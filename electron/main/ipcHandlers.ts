@@ -1,4 +1,5 @@
 import { app, dialog, ipcMain, shell } from "electron";
+import * as path from "node:path";
 
 import type { InMemorySettings } from "./types/settings.js";
 
@@ -198,15 +199,22 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
         return { error: access.error, success: false };
       }
       try {
-        const result = await archiveService.downloadAndExtractArchive(
-          getFactorySamplesArchiveUrl(),
+        // Record what the extraction creates so a cancelled or failed
+        // setup can remove it (RE-66)
+        const result = await localStoreSetupService.trackCreatedEntries(
           destDir,
-          (progress) => {
-            event.sender.send("archive-progress", progress);
-          },
+          () =>
+            archiveService.downloadAndExtractArchive(
+              getFactorySamplesArchiveUrl(),
+              destDir,
+              (progress) => {
+                event.sender.send("archive-progress", progress);
+              },
+              localStoreSetupService.setupSignal,
+            ),
         );
 
-        if (!result.success) {
+        if (!result.success && !result.cancelled) {
           event.sender.send("archive-error", { message: result.error });
         }
 
@@ -230,7 +238,17 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
       ? checkPathAccess(dest, { write: true })
       : access;
     if (!destAccess.ok) return { error: destAccess.error, success: false };
-    return archiveService.copyDirectory(src, dest);
+    // Setup copies each kit from the card into the new store; record the
+    // folder so a cancelled or failed setup can remove it (RE-66)
+    return localStoreSetupService.trackCreatedEntries(path.dirname(dest), () =>
+      archiveService.copyDirectory(src, dest),
+    );
+  });
+
+  // Stop the setup download or extraction in progress (RE-66)
+  ipcMain.handle("cancel-setup", () => {
+    localStoreSetupService.cancelSetup();
+    return { success: true };
   });
 
   ipcMain.handle(

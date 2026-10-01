@@ -71,9 +71,15 @@ vi.mock("../services/localStoreService.js", () => ({
 
 vi.mock("../services/localStoreSetupService.js", () => ({
   localStoreSetupService: {
+    cancelSetup: vi.fn(),
     cleanupFailedSetup: vi.fn(() => ({ removed: false })),
     hasExistingLocalStore: vi.fn(() => ({ exists: true })),
     markSetupComplete: vi.fn(),
+    setupSignal: new AbortController().signal,
+    // Runs the work, as the real one does around recording what it created
+    trackCreatedEntries: vi.fn((_target: string, work: () => unknown) =>
+      Promise.resolve(work()),
+    ),
   },
 }));
 
@@ -493,6 +499,7 @@ describe("registerIpcHandlers", () => {
       "https://factory.test/samples.zip",
       "/mock/dest",
       expect.any(Function),
+      expect.any(AbortSignal),
     );
     expect(mockEvent.sender.send).toHaveBeenCalledWith("archive-progress", {
       percent: 50,

@@ -173,6 +173,7 @@ export async function extractZipEntries(
   entryCount: number,
   onProgress: (info: { file: string; percent: null | number }) => void,
   limits: ArchiveLimits = DEFAULT_ARCHIVE_LIMITS,
+  signal?: AbortSignal,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     let processedCount = 0;
@@ -192,6 +193,7 @@ export async function extractZipEntries(
     const maybeSettle = () => {
       if (settled || !streamClosed || pendingWrites.size > 0) return;
       settled = true;
+      signal?.removeEventListener("abort", onAbort);
       if (failure) {
         reject(failure);
       } else {
@@ -268,6 +270,17 @@ export async function extractZipEntries(
       streamClosed = true;
       maybeSettle();
     });
+
+    // Cancelling setup stops the extraction and tears down open writes; the
+    // promise still waits for them to close before it rejects (RE-66)
+    function onAbort() {
+      fail(signal?.reason ?? new Error("Extraction cancelled"));
+    }
+    if (signal?.aborted) {
+      onAbort();
+    } else {
+      signal?.addEventListener("abort", onAbort, { once: true });
+    }
   });
 }
 

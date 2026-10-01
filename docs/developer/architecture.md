@@ -89,6 +89,13 @@ in `electron/main/security/`.
   samples per voice in card order, WAV metadata, and voice names inferred
   from file names, in one transaction per kit. The renderer only drives the
   steps and shows progress and the "samples left out" notice.
+- Setup can be cancelled (RE-66). `cancel-setup` aborts main's setup signal,
+  which stops the archive download or extraction in progress, and the wizard
+  stops before its next step or kit. Main records the top-level entries
+  setup writes into the target (`trackCreatedEntries`, around extraction and
+  each SD-card kit copy); cleanup after a cancelled or failed setup, or on
+  quit, removes only those and moves the database aside, so the same folder
+  can be set up again. Entries that were there before are never touched.
 
 ## Data
 

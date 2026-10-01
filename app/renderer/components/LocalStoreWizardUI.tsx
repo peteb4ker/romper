@@ -53,7 +53,9 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
     const [truncationWarnings, setTruncationWarnings] = useState<
       TruncationWarning[]
     >([]);
+    const [isCancelling, setIsCancelling] = useState(false);
     const {
+      cancelSetup,
       canInitialize, // from hook
       defaultPath,
       errorMessage, // from hook
@@ -70,6 +72,15 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
     useEffect(() => {
       onInitializationChange?.(state.isInitializing);
     }, [state.isInitializing, onInitializationChange]);
+
+    // Cancel stops setup first; the wizard closes once the work has stopped
+    // and been cleaned up (RE-66). On first run, closing quits the app.
+    useEffect(() => {
+      if (isCancelling && !state.isInitializing) {
+        setIsCancelling(false);
+        onClose();
+      }
+    }, [isCancelling, state.isInitializing, onClose]);
 
     const safeSelectLocalStorePath = useCallback(async () => {
       if (globalThis.electronAPI?.selectLocalStorePath) {
@@ -331,18 +342,24 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
                   )}
                 </button>
                 <button
-                  className="bg-surface-4 text-text-primary px-4 py-2 rounded"
+                  className="bg-surface-4 text-text-primary px-4 py-2 rounded disabled:opacity-50"
+                  data-testid="wizard-cancel-btn"
+                  disabled={isCancelling}
                   onClick={() => {
-                    if (state.isInitializing) {
-                      const confirmed = globalThis.confirm(
-                        "Setup is still running. Cancel will stop setup. Stop setup now?",
-                      );
-                      if (!confirmed) return;
+                    if (!state.isInitializing) {
+                      onClose();
+                      return;
                     }
-                    onClose();
+                    const confirmed = globalThis.confirm(
+                      "Setup is still running. Cancel will stop setup and remove what it has written so far. Stop setup now?",
+                    );
+                    if (!confirmed) return;
+                    setIsCancelling(true);
+                    void cancelSetup();
                   }}
+                  type="button"
                 >
-                  Cancel
+                  {isCancelling ? "Stopping…" : "Cancel"}
                 </button>
               </div>
 

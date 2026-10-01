@@ -1,16 +1,20 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 
 import type { ElectronAPI } from "../../../electron.d";
 
 import { config } from "../../../config";
 import { createLogger } from "../../../utils/logger";
+import { SetupCancelledError } from "./setupCancelled";
 import { useLocalStoreWizardFileOps } from "./useLocalStoreWizardFileOps";
 import {
   type LocalStoreSource,
   type ProgressEvent,
   useLocalStoreWizardState,
 } from "./useLocalStoreWizardState";
-import { useWizardProgress } from "./useWizardProgress";
+import {
+  type StepProgressParams,
+  useWizardProgress,
+} from "./useWizardProgress";
 import {
   getElectronAPI,
   normalizeErrorMessage,
@@ -46,13 +50,36 @@ export function useLocalStoreWizard(
     onProgress,
   );
 
+  // Cancel (RE-66): main aborts its download or extraction, and the wizard
+  // stops before its next step or kit
+  const cancelRequested = useRef(false);
+  const throwIfCancelled = useCallback(() => {
+    if (cancelRequested.current) throw new SetupCancelledError();
+  }, []);
+  const cancellableStepProgress = useCallback(
+    (params: StepProgressParams) =>
+      reportStepProgress({
+        ...params,
+        onStep: async (item, idx) => {
+          throwIfCancelled();
+          await params.onStep(item, idx);
+        },
+      }),
+    [reportStepProgress, throwIfCancelled],
+  );
+  const cancelSetup = useCallback(async () => {
+    cancelRequested.current = true;
+    await api.cancelSetup?.();
+  }, [api]);
+
   // File operations hook
   const fileOpsHook = useLocalStoreWizardFileOps({
     api,
     reportProgress,
-    reportStepProgress,
+    reportStepProgress: cancellableStepProgress,
     setError: stateHook.setError,
     setWizardState: stateHook.setWizardState,
+    throwIfCancelled,
   });
 
   // Helper function to set the local store path
@@ -95,27 +122,32 @@ export function useLocalStoreWizard(
     stateHook.setIsInitializing(true);
     stateHook.setError(null);
     stateHook.setProgress(null);
-    // Only a run that got as far as creating the database has one to clean up
-    let dbCreationStarted = false;
+    cancelRequested.current = false;
+    // Only a run that got as far as writing into the target has anything to
+    // clean up; main removes only what this setup created
+    let writingStarted = false;
 
     try {
       if (!state.targetPath) throw new Error("No target path specified");
       if (!state.source) throw new Error("No source selected");
 
       await runPreChecks(api, state.targetPath, state.source);
+      throwIfCancelled();
 
       if (api.ensureDir) await api.ensureDir(state.targetPath);
 
       // Process source-specific operations
+      writingStarted = true;
       await processSource();
+      throwIfCancelled();
 
       // Create the database and import the kits (main names the voices)
       log.debug("initialize - creating and populating database");
-      dbCreationStarted = true;
       const { truncationWarnings } = await fileOpsHook.createAndPopulateDb(
         state.targetPath,
       );
       log.debug("initialize - database creation completed");
+      throwIfCancelled();
 
       // Set the local store path only after everything is ready
       await setLocalStorePathHelper();
@@ -125,19 +157,26 @@ export function useLocalStoreWizard(
       // run's result, never from state captured before it ran (RE-42)
       return { success: true, truncationWarnings: truncationWarnings ?? [] };
     } catch (e: unknown) {
-      log.error("initialize error:", e);
+      const cancelled =
+        e instanceof SetupCancelledError || cancelRequested.current;
       const errorMessage = e instanceof Error ? e.message : "Unknown error";
-      stateHook.setError(normalizeErrorMessage(errorMessage));
+      if (cancelled) {
+        log.debug("initialize cancelled");
+      } else {
+        log.error("initialize error:", e);
+        stateHook.setError(normalizeErrorMessage(errorMessage));
+      }
 
-      // Move this run's partial database aside so a retry starts fresh.
-      // Main only acts on a .romperdb this setup created (RE-10).
-      if (dbCreationStarted && state.targetPath && api.cleanupPartialInit) {
+      // Remove what this run wrote (kit folders it extracted or copied) and
+      // move its database aside, so a retry starts fresh. Main only acts on
+      // what this setup created (RE-10, RE-66).
+      if (writingStarted && state.targetPath && api.cleanupPartialInit) {
         try {
           const cleanup = await api.cleanupPartialInit(state.targetPath);
           if (cleanup.removed) {
-            log.debug("Moved partial .romperdb aside after failed setup");
+            log.debug("Cleaned up the partial local store");
           } else {
-            log.warn("Partial .romperdb was not cleaned up:", cleanup.error);
+            log.debug("Partial local store not cleaned up:", cleanup.error);
           }
         } catch {
           // Cleanup is best-effort; don't mask the original error
@@ -147,7 +186,9 @@ export function useLocalStoreWizard(
       if (state.source === "sdcard") {
         stateHook.setWizardState({ source: null });
       }
-      return { error: errorMessage, success: false };
+      return cancelled
+        ? { cancelled: true, success: false }
+        : { error: errorMessage, success: false };
     } finally {
       stateHook.setIsInitializing(false);
       stateHook.setProgress(null);
@@ -159,6 +200,7 @@ export function useLocalStoreWizard(
     stateHook,
     setLocalStorePathHelper,
     processSource,
+    throwIfCancelled,
   ]);
 
   // --- Source selection handler ---
@@ -197,6 +239,7 @@ export function useLocalStoreWizard(
 
   return useMemo(
     () => ({
+      cancelSetup,
       canInitialize: stateHook.canInitialize,
       defaultPath,
       errorMessage: stateHook.errorMessage,
@@ -215,6 +258,7 @@ export function useLocalStoreWizard(
       validateSdCardFolder: fileOpsHook.validateSdCardFolder,
     }),
     [
+      cancelSetup,
       stateHook.canInitialize,
       defaultPath,
       stateHook.errorMessage,

@@ -56,15 +56,24 @@ export class ArchiveService {
       percent: null | number;
       phase: string;
     }) => void,
-  ): Promise<{ error?: string; success: boolean }> {
+    signal?: AbortSignal,
+  ): Promise<{ cancelled?: boolean; error?: string; success: boolean }> {
     let tmpZipPath: string | undefined;
 
     try {
-      tmpZipPath = await this.resolveArchivePath(url, progressCallback);
-      await this.performExtraction(tmpZipPath, destDir, progressCallback);
+      tmpZipPath = await this.resolveArchivePath(url, progressCallback, signal);
+      await this.performExtraction(
+        tmpZipPath,
+        destDir,
+        progressCallback,
+        signal,
+      );
       progressCallback?.({ percent: 100, phase: "Done" });
       return { success: true };
     } catch (e) {
+      if (signal?.aborted) {
+        return { cancelled: true, error: "Setup cancelled", success: false };
+      }
       return { error: this.formatErrorMessage(e), success: false };
     } finally {
       // The downloaded zip (about 313 MiB for the factory pack) is only
@@ -141,6 +150,7 @@ export class ArchiveService {
       percent: null | number;
       phase: string;
     }) => void,
+    signal?: AbortSignal,
   ): Promise<string> {
     const os = await import("node:os");
     const tmp = os.tmpdir();
@@ -162,6 +172,7 @@ export class ArchiveService {
           url === SQUARP_FACTORY_SAMPLES_URL
             ? SQUARP_FACTORY_SAMPLES_SHA256
             : undefined,
+        signal,
       },
     );
 
@@ -215,6 +226,7 @@ export class ArchiveService {
       percent: null | number;
       phase: string;
     }) => void,
+    signal?: AbortSignal,
   ): Promise<void> {
     // Count entries for progress tracking
     let entryCount = 0;
@@ -236,6 +248,8 @@ export class ArchiveService {
           phase: "Extracting",
         });
       },
+      undefined,
+      signal,
     );
   }
 
@@ -253,6 +267,7 @@ export class ArchiveService {
       percent: null | number;
       phase: string;
     }) => void,
+    signal?: AbortSignal,
   ): Promise<string> {
     if (url.startsWith("file://")) {
       return this.handleFileUrl(url);
@@ -264,7 +279,7 @@ export class ArchiveService {
         "Unsupported archive URL scheme: only https:// and file:// are allowed",
       );
     }
-    return this.downloadFromUrl(url, progressCallback);
+    return this.downloadFromUrl(url, progressCallback, signal);
   }
 }
 

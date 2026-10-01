@@ -222,4 +222,70 @@ describe("LocalStoreWizardUI", () => {
       expect(screen.queryByTestId("truncation-warnings")).toBeNull();
     });
   });
+  // RE-66: Cancel during setup stops it, and the wizard closes only once
+  // the work has stopped and been cleaned up
+  describe("[UC-02] cancelling setup", () => {
+    it("stops setup, shows it's stopping, then closes", async () => {
+      vi.resetModules();
+      const onClose = vi.fn();
+      const cancelSetup = vi.fn(async () => {});
+      const mockHook = getMockUseLocalStoreWizard({
+        cancelSetup,
+        state: {
+          error: null,
+          isInitializing: true,
+          source: "squarp",
+          targetPath: "/tmp/store",
+        },
+      });
+      vi.doMock("../hooks/wizard/useLocalStoreWizard", () => ({
+        useLocalStoreWizard: () => mockHook,
+      }));
+      vi.spyOn(globalThis, "confirm").mockReturnValue(true);
+      const { default: LocalStoreWizardUI } =
+        await import("../LocalStoreWizardUI");
+      const { rerender } = render(<LocalStoreWizardUI onClose={onClose} />);
+
+      fireEvent.click(screen.getByTestId("wizard-cancel-btn"));
+
+      expect(cancelSetup).toHaveBeenCalledTimes(1);
+      expect(screen.getByTestId("wizard-cancel-btn")).toHaveTextContent(
+        "Stopping",
+      );
+      expect(onClose).not.toHaveBeenCalled();
+
+      // Setup has stopped. The component is memoised: a new prop stands in
+      // for the hook's own state change re-rendering it
+      mockHook.state = { ...mockHook.state, isInitializing: false };
+      rerender(
+        <LocalStoreWizardUI
+          onClose={onClose}
+          onInitializationChange={vi.fn()}
+        />,
+      );
+      await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    });
+
+    it("keeps going when the user doesn't confirm", async () => {
+      vi.resetModules();
+      const onClose = vi.fn();
+      const cancelSetup = vi.fn(async () => {});
+      const mockHook = getMockUseLocalStoreWizard({
+        cancelSetup,
+        state: { error: null, isInitializing: true, source: "squarp" },
+      });
+      vi.doMock("../hooks/wizard/useLocalStoreWizard", () => ({
+        useLocalStoreWizard: () => mockHook,
+      }));
+      vi.spyOn(globalThis, "confirm").mockReturnValue(false);
+      const { default: LocalStoreWizardUI } =
+        await import("../LocalStoreWizardUI");
+      render(<LocalStoreWizardUI onClose={onClose} />);
+
+      fireEvent.click(screen.getByTestId("wizard-cancel-btn"));
+
+      expect(cancelSetup).not.toHaveBeenCalled();
+      expect(onClose).not.toHaveBeenCalled();
+    });
+  });
 });

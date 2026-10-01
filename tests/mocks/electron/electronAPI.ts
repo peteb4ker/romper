@@ -10,6 +10,7 @@ export const createElectronAPIMock = (
   // Sample operations
   addSampleToSlot: vi.fn().mockResolvedValue(undefined),
   cancelKitSync: vi.fn().mockResolvedValue(undefined),
+  cancelSetup: vi.fn().mockResolvedValue({ success: true }),
   // Filesystem pre-checks
   checkDiskSpace: vi.fn().mockResolvedValue({
     availableBytes: 10 * 1024 * 1024 * 1024,
@@ -23,22 +24,22 @@ export const createElectronAPIMock = (
   closeApp: vi.fn().mockResolvedValue(undefined),
   copyDir: vi.fn().mockResolvedValue(undefined),
   copyKit: vi.fn().mockResolvedValue({ success: true }),
+
   // Kit operations
   createKit: vi.fn().mockResolvedValue({ success: true }),
 
   // Database setup
   createRomperDb: vi.fn().mockResolvedValue(undefined),
-
   deleteSampleFromSlot: vi.fn().mockResolvedValue(undefined),
   // Archive operations
   downloadAndExtractArchive: vi.fn().mockResolvedValue(undefined),
+
   ensureDir: vi.fn().mockResolvedValue(undefined),
 
   // Sync operations
   generateSyncChangeSummary: vi
     .fn()
     .mockResolvedValue({ data: null, success: true }),
-
   getAllBanks: vi.fn().mockResolvedValue({ data: [], success: true }),
   getAllSamplesForKit: vi.fn().mockImplementation((_: string) => {
     return Promise.resolve({
@@ -72,6 +73,7 @@ export const createElectronAPIMock = (
     },
     success: true,
   }),
+
   // Database operations
   getKits: vi.fn().mockResolvedValue({
     data: [
@@ -96,7 +98,6 @@ export const createElectronAPIMock = (
     ],
     success: true,
   }),
-
   // Local store operations
   getLocalStoreStatus: vi
     .fn()
@@ -106,8 +107,8 @@ export const createElectronAPIMock = (
     .mockResolvedValue({ data: new ArrayBuffer(8), success: true }),
   // Settings operations
   getSetting: vi.fn().mockResolvedValue("/mock/local/store"),
-  getUserHomeDir: vi.fn().mockResolvedValue("/mock/home"),
 
+  getUserHomeDir: vi.fn().mockResolvedValue("/mock/home"),
   listFilesInRoot: vi.fn().mockImplementation((path: string) => {
     // When called with common local store paths, return kit folders
     if (
@@ -130,11 +131,11 @@ export const createElectronAPIMock = (
   moveSampleInKit: vi.fn().mockResolvedValue({ success: true }),
   onSyncProgress: vi.fn(),
   openExternal: vi.fn().mockResolvedValue(undefined),
+
   readFile: vi.fn().mockResolvedValue({
     data: new ArrayBuffer(1024),
     success: true,
   }),
-
   readSettings: vi.fn().mockResolvedValue({
     darkMode: false,
     localStorePath: "/mock/local/store",
@@ -159,16 +160,16 @@ export const createElectronAPIMock = (
     data: { kitsRescanned: [], totalSamplesUpdated: 0 },
     success: true,
   }),
+
   scanBanks: vi.fn().mockResolvedValue({
     data: { scannedAt: new Date(), scannedFiles: 0, updatedBanks: 2 },
     success: true,
   }),
-
   selectExistingLocalStore: vi.fn().mockResolvedValue("/mock/existing/path"),
   selectLocalStorePath: vi.fn().mockResolvedValue("/mock/custom/path"),
+
   // File operations
   selectSdCard: vi.fn().mockResolvedValue("/sd"),
-
   setSetting: vi.fn().mockResolvedValue(undefined),
   setupImportKit: vi.fn().mockResolvedValue({
     data: {

@@ -147,7 +147,15 @@ export class MessageCollector {
     );
   }
 
-  async attachPage(page: Page): Promise<void> {
+  /**
+   * `acceptDialogs` (the default) accepts every confirm(), as a user going
+   * ahead would. Off, a dialog is only recorded, and dismissed as Playwright
+   * does by default unless the test has its own dialog handler.
+   */
+  async attachPage(
+    page: Page,
+    { acceptDialogs = true }: { acceptDialogs?: boolean } = {},
+  ): Promise<void> {
     if (this.pages.has(page)) return;
     this.pages.add(page);
     page.on("console", (msg) => {
@@ -166,14 +174,18 @@ export class MessageCollector {
       });
     });
     // Playwright dismisses dialogs by default, which would answer "Cancel"
-    // to every confirm(); record them and accept, as a user going ahead would
+    // to every confirm()
     page.on("dialog", (dialog) => {
       this.add({
         level: dialog.type() === "alert" ? "warning" : "info",
         source: "ui",
         text: `${dialog.type()} dialog: ${dialog.message()}`,
       });
-      void dialog.accept().catch(() => {});
+      if (acceptDialogs) {
+        void dialog.accept().catch(() => {});
+      } else if (page.listenerCount("dialog") === 1) {
+        void dialog.dismiss().catch(() => {});
+      }
     });
     page.on("pageerror", (error) =>
       this.add({
@@ -250,7 +262,11 @@ export class MessageCollector {
           source,
           text: line,
         });
-      } else if (STDOUT_PROBLEM.test(line) && !STDOUT_BENIGN.test(line)) {
+      } else if (
+        // Not a path that happens to contain "error" (a folder name)
+        STDOUT_PROBLEM.test(line.replaceAll(/\S*[/\\]\S*/g, "")) &&
+        !STDOUT_BENIGN.test(line)
+      ) {
         this.add({ level: "warning", source, text: line });
       }
     }

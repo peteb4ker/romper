@@ -1,11 +1,7 @@
-import {
-  type ElectronApplication,
-  expect,
-  type Page,
-  test,
-} from "@playwright/test";
+import { type ElectronApplication, type Page } from "@playwright/test";
 import { _electron as electron } from "playwright";
 
+import { expect, test } from "../utils/e2e-error-guard";
 import {
   cleanupE2EFixture,
   type E2ETestEnvironment,

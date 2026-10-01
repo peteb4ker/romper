@@ -1,7 +1,8 @@
-import { expect, test } from "@playwright/test";
 import fs from "node:fs";
 import { builtinModules } from "node:module";
 import path from "node:path";
+
+import { expect, test } from "../utils/e2e-error-guard";
 
 /**
  * The built main process is Node code (RE-16). Built as a browser library,

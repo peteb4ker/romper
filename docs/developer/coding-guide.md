@@ -64,6 +64,14 @@ the pieces fit.
   `<file>.test.ts(x)`, and run in jsdom. Integration tests go in
   `tests/integration/*.integration.test.ts` and run inside Electron.
   E2E tests are `*.e2e.test.ts` (mostly `tests/e2e/`).
+- E2E specs import `test` and `expect` from `tests/utils/e2e-error-guard`,
+  not `@playwright/test`. The guard watches every app a test launches and
+  fails the test on an error-level message nobody expected: a renderer
+  `console.error`, an uncaught page error, an error toast, the error
+  boundary or the wizard's error, or a line on the main process's stderr.
+  A spec that triggers errors on purpose declares them, keyed by the reason:
+  `test.use({ expectedMessages: { "<reason>": { pattern, sources } } })`. Unexpected
+  warnings are listed as test annotations and don't fail the test.
 - The full-pipeline validation (`tests/validation/*.validation.ts`) is not
   part of any suite. `npm run validate:full` builds the app, then sets up a
   store from the factory archive, adds a kit with stereo samples, writes it

@@ -1,9 +1,9 @@
-import { expect, test } from "@playwright/test";
 import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
 import { _electron as electron } from "playwright";
 
+import { expect, test } from "../utils/e2e-error-guard";
 import {
   cleanupE2EFixture,
   type E2ETestEnvironment,
@@ -22,6 +22,15 @@ import {
  * WAV file, so the sync system can find them.
  */
 test.describe("Sync Real Operations E2E Tests", () => {
+  test.use({
+    expectedMessages: {
+      "the RE-09 test deletes a sample's source file before writing": {
+        pattern: /Source file not found: .*1_kick\.wav/,
+        sources: ["main-stdout", "ui"],
+      },
+    },
+  });
+
   let electronApp: ReturnType<typeof electron.launch> extends Promise<infer T>
     ? T
     : never;

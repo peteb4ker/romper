@@ -5,6 +5,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
 import SampleWaveform from "../SampleWaveform";
+
+// Each test installs its own AudioContext mock; build the "shared" context
+// from it so every test starts from a fresh one
+vi.mock("../../utils/sharedAudioContext", () => ({
+  getSharedAudioContext: vi.fn(() => new globalThis.AudioContext()),
+}));
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 
 function createMockAnalyser() {
@@ -698,63 +704,6 @@ describe("SampleWaveform", () => {
     expect(mockCanvasContext).toBeDefined();
   });
 
-  it("handles AudioContext close errors gracefully", async () => {
-    // Mock AudioContext.close to throw an error
-    const mockAudioContext = {
-      close: vi.fn().mockRejectedValue(new Error("Close failed")),
-      createBufferSource: vi.fn(() => ({
-        buffer: null,
-        connect: vi.fn(),
-        disconnect: vi.fn(),
-        onended: null,
-        start: vi.fn(),
-        stop: vi.fn(),
-      })),
-      currentTime: 0,
-      decodeAudioData: vi.fn(),
-      destination: {},
-      state: "running",
-    };
-
-    global.AudioContext = vi.fn(function () {
-      return mockAudioContext;
-    });
-
-    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
-      data: new ArrayBuffer(1024),
-      success: true,
-    });
-
-    const { rerender } = render(
-      <SampleWaveform
-        kitName="A1"
-        playTrigger={0}
-        slotNumber={1}
-        voiceNumber={1}
-      />,
-    );
-
-    // Wait for initial setup
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 10));
-    });
-
-    // Trigger a re-render to cause previous AudioContext to be closed
-    await act(async () => {
-      rerender(
-        <SampleWaveform
-          kitName="A2"
-          playTrigger={0}
-          slotNumber={1}
-          voiceNumber={1}
-        />,
-      );
-    });
-
-    // Should handle close errors gracefully without throwing
-    expect(mockAudioContext.close).toHaveBeenCalled();
-  });
-
   it("clears onended on previous source when replaying to prevent stale callback", async () => {
     const mockSource1 = {
       buffer: null,
@@ -1047,55 +996,88 @@ describe("SampleWaveform", () => {
     expect(global.cancelAnimationFrame).toHaveBeenCalled();
   });
 
-  it("handles synchronous AudioContext close errors gracefully", async () => {
-    // Mock AudioContext.close to return a rejected Promise
-    const mockAudioContext = {
-      close: vi.fn(() => Promise.reject(new Error("Synchronous close failed"))),
-      createBufferSource: vi.fn(() => ({
-        buffer: null,
+  describe("shared AudioContext (RE-14)", () => {
+    async function playOnce(volume = 80) {
+      const gainNode = {
         connect: vi.fn(),
         disconnect: vi.fn(),
-        onended: null,
-        start: vi.fn(),
-        stop: vi.fn(),
-      })),
-      currentTime: 0,
-      decodeAudioData: vi.fn(),
-      destination: {},
-      state: "running",
-    };
-
-    global.AudioContext = vi.fn(function () {
-      return mockAudioContext;
-    });
-
-    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
-      data: new ArrayBuffer(1024),
-      success: true,
-    });
-
-    const { rerender } = render(
-      <SampleWaveform
-        kitName="A1"
-        playTrigger={0}
-        slotNumber={1}
-        voiceNumber={1}
-      />,
-    );
-
-    // Trigger a re-render to cause previous AudioContext to be closed
-    await act(async () => {
-      rerender(
+        gain: { setValueAtTime: vi.fn() },
+      };
+      const ctx = createMockAudioContext({
+        createGain: vi.fn(() => gainNode),
+        decodeAudioData: vi.fn((_buf, cb) =>
+          cb({
+            duration: 1,
+            getChannelData: vi.fn(() => new Float32Array(100)),
+            length: 44100,
+            numberOfChannels: 1,
+            sampleRate: 44100,
+          }),
+        ),
+      });
+      global.AudioContext = vi.fn(function () {
+        return ctx;
+      });
+      vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
+        data: new ArrayBuffer(1024),
+        success: true,
+      });
+      const view = render(
         <SampleWaveform
-          kitName="A2"
+          kitName="A1"
           playTrigger={0}
           slotNumber={1}
           voiceNumber={1}
+          volume={volume}
         />,
       );
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      });
+      await act(async () => {
+        view.rerender(
+          <SampleWaveform
+            kitName="A1"
+            playTrigger={1}
+            slotNumber={1}
+            voiceNumber={1}
+            volume={volume}
+          />,
+        );
+      });
+      expect(ctx.createGain).toHaveBeenCalledTimes(1);
+      return { ctx, gainNode, view };
+    }
+
+    it("never closes the shared context, even when it unmounts", async () => {
+      const { ctx, view } = await playOnce();
+      view.unmount();
+      expect(ctx.close).not.toHaveBeenCalled();
     });
 
-    // Should handle synchronous close errors gracefully
-    expect(mockAudioContext.close).toHaveBeenCalled();
+    it("disconnects its own volume and meter nodes when it unmounts", async () => {
+      const { gainNode, view } = await playOnce();
+      expect(gainNode.disconnect).not.toHaveBeenCalled();
+      view.unmount();
+      expect(gainNode.disconnect).toHaveBeenCalled();
+    });
+
+    it("disconnects them when its slot gets another sample", async () => {
+      const { ctx, gainNode, view } = await playOnce();
+      await act(async () => {
+        view.rerender(
+          <SampleWaveform
+            kitName="A1"
+            playTrigger={1}
+            slotNumber={2}
+            voiceNumber={1}
+            volume={80}
+          />,
+        );
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      });
+      expect(gainNode.disconnect).toHaveBeenCalled();
+      expect(ctx.close).not.toHaveBeenCalled();
+    });
   });
 });

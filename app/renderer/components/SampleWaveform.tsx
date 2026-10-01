@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import type { PlayOptions, PlayRegion } from "./kitTypes";
 
+import { getSharedAudioContext } from "../utils/sharedAudioContext";
 import { clearVoiceLevel, setVoiceLevel } from "./led-icon/audioLevels";
 import { claimVoice } from "./voiceChoke";
 
@@ -225,6 +226,18 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   const playOptionsRef = useRef(playOptions);
   playOptionsRef.current = playOptions;
 
+  // Disconnect this slot's volume and meter nodes from the shared context.
+  // They are connected to its output, so they would otherwise live (and
+  // keep processing) for as long as the app runs (RE-14).
+  const releaseMeters = useCallback(() => {
+    gainNodeRef.current?.disconnect();
+    gainNodeRef.current = null;
+    analyserLRef.current = null;
+    analyserRRef.current = null;
+    analyserDataLRef.current = null;
+    analyserDataRRef.current = null;
+  }, []);
+
   // Load audio file and decode
   useEffect(() => {
     let cancelled = false;
@@ -251,31 +264,11 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
           return;
         }
 
-        // Always close previous context before creating a new one
-        if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
-          try {
-            await audioCtxRef.current.close();
-          } catch {
-            // Ignore close errors
-          }
-        }
-        const ctx = new globalThis.AudioContext();
+        // The new sample may have another channel count, so its meters are
+        // rebuilt on first play
+        releaseMeters();
+        const ctx = getSharedAudioContext();
         audioCtxRef.current = ctx;
-        // Nodes belong to one context; the old ones can't connect to this one
-        gainNodeRef.current = null;
-        analyserLRef.current = null;
-        analyserRRef.current = null;
-        analyserDataLRef.current = null;
-        analyserDataRRef.current = null;
-        ctx.onstatechange = () => {
-          // A context the OS suspends or interrupts (output device change,
-          // sleep) plays nothing; make that visible instead of silent
-          if (ctx.state !== "running" && ctx.state !== "closed") {
-            console.warn(
-              `[SampleWaveform] AudioContext ${ctx.state}: kit=${kitName}, voice=${voiceNumber}, slot=${slotNumber}`,
-            );
-          }
-        };
         void ctx.decodeAudioData(arrayBuffer.slice(0), (buf) => {
           setAudioBuffer(buf);
           drawWaveform(buf);
@@ -293,12 +286,6 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       });
     return () => {
       cancelled = true;
-      if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
-        const result = audioCtxRef.current.close();
-        result?.catch(() => {
-          // Ignore close errors
-        });
-      }
     };
   }, [kitName, voiceNumber, slotNumber]); // eslint-disable-line react-hooks/exhaustive-deps -- onError intentionally excluded to prevent infinite loops
 
@@ -537,18 +524,13 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     }
   }, [playhead, isPlaying, audioBuffer, drawWaveform]);
 
-  // Clean up on unmount
+  // Clean up on unmount. The shared context stays open for the other slots.
   useEffect(() => {
     return () => {
       stopPlayback();
-      if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
-        const result = audioCtxRef.current.close();
-        result?.catch(() => {
-          // Ignore close errors
-        });
-      }
+      releaseMeters();
     };
-  }, [stopPlayback]);
+  }, [stopPlayback, releaseMeters]);
 
   return (
     <div style={{ alignItems: "center", display: "flex" }}>

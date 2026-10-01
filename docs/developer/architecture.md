@@ -144,7 +144,10 @@ exist, but see RE-09 below.
   sample playing on the same voice (`handlePlay` in `useKitPlayback.ts`).
 - Kit samples are loaded over IPC by kit / voice / slot
   (`getSampleAudioBuffer`) and played through an `AudioBufferSourceNode` into
-  a `GainNode`. Channels that take a file path (`readFile`,
+  a `GainNode`. All slots share one `AudioContext`
+  (`utils/sharedAudioContext.ts`, RE-14) and never close it; each slot
+  disconnects its own gain and meter nodes when its sample changes or it
+  unmounts. Channels that take a file path (`readFile`,
   `getAudioMetadata`) are scoped by main; see "The renderer is untrusted".
 - Each voice picks a sample by `sample_mode`: `first`, `random`, or
   `round-robin`. A voice in slice mode then plays only a region of that
@@ -153,7 +156,7 @@ exist, but see RE-09 below.
 - Sequencer timing: the step worker times each step from the start (no
   `setInterval` drift) and sends its ideal time. Every trigger is scheduled
   `SCHEDULE_AHEAD_MS` (80 ms) after that (`PlayOptions.startAt`), mapped to
-  each `AudioContext` with `getOutputTimestamp()`, so voices land exactly on
+  the shared `AudioContext`'s clock with `getOutputTimestamp()`, so voices land exactly on
   the grid regardless of React latency. Chokes and retriggers stop the old
   sound at the new one's start (`stopAt`), so scheduling never opens a gap.
   Clicked previews play immediately.

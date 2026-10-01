@@ -495,9 +495,9 @@ describe("useExternalDragHandlers", () => {
 
       const mockEvent = createMockEvent([createMockFile("test.wav")]);
 
-      expect(async () => {
-        await result.current.handleDrop(mockEvent, 1);
-      }).not.toThrow();
+      await expect(
+        result.current.handleDrop(mockEvent, 1),
+      ).resolves.not.toThrow();
     });
 
     it("handles Array.from on dataTransfer.files", async () => {

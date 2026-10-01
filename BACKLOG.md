@@ -32,7 +32,6 @@ This file tracks what's being done about each item.
 | RE-14 | High | Playback | Each play connects a new analyser (and a splitter for stereo) to the slot's gain node, and nothing disconnects them. | partly done (slicer PR: meters made once per slot and finished sources released; one shared AudioContext still open) |
 | RE-15 | High | Platform | Electron 39.8.10 is out of support (its last patch was 2026-05-05; supported majors are 42 to 44). | open (#348 moved to Electron 41; 42+ is supported) |
 | RE-18 | High | Release | Signing is silently optional. Windows v1.3.1 shipped **unsigned** (the Azure step was skipped because `AZURE_CLIENT_ID` is empty). | partly done (#387: signing required, Apple credentials checked first; Windows needs ALLOW_UNSIGNED_WINDOWS until OPS-2) |
-| RE-20 | High | Docs | User-facing docs promise behaviour that does not exist. README, the manual and the website promise an automatic backup and rollback before sync; there is no backup code. | open |
 
 ## Owner (needs Pete)
 
@@ -89,6 +88,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-20 | High | Docs | User-facing docs promise behaviour that does not exist. README, the manual and the website promise an automatic backup and rollback before sync; there is no backup code. | done (#393; no pre-sync backup: the local store is the master copy) |
 | RE-61 | Medium | Sync | The write panel falls behind the real count on large stores: two progress events per file, and each re-rendered the kit grid. | done (#391) |
 | RE-19 | High | Release | Release secrets are more exposed than needed: the base64 p12 is a job-level environment variable during `npm ci` (the lifecycle scripts of about 1,500 packages) on all three runners; checkout keeps the token while the workflow has `contents: write`; `id-token: write` is unused; third-party actions that receive secrets are pinned by tag, not by SHA. | done (#389) |
 | RE-17 | High | Release | The release workflow runs no unit, integration or e2e tests and does not check that the tag is on `main` or that CI passed. | done (#386) |

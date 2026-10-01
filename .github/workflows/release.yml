@@ -26,6 +26,8 @@ jobs:
     permissions:
       contents: read
       issues: write
+    outputs:
+      windows-signed: ${{ steps.signing.outputs.windows-signed }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -46,6 +48,55 @@ jobs:
             exit 1
           fi
           echo "$GITHUB_REF_NAME is on main and matches package.json"
+
+      # Signing used to be silently optional (RE-18): Windows v1.3.1 shipped
+      # unsigned because its secrets were empty, and missing Apple secrets
+      # would have skipped macOS signing too. A tag build now needs the
+      # macOS secrets. Windows may ship unsigned only while the repo
+      # variable ALLOW_UNSIGNED_WINDOWS is "true", and the release notes
+      # then say so.
+      - name: Check signing is configured
+        id: signing
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          ASC_API_KEY_JSON: ${{ secrets.ASC_API_KEY_JSON }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_SIGNING_ACCOUNT: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
+          AZURE_CERTIFICATE_PROFILE: ${{ secrets.AZURE_CERTIFICATE_PROFILE }}
+          ALLOW_UNSIGNED_WINDOWS: ${{ vars.ALLOW_UNSIGNED_WINDOWS }}
+        run: |
+          missing() {
+            local name out=()
+            for name in "$@"; do [ -n "${!name}" ] || out+=("$name"); done
+            echo "${out[*]}"
+          }
+          APPLE_MISSING=$(missing APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD ASC_API_KEY_JSON)
+          if [ -n "$APPLE_MISSING" ]; then
+            echo "::error::macOS signing secrets are missing: $APPLE_MISSING. An unsigned macOS build can't be released."
+            exit 1
+          fi
+          AZURE_MISSING=$(missing AZURE_TENANT_ID AZURE_CLIENT_ID AZURE_CLIENT_SECRET AZURE_SIGNING_ACCOUNT AZURE_CERTIFICATE_PROFILE)
+          if [ -z "$AZURE_MISSING" ]; then
+            echo "windows-signed=true" >> "$GITHUB_OUTPUT"
+          elif [ "$ALLOW_UNSIGNED_WINDOWS" = "true" ]; then
+            echo "::warning::Windows signing secrets are missing ($AZURE_MISSING); the Windows build ships unsigned because ALLOW_UNSIGNED_WINDOWS is true, and the release notes say so."
+            echo "windows-signed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Windows signing secrets are missing: $AZURE_MISSING. Configure Azure Trusted Signing, or set the repo variable ALLOW_UNSIGNED_WINDOWS to true to ship an unsigned Windows build."
+            exit 1
+          fi
+
+      # v1.3.0 was lost to an expired Apple agreement that only showed up at
+      # notarize time, after every platform had built.
+      - name: Check the App Store Connect key and agreements
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          ASC_API_KEY_JSON: ${{ secrets.ASC_API_KEY_JSON }}
+        run: node scripts/check-notary-credentials.mjs
 
       - name: Check SonarCloud Quality Gate
         env:
@@ -84,7 +135,7 @@ jobs:
             --repo ${{ github.repository }} \
             --title "Release ${{ github.ref_name }} blocked: preflight failed" \
             --label "bug,priority:high" \
-            --body "Release **${{ github.ref_name }}** didn't pass preflight (tag on main and matching package.json, SonarCloud gate). See [the run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).
+            --body "Release **${{ github.ref_name }}** didn't pass preflight (tag on main and matching package.json, signing secrets, Apple credentials and agreements, SonarCloud gate). See [the run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).
           - [Issues](https://sonarcloud.io/project/issues?id=peteb4ker_romper&severities=CRITICAL,BLOCKER)
           - [Hotspots](https://sonarcloud.io/project/security_hotspots?id=peteb4ker_romper)
 
@@ -357,7 +408,7 @@ jobs:
           retention-days: 7
 
   release:
-    needs: build
+    needs: [preflight, build]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
 
@@ -389,6 +440,13 @@ jobs:
         run: |
           # Generate release notes using the Node.js script
           RELEASE_NOTES=$(node scripts/generate-github-release-notes.js ${{ github.ref_name }})
+
+          # An unsigned Windows build is only ever shipped knowingly (RE-18)
+          if [ "${{ needs.preflight.outputs.windows-signed }}" = "false" ]; then
+            RELEASE_NOTES="$RELEASE_NOTES
+
+          > **Windows:** this build isn't code-signed yet, so Windows SmartScreen warns when you run the installer. Choose **More info**, then **Run anyway**."
+          fi
 
           # Output to GitHub Actions
           echo "notes<<EOF" >> $GITHUB_OUTPUT

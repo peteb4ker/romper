@@ -6,9 +6,19 @@ title: Code Signing
 
 Unsigned builds trip Gatekeeper on macOS and SmartScreen on Windows, so
 release builds are signed. Signing runs only in the tag-triggered release
-workflow (`.github/workflows/release.yml`). Each platform's steps are inert
-until its secrets exist, so forks and local builds produce unsigned
-artifacts.
+workflow (`.github/workflows/release.yml`). Each platform's signing steps
+are inert until its secrets exist, so forks, local builds and manual
+(`workflow_dispatch`) runs can produce unsigned artifacts.
+
+A tag build doesn't start without signing (RE-18). The release's preflight
+job fails unless the macOS secrets are set, and checks the App Store
+Connect key against Apple (`scripts/check-notary-credentials.mjs`), so a
+revoked key or an expired agreement fails in the first minute instead of
+at notarize time. Windows needs its secrets too, unless the repository
+variable `ALLOW_UNSIGNED_WINDOWS` is `true`: then the Windows build ships
+unsigned, the run warns, and the release notes tell Windows users how to
+get past SmartScreen. Remove the variable once Azure Trusted Signing is
+set up.
 
 ## macOS: rcodesign
 
@@ -64,9 +74,10 @@ step, so validate any change here with a real (or RC) tag build.
 The team ID comes from the certificate. `APPLE_ID`, `APPLE_ID_PASSWORD`, and
 `APPLE_TEAM_ID` belonged to the old notarization flow and are unused.
 
-If notarization fails with HTTP 403 `REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`,
-the Apple Developer account holder must accept the updated agreement at
-developer.apple.com. Then re-run the failed job.
+If the preflight's App Store Connect check, or notarization, fails with HTTP
+403 (`REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`), the Apple Developer account
+holder must accept the updated agreement at developer.apple.com. Then re-run
+the failed job.
 
 ## Windows: Azure Trusted Signing
 
@@ -109,6 +120,8 @@ Docs: [Azure Trusted Signing](https://azure.microsoft.com/en-us/products/artifac
 | `AZURE_CERTIFICATE_PROFILE` | certificate profile name |
 
 All secrets live under **Settings → Secrets and variables → Actions**.
+Once they're set, delete the `ALLOW_UNSIGNED_WINDOWS` variable (same page,
+**Variables** tab) so an unsigned Windows build can't ship again.
 
 ## Verifying a signed release
 

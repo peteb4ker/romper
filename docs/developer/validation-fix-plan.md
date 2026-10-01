@@ -4,7 +4,7 @@ priority: high
 status: plan
 updated: 2026-10-01
 context_size: medium
-implementation_status: RE-29 in #404, RE-64 in #401, validation CI in #403, RE-65 in #406, RE-24 in #405, hygiene in #409; the rest to do
+implementation_status: RE-29 in #404, RE-64 in #401, validation CI in #403, RE-65 in #406, RE-24 in #405, hygiene in #409, RE-69 in #407; the rest to do
 -->
 
 # Fixing what the full-pipeline validation found
@@ -35,7 +35,7 @@ Severity and details for each ID are in the findings register
 | RE-29 | High | Stereo files on unlinked voices weren't mixed to mono | #404 | done in PR |
 | RE-64 | High | No way to create a kit in an empty bank or library | #401 | in review (another session) |
 | RE-70 | Medium | `file://` archive URLs weren't decoded (Windows, spaces) | #403 | done in PR |
-| RE-69 | High | Unlinking a stereo pair silently does nothing when the voice holds a 2-channel file; dead `is_stereo` rules | 1 | to do |
+| RE-69 | High | Unlinking a stereo pair silently does nothing when the voice holds a 2-channel file; dead `is_stereo` rules | #407 | done in PR |
 | RE-42 | Medium | No truncation notice after setup | #410 | done in PR |
 | RE-34 | Medium | Setup's voice naming does nothing; 2,373 file reads over IPC | 3 | to do |
 | RE-66 | Medium | Cancel during setup quits mid-import and leaves a store that blocks a retry | 4: #408 (step 1) | step 1 done in PR; step 2 to do |

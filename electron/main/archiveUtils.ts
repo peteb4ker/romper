@@ -1,5 +1,10 @@
+import type { ReadableStream as WebReadableStream } from "node:stream/web";
+
+import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import * as unzipper from "unzipper";
 
 /**
@@ -50,30 +55,116 @@ export async function countZipEntries(zipPath: string): Promise<number> {
   });
 }
 
+/** A download that receives nothing for this long is treated as stalled. */
+export const DOWNLOAD_IDLE_TIMEOUT_MS = 60_000;
+
+export interface DownloadOptions {
+  /** Checked before the file is kept; a mismatch throws ArchiveChecksumError */
+  expectedSha256?: string;
+  /** No data for this long fails the download (default 60 s) */
+  idleTimeoutMs?: number;
+  signal?: AbortSignal;
+}
+
+/** The downloaded file's SHA-256 isn't the one the caller expected. */
+export class ArchiveChecksumError extends Error {
+  constructor(
+    readonly expected: string,
+    readonly actual: string,
+  ) {
+    super(
+      `Archive checksum mismatch: expected SHA-256 ${expected}, got ${actual}`,
+    );
+    this.name = "ArchiveChecksumError";
+  }
+}
+
+/**
+ * Download `url` to `targetPath`. The body streams to `<targetPath>.part`,
+ * hashed as it arrives, and is renamed to `targetPath` only once the status,
+ * length and checksum all check out. On failure the partial file is removed
+ * and nothing is left at `targetPath`.
+ */
 export async function downloadArchive(
   url: string,
-  tmpZipPath: string,
+  targetPath: string,
   onProgress: (percent: null | number) => void,
+  options: DownloadOptions = {},
 ): Promise<void> {
-  const https = await import("node:https");
+  const idleTimeoutMs = options.idleTimeoutMs ?? DOWNLOAD_IDLE_TIMEOUT_MS;
+  const partPath = `${targetPath}.part`;
 
-  return new Promise((resolve, reject) => {
-    const fileStream = fs.createWriteStream(tmpZipPath);
-    setupFileStream(fileStream, resolve, reject);
-
-    const request = https.get(url, (response) => {
-      const totalBytes = Number.parseInt(
-        response.headers["content-length"] || "0",
-        10,
+  // An idle timeout rather than a total one: a slow connection is fine as
+  // long as data keeps arriving.
+  const idle = new AbortController();
+  let idleTimer: NodeJS.Timeout | undefined;
+  const resetIdleTimer = () => {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      const seconds = Math.round(idleTimeoutMs / 1000);
+      idle.abort(
+        new Error(
+          `Download stalled: no data received for ${seconds} seconds. Check your connection and try again.`,
+        ),
       );
+    }, idleTimeoutMs);
+  };
+  const signal = options.signal
+    ? AbortSignal.any([options.signal, idle.signal])
+    : idle.signal;
 
-      const trackProgress = createProgressTracker(totalBytes, onProgress);
-      response.on("data", trackProgress);
-      response.pipe(fileStream);
+  try {
+    resetIdleTimer();
+    const response = await fetch(url, {
+      // Content-Length has to count the bytes we receive
+      headers: { "Accept-Encoding": "identity" },
+      redirect: "follow",
+      signal,
     });
+    if (!response.ok || !response.body) {
+      const status = `${response.status} ${response.statusText}`.trim();
+      throw new Error(`Download failed: the server answered HTTP ${status}`);
+    }
 
-    request.on("error", reject);
-  });
+    const totalBytes = expectedLength(response.headers);
+    const trackProgress = createProgressTracker(totalBytes ?? 0, onProgress);
+    const hash = createHash("sha256");
+    let receivedBytes = 0;
+
+    await pipeline(
+      Readable.fromWeb(response.body as WebReadableStream<Uint8Array>),
+      async function* (source: AsyncIterable<Buffer>) {
+        for await (const chunk of source) {
+          resetIdleTimer();
+          hash.update(chunk);
+          receivedBytes += chunk.length;
+          trackProgress(chunk);
+          yield chunk;
+        }
+      },
+      fs.createWriteStream(partPath),
+      { signal },
+    );
+
+    if (totalBytes !== undefined && receivedBytes !== totalBytes) {
+      throw new Error(
+        `Download incomplete: received ${receivedBytes} of ${totalBytes} bytes. Try again.`,
+      );
+    }
+    const sha256 = hash.digest("hex");
+    if (options.expectedSha256 && sha256 !== options.expectedSha256) {
+      throw new ArchiveChecksumError(options.expectedSha256, sha256);
+    }
+    await fs.promises.rename(partPath, targetPath);
+  } catch (error) {
+    await fs.promises.rm(partPath, { force: true }).catch(() => {});
+    // An abort surfaces as a bare AbortError; report why it was aborted
+    throw signal.aborted && signal.reason instanceof Error
+      ? signal.reason
+      : error;
+  } finally {
+    clearTimeout(idleTimer);
+  }
 }
 
 export async function extractZipEntries(
@@ -153,24 +244,23 @@ export async function extractZipEntries(
       onProgress({ file: entry.path, percent });
 
       const destPath = path.join(destDir, entry.path);
-      if (entry.type === "Directory") {
-        handleDirectoryEntry(entry, destPath);
-      } else {
-        const writePromise = handleFileEntry(
-          entry,
-          destPath,
-          limits,
-          budget,
-          fail,
-          () => failure !== null,
-          openWriteStreams,
-        );
-        pendingWrites.add(writePromise);
-        void writePromise.finally(() => {
-          pendingWrites.delete(writePromise);
-          maybeSettle();
-        });
-      }
+      const writePromise =
+        entry.type === "Directory"
+          ? handleDirectoryEntry(entry, destPath, fail)
+          : handleFileEntry(
+              entry,
+              destPath,
+              limits,
+              budget,
+              fail,
+              () => failure !== null,
+              openWriteStreams,
+            );
+      pendingWrites.add(writePromise);
+      void writePromise.finally(() => {
+        pendingWrites.delete(writePromise);
+        maybeSettle();
+      });
     });
 
     stream.on("error", fail);
@@ -273,11 +363,40 @@ function createProgressTracker(
   };
 }
 
-// Helper function to handle directory extraction
-function handleDirectoryEntry(entry: UnzipperEntry, destPath: string): void {
-  fs.mkdir(destPath, { recursive: true }, (err) => {
-    if (err) console.warn("Failed to create directory:", destPath, err);
-    entry.autodrain();
+// The body length to check against, when the server gives one that counts
+// the bytes we receive (an encoded body's Content-Length counts encoded bytes).
+function expectedLength(headers: Headers): number | undefined {
+  const encoding = headers.get("content-encoding");
+  if (encoding && encoding !== "identity") return undefined;
+  const length = Number.parseInt(headers.get("content-length") ?? "", 10);
+  return Number.isFinite(length) && length >= 0 ? length : undefined;
+}
+
+// An extraction failure the user can act on: what failed, where, and why
+// (usually a full disk or a folder they can't write to).
+function extractionError(action: string, target: string, err: unknown): Error {
+  const reason = err instanceof Error ? err.message : String(err);
+  return new Error(
+    `Extraction failed: couldn't ${action} ${target}: ${reason}`,
+    {
+      cause: err,
+    },
+  );
+}
+
+// Create a directory entry's folder. A failure fails the extraction: a
+// missing folder means its files are missing too.
+function handleDirectoryEntry(
+  entry: UnzipperEntry,
+  destPath: string,
+  fail: (error: unknown) => void,
+): Promise<void> {
+  return new Promise<void>((done) => {
+    fs.mkdir(destPath, { recursive: true }, (err) => {
+      if (err) fail(extractionError("create folder", destPath, err));
+      entry.autodrain();
+      done();
+    });
   });
 }
 
@@ -297,11 +416,7 @@ function handleFileEntry(
   return new Promise<void>((resolveWrite) => {
     fs.mkdir(path.dirname(destPath), { recursive: true }, (err) => {
       if (err) {
-        console.warn(
-          "Failed to create parent directory:",
-          path.dirname(destPath),
-          err,
-        );
+        fail(extractionError("create folder", path.dirname(destPath), err));
         entry.autodrain();
         resolveWrite();
         return;
@@ -318,7 +433,7 @@ function handleFileEntry(
       }
 
       attachSizeGuard(entry, limits, budget, fail);
-      pipeEntryToFile(entry, destPath, openWriteStreams, resolveWrite);
+      pipeEntryToFile(entry, destPath, openWriteStreams, fail, resolveWrite);
     });
   });
 }
@@ -330,6 +445,7 @@ function pipeEntryToFile(
   entry: UnzipperEntry,
   destPath: string,
   openWriteStreams: Set<fs.WriteStream>,
+  fail: (error: unknown) => void,
   done: () => void,
 ): void {
   const writeStream = fs.createWriteStream(destPath);
@@ -342,28 +458,8 @@ function pipeEntryToFile(
   // covers open/write failures. Either way the write is no longer in flight.
   writeStream.on("close", finishWrite);
   writeStream.on("error", (err: unknown) => {
-    warnWriteFailure(destPath, err);
+    fail(extractionError("write", destPath, err));
     finishWrite();
   });
   entry.pipe(writeStream);
-}
-
-// Helper to setup file stream handlers
-function setupFileStream(
-  fileStream: fs.WriteStream,
-  resolve: () => void,
-  reject: (error: unknown) => void,
-) {
-  fileStream.on("finish", () => {
-    fileStream.close(() => resolve());
-  });
-  fileStream.on("error", reject);
-}
-
-// Defer the warning so it doesn't interleave with the synchronous teardown path
-// (matches the original behaviour of logging write failures out-of-band).
-function warnWriteFailure(destPath: string, err: unknown): void {
-  setImmediate(() => {
-    console.warn("Failed to write file:", destPath, err);
-  });
 }

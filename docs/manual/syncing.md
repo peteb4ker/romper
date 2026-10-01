@@ -35,7 +35,7 @@ If validation finds issues, they're shown in a results dialog before any writing
 
 1. Click the **Sync to SD Card** button in the Kit Browser header
 2. Romper runs validation across all kits
-3. If destructive sync is enabled (overwriting existing data on the card), you'll see a confirmation dialog showing exactly what will change
+3. The write summary lists anything on the card that's no longer in your library (a sample you removed, a kit you deleted, a bank you renamed); sync removes it
 4. A local backup of the current SD card contents is created automatically
 5. Files are copied to the SD card with progress shown in the status bar
 6. Format conversions happen during this step -- for example, stereo-to-mono conversion for samples configured in mono mode
@@ -50,7 +50,7 @@ During sync, Romper writes:
 - **Bank names** -- each named bank gets a `<letter> - <name>.rtf` file at the root of the card, as on the factory card
 - **Folder structure** -- kit folders are created as needed
 
-Romper doesn't write anything else. The Rample keeps its own saved kit settings (from **STORE**) in a `_save` folder on the card, which sync leaves alone.
+The card ends up matching your library: after everything is written, sync removes kit folders, files inside kit folders, and bank name files that your library no longer has. If you cancel, nothing is removed. Romper doesn't write or remove anything else. The Rample keeps its own saved kit settings (from **STORE**) in a `_save` folder on the card, which sync leaves alone.
 
 ### Automatic Backup
 

@@ -4,8 +4,9 @@ import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
-  clearRampleContent,
+  findStaleCardEntries,
   getSdCardDialogDefaultPath,
+  removeCardEntries,
   validateSdCardTarget,
 } from "../sdCardSafety";
 
@@ -115,93 +116,119 @@ describe("sdCardSafety", () => {
     );
   });
 
-  describe("clearRampleContent", () => {
-    const touch = (name: string) =>
-      fs.writeFileSync(path.join(card, name), "x");
-    const mkdir = (name: string) => {
-      fs.mkdirSync(path.join(card, name));
-      fs.writeFileSync(path.join(card, name, "1kick.wav"), "x");
+  describe("findStaleCardEntries", () => {
+    const write = (relative: string) => {
+      fs.mkdirSync(path.dirname(path.join(card, relative)), {
+        recursive: true,
+      });
+      fs.writeFileSync(path.join(card, relative), "x");
     };
+    const contents = (
+      kits: Record<string, string[]>,
+      bankFiles: string[] = [],
+    ) => ({ bankFiles, kits: new Map(Object.entries(kits)) });
 
-    it("removes kit folders and bank RTF files, and nothing else", () => {
-      for (const kit of ["A0", "B12", "Z99", "c5"]) mkdir(kit);
-      touch("A - Artist.rtf");
-      touch("Z - Another Artist.RTF");
-      // Things that must survive
-      for (const keep of ["Documents", "A100", "AB1", "Samples"]) mkdir(keep);
-      touch("notes.txt");
-      touch("readme.rtf");
-      touch("A - not a bank.txt");
+    it("lists kit folders the store doesn't have", () => {
+      write("A0/1-01 kick.wav");
+      write("B3/1-01 old.wav");
 
-      const { removed } = clearRampleContent(card);
-
-      expect(removed.sort()).toEqual(
-        [
-          "A - Artist.rtf",
-          "A0",
-          "B12",
-          "Z - Another Artist.RTF",
-          "Z99",
-          "c5",
-        ].sort(),
-      );
+      expect(
+        findStaleCardEntries(card, contents({ A0: ["1-01 kick.wav"] })),
+      ).toEqual(["B3"]);
     });
 
-    it("keeps everything that is not Rample content", () => {
-      mkdir("A0");
-      mkdir("Documents");
-      touch("notes.txt");
-      touch("readme.rtf");
+    it("lists files and folders inside a kit that the store doesn't have", () => {
+      write("A0/1-01 kick.wav");
+      write("A0/1-02 removed.wav");
+      write("A0/2/old layout.wav");
+      write("A0/.DS_Store");
 
-      clearRampleContent(card);
+      expect(
+        findStaleCardEntries(card, contents({ A0: ["1-01 kick.wav"] })),
+      ).toEqual([
+        path.join("A0", ".DS_Store"),
+        path.join("A0", "1-02 removed.wav"),
+        path.join("A0", "2"),
+      ]);
+    });
 
-      expect(fs.readdirSync(card).sort()).toEqual(
-        ["Documents", "notes.txt", "readme.rtf"].sort(),
-      );
-      expect(fs.existsSync(path.join(card, "Documents", "1kick.wav"))).toBe(
-        true,
-      );
+    it("lists bank name files for banks without a name", () => {
+      write("A - ALWIS.rtf");
+      write("B - OLD NAME.rtf");
+
+      expect(
+        findStaleCardEntries(card, contents({}, ["A - ALWIS.rtf"])),
+      ).toEqual(["B - OLD NAME.rtf"]);
+    });
+
+    it("compares names ignoring case, as FAT32 does", () => {
+      write("a0/1-01 KICK.wav");
+      write("A - alwis.RTF");
+
+      expect(
+        findStaleCardEntries(
+          card,
+          contents({ A0: ["1-01 kick.wav"] }, ["A - ALWIS.rtf"]),
+        ),
+      ).toEqual([]);
+    });
+
+    it("leaves everything that isn't Rample content", () => {
+      write("_save/A0.rpl");
+      write("Documents/1kick.wav");
+      write("A100/1kick.wav");
+      write("notes.txt");
+      write("readme.rtf");
+      write("D7");
+
+      expect(findStaleCardEntries(card, contents({}))).toEqual([]);
+    });
+
+    it.skipIf(isWindows)("never follows a symlink named like a kit", () => {
+      const outside = path.join(root, "outside");
+      fs.mkdirSync(outside);
+      fs.writeFileSync(path.join(outside, "precious.wav"), "x");
+      fs.symlinkSync(outside, path.join(card, "C3"));
+
+      expect(findStaleCardEntries(card, contents({}))).toEqual([]);
+    });
+
+    it("returns nothing for a card that doesn't exist", () => {
+      expect(
+        findStaleCardEntries(path.join(root, "missing"), contents({})),
+      ).toEqual([]);
+    });
+  });
+
+  describe("removeCardEntries", () => {
+    it("removes the listed files and folders, and nothing else", () => {
+      fs.mkdirSync(path.join(card, "A0", "2"), { recursive: true });
+      fs.writeFileSync(path.join(card, "A0", "2", "old.wav"), "x");
+      fs.writeFileSync(path.join(card, "A0", "1-01 kick.wav"), "x");
+      fs.mkdirSync(path.join(card, "B3"));
+      fs.writeFileSync(path.join(card, "B - OLD.rtf"), "x");
+
+      removeCardEntries(card, [path.join("A0", "2"), "B3", "B - OLD.rtf"]);
+
+      expect(fs.readdirSync(card)).toEqual(["A0"]);
+      expect(fs.readdirSync(path.join(card, "A0"))).toEqual(["1-01 kick.wav"]);
     });
 
     it.skipIf(isWindows)(
-      "never follows or removes a symlink, even one named like a kit",
+      "removes a symlink inside a kit without touching its target",
       () => {
         const outside = path.join(root, "outside");
         fs.mkdirSync(outside);
         fs.writeFileSync(path.join(outside, "precious.wav"), "x");
-        fs.symlinkSync(outside, path.join(card, "C3"));
+        fs.mkdirSync(path.join(card, "A0"));
+        fs.symlinkSync(outside, path.join(card, "A0", "linked"));
 
-        const { removed } = clearRampleContent(card);
+        removeCardEntries(card, [path.join("A0", "linked")]);
 
-        expect(removed).toEqual([]);
+        expect(fs.existsSync(path.join(card, "A0", "linked"))).toBe(false);
         expect(fs.existsSync(path.join(outside, "precious.wav"))).toBe(true);
-        expect(fs.lstatSync(path.join(card, "C3")).isSymbolicLink()).toBe(true);
       },
     );
-
-    it("keeps a file that is merely named like a kit", () => {
-      touch("D7");
-
-      expect(clearRampleContent(card)).toEqual({ removed: [] });
-      expect(fs.existsSync(path.join(card, "D7"))).toBe(true);
-    });
-
-    it("returns an empty list for an empty card", () => {
-      expect(clearRampleContent(card)).toEqual({ removed: [] });
-    });
-
-    it("throws when the path does not exist", () => {
-      expect(() => clearRampleContent(path.join(root, "missing"))).toThrow(
-        /does not exist/,
-      );
-    });
-
-    it("throws when the path is a file", () => {
-      touch("file.txt");
-      expect(() => clearRampleContent(path.join(card, "file.txt"))).toThrow(
-        /not a folder/,
-      );
-    });
   });
 
   describe("getSdCardDialogDefaultPath", () => {

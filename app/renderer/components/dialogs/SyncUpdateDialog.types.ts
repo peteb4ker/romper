@@ -51,7 +51,6 @@ export interface SyncUpdateDialogProps {
   onConfirm: (options: {
     sdCardPath: null | string;
     skipInvalidFiles: boolean;
-    wipeSdCard: boolean;
   }) => void;
   onGenerateChangeSummary?: (
     sdCardPath: string,

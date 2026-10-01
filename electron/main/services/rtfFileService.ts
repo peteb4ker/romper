@@ -47,10 +47,20 @@ class RtfFileService {
     // Remove any existing RTF file for this bank letter
     this.removeRtfFile(dirPath, bankLetter);
 
-    const filename = `${bankLetter} - ${artistName}.rtf`;
-    const filePath = path.join(dirPath, filename);
+    const filePath = path.join(
+      dirPath,
+      bankRtfFileName(bankLetter, artistName),
+    );
     fs.writeFileSync(filePath, String.raw`{\rtf1}`, "utf-8");
   }
+}
+
+/** The bank name file the Rample shows: `{Letter} - {Artist}.rtf`. */
+export function bankRtfFileName(
+  bankLetter: string,
+  artistName: string,
+): string {
+  return `${bankLetter} - ${artistName}.rtf`;
 }
 
 export const rtfFileService = new RtfFileService();

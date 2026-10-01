@@ -301,6 +301,11 @@ export interface SyncChangeSummary {
   /** Files that will be written to the card */
   fileCount: number;
   kitCount: number;
+  /**
+   * Rample content on the card that sync will delete because the store no
+   * longer has it (paths relative to the card). Empty without a card path.
+   */
+  removals: string[];
   /** Samples that can't be written (missing or unreadable source files) */
   validationErrors: SyncValidationError[];
   warnings: string[];
@@ -314,7 +319,6 @@ export interface SyncOptions {
    * while any sample would be skipped.
    */
   skipInvalidFiles?: boolean;
-  wipeSdCard?: boolean;
 }
 
 export interface SyncOutcome {

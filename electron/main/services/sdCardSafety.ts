@@ -11,40 +11,66 @@ const KIT_FOLDER_PATTERN = /^[A-Z]\d{1,2}$/i;
 /** Bank name files the Rample reads at the card root: "{L} - {Artist}.rtf". */
 const BANK_RTF_PATTERN = /^[A-Z] - .+\.rtf$/i;
 
+/**
+ * What a sync leaves on the card: for each kit folder the file names it
+ * should hold, and the bank name files at the root.
+ */
+export interface CardContents {
+  bankFiles: Iterable<string>;
+  kits: ReadonlyMap<string, Iterable<string>>;
+}
+
 export interface SdCardTargetCheck {
   ok: boolean;
   reason?: string;
 }
 
 /**
- * Remove the Rample content Romper manages from the root of an SD card:
- * kit folders (A0 to Z99) and bank name RTF files. Everything else on the
- * card is left alone, and symlinks are never followed or removed.
+ * The Rample content on the card that `contents` doesn't account for, as
+ * paths relative to the card: kit folders for kits that aren't in the
+ * store (or have no samples), anything else inside a kit folder, and bank
+ * name files for banks without a name. Everything else on the card (the
+ * Rample's own `_save` folder, any other file or folder) is left out.
  *
- * This replaces the old behaviour of deleting every entry at the chosen
- * path, which would erase any folder the user picked by mistake.
+ * Names are compared ignoring case: FAT32 cards and macOS volumes are case
+ * insensitive, so a file sync just overwrote may keep its old case.
  */
-export function clearRampleContent(sdCardPath: string): { removed: string[] } {
+export function findStaleCardEntries(
+  sdCardPath: string,
+  contents: CardContents,
+): string[] {
   const stats = fs.statSync(sdCardPath, { throwIfNoEntry: false });
-  if (!stats) {
-    throw new Error(`SD card path does not exist: ${sdCardPath}`);
-  }
-  if (!stats.isDirectory()) {
-    throw new Error(`SD card path is not a folder: ${sdCardPath}`);
-  }
+  if (!stats?.isDirectory()) return [];
 
-  const removed: string[] = [];
+  const kits = new Map<string, Set<string>>();
+  for (const [kitName, fileNames] of contents.kits) {
+    kits.set(kitName.toUpperCase(), lowerCaseSet(fileNames));
+  }
+  const bankFiles = lowerCaseSet(contents.bankFiles);
+
+  const stale: string[] = [];
   for (const entry of fs.readdirSync(sdCardPath, { withFileTypes: true })) {
-    const entryPath = path.join(sdCardPath, entry.name);
     if (entry.isDirectory() && KIT_FOLDER_PATTERN.test(entry.name)) {
-      fs.rmSync(entryPath, { force: true, recursive: true });
-      removed.push(entry.name);
-    } else if (entry.isFile() && BANK_RTF_PATTERN.test(entry.name)) {
-      fs.unlinkSync(entryPath);
-      removed.push(entry.name);
+      const keep = kits.get(entry.name.toUpperCase());
+      if (!keep) {
+        stale.push(entry.name);
+        continue;
+      }
+      const kitPath = path.join(sdCardPath, entry.name);
+      for (const name of fs.readdirSync(kitPath)) {
+        if (!keep.has(name.toLowerCase())) {
+          stale.push(path.join(entry.name, name));
+        }
+      }
+    } else if (
+      entry.isFile() &&
+      BANK_RTF_PATTERN.test(entry.name) &&
+      !bankFiles.has(entry.name.toLowerCase())
+    ) {
+      stale.push(entry.name);
     }
   }
-  return { removed };
+  return stale.sort();
 }
 
 /**
@@ -64,6 +90,20 @@ export function getSdCardDialogDefaultPath(): string {
     if (fs.existsSync(candidate)) return candidate;
   }
   return os.homedir();
+}
+
+/**
+ * Delete entries (paths relative to the card) found by
+ * {@link findStaleCardEntries}. Folders are removed with their contents;
+ * symlinks are removed, never followed.
+ */
+export function removeCardEntries(
+  sdCardPath: string,
+  entries: readonly string[],
+): void {
+  for (const entry of entries) {
+    fs.rmSync(path.join(sdCardPath, entry), { force: true, recursive: true });
+  }
 }
 
 /**
@@ -130,6 +170,10 @@ function isSameOrInside(child: string, parent: string): boolean {
     relative === "" ||
     (relative.split(path.sep)[0] !== ".." && !path.isAbsolute(relative))
   );
+}
+
+function lowerCaseSet(names: Iterable<string>): Set<string> {
+  return new Set([...names].map((name) => name.toLowerCase()));
 }
 
 function systemRoot(): string {

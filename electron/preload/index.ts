@@ -246,9 +246,9 @@ const electronAPI = {
     return ipcRenderer.invoke("ensure-dir", dir);
   },
   // Task 8.2.1: SD Card sync operations
-  generateSyncChangeSummary: () => {
+  generateSyncChangeSummary: (sdCardPath?: string) => {
     isDev && console.debug("[IPC] generateSyncChangeSummary invoked");
-    return ipcRenderer.invoke("generateSyncChangeSummary");
+    return ipcRenderer.invoke("generateSyncChangeSummary", sdCardPath);
   },
   // Bank operations
   getAllBanks: () => {

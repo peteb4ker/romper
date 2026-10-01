@@ -14,6 +14,8 @@ import {
   addKit,
   addSample,
   createRomperDbFile,
+  deleteKit,
+  deleteSamples,
   getKitSamples,
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { syncService } from "../../electron/main/services/syncService.js";
@@ -118,7 +120,6 @@ describe("Sync Referenced Samples Integration Test", () => {
     // Now perform the actual sync
     const syncResult = await syncService.startKitSync(inMemorySettings, {
       sdCardPath,
-      wipeSdCard: false,
     });
 
     // This is where the bug manifests - the sync should succeed
@@ -180,7 +181,6 @@ describe("Sync Referenced Samples Integration Test", () => {
     const inMemorySettings = { localStorePath };
     const syncResult = await syncService.startKitSync(inMemorySettings, {
       sdCardPath,
-      wipeSdCard: false,
     });
 
     expect(syncResult.success).toBe(true);
@@ -217,7 +217,6 @@ describe("Sync Referenced Samples Integration Test", () => {
     const inMemorySettings = { localStorePath };
     const syncResult = await syncService.startKitSync(inMemorySettings, {
       sdCardPath,
-      wipeSdCard: false,
     });
 
     // Should succeed but with 0 files synced
@@ -280,7 +279,6 @@ describe("Sync Referenced Samples Integration Test", () => {
     // Without confirmation, sync refuses and writes nothing
     const refused = await syncService.startKitSync(inMemorySettings, {
       sdCardPath,
-      wipeSdCard: false,
     });
     expect(refused.success).toBe(false);
     expect(refused.error).toMatch(/1 sample can't be written/);
@@ -291,7 +289,6 @@ describe("Sync Referenced Samples Integration Test", () => {
     const syncResult = await syncService.startKitSync(inMemorySettings, {
       sdCardPath,
       skipInvalidFiles: true,
-      wipeSdCard: false,
     });
     expect(syncResult.success).toBe(true);
     expect(syncResult.data?.syncedFiles).toBe(1);
@@ -306,5 +303,78 @@ describe("Sync Referenced Samples Integration Test", () => {
     expect(
       fs.existsSync(path.join(sdCardPath, kitName, "1-01 missing.wav")),
     ).toBe(false);
+  });
+
+  it("keeps the card a mirror of the store (RE-05)", async () => {
+    const settings = { localStorePath };
+    const kit = (name: string) =>
+      addKit(dbDir, {
+        alias: null,
+        bank_letter: name[0],
+        editable: true,
+        locked: false,
+        modified_since_sync: false,
+        name,
+        step_pattern: null,
+      });
+    const sample = (kitName: string, voiceNumber: number) =>
+      addSample(dbDir, {
+        filename: "kick.wav",
+        is_stereo: false,
+        kit_name: kitName,
+        slot_number: 0,
+        source_path: externalSamplePath,
+        voice_number: voiceNumber,
+      });
+    kit("A7");
+    sample("A7", 1);
+    sample("A7", 2);
+    kit("B1");
+    sample("B1", 1);
+
+    // Already on the card: a kit and a bank file the store doesn't have,
+    // plus the Rample's own settings and an unrelated file
+    const write = (relative: string) => {
+      fs.mkdirSync(path.dirname(path.join(sdCardPath, relative)), {
+        recursive: true,
+      });
+      fs.writeFileSync(path.join(sdCardPath, relative), "x");
+    };
+    write("Z9/1-01 old.wav");
+    write("C - OLD.rtf");
+    write("_save/A7.rpl");
+    write("notes.txt");
+
+    const summary = await syncService.generateChangeSummary(
+      settings,
+      sdCardPath,
+    );
+    expect(summary.data?.removals).toEqual(["C - OLD.rtf", "Z9"]);
+
+    expect(
+      (await syncService.startKitSync(settings, { sdCardPath })).success,
+    ).toBe(true);
+    expect(fs.readdirSync(sdCardPath).sort()).toEqual(
+      ["A7", "B1", "_save", "notes.txt"].sort(),
+    );
+    expect(fs.readdirSync(path.join(sdCardPath, "A7")).sort()).toEqual([
+      "1-01 kick.wav",
+      "2-01 kick.wav",
+    ]);
+
+    // Remove a sample and a kit in Romper, then sync again
+    deleteSamples(dbDir, "A7", { slotNumber: 0, voiceNumber: 2 });
+    deleteKit(dbDir, "B1");
+    expect(
+      (await syncService.startKitSync(settings, { sdCardPath })).success,
+    ).toBe(true);
+
+    expect(fs.readdirSync(sdCardPath).sort()).toEqual(
+      ["A7", "_save", "notes.txt"].sort(),
+    );
+    expect(fs.readdirSync(path.join(sdCardPath, "A7"))).toEqual([
+      "1-01 kick.wav",
+    ]);
+    expect(fs.existsSync(path.join(sdCardPath, "_save", "A7.rpl"))).toBe(true);
   });
 });

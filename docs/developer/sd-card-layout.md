@@ -4,7 +4,7 @@ priority: high
 status: specification
 updated: 2026-09-30
 context_size: small
-implementation_status: RE-06 implemented in #372. RE-05 not started.
+implementation_status: RE-06 implemented in #372; RE-05 in the follow-up PR.
 -->
 
 # SD card layout (RE-06, RE-05)
@@ -77,8 +77,8 @@ module, and has sync write it.
 - Import (setup wizard) and rescan already read the factory layout:
   WAVs at the kit root, voice from the first character
   (`groupSamplesByVoice`).
-- `clearRampleContent` removes only kit folders and bank files, so
-  `_save/` survives a "clear card" sync.
+- Sync only added or overwrote files (RE-05); an optional "clear card"
+  step removed kit folders and bank files first.
 - The e2e sync test checks only that the card isn't empty, so nothing
   checks the layout.
 - `docs/manual/syncing.md` describes `/KITS/[bank][slot]/[voice]/` and a
@@ -146,8 +146,8 @@ imported it, are deleted (part of RE-56).
 
 ### Existing cards
 
-None are in use, so there is no migration. A card that still has the old
-per-voice subfolders can be cleared with the "clear card" option.
+None are in use, so there is no migration. Mirroring (RE-05) removes old
+per-voice subfolders anyway, since they aren't samples of the kit.
 
 ### What sync never touches
 
@@ -180,10 +180,19 @@ for changed kits, which is Squarp's documented reset.
    - fix the layout sections of `docs/manual/syncing.md` (no `/KITS`,
      no labels file);
    - add tests for the names and an e2e assertion on the written layout.
-2. **RE-05 (next):** per-kit replacement. Sync rewrites each kit folder
-   it manages: it deletes WAVs that aren't in the plan and removes
-   folders for kits deleted from the store. This is safe under the "only
-   through Romper" assumption, and it never touches `_save/`.
+2. **RE-05: the card mirrors the store.** After every file is written,
+   and only if the sync wasn't cancelled, sync deletes:
+   - kit folders for kits the store doesn't have, or that have no
+     samples;
+   - anything inside a kit folder that isn't one of that kit's samples;
+   - bank name files for banks without a name (or with a new one).
+
+   A sample that can't be written (RE-09) keeps its file, so skipping it
+   leaves the card's last copy. Names are compared ignoring case, as
+   FAT32 does. The write summary lists the same entries before the user
+   confirms, which replaces the "clear card first" option.
+   `_save/` and anything else on the card is never touched. This is safe
+   under the "only through Romper" assumption.
 
 ## Open questions
 

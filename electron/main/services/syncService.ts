@@ -1,5 +1,6 @@
-import type { DbResult } from "@romper/shared/db/schema.js";
+import type { DbResult, Sample } from "@romper/shared/db/schema.js";
 
+import { cardSampleFileName } from "@romper/shared/rampleCardLayout.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -10,8 +11,13 @@ import {
 } from "../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
 import { logger } from "../utils/logger.js";
-import { rtfFileService } from "./rtfFileService.js";
-import { clearRampleContent, validateSdCardTarget } from "./sdCardSafety.js";
+import { bankRtfFileName, rtfFileService } from "./rtfFileService.js";
+import {
+  type CardContents,
+  findStaleCardEntries,
+  removeCardEntries,
+  validateSdCardTarget,
+} from "./sdCardSafety.js";
 import {
   type SyncFileOperation,
   syncFileOperationsService,
@@ -33,6 +39,11 @@ export interface SyncChangeSummary {
   /** Files that will be written to the card */
   fileCount: number;
   kitCount: number;
+  /**
+   * Rample content on the card that sync will delete because the store no
+   * longer has it (paths relative to the card). Empty without a card path.
+   */
+  removals: string[];
   /** Samples that can't be written (missing or unreadable source files) */
   validationErrors: SyncValidationError[];
   warnings: string[];
@@ -43,10 +54,9 @@ export interface SyncOptions {
   /**
    * The user has seen the summary's validation errors and chose to write
    * the rest. Without it, sync refuses to start while any sample would be
-   * skipped, so a card is never wiped and then only partly written.
+   * skipped.
    */
   skipInvalidFiles?: boolean;
-  wipeSdCard?: boolean;
 }
 
 export interface SyncOutcome {
@@ -57,6 +67,8 @@ export interface SyncOutcome {
 }
 
 interface SyncPlan {
+  /** What the card should hold once this sync has run */
+  cardContents: CardContents;
   dbDir: string;
   files: SyncFileOperation[];
   localStorePath: string;
@@ -133,6 +145,9 @@ class SyncService {
         banks,
         fileCount,
         kitCount,
+        removals: sdCardPath
+          ? findStaleCardEntries(sdCardPath, plan.cardContents)
+          : [],
         validationErrors: plan.validationErrors,
         warnings: plan.warnings,
       };
@@ -184,6 +199,7 @@ class SyncService {
         return { error: planResult.error, success: false };
       }
       const {
+        cardContents,
         dbDir,
         files: allFiles,
         validationErrors,
@@ -191,7 +207,7 @@ class SyncService {
       } = planResult.data;
 
       // Samples that can't be written must not be dropped silently. Refuse
-      // before touching the card (and before any wipe) unless the user has
+      // before touching the card unless the user has
       // reviewed them in the summary and chosen to skip them.
       if (validationErrors.length > 0 && !options.skipInvalidFiles) {
         const count = validationErrors.length;
@@ -205,12 +221,6 @@ class SyncService {
       // Set per-file forceMonoConversion based on voice stereo_mode
       // Mono voices need stereo samples converted to mono; stereo voices pass through
       annotateMonoConversion(allFiles, dbDir);
-
-      // Remove existing kits from the card if requested. Only Rample kit
-      // folders and bank RTF files are removed; other files are kept.
-      if (options.wipeSdCard) {
-        this.clearSdCard(options.sdCardPath);
-      }
 
       syncProgressManager.initializeSyncJob(allFiles);
 
@@ -229,6 +239,11 @@ class SyncService {
 
       // Write bank RTF files to SD card root
       this.writeBankRtfFiles(dbDir, options.sdCardPath);
+
+      // The card mirrors the store: delete what the store no longer has.
+      // Only after every file is written, so a cancelled or failed sync
+      // never leaves a kit with less than it had.
+      this.removeStaleEntries(options.sdCardPath, cardContents);
 
       // A kit with a skipped sample isn't in sync with the card, so it keeps
       // its "modified since sync" flag.
@@ -251,22 +266,6 @@ class SyncService {
         error: `Failed to sync kit: ${error instanceof Error ? error.message : String(error)}`,
         success: false,
       };
-    }
-  }
-
-  /**
-   * Remove existing Rample kits and bank files from the SD card before sync
-   */
-  private clearSdCard(sdCardPath: string): void {
-    try {
-      const { removed } = clearRampleContent(sdCardPath);
-      logger.log(
-        `Removed ${removed.length} kit folders and bank files from SD card at: ${sdCardPath}`,
-      );
-    } catch (error) {
-      throw new Error(
-        `Failed to clear SD card: ${error instanceof Error ? error.message : String(error)}`,
-      );
     }
   }
 
@@ -339,6 +338,33 @@ class SyncService {
   }
 
   /**
+   * What the card holds after a sync: every sample's file in its kit folder
+   * and a name file for every named bank. A sample that can't be written
+   * keeps its file, so skipping it leaves the card's last copy in place.
+   */
+  private planCardContents(dbDir: string, samples: Sample[]): CardContents {
+    const kits = new Map<string, string[]>();
+    for (const sample of samples) {
+      const fileNames = kits.get(sample.kit_name) ?? [];
+      fileNames.push(
+        cardSampleFileName(
+          sample.voice_number,
+          sample.slot_number,
+          sample.filename,
+        ),
+      );
+      kits.set(sample.kit_name, fileNames);
+    }
+
+    const banksResult = getAllBanks(dbDir);
+    const bankFiles = (banksResult.success ? (banksResult.data ?? []) : [])
+      .filter((bank) => bank.artist)
+      .map((bank) => bankRtfFileName(bank.letter, bank.artist as string));
+
+    return { bankFiles, kits };
+  }
+
+  /**
    * Work out which files a sync would write, and which samples it can't
    * write. The summary and the sync share this so they always agree.
    */
@@ -367,6 +393,7 @@ class SyncService {
       warnings: [] as string[],
     };
     const samples = samplesResult.data || [];
+    const cardContents = this.planCardContents(dbDir, samples);
     for (const sample of samples) {
       syncSampleProcessingService.processSampleForSync(
         sample,
@@ -385,6 +412,7 @@ class SyncService {
 
     return {
       data: {
+        cardContents,
         dbDir,
         files: [...results.filesToCopy, ...results.filesToConvert],
         localStorePath,
@@ -393,6 +421,23 @@ class SyncService {
       },
       success: true,
     };
+  }
+
+  /**
+   * Delete the Rample content on the card that the store no longer has.
+   */
+  private removeStaleEntries(
+    sdCardPath: string,
+    cardContents: CardContents,
+  ): void {
+    const stale = findStaleCardEntries(sdCardPath, cardContents);
+    removeCardEntries(sdCardPath, stale);
+    if (stale.length > 0) {
+      logger.log(
+        `Removed ${stale.length} stale entries from the SD card:`,
+        stale,
+      );
+    }
   }
 
   /**

@@ -1,4 +1,5 @@
 import { defineConfig } from "@playwright/test";
+import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
@@ -10,6 +11,13 @@ function escapeRegExp(text: string) {
 // Every spec launches Electron with process.env, so this reaches all of them.
 // `npm run test:e2e:headed` (ROMPER_HEADLESS=false) shows the window instead.
 process.env.ROMPER_HEADLESS ??= "true";
+
+// The app is named "Romper", so without this every spec would read and write
+// the installed app's settings (RE-68). One temp folder per run; workers
+// inherit it from the runner's environment.
+process.env.ROMPER_USER_DATA_DIR ??= fs.mkdtempSync(
+  path.join(os.tmpdir(), "romper-e2e-userdata-"),
+);
 
 export default defineConfig({
   expect: {

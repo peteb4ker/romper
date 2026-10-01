@@ -39,6 +39,19 @@ test.describe("Headless window", () => {
     if (testEnv) await cleanupE2EFixture(testEnv);
   });
 
+  // RE-68: the installed app also uses the "Romper" folder, so a run without
+  // the override would overwrite the developer's real settings.
+  test("keeps settings out of the installed app's folder", async () => {
+    const override = process.env.ROMPER_USER_DATA_DIR;
+    expect(override).toBeTruthy();
+    const paths = await electronApp.evaluate(({ app }) => ({
+      appData: app.getPath("appData"),
+      userData: app.getPath("userData"),
+    }));
+    expect(paths.userData).toBe(override);
+    expect(paths.userData.startsWith(paths.appData)).toBe(false);
+  });
+
   test("keeps the window hidden when ROMPER_HEADLESS=true", async () => {
     const isVisible = await electronApp.evaluate(({ BrowserWindow }) =>
       BrowserWindow.getAllWindows()[0].isVisible(),

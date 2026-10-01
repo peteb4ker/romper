@@ -162,6 +162,41 @@ describe("StepSequencerControls", () => {
     expect(mockBpmLogic.setBpm).not.toHaveBeenCalled();
   });
 
+  describe("BPM scrubbing", () => {
+    it("scrolls the BPM up and down, by 10 with Shift", () => {
+      render(
+        <StepSequencerControls
+          bpmLogic={mockBpmLogic}
+          isSeqPlaying={false}
+          kitName="TestKit"
+          setIsSeqPlaying={setIsSeqPlaying}
+        />,
+      );
+      const bpm = screen.getByTestId("bpm-input");
+
+      fireEvent.wheel(bpm, { deltaY: -100 });
+      expect(mockBpmLogic.setBpm).toHaveBeenLastCalledWith(121);
+
+      fireEvent.wheel(bpm, { deltaY: 100, shiftKey: true });
+      expect(mockBpmLogic.setBpm).toHaveBeenLastCalledWith(110);
+    });
+
+    it("stays within 30–180", () => {
+      mockBpmLogic.bpm = 180;
+      render(
+        <StepSequencerControls
+          bpmLogic={mockBpmLogic}
+          isSeqPlaying={false}
+          kitName="TestKit"
+          setIsSeqPlaying={setIsSeqPlaying}
+        />,
+      );
+
+      fireEvent.wheel(screen.getByTestId("bpm-input"), { deltaY: -100 });
+      expect(mockBpmLogic.setBpm).not.toHaveBeenCalled();
+    });
+  });
+
   describe("Cycle counter", () => {
     it("shows cycle counter during playback", () => {
       render(
@@ -178,7 +213,7 @@ describe("StepSequencerControls", () => {
       expect(counter).toBeInTheDocument();
     });
 
-    it("hides cycle counter when not playing", () => {
+    it("shows the loop indicator unlit when not playing", () => {
       render(
         <StepSequencerControls
           bpmLogic={mockBpmLogic}
@@ -189,10 +224,15 @@ describe("StepSequencerControls", () => {
         />,
       );
 
-      expect(screen.queryByTestId("cycle-counter")).not.toBeInTheDocument();
+      expect(screen.getByTestId("cycle-counter")).toBeInTheDocument();
+      for (let i = 0; i < 4; i++) {
+        expect(screen.getByTestId(`loop-pip-${i}`)).not.toHaveAttribute(
+          "data-lit",
+        );
+      }
     });
 
-    it("displays correct cycle number (cycleCount + 1)", () => {
+    it("lights the current loop of four", () => {
       render(
         <StepSequencerControls
           bpmLogic={mockBpmLogic}
@@ -203,9 +243,12 @@ describe("StepSequencerControls", () => {
         />,
       );
 
-      const counter = screen.getByTestId("cycle-counter");
-      expect(counter).toHaveTextContent("5");
-      expect(counter).toHaveTextContent("cycle");
+      // Cycle 4 (zero-based) is loop 1 of the next group of four
+      expect(screen.getByTestId("cycle-counter")).toHaveAccessibleName(
+        "Loop 1 of 4",
+      );
+      expect(screen.getByTestId("loop-pip-0")).toHaveAttribute("data-lit");
+      expect(screen.getByTestId("loop-pip-1")).not.toHaveAttribute("data-lit");
     });
   });
 });

@@ -51,7 +51,7 @@ describe("StepSequencerDrawer", () => {
     expect(drawer).toBeInTheDocument();
 
     // Verify drawer is open (check for open drawer classes)
-    expect(drawer.className).toMatch(/max-h-\[400px\]/);
+    expect(drawer.className).toMatch(/max-h-\[640px\]/);
     expect(drawer.className).toMatch(/opacity-100/);
 
     // Content should be visible in the open drawer

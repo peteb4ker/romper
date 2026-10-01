@@ -336,16 +336,12 @@ describe("KitStepSequencer", () => {
       />,
     );
 
-    // Find sample mode toggle buttons by their title attribute
-    const modeButtons = screen.getAllByTitle(/Sample mode:/);
-    if (modeButtons.length > 0) {
-      fireEvent.click(modeButtons[0]);
-      expect(window.electronAPI.updateVoiceSampleMode).toHaveBeenCalledWith(
-        "TestKit",
-        1,
-        "random",
-      );
-    }
+    fireEvent.click(screen.getByTestId("sample-mode-0-random"));
+    expect(window.electronAPI.updateVoiceSampleMode).toHaveBeenCalledWith(
+      "TestKit",
+      1,
+      "random",
+    );
   });
 
   it("debounces onVoiceSettingChanged for volume changes", async () => {
@@ -476,12 +472,9 @@ describe("KitStepSequencer", () => {
       />,
     );
 
-    const modeButtons = screen.getAllByTitle(/Sample mode:/);
-    if (modeButtons.length > 0) {
-      fireEvent.click(modeButtons[0]);
-      // Sample mode change calls onVoiceSettingChanged immediately (no debounce)
-      expect(onVoiceSettingChanged).toHaveBeenCalledTimes(1);
-    }
+    fireEvent.click(screen.getByTestId("sample-mode-0-random"));
+    // Sample mode change calls onVoiceSettingChanged immediately (no debounce)
+    expect(onVoiceSettingChanged).toHaveBeenCalledTimes(1);
   });
 
   describe("Stereo linking", () => {
@@ -672,6 +665,7 @@ describe("KitStepSequencer", () => {
         8,
       );
 
+      fireEvent.click(screen.getByTestId("slice-roll-options"));
       fireEvent.change(screen.getByTestId("slice-roll-amount"), {
         target: { value: "50" },
       });

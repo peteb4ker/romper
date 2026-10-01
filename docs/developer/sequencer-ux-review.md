@@ -1,7 +1,7 @@
 <!--
 title: Step Sequencer UX Review and Proposal
 priority: medium
-status: accepted; Phase 0 in progress
+status: accepted; Phase 0 merged (#371); refresh (Phases 1, 2, 4 and part of 3) in progress
 updated: 2026-09-30
 context_size: medium
 -->
@@ -165,11 +165,34 @@ each other and can land in any order.
 
 | Phase | Items | Size | Notes |
 |-------|-------|------|-------|
-| 0. Fixes and keys | A1–A4, B3 | M | Done on `claude/sequencer-ui-ux-analysis-d167c5`; see "Keyboard routing" below. |
-| 1. Readability | B1, B2, B4 (visual), B6, C2, C5, C6, D2 | M | Mostly `StepSequencerGrid` styling; uses existing tokens. |
-| 2. Row controls | C1, C3, B7, B8 | M | Same callbacks, new presentation. |
-| 3. Discoverability | B4 (menu), B5, C4 | S–M | |
-| 4. Slicer layout | C7, C8, C9 | M | Strip uses the grid's column geometry. |
+| 0. Fixes and keys | A1–A4, B3 | M | Merged in #371; see "Keyboard routing" below. |
+| 1. Readability | B1, B2, B4 (visual), B6, C2, C5, C6, D2 | M | Done in the refresh branch (`claude/sequencer-refresh`). |
+| 2. Row controls | C1, C3, B7, B8 | M | Done in the refresh, except B8: transport keeps its amber. |
+| 3. Discoverability | B4 (menu), B5, C4 | S–M | B4 menu and B5 done in the refresh; C4 (status line, `?` overlay, keycaps) open. |
+| 4. Slicer layout | C7, C8, C9 | M | C7 and C8 done in the refresh; C9 partly (the drawer may grow to 640 px; no drag handle). |
+
+### The refresh, as built
+
+- **Size:** pads scale with the window, 32–48 px wide and up to 40 px
+  tall (`sequencerLayout.ts`, CSS variables on the sequencer root).
+- **Playhead:** a lit column over the ruler and all rows, a running light
+  in the step ruler, and a flash on each pad that fires. A step whose
+  condition isn't met this loop doesn't flash.
+- **Beat groups:** off pads alternate shade by beat; no hairlines.
+- **Rows:** a full-color number chip (numbers only) that flashes when the
+  voice fires; an **M** mute button beside it; then the pads (only they
+  dim when muted); then the saved settings under column headers: Slice,
+  a 3-way **Sample** switch (1st / Rnd / R-R), and **Level** with its
+  value.
+- **Conditions:** drawn as dots (●○○○ = 1:4) on the pad, and in the
+  popover with a plain-language line.
+- **Transport:** a 56 px Play/Stop, a BPM field you can scroll (Shift:
+  ×10), and a four-dot loop indicator that is always shown.
+- **Ink:** text on lit voice colors uses `--voice-N-ink` (dark on yellow
+  in light mode; dark on all voices in dark mode).
+- **Slicer:** the waveform shares the step columns' geometry, so at /16
+  slice n sits above step n. Roll's settings moved into a ▾ menu next to
+  Roll.
 
 Verification for each phase: unit tests for state and keyboard routing,
 then screenshots of the running app (`run-app` skill) in both themes,

@@ -60,6 +60,32 @@ describe("useKitStepSequencerLogic", () => {
     stepPattern: defaultStepPattern,
   });
 
+  describe("Firing voices", () => {
+    it("marks the rows that fire on the current step", () => {
+      const conditions = Array.from({ length: 4 }, () =>
+        new Array(16).fill(null),
+      );
+      conditions[0][0] = "2:2"; // voice 1 step 1 waits for loop 2
+      const pattern = defaultStepPattern.map((row) => [...row]);
+      pattern[1][0] = 127; // voice 2 on at step 1
+      pattern[2][0] = 127; // voice 3 on at step 1, but muted
+
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic({
+          ...getDefaultParams(),
+          stepPattern: pattern,
+          triggerConditions: conditions,
+          voiceMutes: { 3: true },
+        }),
+      );
+      expect(result.current.firingVoices).toEqual([false, false, false, false]);
+
+      act(() => result.current.setIsSeqPlaying(true));
+
+      expect(result.current.firingVoices).toEqual([false, true, false, false]);
+    });
+  });
+
   describe("Initialization", () => {
     it("should initialize with default state", () => {
       const { result } = renderHook(() =>
@@ -968,10 +994,9 @@ describe("useKitStepSequencerLogic", () => {
         useKitStepSequencerLogic(getDefaultParams()),
       );
 
-      expect(result.current.LED_GLOWS[0]).toContain("rgba(224,90,96,0.7)");
-      expect(result.current.LED_GLOWS[1]).toContain("rgba(232,200,70,0.7)");
-      expect(result.current.LED_GLOWS[2]).toContain("rgba(61,170,120,0.7)");
-      expect(result.current.LED_GLOWS[3]).toContain("rgba(58,159,212,0.7)");
+      result.current.LED_GLOWS.forEach((glow, i) => {
+        expect(glow).toContain(`var(--voice-${i + 1})`);
+      });
     });
   });
 

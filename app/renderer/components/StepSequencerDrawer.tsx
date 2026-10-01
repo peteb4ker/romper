@@ -37,7 +37,7 @@ const StepSequencerDrawer: React.FC<StepSequencerDrawerProps> = ({
 
       {/* Drawer body with animation */}
       <div
-        className={`transition-all duration-500 ease-in-out rounded-t-md overflow-hidden w-full flex justify-center pointer-events-auto ${sequencerOpen ? "max-h-[400px] opacity-100 translate-y-0" : "max-h-0 opacity-0 translate-y-8 pointer-events-none"}`}
+        className={`transition-all duration-500 ease-in-out rounded-t-md overflow-hidden w-full flex justify-center pointer-events-auto ${sequencerOpen ? "max-h-[640px] opacity-100 translate-y-0" : "max-h-0 opacity-0 translate-y-8 pointer-events-none"}`}
         data-testid="kit-step-sequencer-drawer"
         style={{
           background:

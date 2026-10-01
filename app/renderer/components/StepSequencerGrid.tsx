@@ -3,12 +3,7 @@ import type { SliceStep } from "@romper/shared/sliceTypes";
 import {
   DiceFiveIcon,
   LockSimpleIcon,
-  NumberCircleOneIcon,
-  RepeatIcon,
   ScissorsIcon,
-  ShuffleIcon,
-  SpeakerSimpleHighIcon,
-  SpeakerSimpleSlashIcon,
 } from "@phosphor-icons/react";
 import React from "react";
 import ReactDOM from "react-dom";
@@ -16,8 +11,10 @@ import ReactDOM from "react-dom";
 import type { RolledSteps } from "./hooks/kit-management/useSlicerEditor";
 import type { StereoLinks } from "./KitStepSequencer";
 
+import ConditionPips from "./ConditionPips";
 import { sequentialSliceStep } from "./hooks/shared/sliceConstants";
 import {
+  describeCondition,
   type FocusedStep,
   SAMPLE_MODE_LABELS,
   type SampleMode,
@@ -25,23 +22,36 @@ import {
   type TriggerCondition,
 } from "./hooks/shared/stepPatternConstants";
 import { usePopoverDismiss } from "./hooks/shared/usePopoverDismiss";
+import {
+  LABEL_GAP,
+  LABEL_WIDTH,
+  MUTE_GAP,
+  MUTE_WIDTH,
+  PAD_GAP,
+  ROW_GAP,
+  stepOffset,
+} from "./sequencerLayout";
 import SliceStepEditor from "./SliceStepEditor";
 
-const SAMPLE_MODE_ICONS: Record<SampleMode, React.ReactNode> = {
-  first: <NumberCircleOneIcon size={14} weight="bold" />,
-  random: <ShuffleIcon size={14} weight="bold" />,
-  "round-robin": <RepeatIcon size={14} weight="bold" />,
+const SAMPLE_MODES: SampleMode[] = ["first", "random", "round-robin"];
+
+const SAMPLE_MODE_TITLES: Record<SampleMode, string> = {
+  first: "Always play the voice's first sample",
+  random: "Play a random sample from the voice each time",
+  "round-robin": "Play the voice's samples in turn",
 };
 
-const SAMPLE_MODE_CYCLE: SampleMode[] = ["first", "random", "round-robin"];
+/** From the grid's left edge to the first pad. */
+const PADS_OFFSET = LABEL_WIDTH + LABEL_GAP + MUTE_WIDTH + MUTE_GAP;
+/** Space between the last pad and the row's settings. */
+const SETTINGS_GAP = 20;
 
-// Voice background colors mapping
-const VOICE_BG_COLORS: Record<number, string> = {
-  0: "bg-voice-1/40",
-  1: "bg-voice-2/40",
-  2: "bg-voice-3/40",
-  3: "bg-voice-4/40",
-};
+const SLICE_COLUMN_WIDTH = 30;
+const MODE_COLUMN_WIDTH = 102;
+const LEVEL_COLUMN_WIDTH = 112;
+
+const headerClass =
+  "text-[10px] font-semibold uppercase tracking-wide text-text-tertiary";
 
 /** What a step on a slice-mode row shows. */
 export interface StepSliceDisplay {
@@ -54,6 +64,7 @@ export interface StepSliceDisplay {
 
 interface StepButtonProps {
   condition: TriggerCondition;
+  isFiring: boolean;
   isFocused: boolean;
   isOn: boolean;
   isPlayhead: boolean;
@@ -66,6 +77,13 @@ interface StepButtonProps {
   stepIdx: number;
   voiceIdx: number;
   voiceNumber: number;
+}
+
+/** Off pads alternate shade by beat, like the TR-808's step groups. */
+function offPadClass(stepIdx: number): string {
+  return Math.floor(stepIdx / 4) % 2 === 0
+    ? "bg-surface-3 border-border-default"
+    : "bg-surface-4 border-border-default";
 }
 
 function sliceAriaSuffix(slice?: StepSliceDisplay): string {
@@ -91,53 +109,46 @@ function sliceToggleTitle(enabled: boolean, unavailable: boolean): string {
   return "Slice mode: play parts of a long sample from each step";
 }
 
-/** Slice number (or dice), length bar, lock mark and condition badge. */
+/** Slice number (or dice), length bar and lock mark on a lit pad. */
 const StepSliceContent: React.FC<{
-  condition: TriggerCondition;
   slice: StepSliceDisplay;
   stepIdx: number;
   voiceIdx: number;
-}> = ({ condition, slice, stepIdx, voiceIdx }) => (
+}> = ({ slice, stepIdx, voiceIdx }) => (
   <span
-    className="absolute inset-0 pointer-events-none select-none text-white/95"
+    className="absolute inset-0 pointer-events-none select-none"
     data-testid={`seq-slice-${voiceIdx}-${stepIdx}`}
-    style={{ textShadow: "0 0 3px rgba(0,0,0,0.6)", zIndex: 1 }}
+    style={{ zIndex: 1 }}
   >
-    <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold">
+    <span className="absolute inset-0 flex items-center justify-center text-[13px] font-bold tabular-nums">
       {slice.random ? (
-        <DiceFiveIcon size={14} weight="bold" />
+        <DiceFiveIcon size={16} weight="bold" />
       ) : (
         slice.startSlice + 1
       )}
     </span>
     {slice.lengthSlices > 1 && !slice.random && (
       <span
-        className="absolute bottom-0.5 left-0.5 h-0.5 rounded bg-white/90"
+        className="absolute bottom-1 left-1 h-[3px] rounded bg-current opacity-80"
         style={{
-          width: `calc(${Math.min(1, slice.lengthSlices / 8) * 100}% - 4px)`,
+          // A quarter of the pad per slice of length, full at 4+
+          width: `calc(${Math.min(1, slice.lengthSlices / 4) * 100}% - 8px)`,
         }}
       />
     )}
     {slice.locked && (
       <LockSimpleIcon
-        className="absolute top-0 right-0"
-        size={8}
+        className="absolute top-1 right-1"
+        size={9}
         weight="fill"
       />
-    )}
-    {condition && (
-      <span
-        className="absolute top-0 left-0.5 text-[7px] font-bold leading-none"
-        data-testid={`seq-condition-${voiceIdx}-${stepIdx}`}
-      >
-        {condition}
-      </span>
     )}
   </span>
 );
 
 const StepButton: React.FC<StepButtonProps> = ({
   condition,
+  isFiring,
   isFocused,
   isOn,
   isPlayhead,
@@ -151,19 +162,6 @@ const StepButton: React.FC<StepButtonProps> = ({
   voiceIdx,
   voiceNumber,
 }) => {
-  const getBoxShadow = () => {
-    if (isPlayhead && isFocused) {
-      return "0 0 0 2px #fff, 0 0 0 2.5px var(--color-accent-primary)";
-    }
-    if (isPlayhead) {
-      return "0 0 0 2px #fff";
-    }
-    if (isFocused) {
-      return "0 0 0 2.5px var(--color-accent-primary)";
-    }
-    return undefined;
-  };
-
   const conditionSuffix = condition ? ` (${condition})` : "";
   const showSlice = slice && isOn;
 
@@ -171,48 +169,43 @@ const StepButton: React.FC<StepButtonProps> = ({
     <button
       aria-label={`Toggle step ${stepIdx + 1} for voice ${voiceNumber}${conditionSuffix}${isOn ? sliceAriaSuffix(slice) : ""}`}
       aria-pressed={isOn}
-      className={`relative w-8 h-8 min-w-8 min-h-8 max-w-8 max-h-8 rounded-md border-2 mx-0.5 focus:outline-none transition-colors ${onColor} ${ledGlow}${slice?.flash ? " ring-2 ring-white" : ""}`}
+      className={`relative shrink-0 rounded-md border-2 focus:outline-none transition-colors ${onColor} ${ledGlow}${slice?.flash ? " ring-2 ring-white" : ""}${isFiring ? " motion-safe:animate-seq-fire" : ""}`}
+      data-firing={isFiring || undefined}
+      data-playhead={isPlayhead || undefined}
       data-slice-step={slice ? `${voiceIdx}:${stepIdx}` : undefined}
       data-testid={`seq-step-${voiceIdx}-${stepIdx}`}
       onClick={onClick}
       onContextMenu={onContextMenu}
       onMouseEnter={onMouseEnter}
       role="gridcell"
+      style={{
+        color: isOn ? `var(--voice-${voiceNumber}-ink)` : undefined,
+        height: "var(--seq-pad-h)",
+        width: "var(--seq-pad)",
+      }}
       type="button"
     >
       {showSlice && (
-        <StepSliceContent
-          condition={condition}
-          slice={slice}
-          stepIdx={stepIdx}
-          voiceIdx={voiceIdx}
-        />
+        <StepSliceContent slice={slice} stepIdx={stepIdx} voiceIdx={voiceIdx} />
       )}
-      {/* Trigger condition indicator */}
-      {condition && isOn && !showSlice && (
+      {/* Trigger condition: dots, top-left when lit, centered when off */}
+      {condition && (
         <span
-          className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white/90 pointer-events-none select-none"
-          data-testid={`seq-condition-${voiceIdx}-${stepIdx}`}
-          style={{ textShadow: "0 0 3px rgba(0,0,0,0.6)", zIndex: 1 }}
-        >
-          {condition}
-        </span>
-      )}
-      {condition && !isOn && (
-        <span
-          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
-          data-testid={`seq-condition-${voiceIdx}-${stepIdx}`}
+          className={`absolute pointer-events-none select-none flex ${isOn ? "top-1 left-1 opacity-90" : "inset-0 items-center justify-center text-text-tertiary"}`}
           style={{ zIndex: 1 }}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-text-tertiary/50" />
+          <ConditionPips
+            condition={condition}
+            data-testid={`seq-condition-${voiceIdx}-${stepIdx}`}
+          />
         </span>
       )}
-      {(isPlayhead || isFocused) && (
+      {isFocused && (
         <span
-          className="absolute inset-0 rounded-md pointer-events-none"
-          data-testid={isFocused ? "seq-step-focus-ring" : undefined}
+          className="absolute -inset-[3px] rounded-lg pointer-events-none"
+          data-testid="seq-step-focus-ring"
           style={{
-            boxShadow: getBoxShadow(),
+            boxShadow: "0 0 0 2px var(--focus-ring)",
             zIndex: 2,
           }}
         />
@@ -221,7 +214,7 @@ const StepButton: React.FC<StepButtonProps> = ({
   );
 };
 
-// Condition popover for right-click
+// Step options popover (right-click)
 interface ConditionPopoverProps {
   currentCondition: TriggerCondition;
   onClose: () => void;
@@ -269,7 +262,7 @@ const ConditionPopover: React.FC<ConditionPopoverProps> = ({
   return (
     <div
       aria-label="Step options"
-      className="fixed z-50 bg-surface-2 border border-border-strong rounded-lg shadow-lg py-1 min-w-[80px]"
+      className="fixed z-50 bg-surface-2 border border-border-strong rounded-lg shadow-lg py-1 min-w-[220px]"
       data-testid="condition-popover"
       // Keep typing in the popover from reaching the grid's shortcuts
       // (portals still bubble React events); Escape must reach the dismiss hook.
@@ -281,21 +274,14 @@ const ConditionPopover: React.FC<ConditionPopoverProps> = ({
       style={{ left: adjustedPos.x, top: adjustedPos.y }}
     >
       {sliceSection && (
-        <>
-          {sliceSection}
-          <div className="px-3 pt-1 pb-0.5 border-t border-border-subtle text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
-            Condition
-          </div>
-        </>
+        <div className="border-b border-border-subtle mb-1">{sliceSection}</div>
       )}
+      <div className={`px-3 pt-1 pb-1 ${headerClass}`}>Plays</div>
       {TRIGGER_CONDITIONS.map((cond) => {
-        const isActive =
-          cond === currentCondition ||
-          (cond === null && currentCondition === null);
-        const label = cond ?? "Always";
+        const isActive = cond === currentCondition;
         return (
           <button
-            className={`block w-full text-left px-3 py-1 text-xs hover:bg-surface-3 focus:outline-none focus-visible:bg-surface-3 transition-colors ${isActive ? "text-accent-primary font-bold" : "text-text-primary"}`}
+            className={`flex w-full items-center gap-2.5 text-left px-3 py-1 text-xs hover:bg-surface-3 focus:outline-none focus-visible:bg-surface-3 transition-colors ${isActive ? "text-accent-primary font-semibold" : "text-text-primary"}`}
             data-active={isActive || undefined}
             data-testid={`condition-option-${cond ?? "always"}`}
             key={cond ?? "always"}
@@ -305,7 +291,19 @@ const ConditionPopover: React.FC<ConditionPopoverProps> = ({
             }}
             type="button"
           >
-            {label}
+            <span className="w-7 shrink-0 flex justify-start">
+              {cond ? (
+                <ConditionPips condition={cond} />
+              ) : (
+                <span className="text-[10px] font-semibold">All</span>
+              )}
+            </span>
+            <span className="flex-1">{describeCondition(cond)}</span>
+            {cond && (
+              <span className="font-mono text-[10px] text-text-tertiary">
+                {cond}
+              </span>
+            )}
           </button>
         );
       })}
@@ -313,8 +311,45 @@ const ConditionPopover: React.FC<ConditionPopoverProps> = ({
   );
 };
 
+/** The step ruler: numbers, beat starts emphasised, and the running light. */
+const StepRuler: React.FC<{ isSeqPlaying: boolean; playheadStep: number }> = ({
+  isSeqPlaying,
+  playheadStep,
+}) => (
+  <div
+    aria-hidden
+    className="flex items-end"
+    data-testid="seq-step-ruler"
+    style={{ gap: PAD_GAP, marginLeft: PADS_OFFSET }}
+  >
+    {Array.from({ length: 16 }, (_, step) => {
+      const lit = isSeqPlaying && step === playheadStep;
+      return (
+        <span
+          className="flex flex-col items-center gap-0.5 shrink-0"
+          key={step}
+          style={{ width: "var(--seq-pad)" }}
+        >
+          <span
+            className={`text-[10px] leading-none tabular-nums ${step % 4 === 0 ? "font-bold text-text-secondary" : "text-text-tertiary"}`}
+          >
+            {step + 1}
+          </span>
+          <span
+            className={`block h-[3px] w-1/2 rounded-full ${lit ? "bg-transport-play" : "bg-border-subtle"}`}
+            data-lit={lit || undefined}
+            data-testid={`seq-ruler-led-${step}`}
+          />
+        </span>
+      );
+    })}
+  </div>
+);
+
 interface StepSequencerGridProps {
   currentSeqStep: number;
+  /** Rows that fire on the current step (they flash). */
+  firingVoices?: boolean[];
   focusedStep: FocusedStep;
   gridRef: React.RefObject<HTMLDivElement | null>;
   handleStepGridKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
@@ -366,6 +401,7 @@ interface StepSequencerGridProps {
 
 const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
   currentSeqStep,
+  firingVoices = [],
   focusedStep,
   gridRef,
   handleStepGridKeyDown,
@@ -404,15 +440,8 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
     x: number;
     y: number;
   } | null>(null);
-
-  const cycleSampleMode = (voiceIdx: number) => {
-    const voiceNumber = voiceIdx + 1;
-    const current = sampleModes[voiceNumber] || "first";
-    const currentIndex = SAMPLE_MODE_CYCLE.indexOf(current);
-    const nextMode =
-      SAMPLE_MODE_CYCLE[(currentIndex + 1) % SAMPLE_MODE_CYCLE.length];
-    onSampleModeChange?.(voiceNumber, nextMode);
-  };
+  // The focus ring shows only while the grid has keyboard focus
+  const [hasFocus, setHasFocus] = React.useState(false);
 
   const handleStepClick = (voiceIdx: number, stepIdx: number) => {
     if (onStepClick) {
@@ -481,21 +510,67 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
     gridRef.current?.focus();
   }, [gridRef]);
 
-  // Fixed height: 4 rows * 32px (h-8) + 3 gaps * 8px (gap-2) = 152px
-  const GRID_HEIGHT = 152;
-
   return (
     <div
       aria-label="Step sequencer grid"
-      className="flex flex-col gap-2"
+      className="relative flex flex-col"
       data-testid="kit-step-sequencer-grid"
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+          setHasFocus(false);
+        }
+      }}
+      onFocus={() => setHasFocus(true)}
       onKeyDown={handleStepGridKeyDown}
       onMouseLeave={() => onStepHover?.(null)}
       ref={gridRef}
       role="grid"
-      style={{ height: GRID_HEIGHT, outline: "none" }}
+      style={{ gap: ROW_GAP, outline: "none" }}
       tabIndex={0}
     >
+      {/* Playhead: a lit column across the ruler and all rows */}
+      {isSeqPlaying && (
+        <div
+          aria-hidden
+          className="absolute -top-1 -bottom-1 rounded-md pointer-events-none"
+          data-testid="seq-playhead-column"
+          style={{
+            background: "var(--seq-playhead-band)",
+            left: `calc(${PADS_OFFSET - PAD_GAP / 2}px + ${stepOffset(currentSeqStep)})`,
+            width: "var(--seq-pitch)",
+            zIndex: 3,
+          }}
+        />
+      )}
+
+      {/* Header: step ruler and the row-settings column titles */}
+      <div className="flex items-end">
+        <StepRuler isSeqPlaying={isSeqPlaying} playheadStep={currentSeqStep} />
+        <div
+          aria-hidden
+          className="flex items-end gap-2.5"
+          style={{ marginLeft: SETTINGS_GAP }}
+        >
+          {onSliceToggle && (
+            <span
+              className={`${headerClass} text-center`}
+              style={{ width: SLICE_COLUMN_WIDTH }}
+            >
+              Slice
+            </span>
+          )}
+          <span
+            className={`${headerClass} text-center`}
+            style={{ width: MODE_COLUMN_WIDTH }}
+          >
+            Sample
+          </span>
+          <span className={headerClass} style={{ width: LEVEL_COLUMN_WIDTH }}>
+            Level
+          </span>
+        </div>
+      </div>
+
       {Array.from({ length: NUM_VOICES }, (_, index) => index).map(
         (voiceIdx) => {
           const voiceNumber = voiceIdx + 1;
@@ -507,11 +582,12 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
           const isMuted = voiceMutes[voiceNumber] ?? false;
           const voiceLabel =
             stereoLinks?.primaryLabels[voiceNumber] ?? voiceNumber;
+          const isFiring = firingVoices[voiceIdx] ?? false;
 
           return (
             <div
               aria-hidden={isLinkedSecondary || undefined}
-              className={`flex flex-row items-center transition-all duration-300 ease-in-out overflow-hidden${isMuted && !isLinkedSecondary ? " opacity-40" : ""}`}
+              className="flex flex-row items-center overflow-hidden"
               data-testid={
                 isLinkedSecondary ? undefined : `seq-row-${voiceIdx}`
               }
@@ -519,50 +595,77 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
               role={isLinkedSecondary ? undefined : "row"}
               style={
                 isLinkedSecondary
-                  ? { height: 0, marginTop: -8, opacity: 0 }
-                  : { height: 32 }
+                  ? { height: 0, marginTop: -ROW_GAP, opacity: 0 }
+                  : { height: "var(--seq-pad-h)" }
               }
             >
-              {/* Voice label */}
+              {/* Voice number chip: lit in the voice color, flashes on a hit */}
               <span
-                className={`flex items-center justify-center w-7 h-7 min-w-7 text-center text-xs font-bold rounded ${VOICE_BG_COLORS[voiceIdx] || "bg-surface-3"} text-text-primary border border-border-strong mr-1.5`}
+                className="relative flex items-center justify-center h-9 text-sm font-bold rounded-md shrink-0"
                 data-testid={`seq-voice-label-${voiceIdx}`}
+                style={{
+                  background: `var(--voice-${voiceNumber})`,
+                  color: `var(--voice-${voiceNumber}-ink)`,
+                  marginRight: LABEL_GAP,
+                  width: LABEL_WIDTH,
+                }}
               >
                 {voiceLabel}
+                {isFiring && (
+                  <span
+                    className="absolute inset-0 rounded-md bg-white/35 motion-safe:animate-seq-fire"
+                    data-testid={`seq-voice-fire-${voiceIdx}`}
+                    // Restart the flash on every step this voice fires
+                    key={currentSeqStep}
+                  />
+                )}
               </span>
 
-              {/* Step buttons with beat-group dividers every 4 steps */}
-              {Array.from({ length: 16 }, (_, stepIdx) => {
-                const isOn = safeStepPattern[voiceIdx][stepIdx] > 0;
-                const groupIdx = Math.floor(stepIdx / 4);
-                const showDivider = stepIdx > 0 && stepIdx % 4 === 0;
-                const condition = (triggerConditions?.[voiceIdx]?.[stepIdx] ??
-                  null) as TriggerCondition;
+              {/* Mute: a performance control, so it sits with the row label */}
+              <button
+                aria-label={`${isMuted ? "Unmute" : "Mute"} voice ${voiceNumber}`}
+                aria-pressed={isMuted}
+                className={`flex items-center justify-center h-[30px] rounded-md border text-xs font-bold shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary transition-colors ${isMuted ? "bg-accent-warning border-accent-warning text-[#1a1d23]" : "bg-surface-2 border-border-default text-text-tertiary hover:text-text-primary hover:bg-surface-3"}`}
+                data-testid={`voice-mute-${voiceIdx}`}
+                onClick={() => onMuteToggle?.(voiceNumber)}
+                style={{ marginRight: MUTE_GAP, width: MUTE_WIDTH }}
+                title={
+                  isMuted
+                    ? "Muted for this session. Click to unmute."
+                    : "Mute this voice (for this session only)"
+                }
+                type="button"
+              >
+                M
+              </button>
 
-                return (
-                  <React.Fragment
-                    key={`seq-step-voice-${voiceIdx}-step-${stepIdx}`}
-                  >
-                    {showDivider && (
-                      <div
-                        className="w-px h-5 bg-text-tertiary/30 mx-0.5 self-center"
-                        data-testid={`beat-divider-${voiceIdx}-${groupIdx}`}
-                      />
-                    )}
+              {/* Pads */}
+              <div
+                className={`flex items-center transition-opacity${isMuted && !isLinkedSecondary ? " opacity-35" : ""}`}
+                style={{ gap: PAD_GAP }}
+              >
+                {Array.from({ length: 16 }, (_, stepIdx) => {
+                  const isOn = safeStepPattern[voiceIdx][stepIdx] > 0;
+                  const isPlayhead = isSeqPlaying && currentSeqStep === stepIdx;
+                  const condition = (triggerConditions?.[voiceIdx]?.[stepIdx] ??
+                    null) as TriggerCondition;
+
+                  return (
                     <StepButton
                       condition={condition}
+                      isFiring={isPlayhead && isFiring}
                       isFocused={
+                        hasFocus &&
                         focusedStep.voice === voiceIdx &&
                         focusedStep.step === stepIdx
                       }
                       isOn={isOn}
-                      isPlayhead={isSeqPlaying && currentSeqStep === stepIdx}
+                      isPlayhead={isPlayhead}
+                      key={`seq-step-voice-${voiceIdx}-step-${stepIdx}`}
                       ledGlow={isOn ? LED_GLOWS[voiceIdx] : ""}
                       onClick={() => handleStepClick(voiceIdx, stepIdx)}
                       onColor={
-                        isOn
-                          ? ROW_COLORS[voiceIdx]
-                          : "bg-surface-3 border-border-default"
+                        isOn ? ROW_COLORS[voiceIdx] : offPadClass(stepIdx)
                       }
                       onContextMenu={(e) =>
                         handleStepContextMenu(e, voiceIdx, stepIdx)
@@ -578,96 +681,100 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
                       voiceIdx={voiceIdx}
                       voiceNumber={voiceNumber}
                     />
-                  </React.Fragment>
-                );
-              })}
+                  );
+                })}
+              </div>
 
-              {/* Spacer between steps and voice controls */}
-              <div className="w-3" />
-
-              {/* Slice mode toggle */}
-              {onSliceToggle && (
-                <button
-                  aria-label={`Slice mode for voice ${voiceNumber}`}
-                  aria-pressed={sliceEnabled[voiceNumber] ?? false}
-                  className={`flex items-center justify-center w-7 h-7 rounded border focus:outline-none focus:ring-1 focus:ring-accent-primary transition-colors mr-1.5 disabled:opacity-40 disabled:cursor-not-allowed ${sliceEnabled[voiceNumber] ? "bg-surface-3 border-border-strong" : "bg-surface-2 border-border-default hover:bg-surface-3"}`}
-                  data-testid={`slice-toggle-${voiceIdx}`}
-                  disabled={
-                    !sliceEnabled[voiceNumber] && sliceUnavailable[voiceNumber]
-                  }
-                  onClick={() => onSliceToggle(voiceNumber)}
-                  style={
-                    sliceEnabled[voiceNumber]
-                      ? { color: `var(--voice-${voiceNumber})` }
-                      : undefined
-                  }
-                  title={sliceToggleTitle(
-                    sliceEnabled[voiceNumber] ?? false,
-                    sliceUnavailable[voiceNumber] ?? false,
-                  )}
-                  type="button"
-                >
-                  <ScissorsIcon size={14} weight="bold" />
-                </button>
-              )}
-
-              {/* Sample mode toggle */}
-              <button
-                aria-label={`Sample mode for voice ${voiceNumber}: ${mode}`}
-                className="flex items-center justify-center w-7 h-7 rounded border border-border-default bg-surface-2 hover:bg-surface-3 focus:outline-none focus:ring-1 focus:ring-accent-primary transition-colors mr-1.5"
-                data-testid={`sample-mode-${voiceIdx}`}
-                onClick={() => cycleSampleMode(voiceIdx)}
-                title={`Sample mode: ${SAMPLE_MODE_LABELS[mode]}`}
-                type="button"
+              {/* Saved voice settings */}
+              <div
+                className="flex items-center gap-2.5"
+                style={{ marginLeft: SETTINGS_GAP }}
               >
-                {SAMPLE_MODE_ICONS[mode]}
-              </button>
-
-              {/* Mute toggle + volume slider */}
-              <button
-                aria-label={`${isMuted ? "Unmute" : "Mute"} voice ${voiceNumber}`}
-                className="flex items-center justify-center w-5 h-5 rounded hover:bg-surface-3 focus:outline-none focus:ring-1 focus:ring-accent-primary transition-colors mr-0.5 shrink-0"
-                data-testid={`voice-mute-${voiceIdx}`}
-                onClick={() => onMuteToggle?.(voiceNumber)}
-                title={isMuted ? "Unmute" : "Mute"}
-                type="button"
-              >
-                {isMuted ? (
-                  <SpeakerSimpleSlashIcon
-                    className="text-amber-500"
-                    size={14}
-                    weight="bold"
-                  />
-                ) : (
-                  <SpeakerSimpleHighIcon
-                    className="text-text-tertiary"
-                    size={14}
-                  />
+                {onSliceToggle && (
+                  <button
+                    aria-label={`Slice mode for voice ${voiceNumber}`}
+                    aria-pressed={sliceEnabled[voiceNumber] ?? false}
+                    className={`flex items-center justify-center h-[30px] rounded-md border focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${sliceEnabled[voiceNumber] ? "bg-surface-3 border-border-strong" : "bg-surface-2 border-border-default text-text-tertiary hover:text-text-primary hover:bg-surface-3"}`}
+                    data-testid={`slice-toggle-${voiceIdx}`}
+                    disabled={
+                      !sliceEnabled[voiceNumber] &&
+                      sliceUnavailable[voiceNumber]
+                    }
+                    onClick={() => onSliceToggle(voiceNumber)}
+                    style={{
+                      color: sliceEnabled[voiceNumber]
+                        ? `var(--voice-${voiceNumber})`
+                        : undefined,
+                      width: SLICE_COLUMN_WIDTH,
+                    }}
+                    title={sliceToggleTitle(
+                      sliceEnabled[voiceNumber] ?? false,
+                      sliceUnavailable[voiceNumber] ?? false,
+                    )}
+                    type="button"
+                  >
+                    <ScissorsIcon size={15} weight="bold" />
+                  </button>
                 )}
-              </button>
-              <input
-                aria-label={`Volume for voice ${voiceNumber}`}
-                className="w-14 h-1 cursor-pointer"
-                data-testid={`voice-volume-${voiceIdx}`}
-                max={100}
-                min={0}
-                onChange={(e) =>
-                  onVolumeChange?.(
-                    voiceNumber,
-                    Number.parseInt(e.target.value, 10),
-                  )
-                }
-                style={{ accentColor: "var(--text-tertiary)" }}
-                title={`Volume: ${volume}`}
-                type="range"
-                value={volume}
-              />
+
+                {/* Sample mode: which of the voice's samples each hit plays */}
+                <div
+                  aria-label={`Sample mode for voice ${voiceNumber}`}
+                  className="flex h-[30px] rounded-md border border-border-default bg-surface-2 p-0.5"
+                  data-testid={`sample-mode-${voiceIdx}`}
+                  role="group"
+                  style={{ width: MODE_COLUMN_WIDTH }}
+                >
+                  {SAMPLE_MODES.map((m) => (
+                    <button
+                      aria-pressed={m === mode}
+                      className={`flex-1 rounded text-[11px] font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary transition-colors ${m === mode ? "bg-surface-4 text-text-primary" : "text-text-tertiary hover:text-text-primary"}`}
+                      data-testid={`sample-mode-${voiceIdx}-${m}`}
+                      key={m}
+                      onClick={() => {
+                        if (m !== mode) onSampleModeChange?.(voiceNumber, m);
+                      }}
+                      title={SAMPLE_MODE_TITLES[m]}
+                      type="button"
+                    >
+                      {SAMPLE_MODE_LABELS[m]}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Level */}
+                <label
+                  className="flex items-center gap-2"
+                  style={{ width: LEVEL_COLUMN_WIDTH }}
+                  title={`Volume for voice ${voiceNumber}: ${volume}`}
+                >
+                  <input
+                    aria-label={`Volume for voice ${voiceNumber}`}
+                    className="flex-1 min-w-0 h-1 cursor-pointer"
+                    data-testid={`voice-volume-${voiceIdx}`}
+                    max={100}
+                    min={0}
+                    onChange={(e) =>
+                      onVolumeChange?.(
+                        voiceNumber,
+                        Number.parseInt(e.target.value, 10),
+                      )
+                    }
+                    style={{ accentColor: `var(--voice-${voiceNumber})` }}
+                    type="range"
+                    value={volume}
+                  />
+                  <span className="w-7 text-right text-[11px] tabular-nums text-text-secondary">
+                    {volume}
+                  </span>
+                </label>
+              </div>
             </div>
           );
         },
       )}
 
-      {/* Condition popover — portal to body to escape overflow:hidden + transform */}
+      {/* Step options popover — portal to body to escape overflow:hidden + transform */}
       {popover &&
         ReactDOM.createPortal(
           <ConditionPopover

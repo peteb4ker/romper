@@ -21,6 +21,13 @@ import {
 } from "./hooks/shared/stepPatternConstants";
 import { useBpm } from "./hooks/shared/useBpm";
 import { useSliceSteps } from "./hooks/shared/useSliceSteps";
+import {
+  PAD_GAP,
+  PADS_LEFT,
+  SEQUENCER_VARS,
+  STEPS_SPAN,
+  TRANSPORT_GAP,
+} from "./sequencerLayout";
 import SliceStrip from "./SliceStrip";
 import StepSequencerControls from "./StepSequencerControls";
 import StepSequencerDrawer from "./StepSequencerDrawer";
@@ -328,8 +335,12 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
       sequencerOpen={props.sequencerOpen}
       setSequencerOpen={props.setSequencerOpen}
     >
-      {slicer.editorOpen && editingVoice != null && (
-        <div className="w-full max-w-[960px] px-4">
+      <div
+        className="flex flex-col"
+        data-testid="kit-step-sequencer-body"
+        style={SEQUENCER_VARS}
+      >
+        {slicer.editorOpen && editingVoice != null && (
           <SliceStrip
             canUndo={props.sequenceUndo?.canUndo ?? false}
             division={slicerData.slicerDivision}
@@ -377,53 +388,63 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
             voiceLabel={
               stereoLinks.primaryLabels[editingVoice] ?? String(editingVoice)
             }
+            waveformStyle={{
+              // Under the strip's 1px border and 8px padding, so slice
+              // columns line up with the step columns below
+              marginLeft: PADS_LEFT - 9 - PAD_GAP / 2,
+              width: STEPS_SPAN,
+            }}
+          />
+        )}
+        <div
+          className="flex flex-row items-start"
+          style={{ gap: TRANSPORT_GAP }}
+        >
+          {/* Transport column — left */}
+          <StepSequencerControls
+            bpmLogic={bpmLogic}
+            cycleCount={logic.cycleCount}
+            isSeqPlaying={logic.isSeqPlaying}
+            kitName={props.kitName}
+            setIsSeqPlaying={logic.setIsSeqPlaying}
+          />
+          {/* Grid with integrated voice controls on right */}
+          <StepSequencerGrid
+            currentSeqStep={logic.currentSeqStep}
+            firingVoices={logic.firingVoices}
+            focusedStep={logic.focusedStep}
+            gridRef={props.gridRef || logic.gridRefInternal}
+            handleStepGridKeyDown={logic.handleStepGridKeyDown}
+            isSeqPlaying={logic.isSeqPlaying}
+            LED_GLOWS={logic.LED_GLOWS}
+            NUM_STEPS={logic.NUM_STEPS}
+            NUM_VOICES={logic.NUM_VOICES}
+            onConditionChange={handleConditionChange}
+            onMuteToggle={handleMuteToggle}
+            onSampleModeChange={handleSampleModeChange}
+            onSliceStepUpdate={slicer.updateSliceStep}
+            onSliceToggle={slicer.handleSliceToggle}
+            onStepClick={slicer.handleStepClick}
+            onStepHover={slicer.setHoverStep}
+            onStepWheel={slicer.handleStepWheel}
+            onVolumeChange={handleVolumeChange}
+            rolledSteps={slicer.rolledSteps}
+            ROW_COLORS={logic.ROW_COLORS}
+            safeStepPattern={logic.safeStepPattern}
+            sampleModes={sampleModes}
+            setFocusedStep={logic.setFocusedStep}
+            sliceEnabled={sliceEnabled}
+            slicerDivision={slicerData.slicerDivision}
+            sliceSteps={slicerData.sliceSteps}
+            sliceUnavailable={sliceUnavailable}
+            sliceViews={slicer.sliceViews}
+            stereoLinks={stereoLinks}
+            toggleStep={logic.toggleStep}
+            triggerConditions={props.triggerConditions}
+            voiceMutes={voiceMutes}
+            voiceVolumes={voiceVolumes}
           />
         </div>
-      )}
-      <div className="flex flex-row items-center justify-center gap-2">
-        {/* Transport column — left */}
-        <StepSequencerControls
-          bpmLogic={bpmLogic}
-          cycleCount={logic.cycleCount}
-          isSeqPlaying={logic.isSeqPlaying}
-          kitName={props.kitName}
-          setIsSeqPlaying={logic.setIsSeqPlaying}
-        />
-        {/* Grid with integrated voice controls on right */}
-        <StepSequencerGrid
-          currentSeqStep={logic.currentSeqStep}
-          focusedStep={logic.focusedStep}
-          gridRef={props.gridRef || logic.gridRefInternal}
-          handleStepGridKeyDown={logic.handleStepGridKeyDown}
-          isSeqPlaying={logic.isSeqPlaying}
-          LED_GLOWS={logic.LED_GLOWS}
-          NUM_STEPS={logic.NUM_STEPS}
-          NUM_VOICES={logic.NUM_VOICES}
-          onConditionChange={handleConditionChange}
-          onMuteToggle={handleMuteToggle}
-          onSampleModeChange={handleSampleModeChange}
-          onSliceStepUpdate={slicer.updateSliceStep}
-          onSliceToggle={slicer.handleSliceToggle}
-          onStepClick={slicer.handleStepClick}
-          onStepHover={slicer.setHoverStep}
-          onStepWheel={slicer.handleStepWheel}
-          onVolumeChange={handleVolumeChange}
-          rolledSteps={slicer.rolledSteps}
-          ROW_COLORS={logic.ROW_COLORS}
-          safeStepPattern={logic.safeStepPattern}
-          sampleModes={sampleModes}
-          setFocusedStep={logic.setFocusedStep}
-          sliceEnabled={sliceEnabled}
-          slicerDivision={slicerData.slicerDivision}
-          sliceSteps={slicerData.sliceSteps}
-          sliceUnavailable={sliceUnavailable}
-          sliceViews={slicer.sliceViews}
-          stereoLinks={stereoLinks}
-          toggleStep={logic.toggleStep}
-          triggerConditions={props.triggerConditions}
-          voiceMutes={voiceMutes}
-          voiceVolumes={voiceVolumes}
-        />
       </div>
     </StepSequencerDrawer>
   );

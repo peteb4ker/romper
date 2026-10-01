@@ -41,8 +41,6 @@ This file tracks what's being done about each item.
 | RE-18 | High | Release | Signing is silently optional. Windows v1.3.1 shipped **unsigned** (the Azure step was skipped because `AZURE_CLIENT_ID` is empty). | open |
 | RE-19 | High | Release | Release secrets are more exposed than needed: the base64 p12 is a job-level environment variable during `npm ci` (the lifecycle scripts of about 1,500 packages) on all three runners; checkout keeps the token while the workflow has `contents: write`; `id-token: write` is unused; third-party actions that receive secrets are pinned by tag, not by SHA. | open |
 | RE-20 | High | Docs | User-facing docs promise behaviour that does not exist. README, the manual and the website promise an automatic backup and rollback before sync; there is no backup code. | open |
-| RE-59 | High | Renderer | Escape on the sequencer's step-options popover also leaves the kit. | in progress (`claude/sequencer-ui-ux-analysis-d167c5`) |
-| RE-60 | High | Undo | Sequencer edits are not undoable, and Cmd/Ctrl+Z after a pattern edit undoes the last sample edit instead; the slicer's roll undo never runs in editable kits. | in progress (`claude/sequencer-ui-ux-analysis-d167c5`) |
 
 ## Owner (needs Pete)
 
@@ -99,6 +97,8 @@ This file tracks what's being done about each item.
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
 | RE-06 | High | Sync | Sync writes `<card>/<kit>/<voice>/<file>`, but SD import and rescan read only WAVs at the kit root and take the voice from the first character of the file name. | done (#372; spec: [`sd-card-layout.md`](docs/developer/sd-card-layout.md)) |
+| RE-59 | High | Renderer | Escape on the sequencer's step-options popover also leaves the kit. | done (#371) |
+| RE-60 | High | Undo | Sequencer edits are not undoable, and Cmd/Ctrl+Z after a pattern edit undoes the last sample edit instead; the slicer's roll undo never runs in editable kits. | done (#371) |
 | RE-03 | High | Security | The renderer can read any file (up to 256 MiB), list any folder, create and copy folders, extract a downloaded archive into any folder, write a probe file anywhere, and create or insert into a database in any folder. | done (#367) |
 | RE-04 | High | Scan | "Scan Kit" on a non-editable kit, and "File > Scan All" on every kit, delete all of the kit's sample rows and rebuild them from `<store>/<kit>/*.wav`. | done (#360) |
 | RE-09 | High | Sync | Validation errors (such as missing source files) and warnings are built and then dropped. | done (#364) |

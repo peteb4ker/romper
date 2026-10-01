@@ -1,9 +1,10 @@
-import { _electron as electron, expect, test } from "@playwright/test";
+import { _electron as electron } from "@playwright/test";
 import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
 
 import { approveLocalStorePrompts } from "../utils/e2e-dialogs";
+import { expect, test } from "../utils/e2e-error-guard";
 
 /**
  * Onboarding Error Recovery E2E Tests
@@ -15,6 +16,24 @@ import { approveLocalStorePrompts } from "../utils/e2e-dialogs";
  * 4. A target that already holds a local store is refused and left intact
  */
 test.describe("Onboarding Error Recovery E2E Tests", () => {
+  // These tests make setup fail on purpose, and the wizard shows and logs it
+  test.use({
+    expectedMessages: {
+      "each test starts with no local store, so the wizard opens": {
+        pattern: /No local store configured/,
+        sources: ["main-stdout"],
+      },
+      "the test points setup at an SD card with no kit folders": {
+        pattern: /No kit folders found in .*romper-e2e-(invalid|empty)-sdcard-/,
+        sources: ["ui", "renderer-console"],
+      },
+      "the test sets up in a folder that already holds a store (RE-10)": {
+        pattern: /This folder already contains a Romper local store/,
+        sources: ["ui", "renderer-console"],
+      },
+    },
+  });
+
   // Each test manages its own Electron app lifecycle since environment varies per scenario
   let tempDirs: string[] = [];
 

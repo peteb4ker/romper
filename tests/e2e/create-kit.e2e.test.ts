@@ -1,9 +1,10 @@
-import { expect, type Page, test } from "@playwright/test";
+import { type Page } from "@playwright/test";
 import fs from "fs-extra";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { _electron as electron, type ElectronApplication } from "playwright";
 
+import { expect, test } from "../utils/e2e-error-guard";
 import {
   cleanupE2EFixture,
   type E2ETestEnvironment,

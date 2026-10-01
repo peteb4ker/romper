@@ -27,6 +27,7 @@ import type { ElectronAPI } from "../../shared/electronApi";
 import { approveLocalStorePrompts } from "../utils/e2e-dialogs";
 import { dropFiles } from "../utils/e2e-drop";
 import { ensureFactoryArchive, factoryArchive } from "./support/archive";
+import { BASELINE_EXPECTED } from "./support/baseline";
 import {
   compareCard,
   expectedCardFiles,
@@ -48,34 +49,11 @@ const REPORT_DIR = path.resolve(
  * or error level fails the run.
  */
 const EXPECTED: Expectation[] = [
-  // Chromium's own logging about the CI machine, not about Romper
-  {
-    pattern: /:ERROR:dbus\/(bus|object_proxy)\.cc:\d+\]/,
-    reason: "Linux CI runners have no D-Bus session for Chromium to connect to",
-    sources: ["main-stderr"],
-  },
-  {
-    pattern:
-      /:ERROR:sandbox\/mac\/system_services\.cc:\d+\] SetApplicationIsDaemon/,
-    reason:
-      "Chromium logs this on macOS runners when the app runs as an accessory (hidden window)",
-    sources: ["main-stderr"],
-  },
-  {
-    pattern:
-      /^(Debugger (listening|ending) on ws:|For help, see: https:\/\/nodejs\.org)/,
-    reason: "Playwright drives the main process through the Node inspector",
-    sources: ["main-stderr"],
-  },
+  ...BASELINE_EXPECTED,
   {
     pattern: /No local store configured/,
     reason: "the run starts with no local store, so the setup wizard opens",
     sources: ["main-stdout"],
-  },
-  {
-    pattern: /'frame-ancestors' is ignored when delivered via a <meta> element/,
-    reason: "frame-ancestors in a <meta> CSP has no effect (register: Low)",
-    sources: ["renderer-console"],
   },
   {
     pattern:

@@ -1,7 +1,7 @@
 // E2E test for Local Store Wizard flows using Playwright (or Spectron, or Electron E2E harness)
 // This is a scaffold. You must run this in an environment where the Electron renderer UI is available.
 
-import { _electron as electron, expect, test } from "@playwright/test";
+import { _electron as electron } from "@playwright/test";
 import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
@@ -11,6 +11,7 @@ import {
   approveLocalStorePrompts,
   getLocalStorePromptsShown,
 } from "../../../../../../tests/utils/e2e-dialogs";
+import { expect, test } from "../../../../../../tests/utils/e2e-error-guard";
 
 // Retry a function with exponential backoff
 async function retryWithBackoff<T>(
@@ -236,6 +237,25 @@ async function waitForFileExists(
 }
 
 test.describe("Local Store Wizard E2E", () => {
+  test.use({
+    expectedMessages: {
+      "each run starts with no local store, so the wizard opens": {
+        pattern: /No local store configured/,
+        sources: ["main-stdout"],
+      },
+      "the fixtures' .wav files are stubs, not audio, so WAV analysis fails": {
+        pattern: /Scan warnings for kit \w+: .*Not a WAV file/,
+        sources: ["renderer-console"],
+      },
+      "voice naming in the wizard runs before the store path is saved": {
+        pattern:
+          /Failed to set voice alias for kit \w+, voice \d: No local store path configured/,
+        ref: "RE-34",
+        sources: ["renderer-console"],
+      },
+    },
+  });
+
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
 

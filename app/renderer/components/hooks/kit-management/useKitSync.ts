@@ -53,7 +53,7 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
     generateChangeSummary,
     isLoading: isSyncLoading,
     startSync,
-    syncProgress,
+    syncProgressStore,
   } = useSyncUpdate();
 
   // Handler to initiate sync to SD card
@@ -153,6 +153,6 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
     // State
     showSyncDialog,
     syncError,
-    syncProgress,
+    syncProgressStore,
   };
 }

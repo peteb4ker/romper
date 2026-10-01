@@ -6,6 +6,12 @@ const mockClearError = vi.hoisted(() => vi.fn());
 const mockGenerateChangeSummary = vi.hoisted(() => vi.fn());
 const mockStartSync = vi.hoisted(() => vi.fn());
 
+const mockSyncProgressStore = vi.hoisted(() => ({
+  get: () => null,
+  set: vi.fn(),
+  subscribe: () => () => {},
+}));
+
 // Mock the useSyncUpdate hook
 vi.mock("../../shared/useSyncUpdate", () => ({
   useSyncUpdate: vi.fn(() => ({
@@ -15,7 +21,7 @@ vi.mock("../../shared/useSyncUpdate", () => ({
     generateChangeSummary: mockGenerateChangeSummary,
     isLoading: false,
     startSync: mockStartSync,
-    syncProgress: null,
+    syncProgressStore: mockSyncProgressStore,
   })),
 }));
 

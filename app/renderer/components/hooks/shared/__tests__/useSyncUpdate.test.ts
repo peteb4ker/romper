@@ -39,7 +39,7 @@ describe("useSyncUpdate", () => {
         useSyncUpdate({ electronAPI: mockElectronAPI }),
       );
 
-      expect(result.current.syncProgress).toBeNull();
+      expect(result.current.syncProgressStore.get()).toBeNull();
       expect(result.current.isLoading).toBe(false);
       expect(result.current.error).toBeNull();
       expect(typeof result.current.generateChangeSummary).toBe("function");
@@ -179,7 +179,7 @@ describe("useSyncUpdate", () => {
         sdCardPath: "/path/to/sd",
       });
       expect(success).toBe(true);
-      expect(result.current.syncProgress?.status).toBe("completed");
+      expect(result.current.syncProgressStore.get()?.status).toBe("completed");
       expect(result.current.isLoading).toBe(false);
     });
 
@@ -200,7 +200,7 @@ describe("useSyncUpdate", () => {
 
       expect(success).toBe(false);
       expect(result.current.error).toBe("SD card not found");
-      expect(result.current.syncProgress?.status).toBe("error");
+      expect(result.current.syncProgressStore.get()?.status).toBe("error");
     });
 
     it("should initialize sync progress", async () => {
@@ -219,7 +219,7 @@ describe("useSyncUpdate", () => {
         });
       });
 
-      expect(result.current.syncProgress).toMatchObject({
+      expect(result.current.syncProgressStore.get()).toMatchObject({
         bytesCompleted: 0,
         currentFile: "",
         filesCompleted: 0,
@@ -275,7 +275,7 @@ describe("useSyncUpdate", () => {
       });
 
       expect(mockElectronAPI.cancelKitSync).toHaveBeenCalled();
-      expect(result.current.syncProgress).toBeNull();
+      expect(result.current.syncProgressStore.get()).toBeNull();
       expect(result.current.error).toBeNull();
     });
 
@@ -311,8 +311,56 @@ describe("useSyncUpdate", () => {
         });
       });
 
-      expect(result.current.syncProgress?.status).toBe("cancelled");
-      expect(result.current.syncProgress?.filesCompleted).toBe(2);
+      expect(result.current.syncProgressStore.get()?.status).toBe("cancelled");
+      expect(result.current.syncProgressStore.get()?.filesCompleted).toBe(2);
+    });
+
+    it("delivers progress through the store without re-rendering the hook's owner (RE-61)", async () => {
+      let onProgress: ((progress: unknown) => void) | undefined;
+      mockElectronAPI.onSyncProgress = vi.fn((callback) => {
+        onProgress = callback;
+      });
+      let finishWrite: (value: unknown) => void = () => {};
+      mockElectronAPI.startKitSync.mockReturnValue(
+        new Promise((resolve) => {
+          finishWrite = resolve;
+        }),
+      );
+      let renders = 0;
+      const { result } = renderHook(() => {
+        renders++;
+        return useSyncUpdate({ electronAPI: mockElectronAPI });
+      });
+
+      let write: Promise<boolean> = Promise.resolve(false);
+      act(() => {
+        write = result.current.startSync({ sdCardPath: "/sd" });
+      });
+      const rendersBeforeProgress = renders;
+      act(() => {
+        for (let filesCompleted = 1; filesCompleted <= 100; filesCompleted++) {
+          onProgress?.({
+            bytesCompleted: 0,
+            currentFile: `s${filesCompleted}.wav`,
+            filesCompleted,
+            status: "copying",
+            totalBytes: 0,
+            totalFiles: 100,
+          });
+        }
+      });
+
+      expect(renders).toBe(rendersBeforeProgress);
+      expect(result.current.syncProgressStore.get()?.filesCompleted).toBe(100);
+
+      await act(async () => {
+        finishWrite({
+          data: { skippedFiles: [], syncedFiles: 100, warnings: [] },
+          success: true,
+        });
+        await write;
+      });
+      expect(result.current.syncProgressStore.get()?.status).toBe("completed");
     });
 
     it("shows a cancelled write as cancelled, not failed or complete", async () => {
@@ -335,7 +383,7 @@ describe("useSyncUpdate", () => {
       });
 
       expect(success).toBe(true);
-      expect(result.current.syncProgress?.status).toBe("cancelled");
+      expect(result.current.syncProgressStore.get()?.status).toBe("cancelled");
       expect(result.current.error).toBeNull();
       expect(result.current.isLoading).toBe(false);
     });

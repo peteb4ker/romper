@@ -2,7 +2,7 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import React, { useCallback, useImperativeHandle, useRef } from "react";
 
-import SyncUpdateDialog from "./dialogs/SyncUpdateDialog";
+import LiveSyncUpdateDialog from "./dialogs/LiveSyncUpdateDialog";
 import ValidationResultsDialog from "./dialogs/ValidationResultsDialog";
 import { useKitBrowser } from "./hooks/kit-management/useKitBrowser";
 import { useKitDeletion } from "./hooks/kit-management/useKitDeletion";
@@ -158,7 +158,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       onSdCardPathChange,
       sdCardPath,
       showSyncDialog,
-      syncProgress,
+      syncProgressStore,
     } = sync;
 
     // Keyboard navigation hook
@@ -273,7 +273,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
 
         {/* SyncUpdateDialog */}
         {showSyncDialog && currentSyncKit && (
-          <SyncUpdateDialog
+          <LiveSyncUpdateDialog
             isLoading={isSyncLoading}
             isOpen={showSyncDialog}
             kitName={currentSyncKit}
@@ -284,7 +284,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
             onGenerateChangeSummary={generateChangeSummary}
             onSdCardPathChange={onSdCardPathChange}
             sdCardPath={sdCardPath}
-            syncProgress={syncProgress}
+            syncProgressStore={syncProgressStore}
           />
         )}
       </div>

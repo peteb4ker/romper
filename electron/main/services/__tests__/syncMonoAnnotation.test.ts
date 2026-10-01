@@ -128,9 +128,9 @@ describe("annotateMonoConversion", () => {
 
     const files: SyncFileOperation[] = [
       {
+        channels: 2,
         destinationPath: "myKit/1-01 sample.wav",
         filename: "sample.wav",
-        isStereo: true,
         kitName: "myKit",
         operation: "copy",
         sourcePath: "/src/sample.wav",
@@ -143,7 +143,7 @@ describe("annotateMonoConversion", () => {
     expect(files[0].forceMonoConversion).toBe(true);
     expect(files[0].operation).toBe("convert");
     expect(files[0].reason).toBe(
-      "Stereo sample on mono voice requires mono conversion",
+      "Stereo file on voice 1, which isn't linked as stereo: mixed to mono",
     );
   });
 
@@ -157,9 +157,9 @@ describe("annotateMonoConversion", () => {
 
     const files: SyncFileOperation[] = [
       {
+        channels: 1,
         destinationPath: "myKit/1-01 sample.wav",
         filename: "sample.wav",
-        isStereo: false,
         kitName: "myKit",
         operation: "copy",
         sourcePath: "/src/sample.wav",
@@ -183,9 +183,9 @@ describe("annotateMonoConversion", () => {
 
     const files: SyncFileOperation[] = [
       {
+        channels: 2,
         destinationPath: "myKit/1-01 sample.wav",
         filename: "sample.wav",
-        isStereo: true,
         kitName: "myKit",
         operation: "copy",
         sourcePath: "/src/sample.wav",
@@ -209,9 +209,9 @@ describe("annotateMonoConversion", () => {
 
     const files: SyncFileOperation[] = [
       {
+        channels: 2,
         destinationPath: "myKit/1-01 sample.wav",
         filename: "sample.wav",
-        isStereo: true,
         kitName: "myKit",
         operation: "convert",
         reason: "Format conversion required",
@@ -235,9 +235,31 @@ describe("annotateMonoConversion", () => {
 
     const files: SyncFileOperation[] = [
       {
+        channels: 2,
         destinationPath: "myKit/1-01 sample.wav",
         filename: "sample.wav",
-        isStereo: true,
+        kitName: "myKit",
+        operation: "copy",
+        sourcePath: "/src/sample.wav",
+        voiceNumber: 1,
+      },
+    ];
+
+    annotateMonoConversion(files, "/db");
+
+    expect(files[0].forceMonoConversion).toBeUndefined();
+    expect(files[0].operation).toBe("copy");
+  });
+  it("leaves a file alone when its channel count is unknown", () => {
+    vi.mocked(getKit).mockReturnValue({
+      data: { voices: [{ stereo_mode: false, voice_number: 1 }] },
+      success: true,
+    } as ReturnType<typeof getKit>);
+
+    const files: SyncFileOperation[] = [
+      {
+        destinationPath: "myKit/1-01 sample.wav",
+        filename: "sample.wav",
         kitName: "myKit",
         operation: "copy",
         sourcePath: "/src/sample.wav",

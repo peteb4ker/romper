@@ -77,11 +77,13 @@ The primary way to add samples is drag and drop:
 
 ### Stereo and Mono Handling
 
-The Rample supports both mono and stereo playback, and Romper handles this with two levels of control:
+Stereo is set per voice, as on the Rample. Click the link icon between two neighbouring voices to link them as a stereo pair; the left voice shows a **Stereo** badge, and its samples play in stereo across both voices' outputs. Nothing can be added to the right-hand voice while the pair is linked.
 
-**Global setting** -- In Settings, the **Treat Stereo as Mono** toggle (on by default) controls the default behavior. When enabled, stereo samples are treated as two linked mono channels during sync.
+When you write to the card:
 
-**Per-sample override** -- Each sample row has a stereo/mono toggle that overrides the global setting for that specific sample. When a stereo sample is set to mono mode, it occupies its own slot plus the matching slot in the next voice (stereo linking). If there isn't room, Romper shows a warning.
+- A stereo file on a linked voice is written as it is.
+- A stereo file on a voice that isn't linked is mixed down to mono (the average of its two channels), because a mono voice plays one channel. The write summary marks the bank as needing conversion.
+- Mono files are written as they are on either kind of voice.
 
 ### Voice Names and Kit Type
 

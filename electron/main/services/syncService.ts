@@ -223,10 +223,6 @@ class SyncService {
         };
       }
 
-      // Set per-file forceMonoConversion based on voice stereo_mode
-      // Mono voices need stereo samples converted to mono; stereo voices pass through
-      annotateMonoConversion(allFiles, dbDir);
-
       syncProgressManager.initializeSyncJob(allFiles);
 
       const syncedFiles = await syncFileOperationsService.processAllFiles(
@@ -428,11 +424,15 @@ class SyncService {
       );
     }
 
+    // Decide mono conversion while planning, so the summary shows it too
+    const files = [...results.filesToCopy, ...results.filesToConvert];
+    annotateMonoConversion(files, dbDir);
+
     return {
       data: {
         cardContents,
         dbDir,
-        files: [...results.filesToCopy, ...results.filesToConvert],
+        files,
         localStorePath,
         validationErrors: results.validationErrors,
         warnings: results.warnings,

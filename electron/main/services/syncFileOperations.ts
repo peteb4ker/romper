@@ -16,11 +16,16 @@ import {
 } from "./syncValidationService.js";
 
 export interface SyncFileOperation {
+  /**
+   * The source file's channel count, from its header. Mono conversion keys
+   * on this and the voice's stereo setting (RE-29); `samples.is_stereo` is
+   * never set from the file.
+   */
+  channels?: number;
   destinationPath: string;
   filename: string;
   forceMonoConversion?: boolean;
   gainDb?: number;
-  isStereo?: boolean;
   kitName: string;
   operation: "convert" | "copy";
   originalFormat?: string;
@@ -205,10 +210,10 @@ export class SyncFileOperationsService {
     const reasons = issues.map((issue) => issue.message).join(", ");
 
     results.filesToConvert.push({
+      channels: format.metadata?.channels,
       destinationPath,
       filename: sample.filename,
       gainDb: sample.gain_db,
-      isStereo: sample.is_stereo,
       kitName: sample.kit_name,
       operation: "convert",
       originalFormat: "Audio file (needs conversion)",
@@ -231,10 +236,10 @@ export class SyncFileOperationsService {
     results: SyncResults,
   ): void {
     results.filesToCopy.push({
+      channels: format.metadata?.channels,
       destinationPath,
       filename: sample.filename,
       gainDb: sample.gain_db,
-      isStereo: sample.is_stereo,
       kitName: sample.kit_name,
       operation: "copy",
       originalFormat: "Compatible audio file",

@@ -37,7 +37,7 @@ Severity and details for each ID are in the findings register
 | RE-70 | Medium | `file://` archive URLs weren't decoded (Windows, spaces) | #403 | done in PR |
 | RE-69 | High | Unlinking a stereo pair silently does nothing when the voice holds a 2-channel file; dead `is_stereo` rules | #407 | done in PR |
 | RE-42 | Medium | No truncation notice after setup | #410 | done in PR |
-| RE-34 | Medium | Setup's voice naming does nothing; 2,373 file reads over IPC | #PR | done in PR |
+| RE-34 | Medium | Setup's voice naming does nothing; 2,373 file reads over IPC | #413 | done in PR |
 | RE-66 | Medium | Cancel during setup quits mid-import and leaves a store that blocks a retry | 4: #408 (step 1) | step 1 done in PR; step 2 to do |
 | RE-24 | Medium | Download has no status, redirect, timeout or checksum; temp zip kept; extraction errors ignored | #405 | done |
 | RE-65 | Medium | Edit > Undo/Redo never reach Romper's undo | #406 | done |

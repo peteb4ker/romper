@@ -21,7 +21,7 @@ Download the latest release for your operating system from the [Releases page](h
 - **Windows** -- `Romper-Setup-x.x.x.exe` (run the installer)
 - **Linux** -- `Romper-x.x.x.AppImage` (make executable and run)
 
-Romper requires no additional dependencies. It runs entirely offline after installation.
+Romper requires no additional dependencies and works offline. It goes online only to download the factory samples, if you choose to, and on macOS to check for updates.
 
 ## First Launch
 
@@ -47,7 +47,7 @@ Your kits, sample references, and metadata will appear in the Kit Browser immedi
 If you're new to the Rample or want a clean starting point:
 
 1. Select **Download Factory Samples** in the wizard
-2. Romper downloads the official Squarp sample packs (~500 MB, requires internet)
+2. Romper downloads the official Squarp sample packs (about 300 MB, requires internet)
 3. Factory kits are imported into your local store
 
 This gives you professionally organized kits to explore and learn from. If the download is interrupted, Romper will automatically retry up to 3 times.
@@ -98,7 +98,7 @@ For full details on the sync process, see [Syncing](syncing).
 
 **"Cannot write to path"** -- The target directory isn't writable. Choose a location in your Documents folder or another directory you have write access to.
 
-**"Download failed after 3 attempts"** -- Check your internet connection and try again. The factory samples download is ~500 MB and needs a stable connection.
+**"Download failed after 3 attempts"** -- Check your internet connection and try again. The factory samples download is about 300 MB and needs a stable connection.
 
 **Sample limit notice** -- Rample supports a maximum of 12 samples per voice. If your kits contain more, Romper keeps the first 12 and tells you how many were skipped.
 

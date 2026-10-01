@@ -23,7 +23,7 @@ Romper gives you a visual interface on top of that process with several key adva
 - **Non-destructive editing** -- Romper stores references to your samples rather than moving the files themselves. Your original sample library stays untouched until you explicitly sync.
 - **Full undo/redo support** -- Every sample assignment, removal, and rearrangement can be undone. Try different kit arrangements without worrying about losing your work.
 - **Validation before sync** -- Romper checks your kits for issues (missing files, format problems, naming conflicts) before writing anything to the SD card.
-- **Automatic backups** -- When you sync, Romper creates a backup of the existing SD card content first.
+- **Your library is the master copy** -- Sync rewrites the card to match your library, so the card can always be rebuilt from it. Include your local store folder in your own backups; Romper doesn't back up the card.
 
 Think of Romper as a working copy for your Rample kits. You experiment freely, then commit the results to the SD card when you're ready.
 
@@ -90,14 +90,14 @@ Romper references your existing sample files in place, so it does not duplicate 
 
 ## Does Romper work offline?
 
-**Yes.** Romper is a desktop application that runs entirely offline after installation. No internet connection is required for:
+**Yes.** Romper is a desktop application and works offline. No internet connection is required for:
 
 - Browsing and editing kits
 - Assigning and previewing samples
 - Using the step sequencer
 - Syncing to the SD card
 
-The only feature that requires an internet connection is downloading the Rample factory samples during initial setup. Once downloaded, everything works offline.
+Romper goes online in only two cases: to download the Rample factory samples during setup, if you choose to, and on macOS to check for updates at launch and weekly. Neither is needed for anything above. See the [privacy policy](https://github.com/peteb4ker/romper/blob/main/PRIVACY.md) for exactly what the update check sends.
 
 </div>
 </div>

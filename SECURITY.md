@@ -13,6 +13,6 @@ Only the latest release receives security updates. We recommend staying up-to-da
 ## Security Notes
 
 Romper is a desktop application that:
-- Operates entirely offline (no network communication)
+- Works offline. It goes online only to download Squarp's factory samples when you ask it to, and, on macOS, to check for updates
 - Only accesses local files and SD cards
 - Uses standard Electron security practices

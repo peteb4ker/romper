@@ -17,7 +17,7 @@ Romper manages that complexity for you:
 - **Browse** all your kits in a visual grid organized by bank
 - **Assign samples** by dragging WAV files onto voice slots
 - **Preview** individual samples or entire kits with the built-in step sequencer
-- **Sync** validated kits to your SD card with automatic backup
+- **Sync** validated kits to your SD card, which ends up matching your library
 
 ## Key Concepts
 

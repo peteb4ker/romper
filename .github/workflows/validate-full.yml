@@ -1,0 +1,97 @@
+name: Full-Pipeline Validation
+
+# The on-demand full-pipeline validation (RE-67; plan:
+# docs/developer/validation-and-traceability.md): factory archive -> new store
+# -> new kit with stereo samples -> write to a folder -> byte-for-byte
+# comparison, with every UI error and warning captured. Too heavy for PRs;
+# run it by hand, or call it from another workflow (a release, later).
+
+on:
+  workflow_dispatch:
+    inputs:
+      fresh:
+        description: "Download the factory archive from Squarp instead of using the cached copy"
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      fresh:
+        type: boolean
+        default: false
+
+concurrency:
+  # A literal name: in a calling workflow, github.workflow is the caller's
+  group: validate-full-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Our copy of Squarp's archive, keyed by its recorded SHA-256, so each
+      # archive version is downloaded from Squarp once, not once per run. The
+      # cache is private to this repo; the archive is never uploaded as an
+      # artifact (it's Squarp's content).
+      - name: Restore the factory archive
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/romper
+          key: factory-archive-${{ hashFiles('tests/validation/factory-archive.json') }}
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3-dev libatk-bridge2.0-dev libxkbcommon0 \
+            libxcomposite1 libxdamage1 libxrandr2 libgbm1 libxss1 libasound2-dev \
+            libgtk-3-0 x11-utils xvfb
+          # Electron 42+ downloads its binary on first use, not at install
+          node node_modules/electron/install.js
+          sudo chown root node_modules/electron/dist/chrome-sandbox
+          sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
+          Xvfb :99 -screen 0 1280x800x24 > /dev/null 2>&1 &
+          for i in $(seq 1 10); do
+            DISPLAY=:99 xdpyinfo > /dev/null 2>&1 && exit 0
+            sleep 1
+          done
+          echo "Xvfb didn't start"
+          exit 1
+
+      - name: Run the validation
+        run: npm run validate:full ${{ inputs.fresh && '-- --fresh' || '' }}
+        env:
+          CI: true
+          DISPLAY: ":99"
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: validation-report-${{ matrix.os }}
+          path: |
+            validation-report/
+            test-results/validation/
+          retention-days: 30

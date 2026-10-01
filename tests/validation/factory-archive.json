@@ -1,0 +1,13 @@
+{
+  "url": "https://data.squarp.net/RampleSamplesV1-2.zip",
+  "fileName": "RampleSamplesV1-2.zip",
+  "sha256": "1b03f1737a21598bdce05e1de344f71a1c9d64a0f314516ccf82c60215eca84c",
+  "size": 327886026,
+  "checked": "2026-10-01",
+  "contents": {
+    "kitFolders": 183,
+    "wavFiles": 2373,
+    "bankFiles": 14,
+    "filesOverTwelvePerVoice": 7
+  }
+}

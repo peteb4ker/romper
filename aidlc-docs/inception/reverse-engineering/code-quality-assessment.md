@@ -240,6 +240,15 @@ real defect with a workaround or a limited blast radius. **Low** is hygiene.
   nothing sets it, so its branches never run;
   `sync-unsaved-state.integration` writes into
   `tests/integration/sync-test-data` instead of a temp folder.
+- **Found by the full-pipeline validation (2026-10-01)**: an empty
+  `ROMPER_LOCAL_PATH` (what the e2e specs set to force the wizard) shows the
+  "Test Mode: Using ROMPER_LOCAL_PATH" banner although nothing is
+  overridden; every factory import logs 43 "No voice types could be
+  inferred from filenames" warnings for kits whose file names have no drum
+  words, a normal outcome logged as a warning
+  (`useLocalStoreWizardScanning.ts:92`); `scripts/capture-screenshots.ts`
+  still launches with the installed app's settings folder (RE-68 covered
+  e2e only).
 
 ## Technical Debt
 

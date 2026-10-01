@@ -4,7 +4,7 @@ priority: high
 status: specification (approved 2026-10-01)
 updated: 2026-10-01
 context_size: large
-implementation_status: not started
+implementation_status: harness built (PR 2); PRs 3 onward to do
 -->
 
 # Full-pipeline validation, test layering and traceability
@@ -372,6 +372,23 @@ behaviour checks, and RE-51 makes tests type-check.
 | 3 | The e2e error guard (section 2, item 6) across the existing suite, plus fixing whatever it uncovers. |
 | 4 | `use-cases.md`; tests tagged with use case IDs; `scripts/traceability.mjs`, the generated matrix and the CI check. |
 | 5 onward | The focused tests from section 2 and fixes for the bugs found (RE-29 and RE-64 first), one PR per finding. |
+
+## First results (2026-10-01, macOS arm64, 23 s with the local archive copy)
+
+- The factory import matches the archive: 183 kits and 2,366 files, all
+  byte-identical, with the 7 files over the 12-per-voice limit left out in
+  the right places. Bank names match the 14 bank files.
+- All 2,368 copied card files are byte-identical to their sources, the
+  converted files match the reference conversion, `_save` survives every
+  write, a second write changes nothing, and deleting a sample removes it
+  from the card at the next write.
+- Known bugs seen: RE-29 (the stereo file on an unlinked voice reaches the
+  card as stereo) and RE-42 (no truncation notice after setup). RE-34's
+  voice-naming failures show up as 458 console warnings during setup.
+- New: RE-68 (the e2e suite overwrote the installed app's settings; fixed in
+  #400), plus three Low items in the register: the Test Mode banner on an
+  empty override, a warning logged for a normal voice-inference outcome, and
+  `scripts/capture-screenshots.ts` still using the installed app's settings.
 
 ## Decisions (Pete, 2026-10-01)
 

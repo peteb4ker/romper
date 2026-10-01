@@ -12,7 +12,7 @@ import { useLocalStoreSetupFlow } from "../components/hooks/kit-management/useLo
 import { useSampleRefreshListener } from "../components/hooks/kit-management/useSampleRefreshListener";
 import { useDialogState } from "../components/hooks/shared/useDialogState";
 import { useGlobalKeyboardShortcuts } from "../components/hooks/shared/useGlobalKeyboardShortcuts";
-import { useMessageDisplay } from "../components/hooks/shared/useMessageDisplay";
+import { useMessageApi } from "../components/hooks/shared/useMessageApi";
 import { useStartupActions } from "../components/hooks/shared/useStartupActions";
 import KitBrowserContainer from "../components/KitBrowserContainer";
 import KitEditorContainer from "../components/KitEditorContainer";
@@ -34,7 +34,10 @@ const KitsView: React.FC = () => {
     setLocalStorePath,
   } = useSettings();
 
-  const { showMessage } = useMessageDisplay();
+  // The app-wide toast stack (main.tsx). Calling useMessageDisplay here
+  // made a second, unrendered stack, so no message from this view showed
+  // (RE-11).
+  const { showMessage } = useMessageApi();
 
   // Dialog state management
   const dialogState = useDialogState();
@@ -81,13 +84,10 @@ const KitsView: React.FC = () => {
     kits,
   });
 
-  // No-op message function for filters
-  const noOpMessage = useCallback(() => {}, []);
-
   // Kit filters management for favorites functionality (applied after search)
   const kitFilters = useKitFilters({
     kits: search.filteredKits,
-    onMessage: noOpMessage,
+    onMessage: showMessage,
   });
 
   // Get current kit from shared data for keyboard shortcuts

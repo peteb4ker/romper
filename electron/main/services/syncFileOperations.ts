@@ -24,6 +24,8 @@ export interface SyncFileOperation {
   reason?: string;
   sourcePath: string;
   targetFormat?: string;
+  /** The voice (1-4) the sample plays on */
+  voiceNumber: number;
 }
 
 export interface SyncResults {
@@ -196,6 +198,7 @@ export class SyncFileOperationsService {
       reason: reasons,
       sourcePath: sample.source_path,
       targetFormat: "WAV (16-bit, mono/stereo)",
+      voiceNumber: sample.voice_number,
     });
 
     results.hasFormatWarnings = true;
@@ -219,6 +222,7 @@ export class SyncFileOperationsService {
       operation: "copy",
       originalFormat: "Compatible audio file",
       sourcePath: sample.source_path,
+      voiceNumber: sample.voice_number,
     });
   }
 

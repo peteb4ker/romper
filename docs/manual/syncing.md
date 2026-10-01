@@ -39,16 +39,18 @@ If validation finds issues, they're shown in a results dialog before any writing
 4. A local backup of the current SD card contents is created automatically
 5. Files are copied to the SD card with progress shown in the status bar
 6. Format conversions happen during this step -- for example, stereo-to-mono conversion for samples configured in mono mode
-7. Metadata and labels are written to the card
+7. Bank names are written to the card
 8. A completion message confirms success
 
 ### What Gets Written
 
 During sync, Romper writes:
 
-- **Sample files** -- WAV files are copied into the correct Rample folder structure (`/KITS/[bank][slot]/[voice]/`). If a sample has a [gain adjustment]({{ site.baseurl }}/manual/kit-editor#gain-control), the gain is applied directly to the WAV data during copy so the Rample plays it at the correct level
-- **Labels** -- Kit names and voice names are written to `.rample_labels.json`
-- **Folder structure** -- Bank and kit directories are created as needed
+- **Sample files** -- each kit is a folder at the root of the card (`A0` to `Z99`), with its WAV files directly inside, the same layout as the Rample factory kits. Each file is named `<voice>-<slot> <name>.wav`, for example `1-01 KICK LOW.wav`: the first character tells the Rample which voice plays it, and the slot number keeps your layers in the order you set in Romper. If a sample has a [gain adjustment]({{ site.baseurl }}/manual/kit-editor#gain-control), the gain is applied directly to the WAV data during copy so the Rample plays it at the correct level
+- **Bank names** -- each named bank gets a `<letter> - <name>.rtf` file at the root of the card, as on the factory card
+- **Folder structure** -- kit folders are created as needed
+
+Romper doesn't write anything else. The Rample keeps its own saved kit settings (from **STORE**) in a `_save` folder on the card, which sync leaves alone.
 
 ### Automatic Backup
 

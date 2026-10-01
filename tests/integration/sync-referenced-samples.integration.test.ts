@@ -133,7 +133,7 @@ describe("Sync Referenced Samples Integration Test", () => {
     expect(fs.existsSync(expectedKitDir)).toBe(true);
 
     // Verify the sample was copied to the correct location
-    const expectedSamplePath = path.join(expectedKitDir, "1", "kick.wav");
+    const expectedSamplePath = path.join(expectedKitDir, "1-01 kick.wav");
     expect(fs.existsSync(expectedSamplePath)).toBe(true);
   });
 
@@ -187,11 +187,11 @@ describe("Sync Referenced Samples Integration Test", () => {
     expect(syncResult.data?.syncedFiles).toBe(2);
 
     // Verify both samples were synced
-    expect(fs.existsSync(path.join(sdCardPath, kitName, "1", "kick.wav"))).toBe(
+    expect(fs.existsSync(path.join(sdCardPath, kitName, "1-01 kick.wav"))).toBe(
       true,
     );
     expect(
-      fs.existsSync(path.join(sdCardPath, kitName, "2", "snare.wav")),
+      fs.existsSync(path.join(sdCardPath, kitName, "2-01 snare.wav")),
     ).toBe(true);
   });
 
@@ -300,11 +300,11 @@ describe("Sync Referenced Samples Integration Test", () => {
     ]);
 
     // Only the valid sample should be synced
-    expect(fs.existsSync(path.join(sdCardPath, kitName, "2", "kick.wav"))).toBe(
+    expect(fs.existsSync(path.join(sdCardPath, kitName, "2-01 kick.wav"))).toBe(
       true,
     );
     expect(
-      fs.existsSync(path.join(sdCardPath, kitName, "1", "missing.wav")),
+      fs.existsSync(path.join(sdCardPath, kitName, "1-01 missing.wav")),
     ).toBe(false);
   });
 });

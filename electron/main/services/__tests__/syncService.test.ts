@@ -430,7 +430,12 @@ describe("SyncService", () => {
   describe("samples that can't be written (RE-09)", () => {
     const mockSettings = { localStorePath: "/local/store" };
     const sample = (kitName: string, filename: string) =>
-      ({ filename, kit_name: kitName, kitName }) as unknown as Sample;
+      ({
+        filename,
+        kit_name: kitName,
+        kitName,
+        voice_number: 1,
+      }) as unknown as Sample;
 
     beforeEach(() => {
       // A1/kick.wav can be written; A1/missing.wav and B2/gone.wav can't.
@@ -477,6 +482,28 @@ describe("SyncService", () => {
 
     afterEach(() => {
       vi.restoreAllMocks();
+    });
+
+    it("warns about kits the Rample won't open because voice 1 is empty", async () => {
+      vi.mocked(syncSampleProcessingService.gatherAllSamples).mockResolvedValue(
+        {
+          data: [
+            sample("A1", "kick.wav"),
+            { ...sample("D4", "snare.wav"), voice_number: 2 },
+          ],
+          success: true,
+        },
+      );
+      mockGetKits.mockReturnValue({ data: [{}, {}], success: true });
+
+      const result = await syncService.generateChangeSummary(mockSettings);
+
+      expect(result.data?.warnings).toContain(
+        "Kit D4 has no sample on voice 1, so the Rample won't open it",
+      );
+      expect(result.data?.warnings).not.toContain(
+        "Kit A1 has no sample on voice 1, so the Rample won't open it",
+      );
     });
 
     it("reports them in the summary and counts only files that will be written", async () => {
@@ -598,24 +625,6 @@ describe("SyncService", () => {
   });
 
   describe("private methods", () => {
-    it("calculates destination paths correctly", () => {
-      const sample = {
-        filename: "kick.wav",
-        slot: 0,
-        voice: 1,
-      };
-
-      // Test destination path calculation via sample processing service
-      const destPath = syncSampleProcessingService.getDestinationPath(
-        "/local/store",
-        "A01",
-        sample,
-      );
-
-      expect(typeof destPath).toBe("string");
-      expect(destPath).toContain("kick.wav");
-    });
-
     it("estimates sync time", () => {
       const estimatedTime = (syncService as unknown).estimateSyncTime(
         5, // totalFiles

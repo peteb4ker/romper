@@ -366,12 +366,20 @@ class SyncService {
       validationErrors: [] as SyncValidationError[],
       warnings: [] as string[],
     };
-    for (const sample of samplesResult.data || []) {
+    const samples = samplesResult.data || [];
+    for (const sample of samples) {
       syncSampleProcessingService.processSampleForSync(
         sample,
         localStorePath,
         results,
         sdCardPath,
+      );
+    }
+    for (const kitName of syncSampleProcessingService.kitsWithoutVoiceOne(
+      samples,
+    )) {
+      results.warnings.push(
+        `Kit ${kitName} has no sample on voice 1, so the Rample won't open it`,
       );
     }
 

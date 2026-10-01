@@ -1,3 +1,4 @@
+import * as path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../db/romperDbCoreORM.js", () => ({
@@ -142,40 +143,66 @@ describe("SyncSampleProcessingService", () => {
   describe("getDestinationPath", () => {
     const sample = {
       filename: "kick.wav",
+      slot_number: 0,
       voice_number: 1,
     } as unknown;
 
-    it("should generate correct destination path with SD card path", () => {
+    it("writes the sample flat in its kit folder on the SD card", () => {
       const result = syncSampleProcessingService.getDestinationPath(
         "/local/store",
-        "TestKit",
+        "A0",
         sample,
         "/sdcard",
       );
 
-      expect(result).toBe("/sdcard/TestKit/1/kick.wav");
+      expect(result).toBe(path.join("/sdcard", "A0", "1-01 kick.wav"));
     });
 
-    it("should generate correct destination path without SD card path", () => {
+    it("falls back to sync_output without an SD card path", () => {
       const result = syncSampleProcessingService.getDestinationPath(
         "/local/store",
-        "TestKit",
+        "A0",
         sample,
       );
 
-      expect(result).toBe("/local/store/sync_output/TestKit/1/kick.wav");
+      expect(result).toBe(
+        path.join("/local/store", "sync_output", "A0", "1-01 kick.wav"),
+      );
     });
 
-    it("should handle different voice numbers", () => {
-      const sampleVoice2 = { ...sample, voice_number: 2 };
-
+    it("names the file after the sample's voice and slot", () => {
       const result = syncSampleProcessingService.getDestinationPath(
         "/local/store",
-        "TestKit",
-        sampleVoice2,
+        "A0",
+        { ...(sample as object), slot_number: 2, voice_number: 3 } as never,
+        "/sdcard",
       );
 
-      expect(result).toBe("/local/store/sync_output/TestKit/2/kick.wav");
+      expect(result).toBe(path.join("/sdcard", "A0", "3-03 kick.wav"));
+    });
+  });
+
+  describe("kitsWithoutVoiceOne", () => {
+    it("lists kits that have samples but none on voice 1", () => {
+      const samples = [
+        { kit_name: "A1", voice_number: 2 },
+        { kit_name: "A0", voice_number: 1 },
+        { kit_name: "A0", voice_number: 3 },
+        { kit_name: "B2", voice_number: 4 },
+      ] as never;
+
+      expect(syncSampleProcessingService.kitsWithoutVoiceOne(samples)).toEqual([
+        "A1",
+        "B2",
+      ]);
+    });
+
+    it("returns nothing when every kit has a voice 1 sample", () => {
+      expect(
+        syncSampleProcessingService.kitsWithoutVoiceOne([
+          { kit_name: "A0", voice_number: 1 },
+        ] as never),
+      ).toEqual([]);
     });
   });
 
@@ -296,7 +323,7 @@ describe("SyncSampleProcessingService", () => {
         monoSample,
         "kick.wav",
         "/source/kick.wav",
-        "/local/store/sync_output/TestKit/1/kick.wav",
+        path.join("/local/store", "sync_output", "TestKit", "1-01 kick.wav"),
         results,
       );
     });
@@ -357,7 +384,7 @@ describe("SyncSampleProcessingService", () => {
         monoSample,
         "kick.wav",
         "/source/kick.wav",
-        "/sdcard/TestKit/1/kick.wav",
+        path.join("/sdcard", "TestKit", "1-01 kick.wav"),
         results,
       );
     });

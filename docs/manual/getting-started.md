@@ -38,7 +38,7 @@ If you already have a Rample SD card with kits on it:
 1. Insert your SD card and mount it on your computer
 2. Select **Load from SD Card** in the wizard
 3. Choose the mounted SD card volume
-4. Romper scans the standard Rample folder structure (`KITS/`, `SAMPLES/`) and imports all existing kits
+4. Romper reads the kit folders at the root of the card (`A0` to `Z99`) and imports all existing kits
 
 Your kits, sample references, and metadata will appear in the Kit Browser immediately.
 

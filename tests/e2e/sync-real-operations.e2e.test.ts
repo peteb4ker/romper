@@ -154,13 +154,15 @@ test.describe("Sync Real Operations E2E Tests", () => {
       await writeComplete.waitFor({ state: "visible", timeout: 15000 });
       console.log("[E2E Sync Test] Sync completed successfully");
 
-      // Verify files were written to the SD card directory
+      // The card uses the layout the Rample reads (RE-06): kit folders at
+      // the root, samples directly inside, named <voice>-<slot> <name>.wav
       const sdCardContents = await fs.readdir(tempSdCardDir);
-      // Sync should create kit folders on the SD card
-      expect(sdCardContents.length).toBeGreaterThan(0);
-      console.log(
-        `[E2E Sync Test] SD card contents after sync: ${sdCardContents.join(", ")}`,
-      );
+      expect(sdCardContents.sort()).toEqual(["A0", "B1"]);
+      for (const kit of ["A0", "B1"]) {
+        expect(
+          (await fs.readdir(path.join(tempSdCardDir, kit))).sort(),
+        ).toEqual(["1-01 kick.wav", "2-01 snare.wav"]);
+      }
 
       // Close the sync dialog
       const closeButton = window.locator('[data-testid="cancel-sync"]');
@@ -268,12 +270,12 @@ test.describe("Sync Real Operations E2E Tests", () => {
       );
 
       // The missing sample was skipped; everything else was written
-      expect(
-        await fs.pathExists(path.join(tempSdCardDir, "A0", "1", "1_kick.wav")),
-      ).toBe(false);
-      expect(
-        await fs.pathExists(path.join(tempSdCardDir, "B1", "1", "1_kick.wav")),
-      ).toBe(true);
+      expect(await fs.readdir(path.join(tempSdCardDir, "A0"))).toEqual([
+        "2-01 snare.wav",
+      ]);
+      expect((await fs.readdir(path.join(tempSdCardDir, "B1"))).sort()).toEqual(
+        ["1-01 kick.wav", "2-01 snare.wav"],
+      );
     });
   });
 

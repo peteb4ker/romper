@@ -28,6 +28,10 @@ is already green, skip auto-merge and merge it directly (rebase method).
    merge-commit.
 4. If CI fails, it is your problem until proven otherwise — no "pre-existing
    failure" dismissals, no `--no-verify`, no `HUSKY=0`.
+5. **UI changes carry their screenshots.** If the PR changes how a captured
+   view looks, it must include the regenerated screenshots and manual text
+   (`capture-screenshots` command). If it merged without them, raise a
+   `docs/` PR with them before moving on.
 
 ## Queue mechanics (no merge queue on free GitHub)
 

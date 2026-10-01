@@ -132,9 +132,9 @@ This example uses the factory default **C0** kit to demonstrate steps, trigger c
 Here's what's programmed in each voice:
 
 - **Voice 1 (Kick)** -- A single hit on step 1 with a **3:4** trigger condition, so it only fires on the 3rd of every 4 cycles. Sample mode is set to **Rnd** (random) to vary which kick sample plays each time.
-- **Voice 2 (Hi-Hat)** -- A busy pattern with most steps active (steps 2--7 and 9--16), creating a driving hi-hat rhythm. No trigger conditions, so it plays every cycle. Sample mode is **Rnd** for subtle variation between hits.
-- **Voice 3 (Snare)** -- Two hits using different trigger conditions: step 2 with **2:4** (fires on the 2nd cycle) and step 9 with **4:4** (fires only on the 4th cycle). This creates a snare pattern that evolves over 4 bars. Sample mode is **Rnd**.
-- **Voice 4 (Clap)** -- A single hit on step 2 with a **1:4** condition, so it only sounds on the 1st of every 4 cycles. Sample mode is **Rnd**.
+- **Voice 2 (Hi-Hat)** -- Every step active, creating a driving hi-hat rhythm. No trigger conditions, so it plays every cycle. Sample mode is **Rnd** for subtle variation between hits.
+- **Voice 3 (Snare)** -- Two hits using different trigger conditions: step 1 with **2:4** (fires on the 2nd cycle) and step 9 with **4:4** (fires only on the 4th cycle). This creates a snare pattern that evolves over 4 bars. Sample mode is **Rnd**.
+- **Voice 4 (Clap)** -- A single hit on step 1 with a **1:4** condition, so it only sounds on the 1st of every 4 cycles. Sample mode is **Rnd**.
 
 **What to listen for**: Because each voice uses different trigger conditions across a 4-cycle span, the pattern evolves over 4 bars before repeating. The kick appears only on bar 3, the snare shifts between bars 2 and 4, and the clap anchors bar 1 -- all while the hi-hat drives steadily underneath. Watch the **loop indicator** under the BPM to follow which bar you're on.
 

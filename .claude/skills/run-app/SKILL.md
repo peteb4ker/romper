@@ -43,5 +43,13 @@ To click or type before capturing, use `--eval` with DOM calls, dispatching
 events on the element; Playwright's `mouse.move()` does not reliably trigger
 React handlers in Electron.
 
+To try edits (steps, slices, settings) without touching the user's kits,
+copy their store and start dev with `ROMPER_LOCAL_PATH=<copy> npm run dev`;
+the app shows a "Test Mode" banner.
+
 When you're done, stop the instance (step 2) unless the user wants it left
 open.
+
+A UI change isn't done until the manual matches it: regenerate the affected
+screenshots and update the manual text (the `capture-screenshots` command),
+in the same PR or, if it has merged, a `docs/` PR right away.

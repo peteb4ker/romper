@@ -827,6 +827,46 @@ describe("useKitStepSequencerLogic", () => {
       expect(mockSetStepPattern).not.toHaveBeenCalled();
     });
 
+    it("leaves keys on the row controls to the controls", () => {
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic({
+          ...getDefaultParams(),
+          sequencerOpen: true,
+        }),
+      );
+      const grid = document.createElement("div");
+      const muteButton = document.createElement("button");
+      const pad = document.createElement("button");
+      pad.setAttribute("role", "gridcell");
+      grid.append(muteButton, pad);
+      const preventDefault = vi.fn();
+
+      // Space on a mute button mutes; it doesn't start playback
+      act(() => {
+        result.current.handleStepGridKeyDown({
+          currentTarget: grid,
+          key: " ",
+          preventDefault,
+          stopPropagation: vi.fn(),
+          target: muteButton,
+        } as unknown);
+      });
+      expect(preventDefault).not.toHaveBeenCalled();
+      expect(result.current.isSeqPlaying).toBe(false);
+
+      // The same key on a pad is the transport
+      act(() => {
+        result.current.handleStepGridKeyDown({
+          currentTarget: grid,
+          key: " ",
+          preventDefault,
+          stopPropagation: vi.fn(),
+          target: pad,
+        } as unknown);
+      });
+      expect(result.current.isSeqPlaying).toBe(true);
+    });
+
     it("ignores Space while the sequencer is closed", () => {
       const { result } = renderHook(() =>
         useKitStepSequencerLogic({

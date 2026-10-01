@@ -453,6 +453,13 @@ describe("StepSequencerGrid", () => {
       expect(popover).toBeInTheDocument();
     });
 
+    it("offers the shortcut list from the header", () => {
+      const onShowKeys = vi.fn();
+      render(<StepSequencerGrid {...defaultProps} onShowKeys={onShowKeys} />);
+      fireEvent.click(screen.getByTestId("sequencer-keys-button"));
+      expect(onShowKeys).toHaveBeenCalled();
+    });
+
     it("right-click selects the step it opens options for", () => {
       render(<StepSequencerGrid {...defaultProps} />);
 

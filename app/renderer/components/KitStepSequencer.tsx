@@ -21,7 +21,7 @@ import {
 } from "./hooks/shared/stepPatternConstants";
 import { useBpm } from "./hooks/shared/useBpm";
 import { useSliceSteps } from "./hooks/shared/useSliceSteps";
-import { SequencerKeysOverlay, SequencerStatusLine } from "./SequencerHelp";
+import { SequencerKeysOverlay } from "./SequencerHelp";
 import {
   PAD_GAP,
   PADS_LEFT,
@@ -29,7 +29,6 @@ import {
   STEPS_SPAN,
   TRANSPORT_GAP,
 } from "./sequencerLayout";
-import { usePadHeight } from "./sequencerLayout";
 import SliceStrip from "./SliceStrip";
 import StepSequencerControls from "./StepSequencerControls";
 import StepSequencerDrawer from "./StepSequencerDrawer";
@@ -306,9 +305,6 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
     return unavailable;
   }, [props.samples]);
 
-  // Pad height, set by dragging the drawer's top edge
-  const padHeight = usePadHeight();
-
   // The shortcut overlay: "?" toggles it while the sequencer shows
   const [keysOpen, setKeysOpen] = React.useState(false);
   const gridRef = props.gridRef || logic.gridRefInternal;
@@ -363,26 +359,10 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
       sequencerOpen={props.sequencerOpen}
       setSequencerOpen={props.setSequencerOpen}
     >
-      {/* Drag to make the pads (and so the drawer) taller or shorter */}
-      <div
-        aria-label="Resize the sequencer"
-        aria-orientation="horizontal"
-        aria-valuemax={padHeight.max}
-        aria-valuemin={padHeight.min}
-        aria-valuenow={padHeight.value ?? undefined}
-        className="group absolute top-0 inset-x-0 h-3 flex items-start justify-center cursor-row-resize touch-none"
-        data-testid="sequencer-resize-grip"
-        onDoubleClick={padHeight.reset}
-        onPointerDown={padHeight.onPointerDown}
-        role="separator"
-        title="Drag to resize the sequencer; double-click to reset"
-      >
-        <span className="mt-1 h-1 w-10 rounded-full bg-border-default group-hover:bg-border-strong" />
-      </div>
       <div
         className="relative flex flex-col"
         data-testid="kit-step-sequencer-body"
-        style={{ ...SEQUENCER_VARS, ...padHeight.style }}
+        style={SEQUENCER_VARS}
       >
         {slicer.editorOpen && editingVoice != null && (
           <SliceStrip
@@ -466,6 +446,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
             onConditionChange={handleConditionChange}
             onMuteToggle={handleMuteToggle}
             onSampleModeChange={handleSampleModeChange}
+            onShowKeys={() => setKeysOpen(true)}
             onSliceStepUpdate={slicer.updateSliceStep}
             onSliceToggle={slicer.handleSliceToggle}
             onStepClick={slicer.handleStepClick}
@@ -487,12 +468,6 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
             triggerConditions={props.triggerConditions}
             voiceMutes={voiceMutes}
             voiceVolumes={voiceVolumes}
-          />
-        </div>
-        <div className="mt-3" style={{ marginLeft: PADS_LEFT }}>
-          <SequencerStatusLine
-            onShowKeys={() => setKeysOpen(true)}
-            sliceRow={sliceEnabled[logic.focusedStep.voice + 1] ?? false}
           />
         </div>
         {keysOpen && <SequencerKeysOverlay onClose={closeKeys} />}

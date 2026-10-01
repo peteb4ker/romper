@@ -4,33 +4,13 @@ import type { SyncOptions } from "@romper/shared/electronApi.js";
 import { useCallback, useState } from "react";
 
 import { createLogger } from "../../../utils/logger";
+import {
+  createSyncProgressStore,
+  type SyncProgress,
+  type SyncProgressStore,
+} from "./syncProgressStore";
 
 const log = createLogger("Sync");
-
-interface SyncProgress {
-  bytesCompleted: number;
-  currentFile: string;
-  currentKitName?: string;
-  error?: string;
-  errorDetails?: {
-    canRetry: boolean;
-    error: string;
-    fileName: string;
-    kitName?: string;
-    operation: "convert" | "copy";
-  };
-  filesCompleted: number;
-  status:
-    | "cancelled"
-    | "completed"
-    | "converting"
-    | "copying"
-    | "error"
-    | "finalizing"
-    | "preparing";
-  totalBytes: number;
-  totalFiles: number;
-}
 
 interface SyncUpdateDependencies {
   electronAPI?: typeof globalThis.electronAPI;
@@ -45,7 +25,8 @@ interface UseSyncUpdateResult {
   ) => Promise<null | SyncChangeSummary>;
   isLoading: boolean;
   startSync: (options: SyncOptions) => Promise<boolean>;
-  syncProgress: null | SyncProgress;
+  /** Read with useSyncProgress; see syncProgressStore.ts. */
+  syncProgressStore: SyncProgressStore;
 }
 
 export function useSyncUpdate(
@@ -53,7 +34,8 @@ export function useSyncUpdate(
 ): UseSyncUpdateResult {
   const electronAPI = deps.electronAPI || globalThis.electronAPI;
 
-  const [syncProgress, setSyncProgress] = useState<null | SyncProgress>(null);
+  const [syncProgressStore] = useState(createSyncProgressStore);
+  const setSyncProgress = syncProgressStore.set;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<null | string>(null);
 
@@ -169,7 +151,7 @@ export function useSyncUpdate(
         setIsLoading(false);
       }
     },
-    [electronAPI],
+    [electronAPI, setSyncProgress],
   );
 
   // Asks main to stop after the file in progress. The running startSync
@@ -185,6 +167,6 @@ export function useSyncUpdate(
     generateChangeSummary,
     isLoading,
     startSync,
-    syncProgress,
+    syncProgressStore,
   };
 }

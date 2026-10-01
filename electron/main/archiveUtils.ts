@@ -42,7 +42,13 @@ interface ExtractionBudget {
 export async function countZipEntries(zipPath: string): Promise<number> {
   return new Promise((resolve, reject) => {
     let count = 0;
-    fs.createReadStream(zipPath)
+    let failure: Error | null = null;
+    // The parser can stop before the end of the file and doesn't close what
+    // it reads; settle only once the file is closed, or Windows can't delete
+    // the zip afterwards
+    const source = fs.createReadStream(zipPath);
+    source.on("close", () => (failure ? reject(failure) : resolve(count)));
+    source
       .pipe(unzipper.Parse())
       .on("entry", (entry: UnzipperEntry) => {
         if (isValidEntry(entry.path)) {
@@ -50,8 +56,11 @@ export async function countZipEntries(zipPath: string): Promise<number> {
         }
         entry.autodrain();
       })
-      .on("close", () => resolve(count))
-      .on("error", reject);
+      .on("close", () => source.destroy())
+      .on("error", (error: Error) => {
+        failure = error;
+        source.destroy();
+      });
   });
 }
 

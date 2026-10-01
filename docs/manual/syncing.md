@@ -36,11 +36,10 @@ If validation finds issues, they're shown in a results dialog before any writing
 1. Click the **Sync to SD Card** button in the Kit Browser header
 2. Romper runs validation across all kits
 3. The write summary lists anything on the card that's no longer in your library (a sample you removed, a kit you deleted, a bank you renamed); sync removes it
-4. A local backup of the current SD card contents is created automatically
-5. Files are copied to the SD card with progress shown in the status bar. **Cancel** stops the write after the file in progress; files already written stay on the card, and nothing is removed from it
-6. Format conversions happen during this step -- for example, stereo-to-mono conversion for samples configured in mono mode
-7. Bank names are written to the card
-8. A completion message confirms success
+4. Files are copied to the SD card with progress shown in the status bar. **Cancel** stops the write after the file in progress; files already written stay on the card, and nothing is removed from it
+5. Format conversions happen during this step -- for example, stereo-to-mono conversion for samples configured in mono mode
+6. Bank names are written to the card
+7. A completion message confirms success
 
 ### What Gets Written
 
@@ -52,19 +51,23 @@ During sync, Romper writes:
 
 The card ends up matching your library: after everything is written, sync removes kit folders, files inside kit folders, and bank name files that your library no longer has. If you cancel, nothing is removed. Romper doesn't write or remove anything else. The Rample keeps its own saved kit settings (from **STORE**) in a `_save` folder on the card, which sync leaves alone.
 
-### Automatic Backup
+### Backing Up
 
-Before overwriting any data on the SD card, Romper creates a backup of the existing contents. If something goes wrong during sync, you can restore from this backup.
+Romper doesn't back up the SD card. It doesn't need to: your library (the local store) is the master copy, and sync rewrites the card to match it, so you can rebuild a card at any time by syncing again.
+
+Back up the **local store folder** instead, with whatever backup you already use. It holds your kits, voice names, sequencer patterns and settings (in its `.romperdb` folder), along with any samples stored there. Samples you added from elsewhere stay where they are, so back those folders up too.
+
+The one thing on the card that only the Rample writes is its `_save` folder (kit settings you saved with **STORE**). Sync never touches it. If you want a copy, copy that folder yourself.
 
 ## Factory Samples
 
-Romper can download and install the official Squarp factory sample packs:
+The setup wizard can download the official Squarp factory sample packs into a new local store:
 
-1. Use the **Restore Factory Kits** option
-2. Romper downloads the official sample archive
-3. Factory kits and samples are written to the appropriate locations
+1. Choose **Download Factory Samples** when you set up a local store
+2. Romper downloads the official sample archive from Squarp (about 300 MB)
+3. The factory kits appear in your library
 
-This replaces existing factory kit folders on the SD card. Romper shows warnings and progress indicators throughout the operation.
+They reach the SD card the next time you sync, like any other kit.
 
 Factory samples are a good starting point if you're new to the Rample or want to reset to a known-good state.
 

@@ -53,7 +53,7 @@ Built with modern web technologies (**Electron**, **React**, **TypeScript**, **D
 - **Never modifies your original samples** - works with references only
 - Safe to use with existing sample libraries and workflows
 - Supports both local sample libraries and direct SD card management
-- Automatic backup and rollback capabilities
+- Your library is the master copy: sync rewrites the card to match it, and never touches the Rample's own saved settings
 
 ### 💾 **Hardware Integration**
 - Direct SD card synchronization with format validation

@@ -97,7 +97,7 @@ If Romper reports that your local store is invalid or corrupted:
 - **Re-run the setup wizard** -- Romper will prompt you to set up a new local store. You can point it to the same directory, and Romper will attempt to recover existing data.
 - **Choose a new directory** -- If recovery fails, choose a fresh directory for your local store and reimport your kits from your SD card.
 - **Check disk health** -- Corrupted stores can indicate disk issues. Run your operating system's disk checking utility.
-- **Backup consideration** -- The local store is a working copy. Your definitive data lives on your SD card and in your original sample files. Losing the local store means rebuilding your kit configurations, but no samples are lost.
+- **Backup consideration** -- The local store is the master copy of your library; the SD card is a copy Romper writes from it. Include the local store folder in your own backups. Without it, importing your SD card brings the kits and audio back, but not Romper's own data: kit and voice names, sequencer patterns, and where each sample came from.
 
 ---
 

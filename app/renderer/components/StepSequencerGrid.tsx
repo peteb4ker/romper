@@ -242,6 +242,13 @@ const ConditionPopover: React.FC<ConditionPopoverProps> = ({
 
   usePopoverDismiss(popoverRef, onClose);
 
+  // Take focus so Escape and typing go to the popover, not the grid behind
+  React.useEffect(() => {
+    popoverRef.current
+      ?.querySelector<HTMLElement>('[data-active="true"]')
+      ?.focus();
+  }, []);
+
   React.useEffect(() => {
     const el = popoverRef.current;
     if (!el) return;
@@ -288,7 +295,8 @@ const ConditionPopover: React.FC<ConditionPopoverProps> = ({
         const label = cond ?? "Always";
         return (
           <button
-            className={`block w-full text-left px-3 py-1 text-xs hover:bg-surface-3 transition-colors ${isActive ? "text-accent-primary font-bold" : "text-text-primary"}`}
+            className={`block w-full text-left px-3 py-1 text-xs hover:bg-surface-3 focus:outline-none focus-visible:bg-surface-3 transition-colors ${isActive ? "text-accent-primary font-bold" : "text-text-primary"}`}
+            data-active={isActive || undefined}
             data-testid={`condition-option-${cond ?? "always"}`}
             key={cond ?? "always"}
             onClick={() => {
@@ -462,8 +470,16 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
   ) => {
     e.preventDefault();
     e.stopPropagation();
+    // The step being edited becomes the selected step, so the slice strip
+    // and the popover always talk about the same step
+    setFocusedStep({ step: stepIdx, voice: voiceIdx });
     setPopover({ stepIdx, voiceIdx, x: e.clientX, y: e.clientY });
   };
+
+  const closePopover = React.useCallback(() => {
+    setPopover(null);
+    gridRef.current?.focus();
+  }, [gridRef]);
 
   // Fixed height: 4 rows * 32px (h-8) + 3 gaps * 8px (gap-2) = 152px
   const GRID_HEIGHT = 152;
@@ -659,7 +675,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
               (triggerConditions?.[popover.voiceIdx]?.[popover.stepIdx] ??
                 null) as TriggerCondition
             }
-            onClose={() => setPopover(null)}
+            onClose={closePopover}
             onSelect={(condition) => {
               onConditionChange?.(popover.voiceIdx, popover.stepIdx, condition);
             }}

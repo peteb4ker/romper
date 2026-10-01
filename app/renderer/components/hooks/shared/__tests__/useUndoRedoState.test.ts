@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createSequenceEditAction } from "../sequenceUndo";
 import { useUndoRedoState } from "../useUndoRedoState";
 
 // Mock types for testing
@@ -33,6 +34,29 @@ describe("useUndoRedoState", () => {
   });
 
   describe("addAction", () => {
+    it("merges a sequencer edit that continues the previous one", () => {
+      const { result } = renderHook(() =>
+        useUndoRedoState({ kitName: "Test Kit" }),
+      );
+      const empty = { sliceSteps: [], stepPattern: [], triggerConditions: [] };
+      const mid = { ...empty, stepPattern: [[1]] };
+      const end = { ...empty, stepPattern: [[2]] };
+
+      act(() => {
+        result.current.addAction(
+          createSequenceEditAction("Nudge", empty, mid, "slice:0:0"),
+        );
+        result.current.addAction(
+          createSequenceEditAction("Nudge", mid, end, "slice:0:0"),
+        );
+      });
+
+      expect(result.current.undoCount).toBe(1);
+      const top = result.current.undoStack[0];
+      expect(top.type === "SEQUENCE_EDIT" && top.data.before).toBe(empty);
+      expect(top.type === "SEQUENCE_EDIT" && top.data.after).toBe(end);
+    });
+
     it("should add action to undo stack", () => {
       const { result } = renderHook(() =>
         useUndoRedoState({ kitName: "Test Kit" }),

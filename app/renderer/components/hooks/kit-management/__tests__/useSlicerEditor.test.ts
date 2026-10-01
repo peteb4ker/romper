@@ -5,6 +5,7 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { FocusedStep } from "../../shared/stepPatternConstants";
+import type { SequenceEditMeta } from "../useSequenceHistory";
 
 import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
 import {
@@ -34,9 +35,13 @@ interface HarnessOptions {
 /** Wires the editor to real state so interactions behave as in the app. */
 function useHarness(options: HarnessOptions, onPlaySample: () => void) {
   const [sliceSteps, setGrid] = React.useState<Grid>(createEmptySliceSteps);
+  // How each edit would appear in the undo history
+  const edits = React.useRef<(SequenceEditMeta | undefined)[]>([]);
   const setSliceSteps = React.useCallback(
-    (update: ((prev: Grid) => Grid) | Grid) =>
-      setGrid((prev) => (typeof update === "function" ? update(prev) : update)),
+    (update: ((prev: Grid) => Grid) | Grid, meta?: SequenceEditMeta) => {
+      edits.current.push(meta);
+      setGrid((prev) => (typeof update === "function" ? update(prev) : update));
+    },
     [],
   );
   const [pattern, setPattern] = React.useState(
@@ -73,7 +78,14 @@ function useHarness(options: HarnessOptions, onPlaySample: () => void) {
     updateSliceSettings,
     voiceVolumes: { 1: 90 },
   });
-  return { editor, pattern, setFocusedStep, sliceSettings, sliceSteps };
+  return {
+    editor,
+    edits: edits.current,
+    pattern,
+    setFocusedStep,
+    sliceSettings,
+    sliceSteps,
+  };
 }
 
 // Voice data arrays are hoisted: kit data is stable between renders in the app
@@ -309,7 +321,7 @@ describe("useSlicerEditor", () => {
   });
 
   describe("rolls", () => {
-    it("rolls active steps and can undo exactly once", () => {
+    it("rolls active steps as one named undo step", () => {
       vi.spyOn(Math, "random").mockReturnValue(0.99);
       const { result } = renderHook(() =>
         useHarness(
@@ -317,44 +329,39 @@ describe("useSlicerEditor", () => {
           onPlaySample,
         ),
       );
-      const before = result.current.sliceSteps[0];
 
       act(() => result.current.editor.roll(1));
       expect(toSliceView(result.current.sliceSteps[0][0]!, 16).startSlice).toBe(
         15,
       );
       expect(result.current.editor.rolledSteps?.steps).toEqual([0, 4]);
-      expect(result.current.editor.canUndoRoll).toBe(true);
-
-      act(() => result.current.editor.undoRoll());
-      expect(result.current.sliceSteps[0]).toEqual(before);
-      expect(result.current.editor.canUndoRoll).toBe(false);
+      expect(result.current.edits).toEqual([
+        { description: "Roll slices on voice 1" },
+      ]);
     });
 
-    it("explains when there is nothing to roll", () => {
+    it("explains when there is nothing to roll, and records nothing", () => {
       const { result } = renderHook(() =>
         useHarness({ voices: voice1Sliced }, onPlaySample),
       );
       act(() => result.current.editor.roll(1));
       expect(result.current.editor.notice).toMatch(/Nothing to roll/);
-      expect(result.current.editor.canUndoRoll).toBe(false);
+      expect(result.current.edits).toEqual([]);
     });
 
-    it("a manual edit clears the roll undo", () => {
+    it("merges repeated edits of one step's slice", () => {
       const { result } = renderHook(() =>
         useHarness(
           { pattern: patternWith([0]), voices: voice1Sliced },
           onPlaySample,
         ),
       );
-      act(() => result.current.editor.roll(1));
-      act(() =>
-        result.current.editor.updateSliceStep(0, 0, (s) => ({
-          ...s,
-          locked: true,
-        })),
-      );
-      expect(result.current.editor.canUndoRoll).toBe(false);
+      act(() => result.current.editor.handleStepWheel(0, 0, 1, false));
+      act(() => result.current.editor.handleStepWheel(0, 0, 1, true));
+      expect(result.current.edits.map((e) => e?.mergeKey)).toEqual([
+        "slice:0:0",
+        "slice:0:0",
+      ]);
     });
   });
 
@@ -408,30 +415,43 @@ describe("useSlicerEditor", () => {
       });
     });
 
-    it("D rolls and Cmd/Ctrl+Z undoes the roll without reaching sample undo", () => {
+    it("D rolls", () => {
       const { result } = setup();
       act(() => {
         result.current.editor.handleGridKeyDown(key("d"), focus);
       });
-      expect(result.current.editor.canUndoRoll).toBe(true);
-
-      const undo = key("z", { metaKey: true });
-      let handled = false;
-      act(() => {
-        handled = result.current.editor.handleGridKeyDown(undo, focus);
-      });
-      expect(handled).toBe(true);
-      expect(undo.stopPropagation).toHaveBeenCalled();
-      expect(result.current.editor.canUndoRoll).toBe(false);
+      expect(result.current.edits).toEqual([
+        { description: "Roll slices on voice 1" },
+      ]);
     });
 
-    it("leaves Cmd/Ctrl+Z to sample undo when there is no roll to undo", () => {
+    it("leaves Cmd/Ctrl+Z to the kit's undo", () => {
       const { result } = setup();
+      act(() => {
+        result.current.editor.handleGridKeyDown(key("d"), focus);
+      });
       expect(
         result.current.editor.handleGridKeyDown(
           key("z", { ctrlKey: true }),
           focus,
         ),
+      ).toBe(false);
+    });
+
+    it("Escape closes the slicer first, then lets the kit have it", () => {
+      const { result } = setup();
+      expect(result.current.editor.editorOpen).toBe(true);
+      const escape = key("Escape");
+      let handled = false;
+      act(() => {
+        handled = result.current.editor.handleGridKeyDown(escape, focus);
+      });
+      expect(handled).toBe(true);
+      expect(escape.stopPropagation).toHaveBeenCalled();
+      expect(result.current.editor.editorOpen).toBe(false);
+
+      expect(
+        result.current.editor.handleGridKeyDown(key("Escape"), focus),
       ).toBe(false);
     });
 

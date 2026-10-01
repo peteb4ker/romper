@@ -533,6 +533,10 @@ describe("useKitStepSequencerLogic", () => {
           defaultStepPattern[2],
           defaultStepPattern[3],
         ]),
+        {
+          description: "Turn step 2 on voice 1 on",
+          mergeKey: "step:0:1",
+        },
       );
     });
 
@@ -552,6 +556,7 @@ describe("useKitStepSequencerLogic", () => {
           defaultStepPattern[2],
           defaultStepPattern[3],
         ]),
+        expect.objectContaining({ description: "Turn step 1 on voice 1 off" }),
       );
     });
 
@@ -713,7 +718,7 @@ describe("useKitStepSequencerLogic", () => {
   });
 
   describe("Keyboard Interaction", () => {
-    it("should toggle step on Space key", () => {
+    it("plays and stops on Space instead of toggling the step", () => {
       const params = {
         ...getDefaultParams(),
         sequencerOpen: true, // Need sequencer open for keyboard handling
@@ -722,16 +727,94 @@ describe("useKitStepSequencerLogic", () => {
       const { result } = renderHook(() => useKitStepSequencerLogic(params));
 
       const mockPreventDefault = vi.fn();
+      const mockStopPropagation = vi.fn();
+      const space = {
+        key: " ",
+        preventDefault: mockPreventDefault,
+        stopPropagation: mockStopPropagation,
+      } as unknown;
 
       act(() => {
-        result.current.handleStepGridKeyDown({
-          key: " ",
-          preventDefault: mockPreventDefault,
-        } as unknown);
+        result.current.handleStepGridKeyDown(space);
       });
 
       expect(mockPreventDefault).toHaveBeenCalled();
-      expect(mockSetStepPattern).toHaveBeenCalled();
+      // Stopped so the sequencer-wide Space listener doesn't toggle again
+      expect(mockStopPropagation).toHaveBeenCalled();
+      expect(result.current.isSeqPlaying).toBe(true);
+      expect(mockSetStepPattern).not.toHaveBeenCalled();
+
+      act(() => {
+        result.current.handleStepGridKeyDown(space);
+      });
+      expect(result.current.isSeqPlaying).toBe(false);
+    });
+
+    it("plays and stops on Space anywhere outside controls while open", () => {
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic({
+          ...getDefaultParams(),
+          sequencerOpen: true,
+        }),
+      );
+
+      act(() => {
+        document.body.dispatchEvent(
+          new KeyboardEvent("keydown", { bubbles: true, key: " " }),
+        );
+      });
+      expect(result.current.isSeqPlaying).toBe(true);
+
+      // A focused button keeps Space for itself
+      const button = document.createElement("button");
+      document.body.appendChild(button);
+      act(() => {
+        button.dispatchEvent(
+          new KeyboardEvent("keydown", { bubbles: true, key: " " }),
+        );
+      });
+      expect(result.current.isSeqPlaying).toBe(true);
+      button.remove();
+    });
+
+    it("ignores keys from popovers portalled out of the grid", () => {
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic({
+          ...getDefaultParams(),
+          sequencerOpen: true,
+        }),
+      );
+      const grid = document.createElement("div");
+      const popoverButton = document.createElement("button");
+      const preventDefault = vi.fn();
+
+      act(() => {
+        result.current.handleStepGridKeyDown({
+          currentTarget: grid,
+          key: "Enter",
+          preventDefault,
+          target: popoverButton,
+        } as unknown);
+      });
+
+      expect(preventDefault).not.toHaveBeenCalled();
+      expect(mockSetStepPattern).not.toHaveBeenCalled();
+    });
+
+    it("ignores Space while the sequencer is closed", () => {
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic({
+          ...getDefaultParams(),
+          sequencerOpen: false,
+        }),
+      );
+
+      act(() => {
+        document.body.dispatchEvent(
+          new KeyboardEvent("keydown", { bubbles: true, key: " " }),
+        );
+      });
+      expect(result.current.isSeqPlaying).toBe(false);
     });
 
     it("should toggle step on Enter key", () => {

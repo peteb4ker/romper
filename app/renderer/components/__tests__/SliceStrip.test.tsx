@@ -34,7 +34,7 @@ function renderStrip(overrides: Partial<SliceStripProps> = {}) {
 
 function stripProps(overrides: Partial<SliceStripProps> = {}): SliceStripProps {
   return {
-    canUndoRoll: false,
+    canUndo: false,
     division: 16,
     editingVoice: 1,
     hoverView: null,
@@ -46,7 +46,7 @@ function stripProps(overrides: Partial<SliceStripProps> = {}): SliceStripProps {
     onRoll: vi.fn(),
     onSelectVoice: vi.fn(),
     onSettingsChange: vi.fn(),
-    onUndoRoll: vi.fn(),
+    onUndo: vi.fn(),
     playingView: null,
     sampleName: "break.wav",
     selectedStep: null,
@@ -147,7 +147,7 @@ describe("SliceStrip", () => {
   });
 
   it("wires the division, roll, undo and roll settings controls", () => {
-    const props = renderStrip({ canUndoRoll: true });
+    const props = renderStrip({ canUndo: true });
 
     fireEvent.change(screen.getByTestId("slice-division"), {
       target: { value: "32" },
@@ -158,7 +158,7 @@ describe("SliceStrip", () => {
     expect(props.onRoll).toHaveBeenCalled();
 
     fireEvent.click(screen.getByTestId("slice-undo-roll"));
-    expect(props.onUndoRoll).toHaveBeenCalled();
+    expect(props.onUndo).toHaveBeenCalled();
 
     fireEvent.change(screen.getByTestId("slice-roll-amount"), {
       target: { value: "25" },
@@ -169,8 +169,8 @@ describe("SliceStrip", () => {
     expect(props.onSettingsChange).toHaveBeenCalledWith({ varyLength: true });
   });
 
-  it("disables undo until there is a roll to undo", () => {
-    renderStrip({ canUndoRoll: false });
+  it("disables undo until the next undo is a sequencer edit", () => {
+    renderStrip({ canUndo: false });
     expect(screen.getByTestId("slice-undo-roll")).toBeDisabled();
   });
 

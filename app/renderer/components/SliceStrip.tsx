@@ -18,7 +18,8 @@ import type { SliceView } from "./hooks/shared/sliceConstants";
 const WAVE_COLUMNS = 512;
 
 export interface SliceStripProps {
-  canUndoRoll: boolean;
+  /** Whether the kit's next undo is a sequencer edit (a roll, a slice…). */
+  canUndo: boolean;
   division: SlicerDivision;
   editingVoice: number;
   hoverView: null | SliceView;
@@ -32,7 +33,7 @@ export interface SliceStripProps {
   onRoll: () => void;
   onSelectVoice: (voiceNumber: number) => void;
   onSettingsChange: (update: Partial<VoiceSliceSettings>) => void;
-  onUndoRoll: () => void;
+  onUndo: () => void;
   playingView: null | SliceView;
   sampleName: null | string;
   selectedStep: null | number;
@@ -205,7 +206,7 @@ const buttonClass =
  */
 const SliceStrip: React.FC<SliceStripProps> = (props) => {
   const {
-    canUndoRoll,
+    canUndo,
     division,
     editingVoice,
     hoverView,
@@ -218,7 +219,7 @@ const SliceStrip: React.FC<SliceStripProps> = (props) => {
     onRoll,
     onSelectVoice,
     onSettingsChange,
-    onUndoRoll,
+    onUndo,
     playingView,
     sampleName,
     selectedView,
@@ -368,9 +369,9 @@ const SliceStrip: React.FC<SliceStripProps> = (props) => {
         <button
           className={buttonClass}
           data-testid="slice-undo-roll"
-          disabled={!canUndoRoll}
-          onClick={onUndoRoll}
-          title="Undo the last roll (Cmd/Ctrl+Z)"
+          disabled={!canUndo}
+          onClick={onUndo}
+          title="Undo the last sequencer change (Cmd/Ctrl+Z)"
           type="button"
         >
           <ArrowCounterClockwiseIcon size={14} weight="bold" />

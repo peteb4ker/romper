@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 
 import CriticalErrorDialog from "../components/dialogs/CriticalErrorDialog";
 import InvalidLocalStoreDialog from "../components/dialogs/InvalidLocalStoreDialog";
@@ -129,11 +129,23 @@ const KitsView: React.FC = () => {
     }
   }, [navigation.selectedKit]);
 
-  // Reload the selected kit's samples when undo operations request it
+  // Reload the selected kit's samples and data (its sequence) when undo
+  // operations request it
   useSampleRefreshListener({
+    refreshKitMetadata: refreshSingleKitMetadata,
     reloadCurrentKitSamples,
     selectedKit: navigation.selectedKit,
   });
+
+  // Lets the sequencer's Undo button undo its own edits
+  const { nextUndo, undo } = keyboardShortcuts;
+  const sequenceUndo = useMemo(
+    () => ({
+      canUndo: nextUndo?.type === "SEQUENCE_EDIT",
+      undo: () => void undo(),
+    }),
+    [nextUndo, undo],
+  );
 
   // Handle samples reload request
   const handleRequestSamplesReload = useCallback(async () => {
@@ -180,6 +192,7 @@ const KitsView: React.FC = () => {
           onToggleFavorite={toggleKitFavorite}
           onUpdateKitAlias={updateKitAlias}
           samples={navigation.selectedKitSamples}
+          sequenceUndo={sequenceUndo}
         />
       ) : (
         <KitBrowserContainer

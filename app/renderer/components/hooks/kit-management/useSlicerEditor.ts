@@ -7,6 +7,7 @@ import {
 import React from "react";
 
 import type { PlayOptions } from "../../kitTypes";
+import type { SequenceEditMeta } from "./useSequenceHistory";
 
 import {
   makeSliceStep,
@@ -58,6 +59,7 @@ interface UseSlicerEditorParams {
   setFocusedStep: (step: FocusedStep) => void;
   setSliceSteps: (
     update: ((prev: SliceSteps) => SliceSteps) | SliceSteps,
+    meta?: SequenceEditMeta,
   ) => Promise<void> | void;
   slicerDivision: SlicerDivision;
   sliceSettings: Record<number, VoiceSliceSettings>;
@@ -93,7 +95,7 @@ export function displayedSlotIndex(
 /**
  * State and actions for the sequencer slicer: which voice the slice strip
  * edits, the selected step, per-voice slicer settings, slice edits, rolls
- * with single-level undo, and slicer keyboard shortcuts.
+ * (undone through the kit's undo stack), and slicer keyboard shortcuts.
  */
 export function useSlicerEditor(params: UseSlicerEditorParams) {
   const {
@@ -127,10 +129,6 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
   const [rolledSteps, setRolledSteps] = React.useState<null | RolledSteps>(
     null,
   );
-  const [rollUndo, setRollUndo] = React.useState<{
-    row: (null | SliceStep)[];
-    voiceIdx: number;
-  } | null>(null);
   const [notice, setNotice] = React.useState<null | string>(null);
 
   // Forget selection, undo and flashes when switching kits
@@ -138,7 +136,6 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
     setChosenVoice(null);
     setEditorOpen(true);
     setSelection(null);
-    setRollUndo(null);
     setRolledSteps(null);
     setPlayingSlice(null);
     setNotice(null);
@@ -204,18 +201,24 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
       voiceIdx: number,
       stepIdx: number,
       edit: (step: SliceStep) => SliceStep,
+      meta?: SequenceEditMeta,
     ) => {
-      setRollUndo(null);
-      void setSliceSteps((prev) =>
-        replaceRow(
-          prev,
-          voiceIdx,
-          prev[voiceIdx].map((cell, s) =>
-            s === stepIdx
-              ? edit(cell ?? sequentialSliceStep(stepIdx, slicerDivision))
-              : cell,
+      void setSliceSteps(
+        (prev) =>
+          replaceRow(
+            prev,
+            voiceIdx,
+            prev[voiceIdx].map((cell, s) =>
+              s === stepIdx
+                ? edit(cell ?? sequentialSliceStep(stepIdx, slicerDivision))
+                : cell,
+            ),
           ),
-        ),
+        {
+          description: `Edit the slice on step ${stepIdx + 1} of voice ${voiceIdx + 1}`,
+          mergeKey: `slice:${voiceIdx}:${stepIdx}`,
+          ...meta,
+        },
       );
     },
     [setSliceSteps, slicerDivision],
@@ -235,7 +238,6 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
       setChosenVoice(voiceNumber);
       setEditorOpen(true);
       setSelection({ step: stepIdx, voice: voiceIdx });
-      setRollUndo(null);
       const isOn = (stepPattern[voiceIdx]?.[stepIdx] ?? 0) > 0;
       if (!isOn || wasSelected) {
         toggleStep(voiceIdx, stepIdx);
@@ -309,10 +311,16 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
       auditionSlice(startSlice, lengthSlices);
       if (editingVoice == null || selectedStep == null) return;
       const voiceIdx = editingVoice - 1;
-      updateSliceStep(voiceIdx, selectedStep, (step) =>
-        makeSliceStep(startSlice, lengthSlices, slicerDivision, {
-          locked: step.locked,
-        }),
+      // Same merge key as toggleStep: assigning to an off step turns it on,
+      // and both undo together
+      updateSliceStep(
+        voiceIdx,
+        selectedStep,
+        (step) =>
+          makeSliceStep(startSlice, lengthSlices, slicerDivision, {
+            locked: step.locked,
+          }),
+        { mergeKey: `step:${voiceIdx}:${selectedStep}` },
       );
       if ((stepPattern[voiceIdx]?.[selectedStep] ?? 0) === 0) {
         toggleStep(voiceIdx, selectedStep);
@@ -349,24 +357,17 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
         return;
       }
       setNotice(null);
-      setRollUndo({ row, voiceIdx });
       setRolledSteps((prev) => ({
         id: (prev?.id ?? 0) + 1,
         steps: result.rolled,
         voiceIdx,
       }));
-      void setSliceSteps((prev) => replaceRow(prev, voiceIdx, result.row));
+      void setSliceSteps((prev) => replaceRow(prev, voiceIdx, result.row), {
+        description: `Roll slices on voice ${voiceNumber}`,
+      });
     },
     [setSliceSteps, sliceSettings, slicerDivision, sliceSteps, stepPattern],
   );
-
-  const undoRoll = React.useCallback(() => {
-    if (!rollUndo) return;
-    const { row, voiceIdx } = rollUndo;
-    setRollUndo(null);
-    setRolledSteps(null);
-    void setSliceSteps((prev) => replaceRow(prev, voiceIdx, row));
-  }, [rollUndo, setSliceSteps]);
 
   // Clear the rolled-step flash shortly after it appears
   React.useEffect(() => {
@@ -379,13 +380,15 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
   const handleGridKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>, focus: FocusedStep): boolean => {
       const voiceNumber = focus.voice + 1;
-      if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
-        if (!rollUndo) return false;
-        e.stopPropagation(); // keep the sample undo from also firing
-        undoRoll();
+      if (e.metaKey || e.ctrlKey || e.altKey) return false;
+      // Escape closes the slicer first; the next Escape leaves the kit
+      if (e.key === "Escape") {
+        if (!editorOpen || sliceVoices.length === 0) return false;
+        setEditorOpen(false);
+        setSelection(null);
+        e.stopPropagation();
         return true;
       }
-      if (e.metaKey || e.ctrlKey || e.altKey) return false;
       if (!isSliceVoice(voiceNumber)) return false;
 
       const { step, voice } = focus;
@@ -413,23 +416,29 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
           return true;
         case "l":
         case "L":
-          updateSliceStep(voice, step, (s) => ({ ...s, locked: !s.locked }));
+          updateSliceStep(voice, step, (s) => ({ ...s, locked: !s.locked }), {
+            description: `Lock or unlock step ${step + 1} of voice ${voiceNumber}`,
+            mergeKey: undefined,
+          });
           return true;
         case "r":
         case "R":
-          updateSliceStep(voice, step, (s) => ({ ...s, random: !s.random }));
+          updateSliceStep(voice, step, (s) => ({ ...s, random: !s.random }), {
+            description: `Toggle random slice on step ${step + 1} of voice ${voiceNumber}`,
+            mergeKey: undefined,
+          });
           return true;
         default:
           return false;
       }
     },
     [
+      editorOpen,
       isSliceVoice,
       roll,
-      rollUndo,
       slicerDivision,
+      sliceVoices.length,
       stepPattern,
-      undoRoll,
       updateSliceStep,
     ],
   );
@@ -456,7 +465,6 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
   return {
     assignSlice,
     auditionSlice,
-    canUndoRoll: rollUndo != null,
     closeEditor,
     displayedSample,
     displayedSlot,
@@ -479,7 +487,6 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
     setHoverStep,
     sliceViews,
     sliceVoices,
-    undoRoll,
     updateSliceStep,
   };
 }

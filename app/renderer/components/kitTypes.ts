@@ -14,6 +14,7 @@ export interface KitEditorProps {
   onPrevKit?: () => void;
   onRequestSamplesReload?: () => Promise<void>;
   samples?: null | VoiceSamples;
+  sequenceUndo?: SequenceUndo;
 }
 
 export interface KitSamplePlanSlot {
@@ -52,6 +53,13 @@ export interface SampleData {
   wav_bitrate?: number;
   wav_channels?: number;
   wav_sample_rate?: number;
+}
+
+/** Undo for the sequencer's own Undo button: set when the next undo is a
+ * sequencer edit. */
+export interface SequenceUndo {
+  canUndo: boolean;
+  undo: () => void;
 }
 
 export interface VoiceSamples {

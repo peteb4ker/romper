@@ -146,12 +146,14 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
         bpm={logic.kit?.bpm}
         gridRef={logic.sequencerGridRef as React.RefObject<HTMLDivElement>}
         kitName={props.kitName}
+        onAddUndoAction={props.onAddUndoAction}
         onPlaySample={logic.playback.handlePlay}
         onVoiceSettingChanged={logic.reloadKit}
         samples={logic.samples}
         selectedSampleIdx={logic.selectedSampleIdx}
         selectedVoice={logic.selectedVoice}
         sequencerOpen={logic.sequencerOpen}
+        sequenceUndo={props.sequenceUndo}
         setSequencerOpen={logic.setSequencerOpen}
         setStepPattern={logic.setStepPattern}
         setTriggerConditions={logic.setTriggerConditions}

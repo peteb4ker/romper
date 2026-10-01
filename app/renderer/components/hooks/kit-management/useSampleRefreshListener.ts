@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 
 interface UseSampleRefreshListenerParams {
+  /** Reloads the kit's own data, e.g. its sequence after a sequencer undo. */
+  refreshKitMetadata?: (kitName: string) => Promise<void>;
   reloadCurrentKitSamples: (kitName: string) => Promise<void>;
   selectedKit: null | string;
 }
@@ -12,12 +14,14 @@ interface UseSampleRefreshListenerParams {
  * selection and reload function are read through refs.
  */
 export function useSampleRefreshListener({
+  refreshKitMetadata,
   reloadCurrentKitSamples,
   selectedKit,
 }: UseSampleRefreshListenerParams) {
   // Store latest values in refs to avoid recreating event listener
   const selectedKitRef = useRef(selectedKit);
   const reloadCurrentKitSamplesRef = useRef(reloadCurrentKitSamples);
+  const refreshKitMetadataRef = useRef(refreshKitMetadata);
 
   // Update refs when values change
   useEffect(() => {
@@ -28,12 +32,17 @@ export function useSampleRefreshListener({
     reloadCurrentKitSamplesRef.current = reloadCurrentKitSamples;
   }, [reloadCurrentKitSamples]);
 
+  useEffect(() => {
+    refreshKitMetadataRef.current = refreshKitMetadata;
+  }, [refreshKitMetadata]);
+
   // Listen for refresh events from undo operations - stable event listener
   useEffect(() => {
     const handleRefreshSamples = (event: Event) => {
       const customEvent = event as CustomEvent<{ kitName: string }>;
       if (customEvent.detail.kitName === selectedKitRef.current) {
         void reloadCurrentKitSamplesRef.current(selectedKitRef.current);
+        void refreshKitMetadataRef.current?.(selectedKitRef.current);
       }
     };
 

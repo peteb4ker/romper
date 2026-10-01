@@ -87,7 +87,7 @@ On a slice row, clicking a lit step **selects** it; clicking the selected step a
 
 ### Happy accidents
 
-- **🎲 Roll** gives the row's steps random slices. The result stays put, so when something great comes up, keep it. **Undo** takes back the last roll.
+- **🎲 Roll** gives the row's steps random slices. The result stays put, so when something great comes up, keep it. **Undo** takes back the last roll, or any other sequencer edit.
 - **Amount** decides how much a roll changes: 25% nudges the pattern, 100% rewrites it.
 - **Lock** a step (right-click, or `L`) to keep it while you roll everything else -- for example, keep the kick on step 1.
 - **Random slice each time** (right-click, or `R`) makes a step pick a new slice every time it plays, shown as a dice on the step, so the pattern never repeats exactly.
@@ -149,8 +149,11 @@ Here's what's programmed in each voice:
 | Action | Shortcut |
 |--------|----------|
 | Show/hide sequencer | `S` |
-| Toggle step | `Space` or `Enter` |
+| Play / stop | `Space` |
+| Toggle step | `Enter` |
 | Navigate steps | Arrow keys |
+| Undo / redo any sequencer edit | `Cmd+Z` / `Cmd+Shift+Z` (`Ctrl+Z` / `Ctrl+Y`) |
+| Close step options, then the slicer | `Escape` |
 | Previous / next slice (slice rows) | `[` / `]` |
 | Shorter / longer slice (slice rows) | `{` / `}` |
 | Random slice each time (slice rows) | `R` |

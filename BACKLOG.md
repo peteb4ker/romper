@@ -47,7 +47,6 @@ This file tracks what's being done about each item.
 | RE-21 | Medium | Settings | Only `localStorePath` and `sdCardPath` are loaded at startup. | open |
 | RE-22 | Medium | IPC | `update-kit-metadata` spreads the renderer's object straight into the update. | open |
 | RE-23 | Medium | Banks | Clearing a bank name deletes the RTF file but keeps the name in the database, so it returns on reload and is written to the card at the next sync. | open |
-| RE-24 | Medium | Archive | The downloaded archive (about 313 MiB) is never deleted after a successful setup. | open |
 | RE-25 | Medium | Validation | No range or enum checks in main for volume (0 to 100), gain (-24 to +12), BPM (30 to 180) or sample mode. | open |
 | RE-26 | Medium | Samples | Replace deletes the old sample, then adds the new one, with no transaction. | open |
 | RE-27 | Medium | Samples | Moving a sample to another kit is not atomic and rebuilds the row from `source_path` only, dropping gain, WAV metadata and the stereo flag. | open |
@@ -86,6 +85,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-24 | Medium | Archive | The factory download had no status check, redirect handling, timeout or checksum; the ~313 MiB zip was never deleted; extraction ignored write and mkdir errors. | done (#405: fetch with an idle timeout, pinned SHA-256, zip deleted in `finally`, extraction fails on any write error) |
 | RE-64 | High | Kits | A kit can only be created in a bank that already has one, so an empty local store can't create its first kit. | done (#401) |
 | RE-65 | Medium | Undo | Edit > Undo and Edit > Redo use Electron's native roles and never reach Romper's undo; only Cmd/Ctrl+Z works. | done (#406) |
 | RE-70 | Medium | Archive | `file://` archive URLs weren't decoded: `/C:/...` on Windows, `%20` everywhere. | done (#403) |

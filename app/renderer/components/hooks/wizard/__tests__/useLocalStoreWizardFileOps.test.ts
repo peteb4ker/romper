@@ -108,7 +108,7 @@ describe("useLocalStoreWizardFileOps", () => {
       const error = await result.current.validateSdCardFolder("/path");
 
       expect(error).toBe(
-        "No kit folders found in /path. Found: file.txt, README.md. Expected folders named like A0, B1, Drum01 (uppercase letter followed by a number).",
+        "No kit folders found in /path. Found: file.txt, README.md. Expected kit folders named like the Rample's: a bank letter and a number from 0 to 99, such as A0, B1 or Z99.",
       );
     });
 

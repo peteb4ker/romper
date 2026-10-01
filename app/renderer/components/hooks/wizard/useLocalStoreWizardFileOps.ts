@@ -54,7 +54,7 @@ export function useLocalStoreWizardFileOps({
           nonHidden.length > 0
             ? `Found: ${nonHidden.slice(0, 5).join(", ")}${overflow}`
             : "The folder is empty";
-        return `No kit folders found in ${sdCardSourcePath}. ${foundList}. Expected folders named like A0, B1, Drum01 (uppercase letter followed by a number).`;
+        return `No kit folders found in ${sdCardSourcePath}. ${foundList}. Expected kit folders named like the Rample's: a bank letter and a number from 0 to 99, such as A0, B1 or Z99.`;
       }
       return null;
     },

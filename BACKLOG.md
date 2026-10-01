@@ -28,7 +28,6 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
-| RE-15 | High | Platform | Electron 39.8.10 is out of support (its last patch was 2026-05-05; supported majors are 42 to 44). | open (#348 moved to Electron 41; 42+ is supported) |
 | RE-18 | High | Release | Signing is silently optional. Windows v1.3.1 shipped **unsigned** (the Azure step was skipped because `AZURE_CLIENT_ID` is empty). | partly done (#387: signing required, Apple credentials checked first; Windows needs ALLOW_UNSIGNED_WINDOWS until OPS-2) |
 
 ## Owner (needs Pete)
@@ -85,6 +84,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-15 | High | Platform | Electron 39.8.10 is out of support (its last patch was 2026-05-05; supported majors are 42 to 44). | done (#392: Electron 44, better-sqlite3 13) |
 | RE-63 | Medium | Sync | Sample conversion truncates instead of rounding: re-encoding an unchanged 16-bit sample alters about a third of its samples, and 24- to 16-bit conversion has twice the quantization error. | done (#396) |
 | RE-14 | High | Playback | Each play connects a new analyser (and a splitter for stereo) to the slot's gain node, and nothing disconnects them. | done (#366 node leak; #397 one shared AudioContext) |
 | RE-13 | High | Playback | The voice choke can fail after any kit refresh. Step, condition, mode, volume and alias edits reload all kits, which resets the "playing" map while samples are still playing, so the next trigger on that voice does not stop them. | done (#394) |

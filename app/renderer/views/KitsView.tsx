@@ -109,9 +109,9 @@ const KitsView: React.FC = () => {
 
   // Menu handlers
   const { kitBrowserRef } = useKitViewMenuHandlers({
-    canRedo: keyboardShortcuts.canRedo,
-    canUndo: keyboardShortcuts.canUndo,
     onMessage: showMessage,
+    onRedo: keyboardShortcuts.redoIfAllowed,
+    onUndo: keyboardShortcuts.undoIfAllowed,
     openChangeDirectory: dialogState.openChangeDirectory,
     openPreferences: dialogState.openPreferences,
   });

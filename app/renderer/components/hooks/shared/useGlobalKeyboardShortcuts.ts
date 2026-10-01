@@ -11,6 +11,17 @@ interface UseGlobalKeyboardShortcutsProps {
   onBackNavigation?: () => void;
 }
 
+/** True for text-entry targets, which keep native undo. */
+export function isTypingTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el?.tagName) return false;
+  if (el.tagName === "INPUT") {
+    const type = (el as HTMLInputElement).type;
+    return type !== "checkbox" && type !== "range" && type !== "radio";
+  }
+  return el.tagName === "TEXTAREA" || el.isContentEditable === true;
+}
+
 export function useGlobalKeyboardShortcuts({
   currentKitName,
   isEditMode,
@@ -61,38 +72,24 @@ export function useGlobalKeyboardShortcuts({
     [onBackNavigation, currentKitName, isTargetInInputOrDialog],
   );
 
-  // Helper function to handle undo operation
-  const handleUndo = useCallback(
-    (event: KeyboardEvent): boolean => {
-      if (event.key === "z" && !event.shiftKey) {
-        event.preventDefault();
-        event.stopPropagation();
+  // Undoes or redoes the next action if the current kit allows it, for
+  // the keyboard and the Edit menu alike. Sample edits undo only in edit
+  // mode; sequencer edits always do, since the sequencer works on locked
+  // kits too. Returns false when there's no kit or the kit doesn't allow it.
+  const applyUndoRedo = useCallback(
+    (isRedo: boolean): boolean => {
+      if (!currentKitName) return false;
+      const next = isRedo ? undoRedo.nextRedo : undoRedo.nextUndo;
+      if (!isEditMode && next?.type !== "SEQUENCE_EDIT") return false;
 
-        if (undoRedo.canUndo && !undoRedo.isUndoing) {
-          void undoRedo.undo();
-        }
-        return true;
+      if (isRedo) {
+        if (undoRedo.canRedo && !undoRedo.isRedoing) void undoRedo.redo();
+      } else if (undoRedo.canUndo && !undoRedo.isUndoing) {
+        void undoRedo.undo();
       }
-      return false;
+      return true;
     },
-    [undoRedo],
-  );
-
-  // Helper function to handle redo operation
-  const handleRedo = useCallback(
-    (event: KeyboardEvent): boolean => {
-      if ((event.key === "z" && event.shiftKey) || event.key === "y") {
-        event.preventDefault();
-        event.stopPropagation();
-
-        if (undoRedo.canRedo && !undoRedo.isRedoing) {
-          void undoRedo.redo();
-        }
-        return true;
-      }
-      return false;
-    },
-    [undoRedo],
+    [currentKitName, isEditMode, undoRedo],
   );
 
   // Return the addAction function so it can be passed to components that need it
@@ -107,7 +104,7 @@ export function useGlobalKeyboardShortcuts({
 
       // Check for Cmd/Ctrl key (Mac uses metaKey, Windows/Linux uses ctrlKey)
       const isModifier = event.metaKey || event.ctrlKey;
-      if (!isModifier || !currentKitName || event.defaultPrevented) {
+      if (!isModifier || event.defaultPrevented) {
         return;
       }
       // Text fields keep their own undo
@@ -115,17 +112,14 @@ export function useGlobalKeyboardShortcuts({
         return;
       }
 
-      // Sample edits undo only in edit mode; sequencer edits always do,
-      // since the sequencer works on locked kits too
-      const isRedoKey =
-        (event.key === "z" && event.shiftKey) || event.key === "y";
-      const next = isRedoKey ? undoRedo.nextRedo : undoRedo.nextUndo;
-      if (!isEditMode && next?.type !== "SEQUENCE_EDIT") {
-        return;
+      const key = event.key.toLowerCase();
+      const isRedoKey = (key === "z" && event.shiftKey) || key === "y";
+      const isUndoKey = key === "z" && !event.shiftKey;
+      // Handled here, the key doesn't also reach the Edit menu's accelerator
+      if ((isUndoKey || isRedoKey) && applyUndoRedo(isRedoKey)) {
+        event.preventDefault();
+        event.stopPropagation();
       }
-
-      // Handle undo and redo operations
-      handleUndo(event) || handleRedo(event);
     };
 
     // Bubble phase: components that own a key (the sequencer grid, popovers,
@@ -136,15 +130,7 @@ export function useGlobalKeyboardShortcuts({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [
-    currentKitName,
-    isEditMode,
-    undoRedo,
-    onBackNavigation,
-    handleEscapeKey,
-    handleUndo,
-    handleRedo,
-  ]);
+  }, [handleEscapeKey, applyUndoRedo]);
 
   return {
     addUndoAction: undoRedo.addAction, // Expose this so it can be passed to components
@@ -152,18 +138,10 @@ export function useGlobalKeyboardShortcuts({
     canUndo: undoRedo.canUndo,
     nextUndo: undoRedo.nextUndo,
     redoDescription: undoRedo.redoDescription,
+    // Edit > Redo and Edit > Undo, under the same rules as the keys
+    redoIfAllowed: () => applyUndoRedo(true),
     undo: undoRedo.undo,
     undoDescription: undoRedo.undoDescription,
+    undoIfAllowed: () => applyUndoRedo(false),
   };
-}
-
-/** True for text-entry targets, which keep native undo. */
-function isTypingTarget(target: EventTarget | null): boolean {
-  const el = target as HTMLElement | null;
-  if (!el?.tagName) return false;
-  if (el.tagName === "INPUT") {
-    const type = (el as HTMLInputElement).type;
-    return type !== "checkbox" && type !== "range" && type !== "radio";
-  }
-  return el.tagName === "TEXTAREA" || el.isContentEditable === true;
 }

@@ -116,8 +116,21 @@ export function createApplicationMenu() {
     {
       label: "Edit",
       submenu: [
-        { role: "undo" as const },
-        { role: "redo" as const },
+        // Not the native undo/redo roles: those only reach text fields, so
+        // the renderer decides between a text field's undo and Romper's
+        // (RE-65)
+        {
+          accelerator: "CmdOrCtrl+Z",
+          click: (_item, window) => sendToWindow(window, "menu-undo"),
+          id: "undo",
+          label: "Undo",
+        },
+        {
+          accelerator: "Shift+CmdOrCtrl+Z",
+          click: (_item, window) => sendToWindow(window, "menu-redo"),
+          id: "redo",
+          label: "Redo",
+        },
         { type: "separator" as const },
         { role: "cut" as const },
         { role: "copy" as const },
@@ -212,4 +225,17 @@ export function registerMenuIpcHandlers() {
   // Menu actions are handled via webContents.send() to the renderer process
   // No additional IPC handlers needed for basic menu functionality
   logger.log("[Menu] Menu IPC handlers registered");
+}
+
+/**
+ * Sends a menu event to the window the menu acted on, or the focused one
+ * when the click came without a window
+ */
+function sendToWindow(
+  window: Electron.BaseWindow | undefined,
+  channel: string,
+) {
+  const target =
+    window instanceof BrowserWindow ? window : BrowserWindow.getFocusedWindow();
+  target?.webContents.send(channel);
 }

@@ -55,12 +55,14 @@ const ALL_SHORTCUTS: { group: string; items: Shortcut[] }[] = [
 
 /** Opens the shortcut list. A palette secondary button, so it reads as a
  * control rather than another label. */
-export const SequencerKeysButton: React.FC<{ onClick: () => void }> = ({
-  onClick,
-}) => (
+export const SequencerKeysButton: React.FC<{
+  /** Size and shape; the look comes from the palette. */
+  className?: string;
+  onClick: () => void;
+}> = ({ className = "h-7 px-2", onClick }) => (
   <button
     aria-label="Keyboard shortcuts"
-    className="btn-secondary h-7 px-2 text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+    className={`btn-secondary text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary ${className}`}
     data-testid="sequencer-keys-button"
     onClick={onClick}
     title="Keyboard shortcuts (?)"

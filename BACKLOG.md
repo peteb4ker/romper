@@ -23,12 +23,12 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-06 | High | Sync | Sync writes `<card>/<kit>/<voice>/<file>`, but SD import and rescan read only WAVs at the kit root and take the voice from the first character of the file name. | in progress (`fix/re-06-sd-card-layout`; spec: [`sd-card-layout.md`](docs/developer/sd-card-layout.md)) |
 
 ## Next
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
-| RE-06 | High | Sync | Sync writes `<card>/<kit>/<voice>/<file>`, but SD import and rescan read only WAVs at the kit root and take the voice from the first character of the file name. | open; needs a decision on the card layout (confirm what the Rample firmware reads) |
 | RE-05 | High | Sync | Sync only adds or overwrites. Removed, moved or renamed samples and deleted kits stay on the card. | open |
 | RE-07 | High | Sync | Sync blocks the main process for the whole run: every file is copied or converted with synchronous calls, so no IPC (including Cancel) runs until it finishes. | open |
 | RE-08 | High | Sync | The WAV header parser requires the `fmt ` chunk at byte 12 with size 16. | open |

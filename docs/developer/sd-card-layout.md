@@ -1,0 +1,197 @@
+<!--
+title: SD Card Layout - Specification
+priority: high
+status: specification
+updated: 2026-09-30
+context_size: small
+implementation_status: not started. Covers RE-06 and sets up RE-05.
+-->
+
+# SD card layout (RE-06, RE-05)
+
+## Overview
+
+Sync must write the card in the layout the Rample firmware reads. Today it
+doesn't: every sample goes into a per-voice subfolder
+(`<card>/<kit>/<voice>/<original name>`), where, per the manual, the
+firmware doesn't look. This spec defines the card layout once, in one
+module, and has sync write it.
+
+## Assumptions (Pete, 2026-09-30)
+
+- **One Rample.** A user syncs to one device's card.
+- **The local store is the source of truth.** The user backs it up with
+  their own backup scheme. Romper doesn't need to read back a card it
+  wrote.
+- **Samples reach the card only through Romper.** Nobody adds files to
+  the card directly, so Romper may treat kit folders on the card as its
+  own.
+- **Squarp's factory kits define the standard.** The archive the setup
+  wizard downloads (`SQUARP_FACTORY_SAMPLES_URL`,
+  `RampleSamplesV1-2.zip`) is the reference layout.
+
+## The standard
+
+### From the Rample manual
+
+- Kit folders sit at the card root, named `<bank letter><0–99>` (`A0`,
+  `E10`, `Z99`).
+- In a kit folder, a WAV's **first character is its voice** (1–4). "Sample
+  layer names are numerically and alphabetically sorted", which sets the
+  layer order. Up to 12 layers per voice.
+- A kit opens only if it has a voice-1 file.
+- 44.1 kHz, 16- or 8-bit, at least 50 ms. A stereo file fills two voices,
+  and all layers in a voice must be the same type (mono or stereo).
+- Subfolders inside a kit folder are not mentioned.
+
+### From the factory archive (checked 2026-09-30)
+
+- 14 bank name files at the root (`A - ALWIS.rtf`), 137 kit folders
+  (`A0`…`S36`), 2,374 WAVs.
+- Every WAV sits directly in its kit folder. There are no subfolders.
+- Every WAV name starts with 1–4. The rest of the name is free-form:
+  `1 KICK LOW 01.wav`, `2.wav`, `3_hat.wav`, `4KICK.wav`.
+- Layer numbers are a mix of zero-padded (`01`) and unpadded (`1`)
+  numbers. Nothing in the archive shows whether the firmware sorts
+  `10` before or after `2`.
+
+### Written by the device (Squarp forum, not the manual)
+
+- STORE writes per-kit settings to `_save/<kit>.rpl` at the card root
+  (for example `_save/C0.rpl`). The files are binary and undocumented.
+  Deleting one resets that kit, per Squarp staff.
+- SAVE SETTINGS writes global settings to the card, probably under
+  `_save/` too.
+- Nothing the device writes lives inside a kit folder.
+
+## Current state
+
+- `syncSampleProcessing.getDestinationPath` writes
+  `<card>/<kit>/<voice_number>/<filename>` with the sample's original
+  file name. Without a sync-side folder `sync_output` is used instead.
+- #56 (Aug 2025) built a flat, firmware-compliant naming scheme
+  (`rampleNamingService`, `1sample1.wav`), but wired it only into
+  `syncServiceRefactored`, which IPC never used. That cluster was removed
+  as dead code in 5e3bf54a (June 2026); `rampleNamingService.ts` is still
+  there, unused (RE-56).
+- Import (setup wizard) and rescan already read the factory layout:
+  WAVs at the kit root, voice from the first character
+  (`groupSamplesByVoice`).
+- `clearRampleContent` removes only kit folders and bank files, so
+  `_save/` survives a "clear card" sync.
+- The e2e sync test checks only that the card isn't empty, so nothing
+  checks the layout.
+- `docs/manual/syncing.md` describes `/KITS/[bank][slot]/[voice]/` and a
+  `.rample_labels.json` labels file. Neither exists.
+
+Pete thinks a card synced by Romper has played on his Rample. If so,
+the firmware reads subfolders too and this is a compliance fix rather
+than a broken feature. Either way, the fix is the same.
+
+## Design
+
+### Card layout
+
+```
+<card>/
+  A - ALWIS.rtf                 bank name (unchanged)
+  _save/                        device-owned; Romper never touches it
+  A0/
+    1-01 KICK LOW.wav
+    1-02 KICK LOW.wav
+    2-01 SNARE.wav
+    3-01 XO-6 OP HH.wav
+```
+
+### File names
+
+`<voice>-<slot> <name>.wav`
+
+- `<voice>`: `voice_number`, 1–4. It's the first character, so the
+  firmware assigns the voice.
+- `<slot>`: `slot_number + 1`, zero-padded to two digits (`01`–`12`).
+  Zero-padding makes ASCII and natural sort agree, so the layer order on
+  the device matches Romper's slot order whichever sort the firmware
+  uses.
+- `<name>`: the sample's file name without `.wav`, with:
+  - a leading voice prefix removed (`^[1-4][ ._-]*`), so
+    `1 KICK LOW 01.wav` becomes `1-01 KICK LOW 01.wav`, not
+    `1-01 1 KICK LOW 01.wav`;
+  - characters FAT32 forbids (`\ / : * ? " < > |` and control
+    characters) replaced with `_`;
+  - leading and trailing spaces and dots trimmed;
+  - truncated so the whole name is at most 64 characters (a safe limit
+    until the hardware says otherwise).
+  - If nothing is left, the name is just `<voice>-<slot>.wav`.
+- The `<voice>-<slot>` prefix is unique within a kit, so two samples with
+  the same name can no longer overwrite each other (part of RE-05).
+- Stereo: a sample on a voice in stereo mode is written once, on that
+  voice. The firmware spreads it over two voices. Never copy it onto
+  voice N+1 (see the stereo invariant in `CLAUDE.md`).
+
+### One layout module
+
+`electron/main/services/rampleCardLayout.ts` (replacing the unused
+`rampleNamingService.ts`) owns:
+
+- `kitFolderPath(cardRoot, kitName)`, validated with `isValidKit`
+- `sampleFileName(voice, slot, originalName)`, the rules above
+- `sampleFilePath(cardRoot, sample)`
+- `voiceOfCardFile(fileName)`, used by import and rescan in place of
+  their own regex (it wraps `groupSamplesByVoice`'s rule)
+- `legacyVoiceFolders(kitPath)`: the `1`–`4` subfolders older Romper
+  versions wrote
+
+Sync, import and rescan all go through it.
+
+### Legacy cards
+
+A card synced by Romper up to v1.3.1 has `<kit>/1/` … `<kit>/4/`
+subfolders. When sync writes a kit, it removes those four folders from
+that kit's folder, and nothing else. It doesn't touch kits it isn't
+writing.
+
+### What sync never touches
+
+`_save/`, anything at the root other than kit folders and bank files, and
+any folder that isn't a valid kit name.
+
+### Settings stored on the device
+
+`_save/<kit>.rpl` belongs to the kit slot, not its samples, so the
+device applies old settings to a kit whose samples changed. Romper
+leaves `_save/` alone. A later option could reset (delete) the `.rpl`
+for changed kits, which is Squarp's documented reset.
+
+### Validation (warnings in the sync summary)
+
+- A kit with no voice-1 sample won't open on the device.
+- More than 12 samples in a voice: the device's behaviour is unknown, so
+  sync warns. Romper's slots already cap a voice at 12.
+- Mixed mono and stereo in a voice is handled by `stereo_mode`. The
+  format rules (44.1 kHz, 16-bit) are the converter's job and are tracked
+  in RE-08 and RE-29.
+
+## Delivery
+
+1. **RE-06 (this PR series):**
+   - add the layout module and sync's new file names;
+   - remove legacy voice folders;
+   - route import and rescan voice parsing through the module;
+   - delete `rampleNamingService.ts`;
+   - fix the layout sections of `docs/manual/syncing.md` (no `/KITS`,
+     no labels file);
+   - add tests for the names and an e2e assertion on the written layout.
+2. **RE-05 (next):** per-kit replacement. Sync rewrites each kit folder
+   it manages: it deletes WAVs that aren't in the plan and removes
+   folders for kits deleted from the store. This is safe under the "only
+   through Romper" assumption, and it never touches `_save/`.
+
+## Open questions
+
+- **Hardware check:** after RE-06, sync a card and confirm on the Rample:
+  - the layers play in slot order;
+  - names up to 64 characters are fine;
+  - a voice-1-less kit refuses to open.
+- **Old cards:** did a card synced before this change actually play?
+  This only matters for the RE-06 write-up.

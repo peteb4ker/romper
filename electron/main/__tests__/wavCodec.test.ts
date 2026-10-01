@@ -202,77 +202,92 @@ describe("encodeWav", () => {
 
   it("interleaves channels", () => {
     const out = encodeWav(
-      [Float32Array.of(1, 0), Float32Array.of(-1, 0.5)],
+      [Float32Array.of(1, 0), Float32Array.of(-1, 0.25)],
       44100,
       16,
     );
     expect([0, 1, 2, 3].map((i) => out.readInt16LE(44 + i * 2))).toEqual([
-      32767, -32768, 0, 16383,
+      32767, -32768, 0, 8192,
     ]);
   });
 
-  it("clamps to [-1, 1], truncates, and writes NaN as silence", () => {
+  it("clamps to [-1, 1], rounds to the nearest step, and writes NaN as silence (RE-63)", () => {
     const out = encodeWav(
-      [Float32Array.of(2, -3, 0.99999, -0.99999, Number.NaN)],
+      [Float32Array.of(2, -3, 0.99999, -0.99999, 0.5, Number.NaN)],
       44100,
       16,
     );
-    expect([0, 1, 2, 3, 4].map((i) => out.readInt16LE(44 + i * 2))).toEqual([
-      32767, -32768, 32766, -32767, 0,
+    // 0.99999 is 32766.7 steps and 0.5 is 16383.5: truncating gave 32766
+    // and 16383
+    expect([0, 1, 2, 3, 4, 5].map((i) => out.readInt16LE(44 + i * 2))).toEqual([
+      32767, -32768, 32767, -32768, 16384, 0,
     ]);
   });
 
-  it("writes 8-bit as unsigned", () => {
-    const out = encodeWav([Float32Array.of(-1, 0, 1)], 44100, 8);
-    expect([...out.subarray(44)]).toEqual([0, 127, 255]);
+  it("writes 8-bit as unsigned, the inverse of decoding (RE-63)", () => {
+    const out = encodeWav(
+      [Float32Array.of(-1, -0.5, 0, 1, Number.NaN)],
+      44100,
+      8,
+    );
+    // node-wav wrote 0 as 127 and NaN as 0 (full-scale negative)
+    expect([...out.subarray(44)]).toEqual([0, 64, 128, 255, 128]);
   });
 
-  it("rounds negative 24-bit samples down, as node-wav did", () => {
-    // -1.5 steps rounds to -2, where truncating toward zero would give -1
-    const out = encodeWav([Float32Array.of(-1.5 / 8388608, -1)], 44100, 24);
-    expect(out.readIntLE(44, 3)).toBe(-2);
-    expect(out.readIntLE(47, 3)).toBe(-8388608);
+  it("rounds 24-bit samples to the nearest step (RE-63)", () => {
+    const out = encodeWav(
+      [Float32Array.of(-1.4 / 8388608, -1.6 / 8388608, 1.6 / 8388607, -1)],
+      44100,
+      24,
+    );
+    expect([0, 1, 2, 3].map((i) => out.readIntLE(44 + i * 3, 3))).toEqual([
+      -1, -2, 2, -8388608,
+    ]);
   });
 
   it("writes an empty file for no channels", () => {
     expect(encodeWav([], 44100, 16).length).toBe(44);
   });
 
-  it("re-encodes decoded 16-bit samples exactly, or one step low for positive values", () => {
-    // Inherited from node-wav, and kept so converted files don't change:
-    // positive samples are scaled by 1/32767, which a Float32 can't hold
-    // exactly, and encoding truncates. Negative samples (1/32768) are exact.
-    const original = Int16Array.from({ length: 4000 }, (_, i) =>
-      Math.round(Math.sin(i * 0.37) * 32767),
-    );
-    const file = wavFile(
-      { bitDepth: 16, channels: 1 },
-      Buffer.from(original.buffer),
-    );
-    const reencoded = encodeWav(decodeWav(file).channelData, 44100, 16);
-
-    original.forEach((sample, i) => {
-      const difference = reencoded.readInt16LE(44 + i * 2) - sample;
-      if (sample <= 0) {
-        expect(difference).toBe(0);
-      } else {
-        expect([0, -1]).toContain(difference);
+  it.each([
+    [8, (b: Buffer, v: number, o: number) => b.writeUInt8(v + 128, o)],
+    [16, (b: Buffer, v: number, o: number) => b.writeInt16LE(v, o)],
+    [24, (b: Buffer, v: number, o: number) => b.writeIntLE(v, o, 3)],
+  ] as const)(
+    "gives back the same %i-bit samples after decoding and encoding (RE-63)",
+    (bitDepth, write) => {
+      const max = 2 ** (bitDepth - 1);
+      // Both extremes, silence, and a full-range sweep in both channels
+      const values = [-max, max - 1, 0, -1, 1];
+      for (let i = 0; values.length < 20000; i++) {
+        values.push(Math.round(Math.sin(i * 0.0137) * (max - 0.5) - 0.5));
       }
-    });
-  });
+      const data = samples(bitDepth, values, write);
+      const file = wavFile({ bitDepth, channels: 2 }, data);
+
+      const reencoded = encodeWav(
+        decodeWav(file).channelData,
+        44100,
+        bitDepth as EncodeBitDepth,
+      );
+
+      expect(Buffer.compare(reencoded.subarray(44), data)).toBe(0);
+    },
+  );
 
   it.each([16, 24, 32] as EncodeBitDepth[])(
-    "decodes what it encodes to within one %i-bit step",
+    "decodes what it encodes to within half a %i-bit step",
     (bitDepth) => {
       const values = Float32Array.from(
         { length: 2000 },
         (_, i) => Math.sin(i * 0.37) * 1.1,
       );
       const decoded = decodeWav(encodeWav([values], 44100, bitDepth));
-      const step = 1 / 2 ** (bitDepth - 1);
+      // Half a step, plus the Float32 rounding of the decoded value
+      const tolerance = 1 / 2 ** bitDepth + 2 ** -24;
       decoded.channelData[0].forEach((sample, i) => {
         const expected = Math.max(-1, Math.min(values[i], 1));
-        expect(Math.abs(sample - expected)).toBeLessThanOrEqual(step * 1.0001);
+        expect(Math.abs(sample - expected)).toBeLessThanOrEqual(tolerance);
       });
     },
   );

@@ -5,11 +5,12 @@ import { parseWavHeader, type WavHeader } from "./wavHeader.js";
  * format and where the samples are; this converts them to and from
  * per-channel floats in [-1, 1].
  *
- * The scaling matches node-wav, which this replaces, so converted files are
- * byte-for-byte what they were: integers map to floats asymmetrically
- * (negative values over 2^(n-1), positive over 2^(n-1) - 1), and encoding
- * clamps to [-1, 1] and truncates. 8-bit WAV is unsigned with 128 as
- * silence.
+ * Integers map to floats asymmetrically, as node-wav (which this replaced)
+ * did: negative values over 2^(n-1), positive over 2^(n-1) - 1, so both
+ * full-scale values are exactly -1 and 1. Encoding clamps to [-1, 1] and
+ * rounds to the nearest step with the same scale (RE-63), so decoding then
+ * encoding gives back the same 8-, 16- or 24-bit samples. 8-bit WAV is
+ * unsigned with 128 as silence.
  *
  * Samples go through typed arrays, which are much faster than DataView.
  * WAV is little-endian, and so is every platform Romper ships for.
@@ -167,10 +168,6 @@ function assertLittleEndian(): void {
   }
 }
 
-function clamp(value: number): number {
-  return Math.max(-1, Math.min(value, 1));
-}
-
 /**
  * Split interleaved samples into channels, dividing negative values by
  * `negativeScale` and the rest by `positiveScale` (1 and 1 for float).
@@ -227,7 +224,7 @@ function deinterleaveUnsigned8(
   }
 }
 
-/** Inverse of deinterleave for integer output: clamp, scale and truncate */
+/** Inverse of deinterleave for integer output */
 function interleave(
   channelData: Float32Array[],
   output: Int16Array | Int32Array,
@@ -239,9 +236,11 @@ function interleave(
   let i = 0;
   for (let frame = 0; frame < frames; frame++) {
     for (let channel = 0; channel < channels; channel++) {
-      const value = clamp(channelData[channel][frame]);
-      output[i++] =
-        (value < 0 ? value * negativeScale : value * positiveScale) | 0;
+      output[i++] = quantize(
+        channelData[channel][frame],
+        negativeScale,
+        positiveScale,
+      );
     }
   }
 }
@@ -252,11 +251,9 @@ function interleave24(channelData: Float32Array[], output: Uint8Array): void {
   let i = 0;
   for (let frame = 0; frame < frames; frame++) {
     for (let channel = 0; channel < channels; channel++) {
-      const value = clamp(channelData[channel][frame]);
-      // Two's complement as an unsigned number. Negative values truncate
-      // after the offset, so they round down, as node-wav did.
-      const sample =
-        (value < 0 ? 0x1000000 + value * 8388608 : value * 8388607) | 0;
+      // Bitwise operators work on 32-bit two's complement, so the low three
+      // bytes of a negative sample are its 24-bit encoding
+      const sample = quantize(channelData[channel][frame], 8388608, 8388607);
       output[i++] = sample & 0xff;
       output[i++] = (sample >> 8) & 0xff;
       output[i++] = (sample >> 16) & 0xff;
@@ -273,8 +270,25 @@ function interleaveUnsigned8(
   let i = 0;
   for (let frame = 0; frame < frames; frame++) {
     for (let channel = 0; channel < channels; channel++) {
-      const value = clamp(channelData[channel][frame]);
-      output[i++] = ((value * 0.5 + 0.5) * 255) | 0;
+      output[i++] = quantize(channelData[channel][frame], 128, 127) + 128;
     }
   }
+}
+
+/**
+ * Clamp to [-1, 1] (NaN is silence) and round to the nearest step, the
+ * inverse of the decoder's scaling. node-wav truncated instead, which lost
+ * up to a step and changed about a third of the samples in a 16-bit file
+ * that was decoded and encoded again.
+ */
+function quantize(
+  value: number,
+  negativeScale: number,
+  positiveScale: number,
+): number {
+  if (Number.isNaN(value)) return 0;
+  const clamped = Math.max(-1, Math.min(value, 1));
+  return Math.round(
+    clamped < 0 ? clamped * negativeScale : clamped * positiveScale,
+  );
 }

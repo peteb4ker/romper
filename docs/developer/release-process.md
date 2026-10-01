@@ -32,7 +32,9 @@ condensed checklist for these steps.
 4. **Watch the workflow** at https://github.com/peteb4ker/romper/actions.
    Nothing is built until the first two steps pass (RE-17):
    1. Preflight. The tag must be on `main` and match `package.json`'s
-      version, and SonarCloud's quality gate must be `OK` with no open
+      version. Signing must be configured, and Apple must accept the App
+      Store Connect key (see [code-signing.md](code-signing.md)). SonarCloud's
+      quality gate must be `OK` with no open
       CRITICAL/BLOCKER issue or unreviewed security hotspot. An unreachable
       SonarCloud API also blocks. A failure files a GitHub issue; fix it and
       re-tag.
@@ -80,8 +82,9 @@ repeating the process with the final version; semver orders
 ## When something goes wrong
 
 - **Preflight failed:** the run says which check. Tag a commit that's on
-  `main`, bump `package.json` to match the tag, or fix what SonarCloud
-  reports; then delete and re-push the tag.
+  `main`, bump `package.json` to match the tag, add the missing signing
+  secrets, accept Apple's agreement, or fix what SonarCloud reports; then
+  delete and re-push the tag.
 - **Platform build failed:** re-run only the failed job
   (`gh run rerun <run-id> --failed`). A macOS notarization 403 mentioning
   agreements means the Apple Developer account holder must re-accept the

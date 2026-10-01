@@ -46,8 +46,9 @@ module, and has sync write it.
 
 ### From the factory archive (checked 2026-09-30)
 
-- 14 bank name files at the root (`A - ALWIS.rtf`), 137 kit folders
-  (`A0`…`S36`), 2,374 WAVs.
+- 14 bank name files at the root (`A - ALWIS.rtf`), 183 kit folders
+  (`A0`…`S36`), 2,373 WAVs. Two voices hold more than 12 files (S62 voice
+  2 has 18, S67 voice 4 has 13), so 7 files never reach the card.
 - Every WAV sits directly in its kit folder. There are no subfolders.
 - Every WAV name starts with 1–4. The rest of the name is free-form:
   `1 KICK LOW 01.wav`, `2.wav`, `3_hat.wav`, `4KICK.wav`.

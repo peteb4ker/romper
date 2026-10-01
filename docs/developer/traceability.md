@@ -10,14 +10,14 @@ Regenerate with `npm run trace`; CI runs `npm run trace:check`, which
 fails on an unknown ID, on a supported use case with no test above unit
 level (unless the register declares the gap), and when this file is stale.
 
-37 use cases: 15 supported, 20 partial, 2 not built. 1321 of 4344 tests carry a use case tag.
+37 use cases: 15 supported, 20 partial, 2 not built. 1334 of 4357 tests carry a use case tag.
 
 ## Matrix
 
 | Use case | Status | Unit | Integration | E2E | Validation |
 |---|---|--:|--:|--:|--:|
-| [UC-01](use-cases.md#uc-01-set-up-from-an-sd-card) Set up from an SD card | partial | [46](#uc-01) | [6](#uc-01) | [3](#uc-01) | - |
-| [UC-02](use-cases.md#uc-02-set-up-from-the-factory-archive) Set up from the factory archive | partial | [78](#uc-02) | [6](#uc-02) | [2](#uc-02) | [1](#uc-02) |
+| [UC-01](use-cases.md#uc-01-set-up-from-an-sd-card) Set up from an SD card | partial | [47](#uc-01) | [6](#uc-01) | [3](#uc-01) | - |
+| [UC-02](use-cases.md#uc-02-set-up-from-the-factory-archive) Set up from the factory archive | partial | [82](#uc-02) | [13](#uc-02) | [2](#uc-02) | [2](#uc-02) |
 | [UC-03](use-cases.md#uc-03-set-up-an-empty-library) Set up an empty library | partial | [32](#uc-03) | [2](#uc-03) | [3](#uc-03) | - |
 | [UC-04](use-cases.md#uc-04-choose-an-existing-local-store) Choose an existing local store | partial | [10](#uc-04) | - | - | - |
 | [UC-05](use-cases.md#uc-05-recover-from-an-invalid-or-missing-store) Recover from an invalid or missing store | partial | [35](#uc-05) | - | - | - |
@@ -79,7 +79,7 @@ Partial or not-built use cases with no test above unit level:
 
 - Unit: [`app/renderer/components/__tests__/LocalStoreWizardUI.test.tsx`](../../app/renderer/components/__tests__/LocalStoreWizardUI.test.tsx#L168) (2 tests)
 - Unit: [`app/renderer/components/hooks/wizard/__tests__/useLocalStoreWizard.test.ts`](../../app/renderer/components/hooks/wizard/__tests__/useLocalStoreWizard.test.ts#L182) (2 tests)
-- Unit: [`app/renderer/components/hooks/wizard/__tests__/useLocalStoreWizardFileOps.test.ts`](../../app/renderer/components/hooks/wizard/__tests__/useLocalStoreWizardFileOps.test.ts#L58) (12 tests)
+- Unit: [`app/renderer/components/hooks/wizard/__tests__/useLocalStoreWizardFileOps.test.ts`](../../app/renderer/components/hooks/wizard/__tests__/useLocalStoreWizardFileOps.test.ts#L58) (13 tests)
 - Unit: [`app/renderer/components/hooks/wizard/__tests__/wizardInitUtils.test.ts`](../../app/renderer/components/hooks/wizard/__tests__/wizardInitUtils.test.ts#L30) (11 tests)
 - Unit: [`electron/main/services/__tests__/localStoreSetupService.test.ts`](../../electron/main/services/__tests__/localStoreSetupService.test.ts#L33) (19 tests)
 - Integration: [`electron/main/services/__tests__/localStoreSetupService.integration.test.ts`](../../electron/main/services/__tests__/localStoreSetupService.integration.test.ts#L12) (2 tests)
@@ -91,17 +91,19 @@ Partial or not-built use cases with no test above unit level:
 
 [UC-02](use-cases.md#uc-02-set-up-from-the-factory-archive) Set up from the factory archive (partial)
 
-- Unit: [`app/renderer/components/__tests__/LocalStoreWizardUI.test.tsx`](../../app/renderer/components/__tests__/LocalStoreWizardUI.test.tsx#L168) (2 tests)
-- Unit: [`app/renderer/components/hooks/wizard/__tests__/useLocalStoreWizard.test.ts`](../../app/renderer/components/hooks/wizard/__tests__/useLocalStoreWizard.test.ts#L161) (5 tests)
-- Unit: [`app/renderer/components/hooks/wizard/__tests__/useLocalStoreWizardFileOps.test.ts`](../../app/renderer/components/hooks/wizard/__tests__/useLocalStoreWizardFileOps.test.ts#L224) (8 tests)
+- Unit: [`app/renderer/components/__tests__/LocalStoreWizardUI.test.tsx`](../../app/renderer/components/__tests__/LocalStoreWizardUI.test.tsx#L168) (4 tests)
+- Unit: [`app/renderer/components/hooks/wizard/__tests__/useLocalStoreWizard.test.ts`](../../app/renderer/components/hooks/wizard/__tests__/useLocalStoreWizard.test.ts#L161) (7 tests)
+- Unit: [`app/renderer/components/hooks/wizard/__tests__/useLocalStoreWizardFileOps.test.ts`](../../app/renderer/components/hooks/wizard/__tests__/useLocalStoreWizardFileOps.test.ts#L256) (8 tests)
 - Unit: [`app/renderer/components/hooks/wizard/__tests__/wizardInitUtils.test.ts`](../../app/renderer/components/hooks/wizard/__tests__/wizardInitUtils.test.ts#L30) (11 tests)
 - Unit: [`electron/main/__tests__/archiveUtils.test.ts`](../../electron/main/__tests__/archiveUtils.test.ts#L81) (15 tests)
 - Unit: [`electron/main/services/__tests__/archiveService.test.ts`](../../electron/main/services/__tests__/archiveService.test.ts#L161) (18 tests)
 - Unit: [`electron/main/services/__tests__/localStoreSetupService.test.ts`](../../electron/main/services/__tests__/localStoreSetupService.test.ts#L33) (19 tests)
 - Integration: [`electron/main/services/__tests__/localStoreSetupService.integration.test.ts`](../../electron/main/services/__tests__/localStoreSetupService.integration.test.ts#L12) (2 tests)
+- Integration: [`tests/integration/setup-cancel.integration.test.ts`](../../tests/integration/setup-cancel.integration.test.ts#L41) (7 tests)
 - Integration: [`tests/integration/setup-import.integration.test.ts`](../../tests/integration/setup-import.integration.test.ts#L32) (4 tests)
 - E2E: [`app/renderer/components/hooks/wizard/__tests__/localStoreWizard.e2e.test.ts`](../../app/renderer/components/hooks/wizard/__tests__/localStoreWizard.e2e.test.ts#L270) (1 test)
 - E2E: [`tests/e2e/onboarding-errors.e2e.test.ts`](../../tests/e2e/onboarding-errors.e2e.test.ts#L222) (1 test)
+- Validation: [`tests/validation/cancel-setup.validation.ts`](../../tests/validation/cancel-setup.validation.ts#L54) (1 test)
 - Validation: [`tests/validation/full-pipeline.validation.ts`](../../tests/validation/full-pipeline.validation.ts#L141) (1 test)
 
 ### UC-03
@@ -120,7 +122,7 @@ Partial or not-built use cases with no test above unit level:
 
 [UC-04](use-cases.md#uc-04-choose-an-existing-local-store) Choose an existing local store (partial)
 
-- Unit: [`electron/main/__tests__/ipcHandlers.test.ts`](../../electron/main/__tests__/ipcHandlers.test.ts#L437) (1 test)
+- Unit: [`electron/main/__tests__/ipcHandlers.test.ts`](../../electron/main/__tests__/ipcHandlers.test.ts#L443) (1 test)
 - Unit: [`electron/main/__tests__/localStoreValidator.test.ts`](../../electron/main/__tests__/localStoreValidator.test.ts#L48) (6 tests)
 - Unit: [`electron/main/services/__tests__/localStoreService.test.ts`](../../electron/main/services/__tests__/localStoreService.test.ts#L244) (3 tests)
 

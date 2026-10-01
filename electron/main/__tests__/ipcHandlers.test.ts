@@ -73,6 +73,7 @@ vi.mock("../services/localStoreSetupService.js", () => ({
   localStoreSetupService: {
     cleanupFailedSetup: vi.fn(() => ({ removed: false })),
     hasExistingLocalStore: vi.fn(() => ({ exists: true })),
+    markSetupComplete: vi.fn(),
   },
 }));
 
@@ -790,6 +791,21 @@ describe("registerIpcHandlers - path authorization (RE-03)", () => {
     ipcMainHandlers["write-settings"]({}, "sdCardPath", "");
     expect(assertAllowed).not.toHaveBeenCalled();
     expect(settingsService.writeSetting).toHaveBeenCalledTimes(5);
+  });
+
+  it("saving the local store marks its setup finished (RE-66)", async () => {
+    const { localStoreSetupService } =
+      await import("../services/localStoreSetupService.js");
+    await setup();
+
+    ipcMainHandlers["write-settings"]({}, "sdCardPath", "/Volumes/RAMPLE");
+    ipcMainHandlers["write-settings"]({}, "localStorePath", null);
+    expect(localStoreSetupService.markSetupComplete).not.toHaveBeenCalled();
+
+    ipcMainHandlers["write-settings"]({}, "localStorePath", "/Users/me/store");
+    expect(localStoreSetupService.markSetupComplete).toHaveBeenCalledWith(
+      "/Users/me/store",
+    );
   });
 
   it("folder dialogs grant the picked folder as a root", async () => {

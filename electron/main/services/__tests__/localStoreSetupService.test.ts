@@ -189,4 +189,60 @@ describe("LocalStoreSetupService (RE-10)", () => {
       expect(fs.existsSync(dbDir)).toBe(true);
     });
   });
+
+  describe("cleanupUnfinishedSetups (RE-66: quit mid-setup)", () => {
+    const failedCopies = (dir: string) =>
+      fs.readdirSync(dir).filter((n) => n.startsWith(".romperdb.failed-"));
+
+    it("moves aside a store whose setup never finished", () => {
+      service.createSetupDatabase(dbDir);
+
+      const results = service.cleanupUnfinishedSetups(null);
+
+      expect(results).toEqual([
+        expect.objectContaining({ removed: true, targetPath: target }),
+      ]);
+      expect(fs.existsSync(dbDir)).toBe(false);
+      expect(failedCopies(target)).toHaveLength(1);
+      // The next launch can set up the same folder
+      expect(service.hasExistingLocalStore(target).exists).toBe(false);
+    });
+
+    it("skips the configured local store", () => {
+      service.createSetupDatabase(dbDir);
+
+      expect(service.cleanupUnfinishedSetups(target)).toEqual([]);
+      expect(fs.existsSync(path.join(dbDir, "romper.sqlite"))).toBe(true);
+    });
+
+    it("skips a store whose setup finished", () => {
+      service.createSetupDatabase(dbDir);
+      service.markSetupComplete(target);
+
+      // Even once another store is configured, the finished one stays
+      expect(
+        service.cleanupUnfinishedSetups(path.join(tmpRoot, "elsewhere")),
+      ).toEqual([]);
+      expect(fs.existsSync(path.join(dbDir, "romper.sqlite"))).toBe(true);
+    });
+
+    it("cleans up only the unfinished store among several", () => {
+      const other = path.join(tmpRoot, "other");
+      fs.mkdirSync(other);
+      service.createSetupDatabase(dbDir);
+      service.createSetupDatabase(path.join(other, ".romperdb"));
+
+      const results = service.cleanupUnfinishedSetups(target);
+
+      expect(results.map((r) => r.targetPath)).toEqual([other]);
+      expect(fs.existsSync(dbDir)).toBe(true);
+      expect(fs.existsSync(path.join(other, ".romperdb"))).toBe(false);
+    });
+
+    it("never touches a store it didn't create", () => {
+      makeExistingStore();
+      expect(service.cleanupUnfinishedSetups(null)).toEqual([]);
+      expect(fs.existsSync(dbDir)).toBe(true);
+    });
+  });
 });

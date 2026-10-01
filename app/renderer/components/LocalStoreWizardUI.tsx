@@ -328,7 +328,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
                   onClick={() => {
                     if (state.isInitializing) {
                       const confirmed = globalThis.confirm(
-                        "Initialization is in progress. Closing now may leave an incomplete database. Are you sure?",
+                        "Setup is still running. Cancel will stop setup. Stop setup now?",
                       );
                       if (!confirmed) return;
                     }

@@ -5,8 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useKitPlayback } from "../useKitPlayback";
 
 describe("useKitPlayback", () => {
-  const mockSamples = { 1: [], 2: [], 3: [], 4: [] };
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -15,7 +13,7 @@ describe("useKitPlayback", () => {
   });
 
   it("initializes state correctly", () => {
-    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    const { result } = renderHook(() => useKitPlayback());
     expect(result.current.playbackError).toBeNull();
     expect(result.current.playTriggers).toEqual({});
     expect(result.current.stopTriggers).toEqual({});
@@ -23,7 +21,7 @@ describe("useKitPlayback", () => {
   });
 
   it("handlePlay triggers play and clears error", () => {
-    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    const { result } = renderHook(() => useKitPlayback());
     act(() => {
       result.current.handlePlay(1, "kick.wav");
     });
@@ -36,7 +34,7 @@ describe("useKitPlayback", () => {
   });
 
   it("handleStop triggers stop and sets samplePlaying false", () => {
-    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    const { result } = renderHook(() => useKitPlayback());
     act(() => {
       result.current.handleStop(2, "snare.wav");
     });
@@ -45,7 +43,7 @@ describe("useKitPlayback", () => {
   });
 
   it("handleWaveformPlayingChange sets samplePlaying", () => {
-    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    const { result } = renderHook(() => useKitPlayback());
     act(() => {
       result.current.handleWaveformPlayingChange(3, "hat.wav", true);
     });
@@ -57,7 +55,7 @@ describe("useKitPlayback", () => {
   });
 
   it("sets playVolumes when volume is provided", () => {
-    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    const { result } = renderHook(() => useKitPlayback());
     act(() => {
       result.current.handlePlay(1, "kick.wav", 75);
     });
@@ -65,7 +63,7 @@ describe("useKitPlayback", () => {
   });
 
   it("does not set playVolumes when volume is omitted", () => {
-    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    const { result } = renderHook(() => useKitPlayback());
     act(() => {
       result.current.handlePlay(1, "kick.wav");
     });
@@ -73,7 +71,7 @@ describe("useKitPlayback", () => {
   });
 
   it("updates playVolumes on subsequent calls with different volumes", () => {
-    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    const { result } = renderHook(() => useKitPlayback());
     act(() => {
       result.current.handlePlay(1, "kick.wav", 100);
     });
@@ -85,13 +83,13 @@ describe("useKitPlayback", () => {
   });
 
   it("returns playVolumes in hook interface", () => {
-    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    const { result } = renderHook(() => useKitPlayback());
     expect(result.current).toHaveProperty("playVolumes");
     expect(result.current.playVolumes).toEqual({});
   });
 
   it("chokes other playing samples on the same voice", () => {
-    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    const { result } = renderHook(() => useKitPlayback());
     // Mark sample A on voice 1 as playing
     act(() => {
       result.current.handleWaveformPlayingChange(1, "kick.wav", true);
@@ -111,7 +109,7 @@ describe("useKitPlayback", () => {
   });
 
   it("does not choke samples on other voices", () => {
-    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    const { result } = renderHook(() => useKitPlayback());
     // Mark samples playing on voice 1 and voice 2
     act(() => {
       result.current.handleWaveformPlayingChange(1, "kick.wav", true);
@@ -129,7 +127,7 @@ describe("useKitPlayback", () => {
   });
 
   it("does not choke the same sample being replayed", () => {
-    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    const { result } = renderHook(() => useKitPlayback());
     act(() => {
       result.current.handleWaveformPlayingChange(1, "kick.wav", true);
     });
@@ -144,7 +142,7 @@ describe("useKitPlayback", () => {
   });
 
   it("records play options for a play, and clears them for a plain play", () => {
-    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    const { result } = renderHook(() => useKitPlayback());
     const options = { region: { length: 0.0625, start: 0.25 }, startAt: 1000 };
     act(() => {
       result.current.handlePlay(2, "break.wav", 80, options);
@@ -158,7 +156,7 @@ describe("useKitPlayback", () => {
   });
 
   it("stops a choked sample when the choking sound is scheduled to start", () => {
-    const { result } = renderHook(() => useKitPlayback(mockSamples));
+    const { result } = renderHook(() => useKitPlayback());
     act(() => {
       result.current.handleWaveformPlayingChange(1, "kick.wav", true);
     });
@@ -167,5 +165,78 @@ describe("useKitPlayback", () => {
     });
     expect(result.current.stopTriggers["1:kick.wav"]).toBe(1);
     expect(result.current.playOptions["1:kick.wav"]?.stopAt).toBe(2500);
+  });
+
+  describe("voice choke tracking (RE-13)", () => {
+    it("keeps choking across re-renders, such as a kit reload", () => {
+      const { rerender, result } = renderHook(() => useKitPlayback());
+      act(() => {
+        result.current.handlePlay(1, "kick.wav");
+        result.current.handleWaveformPlayingChange(1, "kick.wav", true);
+      });
+
+      // An edit reloads the kit, which re-renders the editor
+      rerender();
+      rerender();
+      expect(result.current.playTriggers["1:kick.wav"]).toBe(1);
+      expect(result.current.samplePlaying["1:kick.wav"]).toBe(true);
+
+      act(() => {
+        result.current.handlePlay(1, "snare.wav");
+      });
+      expect(result.current.stopTriggers["1:kick.wav"]).toBe(1);
+    });
+
+    it("chokes a sample triggered moments ago, before it reports playing", () => {
+      const { result } = renderHook(() => useKitPlayback());
+      act(() => {
+        result.current.handlePlay(1, "kick.wav", 100, { startAt: 1000 });
+        result.current.handlePlay(1, "snare.wav", 100, { startAt: 1125 });
+      });
+
+      expect(result.current.stopTriggers["1:kick.wav"]).toBe(1);
+      expect(result.current.playOptions["1:kick.wav"]?.stopAt).toBe(1125);
+    });
+
+    it("leaves a sample alone once it has finished", () => {
+      const { result } = renderHook(() => useKitPlayback());
+      act(() => {
+        result.current.handlePlay(1, "kick.wav");
+        result.current.handleWaveformPlayingChange(1, "kick.wav", true);
+        result.current.handleWaveformPlayingChange(1, "kick.wav", false);
+      });
+      act(() => {
+        result.current.handlePlay(1, "snare.wav");
+      });
+
+      expect(result.current.stopTriggers["1:kick.wav"]).toBeUndefined();
+    });
+
+    it("leaves a sample alone once it was stopped", () => {
+      const { result } = renderHook(() => useKitPlayback());
+      act(() => {
+        result.current.handlePlay(1, "kick.wav");
+        result.current.handleStop(1, "kick.wav");
+      });
+      act(() => {
+        result.current.handlePlay(1, "snare.wav");
+      });
+
+      // One stop from handleStop, none from the choke
+      expect(result.current.stopTriggers["1:kick.wav"]).toBe(1);
+    });
+
+    it("chokes each sample only once", () => {
+      const { result } = renderHook(() => useKitPlayback());
+      act(() => {
+        result.current.handlePlay(1, "kick.wav");
+        result.current.handlePlay(1, "snare.wav");
+        result.current.handlePlay(1, "hat.wav");
+      });
+
+      expect(result.current.stopTriggers["1:kick.wav"]).toBe(1);
+      expect(result.current.stopTriggers["1:snare.wav"]).toBe(1);
+      expect(result.current.stopTriggers["1:hat.wav"]).toBeUndefined();
+    });
   });
 });

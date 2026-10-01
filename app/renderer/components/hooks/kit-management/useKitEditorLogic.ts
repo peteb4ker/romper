@@ -122,7 +122,7 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   });
 
   // Playback logic
-  const playback = useKitPlayback(props.samples);
+  const playback = useKitPlayback();
 
   // Default samples to avoid undefined errors
   const samples = React.useMemo(

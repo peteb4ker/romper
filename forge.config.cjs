@@ -45,7 +45,11 @@ const config = {
     // workflow signs it, then runs the DMG/zip makers around it, then
     // notarizes+staples the DMG.
   },
-  rebuildConfig: {},
+  // Rebuild no native modules for Electron. better-sqlite3 (the only one)
+  // ships N-API prebuilds that load in any Electron version, and compiling it
+  // needs a C++ toolchain node-gyp can find, which the Windows release runner
+  // (Visual Studio 2026) didn't provide to Forge's bundled node-gyp.
+  rebuildConfig: { onlyModules: [] },
   makers: [
     {
       name: "@electron-forge/maker-squirrel",

@@ -70,6 +70,9 @@ jobs:
       - name: Configure Electron sandbox (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
+          # Electron 42+ downloads its binary on first use, not at install;
+          # fetch it now so chrome-sandbox exists to be configured
+          node node_modules/electron/install.js
           # Configure chrome-sandbox for proper sandboxing in CI
           CHROME_SANDBOX_PATH="node_modules/electron/dist/chrome-sandbox"
           if [ -f "$CHROME_SANDBOX_PATH" ]; then

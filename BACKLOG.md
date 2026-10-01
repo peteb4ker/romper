@@ -83,7 +83,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
-| RE-71 | Medium | Stereo | Stereo link and unlink worked on kits that aren't editable, changing what the next write puts on the card. | done (#PR: linking is an edit; read-only kits show the pair but offer no link or unlink, and main refuses the change) |
+| RE-71 | Medium | Stereo | Stereo link and unlink worked on kits that aren't editable, changing what the next write puts on the card. | done (#416: linking is an edit; read-only kits show the pair but offer no link or unlink, and main refuses the change) |
 | RE-34 | Medium | Setup | Voice naming in the setup wizard did nothing (its writes went to a store not yet configured), and setup read every WAV over IPC. | done (#413: setup imports kits in main with the rescan merge: samples, WAV metadata and voice names in one transaction per kit) |
 | RE-32 | Medium | Kits | Kit names were checked inconsistently: setup imported folders such as `Drum01` that the kit service then refused to delete or duplicate. | done (#413: setup imports only folders named like kits, A0-Z99, the same rule `kitService` uses; `insert-kit` is gone) |
 | RE-69 | High | Stereo | Unlinking a stereo pair silently did nothing when the voice held a 2-channel file; the `is_stereo` rules contradicted "stereo is a voice setting". | done (#407: unlink only clears `voices.stereo_mode`; `samples.is_stereo` dropped; main refuses samples on the right-hand voice of a linked pair; proven by `npm run validate:full`) |

@@ -48,7 +48,6 @@
 | better-sqlite3 | 12.10.0 | SQLite driver. Rebuilt for the Electron ABI by `postinstall` (`electron-rebuild`), so it will not load under plain Node. |
 | drizzle-orm | 0.45.2 | ORM and migrator. Bundled into the main-process build. |
 | drizzle-kit | 0.31.10 | Migration generator (CLI only). Misplaced in `dependencies`. |
-| node-wav | 0.0.2 | WAV decode and encode for format conversion during sync. |
 | unzipper | 0.12.3 | Streaming extraction of the Squarp factory archive. |
 | update-electron-app | 3.2.0 | macOS auto-update through update.electronjs.org. **Broken in packaged builds** (see code-quality-assessment.md). |
 

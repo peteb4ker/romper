@@ -173,8 +173,10 @@ listed here.
   Dead alternative sync planner and naming service.
 - `audioUtils.ts` - Rample format rules (8/16-bit, 44.1 kHz, up to 2
   channels, `.wav`) and a WAV header parser.
-- `formatConverter.ts` - node-wav decode, mono, gain, linear resample,
-  16-bit encode.
+- `formatConverter.ts` - Decode, mono, gain, linear resample, 16-bit
+  encode.
+- `wavHeader.ts`, `wavCodec.ts` - RIFF chunk walker; PCM and float sample
+  decode and integer PCM encode (replaced node-wav, RE-62).
 - `utils/fileSystemUtils.ts` - Path helper, disk space (`statfsSync`),
   writable probe, `.romperdb`-only delete.
 - `utils/errorCategorizationUtils.ts`, `utils/stereoProcessingUtils.ts` -
@@ -282,12 +284,6 @@ listed here.
 - **Version**: 19.2.4 + 7.18.2 + 1.8.11
 - **Usage**: all UI; `HashRouter`; the virtualised kit grid.
 - **Purpose**: renderer UI.
-
-### node-wav
-- **Version**: 0.0.2
-- **Usage**: `formatConverter.ts`.
-- **Purpose**: decode and encode WAVs when converting samples to the
-  Rample format during sync.
 
 ### unzipper
 - **Version**: 0.12.3

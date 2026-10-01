@@ -68,10 +68,10 @@ flowchart LR
 
 ## External Dependencies
 
-### Runtime (`dependencies`, 18 packages)
+### Runtime (`dependencies`, 17 packages)
 
 What actually ships: the main-process bundle leaves only `better-sqlite3`
-and `unzipper` external. `drizzle-orm`, `node-wav` and `update-electron-app`
+and `unzipper` external. `drizzle-orm` and `update-electron-app`
 are bundled into main, and the renderer bundle contains React and the
 other UI libraries. Even so, Forge copies every package in `dependencies`
 into the app, which is not packed into an asar archive. The production
@@ -86,7 +86,6 @@ that the app needs at runtime (static estimate from the lockfile).
 | @phosphor-icons/react | 2.1.10 | Icons | MIT | In use; 33 MB on disk |
 | better-sqlite3 | 12.10.0 | SQLite driver | MIT | In use (external, native); 13.x available |
 | drizzle-orm | 0.45.2 | ORM and migrator | Apache-2.0 | In use (bundled) |
-| node-wav | 0.0.2 | WAV codec | MIT | In use (bundled) |
 | unzipper | 0.12.3 | Zip extraction | MIT | In use (external) |
 | update-electron-app | 3.2.0 | macOS auto-update | MIT | Bundled, but the bundle breaks it |
 | drizzle-kit | 0.31.10 | Migration CLI | MIT | **Belongs in devDependencies** (73 MB) |

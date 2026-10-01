@@ -27,7 +27,12 @@ test.describe("Fixture System Validation", () => {
     });
 
     window = await electronApp.firstWindow();
-    await window.waitForLoadState("domcontentloaded");
+    // From Electron 44 the first window is returned while it still shows its
+    // initial blank document, which is already "loaded"; wait for the app
+    // itself, or the page load replaces the context mid-test.
+    await window.waitForSelector('[data-testid="kits-view"]', {
+      timeout: 10000,
+    });
   });
 
   test.afterEach(async () => {

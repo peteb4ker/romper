@@ -21,6 +21,7 @@ interface SyncProgress {
   };
   filesCompleted: number;
   status:
+    | "cancelled"
     | "completed"
     | "converting"
     | "copying"
@@ -111,10 +112,14 @@ export function useSyncUpdate(
         totalFiles: 0, // Will be updated by progress events
       });
 
+      // Progress events can be delivered after the write's result (a large
+      // sync queues thousands), and must not overwrite the final state.
+      let settled = false;
       try {
         // Set up progress listener if available
         if (electronAPI.onSyncProgress) {
           electronAPI.onSyncProgress((progress: SyncProgress) => {
+            if (settled) return;
             // Normalize backend "complete" status to frontend "completed"
             const normalizedStatus =
               (progress.status as string) === "complete"
@@ -128,6 +133,7 @@ export function useSyncUpdate(
           sdCardPath: options.sdCardPath,
           skipInvalidFiles: options.skipInvalidFiles,
         });
+        settled = true;
 
         if (!result.success) {
           setError(result.error || "Sync operation failed");
@@ -137,11 +143,21 @@ export function useSyncUpdate(
           return false;
         }
 
+        const finalStatus = result.data?.cancelled ? "cancelled" : "completed";
+        // Main's count is exact; the last progress event may lag behind it
+        const syncedFiles = result.data?.syncedFiles;
         setSyncProgress((prev) =>
-          prev ? { ...prev, status: "completed" } : null,
+          prev
+            ? {
+                ...prev,
+                filesCompleted: syncedFiles ?? prev.filesCompleted,
+                status: finalStatus,
+              }
+            : null,
         );
         return true;
       } catch (err) {
+        settled = true;
         const errorMessage =
           err instanceof Error ? err.message : "Unknown error occurred";
         setError(`Sync failed: ${errorMessage}`);
@@ -156,14 +172,10 @@ export function useSyncUpdate(
     [electronAPI],
   );
 
+  // Asks main to stop after the file in progress. The running startSync
+  // call resolves with a cancelled outcome and sets the final state.
   const cancelSync = useCallback(() => {
-    if (electronAPI?.cancelKitSync) {
-      void electronAPI.cancelKitSync();
-    }
-
-    setSyncProgress(null);
-    setIsLoading(false);
-    setError(null);
+    void electronAPI?.cancelKitSync?.();
   }, [electronAPI]);
 
   return {

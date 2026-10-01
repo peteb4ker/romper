@@ -60,6 +60,11 @@ export interface SyncOptions {
 }
 
 export interface SyncOutcome {
+  /**
+   * The user cancelled: writing stopped after the file in progress, and
+   * nothing was removed from the card or marked as synced.
+   */
+  cancelled: boolean;
   /** Samples that were not written because they failed validation */
   skippedFiles: SyncValidationError[];
   syncedFiles: number;
@@ -230,12 +235,20 @@ class SyncService {
         options.sdCardPath,
       );
 
-      syncProgressManager.emitCompletionProgress(syncedFiles, allFiles.length);
-
-      const wasCancelled = syncProgressManager.finalizeSyncJob();
-      if (wasCancelled) {
-        return { error: "Sync operation was cancelled", success: false };
+      if (syncProgressManager.getCurrentSyncJob()?.cancelled) {
+        syncProgressManager.finalizeSyncJob();
+        return {
+          data: {
+            cancelled: true,
+            skippedFiles: validationErrors,
+            syncedFiles,
+            warnings,
+          },
+          success: true,
+        };
       }
+      syncProgressManager.emitCompletionProgress(syncedFiles, allFiles.length);
+      syncProgressManager.finalizeSyncJob();
 
       // Write bank RTF files to SD card root
       this.writeBankRtfFiles(dbDir, options.sdCardPath);
@@ -257,7 +270,12 @@ class SyncService {
       );
 
       return {
-        data: { skippedFiles: validationErrors, syncedFiles, warnings },
+        data: {
+          cancelled: false,
+          skippedFiles: validationErrors,
+          syncedFiles,
+          warnings,
+        },
         success: true,
       };
     } catch (error) {

@@ -147,6 +147,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
     // Sync functionality hook
     const sync = useKitSync({ onMessage, onRefreshKits });
     const {
+      cancelSync,
       currentChangeSummary,
       currentSyncKit,
       generateChangeSummary,
@@ -277,6 +278,7 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
             isOpen={showSyncDialog}
             kitName={currentSyncKit}
             localChangeSummary={currentChangeSummary}
+            onCancelSync={cancelSync}
             onClose={handleCloseSyncDialog}
             onConfirm={handleConfirmSync}
             onGenerateChangeSummary={generateChangeSummary}

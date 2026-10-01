@@ -185,6 +185,15 @@ its samples, and bank name files (`sdCardSafety.findStaleCardEntries`).
 The write summary lists the same entries first. Sync never touches the
 device's `_save/` folder or anything else on the card.
 
+Sync doesn't block the main process (RE-07): file I/O is asynchronous and
+`syncFileOperations.processAllFiles` yields to the event loop after every
+file, so progress events and `cancelKitSync` are handled while it runs.
+Cancel stops after the file in progress and returns a `cancelled` outcome.
+Converting a file is synchronous CPU work, but short (about 0.1 s for a
+3-minute stereo 24-bit file), so it runs in the main process. The main
+build stubs some `node:` modules (for example `node:timers/promises`; see
+RE-16), so use Node globals or `fs.promises` there.
+
 ## Testing
 
 - **Unit** (jsdom): `__tests__/` next to the source. Shared mocks live in

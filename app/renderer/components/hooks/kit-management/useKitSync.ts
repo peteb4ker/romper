@@ -47,6 +47,7 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
 
   // Sync functionality from useSyncUpdate hook
   const {
+    cancelSync,
     clearError: clearSyncError,
     error: syncError,
     generateChangeSummary,
@@ -137,6 +138,7 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
   );
 
   return {
+    cancelSync,
     currentChangeSummary,
     currentSyncKit,
     generateChangeSummary,

@@ -86,11 +86,8 @@ export class SyncFileOperationsService {
   /**
    * Ensure destination directory exists
    */
-  ensureDestinationDirectory(destinationPath: string): void {
-    const destinationDir = path.dirname(destinationPath);
-    if (!fs.existsSync(destinationDir)) {
-      fs.mkdirSync(destinationDir, { recursive: true });
-    }
+  async ensureDestinationDirectory(destinationPath: string): Promise<void> {
+    await fs.promises.mkdir(path.dirname(destinationPath), { recursive: true });
   }
 
   /**
@@ -103,7 +100,7 @@ export class SyncFileOperationsService {
     // Non-zero gain requires decode/re-encode even for "copy" operations
     const needsGainConversion = fileOp.gainDb != null && fileOp.gainDb !== 0;
     if (fileOp.operation === "copy" && !needsGainConversion) {
-      fs.copyFileSync(fileOp.sourcePath, fileOp.destinationPath);
+      await fs.promises.copyFile(fileOp.sourcePath, fileOp.destinationPath);
     } else {
       await this.handleFileConversion(fileOp, inMemorySettings);
     }
@@ -125,7 +122,10 @@ export class SyncFileOperationsService {
   }
 
   /**
-   * Process all file operations
+   * Process all file operations. The main process stays responsive: file
+   * I/O is asynchronous and the loop yields to the event loop after every
+   * file, so IPC (progress, Cancel) is handled while a sync runs (RE-07).
+   * A cancelled sync stops after the file in progress.
    */
   async processAllFiles(
     allFiles: SyncFileOperation[],
@@ -148,6 +148,7 @@ export class SyncFileOperationsService {
           inMemorySettings,
         );
         syncedFiles++;
+        await yieldToEventLoop();
       } catch (error) {
         this.handleFileProcessingError(fileOp, error);
         throw error;
@@ -168,7 +169,7 @@ export class SyncFileOperationsService {
   ): Promise<void> {
     syncProgressManager.emitFileStartProgress(fileOp);
 
-    this.ensureDestinationDirectory(fileOp.destinationPath);
+    await this.ensureDestinationDirectory(fileOp.destinationPath);
 
     await this.executeFileOperation(fileOp, inMemorySettings);
 
@@ -251,8 +252,7 @@ export class SyncFileOperationsService {
         );
         // Copy the original file instead of converting it
         try {
-          const fs = await import("node:fs");
-          fs.copyFileSync(fileOp.sourcePath, fileOp.destinationPath);
+          await fs.promises.copyFile(fileOp.sourcePath, fileOp.destinationPath);
           return; // Successfully handled by copying instead
         } catch (copyError) {
           console.error(
@@ -269,3 +269,11 @@ export class SyncFileOperationsService {
 }
 
 export const syncFileOperationsService = new SyncFileOperationsService();
+
+/**
+ * Let pending IPC and timers run before the next file. Uses the global
+ * setImmediate: the main build stubs `node:timers/promises`.
+ */
+function yieldToEventLoop(): Promise<void> {
+  return new Promise((resolve) => setImmediate(resolve));
+}

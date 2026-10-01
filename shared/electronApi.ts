@@ -322,6 +322,8 @@ export interface SyncOptions {
 }
 
 export interface SyncOutcome {
+  /** The user cancelled; writing stopped after the file in progress */
+  cancelled: boolean;
   skippedFiles: SyncValidationError[];
   syncedFiles: number;
   warnings: string[];

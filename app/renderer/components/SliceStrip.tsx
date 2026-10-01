@@ -1,5 +1,6 @@
 import {
   ArrowCounterClockwiseIcon,
+  CaretDownIcon,
   DiceFiveIcon,
   ScissorsIcon,
   XIcon,
@@ -14,6 +15,8 @@ import {
 import React from "react";
 
 import type { SliceView } from "./hooks/shared/sliceConstants";
+
+import { usePopoverDismiss } from "./hooks/shared/usePopoverDismiss";
 
 const WAVE_COLUMNS = 512;
 
@@ -44,6 +47,8 @@ export interface SliceStripProps {
   slotIndex: null | number;
   usedSlices: Set<number>;
   voiceLabel: string;
+  /** Places the waveform so its slices line up with the step columns. */
+  waveformStyle?: React.CSSProperties;
 }
 
 /** Tell the user what to do next, based on what is selected. */
@@ -199,6 +204,99 @@ const selectClass =
 const buttonClass =
   "flex items-center gap-1 h-6 px-2 text-xs font-semibold rounded border border-border-default bg-surface-2 hover:bg-surface-3 focus:outline-none focus:ring-1 focus:ring-accent-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed";
 
+/** Roll settings, behind a small menu next to Roll: how much a roll
+ * changes and whether it varies slice length. */
+const RollOptions: React.FC<{
+  onSettingsChange: (update: Partial<VoiceSliceSettings>) => void;
+  settings: VoiceSliceSettings;
+}> = ({ onSettingsChange, settings }) => {
+  const [open, setOpen] = React.useState(false);
+  const menuRef = React.useRef<HTMLDivElement>(null);
+  const close = React.useCallback(() => setOpen(false), []);
+  usePopoverDismiss(menuRef, close, open);
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        aria-expanded={open}
+        aria-label="Roll options"
+        className={`${buttonClass} px-1.5`}
+        data-testid="slice-roll-options"
+        onClick={() => setOpen((o) => !o)}
+        title={`Roll options: ${settings.rollAmount}% of steps${settings.varyLength ? `, lengths up to ${settings.maxLength}` : ""}`}
+        type="button"
+      >
+        <CaretDownIcon size={12} weight="bold" />
+      </button>
+      {open && (
+        <div
+          className="absolute right-0 top-full mt-1 z-50 flex flex-col gap-2 p-3 rounded-lg border border-border-strong bg-surface-2 shadow-lg text-xs whitespace-nowrap"
+          data-testid="slice-roll-options-menu"
+          role="dialog"
+        >
+          <label
+            className="flex items-center gap-1 text-text-secondary"
+            title="How many of the row's steps a roll changes"
+          >
+            <span>Amount</span>
+            <select
+              aria-label="Roll amount"
+              className={selectClass}
+              data-testid="slice-roll-amount"
+              onChange={(e) =>
+                onSettingsChange({ rollAmount: Number(e.target.value) })
+              }
+              value={settings.rollAmount}
+            >
+              {ROLL_AMOUNTS.map((a) => (
+                <option key={a} value={a}>
+                  {a}%
+                </option>
+              ))}
+            </select>
+          </label>
+          <label
+            className="flex items-center gap-1 text-text-secondary"
+            title="Rolls and random steps also pick a random length"
+          >
+            <input
+              checked={settings.varyLength}
+              data-testid="slice-vary-length"
+              onChange={(e) =>
+                onSettingsChange({ varyLength: e.target.checked })
+              }
+              type="checkbox"
+            />
+            <span>Vary length</span>
+          </label>
+          <label
+            className="flex items-center gap-1 text-text-secondary"
+            title="Longest random length, in slices"
+          >
+            <span>up to</span>
+            <select
+              aria-label="Maximum random length"
+              className={selectClass}
+              data-testid="slice-max-length"
+              disabled={!settings.varyLength}
+              onChange={(e) =>
+                onSettingsChange({ maxLength: Number(e.target.value) })
+              }
+              value={settings.maxLength}
+            >
+              {MAX_LENGTH_OPTIONS.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
+    </div>
+  );
+};
+
 /**
  * Waveform strip above the sequencer grid for the voice being sliced:
  * shows the slices, lets you point the selected step at a slice (click)
@@ -228,6 +326,7 @@ const SliceStrip: React.FC<SliceStripProps> = (props) => {
     slotIndex,
     usedSlices,
     voiceLabel,
+    waveformStyle,
   } = props;
 
   const voiceColor = `var(--voice-${editingVoice})`;
@@ -366,6 +465,7 @@ const SliceStrip: React.FC<SliceStripProps> = (props) => {
           <DiceFiveIcon size={14} weight="bold" />
           Roll
         </button>
+        <RollOptions onSettingsChange={onSettingsChange} settings={settings} />
         <button
           className={buttonClass}
           data-testid="slice-undo-roll"
@@ -377,61 +477,6 @@ const SliceStrip: React.FC<SliceStripProps> = (props) => {
           <ArrowCounterClockwiseIcon size={14} weight="bold" />
           Undo
         </button>
-        <label
-          className="flex items-center gap-1 text-text-secondary"
-          title="How many of the row's steps a roll changes"
-        >
-          <span>Amount</span>
-          <select
-            aria-label="Roll amount"
-            className={selectClass}
-            data-testid="slice-roll-amount"
-            onChange={(e) =>
-              onSettingsChange({ rollAmount: Number(e.target.value) })
-            }
-            value={settings.rollAmount}
-          >
-            {ROLL_AMOUNTS.map((a) => (
-              <option key={a} value={a}>
-                {a}%
-              </option>
-            ))}
-          </select>
-        </label>
-        <label
-          className="flex items-center gap-1 text-text-secondary"
-          title="Rolls and random steps also pick a random length"
-        >
-          <input
-            checked={settings.varyLength}
-            data-testid="slice-vary-length"
-            onChange={(e) => onSettingsChange({ varyLength: e.target.checked })}
-            type="checkbox"
-          />
-          <span>Vary length</span>
-        </label>
-        <label
-          className="flex items-center gap-1 text-text-secondary"
-          title="Longest random length, in slices"
-        >
-          <span>up to</span>
-          <select
-            aria-label="Maximum random length"
-            className={selectClass}
-            data-testid="slice-max-length"
-            disabled={!settings.varyLength}
-            onChange={(e) =>
-              onSettingsChange({ maxLength: Number(e.target.value) })
-            }
-            value={settings.maxLength}
-          >
-            {MAX_LENGTH_OPTIONS.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-        </label>
         <button
           aria-label="Close slicer"
           className="p-0.5 rounded text-text-tertiary hover:text-text-primary hover:bg-surface-3"
@@ -444,95 +489,97 @@ const SliceStrip: React.FC<SliceStripProps> = (props) => {
         </button>
       </div>
 
-      {/* Waveform with slice grid */}
-      <div
-        className="relative h-14 rounded bg-surface-3 overflow-hidden cursor-pointer select-none touch-none"
-        data-testid="slice-waveform"
-        onPointerCancel={() => setDrag(null)}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        ref={areaRef}
-      >
-        <canvas
-          className="absolute inset-0 w-full h-full pointer-events-none"
-          height={56}
-          ref={canvasRef}
-          width={WAVE_COLUMNS * 2}
-        />
-        {hoverView && !dragView && (
-          <div
-            className="absolute inset-y-0 border-2 border-dashed rounded-sm pointer-events-none"
-            data-testid="slice-hover"
-            style={{
-              borderColor: voiceColor,
-              left: pct(hoverView.startSlice),
-              width: pct(hoverView.lengthSlices),
-            }}
+      {/* Waveform with slice grid, and slice numbers */}
+      <div style={waveformStyle}>
+        <div
+          className="relative h-16 rounded bg-surface-3 overflow-hidden cursor-pointer select-none touch-none"
+          data-testid="slice-waveform"
+          onPointerCancel={() => setDrag(null)}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          ref={areaRef}
+        >
+          <canvas
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            height={64}
+            ref={canvasRef}
+            width={WAVE_COLUMNS * 2}
           />
-        )}
-        {highlightView && (
-          <div
-            className="absolute inset-y-0 rounded-sm pointer-events-none"
-            data-testid="slice-selected"
-            style={{
-              background: voiceColor,
-              left: pct(highlightView.startSlice),
-              opacity: 0.35,
-              width: pct(highlightView.lengthSlices),
-            }}
-          />
-        )}
-        {playingView && (
-          <div
-            className="absolute inset-y-0 pointer-events-none"
-            data-testid="slice-playing"
-            style={{
-              background: "#fff",
-              left: pct(playingView.startSlice),
-              opacity: 0.25,
-              width: pct(playingView.lengthSlices),
-            }}
-          />
-        )}
-        {/* One button per slice: gridlines, used-slice ticks, keyboard access */}
-        <div className="absolute inset-0 flex">
-          {Array.from({ length: division }, (_, i) => (
-            <button
-              aria-label={`Slice ${i + 1}`}
-              className={`relative flex-1 h-full focus:outline-none focus-visible:ring-1 focus-visible:ring-accent-primary ${i > 0 ? "border-l border-text-tertiary/25" : ""}`}
-              data-testid={`slice-${i}`}
-              key={i}
-              onClick={(e) => {
-                // Mouse clicks are handled by the pointer events above;
-                // this handles keyboard activation (Enter/Space).
-                if (e.detail !== 0 || !sampleName) return;
-                onAssign(i, selectedView?.lengthSlices ?? 1);
+          {hoverView && !dragView && (
+            <div
+              className="absolute inset-y-0 border-2 border-dashed rounded-sm pointer-events-none"
+              data-testid="slice-hover"
+              style={{
+                borderColor: voiceColor,
+                left: pct(hoverView.startSlice),
+                width: pct(hoverView.lengthSlices),
               }}
-              tabIndex={sampleName ? 0 : -1}
-              type="button"
-            >
-              {usedSlices.has(i) && (
-                <span
-                  className="absolute top-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
-                  style={{ background: voiceColor }}
-                />
-              )}
-            </button>
+            />
+          )}
+          {highlightView && (
+            <div
+              className="absolute inset-y-0 rounded-sm pointer-events-none"
+              data-testid="slice-selected"
+              style={{
+                background: voiceColor,
+                left: pct(highlightView.startSlice),
+                opacity: 0.35,
+                width: pct(highlightView.lengthSlices),
+              }}
+            />
+          )}
+          {playingView && (
+            <div
+              className="absolute inset-y-0 pointer-events-none"
+              data-testid="slice-playing"
+              style={{
+                background: "#fff",
+                left: pct(playingView.startSlice),
+                opacity: 0.25,
+                width: pct(playingView.lengthSlices),
+              }}
+            />
+          )}
+          {/* One button per slice: gridlines, used-slice ticks, keyboard access */}
+          <div className="absolute inset-0 flex">
+            {Array.from({ length: division }, (_, i) => (
+              <button
+                aria-label={`Slice ${i + 1}`}
+                className={`relative flex-1 h-full focus:outline-none focus-visible:ring-1 focus-visible:ring-accent-primary ${i > 0 ? "border-l border-text-tertiary/25" : ""}`}
+                data-testid={`slice-${i}`}
+                key={i}
+                onClick={(e) => {
+                  // Mouse clicks are handled by the pointer events above;
+                  // this handles keyboard activation (Enter/Space).
+                  if (e.detail !== 0 || !sampleName) return;
+                  onAssign(i, selectedView?.lengthSlices ?? 1);
+                }}
+                tabIndex={sampleName ? 0 : -1}
+                type="button"
+              >
+                {usedSlices.has(i) && (
+                  <span
+                    className="absolute top-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
+                    style={{ background: voiceColor }}
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Slice numbers */}
+        <div
+          className="flex mt-0.5 text-[9px] leading-none text-text-tertiary select-none"
+          data-testid="slice-labels"
+        >
+          {Array.from({ length: division }, (_, i) => (
+            <span className="flex-1 text-center overflow-visible" key={i}>
+              {i % every === 0 ? i + 1 : ""}
+            </span>
           ))}
         </div>
-      </div>
-
-      {/* Slice numbers */}
-      <div
-        className="flex mt-0.5 text-[9px] leading-none text-text-tertiary select-none"
-        data-testid="slice-labels"
-      >
-        {Array.from({ length: division }, (_, i) => (
-          <span className="flex-1 text-center overflow-visible" key={i}>
-            {i % every === 0 ? i + 1 : ""}
-          </span>
-        ))}
       </div>
 
       {/* Hint line */}

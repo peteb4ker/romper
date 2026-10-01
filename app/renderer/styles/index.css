@@ -59,6 +59,12 @@
   --voice-3: #2d9668;
   --voice-4: #2889be;
 
+  /* Text and glyphs drawn on a lit voice color (sequencer pads, chips) */
+  --voice-1-ink: #ffffff;
+  --voice-2-ink: #1a1d23;
+  --voice-3-ink: #ffffff;
+  --voice-4-ink: #ffffff;
+
   /* Voice muted backgrounds */
   --voice-1-muted: rgba(212, 73, 80, 0.08);
   --voice-2-muted: rgba(212, 182, 60, 0.08);
@@ -75,6 +81,9 @@
 
   /* Transport */
   --transport-play: #d97706;
+
+  /* Sequencer: the lit playhead column behind the pads */
+  --seq-playhead-band: rgba(26, 29, 35, 0.09);
 
   /* Interactive */
   --focus-ring: #2889be;
@@ -106,6 +115,12 @@
   --voice-3: #3daa78;
   --voice-4: #3a9fd4;
 
+  /* Text and glyphs drawn on a lit voice color (sequencer pads, chips) */
+  --voice-1-ink: #0d0f11;
+  --voice-2-ink: #0d0f11;
+  --voice-3-ink: #0d0f11;
+  --voice-4-ink: #0d0f11;
+
   /* Voice muted backgrounds */
   --voice-1-muted: rgba(224, 90, 96, 0.12);
   --voice-2-muted: rgba(232, 200, 70, 0.12);
@@ -122,6 +137,9 @@
 
   /* Transport */
   --transport-play: #f59e0b;
+
+  /* Sequencer: the lit playhead column behind the pads */
+  --seq-playhead-band: rgba(232, 234, 237, 0.1);
 
   /* Interactive */
   --focus-ring: #3a9fd4;
@@ -193,6 +211,9 @@
 
   /* Voice name inference flash */
   --animate-voice-flash: voice-flash 1200ms ease-out both;
+
+  /* Sequencer: a pad or row chip firing */
+  --animate-seq-fire: seq-fire 220ms ease-out both;
 
   /* Sync panel animations */
   --animate-sync-panel-enter: sync-panel-enter 250ms ease-out both;
@@ -287,6 +308,18 @@ html {
   100% {
     border-color: var(--border-subtle);
     box-shadow: none;
+  }
+}
+
+/* A sequencer pad or row chip firing: a quick flare of light */
+@keyframes seq-fire {
+  0% {
+    filter: brightness(1.45) saturate(1.15);
+    transform: scale(1.06);
+  }
+  100% {
+    filter: none;
+    transform: none;
   }
 }
 

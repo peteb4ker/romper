@@ -160,6 +160,9 @@ describe("SliceStrip", () => {
     fireEvent.click(screen.getByTestId("slice-undo-roll"));
     expect(props.onUndo).toHaveBeenCalled();
 
+    // Roll settings live behind the menu next to Roll
+    expect(screen.queryByTestId("slice-roll-amount")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("slice-roll-options"));
     fireEvent.change(screen.getByTestId("slice-roll-amount"), {
       target: { value: "25" },
     });

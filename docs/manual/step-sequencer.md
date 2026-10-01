@@ -21,8 +21,9 @@ The sequencer is a **4-row, 16-step grid** representing one bar of 16th notes:
 
 - Each row corresponds to one voice (Voice 1 through 4, top to bottom)
 - Click any step to toggle it on or off
-- Active steps are highlighted in the voice's color with an LED glow effect
-- Vertical dividers mark every 4 steps (beat boundaries) for visual orientation
+- Active steps light up in the voice's color
+- Off steps alternate shade every 4 steps (one beat), like the step groups on a TR-808, and the ruler above the grid numbers the steps with each beat's first step in bold
+- The pads grow with the window, up to 48 px wide
 
 ## Transport Controls
 
@@ -30,11 +31,11 @@ The sequencer is a **4-row, 16-step grid** representing one bar of 16th notes:
 
 On the left side of the sequencer:
 
-- **Play/Stop button** -- Start or stop playback. The button glows orange while playing
-- **BPM control** -- Set the tempo (30--180 BPM). Click the field to type a value, or use the up/down arrow keys to nudge by 1 BPM
-- **Cycle counter** -- Appears during playback, showing which cycle (loop repetition) the sequencer is on. This is especially useful with trigger conditions (see below)
+- **Play/Stop button** -- Start or stop playback (or press `Space`). The button glows orange while playing
+- **BPM control** -- Set the tempo (30--180 BPM). Type a value, scroll over the field, or use the up/down arrow keys; hold Shift to change it by 10
+- **Loop indicator** -- Four dots show which of four loops is playing. Trigger conditions (see below) count these loops
 
-A moving **playhead** highlights the current step during playback with a white ring.
+During playback the current step's whole column lights up, a light runs along the ruler, and each step flashes as it fires. A step whose condition isn't met this loop stays dark, so you can see conditions at work. The row's number chip flashes with it.
 
 ## Trigger Conditions (Step Logic)
 
@@ -56,11 +57,11 @@ Each condition uses an **A:B** format, meaning "fire on the Ath repetition of ev
 
 For example, to create a snare that only hits every other bar: activate a step on the snare row and set its condition to **1:2**. To build a fill that only plays on the 4th repetition, use **4:4**. By combining different conditions across steps, you can create evolving patterns up to 64 steps long within the 16-step grid.
 
-Active steps with a trigger condition display the condition label (e.g., "4:4") on the step button. Inactive steps with a condition show a small dot as a reminder.
+Steps with a trigger condition show it as dots: **B** dots with dot **A** filled, so ●○○○ is **1:4** and ○● is **2:2**. Lit steps show the dots in a corner; off steps show them in the middle as a reminder. The popover spells each condition out ("Plays on loop 3 of every 4").
 
 ## Sample Selection Mode
 
-When a voice has multiple samples loaded, the sample mode button (to the right of the step grid) controls which sample plays on each trigger. Click the button to cycle through three modes:
+When a voice has multiple samples loaded, the **Sample** switch (to the right of the step grid) controls which sample plays on each trigger. Click one of its three modes:
 
 - **1st** (first) -- Always plays the first sample in the voice. This is the default
 - **Rnd** (random) -- Randomly picks a sample from the voice on each trigger, adding natural variation
@@ -88,10 +89,10 @@ On a slice row, clicking a lit step **selects** it; clicking the selected step a
 ### Happy accidents
 
 - **🎲 Roll** gives the row's steps random slices. The result stays put, so when something great comes up, keep it. **Undo** takes back the last roll, or any other sequencer edit.
-- **Amount** decides how much a roll changes: 25% nudges the pattern, 100% rewrites it.
+- **Amount** (in the ▾ menu next to Roll) decides how much a roll changes: 25% nudges the pattern, 100% rewrites it.
 - **Lock** a step (right-click, or `L`) to keep it while you roll everything else -- for example, keep the kick on step 1.
 - **Random slice each time** (right-click, or `R`) makes a step pick a new slice every time it plays, shown as a dice on the step, so the pattern never repeats exactly.
-- **Vary length** makes rolls and random steps pick a random length too, up to the length you choose.
+- **Vary length** (also in the ▾ menu) makes rolls and random steps pick a random length too, up to the length you choose.
 
 Slicing works together with everything else: trigger conditions still decide *whether* a step plays, and the sample mode (1st / Rnd / R-R) still decides *which* slot plays -- the slice is then taken from that slot. Sample mode **Rnd** plus random slices gives the most surprising results.
 
@@ -101,14 +102,14 @@ Slicing works together with everything else: trigger conditions still decide *wh
 
 ![Voice controls]({{ site.baseurl }}/images/manual/voice-controls.png){: .img-left}
 
-Each voice has a **volume slider** on the right side of its row. Drag the slider to adjust that voice's playback volume (0--100%). Volume changes are saved to the kit.
+Each voice has a **Level** slider on the right side of its row, with its value beside it. Drag the slider to adjust that voice's playback volume (0--100%). Level changes are saved to the kit.
 
 **Note**: Voice volume only affects preview playback in Romper -- it is **not written to the SD card** during sync. If you need volume adjustments that carry over to the Rample hardware, use the per-sample [gain control]({{ site.baseurl }}/manual/kit-editor#gain-control) in the Kit Editor, which is baked into each WAV file on sync.
 
-The **speaker icon** next to the volume slider toggles mute for that voice. When muted:
+The **M** button next to the row's number mutes that voice. It sits apart from the saved settings on the right because it's a performance control. When muted:
 
 - The voice is silenced during sequencer playback
-- The row fades to reduced opacity as a visual indicator
+- The **M** lights up and the row's steps fade; the row's controls stay at full strength
 - Mute state is session-only and resets when you reopen the kit
 
 Muting is useful for isolating voices -- mute everything except the hi-hat to focus on its pattern, or mute a voice temporarily while adjusting the others.
@@ -134,14 +135,14 @@ Here's what's programmed in each voice:
 - **Voice 3 (Snare)** -- Two hits using different trigger conditions: step 2 with **2:4** (fires on the 2nd cycle) and step 9 with **4:4** (fires only on the 4th cycle). This creates a snare pattern that evolves over 4 bars. Sample mode is **Rnd**.
 - **Voice 4 (Clap)** -- A single hit on step 2 with a **1:4** condition, so it only sounds on the 1st of every 4 cycles. Sample mode is **Rnd**.
 
-**What to listen for**: Because each voice uses different trigger conditions across a 4-cycle span, the pattern evolves over 4 bars before repeating. The kick appears only on bar 3, the snare shifts between bars 2 and 4, and the clap anchors bar 1 -- all while the hi-hat drives steadily underneath. Watch the **cycle counter** next to the BPM to follow which bar you're on.
+**What to listen for**: Because each voice uses different trigger conditions across a 4-cycle span, the pattern evolves over 4 bars before repeating. The kick appears only on bar 3, the snare shifts between bars 2 and 4, and the clap anchors bar 1 -- all while the hi-hat drives steadily underneath. Watch the **loop indicator** under the BPM to follow which bar you're on.
 
 **To recreate this pattern:**
 
 1. Open the **C0** kit and press `S` to show the sequencer
 2. Click steps to activate them in each row (refer to the screenshot above)
 3. Right-click each step that needs a condition and select the appropriate **A:B** value
-4. Click the **sample mode** button on each row until it shows the shuffle icon (**Rnd**)
+4. Click **Rnd** in each row's **Sample** switch
 5. Press **Play** and listen to the pattern evolve over 4 cycles
 
 ## Keyboard Shortcuts

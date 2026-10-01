@@ -20,6 +20,15 @@ export type TriggerCondition =
   | "4:4"
   | null;
 
+/** Plain-language meaning of a trigger condition. */
+export function describeCondition(condition: TriggerCondition): string {
+  if (condition === null) return "Plays every loop";
+  const [a, b] = condition.split(":");
+  return b === "2"
+    ? `Plays on loop ${a} of every 2`
+    : `Plays on loop ${a} of every 4`;
+}
+
 // Ordered array for cycling through conditions via right-click
 export const TRIGGER_CONDITIONS: TriggerCondition[] = [
   null,
@@ -86,11 +95,12 @@ export const ROW_COLORS = [
   "bg-voice-4 border-voice-4", // Row 3 (Voice 4)
 ];
 
+// A tight glow, so lit pads don't tint their neighbours
 export const LED_GLOWS = [
-  "shadow-[0_0_12px_3px_rgba(224,90,96,0.7)]", // voice-1 red
-  "shadow-[0_0_12px_3px_rgba(232,200,70,0.7)]", // voice-2 yellow
-  "shadow-[0_0_12px_3px_rgba(61,170,120,0.7)]", // voice-3 green
-  "shadow-[0_0_12px_3px_rgba(58,159,212,0.7)]", // voice-4 blue
+  "shadow-[0_0_10px_-2px_var(--voice-1)]",
+  "shadow-[0_0_10px_-2px_var(--voice-2)]",
+  "shadow-[0_0_10px_-2px_var(--voice-3)]",
+  "shadow-[0_0_10px_-2px_var(--voice-4)]",
 ];
 
 /**

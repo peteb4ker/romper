@@ -49,32 +49,65 @@ describe("StepSequencerGrid", () => {
     expect(stepCells).toHaveLength(4 * 16);
   });
 
-  it("renders 3 beat-group dividers per voice row", () => {
+  it("shades off steps by beat group, like the 808's step groups", () => {
     render(<StepSequencerGrid {...defaultProps} />);
 
-    // Each voice row should have 3 dividers (between groups)
-    for (let voice = 0; voice < 4; voice++) {
-      for (let group = 1; group <= 3; group++) {
-        expect(
-          screen.getByTestId(`beat-divider-${voice}-${group}`),
-        ).toBeInTheDocument();
-      }
-    }
-
-    // Total of 12 dividers (4 voices x 3 dividers)
-    const allDividers = screen.getAllByTestId(/beat-divider-/);
-    expect(allDividers).toHaveLength(12);
+    // Beats 1 and 3 share a shade; beats 2 and 4 share the other
+    expect(screen.getByTestId("seq-step-0-0").className).toContain(
+      "bg-surface-3",
+    );
+    expect(screen.getByTestId("seq-step-0-4").className).toContain(
+      "bg-surface-4",
+    );
+    expect(screen.getByTestId("seq-step-0-8").className).toContain(
+      "bg-surface-3",
+    );
+    expect(screen.getByTestId("seq-step-0-12").className).toContain(
+      "bg-surface-4",
+    );
   });
 
-  it("highlights the focused step", () => {
+  it("shows the focus ring only while the grid has focus", () => {
     const customFocusedStep = { step: 5, voice: 2 };
 
     render(
       <StepSequencerGrid {...defaultProps} focusedStep={customFocusedStep} />,
     );
+    expect(screen.queryByTestId("seq-step-focus-ring")).not.toBeInTheDocument();
 
+    fireEvent.focus(screen.getByTestId("kit-step-sequencer-grid"));
     const focusRing = screen.getByTestId("seq-step-focus-ring");
-    expect(focusRing).toBeInTheDocument();
+    expect(screen.getByTestId("seq-step-2-5").contains(focusRing)).toBe(true);
+  });
+
+  it("lights the playhead column and ruler, and flashes firing pads", () => {
+    const pattern = Array.from({ length: 4 }, () => Array(16).fill(0));
+    pattern[1][3] = 127;
+    render(
+      <StepSequencerGrid
+        {...defaultProps}
+        currentSeqStep={3}
+        firingVoices={[false, true, false, false]}
+        isSeqPlaying={true}
+        safeStepPattern={pattern}
+      />,
+    );
+
+    expect(screen.getByTestId("seq-playhead-column")).toBeInTheDocument();
+    expect(screen.getByTestId("seq-ruler-led-3")).toHaveAttribute("data-lit");
+    expect(screen.getByTestId("seq-ruler-led-2")).not.toHaveAttribute(
+      "data-lit",
+    );
+    expect(screen.getByTestId("seq-step-1-3")).toHaveAttribute("data-firing");
+    expect(screen.getByTestId("seq-step-0-3")).not.toHaveAttribute(
+      "data-firing",
+    );
+    expect(screen.getByTestId("seq-voice-fire-1")).toBeInTheDocument();
+  });
+
+  it("has no playhead while stopped", () => {
+    render(<StepSequencerGrid {...defaultProps} />);
+    expect(screen.queryByTestId("seq-playhead-column")).not.toBeInTheDocument();
   });
 
   it("highlights the currently playing step when sequencer is running", () => {
@@ -152,22 +185,19 @@ describe("StepSequencerGrid", () => {
         />,
       );
 
-      expect(screen.getByTestId("voice-volume-0")).toHaveAttribute(
-        "title",
-        "Volume: 100",
-      );
-      expect(screen.getByTestId("voice-volume-1")).toHaveAttribute(
-        "title",
-        "Volume: 80",
-      );
-      expect(screen.getByTestId("voice-volume-2")).toHaveAttribute(
-        "title",
-        "Volume: 50",
-      );
-      expect(screen.getByTestId("voice-volume-3")).toHaveAttribute(
-        "title",
-        "Volume: 0",
-      );
+      // Each level shows its value beside the slider
+      expect(
+        screen.getByTestId("voice-volume-0").parentElement,
+      ).toHaveTextContent("100");
+      expect(
+        screen.getByTestId("voice-volume-1").parentElement,
+      ).toHaveTextContent("80");
+      expect(
+        screen.getByTestId("voice-volume-2").parentElement,
+      ).toHaveTextContent("50");
+      expect(
+        screen.getByTestId("voice-volume-3").parentElement,
+      ).toHaveTextContent("0");
     });
 
     it("calls onVolumeChange when slider is changed", () => {
@@ -190,10 +220,7 @@ describe("StepSequencerGrid", () => {
       render(<StepSequencerGrid {...defaultProps} />);
 
       for (let i = 0; i < 4; i++) {
-        expect(screen.getByTestId(`voice-volume-${i}`)).toHaveAttribute(
-          "title",
-          "Volume: 100",
-        );
+        expect(screen.getByTestId(`voice-volume-${i}`)).toHaveValue("100");
       }
     });
 
@@ -219,25 +246,18 @@ describe("StepSequencerGrid", () => {
         />,
       );
 
-      expect(screen.getByTestId("sample-mode-0")).toHaveAttribute(
-        "title",
-        "Sample mode: 1st",
-      );
-      expect(screen.getByTestId("sample-mode-1")).toHaveAttribute(
-        "title",
-        "Sample mode: Rnd",
-      );
-      expect(screen.getByTestId("sample-mode-2")).toHaveAttribute(
-        "title",
-        "Sample mode: R-R",
-      );
-      expect(screen.getByTestId("sample-mode-3")).toHaveAttribute(
-        "title",
-        "Sample mode: 1st",
-      );
+      // The current mode is the pressed segment
+      const pressed = (voice: number) =>
+        screen
+          .getByTestId(`sample-mode-${voice}`)
+          .querySelector('[aria-pressed="true"]');
+      expect(pressed(0)).toHaveTextContent("1st");
+      expect(pressed(1)).toHaveTextContent("Rnd");
+      expect(pressed(2)).toHaveTextContent("R-R");
+      expect(pressed(3)).toHaveTextContent("1st");
     });
 
-    it("cycles through sample modes on click", () => {
+    it("picks a sample mode directly", () => {
       const mockOnSampleModeChange = vi.fn();
       render(
         <StepSequencerGrid
@@ -247,14 +267,16 @@ describe("StepSequencerGrid", () => {
         />,
       );
 
-      const modeButton = screen.getByTestId("sample-mode-0");
-      fireEvent.click(modeButton);
+      fireEvent.click(screen.getByTestId("sample-mode-0-round-robin"));
+      expect(mockOnSampleModeChange).toHaveBeenCalledWith(1, "round-robin");
 
-      // first -> random
-      expect(mockOnSampleModeChange).toHaveBeenCalledWith(1, "random");
+      // The current mode is a no-op
+      mockOnSampleModeChange.mockClear();
+      fireEvent.click(screen.getByTestId("sample-mode-0-first"));
+      expect(mockOnSampleModeChange).not.toHaveBeenCalled();
     });
 
-    it("cycles from round-robin back to first", () => {
+    it("switches from round-robin back to first", () => {
       const mockOnSampleModeChange = vi.fn();
       render(
         <StepSequencerGrid
@@ -269,10 +291,8 @@ describe("StepSequencerGrid", () => {
         />,
       );
 
-      const modeButton = screen.getByTestId("sample-mode-0");
-      fireEvent.click(modeButton);
+      fireEvent.click(screen.getByTestId("sample-mode-0-first"));
 
-      // round-robin -> first
       expect(mockOnSampleModeChange).toHaveBeenCalledWith(1, "first");
     });
   });
@@ -287,7 +307,7 @@ describe("StepSequencerGrid", () => {
       }
     });
 
-    it("shows SpeakerSimpleHigh icon when unmuted", () => {
+    it("shows an unlit M button when unmuted", () => {
       render(
         <StepSequencerGrid
           {...defaultProps}
@@ -296,11 +316,12 @@ describe("StepSequencerGrid", () => {
       );
 
       const muteButton = screen.getByTestId("voice-mute-0");
-      expect(muteButton).toHaveAttribute("title", "Mute");
+      expect(muteButton).toHaveTextContent("M");
+      expect(muteButton).toHaveAttribute("aria-pressed", "false");
       expect(muteButton).toHaveAttribute("aria-label", "Mute voice 1");
     });
 
-    it("shows SpeakerSimpleSlash icon when muted", () => {
+    it("lights the M button when muted", () => {
       render(
         <StepSequencerGrid
           {...defaultProps}
@@ -309,7 +330,7 @@ describe("StepSequencerGrid", () => {
       );
 
       const muteButton = screen.getByTestId("voice-mute-0");
-      expect(muteButton).toHaveAttribute("title", "Unmute");
+      expect(muteButton).toHaveAttribute("aria-pressed", "true");
       expect(muteButton).toHaveAttribute("aria-label", "Unmute voice 1");
     });
 
@@ -325,7 +346,7 @@ describe("StepSequencerGrid", () => {
       expect(mockOnMuteToggle).toHaveBeenCalledWith(2);
     });
 
-    it("applies opacity dimming to muted voice row", () => {
+    it("dims a muted row's steps but not its controls", () => {
       render(
         <StepSequencerGrid
           {...defaultProps}
@@ -333,11 +354,17 @@ describe("StepSequencerGrid", () => {
         />,
       );
 
-      const mutedRow = screen.getByTestId("seq-row-1");
-      expect(mutedRow.className).toContain("opacity-40");
+      const mutedPads = screen.getByTestId("seq-step-1-0").parentElement!;
+      expect(mutedPads.className).toContain("opacity-35");
+      expect(screen.getByTestId("seq-row-1").className).not.toContain(
+        "opacity",
+      );
+      expect(screen.getByTestId("voice-mute-1").closest(".opacity-35")).toBe(
+        null,
+      );
 
-      const unmutedRow = screen.getByTestId("seq-row-0");
-      expect(unmutedRow.className).not.toContain("opacity-40");
+      const unmutedPads = screen.getByTestId("seq-step-0-0").parentElement!;
+      expect(unmutedPads.className).not.toContain("opacity-35");
     });
 
     it("does not dim unmuted rows", () => {
@@ -373,9 +400,11 @@ describe("StepSequencerGrid", () => {
         />,
       );
 
+      // Drawn as dots: two of them, the first filled
       const indicator = screen.getByTestId("seq-condition-0-0");
-      expect(indicator).toBeInTheDocument();
-      expect(indicator).toHaveTextContent("1:2");
+      expect(indicator).toHaveAttribute("data-condition", "1:2");
+      expect(indicator).toHaveAccessibleName("Plays on loop 1 of every 2");
+      expect(indicator.children).toHaveLength(2);
     });
 
     it("renders dot indicator on inactive step with condition set", () => {

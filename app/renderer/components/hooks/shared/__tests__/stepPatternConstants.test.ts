@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   createDefaultStepPattern,
+  describeCondition,
   ensureValidStepPattern,
   isValidStepPattern,
   LED_GLOWS,
@@ -30,10 +31,18 @@ describe("stepPatternConstants", () => {
 
     it("should have LED_GLOWS with correct length", () => {
       expect(LED_GLOWS).toHaveLength(NUM_VOICES);
-      expect(LED_GLOWS[0]).toBe("shadow-[0_0_12px_3px_rgba(224,90,96,0.7)]");
-      expect(LED_GLOWS[1]).toBe("shadow-[0_0_12px_3px_rgba(232,200,70,0.7)]");
-      expect(LED_GLOWS[2]).toBe("shadow-[0_0_12px_3px_rgba(61,170,120,0.7)]");
-      expect(LED_GLOWS[3]).toBe("shadow-[0_0_12px_3px_rgba(58,159,212,0.7)]");
+      // Each glow uses its voice's livery color
+      LED_GLOWS.forEach((glow, i) => {
+        expect(glow).toBe(`shadow-[0_0_10px_-2px_var(--voice-${i + 1})]`);
+      });
+    });
+  });
+
+  describe("describeCondition", () => {
+    it("says when a step plays, in words", () => {
+      expect(describeCondition(null)).toBe("Plays every loop");
+      expect(describeCondition("2:2")).toBe("Plays on loop 2 of every 2");
+      expect(describeCondition("3:4")).toBe("Plays on loop 3 of every 4");
     });
   });
 

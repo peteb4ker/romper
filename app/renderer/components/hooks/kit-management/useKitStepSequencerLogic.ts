@@ -332,6 +332,35 @@ export function useKitStepSequencerLogic(
     return ensureValidStepPattern(stepPattern);
   }, [stepPattern]);
 
+  // Which rows fire on the current step (for the pads' and chips' flash):
+  // on, unmuted, and their condition met this cycle
+  const firingVoices = React.useMemo(
+    () =>
+      Array.from(
+        { length: NUM_VOICES },
+        (_, voiceIdx) =>
+          isSeqPlaying &&
+          isVoiceDue({
+            cycleCount,
+            step: currentSeqStep,
+            stepPattern: safeStepPattern,
+            stereoLinks,
+            triggerConditions,
+            voiceIdx,
+            voiceMutes,
+          }),
+      ),
+    [
+      currentSeqStep,
+      cycleCount,
+      isSeqPlaying,
+      safeStepPattern,
+      stereoLinks,
+      triggerConditions,
+      voiceMutes,
+    ],
+  );
+
   // Step toggling
   const toggleStep = React.useCallback(
     (voiceIdx: number, stepIdx: number) => {
@@ -472,6 +501,7 @@ export function useKitStepSequencerLogic(
   return {
     currentSeqStep,
     cycleCount,
+    firingVoices,
     focusedStep,
     gridRefInternal,
     handleStepGridKeyDown,

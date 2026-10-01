@@ -95,42 +95,6 @@ export function parseWavHeader(
   };
 }
 
-/**
- * Copy a WAV file's samples into a plain PCM/float WAV (16-byte `fmt `,
- * then `data`), so node-wav can decode it. node-wav 0.0.2 rejects
- * WAVE_FORMAT_EXTENSIBLE, ignores chunk padding, and reads samples through
- * typed arrays that need aligned offsets. A `pad ` chunk puts the samples at
- * byte 56, aligned for every sample size.
- */
-export function toPlainWav(buffer: Buffer, header: WavHeader): Buffer {
-  const dataOffset = 56;
-  const data = buffer.subarray(
-    header.dataOffset,
-    header.dataOffset + header.dataSize,
-  );
-  const out = Buffer.alloc(dataOffset + data.length);
-  out.write("RIFF", 0, "ascii");
-  out.writeUInt32LE(out.length - 8, 4);
-  out.write("WAVE", 8, "ascii");
-  out.write("fmt ", 12, "ascii");
-  out.writeUInt32LE(16, 16);
-  out.writeUInt16LE(
-    header.encoding === "float" ? FORMAT_FLOAT : FORMAT_PCM,
-    20,
-  );
-  out.writeUInt16LE(header.channels, 22);
-  out.writeUInt32LE(header.sampleRate, 24);
-  out.writeUInt32LE(header.sampleRate * header.blockAlign, 28);
-  out.writeUInt16LE(header.blockAlign, 32);
-  out.writeUInt16LE(header.bitDepth, 34);
-  out.write("pad ", 36, "ascii");
-  out.writeUInt32LE(4, 40);
-  out.write("data", 48, "ascii");
-  out.writeUInt32LE(data.length, 52);
-  data.copy(out, dataOffset);
-  return out;
-}
-
 function parseFormatChunk(
   fmt: Buffer,
 ): DbResult<Omit<WavHeader, "dataOffset" | "dataSize">> {

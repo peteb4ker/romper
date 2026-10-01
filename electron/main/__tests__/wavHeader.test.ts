@@ -1,7 +1,7 @@
-import * as wav from "node-wav";
 import { describe, expect, it } from "vitest";
 
-import { parseWavHeader, toPlainWav } from "../wavHeader";
+import { decodeSamples as decodeWavSamples } from "../wavCodec";
+import { parseWavHeader } from "../wavHeader";
 
 interface Format {
   bits: number;
@@ -58,7 +58,7 @@ const pcm16 = (() => {
 function decodeSamples(buffer: Buffer): number[] {
   const header = parse(buffer);
   if (!header.success || !header.data) throw new Error(header.error);
-  return [...wav.decode(toPlainWav(buffer, header.data)).channelData[0]];
+  return [...decodeWavSamples(buffer, header.data).channelData[0]];
 }
 
 function parse(buffer: Buffer) {

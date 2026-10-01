@@ -1,11 +1,10 @@
 import type { DbResult } from "@romper/shared/db/schema.js";
 
-import * as wav from "node-wav";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
 import { getAudioMetadata, RAMPLE_FORMAT_REQUIREMENTS } from "./audioUtils.js";
-import { parseWavHeader, toPlainWav } from "./wavHeader.js";
+import { decodeWav, type EncodeBitDepth, encodeWav } from "./wavCodec.js";
 
 export interface ConversionOptions {
   forceMonoConversion?: boolean;
@@ -166,23 +165,6 @@ export async function convertToRampleDefault(
     targetBitDepth: 16,
     targetSampleRate: 44100,
   });
-}
-
-/**
- * Decodes a WAV file buffer with node-wav, by way of a plain copy of its
- * format and samples (toPlainWav): node-wav 0.0.2 can't read extensible
- * headers or padded chunks, and mis-reads a Buffer that is a view into a
- * larger pooled ArrayBuffer, which `fs` hands back for small files.
- */
-export function decodeWav(buffer: Buffer): ReturnType<typeof wav.decode> {
-  const header = parseWavHeader(
-    (offset, length) => buffer.subarray(offset, offset + length),
-    buffer.length,
-  );
-  if (!header.success || !header.data) {
-    throw new Error(header.error);
-  }
-  return wav.decode(toPlainWav(buffer, header.data));
 }
 
 /**
@@ -415,11 +397,12 @@ async function writeOutputFile(
   targetSampleRate: number,
   targetBitDepth: number,
 ): Promise<void> {
-  const outputBuffer = wav.encode(channelData, {
-    bitDepth: targetBitDepth,
-    float: false,
-    sampleRate: targetSampleRate,
-  });
+  // validateTargetFormat has checked the depth against the Rample's (8, 16)
+  const outputBuffer = encodeWav(
+    channelData,
+    targetSampleRate,
+    targetBitDepth as EncodeBitDepth,
+  );
 
   await fs.promises.mkdir(path.dirname(outputPath), { recursive: true });
   await fs.promises.writeFile(outputPath, outputBuffer);

@@ -31,10 +31,20 @@ interface SyncJob {
 }
 
 /**
+ * Minimum gap between per-file progress events. A write of a few thousand
+ * small samples finishes in seconds; one IPC event per file start and finish
+ * floods the renderer, which then lags far behind the real count.
+ */
+export const PROGRESS_THROTTLE_MS = 50;
+
+/**
  * Service responsible for tracking sync progress and emitting progress updates
  */
 export class SyncProgressManager {
   private currentSyncJob: null | SyncJob = null;
+  private lastEmitTime: null | number = null;
+  private pendingProgress: null | SyncProgress = null;
+  private pendingTimer: null | ReturnType<typeof setTimeout> = null;
 
   /**
    * Calculate estimated time remaining based on current progress
@@ -72,6 +82,7 @@ export class SyncProgressManager {
   emitCompletionProgress(syncedFiles: number, totalFiles: number): void {
     if (!this.currentSyncJob) return;
 
+    this.cancelPendingProgress();
     this.emitProgress({
       currentFile: "",
       currentFileProgress: 100,
@@ -95,6 +106,7 @@ export class SyncProgressManager {
   ): void {
     if (!this.currentSyncJob) return;
 
+    this.cancelPendingProgress();
     this.emitProgress({
       currentFile: fileOp.filename,
       currentKitName: fileOp.kitName,
@@ -121,7 +133,7 @@ export class SyncProgressManager {
 
     this.currentSyncJob.completedFiles++;
 
-    this.emitProgress({
+    this.emitThrottledProgress({
       currentFile: fileOp.filename,
       currentFileProgress: 100,
       currentKitName: fileOp.kitName,
@@ -139,7 +151,7 @@ export class SyncProgressManager {
   emitFileStartProgress(fileOp: SyncFileOperation): void {
     if (!this.currentSyncJob) return;
 
-    this.emitProgress({
+    this.emitThrottledProgress({
       currentFile: fileOp.filename,
       currentFileProgress: 0,
       currentKitName: fileOp.kitName,
@@ -162,10 +174,40 @@ export class SyncProgressManager {
   }
 
   /**
+   * Emit per-file progress at most once per PROGRESS_THROTTLE_MS. The first
+   * event and the one that completes the last file go out immediately; an
+   * event that arrives too soon is held, replaced by any newer one, and sent
+   * when the interval elapses, so the renderer always ends on the latest
+   * count.
+   */
+  emitThrottledProgress(progress: SyncProgress): void {
+    const now = Date.now();
+    const isFinalFile =
+      progress.totalFiles > 0 && progress.filesCompleted >= progress.totalFiles;
+    const sinceLast =
+      this.lastEmitTime === null ? Infinity : now - this.lastEmitTime;
+
+    if (isFinalFile || sinceLast >= PROGRESS_THROTTLE_MS) {
+      this.cancelPendingProgress();
+      this.lastEmitTime = now;
+      this.emitProgress(progress);
+      return;
+    }
+
+    this.pendingProgress = progress;
+    this.pendingTimer ??= setTimeout(
+      () => this.flushPendingProgress(),
+      PROGRESS_THROTTLE_MS - sinceLast,
+    );
+  }
+
+  /**
    * Finalize sync job and return if it was cancelled
    */
   finalizeSyncJob(): boolean {
     const wasCancelled = this.currentSyncJob?.cancelled || false;
+    this.cancelPendingProgress();
+    this.lastEmitTime = null;
     this.currentSyncJob = null;
     return wasCancelled;
   }
@@ -181,6 +223,8 @@ export class SyncProgressManager {
    * Initialize a new sync job with file operations
    */
   initializeSyncJob(allFiles: SyncFileOperation[]): void {
+    this.cancelPendingProgress();
+    this.lastEmitTime = null;
     this.currentSyncJob = {
       cancelled: false,
       completedFiles: 0,
@@ -190,6 +234,24 @@ export class SyncProgressManager {
       status: "in_progress",
       totalFiles: allFiles.length,
     };
+  }
+
+  private cancelPendingProgress(): void {
+    if (this.pendingTimer) {
+      clearTimeout(this.pendingTimer);
+      this.pendingTimer = null;
+    }
+    this.pendingProgress = null;
+  }
+
+  private flushPendingProgress(): void {
+    const progress = this.pendingProgress;
+    this.pendingTimer = null;
+    this.pendingProgress = null;
+    if (!progress || !this.currentSyncJob) return;
+
+    this.lastEmitTime = Date.now();
+    this.emitProgress(progress);
   }
 }
 

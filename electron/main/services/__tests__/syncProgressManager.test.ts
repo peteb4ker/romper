@@ -1,5 +1,5 @@
 import { BrowserWindow } from "electron";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("electron", () => ({
   BrowserWindow: {
@@ -7,7 +7,10 @@ vi.mock("electron", () => ({
   },
 }));
 
-import { syncProgressManager } from "../syncProgressManager.js";
+import {
+  PROGRESS_THROTTLE_MS,
+  syncProgressManager,
+} from "../syncProgressManager.js";
 
 const mockBrowserWindow = vi.mocked(BrowserWindow);
 
@@ -278,6 +281,147 @@ describe("SyncProgressManager", () => {
           status: "error",
         }),
       );
+    });
+  });
+
+  describe("progress throttling", () => {
+    const makeFiles = (count: number) =>
+      Array.from({ length: count }, (_, i) => ({
+        filename: `s${i}.wav`,
+        kitName: "A0",
+        operation: "copy",
+      })) as unknown[];
+
+    const sentProgress = () =>
+      mockWebContents.send.mock.calls.map(
+        ([, progress]) =>
+          progress as { filesCompleted: number; status: string },
+      );
+
+    const syncFile = (fileOp: unknown) => {
+      syncProgressManager.emitFileStartProgress(fileOp);
+      syncProgressManager.emitFileCompletionProgress(fileOp);
+    };
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      syncProgressManager.finalizeSyncJob();
+      vi.useRealTimers();
+    });
+
+    it("sends the first event immediately", () => {
+      const files = makeFiles(10);
+      syncProgressManager.initializeSyncJob(files);
+
+      syncProgressManager.emitFileStartProgress(files[0]);
+
+      expect(mockWebContents.send).toHaveBeenCalledTimes(1);
+    });
+
+    it("coalesces a burst of file events into a few sends", () => {
+      const files = makeFiles(2395);
+      syncProgressManager.initializeSyncJob(files);
+
+      // Every file in one instant, as a fast copy loop does
+      files.slice(0, 2000).forEach(syncFile);
+
+      // The first event went out; the rest are held as one pending update
+      expect(mockWebContents.send).toHaveBeenCalledTimes(1);
+
+      vi.advanceTimersByTime(PROGRESS_THROTTLE_MS);
+
+      const sent = sentProgress();
+      expect(sent).toHaveLength(2);
+      expect(sent[1].filesCompleted).toBe(2000);
+    });
+
+    it("sends at most one event per interval while files keep completing", () => {
+      const files = makeFiles(1000);
+      syncProgressManager.initializeSyncJob(files);
+
+      // One file per millisecond for 500 ms
+      for (const file of files.slice(0, 500)) {
+        syncFile(file);
+        vi.advanceTimersByTime(1);
+      }
+      vi.advanceTimersByTime(PROGRESS_THROTTLE_MS);
+
+      const sent = sentProgress();
+      expect(sent.length).toBeLessThanOrEqual(500 / PROGRESS_THROTTLE_MS + 2);
+      expect(sent.at(-1)?.filesCompleted).toBe(500);
+      // Counts only ever move forward
+      const counts = sent.map((p) => p.filesCompleted);
+      expect(counts).toEqual([...counts].sort((a, b) => a - b));
+    });
+
+    it("sends the last file's completion immediately with the exact count", () => {
+      const files = makeFiles(300);
+      syncProgressManager.initializeSyncJob(files);
+
+      files.forEach(syncFile);
+
+      const sent = sentProgress();
+      expect(sent.at(-1)?.filesCompleted).toBe(300);
+      // Nothing stale is left to arrive after the final count
+      vi.advanceTimersByTime(PROGRESS_THROTTLE_MS * 2);
+      expect(sentProgress()).toHaveLength(sent.length);
+    });
+
+    it("sends completion immediately and drops any pending update", () => {
+      const files = makeFiles(100);
+      syncProgressManager.initializeSyncJob(files);
+      files.slice(0, 50).forEach(syncFile);
+
+      syncProgressManager.emitCompletionProgress(50, 100);
+      vi.advanceTimersByTime(PROGRESS_THROTTLE_MS * 2);
+
+      const sent = sentProgress();
+      expect(sent).toHaveLength(2);
+      expect(sent[1]).toMatchObject({ filesCompleted: 50, status: "complete" });
+    });
+
+    it("sends errors immediately and drops any pending update", () => {
+      const files = makeFiles(100);
+      syncProgressManager.initializeSyncJob(files);
+      files.slice(0, 50).forEach(syncFile);
+
+      syncProgressManager.emitErrorProgress(files[50], {
+        canRetry: false,
+        error: "Disk full",
+      });
+      vi.advanceTimersByTime(PROGRESS_THROTTLE_MS * 2);
+
+      const sent = sentProgress();
+      expect(sent).toHaveLength(2);
+      expect(sent[1]).toMatchObject({ filesCompleted: 50, status: "error" });
+    });
+
+    it("drops a pending update when the job is finalized (cancel)", () => {
+      const files = makeFiles(100);
+      syncProgressManager.initializeSyncJob(files);
+      files.slice(0, 50).forEach(syncFile);
+
+      syncProgressManager.cancelCurrentSync();
+      syncProgressManager.finalizeSyncJob();
+      vi.advanceTimersByTime(PROGRESS_THROTTLE_MS * 2);
+
+      expect(mockWebContents.send).toHaveBeenCalledTimes(1);
+    });
+
+    it("sends the first event of a new job immediately", () => {
+      const files = makeFiles(10);
+      syncProgressManager.initializeSyncJob(files);
+      syncFile(files[0]);
+      syncProgressManager.finalizeSyncJob();
+
+      syncProgressManager.initializeSyncJob(files);
+      syncProgressManager.emitFileStartProgress(files[0]);
+
+      expect(sentProgress().at(-1)).toMatchObject({ filesCompleted: 0 });
+      expect(mockWebContents.send).toHaveBeenCalledTimes(2);
     });
   });
 });

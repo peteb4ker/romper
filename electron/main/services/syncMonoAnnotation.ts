@@ -13,12 +13,9 @@ export function annotateMonoConversion(
   const cache = buildVoiceStereoModeCache(allFiles, dbDir);
 
   for (const fileOp of allFiles) {
-    const voiceNumber = extractVoiceNumber(fileOp.destinationPath);
-    if (voiceNumber === undefined) {
-      continue;
-    }
-
-    const voiceStereoMode = cache.get(`${fileOp.kitName}:${voiceNumber}`);
+    const voiceStereoMode = cache.get(
+      `${fileOp.kitName}:${fileOp.voiceNumber}`,
+    );
 
     if (voiceStereoMode === false && fileOp.isStereo) {
       fileOp.forceMonoConversion = true;
@@ -60,16 +57,4 @@ export function buildVoiceStereoModeCache(
   }
 
   return cache;
-}
-
-/**
- * Extract voice number from a sync destination path (e.g., .../kitName/1/filename.wav).
- */
-export function extractVoiceNumber(
-  destinationPath: string,
-): number | undefined {
-  const pathParts = destinationPath.split("/");
-  const voiceNumberStr = pathParts.at(-2) ?? "";
-  const voiceNumber = Number.parseInt(voiceNumberStr, 10);
-  return Number.isNaN(voiceNumber) ? undefined : voiceNumber;
 }

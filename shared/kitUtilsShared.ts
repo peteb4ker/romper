@@ -1,16 +1,16 @@
 // Shared kit utilities for both main and renderer
 
-// For a list of given files, map them to the corresponding voice number
+import { voiceOfCardFile } from "./rampleCardLayout.js";
+
+// For a list of a kit folder's files, map them to the voice the Rample
+// assigns each one (the first character of the name; see rampleCardLayout)
 export function groupSamplesByVoice(files: string[]): {
   [voice: number]: string[];
 } {
   const voices: { [voice: number]: string[] } = { 1: [], 2: [], 3: [], 4: [] };
   files.forEach((f) => {
-    const match = /^([1-4])./.exec(f);
-    if (match) {
-      const voice = Number.parseInt(match[1], 10);
-      if (voices[voice]) voices[voice].push(f);
-    }
+    const voice = voiceOfCardFile(f);
+    if (voice !== null) voices[voice].push(f);
   });
   Object.keys(voices).forEach((v) => {
     voices[+v].sort((a, b) => a.localeCompare(b));

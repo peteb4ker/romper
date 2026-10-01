@@ -170,20 +170,21 @@ for downmixing (channel average, in `formatConverter.ts`).
 ## Sync to SD card
 
 `syncService.ts` orchestrates. Each sample is converted if needed
-(`formatConverter.ts`) and written to `<card>/<kit>/<voice>/<original file
-name>` (`syncSampleProcessing.ts`). The user can choose to wipe the card
-first; `sdCardSafety.ts` guards which folders may be cleared.
+(`formatConverter.ts`) and written directly into its kit folder, named
+`<voice>-<slot> <name>.wav` (`A0/1-01 KICK.wav`). That is the layout the
+Rample firmware and Squarp's factory kits use: the first character is the
+voice, and the zero-padded slot keeps the layer order. The naming and
+voice-parsing rules live in `shared/rampleCardLayout.ts`, which sync, the
+setup wizard's import and rescan share; the spec is
+[sd-card-layout.md](sd-card-layout.md). Sync never touches the device's
+`_save/` folder. The user can choose to wipe the card first; `sdCardSafety.ts`
+guards which folders may be cleared.
 
-Known gaps, tracked in the findings register
+Known gap, tracked in the findings register
 ([aidlc-docs/inception/reverse-engineering/code-quality-assessment.md](../../aidlc-docs/inception/reverse-engineering/code-quality-assessment.md)):
 
-- **RE-06:** scan and SD import read WAVs at the kit root and take the voice
-  from the file name's first character, so a card written by sync can't be
-  re-imported. `rampleNamingService.ts` implements flat
-  `{voice}sample{slot}.wav` naming, but nothing on the sync path calls it
-  (nor `stereoSyncProcessor.ts`).
-- **RE-09:** validation results are built and then dropped, so sync can
-  report success with samples missing.
+- **RE-05:** sync only adds or overwrites, so samples removed from a kit
+  stay on the card.
 
 ## Testing
 

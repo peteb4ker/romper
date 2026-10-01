@@ -4,7 +4,7 @@ priority: high
 status: specification
 updated: 2026-09-30
 context_size: small
-implementation_status: not started. Covers RE-06 and sets up RE-05.
+implementation_status: RE-06 implemented in #372. RE-05 not started.
 -->
 
 # SD card layout (RE-06, RE-05)
@@ -114,9 +114,10 @@ than a broken feature. Either way, the fix is the same.
   the device matches Romper's slot order whichever sort the firmware
   uses.
 - `<name>`: the sample's file name without `.wav`, with:
-  - a leading voice prefix removed (`^[1-4][ ._-]*`), so
-    `1 KICK LOW 01.wav` becomes `1-01 KICK LOW 01.wav`, not
-    `1-01 1 KICK LOW 01.wav`;
+  - a leading voice prefix removed (a voice digit, optionally the `-NN`
+    this scheme adds, then any of ` ._-`), so `1 KICK LOW 01.wav` becomes
+    `1-01 KICK LOW 01.wav`, not `1-01 1 KICK LOW 01.wav`, and a name
+    imported from a Romper-written card isn't prefixed twice;
   - characters FAT32 forbids (`\ / : * ? " < > |` and control
     characters) replaced with `_`;
   - leading and trailing spaces and dots trimmed;
@@ -131,25 +132,22 @@ than a broken feature. Either way, the fix is the same.
 
 ### One layout module
 
-`electron/main/services/rampleCardLayout.ts` (replacing the unused
-`rampleNamingService.ts`) owns:
+`shared/rampleCardLayout.ts` holds the naming and parsing rules. It lives
+in `shared/` because the setup wizard's import runs in the renderer.
 
-- `kitFolderPath(cardRoot, kitName)`, validated with `isValidKit`
-- `sampleFileName(voice, slot, originalName)`, the rules above
-- `sampleFilePath(cardRoot, sample)`
-- `voiceOfCardFile(fileName)`, used by import and rescan in place of
-  their own regex (it wraps `groupSamplesByVoice`'s rule)
-- `legacyVoiceFolders(kitPath)`: the `1`–`4` subfolders older Romper
-  versions wrote
+- `cardSampleFileName(voice, slot, originalName)`: the rules above
+- `voiceOfCardFile(fileName)`: the voice the firmware assigns a file, used
+  by `groupSamplesByVoice` for import and rescan
 
-Sync, import and rescan all go through it.
+Sync joins the kit folder and file name in
+`syncSampleProcessing.getDestinationPath`. The unused
+`rampleNamingService.ts`, and `stereoSyncProcessor.ts`, the only thing that
+imported it, are deleted (part of RE-56).
 
-### Legacy cards
+### Existing cards
 
-A card synced by Romper up to v1.3.1 has `<kit>/1/` … `<kit>/4/`
-subfolders. When sync writes a kit, it removes those four folders from
-that kit's folder, and nothing else. It doesn't touch kits it isn't
-writing.
+None are in use, so there is no migration. A card that still has the old
+per-voice subfolders can be cleared with the "clear card" option.
 
 ### What sync never touches
 
@@ -166,19 +164,19 @@ for changed kits, which is Squarp's documented reset.
 ### Validation (warnings in the sync summary)
 
 - A kit with no voice-1 sample won't open on the device.
-- More than 12 samples in a voice: the device's behaviour is unknown, so
-  sync warns. Romper's slots already cap a voice at 12.
+- More than 12 samples in a voice can't happen: Romper's slots cap a voice
+  at 12. (The factory card has one voice with 18 files; what the device
+  does with the extra ones is unknown.)
 - Mixed mono and stereo in a voice is handled by `stereo_mode`. The
   format rules (44.1 kHz, 16-bit) are the converter's job and are tracked
   in RE-08 and RE-29.
 
 ## Delivery
 
-1. **RE-06 (this PR series):**
+1. **RE-06 (this PR):**
    - add the layout module and sync's new file names;
-   - remove legacy voice folders;
    - route import and rescan voice parsing through the module;
-   - delete `rampleNamingService.ts`;
+   - delete `rampleNamingService.ts` and `stereoSyncProcessor.ts`;
    - fix the layout sections of `docs/manual/syncing.md` (no `/KITS`,
      no labels file);
    - add tests for the names and an e2e assertion on the written layout.

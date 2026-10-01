@@ -10,27 +10,10 @@ import { getKit } from "../../db/romperDbCoreORM.js";
 import {
   annotateMonoConversion,
   buildVoiceStereoModeCache,
-  extractVoiceNumber,
 } from "../syncMonoAnnotation.js";
 
 beforeEach(() => {
   vi.clearAllMocks();
-});
-
-describe("extractVoiceNumber", () => {
-  it("extracts voice number from standard path", () => {
-    expect(extractVoiceNumber("kitName/1/sample.wav")).toBe(1);
-    expect(extractVoiceNumber("kitName/4/sample.wav")).toBe(4);
-  });
-
-  it("returns undefined for non-numeric path segments", () => {
-    expect(extractVoiceNumber("kitName/abc/sample.wav")).toBeUndefined();
-    expect(extractVoiceNumber("sample.wav")).toBeUndefined();
-  });
-
-  it("returns undefined for empty path", () => {
-    expect(extractVoiceNumber("")).toBeUndefined();
-  });
 });
 
 describe("buildVoiceStereoModeCache", () => {
@@ -47,11 +30,12 @@ describe("buildVoiceStereoModeCache", () => {
 
     const files: SyncFileOperation[] = [
       {
-        destinationPath: "myKit/1/sample.wav",
+        destinationPath: "myKit/1-01 sample.wav",
         filename: "sample.wav",
         kitName: "myKit",
         operation: "copy",
         sourcePath: "/src/sample.wav",
+        voiceNumber: 1,
       },
     ];
 
@@ -69,18 +53,20 @@ describe("buildVoiceStereoModeCache", () => {
 
     const files: SyncFileOperation[] = [
       {
-        destinationPath: "myKit/1/a.wav",
+        destinationPath: "myKit/1-01 a.wav",
         filename: "a.wav",
         kitName: "myKit",
         operation: "copy",
         sourcePath: "/src/a.wav",
+        voiceNumber: 1,
       },
       {
-        destinationPath: "myKit/1/b.wav",
+        destinationPath: "myKit/1-01 b.wav",
         filename: "b.wav",
         kitName: "myKit",
         operation: "copy",
         sourcePath: "/src/b.wav",
+        voiceNumber: 1,
       },
     ];
 
@@ -95,11 +81,12 @@ describe("buildVoiceStereoModeCache", () => {
 
     const files: SyncFileOperation[] = [
       {
-        destinationPath: "myKit/1/sample.wav",
+        destinationPath: "myKit/1-01 sample.wav",
         filename: "sample.wav",
         kitName: "myKit",
         operation: "copy",
         sourcePath: "/src/sample.wav",
+        voiceNumber: 1,
       },
     ];
 
@@ -116,11 +103,12 @@ describe("buildVoiceStereoModeCache", () => {
 
     const files: SyncFileOperation[] = [
       {
-        destinationPath: "myKit/1/sample.wav",
+        destinationPath: "myKit/1-01 sample.wav",
         filename: "sample.wav",
         kitName: "myKit",
         operation: "copy",
         sourcePath: "/src/sample.wav",
+        voiceNumber: 1,
       },
     ];
 
@@ -140,12 +128,13 @@ describe("annotateMonoConversion", () => {
 
     const files: SyncFileOperation[] = [
       {
-        destinationPath: "myKit/1/sample.wav",
+        destinationPath: "myKit/1-01 sample.wav",
         filename: "sample.wav",
         isStereo: true,
         kitName: "myKit",
         operation: "copy",
         sourcePath: "/src/sample.wav",
+        voiceNumber: 1,
       },
     ];
 
@@ -168,12 +157,13 @@ describe("annotateMonoConversion", () => {
 
     const files: SyncFileOperation[] = [
       {
-        destinationPath: "myKit/1/sample.wav",
+        destinationPath: "myKit/1-01 sample.wav",
         filename: "sample.wav",
         isStereo: false,
         kitName: "myKit",
         operation: "copy",
         sourcePath: "/src/sample.wav",
+        voiceNumber: 1,
       },
     ];
 
@@ -193,12 +183,13 @@ describe("annotateMonoConversion", () => {
 
     const files: SyncFileOperation[] = [
       {
-        destinationPath: "myKit/1/sample.wav",
+        destinationPath: "myKit/1-01 sample.wav",
         filename: "sample.wav",
         isStereo: true,
         kitName: "myKit",
         operation: "copy",
         sourcePath: "/src/sample.wav",
+        voiceNumber: 1,
       },
     ];
 
@@ -218,13 +209,14 @@ describe("annotateMonoConversion", () => {
 
     const files: SyncFileOperation[] = [
       {
-        destinationPath: "myKit/1/sample.wav",
+        destinationPath: "myKit/1-01 sample.wav",
         filename: "sample.wav",
         isStereo: true,
         kitName: "myKit",
         operation: "convert",
         reason: "Format conversion required",
         sourcePath: "/src/sample.wav",
+        voiceNumber: 1,
       },
     ];
 
@@ -235,31 +227,6 @@ describe("annotateMonoConversion", () => {
     expect(files[0].reason).toBe("Format conversion required");
   });
 
-  it("skips files with unparseable voice numbers", () => {
-    vi.mocked(getKit).mockReturnValue({
-      data: {
-        voices: [{ stereo_mode: false, voice_number: 1 }],
-      },
-      success: true,
-    } as ReturnType<typeof getKit>);
-
-    const files: SyncFileOperation[] = [
-      {
-        destinationPath: "sample.wav",
-        filename: "sample.wav",
-        isStereo: true,
-        kitName: "myKit",
-        operation: "copy",
-        sourcePath: "/src/sample.wav",
-      },
-    ];
-
-    annotateMonoConversion(files, "/db");
-
-    expect(files[0].forceMonoConversion).toBeUndefined();
-    expect(files[0].operation).toBe("copy");
-  });
-
   it("does not annotate when voice stereo_mode is undefined", () => {
     vi.mocked(getKit).mockReturnValue({
       data: { voices: [] },
@@ -268,12 +235,13 @@ describe("annotateMonoConversion", () => {
 
     const files: SyncFileOperation[] = [
       {
-        destinationPath: "myKit/1/sample.wav",
+        destinationPath: "myKit/1-01 sample.wav",
         filename: "sample.wav",
         isStereo: true,
         kitName: "myKit",
         operation: "copy",
         sourcePath: "/src/sample.wav",
+        voiceNumber: 1,
       },
     ];
 

@@ -24,7 +24,7 @@ The sequencer is a **4-row, 16-step grid** representing one bar of 16th notes:
 - Active steps light up in the voice's color
 - Off steps alternate shade every 4 steps (one beat), like the step groups on a TR-808, and the ruler above the grid numbers the steps with each beat's first step in bold
 - The pads grow with the window, up to 48 px wide
-- Press `?`, or click **? Keys** above the Level column, for every sequencer shortcut
+- Press `?`, or click the **⌨ ?** button under the transport, for every sequencer shortcut
 
 ## Transport Controls
 

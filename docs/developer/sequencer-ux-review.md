@@ -174,9 +174,13 @@ each other and can land in any order.
 ### Polish (after #373)
 
 - **C4:** a `?` overlay with every shortcut (`?` again or Escape closes
-  it), opened by `?` or a **? Keys** button in the grid header, and an
+  it), opened by `?` or a **⌨ ?** button under the transport, and an
   `S` keycap on the Show/Hide handle. #375 also added a status line under
-  the grid; Pete removed it (too busy), keeping only the button.
+  the grid; Pete removed it (too busy), keeping only the button. The
+  button first sat among the column headers, where it read as a label;
+  it now sits under the transport and uses the palette's `btn-secondary`
+  style (strong border, primary text), which the slicer's Roll and Undo
+  share.
 - **C9:** #375 added a grip to set the pad height by dragging the
   drawer's edge. Pete removed it: the layout has one sweet spot, and
   other heights look wrong. Pads keep the window-driven size.

@@ -1,4 +1,4 @@
-import { QuestionIcon, XIcon } from "@phosphor-icons/react";
+import { KeyboardIcon, QuestionIcon, XIcon } from "@phosphor-icons/react";
 import React from "react";
 
 import { usePopoverDismiss } from "./hooks/shared/usePopoverDismiss";
@@ -53,20 +53,21 @@ const ALL_SHORTCUTS: { group: string; items: Shortcut[] }[] = [
   },
 ];
 
-/** Opens the shortcut list: a "?" keycap with a label. */
+/** Opens the shortcut list. A palette secondary button, so it reads as a
+ * control rather than another label. */
 export const SequencerKeysButton: React.FC<{ onClick: () => void }> = ({
   onClick,
 }) => (
   <button
     aria-label="Keyboard shortcuts"
-    className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-tertiary hover:text-text-primary hover:bg-surface-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+    className="btn-secondary h-7 px-2 text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
     data-testid="sequencer-keys-button"
     onClick={onClick}
     title="Keyboard shortcuts (?)"
     type="button"
   >
-    <Kbd>?</Kbd>
-    Keys
+    <KeyboardIcon size={14} weight="bold" />
+    <span className="text-sm leading-none">?</span>
   </button>
 );
 

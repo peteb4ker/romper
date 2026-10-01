@@ -162,6 +162,26 @@ describe("StepSequencerControls", () => {
     expect(mockBpmLogic.setBpm).not.toHaveBeenCalled();
   });
 
+  describe("Keyboard shortcuts button", () => {
+    it("sits under the transport and opens the shortcut list", () => {
+      const onShowKeys = vi.fn();
+      render(
+        <StepSequencerControls
+          bpmLogic={mockBpmLogic}
+          isSeqPlaying={false}
+          kitName="TestKit"
+          onShowKeys={onShowKeys}
+          setIsSeqPlaying={setIsSeqPlaying}
+        />,
+      );
+      const button = screen.getByTestId("sequencer-keys-button");
+      // Styled from the palette as a secondary button, not a label
+      expect(button.className).toContain("btn-secondary");
+      fireEvent.click(button);
+      expect(onShowKeys).toHaveBeenCalled();
+    });
+  });
+
   describe("BPM scrubbing", () => {
     it("scrolls the BPM up and down, by 10 with Shift", () => {
       render(

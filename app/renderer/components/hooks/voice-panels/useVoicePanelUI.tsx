@@ -89,9 +89,10 @@ export function useVoicePanelUI({
             )}
           </>
         )}
-        {/* Stereo badge — always visible regardless of editing state */}
+        {/* Stereo badge: always shown; it unlinks only in an editable kit,
+            since linking is an edit (RE-71) */}
         {isLinkedPrimary && <span className="flex-1" />}
-        {isLinkedPrimary && (
+        {isLinkedPrimary && isEditable && (
           <button
             className="flex items-center gap-1 text-xs text-text-secondary opacity-80 hover:opacity-100 transition-opacity flex-shrink-0"
             data-testid={`stereo-badge-${voice}`}
@@ -102,6 +103,16 @@ export function useVoicePanelUI({
             Stereo
             <StereoIcon size={18} />
           </button>
+        )}
+        {isLinkedPrimary && !isEditable && (
+          <span
+            className="flex items-center gap-1 text-xs text-text-secondary opacity-80 flex-shrink-0"
+            data-testid={`stereo-badge-${voice}`}
+            title="Stereo pair. Make the kit editable to unlink it."
+          >
+            Stereo
+            <StereoIcon size={18} />
+          </span>
         )}
       </div>
     ),

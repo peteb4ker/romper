@@ -350,8 +350,13 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
           const nextVoiceLinked =
             voice < 4 &&
             stereoHandling.getVoiceLinkingStatus(voice + 1, voiceData).isLinked;
+          // Linking is an edit (RE-71): no link control on a read-only kit
           const showChainIcon =
-            voice < 4 && !isPrimary && !isSecondary && !nextVoiceLinked;
+            Boolean(props.isEditable) &&
+            voice < 4 &&
+            !isPrimary &&
+            !isSecondary &&
+            !nextVoiceLinked;
 
           return (
             <div

@@ -22,6 +22,7 @@ vi.mock("../db/romperDbCoreORM", () => ({
   toggleKitFavorite: vi.fn(),
   updateKit: vi.fn(),
   updateVoiceAlias: vi.fn(),
+  updateVoiceStereoMode: vi.fn(() => ({ success: true })),
 }));
 
 // Mock services
@@ -205,6 +206,40 @@ describe("dbIpcHandlers - Routing Tests", () => {
 
       expect(importSetupKit).toHaveBeenCalledWith("/test/path/.romperdb", "A5");
       importSetupKit.mockRestore();
+    });
+
+    // RE-71: linking is an edit, so a read-only kit keeps its stereo setting
+    it("update-voice-stereo-mode refuses a kit that isn't editable", async () => {
+      vi.mocked(romperDbCore.getKit).mockReturnValueOnce({
+        data: { editable: false, name: "A0" },
+        success: true,
+      } as ReturnType<typeof romperDbCore.getKit>);
+      const result = await handlerRegistry["update-voice-stereo-mode"](
+        {},
+        "A0",
+        1,
+        true,
+      );
+      expect(result).toEqual({
+        error:
+          "Kit A0 isn't editable. Make it editable to link or unlink voices.",
+        success: false,
+      });
+      expect(romperDbCore.updateVoiceStereoMode).not.toHaveBeenCalled();
+    });
+
+    it("update-voice-stereo-mode links voices in an editable kit", async () => {
+      vi.mocked(romperDbCore.getKit).mockReturnValueOnce({
+        data: { editable: true, name: "A0" },
+        success: true,
+      } as ReturnType<typeof romperDbCore.getKit>);
+      await handlerRegistry["update-voice-stereo-mode"]({}, "A0", 1, true);
+      expect(romperDbCore.updateVoiceStereoMode).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        "A0",
+        1,
+        true,
+      );
     });
 
     it("get-all-kits routes to database with settings validation", async () => {

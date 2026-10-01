@@ -98,4 +98,41 @@ test.describe("Stereo voice linking", () => {
     });
     expect(voice3?.stereo_mode).toBe(false);
   });
+  test("[UC-28] a read-only kit can't be linked or unlinked (RE-71)", async () => {
+    // Link while editable, then lock the kit again
+    await window.locator('[data-testid="link-button-3-4"]').click();
+    await expect(
+      window.locator('[data-testid="stereo-badge-3"]'),
+    ).toBeVisible();
+    await window.getByTitle("Disable editable mode").click();
+
+    // The pair still shows, but nothing offers to change it
+    await expect(
+      window.locator('[data-testid="stereo-badge-3"]'),
+    ).toBeVisible();
+    await expect(
+      window.locator('button[data-testid="stereo-badge-3"]'),
+    ).toHaveCount(0);
+    await expect(window.locator('[data-testid^="link-button-"]')).toHaveCount(
+      0,
+    );
+
+    // And main refuses it, whatever the renderer does
+    const result = await window.evaluate(async () =>
+      (globalThis as unknown as ApiWindow).electronAPI.updateVoiceStereoMode(
+        "A0",
+        3,
+        false,
+      ),
+    );
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/isn't editable/);
+    const voice3 = await window.evaluate(async () => {
+      const res = await (globalThis as unknown as ApiWindow).electronAPI.getKit(
+        "A0",
+      );
+      return res.data?.voices?.find((v) => v.voice_number === 3);
+    });
+    expect(voice3?.stereo_mode).toBe(true);
+  });
 });

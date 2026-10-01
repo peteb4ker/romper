@@ -694,13 +694,13 @@ to mono when written. See
   (`handleVoiceLink`, `handleVoiceUnlink`, test ID `link-button-N-M`);
   `app/renderer/components/hooks/sample-management/useStereoHandling.ts`;
   `app/renderer/components/hooks/voice-panels/useVoicePanelUI.tsx` (`stereo-badge-N`).
-- **IPC:** `update-voice-stereo-mode`.
+- **IPC:** `update-voice-stereo-mode` (refused for a kit that isn't
+  editable, RE-71).
 - **Main:** `electron/main/db/operations/voiceCrudOperations.ts` (`updateVoiceStereoMode`);
   `electron/main/services/validation/sampleValidator.ts`
   (`validateVoiceNotLinkedPartner`); at write time,
   `electron/main/services/syncMonoAnnotation.ts` (`annotateMonoConversion`).
-- **Known issues:** RE-40 (a refused link only reaches the console), RE-71
-  (link and unlink work on non-editable kits).
+- **Known issues:** RE-40 (a refused link only reaches the console).
 
 ## Audition
 

@@ -181,6 +181,20 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
         voiceNumber: number,
         stereoMode: boolean,
       ) => {
+        // Linking is an edit: it decides what the next write puts on the
+        // card (stereo, or a mono mix), so a read-only kit keeps its
+        // setting (RE-71)
+        const kit = getKit(dbDir, kitName);
+        if (!kit.success) return { error: kit.error, success: false };
+        if (!kit.data) {
+          return { error: `Kit ${kitName} not found`, success: false };
+        }
+        if (!kit.data.editable) {
+          return {
+            error: `Kit ${kitName} isn't editable. Make it editable to link or unlink voices.`,
+            success: false,
+          };
+        }
         return updateVoiceStereoMode(dbDir, kitName, voiceNumber, stereoMode);
       },
     ),

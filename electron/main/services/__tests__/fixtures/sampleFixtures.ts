@@ -8,7 +8,6 @@ import type { Sample } from "@romper/shared/db/schema";
 export const baseMockSample: Sample = {
   filename: "test.wav",
   id: 1,
-  is_stereo: false,
   kit_name: "A0",
   slot_number: 0,
   source_path: "/path/to/test.wav",
@@ -23,7 +22,6 @@ export const mockStereoSample: Sample = {
   ...baseMockSample,
   filename: "stereo_test.wav",
   id: 2,
-  is_stereo: true,
   source_path: "/path/to/stereo_test.wav",
   wav_channels: 2,
 };
@@ -32,7 +30,6 @@ export const mockMonoSample: Sample = {
   ...baseMockSample,
   filename: "mono_test.wav",
   id: 3,
-  is_stereo: false,
   wav_channels: 1,
 };
 

@@ -59,14 +59,12 @@ describe("romperDb", () => {
   it("should call insertSample and return sampleId", async () => {
     const sample = {
       filename: "kick.wav",
-      is_stereo: false,
       kit_id: 1,
       slot_number: 100,
     };
     const sampleId = await insertSample("/mock/path", sample);
     expect(window.electronAPI.insertSample).toHaveBeenCalledWith("/mock/path", {
       filename: "kick.wav",
-      is_stereo: false,
       kit_id: 1,
       slot_number: 100,
       source_path: "",
@@ -86,7 +84,6 @@ describe("romperDb", () => {
     await expect(
       insertSample("/fail/path", {
         filename: "fail.wav",
-        is_stereo: false,
         kit_id: 1,
         slot_number: 100,
       }),

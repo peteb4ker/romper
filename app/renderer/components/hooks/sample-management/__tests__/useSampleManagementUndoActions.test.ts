@@ -22,7 +22,6 @@ describe("useSampleManagementUndoActions", () => {
   const mockSample: Sample = {
     filename: "test.wav",
     id: 1,
-    is_stereo: false,
     kit_name: "TestKit",
     slot_number: 0,
     source_path: "/path/to/test.wav",
@@ -199,7 +198,6 @@ describe("useSampleManagementUndoActions", () => {
         data: {
           addedSample: {
             filename: "new.wav",
-            is_stereo: false,
             source_path: "/path/to/new.wav",
           },
           slot: 0,
@@ -230,12 +228,10 @@ describe("useSampleManagementUndoActions", () => {
         data: {
           newSample: {
             filename: "new.wav",
-            is_stereo: false,
             source_path: "/path/to/new.wav",
           },
           oldSample: {
             filename: "test.wav",
-            is_stereo: false,
             source_path: "/path/to/test.wav",
           },
           slot: 0,
@@ -277,7 +273,6 @@ describe("useSampleManagementUndoActions", () => {
               oldSlot: 0,
               sample: {
                 filename: "test.wav",
-                is_stereo: false,
                 source_path: "/path/to/test.wav",
               },
               voice: 1,
@@ -285,7 +280,6 @@ describe("useSampleManagementUndoActions", () => {
           ],
           deletedSample: {
             filename: "test.wav",
-            is_stereo: false,
             source_path: "/path/to/test.wav",
           },
           deletedSlot: 0,
@@ -318,7 +312,6 @@ describe("useSampleManagementUndoActions", () => {
         {
           sample: {
             filename: "test.wav",
-            is_stereo: false,
             source_path: "/path/to/test.wav",
           },
           slot: 0,
@@ -343,7 +336,6 @@ describe("useSampleManagementUndoActions", () => {
               oldSlot: 0,
               sample: {
                 filename: "test.wav",
-                is_stereo: false,
                 source_path: "/path/to/test.wav",
               },
               voice: 1,
@@ -353,7 +345,6 @@ describe("useSampleManagementUndoActions", () => {
           fromVoice: 1,
           movedSample: {
             filename: "test.wav",
-            is_stereo: false,
             source_path: "/path/to/test.wav",
           },
           replacedSample: undefined,
@@ -401,7 +392,6 @@ describe("useSampleManagementUndoActions", () => {
               oldSlot: 0,
               sample: {
                 filename: "test.wav",
-                is_stereo: false,
                 source_path: "/path/to/test.wav",
               },
               voice: 1,
@@ -413,7 +403,6 @@ describe("useSampleManagementUndoActions", () => {
           mode: "insert",
           movedSample: {
             filename: "test.wav",
-            is_stereo: false,
             source_path: "/path/to/test.wav",
           },
           replacedSample: undefined,

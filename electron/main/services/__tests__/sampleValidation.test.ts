@@ -75,6 +75,31 @@ describe("SampleValidationService", () => {
     });
   });
 
+  describe("validateVoiceNotLinkedPartner", () => {
+    it("[UC-28] delegates to the validator and returns its refusal", () => {
+      mockValidator.sampleValidator.validateVoiceNotLinkedPartner.mockReturnValue(
+        {
+          error: "Voice 2 is linked to voice 1 for stereo.",
+          isValid: false,
+        },
+      );
+
+      const result = service.validateVoiceNotLinkedPartner(
+        "/db/path",
+        "TestKit",
+        2,
+      );
+
+      expect(result).toEqual({
+        error: "Voice 2 is linked to voice 1 for stereo.",
+        isValid: false,
+      });
+      expect(
+        mockValidator.sampleValidator.validateVoiceNotLinkedPartner,
+      ).toHaveBeenCalledWith("/db/path", "TestKit", 2);
+    });
+  });
+
   describe("validateSampleMovement", () => {
     beforeEach(() => {
       mockValidator.sampleValidator.validateVoiceAndSlot.mockReturnValue({
@@ -127,7 +152,6 @@ describe("SampleValidationService", () => {
     const mockSample: Sample = {
       filename: "test.wav",
       id: 1,
-      is_stereo: false,
       kit_name: "TestKit",
       slot_number: 2,
       source_path: "/path/test.wav",
@@ -188,93 +212,10 @@ describe("SampleValidationService", () => {
     });
   });
 
-  describe("validateStereoSampleMove", () => {
-    const mockSample: Sample = {
-      filename: "test.wav",
-      id: 1,
-      is_stereo: false,
-      kit_name: "TestKit",
-      slot_number: 2,
-      source_path: "/path/test.wav",
-      voice_number: 1,
-    };
-
-    it("should validate stereo sample move", () => {
-      mockValidator.sampleValidator.validateStereoSampleMove.mockReturnValue({
-        success: true,
-      });
-
-      const result = service.validateStereoSampleMove(
-        mockSample,
-        2,
-        3,
-        "insert",
-        [],
-      );
-
-      expect(result.success).toBe(true);
-      expect(
-        mockValidator.sampleValidator.validateStereoSampleMove,
-      ).toHaveBeenCalledWith(mockSample, 2, 3, "insert", []);
-    });
-  });
-
-  describe("checkStereoConflicts", () => {
-    const mockSample: Sample = {
-      filename: "test.wav",
-      id: 1,
-      is_stereo: true,
-      kit_name: "TestKit",
-      slot_number: 2,
-      source_path: "/path/test.wav",
-      voice_number: 1,
-    };
-
-    it("should check for stereo conflicts", () => {
-      mockValidator.sampleValidator.checkStereoConflicts.mockReturnValue({
-        hasConflict: false,
-      });
-
-      const result = service.checkStereoConflicts(
-        mockSample,
-        2,
-        3,
-        [],
-        "insert",
-        "DestKit",
-      );
-
-      expect(result.hasConflict).toBe(false);
-      expect(
-        mockValidator.sampleValidator.checkStereoConflicts,
-      ).toHaveBeenCalledWith(mockSample, 2, 3, [], "insert", "DestKit");
-    });
-
-    it("should return conflict error", () => {
-      mockValidator.sampleValidator.checkStereoConflicts.mockReturnValue({
-        error: "Stereo sample conflict",
-        hasConflict: true,
-      });
-
-      const result = service.checkStereoConflicts(
-        mockSample,
-        2,
-        3,
-        [],
-        "insert",
-        "DestKit",
-      );
-
-      expect(result.hasConflict).toBe(true);
-      expect(result.error).toBe("Stereo sample conflict");
-    });
-  });
-
   describe("checkSampleExists", () => {
     const mockSample: Sample = {
       filename: "test.wav",
       id: 1,
-      is_stereo: false,
       kit_name: "TestKit",
       slot_number: 2,
       source_path: "/path/test.wav",
@@ -315,65 +256,6 @@ describe("SampleValidationService", () => {
 
       expect(result.exists).toBe(false);
       expect(result.sample).toBeUndefined();
-    });
-  });
-
-  describe("getDestinationSamplesAndReplacements", () => {
-    const mockSamples: Sample[] = [
-      {
-        filename: "test1.wav",
-        id: 1,
-        is_stereo: false,
-        kit_name: "TestKit",
-        slot_number: 0,
-        source_path: "/path/test1.wav",
-        voice_number: 1,
-      },
-      {
-        filename: "test2.wav",
-        id: 2,
-        is_stereo: false,
-        kit_name: "TestKit",
-        slot_number: 1,
-        source_path: "/path/test2.wav",
-        voice_number: 1,
-      },
-    ];
-
-    it("should get destination samples successfully", () => {
-      mockORM.getKitSamples.mockReturnValue({
-        data: mockSamples,
-        success: true,
-      });
-
-      const result = service.getDestinationSamplesAndReplacements(
-        "/db/path",
-        "TestKit",
-        1,
-        0,
-        "insert",
-      );
-
-      expect(result.destSamples).toEqual(mockSamples);
-      expect(result.replacedSample).toBeUndefined(); // Insert mode doesn't replace
-    });
-
-    it("should handle database error", () => {
-      mockORM.getKitSamples.mockReturnValue({
-        error: "Database error",
-        success: false,
-      });
-
-      const result = service.getDestinationSamplesAndReplacements(
-        "/db/path",
-        "TestKit",
-        1,
-        0,
-        "insert",
-      );
-
-      expect(result.destSamples).toEqual([]);
-      expect(result.replacedSample).toBeUndefined();
     });
   });
 });

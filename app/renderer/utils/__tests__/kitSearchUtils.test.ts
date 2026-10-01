@@ -31,7 +31,6 @@ describe("kitSearchUtils", () => {
       {
         filename: "kick_001.wav",
         id: 1,
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 0,
         source_path: "/path/to/kick_001.wav",
@@ -44,7 +43,6 @@ describe("kitSearchUtils", () => {
       {
         filename: "snare_002.wav",
         id: 2,
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 1,
         source_path: "/path/to/snare_002.wav",

@@ -92,6 +92,13 @@
       "when": 1790746907101,
       "tag": "0012_sequencer_slicer",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1790881458596,
+      "tag": "0013_drop_is_stereo_and_artist",
+      "breakpoints": true
     }
   ]
 }

@@ -54,8 +54,6 @@ describe("useDragAndDrop", () => {
   const mockOnSampleAdd = vi.fn();
   const mockOnSampleMove = vi.fn();
   const mockOnSampleReplace = vi.fn();
-  const mockOnStereoDragLeave = vi.fn();
-  const mockOnStereoDragOver = vi.fn();
 
   const defaultProps = {
     isEditable: true,
@@ -63,8 +61,6 @@ describe("useDragAndDrop", () => {
     onSampleAdd: mockOnSampleAdd,
     onSampleMove: mockOnSampleMove,
     onSampleReplace: mockOnSampleReplace,
-    onStereoDragLeave: mockOnStereoDragLeave,
-    onStereoDragOver: mockOnStereoDragOver,
     samples: ["sample1.wav", "sample2.wav", "", "sample4.wav"],
     voice: 2,
   };
@@ -85,15 +81,12 @@ describe("useDragAndDrop", () => {
             validateDroppedFile: expect.any(Function),
           }),
           isEditable: true,
-          onStereoDragLeave: mockOnStereoDragLeave,
-          onStereoDragOver: mockOnStereoDragOver,
           sampleProcessing: expect.objectContaining({
             getCurrentKitSamples: expect.any(Function),
             isDuplicateSample: expect.any(Function),
             processAssignment: expect.any(Function),
           }),
           samples: expect.any(Array),
-          voice: 2,
         }),
       );
 
@@ -195,11 +188,6 @@ describe("useDragAndDrop", () => {
       }).not.toThrow();
 
       // Should pass undefined callbacks to sub-hooks
-      const externalCall = (useExternalDragHandlers as unknown).mock
-        .calls[0][0];
-      expect(externalCall.onStereoDragLeave).toBeUndefined();
-      expect(externalCall.onStereoDragOver).toBeUndefined();
-
       const internalCall = (useInternalDragHandlers as unknown).mock
         .calls[0][0];
       expect(internalCall.onSampleMove).toBeUndefined();
@@ -207,11 +195,6 @@ describe("useDragAndDrop", () => {
 
     it("passes all callbacks when provided", () => {
       renderHookWithSettings(() => useDragAndDrop(defaultProps));
-
-      const externalCall = (useExternalDragHandlers as unknown).mock
-        .calls[0][0];
-      expect(externalCall.onStereoDragLeave).toBe(mockOnStereoDragLeave);
-      expect(externalCall.onStereoDragOver).toBe(mockOnStereoDragOver);
 
       const internalCall = (useInternalDragHandlers as unknown).mock
         .calls[0][0];
@@ -237,12 +220,9 @@ describe("useDragAndDrop", () => {
         useDragAndDrop({ ...defaultProps, voice: 5 }),
       );
 
-      const externalCall = (useExternalDragHandlers as unknown).mock
-        .calls[0][0];
       const internalCall = (useInternalDragHandlers as unknown).mock
         .calls[0][0];
 
-      expect(externalCall.voice).toBe(5);
       expect(internalCall.voice).toBe(5);
     });
 

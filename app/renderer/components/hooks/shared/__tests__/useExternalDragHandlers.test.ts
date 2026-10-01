@@ -28,17 +28,11 @@ describe("useExternalDragHandlers", () => {
     processAssignment: vi.fn(),
   };
 
-  const mockOnStereoDragLeave = vi.fn();
-  const mockOnStereoDragOver = vi.fn();
-
   const defaultProps = {
     fileValidation: mockFileValidation,
     isEditable: true,
-    onStereoDragLeave: mockOnStereoDragLeave,
-    onStereoDragOver: mockOnStereoDragOver,
     sampleProcessing: mockSampleProcessing,
     samples: [],
-    voice: 2,
   };
 
   // Shared mock factory functions
@@ -130,42 +124,6 @@ describe("useExternalDragHandlers", () => {
       expect(result.current.dropZone).toEqual({ mode: "insert", slot: 3 });
     });
 
-    it("calls onStereoDragOver for single file", () => {
-      const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
-      );
-
-      const mockEvent = {
-        dataTransfer: {
-          items: [{ kind: "file" }],
-        },
-        preventDefault: vi.fn(),
-        stopPropagation: vi.fn(),
-      } as unknown;
-
-      result.current.handleDragOver(mockEvent, 2);
-
-      expect(mockOnStereoDragOver).toHaveBeenCalledWith(2, 2, false);
-    });
-
-    it("calls onStereoDragOver for stereo files", () => {
-      const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
-      );
-
-      const mockEvent = {
-        dataTransfer: {
-          items: [{ kind: "file" }, { kind: "file" }],
-        },
-        preventDefault: vi.fn(),
-        stopPropagation: vi.fn(),
-      } as unknown;
-
-      result.current.handleDragOver(mockEvent, 1);
-
-      expect(mockOnStereoDragOver).toHaveBeenCalledWith(2, 1, true);
-    });
-
     it("ignores non-file drags", () => {
       const { result } = renderHook(() =>
         useExternalDragHandlers(defaultProps),
@@ -192,30 +150,6 @@ describe("useExternalDragHandlers", () => {
 
       expect(mockEvent.preventDefault).not.toHaveBeenCalled();
       expect(result.current.dragOverSlot).toBeNull();
-      expect(mockOnStereoDragOver).not.toHaveBeenCalled();
-    });
-
-    it("works without onStereoDragOver callback", () => {
-      const { result } = renderHook(() =>
-        useExternalDragHandlers({
-          ...defaultProps,
-          onStereoDragOver: undefined,
-        }),
-      );
-
-      const mockEvent = {
-        dataTransfer: {
-          items: [{ kind: "file" }],
-        },
-        preventDefault: vi.fn(),
-        stopPropagation: vi.fn(),
-      } as unknown;
-
-      expect(() => {
-        result.current.handleDragOver(mockEvent, 1);
-      }).not.toThrow();
-
-      expect(mockEvent.preventDefault).toHaveBeenCalled();
     });
 
     it("handles Array.from on dataTransfer.items", () => {
@@ -272,29 +206,6 @@ describe("useExternalDragHandlers", () => {
       expect(result.current.dragOverSlot).toBeNull();
       expect(result.current.dropZone).toBeNull();
     });
-
-    it("calls onStereoDragLeave", () => {
-      const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
-      );
-
-      result.current.handleDragLeave();
-
-      expect(mockOnStereoDragLeave).toHaveBeenCalled();
-    });
-
-    it("works without onStereoDragLeave callback", () => {
-      const { result } = renderHook(() =>
-        useExternalDragHandlers({
-          ...defaultProps,
-          onStereoDragLeave: undefined,
-        }),
-      );
-
-      expect(() => {
-        result.current.handleDragLeave();
-      }).not.toThrow();
-    });
   });
 
   describe("handleDrop", () => {
@@ -339,17 +250,6 @@ describe("useExternalDragHandlers", () => {
 
       expect(result.current.dragOverSlot).toBeNull();
       expect(result.current.dropZone).toBeNull();
-    });
-
-    it("calls onStereoDragLeave on drop", async () => {
-      const { result } = renderHook(() =>
-        useExternalDragHandlers(defaultProps),
-      );
-
-      const mockEvent = createMockEvent([createMockFile("test.wav")]);
-      await result.current.handleDrop(mockEvent, 1);
-
-      expect(mockOnStereoDragLeave).toHaveBeenCalled();
     });
 
     it("does nothing with no files", async () => {
@@ -485,21 +385,6 @@ describe("useExternalDragHandlers", () => {
       );
     });
 
-    it("works without onStereoDragLeave callback", async () => {
-      const { result } = renderHook(() =>
-        useExternalDragHandlers({
-          ...defaultProps,
-          onStereoDragLeave: undefined,
-        }),
-      );
-
-      const mockEvent = createMockEvent([createMockFile("test.wav")]);
-
-      await expect(
-        result.current.handleDrop(mockEvent, 1),
-      ).resolves.not.toThrow();
-    });
-
     it("handles Array.from on dataTransfer.files", async () => {
       const { result } = renderHook(() =>
         useExternalDragHandlers(defaultProps),
@@ -546,7 +431,6 @@ describe("useExternalDragHandlers", () => {
       result.current.handleDragOver(dragEvent, 2);
       rerender(); // Force rerender to see state updates
       expect(result.current.dragOverSlot).toBe(2);
-      expect(mockOnStereoDragOver).toHaveBeenCalledWith(2, 2, false);
 
       // Drop
       const dropEvent = {
@@ -563,7 +447,6 @@ describe("useExternalDragHandlers", () => {
       rerender(); // Force rerender to see state updates
 
       expect(result.current.dragOverSlot).toBeNull();
-      expect(mockOnStereoDragLeave).toHaveBeenCalled();
       expect(mockSampleProcessing.processAssignment).toHaveBeenCalled();
     });
 
@@ -572,7 +455,7 @@ describe("useExternalDragHandlers", () => {
         useExternalDragHandlers(defaultProps),
       );
 
-      // Start drag over with two files for stereo test
+      // Start drag over with two files
       const dragEvent = createMockEvent([
         createMockFile("file1.wav"),
         createMockFile("file2.wav"),
@@ -582,14 +465,12 @@ describe("useExternalDragHandlers", () => {
       rerender(); // Force rerender to see state updates
       expect(result.current.dragOverSlot).toBe(1);
       expect(result.current.dropZone).toEqual({ mode: "insert", slot: 1 });
-      expect(mockOnStereoDragOver).toHaveBeenCalledWith(2, 1, true);
 
       // Leave
       result.current.handleDragLeave();
       rerender(); // Force rerender to see state updates
       expect(result.current.dragOverSlot).toBeNull();
       expect(result.current.dropZone).toBeNull();
-      expect(mockOnStereoDragLeave).toHaveBeenCalled();
     });
   });
 
@@ -610,7 +491,6 @@ describe("useExternalDragHandlers", () => {
       result.current.handleDragOver(mockEvent, 1);
 
       expect(mockEvent.preventDefault).toHaveBeenCalled();
-      expect(mockOnStereoDragOver).toHaveBeenCalledWith(2, 1, true); // 2 files
     });
 
     it("handles empty items array in drag over", () => {
@@ -630,29 +510,6 @@ describe("useExternalDragHandlers", () => {
 
       expect(mockEvent.preventDefault).not.toHaveBeenCalled();
       expect(result.current.dragOverSlot).toBeNull();
-    });
-
-    it("handles voice boundary values", () => {
-      const { result: result0 } = renderHook(() =>
-        useExternalDragHandlers({ ...defaultProps, voice: 0 }),
-      );
-      const { result: result16 } = renderHook(() =>
-        useExternalDragHandlers({ ...defaultProps, voice: 16 }),
-      );
-
-      const mockEvent = {
-        dataTransfer: {
-          items: [{ kind: "file" }],
-        },
-        preventDefault: vi.fn(),
-        stopPropagation: vi.fn(),
-      } as unknown;
-
-      result0.current.handleDragOver(mockEvent, 1);
-      expect(mockOnStereoDragOver).toHaveBeenCalledWith(0, 1, false);
-
-      result16.current.handleDragOver(mockEvent, 1);
-      expect(mockOnStereoDragOver).toHaveBeenCalledWith(16, 1, false);
     });
   });
 

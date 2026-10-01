@@ -154,7 +154,6 @@ describe("useSampleManagementOperations", () => {
   describe("handleSampleReplace", () => {
     it("should replace sample successfully", async () => {
       const mockOldSample = {
-        is_stereo: false,
         source_path: "/path/to/old.wav",
       };
 
@@ -238,7 +237,6 @@ describe("useSampleManagementOperations", () => {
     it("should delete sample successfully", async () => {
       const mockSampleToDelete = {
         filename: "test.wav",
-        is_stereo: true,
         source_path: "/path/to/test.wav",
       };
 

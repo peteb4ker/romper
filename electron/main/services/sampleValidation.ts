@@ -31,50 +31,6 @@ export class SampleValidationService {
   }
 
   /**
-   * Check for stereo conflicts when moving samples between kits
-   */
-  checkStereoConflicts(
-    sampleToMove: Sample,
-    toVoice: number,
-    toSlot: number,
-    destSamples: Sample[],
-    mode: "insert",
-    toKit: string,
-  ): { error?: string; hasConflict: boolean } {
-    return sampleValidator.checkStereoConflicts(
-      sampleToMove,
-      toVoice,
-      toSlot,
-      destSamples,
-      mode,
-      toKit,
-    );
-  }
-
-  /**
-   * Get destination kit samples and check for replacements
-   */
-  getDestinationSamplesAndReplacements(
-    dbPath: string,
-    toKit: string,
-    _toVoice: number,
-    _toSlot: number,
-    _mode: "insert",
-  ): { destSamples: Sample[]; replacedSample?: Sample } {
-    const destSamplesResult = getKitSamples(dbPath, toKit);
-    let destSamples: Sample[] = [];
-    let replacedSample: Sample | undefined;
-
-    if (destSamplesResult.success && destSamplesResult.data) {
-      destSamples = destSamplesResult.data;
-
-      // Insert-only mode: no samples are replaced
-    }
-
-    return { destSamples, replacedSample };
-  }
-
-  /**
    * Validate and get sample to move for cross-kit operations
    */
   validateAndGetSampleToMove(
@@ -142,25 +98,6 @@ export class SampleValidationService {
   }
 
   /**
-   * Validate stereo sample constraints for movement
-   */
-  validateStereoSampleMove(
-    sampleToMove: Sample,
-    toVoice: number,
-    toSlot: number,
-    mode: "insert",
-    existingSamples: Sample[],
-  ): { error?: string; success: boolean } {
-    return sampleValidator.validateStereoSampleMove(
-      sampleToMove,
-      toVoice,
-      toSlot,
-      mode,
-      existingSamples,
-    );
-  }
-
-  /**
    * Validate voice and slot parameters for sample operations
    */
   validateVoiceAndSlot(
@@ -168,6 +105,21 @@ export class SampleValidationService {
     slotNumber: number,
   ): { error?: string; isValid: boolean } {
     return sampleValidator.validateVoiceAndSlot(voiceNumber, slotNumber);
+  }
+
+  /**
+   * Refuse samples on the right channel of a linked stereo pair
+   */
+  validateVoiceNotLinkedPartner(
+    dbPath: string,
+    kitName: string,
+    voiceNumber: number,
+  ): { error?: string; isValid: boolean } {
+    return sampleValidator.validateVoiceNotLinkedPartner(
+      dbPath,
+      kitName,
+      voiceNumber,
+    );
   }
 }
 

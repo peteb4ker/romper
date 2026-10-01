@@ -39,6 +39,16 @@ export class SampleCrudService {
       return { error: voiceSlotValidation.error, success: false };
     }
 
+    const linkValidation =
+      sampleValidationService.validateVoiceNotLinkedPartner(
+        dbPath,
+        kitName,
+        voiceNumber,
+      );
+    if (!linkValidation.isValid) {
+      return { error: linkValidation.error, success: false };
+    }
+
     // Validate file
     const fileValidation = sampleValidationService.validateSampleFile(filePath);
     if (!fileValidation.isValid) {
@@ -53,7 +63,6 @@ export class SampleCrudService {
       // The voice's stereo_mode determines stereo behavior at sync time.
       const sampleRecord: NewSample = {
         filename,
-        is_stereo: false,
         kit_name: kitName,
         slot_number: slotNumber, // ZERO-BASED: 0-11 (UI shows 1-12, DB stores 0-11)
         source_path: filePath,
@@ -145,8 +154,7 @@ export class SampleCrudService {
     }
 
     const dbPath = this.getDbPath(localStorePath);
-    const { fromKit, fromSlot, fromVoice, mode, toKit, toSlot, toVoice } =
-      params;
+    const { fromKit, fromSlot, fromVoice, toKit, toSlot, toVoice } = params;
 
     // Validate voice and slot for both source and destination
     const fromValidation = sampleValidationService.validateVoiceAndSlot(
@@ -181,27 +189,14 @@ export class SampleCrudService {
       }
       const sampleToMove = sampleResult.data!; // TypeScript assertion: data is guaranteed to exist when success is true
 
-      // Get destination kit samples to check for conflicts and replacements
-      const { destSamples } =
-        sampleValidationService.getDestinationSamplesAndReplacements(
+      const linkValidation =
+        sampleValidationService.validateVoiceNotLinkedPartner(
           dbPath,
           toKit,
           toVoice,
-          toSlot,
-          mode,
         );
-
-      // Check for stereo conflicts using validation service
-      const conflictCheck = sampleValidationService.checkStereoConflicts(
-        sampleToMove,
-        toVoice,
-        toSlot,
-        destSamples,
-        mode,
-        toKit,
-      );
-      if (conflictCheck.hasConflict) {
-        return { error: conflictCheck.error, success: false };
+      if (!linkValidation.isValid) {
+        return { error: linkValidation.error, success: false };
       }
 
       // Execute the cross-kit move using batch operations service

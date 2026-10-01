@@ -41,7 +41,6 @@ describe("sampleGroupingUtils", () => {
       const dbSamples = [
         {
           filename: "stereo.wav",
-          is_stereo: true,
           slot_number: 0,
           voice_number: 1,
         },
@@ -124,19 +123,16 @@ describe("sampleGroupingUtils", () => {
       const dbSamples = [
         {
           filename: "mono.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 1,
         },
         {
           filename: "stereo.wav",
-          is_stereo: true,
           slot_number: 0,
           voice_number: 2,
         },
         {
           filename: "another.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 4,
         },

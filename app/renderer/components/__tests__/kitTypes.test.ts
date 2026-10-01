@@ -95,12 +95,10 @@ describe("kitTypes", () => {
         // Additional properties via index signature
         duration: 2.5,
         filename: "stereo.wav",
-        is_stereo: true,
         sampleRate: 44100,
         source_path: "/path/to/stereo.wav",
       };
       expect(sample.filename).toBe("stereo.wav");
-      expect(sample.is_stereo).toBe(true);
       expect(sample.source_path).toBe("/path/to/stereo.wav");
       expect(sample.duration).toBe(2.5);
       expect(sample.sampleRate).toBe(44100);

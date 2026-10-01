@@ -6,7 +6,7 @@ import { and, eq } from "drizzle-orm";
 
 import { withDb } from "../utils/dbUtilities.js";
 
-const { voices } = schema;
+const { kits, voices } = schema;
 
 /**
  * Update voice alias
@@ -79,7 +79,9 @@ export function updateVoiceSliceSettings(
 }
 
 /**
- * Update voice stereo mode
+ * Update voice stereo mode. Linking or unlinking changes what the next write
+ * puts on the card (an unlinked voice's stereo files are mixed to mono), so
+ * the kit is marked modified.
  */
 export function updateVoiceStereoMode(
   dbDir: string,
@@ -94,6 +96,10 @@ export function updateVoiceStereoMode(
       .where(
         and(eq(voices.kit_name, kitName), eq(voices.voice_number, voiceNumber)),
       )
+      .run();
+    db.update(kits)
+      .set({ modified_since_sync: true })
+      .where(eq(kits.name, kitName))
       .run();
   });
 }

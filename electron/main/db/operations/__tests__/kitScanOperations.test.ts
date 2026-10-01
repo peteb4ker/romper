@@ -28,7 +28,6 @@ function row(overrides: Partial<Sample> & Pick<Sample, "filename">): Sample {
   return {
     gain_db: 0,
     id: 1,
-    is_stereo: false,
     kit_name: "A0",
     slot_number: 0,
     source_path: path.join(KIT_PATH, overrides.filename),
@@ -58,7 +57,6 @@ describe("planKitScanMerge", () => {
     expect(plan.inserts).toEqual([
       {
         filename: "1 kick2.wav",
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 1,
         source_path: path.join(KIT_PATH, "1 kick2.wav"),

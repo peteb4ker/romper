@@ -12,13 +12,11 @@ describe("useKitDataManager", () => {
   const mockSamples = [
     {
       filename: "kick.wav",
-      is_stereo: false,
       slot_number: 0,
       voice_number: 1,
     },
     {
       filename: "snare.wav",
-      is_stereo: false,
       slot_number: 0,
       voice_number: 2,
     },
@@ -190,7 +188,6 @@ describe("useKitDataManager", () => {
     const newSamples = [
       {
         filename: "new-kick.wav",
-        is_stereo: false,
         slot_number: 100,
         voice_number: 1,
       },

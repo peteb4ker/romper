@@ -11,7 +11,6 @@ describe("SampleSlotService", () => {
     created_at: "2023-01-01",
     filename: `sample_${voiceNumber}_${slotNumber}.wav`,
     id: voiceNumber * 100 + slotNumber,
-    is_stereo: false,
     kit_name: "TestKit",
     slot_number: slotNumber,
     source_path: `/path/to/sample_${voiceNumber}_${slotNumber}.wav`,

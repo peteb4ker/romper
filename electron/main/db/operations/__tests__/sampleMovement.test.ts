@@ -19,7 +19,6 @@ function createMockSample(overrides: Record<string, unknown> = {}) {
     filename: "kick.wav",
     gain_db: 0,
     id: 1,
-    is_stereo: false,
     kit_name: "A0",
     slot_number: 0,
     source_path: "/samples/kick.wav",

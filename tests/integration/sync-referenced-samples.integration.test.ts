@@ -88,7 +88,6 @@ describe("Sync Referenced Samples Integration Test", () => {
     // Step 2: Add external sample via drag-and-drop (simulates user action)
     const addSampleResult = addSample(dbDir, {
       filename: "kick.wav",
-      is_stereo: false,
       kit_name: kitName,
       slot_number: 0,
       source_path: externalSamplePath, // External reference
@@ -155,7 +154,6 @@ describe("Sync Referenced Samples Integration Test", () => {
     // Add external referenced sample
     addSample(dbDir, {
       filename: "kick.wav",
-      is_stereo: false,
       kit_name: kitName,
       slot_number: 0,
       source_path: externalSamplePath,
@@ -170,7 +168,6 @@ describe("Sync Referenced Samples Integration Test", () => {
 
     addSample(dbDir, {
       filename: "snare.wav",
-      is_stereo: false,
       kit_name: kitName,
       slot_number: 0,
       source_path: localSamplePath,
@@ -246,7 +243,6 @@ describe("Sync Referenced Samples Integration Test", () => {
     const nonExistentPath = path.join(tempDir, "missing.wav");
     addSample(dbDir, {
       filename: "missing.wav",
-      is_stereo: false,
       kit_name: kitName,
       slot_number: 0,
       source_path: nonExistentPath,
@@ -256,7 +252,6 @@ describe("Sync Referenced Samples Integration Test", () => {
     // Also add a valid sample
     addSample(dbDir, {
       filename: "kick.wav",
-      is_stereo: false,
       kit_name: kitName,
       slot_number: 0,
       source_path: externalSamplePath,
@@ -320,7 +315,6 @@ describe("Sync Referenced Samples Integration Test", () => {
     const sample = (kitName: string, voiceNumber: number) =>
       addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: kitName,
         slot_number: 0,
         source_path: externalSamplePath,

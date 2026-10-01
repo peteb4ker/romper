@@ -118,7 +118,6 @@ describe("Syncing WAV files with unusual headers (RE-08)", () => {
       (name, slot) =>
         addSample(dbDir, {
           filename: name,
-          is_stereo: false,
           kit_name: "A0",
           slot_number: slot,
           source_path: sources[name],

@@ -44,7 +44,6 @@ describe("schema", () => {
       expect(samples).toBeDefined();
       expect(samples.id).toBeDefined();
       expect(samples.filename).toBeDefined();
-      expect(samples.is_stereo).toBeDefined();
       expect(samples.kit_name).toBeDefined();
       expect(samples.slot_number).toBeDefined();
       expect(samples.voice_number).toBeDefined();

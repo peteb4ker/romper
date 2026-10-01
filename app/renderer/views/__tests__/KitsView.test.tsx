@@ -170,13 +170,11 @@ describe("KitsView", () => {
     const defaultSamples = [
       {
         filename: "kick.wav",
-        is_stereo: false,
         slot_number: 100,
         voice_number: 1,
       },
       {
         filename: "snare.wav",
-        is_stereo: false,
         slot_number: 100,
         voice_number: 2,
       },
@@ -211,13 +209,11 @@ describe("KitsView", () => {
       data: [
         {
           filename: "kick.wav",
-          is_stereo: false,
           slot_number: 100,
           voice_number: 1,
         },
         {
           filename: "snare.wav",
-          is_stereo: false,
           slot_number: 100,
           voice_number: 2,
         },
@@ -493,25 +489,21 @@ describe("KitsView", () => {
             samples: [
               {
                 filename: "kick.wav",
-                is_stereo: false,
                 slot_number: 100,
                 voice_number: 1,
               },
               {
                 filename: "snare.wav",
-                is_stereo: false,
                 slot_number: 100,
                 voice_number: 2,
               },
               {
                 filename: "hat.wav",
-                is_stereo: false,
                 slot_number: 200,
                 voice_number: 1,
               },
               {
                 filename: "stereo.wav",
-                is_stereo: true,
                 slot_number: 100,
                 voice_number: 3,
               },
@@ -531,9 +523,6 @@ describe("KitsView", () => {
         expect(window.electronAPI.getKits).toHaveBeenCalled();
         expect(screen.getByText("A0")).toBeInTheDocument();
       });
-
-      // The component should process stereo samples correctly
-      // Stereo sample should appear in both voice 3 and voice 4
     });
   });
 
@@ -761,7 +750,6 @@ describe("KitsView", () => {
         data: [
           {
             filename: "new-kick.wav",
-            is_stereo: false,
             slot_number: 100,
             voice_number: 1,
           },
@@ -890,13 +878,11 @@ describe("KitsView", () => {
         data: [
           {
             filename: "new-kick.wav",
-            is_stereo: false,
             slot_number: 100,
             voice_number: 1,
           },
           {
             filename: "new-snare.wav",
-            is_stereo: false,
             slot_number: 100,
             voice_number: 2,
           },
@@ -1075,19 +1061,16 @@ describe("KitsView", () => {
             samples: [
               {
                 filename: "kick.wav",
-                is_stereo: false,
                 slot_number: 100,
                 voice_number: 1,
               },
               {
                 filename: "snare.wav",
-                is_stereo: false,
                 slot_number: 200,
                 voice_number: 1,
               },
               {
                 filename: "hat.wav",
-                is_stereo: false,
                 slot_number: 100,
                 voice_number: 2,
               },
@@ -1101,7 +1084,6 @@ describe("KitsView", () => {
             samples: [
               {
                 filename: "bass.wav",
-                is_stereo: false,
                 slot_number: 100,
                 voice_number: 1,
               },
@@ -1132,86 +1114,6 @@ describe("KitsView", () => {
 
       // Component should have processed sample counts
       // The actual counts would be used by KitBrowser for display
-    });
-  });
-
-  describe("Stereo sample handling", () => {
-    it("correctly handles stereo samples spanning two voices", async () => {
-      vi.mocked(window.electronAPI.getKits).mockResolvedValue({
-        data: [
-          {
-            alias: null,
-            bank_letter: "A",
-            editable: false,
-            name: "A0",
-            samples: [
-              {
-                filename: "stereo-kick.wav",
-                is_stereo: true,
-                slot_number: 100,
-                voice_number: 1,
-              },
-              {
-                filename: "mono-snare.wav",
-                is_stereo: false,
-                slot_number: 100,
-                voice_number: 3,
-              },
-            ],
-          },
-        ],
-        success: true,
-      });
-
-      render(
-        <TestSettingsProvider>
-          <KitsView />
-        </TestSettingsProvider>,
-      );
-
-      await waitFor(() => {
-        expect(window.electronAPI.getKits).toHaveBeenCalled();
-        expect(screen.getByText("A0")).toBeInTheDocument();
-      });
-
-      // The stereo sample should appear in both voice 1 and voice 2
-      // This is handled by the groupDbSamplesByVoice function
-    });
-
-    it("handles stereo sample at voice 4 boundary", async () => {
-      vi.mocked(window.electronAPI.getKits).mockResolvedValue({
-        data: [
-          {
-            alias: null,
-            bank_letter: "A",
-            editable: false,
-            name: "A0",
-            samples: [
-              {
-                filename: "stereo-at-end.wav",
-                is_stereo: true,
-                slot_number: 100,
-                voice_number: 4,
-              },
-            ],
-          },
-        ],
-        success: true,
-      });
-
-      render(
-        <TestSettingsProvider>
-          <KitsView />
-        </TestSettingsProvider>,
-      );
-
-      await waitFor(() => {
-        expect(window.electronAPI.getKits).toHaveBeenCalled();
-        expect(screen.getByText("A0")).toBeInTheDocument();
-      });
-
-      // Stereo sample at voice 4 should not overflow to voice 5 (doesn't exist)
-      // Should only appear in voice 4
     });
   });
 
@@ -1757,7 +1659,6 @@ describe("KitsView", () => {
         data: [
           {
             filename: "refreshed-sample.wav",
-            is_stereo: false,
             slot_number: 100,
             voice_number: 1,
           },

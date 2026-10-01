@@ -58,7 +58,6 @@ describe("undoTypes", () => {
 
   const mockSample = {
     filename: "test.wav",
-    is_stereo: false,
     source_path: "/path/to/test.wav",
   };
 
@@ -313,7 +312,6 @@ describe("undoTypes", () => {
         data: {
           addedSample: {
             filename: "kick.wav",
-            is_stereo: false,
             source_path: "/path/to/kick.wav",
           },
           slot: 0,
@@ -335,12 +333,10 @@ describe("undoTypes", () => {
         data: {
           newSample: {
             filename: "new.wav",
-            is_stereo: true,
             source_path: "/path/to/new.wav",
           },
           oldSample: {
             filename: "old.wav",
-            is_stereo: false,
             source_path: "/path/to/old.wav",
           },
           slot: 1,

@@ -48,7 +48,6 @@ describe("Kit Relational Helpers - Integration Tests", () => {
           {
             filename: "kick.wav",
             id: 1,
-            is_stereo: false,
             kit_name: "A0",
             slot_number: 0,
             source_path: "/samples/kick.wav",
@@ -89,7 +88,6 @@ describe("Kit Relational Helpers - Integration Tests", () => {
           {
             filename: "s1.wav",
             id: 1,
-            is_stereo: false,
             kit_name: "A0",
             slot_number: 0,
             source_path: "/s1.wav",
@@ -102,7 +100,6 @@ describe("Kit Relational Helpers - Integration Tests", () => {
           {
             filename: "s2.wav",
             id: 2,
-            is_stereo: false,
             kit_name: "A0",
             slot_number: 1,
             source_path: "/s2.wav",
@@ -115,7 +112,6 @@ describe("Kit Relational Helpers - Integration Tests", () => {
           {
             filename: "s3.wav",
             id: 3,
-            is_stereo: false,
             kit_name: "B0",
             slot_number: 0,
             source_path: "/s3.wav",
@@ -166,7 +162,6 @@ describe("Kit Relational Helpers - Integration Tests", () => {
       addKit(dbDir, { bank_letter: "A", name: "A0" });
       addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 0,
         source_path: "/samples/kick.wav",
@@ -197,7 +192,6 @@ describe("Kit Relational Helpers - Integration Tests", () => {
               {
                 filename: "kick.wav",
                 id: 1,
-                is_stereo: false,
                 kit_name: "A0",
                 slot_number: 0,
                 source_path: "/samples/kick.wav",
@@ -260,7 +254,6 @@ describe("Kit Relational Helpers - Integration Tests", () => {
 
       addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 0,
         source_path: "/samples/kick.wav",
@@ -268,7 +261,6 @@ describe("Kit Relational Helpers - Integration Tests", () => {
       });
       addSample(dbDir, {
         filename: "snare.wav",
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 0,
         source_path: "/samples/snare.wav",
@@ -276,7 +268,6 @@ describe("Kit Relational Helpers - Integration Tests", () => {
       });
       addSample(dbDir, {
         filename: "hat.wav",
-        is_stereo: false,
         kit_name: "B0",
         slot_number: 0,
         source_path: "/samples/hat.wav",
@@ -302,7 +293,6 @@ describe("Kit Relational Helpers - Integration Tests", () => {
 
       addSample(dbDir, {
         filename: "only-in-a.wav",
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 0,
         source_path: "/samples/only-in-a.wav",

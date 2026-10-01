@@ -180,8 +180,6 @@ export function updateSampleMetadata(
 
     // Only include metadata fields that exist in the Sample schema
     if (updates.filename !== undefined) updateData.filename = updates.filename;
-    if (updates.is_stereo !== undefined)
-      updateData.is_stereo = updates.is_stereo;
     if (updates.source_path !== undefined)
       updateData.source_path = updates.source_path;
 

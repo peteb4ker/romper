@@ -145,7 +145,8 @@ export function mergeKitScan(
  *   lowest free slot of the voice their filename prefix names, never beyond
  *   12 per voice. Editable kits own their sample list, so re-adding folder
  *   files would undo in-app deletions; those files are reported instead.
- * - New rows are mono (`is_stereo: false`): stereo is a voice setting.
+ * - New rows carry no stereo flag: stereo is a voice setting
+ *   (`voices.stereo_mode`).
  * - Voice names are inferred from the voice's first sample only for voices
  *   that have no name, so user-set names survive.
  */
@@ -237,7 +238,6 @@ export function planKitScanMerge({
       referenced.add(sourcePath);
       plan.inserts.push({
         filename,
-        is_stereo: false,
         kit_name: kit.name,
         slot_number: slot,
         source_path: sourcePath,

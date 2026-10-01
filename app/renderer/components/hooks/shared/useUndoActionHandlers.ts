@@ -22,7 +22,6 @@ export interface UseUndoActionHandlersOptions {
 interface SampleToRestore {
   sample: {
     filename: string;
-    is_stereo: boolean;
     source_path: string;
   };
   slot: number;
@@ -33,7 +32,6 @@ interface SampleToRestore {
 interface StateSnapshotItem {
   sample: {
     filename: string;
-    is_stereo: boolean;
     source_path: string;
   };
   slot: number;

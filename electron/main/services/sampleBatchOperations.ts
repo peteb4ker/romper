@@ -236,7 +236,7 @@ export class SampleBatchOperationsService {
     fromSlot: number,
     toVoice: number,
     toSlot: number,
-    mode: "insert",
+    _mode: "insert",
   ): DbResult<{
     affectedSamples: ({ original_slot_number: number } & Sample)[];
     movedSample: Sample;
@@ -278,16 +278,14 @@ export class SampleBatchOperationsService {
         };
       }
 
-      // Validate stereo sample constraints
-      const stereoValidation = sampleValidationService.validateStereoSampleMove(
-        sampleToMove,
-        toVoice,
-        toSlot,
-        mode,
-        existingSamplesResult.data,
-      );
-      if (!stereoValidation.success) {
-        return { error: stereoValidation.error, success: false };
+      const linkValidation =
+        sampleValidationService.validateVoiceNotLinkedPartner(
+          dbPath,
+          kitName,
+          toVoice,
+        );
+      if (!linkValidation.isValid) {
+        return { error: linkValidation.error, success: false };
       }
 
       // Use database moveSample operation

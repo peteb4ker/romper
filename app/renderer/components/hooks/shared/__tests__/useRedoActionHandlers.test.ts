@@ -23,7 +23,6 @@ describe("useRedoActionHandlers", () => {
       const addAction = {
         data: {
           addedSample: {
-            is_stereo: false,
             source_path: "/path/to/sample.wav",
           },
           slot: 0,
@@ -45,37 +44,6 @@ describe("useRedoActionHandlers", () => {
         "/path/to/sample.wav",
       );
       expect(redoResult).toEqual({ success: true });
-    });
-
-    it("should handle ADD_SAMPLE with stereo sample", async () => {
-      const { result } = renderHook(() =>
-        useRedoActionHandlers({ kitName: testKitName }),
-      );
-
-      const addAction = {
-        data: {
-          addedSample: {
-            is_stereo: true,
-            source_path: "/path/to/stereo.wav",
-          },
-          slot: 1,
-          voice: 2,
-        },
-        type: "ADD_SAMPLE" as const,
-      };
-
-      vi.mocked(window.electronAPI.addSampleToSlot).mockResolvedValue({
-        success: true,
-      });
-
-      await result.current.executeRedoAction(addAction);
-
-      expect(window.electronAPI.addSampleToSlot).toHaveBeenCalledWith(
-        testKitName,
-        2,
-        1,
-        "/path/to/stereo.wav",
-      );
     });
 
     it("should handle DELETE_SAMPLE redo action", async () => {
@@ -208,7 +176,6 @@ describe("useRedoActionHandlers", () => {
       const replaceAction = {
         data: {
           newSample: {
-            is_stereo: true,
             source_path: "/path/to/new.wav",
           },
           slot: 0,
@@ -258,7 +225,6 @@ describe("useRedoActionHandlers", () => {
       const addAction = {
         data: {
           addedSample: {
-            is_stereo: false,
             source_path: "/path/to/sample.wav",
           },
           slot: 0,
@@ -286,7 +252,6 @@ describe("useRedoActionHandlers", () => {
       const addAction = {
         data: {
           addedSample: {
-            is_stereo: false,
             source_path: "/path/to/sample.wav",
           },
           slot: 0,

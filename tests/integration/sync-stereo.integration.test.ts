@@ -18,8 +18,8 @@ import {
 import { syncService } from "../../electron/main/services/syncService.js";
 
 // RE-29: stereo is a voice setting. A stereo file on a voice linked as stereo
-// is written as it is; on a voice that isn't linked, it's mixed to mono. The
-// sample's own `is_stereo` flag (always false) plays no part.
+// is written as it is; on a voice that isn't linked, it's mixed to mono.
+// Samples carry no stereo flag of their own.
 
 const FRAMES = 4410;
 
@@ -99,7 +99,6 @@ describe("[UC-28] [UC-34] Writing stereo files to the card (RE-29)", () => {
       addSample(dbDir, {
         filename,
         // What every add and import path writes; it must not matter
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 0,
         source_path: sources[filename],

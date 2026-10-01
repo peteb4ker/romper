@@ -212,7 +212,6 @@ describe("ScanService Integration Tests", () => {
         {
           filename: "1-kick.wav",
           gain_db: -4.5,
-          is_stereo: false,
           kit_name: "A1",
           slot_number: 0,
           source_path: path.join(kitDir, "1-kick.wav"),
@@ -221,7 +220,6 @@ describe("ScanService Integration Tests", () => {
         {
           filename: "my-snare.wav",
           gain_db: 3,
-          is_stereo: false,
           kit_name: "A1",
           slot_number: 0,
           source_path: path.join(TEST_DB_DIR, "elsewhere", "my-snare.wav"),
@@ -258,7 +256,6 @@ describe("ScanService Integration Tests", () => {
         voice_number: 2,
       });
       expect(rows.find((r) => r.filename === "1-new-kick.wav")).toMatchObject({
-        is_stereo: false,
         slot_number: 1,
         voice_number: 1,
         wav_channels: 2,
@@ -325,7 +322,6 @@ describe("ScanService Integration Tests", () => {
 
       const sample: NewSample = {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: "A1",
         slot_number: 0,
         source_path: "/test/path/kick.wav",
@@ -478,7 +474,6 @@ describe("ScanService Integration Tests", () => {
       // Add sample with metadata to kit1
       addSample(TEST_DB_PATH, {
         filename: "1-kick.wav",
-        is_stereo: false,
         kit_name: "A1",
         slot_number: 0,
         source_path: path.join(TEST_DB_DIR, "A1", "1-kick.wav"),
@@ -491,7 +486,6 @@ describe("ScanService Integration Tests", () => {
       // Add sample without metadata to kit2 (null values)
       addSample(TEST_DB_PATH, {
         filename: "1-pad.wav",
-        is_stereo: false,
         kit_name: "A2",
         slot_number: 0,
         source_path: path.join(TEST_DB_DIR, "A2", "1-pad.wav"),

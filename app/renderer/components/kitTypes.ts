@@ -45,7 +45,6 @@ export interface SampleData {
   [key: string]: unknown;
   filename: string;
   gain_db?: number;
-  is_stereo?: boolean;
   slot_number?: number;
   source_path: string;
   voice_number?: number;

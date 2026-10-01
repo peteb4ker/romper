@@ -84,7 +84,6 @@ describe("Kit Favorites Operations - Integration Tests", () => {
       addKit(dbDir, { bank_letter: "A", is_favorite: true, name: "A0" });
       addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 0,
         source_path: "/samples/kick.wav",

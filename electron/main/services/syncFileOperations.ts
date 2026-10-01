@@ -18,8 +18,7 @@ import {
 export interface SyncFileOperation {
   /**
    * The source file's channel count, from its header. Mono conversion keys
-   * on this and the voice's stereo setting (RE-29); `samples.is_stereo` is
-   * never set from the file.
+   * on this and the voice's stereo setting (RE-29).
    */
   channels?: number;
   destinationPath: string;

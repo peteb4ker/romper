@@ -26,7 +26,7 @@ beforeEach(() => {
   });
 });
 
-describe("useUndoRedo - Basic Tests", () => {
+describe("[UC-26] useUndoRedo - Basic Tests", () => {
   it("should initialize with empty stacks", () => {
     const { result } = renderHook(() => useUndoRedo("test-kit"));
 

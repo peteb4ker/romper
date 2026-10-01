@@ -73,7 +73,7 @@ describe("KitService Extended Integration Tests", () => {
     fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
   });
 
-  describe("createKit", () => {
+  describe("[UC-14] createKit", () => {
     it("should create a new kit with 4 default voices", () => {
       const result = kitService.createKit(mockInMemorySettings, "A1");
 
@@ -134,7 +134,7 @@ describe("KitService Extended Integration Tests", () => {
     });
   });
 
-  describe("deleteKit", () => {
+  describe("[UC-16] deleteKit", () => {
     it("should delete a kit and all its samples", () => {
       // Setup: Create kit with samples
       const kitRecord: NewKit = {
@@ -313,7 +313,7 @@ describe("KitService Extended Integration Tests", () => {
     });
   });
 
-  describe("getKitDeleteSummary", () => {
+  describe("[UC-16] getKitDeleteSummary", () => {
     it("should return summary with sample and voice counts", () => {
       // Create kit with voices and samples
       addKit(TEST_DB_PATH, {
@@ -408,7 +408,7 @@ describe("KitService Extended Integration Tests", () => {
     });
   });
 
-  describe("copyKit - additional edge cases", () => {
+  describe("[UC-15] copyKit - additional edge cases", () => {
     it("should return error when source kit does not exist", () => {
       const result = kitService.copyKit(mockInMemorySettings, "A1", "B1");
 
@@ -531,7 +531,7 @@ describe("KitService Extended Integration Tests", () => {
     });
   });
 
-  describe("createKit then deleteKit roundtrip", () => {
+  describe("[UC-14] [UC-16] createKit then deleteKit roundtrip", () => {
     it("should create and then fully delete a kit", () => {
       // Create
       const createResult = kitService.createKit(mockInMemorySettings, "H1");
@@ -568,7 +568,7 @@ describe("KitService Extended Integration Tests", () => {
     });
   });
 
-  describe("copyKit then getKitDeleteSummary", () => {
+  describe("[UC-15] [UC-16] copyKit then getKitDeleteSummary", () => {
     it("should report correct counts after copying a kit with samples", () => {
       // Create source with samples
       addKit(TEST_DB_PATH, {

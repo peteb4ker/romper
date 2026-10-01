@@ -14,7 +14,7 @@ import { rtfFileService } from "../rtfFileService.js";
 const mockFs = vi.mocked(fs);
 const mockPath = vi.mocked(path);
 
-describe("rtfFileService", () => {
+describe("[UC-12] [UC-34] rtfFileService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockPath.join.mockImplementation((...args: string[]) => args.join("/"));

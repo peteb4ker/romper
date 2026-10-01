@@ -36,7 +36,7 @@ const msg = (over: Partial<DisplayMessage>): DisplayMessage => ({
   ...over,
 });
 
-describe("MessageDisplay", () => {
+describe("[UC-36] MessageDisplay", () => {
   it("renders nothing when there are no messages", () => {
     const { container } = render(
       <MessageDisplayContext.Provider

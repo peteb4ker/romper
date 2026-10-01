@@ -41,7 +41,7 @@ test.describe("Audio contexts", () => {
     if (testEnv) await cleanupE2EFixture(testEnv);
   });
 
-  test("opening kits creates one audio context in all", async () => {
+  test("[UC-29] opening kits creates one audio context in all", async () => {
     // Count contexts from here on; none exist before a kit is opened
     await window.evaluate(() => {
       const w = globalThis as CountingWindow;

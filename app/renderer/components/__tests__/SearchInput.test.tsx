@@ -6,7 +6,7 @@ import type { SearchActions, SearchState } from "../SearchInput";
 
 import SearchInput from "../SearchInput";
 
-describe("SearchInput", () => {
+describe("[UC-09] SearchInput", () => {
   const mockActions: SearchActions = {
     onChange: vi.fn(),
     onClear: vi.fn(),

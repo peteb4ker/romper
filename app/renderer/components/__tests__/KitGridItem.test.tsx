@@ -97,7 +97,7 @@ describe("KitGridItem", () => {
     });
   });
 
-  describe("Status icons", () => {
+  describe("[UC-08] Status icons", () => {
     it("shows lock icon for factory (read-only) kits", () => {
       render(<KitGridItem {...defaultProps} />);
 
@@ -125,7 +125,7 @@ describe("KitGridItem", () => {
       expect(screen.queryByTestId("lock-icon")).not.toBeInTheDocument();
     });
 
-    it("highlights card for modified/unsynced kits", () => {
+    it("[UC-11] highlights card for modified/unsynced kits", () => {
       const props = {
         ...defaultProps,
         kitData: {
@@ -169,7 +169,7 @@ describe("KitGridItem", () => {
     });
   });
 
-  describe("Favorite button", () => {
+  describe("[UC-10] Favorite button", () => {
     it("renders favorite button for valid kits when onToggleFavorite is provided", () => {
       const mockOnToggleFavorite = vi.fn();
       render(
@@ -368,7 +368,7 @@ describe("KitGridItem", () => {
     });
   });
 
-  describe("Voice channel strip", () => {
+  describe("[UC-08] Voice channel strip", () => {
     it("renders voice counts with names", () => {
       render(<KitGridItem {...defaultProps} />);
 
@@ -578,7 +578,7 @@ describe("KitGridItem", () => {
     });
   });
 
-  describe("Search match indicators", () => {
+  describe("[UC-09] Search match indicators", () => {
     it("renders artist badge when searchMatch has matched artist", () => {
       const props = {
         ...defaultProps,
@@ -911,7 +911,7 @@ describe("KitGridItem", () => {
     });
   });
 
-  describe("Delete popover", () => {
+  describe("[UC-16] Delete popover", () => {
     const editableProps = {
       ...defaultProps,
       kitData: {
@@ -1095,7 +1095,7 @@ describe("KitGridItem", () => {
     });
   });
 
-  describe("Duplicate popover", () => {
+  describe("[UC-15] Duplicate popover", () => {
     const duplicateProps = {
       ...defaultProps,
       onDuplicateKit: vi.fn().mockResolvedValue({}),

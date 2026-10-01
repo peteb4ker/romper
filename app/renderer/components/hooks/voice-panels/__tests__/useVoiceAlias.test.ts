@@ -24,7 +24,7 @@ describe("useVoiceAlias", () => {
     vi.restoreAllMocks();
   });
 
-  describe("updateVoiceAlias", () => {
+  describe("[UC-27] updateVoiceAlias", () => {
     it("updates voice alias successfully", async () => {
       const onUpdate = vi.fn();
       const { result } = renderHook(() =>

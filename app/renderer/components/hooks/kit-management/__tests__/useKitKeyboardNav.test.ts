@@ -85,7 +85,7 @@ describe("useKitKeyboardNav", () => {
     });
   });
 
-  describe("favorites keyboard handler", () => {
+  describe("[UC-10] favorites keyboard handler", () => {
     let favoritesHandler: (e: KeyboardEvent) => void;
 
     beforeEach(() => {

@@ -25,7 +25,7 @@ describe("useSampleActions", () => {
     });
   });
 
-  describe("handleDeleteSample", () => {
+  describe("[UC-23] handleDeleteSample", () => {
     it("calls onSampleDelete when editable", async () => {
       const { result } = renderHook(() => useSampleActions(defaultProps));
 
@@ -74,7 +74,7 @@ describe("useSampleActions", () => {
     });
   });
 
-  describe("handleSampleContextMenu", () => {
+  describe("[UC-25] handleSampleContextMenu", () => {
     it("calls showItemInFolder when sample has source path", () => {
       const { result } = renderHook(() => useSampleActions(defaultProps));
 

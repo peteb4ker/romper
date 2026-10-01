@@ -511,7 +511,7 @@ describe("useKitDataManager", () => {
     });
   });
 
-  describe("toggleKitFavorite", () => {
+  describe("[UC-10] toggleKitFavorite", () => {
     it("should successfully toggle kit favorite status", async () => {
       vi.mocked(window.electronAPI.toggleKitFavorite).mockResolvedValue({
         data: { isFavorite: true },
@@ -607,7 +607,7 @@ describe("useKitDataManager", () => {
     });
   });
 
-  describe("updateKitAlias", () => {
+  describe("[UC-17] updateKitAlias", () => {
     it("should successfully update kit alias", async () => {
       vi.mocked(window.electronAPI.updateKit).mockResolvedValue({
         success: true,
@@ -717,7 +717,7 @@ describe("useKitDataManager", () => {
     });
   });
 
-  describe("toggleKitEditable", () => {
+  describe("[UC-17] toggleKitEditable", () => {
     it("should successfully toggle kit editable mode from false to true", async () => {
       vi.mocked(window.electronAPI.updateKit).mockResolvedValue({
         success: true,

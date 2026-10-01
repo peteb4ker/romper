@@ -247,7 +247,7 @@ describe("Kit Relational Helpers - Integration Tests", () => {
     });
   });
 
-  describe("fetchKitRelatedData (via getKits integration)", () => {
+  describe("[UC-07] fetchKitRelatedData (via getKits integration)", () => {
     test("getKits correctly fetches and combines related data for multiple kits", () => {
       addKit(dbDir, { bank_letter: "A", name: "A0" });
       addKit(dbDir, { bank_letter: "B", name: "B0" });

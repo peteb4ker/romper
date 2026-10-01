@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
 import { useKitScanning } from "../useKitScanning";
 
-describe("useKitScanning", () => {
+describe("[UC-13] useKitScanning", () => {
   const reloadKit = vi.fn().mockResolvedValue(undefined);
   const onRefreshKitMetadata = vi.fn().mockResolvedValue(undefined);
   const onRequestSamplesReload = vi.fn().mockResolvedValue(undefined);

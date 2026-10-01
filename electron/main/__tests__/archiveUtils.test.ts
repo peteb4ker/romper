@@ -78,7 +78,7 @@ describe("isWithinDirectory", () => {
   });
 });
 
-describe("extractZipEntries", () => {
+describe("[UC-02] extractZipEntries", () => {
   let tmpRoot: string;
 
   beforeEach(() => {
@@ -225,7 +225,7 @@ describe("extractZipEntries", () => {
   });
 });
 
-describe("downloadArchive", () => {
+describe("[UC-02] downloadArchive", () => {
   const body = Buffer.alloc(64 * 1024, 0x5a);
   const bodySha256 = createHash("sha256").update(body).digest("hex");
   let tmpRoot: string;

@@ -10,7 +10,7 @@ function Flaky({ label = "content" }: { label?: string }) {
   return <div>{label}</div>;
 }
 
-describe("ErrorBoundary (RE-12)", () => {
+describe("[UC-36] ErrorBoundary (RE-12)", () => {
   beforeEach(() => {
     shouldThrow = true;
     // React reports caught render errors on the console too

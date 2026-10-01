@@ -45,7 +45,7 @@ describe("useVoicePanelButtons", () => {
     });
   });
 
-  describe("renderPlayButton", () => {
+  describe("[UC-29] renderPlayButton", () => {
     it("renders play button when not playing", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
@@ -224,7 +224,7 @@ describe("useVoicePanelButtons", () => {
     });
   });
 
-  describe("renderDeleteButton", () => {
+  describe("[UC-23] renderDeleteButton", () => {
     it("renders delete button correctly", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 

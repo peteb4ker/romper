@@ -208,7 +208,7 @@ describe("useExternalDragHandlers", () => {
     });
   });
 
-  describe("handleDrop", () => {
+  describe("[UC-19] handleDrop", () => {
     beforeEach(() => {
       mockFileValidation.getFilePathFromDrop.mockResolvedValue(
         "/path/to/file.wav",
@@ -513,7 +513,7 @@ describe("useExternalDragHandlers", () => {
     });
   });
 
-  describe("12-sample limit handling", () => {
+  describe("[UC-19] 12-sample limit handling", () => {
     beforeEach(() => {
       vi.clearAllMocks();
       mockFileValidation.getFilePathFromDrop.mockResolvedValue("test.wav");

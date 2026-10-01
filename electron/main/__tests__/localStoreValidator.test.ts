@@ -45,7 +45,7 @@ describe("localStoreValidator", () => {
     });
   });
 
-  describe("validateLocalStoreAndDb", () => {
+  describe("[UC-04] [UC-05] validateLocalStoreAndDb", () => {
     it("should return invalid if local store path does not exist", () => {
       const result = validateLocalStoreAndDb("/nonexistent/path");
       expect(result.isValid).toBe(false);
@@ -110,7 +110,7 @@ describe("localStoreValidator", () => {
     });
   });
 
-  describe("validateLocalStoreAgainstDb", () => {
+  describe("[UC-05] validateLocalStoreAgainstDb", () => {
     beforeEach(() => {
       // Setup mock directory structure
       fs.mkdirSync(testDir, { recursive: true });

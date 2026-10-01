@@ -20,7 +20,7 @@ const mockMatchMedia = vi.fn((query: string) => ({
   removeEventListener: vi.fn(),
 }));
 
-describe("SettingsContext", () => {
+describe("[UC-35] SettingsContext", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 

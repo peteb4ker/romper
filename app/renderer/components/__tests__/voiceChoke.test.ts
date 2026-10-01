@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { claimVoice, soundingCount } from "../voiceChoke";
 
-describe("voiceChoke", () => {
+describe("[UC-29] voiceChoke", () => {
   it("stops the voice's other sounds when one starts, at its start time", () => {
     const first = vi.fn();
     const second = vi.fn();

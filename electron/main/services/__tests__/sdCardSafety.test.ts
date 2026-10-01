@@ -14,7 +14,7 @@ const isWindows = process.platform === "win32";
 const isCaseInsensitive =
   process.platform === "darwin" || process.platform === "win32";
 
-describe("sdCardSafety", () => {
+describe("[UC-34] sdCardSafety", () => {
   let root: string;
   let store: string;
   let card: string;

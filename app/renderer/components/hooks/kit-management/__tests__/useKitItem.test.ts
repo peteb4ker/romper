@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { useKitItem } from "../useKitItem";
 
-describe("useKitItem", () => {
+describe("[UC-08] useKitItem", () => {
   describe("with no voice names", () => {
     it("should return folder icon for empty voice names", () => {
       const { result } = renderHook(() => useKitItem());

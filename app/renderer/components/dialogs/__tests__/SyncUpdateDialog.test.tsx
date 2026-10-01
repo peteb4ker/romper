@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import SyncUpdateDialog, { type SyncChangeSummary } from "../SyncUpdateDialog";
 
-describe("SyncUpdateDialog", () => {
+describe("[UC-34] SyncUpdateDialog", () => {
   const mockOnClose = vi.fn();
   const mockOnConfirm = vi.fn();
 

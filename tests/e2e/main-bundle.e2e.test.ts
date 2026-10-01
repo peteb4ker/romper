@@ -28,7 +28,7 @@ function packageName(specifier: string): string {
   return specifier.startsWith("@") ? parts.slice(0, 2).join("/") : parts[0];
 }
 
-test.describe("Built main process", () => {
+test.describe("[UC-37] Built main process", () => {
   test("has no browser stubs or require() shims", () => {
     for (const file of mainBundleFiles()) {
       const code = fs.readFileSync(file, "utf8");

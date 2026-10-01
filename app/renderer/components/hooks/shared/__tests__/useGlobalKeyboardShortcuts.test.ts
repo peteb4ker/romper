@@ -75,7 +75,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     });
   });
 
-  describe("undo operations", () => {
+  describe("[UC-26] undo operations", () => {
     it("should handle Cmd+Z for undo when in edit mode", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({
@@ -177,7 +177,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     });
   });
 
-  describe("redo operations", () => {
+  describe("[UC-26] redo operations", () => {
     it("should handle Cmd+Shift+Z for redo", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({

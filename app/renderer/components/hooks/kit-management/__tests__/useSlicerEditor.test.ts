@@ -124,7 +124,7 @@ function patternWith(steps: number[]): number[][] {
   return p;
 }
 
-describe("useSlicerEditor", () => {
+describe("[UC-33] useSlicerEditor", () => {
   let api: ReturnType<typeof setupElectronAPIMock>;
   let onPlaySample: ReturnType<typeof vi.fn>;
 

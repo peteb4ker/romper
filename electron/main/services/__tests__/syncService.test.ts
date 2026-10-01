@@ -77,7 +77,7 @@ const mockValidateSdCardTarget = vi.mocked(validateSdCardTarget);
 const mockFindStaleCardEntries = vi.mocked(findStaleCardEntries);
 const mockRemoveCardEntries = vi.mocked(removeCardEntries);
 
-describe("SyncService", () => {
+describe("[UC-34] SyncService", () => {
   let mockWindow: unknown;
 
   beforeEach(() => {

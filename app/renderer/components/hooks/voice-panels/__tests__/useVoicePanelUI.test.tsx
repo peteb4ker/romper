@@ -59,7 +59,7 @@ describe("useVoicePanelUI", () => {
     });
   });
 
-  describe("renderVoiceName", () => {
+  describe("[UC-27] renderVoiceName", () => {
     it("renders voice name with number when not editing", () => {
       const { result } = renderHook(() => useVoicePanelUI(defaultProps));
 

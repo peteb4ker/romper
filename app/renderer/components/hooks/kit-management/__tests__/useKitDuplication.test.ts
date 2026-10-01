@@ -215,7 +215,7 @@ describe("useKitDuplication", () => {
     });
   });
 
-  describe("duplicateKitDirect", () => {
+  describe("[UC-15] duplicateKitDirect", () => {
     it("success returns empty object", async () => {
       mockDuplicateKit.mockResolvedValueOnce(undefined);
       const { result } = renderHook(() => useKitDuplication(defaultProps));

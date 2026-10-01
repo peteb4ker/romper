@@ -92,7 +92,7 @@ describe("useKitFilters", () => {
       );
     });
 
-    it("filters kits by modified only", async () => {
+    it("[UC-11] filters kits by modified only", async () => {
       const { result } = renderHook(() => useKitFilters(defaultProps));
 
       act(() => {
@@ -127,7 +127,7 @@ describe("useKitFilters", () => {
     });
   });
 
-  describe("handleToggleFavorite", () => {
+  describe("[UC-10] handleToggleFavorite", () => {
     it("successfully toggles favorite status", async () => {
       // Ensure the mock is set up correctly
       expect(window.electronAPI).toBeDefined();

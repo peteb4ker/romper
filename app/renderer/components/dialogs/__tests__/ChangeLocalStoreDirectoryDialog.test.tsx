@@ -43,7 +43,7 @@ vi.mock("@phosphor-icons/react", () => ({
 // Setup centralized electronAPI mock
 setupElectronAPIMock();
 
-describe("ChangeLocalStoreDirectoryDialog", () => {
+describe("[UC-06] ChangeLocalStoreDirectoryDialog", () => {
   const defaultProps = {
     isOpen: true,
     onClose: vi.fn(),

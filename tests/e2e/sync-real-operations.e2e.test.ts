@@ -21,7 +21,7 @@ import {
  * The fixture extractor points each sample's source_path at the extracted
  * WAV file, so the sync system can find them.
  */
-test.describe("Sync Real Operations E2E Tests", () => {
+test.describe("[UC-34] Sync Real Operations E2E Tests", () => {
   test.use({
     expectedMessages: {
       "the RE-09 test deletes a sample's source file before writing": {

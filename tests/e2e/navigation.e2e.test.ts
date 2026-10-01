@@ -7,7 +7,7 @@ import {
   extractE2EFixture,
 } from "../utils/e2e-fixture-extractor";
 
-test.describe("Back Navigation E2E Tests", () => {
+test.describe("[UC-07] Back Navigation E2E Tests", () => {
   let electronApp: unknown;
   let window: unknown;
   let testEnv: E2ETestEnvironment;
@@ -332,6 +332,28 @@ test.describe("Back Navigation E2E Tests", () => {
     // Now back button should be visible
     const backButtonInDetails = await window.isVisible('button[title="Back"]');
     expect(backButtonInDetails).toBe(true);
+  });
+
+  test("[UC-18] steps to the next and previous kit with the buttons and , .", async () => {
+    // The fixture has two kits, A0 and B1.
+    await window.locator('[data-testid="kit-item-A0"]').click();
+    const header = window.locator('[data-testid="kit-header"]');
+    await expect(header).toContainText("A0");
+    await expect(
+      header.locator('button[title="No previous kit"]'),
+    ).toBeVisible();
+
+    await header.locator('button[title="Next Kit: B1"]').click();
+    await expect(header).toContainText("B1");
+    await expect(header.locator('button[title="No next kit"]')).toBeDisabled();
+
+    await window.keyboard.press(",");
+    await expect(header).toContainText("A0");
+    await window.keyboard.press(".");
+    await expect(header).toContainText("B1");
+
+    await header.locator('button[title="Previous Kit: A0"]').click();
+    await expect(header).toContainText("A0");
   });
 
   test("should handle consistent navigation through multiple cycles", async () => {

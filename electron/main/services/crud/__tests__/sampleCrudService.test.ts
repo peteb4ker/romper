@@ -49,7 +49,7 @@ describe("SampleCrudService", () => {
     });
   });
 
-  describe("addSampleToSlot", () => {
+  describe("[UC-19] addSampleToSlot", () => {
     it("should successfully add a sample", () => {
       // Mock validation (already set in beforeEach, but override for clarity)
       mockValidation.sampleValidationService.validateVoiceAndSlot.mockReturnValue(

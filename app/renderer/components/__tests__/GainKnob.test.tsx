@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import GainKnob from "../GainKnob";
 
-describe("GainKnob", () => {
+describe("[UC-24] GainKnob", () => {
   const defaultProps = {
     onChange: vi.fn(),
     value: 0,

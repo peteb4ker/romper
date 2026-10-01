@@ -20,7 +20,7 @@ import {
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { syncService } from "../../electron/main/services/syncService.js";
 
-describe("Sync Referenced Samples Integration Test", () => {
+describe("[UC-34] Sync Referenced Samples Integration Test", () => {
   let tempDir: string;
   let localStorePath: string;
   let sdCardPath: string;
@@ -300,7 +300,7 @@ describe("Sync Referenced Samples Integration Test", () => {
     ).toBe(false);
   });
 
-  it("keeps the card a mirror of the store (RE-05)", async () => {
+  it("[UC-16] [UC-23] keeps the card a mirror of the store (RE-05)", async () => {
     const settings = { localStorePath };
     const kit = (name: string) =>
       addKit(dbDir, {

@@ -63,7 +63,7 @@ describe("useKitViewMenuHandlers", () => {
     expect(result.current.kitBrowserRef).toBeDefined();
   });
 
-  describe("Edit > Undo and Redo (RE-65)", () => {
+  describe("[UC-26] Edit > Undo and Redo (RE-65)", () => {
     const onUndo = vi.fn();
     const onRedo = vi.fn();
     const execCommand = vi.fn();
@@ -133,7 +133,7 @@ describe("useKitViewMenuHandlers", () => {
     });
   });
 
-  describe("Scan All", () => {
+  describe("[UC-13] Scan All", () => {
     const scanBanks = vi.fn().mockResolvedValue(undefined);
     const handleScanAllKits = vi.fn();
 

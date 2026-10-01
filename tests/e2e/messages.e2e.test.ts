@@ -12,7 +12,7 @@ import {
  * into a second message store that nothing rendered, so no success or error
  * message from the kit browser or editor was ever shown.
  */
-test.describe("Messages", () => {
+test.describe("[UC-36] Messages", () => {
   let electronApp: Awaited<ReturnType<typeof electron.launch>>;
   let window: Awaited<ReturnType<typeof electronApp.firstWindow>>;
   let testEnv: E2ETestEnvironment;
@@ -36,7 +36,7 @@ test.describe("Messages", () => {
     if (testEnv) await cleanupE2EFixture(testEnv);
   });
 
-  test("shows the result of File > Scan All as a toast", async () => {
+  test("[UC-13] shows the result of File > Scan All as a toast", async () => {
     await window.waitForSelector('[data-testid="kit-grid"]', {
       timeout: 10000,
     });

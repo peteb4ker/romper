@@ -204,7 +204,7 @@ describe("useKitDeletion", () => {
     });
   });
 
-  describe("requestDeleteSummary", () => {
+  describe("[UC-16] requestDeleteSummary", () => {
     it("returns summary for unlocked kit", async () => {
       mockGetKitDeleteSummary.mockResolvedValue({
         kitName: "A5",
@@ -280,7 +280,7 @@ describe("useKitDeletion", () => {
     });
   });
 
-  describe("deleteKitDirect", () => {
+  describe("[UC-16] deleteKitDirect", () => {
     it("deletes kit and refreshes", async () => {
       mockDeleteKit.mockResolvedValue(undefined);
 

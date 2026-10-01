@@ -30,7 +30,7 @@ vi.mock("../../utils/logger.js", () => ({
 }));
 
 // Real filesystem in a temp dir; only database creation is stubbed
-describe("LocalStoreSetupService (RE-10)", () => {
+describe("[UC-01] [UC-02] [UC-03] LocalStoreSetupService (RE-10)", () => {
   let tmpRoot: string;
   let target: string;
   let dbDir: string;

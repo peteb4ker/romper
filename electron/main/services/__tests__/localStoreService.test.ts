@@ -51,7 +51,7 @@ describe("LocalStoreService", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
-  describe("getLocalStoreStatus", () => {
+  describe("[UC-05] getLocalStoreStatus", () => {
     beforeEach(() => {
       mockValidateAndDb.mockReturnValue({
         details: { dbVersion: "1.0", hasDb: true },
@@ -241,7 +241,7 @@ describe("LocalStoreService", () => {
     });
   });
 
-  describe("validateExistingLocalStore", () => {
+  describe("[UC-04] validateExistingLocalStore", () => {
     it("returns success for valid local store", () => {
       mockValidateAndDb.mockReturnValue({
         details: { hasDb: true },

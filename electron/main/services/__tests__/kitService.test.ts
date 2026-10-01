@@ -47,7 +47,7 @@ describe("KitService", () => {
     mockGetKit.mockReturnValue({ success: false }); // Kit doesn't exist by default
   });
 
-  describe("createKit", () => {
+  describe("[UC-14] createKit", () => {
     it("successfully creates a new kit", () => {
       const result = kitService.createKit(mockInMemorySettings, "A5");
 
@@ -124,7 +124,7 @@ describe("KitService", () => {
     });
   });
 
-  describe("copyKit", () => {
+  describe("[UC-15] copyKit", () => {
     it("delegates to the atomic db copy operation", () => {
       const result = kitService.copyKit(mockInMemorySettings, "A1", "B2");
 
@@ -183,7 +183,7 @@ describe("KitService", () => {
     });
   });
 
-  describe("deleteKit", () => {
+  describe("[UC-16] deleteKit", () => {
     it("successfully deletes an unlocked kit", () => {
       mockGetKit.mockReturnValue({
         data: { locked: false, name: "A0" },

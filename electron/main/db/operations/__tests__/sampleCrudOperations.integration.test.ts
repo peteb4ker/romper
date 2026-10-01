@@ -35,7 +35,7 @@ describe("Sample CRUD Operations - Integration Tests", () => {
     rmSync(tempDir, { force: true, recursive: true });
   });
 
-  describe("addSample", () => {
+  describe("[UC-19] addSample", () => {
     test("adds a sample and returns its id", () => {
       const result = addSample(dbDir, {
         filename: "kick.wav",
@@ -261,7 +261,7 @@ describe("Sample CRUD Operations - Integration Tests", () => {
     });
   });
 
-  describe("deleteSamples", () => {
+  describe("[UC-23] deleteSamples", () => {
     test("deletes all samples for a kit", () => {
       addSample(dbDir, {
         filename: "kick.wav",

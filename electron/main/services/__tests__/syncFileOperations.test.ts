@@ -60,7 +60,7 @@ const mockConvertToRampleDefault = vi.mocked(convertToRampleDefault);
 const _mockSyncProgressManager = vi.mocked(syncProgressManager);
 const _mockSyncValidationService = vi.mocked(syncValidationService);
 
-describe("SyncFileOperationsService", () => {
+describe("[UC-34] SyncFileOperationsService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

@@ -12,7 +12,7 @@ import {
 // so nothing is written into the source tree.
 let TEST_DIR: string;
 
-describe("SyncValidationService Integration Tests", () => {
+describe("[UC-34] SyncValidationService Integration Tests", () => {
   let service: SyncValidationService;
   let testFilesDir: string;
 

@@ -20,7 +20,7 @@ import { moveSample } from "../sampleManagementOps.js";
 
 const { kits, samples } = schema;
 
-describe("Drag and Drop Integration Tests", () => {
+describe("[UC-21] Drag and Drop Integration Tests", () => {
   let testDbDir: string;
   let testDbPath: string;
   let db: ReturnType<typeof drizzle>;

@@ -339,7 +339,7 @@ describe("useSampleProcessing", () => {
     });
   });
 
-  describe("processAssignment", () => {
+  describe("[UC-19] processAssignment", () => {
     const mockFormatValidation = {
       metadata: { channels: 2 },
     };

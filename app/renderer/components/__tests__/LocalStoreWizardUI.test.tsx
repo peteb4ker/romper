@@ -165,7 +165,7 @@ describe("LocalStoreWizardUI", () => {
   });
   // RE-42: the notice comes from this run's result, not from wizard state
   // captured before the run (which never had the warnings)
-  describe("[UC-02] after setup", () => {
+  describe("[UC-01] [UC-02] after setup", () => {
     const readyToInitialize = (initialize: () => Promise<unknown>) =>
       getMockUseLocalStoreWizard({
         canInitialize: true,

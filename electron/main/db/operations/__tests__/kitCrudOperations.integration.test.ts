@@ -29,7 +29,7 @@ describe("Kit CRUD Operations - Integration Tests", () => {
     rmSync(tempDir, { force: true, recursive: true });
   });
 
-  describe("addKit", () => {
+  describe("[UC-14] addKit", () => {
     test("creates a kit with 4 voices", () => {
       const result = addKit(dbDir, {
         bank_letter: "A",
@@ -148,7 +148,7 @@ describe("Kit CRUD Operations - Integration Tests", () => {
     });
   });
 
-  describe("getKits", () => {
+  describe("[UC-07] getKits", () => {
     test("returns empty array when no kits exist", () => {
       const result = getKits(dbDir);
       expect(result.success).toBe(true);
@@ -216,7 +216,7 @@ describe("Kit CRUD Operations - Integration Tests", () => {
   });
 
   describe("updateKit", () => {
-    test("updates kit bpm", () => {
+    test("[UC-30] updates kit bpm", () => {
       addKit(dbDir, { bank_letter: "A", name: "A0" });
 
       const result = updateKit(dbDir, "A0", { bpm: 160 });
@@ -226,7 +226,7 @@ describe("Kit CRUD Operations - Integration Tests", () => {
       expect(kit.data!.bpm).toBe(160);
     });
 
-    test("updates multiple kit properties at once", () => {
+    test("[UC-17] updates multiple kit properties at once", () => {
       addKit(dbDir, { bank_letter: "A", name: "A0" });
 
       updateKit(dbDir, "A0", {
@@ -241,6 +241,24 @@ describe("Kit CRUD Operations - Integration Tests", () => {
       expect(kit.data!.is_favorite).toBe(true);
     });
 
+    test("[UC-31] stores a kit's trigger conditions and reads them back", () => {
+      addKit(dbDir, { bank_letter: "A", name: "A0" });
+      const conditions = [
+        ["1:2", null, "3:4", null],
+        [null, "2:2", null, null],
+        [null, null, null, null],
+        ["1:4", null, null, "4:4"],
+      ];
+
+      expect(
+        updateKit(dbDir, "A0", { trigger_conditions: conditions }).success,
+      ).toBe(true);
+      expect(getKit(dbDir, "A0").data!.trigger_conditions).toEqual(conditions);
+
+      updateKit(dbDir, "A0", { trigger_conditions: null });
+      expect(getKit(dbDir, "A0").data!.trigger_conditions).toBeNull();
+    });
+
     test("fails when updating non-existent kit", () => {
       const result = updateKit(dbDir, "NonExistent", { bpm: 120 });
       expect(result.success).toBe(false);
@@ -248,7 +266,7 @@ describe("Kit CRUD Operations - Integration Tests", () => {
     });
   });
 
-  describe("getKitDeleteSummary", () => {
+  describe("[UC-16] getKitDeleteSummary", () => {
     test("returns correct counts for a kit with samples", () => {
       addKit(dbDir, { bank_letter: "A", name: "A0" });
       addSample(dbDir, {
@@ -289,7 +307,7 @@ describe("Kit CRUD Operations - Integration Tests", () => {
     });
   });
 
-  describe("deleteKit", () => {
+  describe("[UC-16] deleteKit", () => {
     test("deletes kit and all child records", () => {
       addKit(dbDir, { bank_letter: "A", name: "A0" });
       addSample(dbDir, {

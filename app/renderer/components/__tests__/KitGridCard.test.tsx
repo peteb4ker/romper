@@ -28,7 +28,7 @@ import { KitGridCard } from "../KitGridCard";
 
 const mockIsValidKit = vi.mocked(isValidKit);
 
-describe("KitGridCard", () => {
+describe("[UC-08] KitGridCard", () => {
   const kitA0: Kit = {
     alias: null,
     artist: null,

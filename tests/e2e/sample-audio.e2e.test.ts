@@ -16,7 +16,7 @@ import {
  * extraction points each sample's source_path at the extracted copy, so the
  * main process can read them and the renderer can decode and draw them.
  */
-test.describe("Sample audio", () => {
+test.describe("[UC-29] Sample audio", () => {
   let electronApp: ElectronApplication;
   let window: Page;
   let testEnv: E2ETestEnvironment;

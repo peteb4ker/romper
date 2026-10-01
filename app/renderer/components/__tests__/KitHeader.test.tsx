@@ -91,7 +91,7 @@ describe("KitHeader", () => {
     expect(onBack).toHaveBeenCalled();
   });
 
-  it("calls onPrevKit and disables at first kit", () => {
+  it("[UC-18] calls onPrevKit and disables at first kit", () => {
     const onPrevKit = vi.fn();
     render(<KitHeader {...baseProps} kitIndex={0} onPrevKit={onPrevKit} />);
     const prevBtn = screen.getByTitle("No previous kit");
@@ -100,7 +100,7 @@ describe("KitHeader", () => {
     expect(onPrevKit).not.toHaveBeenCalled();
   });
 
-  it("calls onNextKit and disables at last kit", () => {
+  it("[UC-18] calls onNextKit and disables at last kit", () => {
     const onNextKit = vi.fn();
     render(<KitHeader {...baseProps} kitIndex={2} onNextKit={onNextKit} />);
     const nextBtn = screen.getByTitle("No next kit");
@@ -121,7 +121,7 @@ describe("KitHeader", () => {
     expect(screen.getByText("(no name)")).toBeInTheDocument();
   });
 
-  describe("Editable Mode Toggle - Task 5.1", () => {
+  describe("[UC-17] Editable Mode Toggle - Task 5.1", () => {
     it("shows editable mode toggle when onToggleEditableMode is provided", () => {
       render(<KitHeader {...baseProps} onToggleEditableMode={vi.fn()} />);
 

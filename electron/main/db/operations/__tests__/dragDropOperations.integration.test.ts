@@ -11,7 +11,7 @@ import {
   moveSample,
 } from "../../romperDbCoreORM";
 
-describe("Drag & Drop Operations - Integration Tests", () => {
+describe("[UC-21] Drag & Drop Operations - Integration Tests", () => {
   let tempDir: string;
   let dbDir: string;
   const testKitName = "TestKit";

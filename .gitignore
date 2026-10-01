@@ -71,3 +71,6 @@ Thumbs.db
 
 # Claude Code personal settings (symlinked into worktrees)
 .claude/settings.local.json
+
+# Full-pipeline validation report (npm run validate:full)
+validation-report/

@@ -64,6 +64,17 @@ the pieces fit.
   `<file>.test.ts(x)`, and run in jsdom. Integration tests go in
   `tests/integration/*.integration.test.ts` and run inside Electron.
   E2E tests are `*.e2e.test.ts` (mostly `tests/e2e/`).
+- The full-pipeline validation (`tests/validation/*.validation.ts`) is not
+  part of any suite. `npm run validate:full` builds the app, then sets up a
+  store from the factory archive, adds a kit with stereo samples, writes it
+  to a folder and compares every card file byte for byte. It fails on any
+  error or warning the app shows or logs that the scenario doesn't expect.
+  The report is `validation-report/report.md`. Options: `--fresh` downloads
+  the archive from Squarp instead of the copy in `~/.cache/romper`;
+  `--headed` shows the window; `--keep` keeps the temp store and card;
+  `--no-build` reuses the build. The "Full-Pipeline Validation" workflow
+  runs it on all three platforms on demand. Plan:
+  [`validation-and-traceability.md`](validation-and-traceability.md).
 - Mock collaborators and test the unit's behavior. Reuse the shared mocks and
   factories in `tests/mocks/` and `tests/factories/`.
 - To change IPC behavior in a test, use

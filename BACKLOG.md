@@ -30,7 +30,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
-| RE-67 | Medium | Tests | The suites never run the core promise for real: no stereo or real audio through a sync, almost no byte checks on the card, and no test fails on an unexpected error. | open (plan: [`validation-and-traceability.md`](docs/developer/validation-and-traceability.md)) |
+| RE-67 | Medium | Tests | The suites never run the core promise for real: no stereo or real audio through a sync, almost no byte checks on the card, and no test fails on an unexpected error. | partly done (#PR: `npm run validate:full` and its workflow; next: e2e error guard, use case tags; plan: [`validation-and-traceability.md`](docs/developer/validation-and-traceability.md)) |
 | RE-18 | High | Release | Signing is silently optional. Windows v1.3.1 shipped **unsigned** (the Azure step was skipped because `AZURE_CLIENT_ID` is empty). | partly done (#387: signing required, Apple credentials checked first; Windows needs ALLOW_UNSIGNED_WINDOWS until OPS-2) |
 
 ## Owner (needs Pete)

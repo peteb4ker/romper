@@ -38,6 +38,12 @@ export interface KitsRow {
   type: "kits";
 }
 
+interface BankGroup {
+  bank: string;
+  kits: KitWithRelations[];
+  start: number; // index of the bank's first kit in the sorted kit list
+}
+
 /**
  * Flatten bank-grouped kits (sorted by name) into virtualized grid rows.
  * `rowIndexByKitIndex` maps each kit's index in `kitsToDisplay` to the row
@@ -63,54 +69,71 @@ export function buildGridRows(
   }
 
   let isFirstBank = true;
-  const pushEmptyBank = (bank: string) => {
-    rows.push({ bank, isFirstBank, type: "header" }, { bank, type: "add" });
+  const pushHeader = (bank: string) => {
+    rows.push({ bank, isFirstBank, type: "header" });
     isFirstBank = false;
   };
 
-  let i = 0;
-  while (i < kitsToDisplay.length) {
-    const bank = kitsToDisplay[i].name[0];
-    if (pendingEmptyBank && pendingEmptyBank < bank) {
-      pushEmptyBank(pendingEmptyBank);
+  for (const group of groupKitsByBank(kitsToDisplay)) {
+    if (pendingEmptyBank && pendingEmptyBank < group.bank) {
+      pushHeader(pendingEmptyBank);
+      rows.push({ bank: pendingEmptyBank, type: "add" });
       pendingEmptyBank = null;
     }
 
-    const bankStart = i;
-    const bankKits: KitWithRelations[] = [];
-    while (i < kitsToDisplay.length && kitsToDisplay[i].name[0] === bank) {
-      bankKits.push(kitsToDisplay[i]);
-      i++;
-    }
-
-    rows.push({ bank, isFirstBank, type: "header" });
-    isFirstBank = false;
-
+    pushHeader(group.bank);
     const bankHasRoom =
-      showAddCards && getNextSlotInBank(bank, existingNames) !== null;
-
-    for (let c = 0; c < bankKits.length; c += columnCount) {
-      const chunk = bankKits.slice(c, c + columnCount);
-      const isLastChunk = c + columnCount >= bankKits.length;
-      const rowIdx = rows.length;
-      for (let j = 0; j < chunk.length; j++) {
-        rowIndexByKitIndex[bankStart + c + j] = rowIdx;
-      }
-      rows.push({
-        bank,
-        kits: chunk,
-        showAddCard: bankHasRoom && isLastChunk && chunk.length < columnCount,
-        type: "kits",
-      });
-    }
-
-    // Add-kit card gets its own row when the bank's final row is full
-    if (bankHasRoom && bankKits.length % columnCount === 0) {
-      rows.push({ bank, type: "add" });
-    }
+      showAddCards && getNextSlotInBank(group.bank, existingNames) !== null;
+    pushKitRows(rows, rowIndexByKitIndex, group, columnCount, bankHasRoom);
   }
 
-  if (pendingEmptyBank) pushEmptyBank(pendingEmptyBank);
+  if (pendingEmptyBank) {
+    pushHeader(pendingEmptyBank);
+    rows.push({ bank: pendingEmptyBank, type: "add" });
+  }
 
   return { rowIndexByKitIndex, rows };
+}
+
+// Split kits sorted by name into runs that share a bank letter
+function groupKitsByBank(kits: KitWithRelations[]): BankGroup[] {
+  const groups: BankGroup[] = [];
+  kits.forEach((kit, index) => {
+    const last = groups.at(-1);
+    if (last && kit.name.startsWith(last.bank)) {
+      last.kits.push(kit);
+    } else {
+      groups.push({ bank: kit.name[0], kits: [kit], start: index });
+    }
+  });
+  return groups;
+}
+
+// Rows of up to `columnCount` kit cards for one bank, ending with its
+// add-kit card: in the last row if it has room, otherwise in a row of its own
+function pushKitRows(
+  rows: GridRow[],
+  rowIndexByKitIndex: number[],
+  { bank, kits, start }: BankGroup,
+  columnCount: number,
+  bankHasRoom: boolean,
+): void {
+  for (let c = 0; c < kits.length; c += columnCount) {
+    const chunk = kits.slice(c, c + columnCount);
+    const isLastChunk = c + columnCount >= kits.length;
+    const rowIdx = rows.length;
+    for (let j = 0; j < chunk.length; j++) {
+      rowIndexByKitIndex[start + c + j] = rowIdx;
+    }
+    rows.push({
+      bank,
+      kits: chunk,
+      showAddCard: bankHasRoom && isLastChunk && chunk.length < columnCount,
+      type: "kits",
+    });
+  }
+
+  if (bankHasRoom && kits.length % columnCount === 0) {
+    rows.push({ bank, type: "add" });
+  }
 }

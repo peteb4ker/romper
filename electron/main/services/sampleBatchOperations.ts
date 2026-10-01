@@ -261,17 +261,17 @@ export class SampleBatchOperationsService {
     }
 
     try {
-      // Get existing samples and find sample to move
+      // Check there is a sample to move
       const existingSamplesResult = getKitSamples(dbPath, kitName);
       if (!existingSamplesResult.success || !existingSamplesResult.data) {
         return { error: existingSamplesResult.error, success: false };
       }
 
-      const sampleToMove = existingSamplesResult.data.find(
+      const hasSampleToMove = existingSamplesResult.data.some(
         (s) => s.voice_number === fromVoice && s.slot_number === fromSlot, // Database stores 0-11 directly
       );
 
-      if (!sampleToMove) {
+      if (!hasSampleToMove) {
         return {
           error: `No sample found at voice ${fromVoice}, slot ${fromSlot + 1}`,
           success: false,

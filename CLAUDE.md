@@ -95,8 +95,14 @@ the repo or on GitHub.
   sessions, but cloud sessions can't reply, so their results come back
   through the PR. To wait on a local session, use `notify_when_idle` rather
   than polling.
-- **Unattended PRs:** a routine (`/schedule`) can re-check a cloud-owned PR's
-  CI and act on failures until it merges.
+- **Auto-fix:** right after opening a PR from a desktop-app session, turn
+  on its Auto-fix (`set_monitor` with `auto_fix: true`; bind the PR first
+  with `bind_pr` if `get_status` doesn't show it). Don't ask first. The app
+  then wakes the session on CI failures, merge conflicts and review
+  comments, so nobody polls CI.
+- **Unattended PRs:** cloud sessions don't have Auto-fix. A routine
+  (`/schedule`) can re-check a cloud-owned PR's CI and act on failures
+  until it merges.
 
 ## Hard rules
 

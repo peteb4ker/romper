@@ -188,10 +188,16 @@ export async function extractZipEntries(
     const pendingWrites = new Set<Promise<void>>();
     const openWriteStreams = new Set<fs.WriteStream>();
 
-    const stream = fs.createReadStream(zipPath).pipe(unzipper.Parse());
+    // Kept separately: destroying the parser doesn't close the file it reads,
+    // and Windows can't delete a file that is still open (the downloaded zip
+    // after a cancel or failure)
+    const source = fs.createReadStream(zipPath);
+    let sourceClosed = false;
+    const stream = source.pipe(unzipper.Parse());
 
     const maybeSettle = () => {
-      if (settled || !streamClosed || pendingWrites.size > 0) return;
+      if (settled || !streamClosed || !sourceClosed || pendingWrites.size > 0)
+        return;
       settled = true;
       signal?.removeEventListener("abort", onAbort);
       if (failure) {
@@ -205,6 +211,7 @@ export async function extractZipEntries(
       if (failure) return;
       failure = error instanceof Error ? error : new Error(String(error));
       stream.destroy();
+      source.destroy();
       // Tear down any in-flight writes so their streams close promptly and we
       // don't leave fs operations racing the caller's cleanup.
       for (const writeStream of openWriteStreams) {
@@ -268,6 +275,12 @@ export async function extractZipEntries(
     stream.on("error", fail);
     stream.on("close", () => {
       streamClosed = true;
+      // The parser can finish without reading to the end of the file
+      source.destroy();
+      maybeSettle();
+    });
+    source.on("close", () => {
+      sourceClosed = true;
       maybeSettle();
     });
 

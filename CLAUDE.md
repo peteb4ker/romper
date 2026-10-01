@@ -108,6 +108,9 @@ Hooks in `.claude/hooks/` and `.husky/` enforce the first two.
   someone else caused; nobody else will fix them. Check whether a failure
   is also on main (`gh run list --commit <sha>` along main's history), fix
   it in its own `fix/` PR, and tell any live session that owns the code.
+- A UI change ships with regenerated manual and website screenshots and
+  matching manual text, in the same PR; if it already merged, raise a
+  `docs/` PR right away. See the `capture-screenshots` command.
 - Don't verify UI in a browser. The renderer needs `globalThis.electronAPI`
   from the preload script, so the Vite URL is broken outside Electron. The
   chrome-devtools MCP server is denied in `.claude/settings.json`; use the

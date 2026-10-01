@@ -24,8 +24,13 @@
  *   npm run screenshots -- --list          # print available targets
  */
 
+import type { Page } from "playwright";
+
+import { execFileSync } from "node:child_process";
+import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { inflateSync } from "node:zlib";
 import { _electron as electron } from "playwright";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -44,6 +49,143 @@ const DOCS_IMAGES = path.join(ROOT, "docs", "images");
 // The navigate() function receives the Playwright Page (window) object.
 // The app starts on the Kit Browser view with fixtures loaded.
 // ---------------------------------------------------------------------------
+
+interface PngHeader {
+  channels: number;
+  height: number;
+  width: number;
+}
+
+/**
+ * Decode an 8-bit, non-interlaced grey/RGB/RGBA PNG to RGBA pixels,
+ * ignoring colour-profile chunks. Returns null for other formats.
+ */
+function decodePng(
+  png: Buffer,
+): { height: number; pixels: Uint8Array; width: number } | null {
+  const chunks = readPngChunks(png);
+  if (!chunks) return null;
+  const { header } = chunks;
+  const samples = unfilter(inflateSync(chunks.data), header);
+  const { channels, height, width } = header;
+  const pixels = new Uint8Array(width * height * 4);
+  for (let i = 0; i < width * height; i++) {
+    const src = samples.subarray(i * channels, (i + 1) * channels);
+    const colour = channels >= 3;
+    const hasAlpha = channels === 2 || channels === 4;
+    pixels.set(
+      [
+        src[0],
+        colour ? src[1] : src[0],
+        colour ? src[2] : src[0],
+        hasAlpha ? src[channels - 1] : 255,
+      ],
+      i * 4,
+    );
+  }
+  return { height, pixels, width };
+}
+
+function paeth(left: number, up: number, upLeft: number): number {
+  const p = left + up - upLeft;
+  const pa = Math.abs(p - left);
+  const pb = Math.abs(p - up);
+  const pc = Math.abs(p - upLeft);
+  if (pa <= pb && pa <= pc) return left;
+  return pb <= pc ? up : upLeft;
+}
+
+/** Header and image data of an 8-bit, non-interlaced grey/RGB/RGBA PNG. */
+function readPngChunks(
+  png: Buffer,
+): { data: Buffer; header: PngHeader } | null {
+  const channelsByType: Record<number, number> = { 0: 1, 2: 3, 4: 2, 6: 4 };
+  let header: null | PngHeader = null;
+  const idat: Buffer[] = [];
+  for (let at = 8; at < png.length; ) {
+    const length = png.readUInt32BE(at);
+    const type = png.toString("ascii", at + 4, at + 8);
+    const data = png.subarray(at + 8, at + 8 + length);
+    if (type === "IHDR") {
+      const channels = channelsByType[data[9]] ?? 0;
+      if (data[8] !== 8 || !channels || data[12] !== 0) return null;
+      header = {
+        channels,
+        height: data.readUInt32BE(4),
+        width: data.readUInt32BE(0),
+      };
+    } else if (type === "IDAT") {
+      idat.push(data);
+    }
+    at += 12 + length;
+  }
+  return header ? { data: Buffer.concat(idat), header } : null;
+}
+
+/**
+ * If a freshly captured image has the same pixels as the committed one,
+ * put the committed bytes back: encoders and colour-profile chunks differ,
+ * so equal pixels can still show up as a modified file. Returns true when
+ * the image is unchanged.
+ */
+function restoreIfUnchanged(output: string): boolean {
+  const file = path.join(DOCS_IMAGES, output);
+  let committed: Buffer;
+  try {
+    committed = execFileSync("git", ["show", `HEAD:docs/images/${output}`], {
+      cwd: ROOT,
+      maxBuffer: 64 * 1024 * 1024,
+    });
+  } catch {
+    return false; // a new image
+  }
+  const before = decodePng(committed);
+  const after = decodePng(readFileSync(file));
+  const same =
+    !!before &&
+    !!after &&
+    before.width === after.width &&
+    before.height === after.height &&
+    before.pixels.every((v, i) => v === after.pixels[i]);
+  if (same) writeFileSync(file, committed);
+  return same;
+}
+
+/** Open the sequencer drawer and drop the grid's keyboard focus ring. */
+async function showSequencer(window: Page) {
+  const showBtn = window.locator('[data-testid="kit-step-sequencer-handle"]');
+  if (await showBtn.isVisible()) {
+    await showBtn.click();
+    await window.waitForTimeout(500);
+  }
+  await window.evaluate(() => (document.activeElement as HTMLElement)?.blur());
+}
+
+/** Undo PNG row filters, giving the raw samples row by row. */
+function unfilter(raw: Buffer, header: PngHeader): Uint8Array {
+  const { channels, height, width } = header;
+  const stride = width * channels;
+  const rows = new Uint8Array(height * stride);
+  for (let y = 0; y < height; y++) {
+    const filter = raw[y * (stride + 1)];
+    const line = raw.subarray(y * (stride + 1) + 1);
+    for (let x = 0; x < stride; x++) {
+      const left = x >= channels ? rows[y * stride + x - channels] : 0;
+      const up = y > 0 ? rows[(y - 1) * stride + x] : 0;
+      const upLeft =
+        y > 0 && x >= channels ? rows[(y - 1) * stride + x - channels] : 0;
+      const predictors = [
+        0,
+        left,
+        up,
+        (left + up) >> 1,
+        paeth(left, up, upLeft),
+      ];
+      rows[y * stride + x] = (line[x] + (predictors[filter] ?? 0)) & 0xff;
+    }
+  }
+  return rows;
+}
 
 const SCREENSHOT_TARGETS = [
   // -- Website front page screenshots --
@@ -189,7 +331,8 @@ const SCREENSHOT_TARGETS = [
       await window.waitForSelector('[data-testid="kit-editor"]', {
         timeout: 10000,
       });
-      await window.waitForTimeout(500);
+      // Let the slots' waveforms decode and draw
+      await window.waitForTimeout(2000);
     },
     output: "manual/voice-panel.png",
     selector: '[data-testid="voice-panel-1"]',
@@ -207,23 +350,39 @@ const SCREENSHOT_TARGETS = [
       await window.waitForSelector('[data-testid="kit-editor"]', {
         timeout: 10000,
       });
-      // Show the sequencer
-      const showBtn = window.locator(
-        '[data-testid="kit-step-sequencer-handle"]',
-      );
-      if (await showBtn.isVisible()) {
-        await showBtn.click();
-        await window.waitForTimeout(500);
-      }
+      await showSequencer(window);
     },
     output: "manual/step-sequencer.png",
     selector: '[data-testid="kit-step-sequencer"]',
   },
   {
+    description:
+      "Step sequencer example pattern: the C0 kit used in the manual's walkthrough",
+    name: "manual-step-sequencer-example",
+    navigate: async (window) => {
+      await window.waitForSelector('[data-testid="kit-grid"]', {
+        timeout: 10000,
+      });
+      // Bank C is below the fold: jump to it with its bank hotkey
+      await window.keyboard.press("c");
+      const kit = window.locator('[data-testid="kit-item-C0"]');
+      await kit.waitFor({ state: "visible", timeout: 5000 });
+      await kit.click();
+      await window.waitForSelector('[data-testid="kit-editor"]', {
+        timeout: 10000,
+      });
+      await showSequencer(window);
+    },
+    output: "manual/step-sequencer-example.png",
+    selector: '[data-testid="kit-step-sequencer"]',
+  },
+  {
     captureOverride: async (window, outputPath) => {
-      // Right-click on the first active step to show the condition popover
-      // First find any active step (velocity > 0)
-      const activeStep = window.locator('button[aria-pressed="true"]').first();
+      // Right-click on the first active step to show the condition popover.
+      // Only step pads (gridcells): other toggles are aria-pressed too.
+      const activeStep = window
+        .locator('[role="gridcell"][aria-pressed="true"]')
+        .first();
       if (await activeStep.isVisible({ timeout: 3000 }).catch(() => false)) {
         await activeStep.click({ button: "right" });
       } else {
@@ -264,29 +423,34 @@ const SCREENSHOT_TARGETS = [
   },
   {
     captureOverride: async (window, outputPath) => {
-      // Capture the right-side controls area of voice row 0 (sample mode + mute + volume)
-      const sampleMode = window.locator('[data-testid="sample-mode-0"]');
-      const volumeSlider = window.locator('[data-testid="voice-volume-0"]');
-      await sampleMode.waitFor({ state: "visible", timeout: 3000 });
-      await volumeSlider.waitFor({ state: "visible", timeout: 3000 });
+      // Capture voice row 0's settings (Slice, Sample, Level with its value)
+      // with their column titles above
+      const slice = window.locator('[data-testid="slice-toggle-0"]');
+      const level = window.locator('[data-testid="voice-volume-0"]');
+      const ruler = window.locator('[data-testid="seq-step-ruler"]');
+      await slice.waitFor({ state: "visible", timeout: 3000 });
+      await level.waitFor({ state: "visible", timeout: 3000 });
 
-      const modeBox = await sampleMode.boundingBox();
-      const volBox = await volumeSlider.boundingBox();
-      if (!modeBox || !volBox) throw new Error("Controls not visible");
+      const sliceBox = await slice.boundingBox();
+      // The level's label holds the slider and its value
+      const levelBox = await level.locator("xpath=..").boundingBox();
+      const rulerBox = await ruler.boundingBox();
+      if (!sliceBox || !levelBox || !rulerBox) {
+        throw new Error("Controls not visible");
+      }
 
-      // Clip from sample mode button to end of volume slider with padding
-      const pad = 4;
-      const x = modeBox.x - pad;
-      const y = modeBox.y - pad;
-      const width = volBox.x + volBox.width - modeBox.x + pad * 2;
-      const height = Math.max(modeBox.height, volBox.height) + pad * 2;
+      const pad = 6;
+      const x = sliceBox.x - pad;
+      const y = rulerBox.y - pad;
+      const width = levelBox.x + levelBox.width - sliceBox.x + pad * 2;
+      const height = sliceBox.y + sliceBox.height - rulerBox.y + pad * 2;
 
       await window.screenshot({
         clip: { height, width, x, y },
         path: outputPath,
       });
     },
-    description: "Voice controls: sample mode, mute toggle, volume slider",
+    description: "Voice settings: slice mode, sample mode, level",
     name: "manual-voice-controls",
     navigate: async (window) => {
       await window.waitForSelector('[data-testid="kit-grid"]', {
@@ -311,14 +475,15 @@ const SCREENSHOT_TARGETS = [
   },
   {
     captureOverride: async (window, outputPath) => {
-      // Capture the transport controls (play button + BPM + cycle counter area)
+      // Capture the transport column (play, BPM, loop indicator, shortcuts)
       const controls = window.locator(
         '[data-testid="kit-step-sequencer-controls"]',
       );
       await controls.waitFor({ state: "visible", timeout: 3000 });
       await controls.screenshot({ path: outputPath });
     },
-    description: "Sequencer transport controls: play/stop, BPM, cycle counter",
+    description:
+      "Sequencer transport controls: play/stop, BPM, loop indicator, shortcuts",
     name: "manual-transport-controls",
     navigate: async (window) => {
       await window.waitForSelector('[data-testid="kit-grid"]', {
@@ -371,17 +536,22 @@ if (args.includes("--list")) {
   process.exit(0);
 }
 
-const targetName = args.includes("--target")
+// --target takes one name or a comma-separated list (one build for all)
+const targetArg = args.includes("--target")
   ? args[args.indexOf("--target") + 1]
   : null;
-const captureAll = args.includes("--all") || !targetName;
+const targetNames = targetArg ? targetArg.split(",").map((n) => n.trim()) : [];
+const captureAll = args.includes("--all") || targetNames.length === 0;
 
 const targets = captureAll
   ? SCREENSHOT_TARGETS
-  : SCREENSHOT_TARGETS.filter((t) => t.name === targetName);
+  : SCREENSHOT_TARGETS.filter((t) => targetNames.includes(t.name));
+const unknown = targetNames.filter(
+  (n) => !SCREENSHOT_TARGETS.some((t) => t.name === n),
+);
 
-if (targets.length === 0) {
-  console.error(`Unknown target: ${targetName}`);
+if (targets.length === 0 || unknown.length > 0) {
+  console.error(`Unknown target: ${unknown.join(", ") || targetArg}`);
   console.error(`Run with --list to see available targets.`);
   process.exit(1);
 }
@@ -450,7 +620,13 @@ async function main() {
           await window.screenshot({ path: outputPath });
         }
 
-        console.log(`    -> docs/images/${target.output}`);
+        // Keep the committed file when the pixels haven't changed, so a
+        // docs PR only carries images that actually look different
+        if (restoreIfUnchanged(target.output)) {
+          console.log(`    == docs/images/${target.output} (unchanged)`);
+        } else {
+          console.log(`    -> docs/images/${target.output}`);
+        }
 
         // Navigate back to kit browser for the next target
         // (reset state between captures)

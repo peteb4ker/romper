@@ -2,6 +2,7 @@ import type { Sample } from "@romper/shared/db/schema.js";
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { setImmediate as yieldToEventLoop } from "node:timers/promises";
 
 import {
   type FormatValidationResult,
@@ -265,11 +266,3 @@ export class SyncFileOperationsService {
 }
 
 export const syncFileOperationsService = new SyncFileOperationsService();
-
-/**
- * Let pending IPC and timers run before the next file. Uses the global
- * setImmediate: the main build stubs `node:timers/promises`.
- */
-function yieldToEventLoop(): Promise<void> {
-  return new Promise((resolve) => setImmediate(resolve));
-}

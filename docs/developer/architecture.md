@@ -200,9 +200,14 @@ Sync doesn't block the main process (RE-07): file I/O is asynchronous and
 file, so progress events and `cancelKitSync` are handled while it runs.
 Cancel stops after the file in progress and returns a `cancelled` outcome.
 Converting a file is synchronous CPU work, but short (about 0.1 s for a
-3-minute stereo 24-bit file), so it runs in the main process. The main
-build stubs some `node:` modules (for example `node:timers/promises`; see
-RE-16), so use Node globals or `fs.promises` there.
+3-minute stereo 24-bit file), so it runs in the main process.
+
+The main process is built for Node (`vite.main.config.ts`, RE-16): Node
+built-ins and every package in `dependencies` stay as imports and load
+from Node and the packaged `node_modules` at runtime. So a package main
+imports must be in `dependencies`, not `devDependencies`; the e2e
+`main-bundle` test checks this, and that the bundle has no browser stubs
+or `require` shims.
 
 ## Testing
 

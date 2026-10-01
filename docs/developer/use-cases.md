@@ -80,12 +80,9 @@ samples keeps the first 12, and the wizard names the files it left out. See
   - The wizard's labels differ from the manual ("Rample SD Card", not
     "Load from SD Card"; also "Squarp.net Factory Samples", "Blank Folder",
     "Choose Existing Store").
-  - "Cancel will stop setup": on first run Cancel quits the app mid-import
-    (RE-66).
   - `troubleshooting.md:47-52` describes a bank-folder card layout; the
     import reads kit folders at the card root.
-- **Known issues:** RE-66, RE-31, RE-73 (a failed kit copy is ignored and
-  setup carries on), RE-67 (the e2e only checks that the database
+- **Known issues:** RE-67 (the e2e only checks that the database
   exists).
 
 ### UC-02 Set up from the factory archive
@@ -114,9 +111,8 @@ and [Factory Samples](../manual/syncing.md#factory-samples).
     store is configured, so there's no way to add them later.
   - The download is "about 300 MB" in some pages and "approximately 1 GB"
     in `troubleshooting.md:62` and `faq.md:83`.
-  - Cancel as in UC-01.
-- **Known issues:** RE-66, RE-67 (the e2e uses a 928-byte stub
-  archive; `npm run validate:full` runs the real one).
+- **Known issues:** RE-67 (the e2e uses a 928-byte stub archive;
+  `npm run validate:full` runs the real one, including a cancelled setup).
 
 ### UC-03 Set up an empty library
 
@@ -137,7 +133,7 @@ and [Creating Kits](../manual/kit-browser.md#creating-kits).
     (`getting-started.md:63`): the guidance offers only "Open Kit Browser".
   - The guidance suggests changing the local store to an SD card, which
     fails validation (a card has no `.romperdb`).
-- **Known issues:** RE-66.
+- **Known issues:** none.
 
 ### UC-04 Choose an existing local store
 

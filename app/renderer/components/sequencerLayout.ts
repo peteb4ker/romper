@@ -17,6 +17,8 @@ export const LABEL_WIDTH = 36;
 export const LABEL_GAP = 6;
 export const MUTE_WIDTH = 30;
 export const MUTE_GAP = 12;
+/** Height of the grid's header (step ruler and column titles). */
+export const HEADER_HEIGHT = 18;
 /** Space between pads, and between rows. */
 export const PAD_GAP = 6;
 export const ROW_GAP = 8;

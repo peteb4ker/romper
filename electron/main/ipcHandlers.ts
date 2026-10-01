@@ -42,6 +42,10 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
       pathAccess.assertAllowed(value, { write: true });
     }
     settingsService.writeSetting(inMemorySettings, key, value);
+    // The wizard saves the store as the last step of a successful setup
+    if (key === "localStorePath" && typeof value === "string" && !clearing) {
+      localStoreSetupService.markSetupComplete(value);
+    }
   });
 
   // Add local store status handler

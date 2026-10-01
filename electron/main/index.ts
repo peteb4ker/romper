@@ -26,6 +26,8 @@ import {
   isExternalHttpUrl,
 } from "./navigationPolicy.js";
 import { enforceTrustedIpcSenders } from "./security/ipcSender.js";
+import { localStoreSetupService } from "./services/localStoreSetupService.js";
+import { ServicePathManager } from "./utils/fileSystemUtils.js";
 import { logger } from "./utils/logger.js";
 
 logger.log("[Romper Electron] Main process entrypoint loaded");
@@ -294,6 +296,22 @@ function onAppReady(): void {
 // `electron.launch` to hang in e2e (ESM-main bootstrap deadlock), so this
 // pattern is intentional.
 void app.whenReady().then(onAppReady); // NOSONAR - S7785, see note
+
+// A setup that never finished (Cancel on first run quits mid-import) must not
+// leave a half-built store that makes the next launch refuse the folder
+// (RE-66). Synchronous, so it completes before the process exits.
+app.on("will-quit", () => {
+  const results = localStoreSetupService.cleanupUnfinishedSetups(
+    ServicePathManager.getLocalStorePath(inMemorySettings),
+  );
+  for (const result of results) {
+    if (result.error) {
+      console.warn(
+        `[Setup] Couldn't clean up the unfinished setup in ${result.targetPath}: ${result.error}`,
+      );
+    }
+  }
+});
 
 process.on("unhandledRejection", (reason: unknown) => {
   console.error(

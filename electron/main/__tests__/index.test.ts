@@ -34,6 +34,7 @@ vi.mock("electron", () => {
   const app = {
     getName: vi.fn(() => "Romper"),
     getPath: vi.fn(() => "/mock/userData"),
+    on: vi.fn(),
     quit: vi.fn(),
     setActivationPolicy: vi.fn(),
     setName: vi.fn(),
@@ -92,6 +93,9 @@ vi.mock("../applicationMenu.js", () => ({
 }));
 vi.mock("../security/ipcSender.js", () => ({
   enforceTrustedIpcSenders: vi.fn(),
+}));
+vi.mock("../services/localStoreSetupService.js", () => ({
+  localStoreSetupService: { cleanupUnfinishedSetups: vi.fn(() => []) },
 }));
 vi.mock("../localStoreValidator.js", () => ({
   validateLocalStoreAndDb: vi.fn(() => ({ isValid: true })),
@@ -191,6 +195,31 @@ describe.sequential("main/index.ts", () => {
     const { app } = await import("electron");
     await import("../index");
     expect(app.whenReady).toHaveBeenCalled();
+  });
+
+  it("cleans up unfinished setups on quit, sparing the configured store (RE-66)", async () => {
+    process.env.ROMPER_LOCAL_PATH = "/mock/local";
+    const { app } = await import("electron");
+    const { localStoreSetupService } =
+      await import("../services/localStoreSetupService.js");
+    vi.mocked(localStoreSetupService.cleanupUnfinishedSetups).mockReturnValue([
+      { error: "EBUSY", removed: false, targetPath: "/mock/half-built" },
+    ]);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await import("../index");
+
+    const onQuit = vi
+      .mocked(app.on)
+      .mock.calls.find(([event]) => event === "will-quit")?.[1] as () => void;
+    onQuit();
+
+    expect(localStoreSetupService.cleanupUnfinishedSetups).toHaveBeenCalledWith(
+      "/mock/local",
+    );
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("/mock/half-built: EBUSY"),
+    );
+    warn.mockRestore();
   });
 
   it("registers unhandledRejection handler and logs error", async () => {

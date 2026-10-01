@@ -23,6 +23,11 @@ export const EXISTING_LOCAL_STORE_MESSAGE =
  * Cleanup renames the failed database aside (`.romperdb.failed-<timestamp>`)
  * rather than deleting it, so even a bookkeeping bug cannot destroy data. A
  * retry still starts fresh because `.romperdb` is gone.
+ *
+ * A setup that never finished (the app quit mid-import, for example after
+ * Cancel on first run) is cleaned up on quit (RE-66), so the next launch can
+ * set up the same folder. Saving the store as the local store marks its
+ * setup finished.
  */
 export class LocalStoreSetupService {
   private readonly createdDbDirs = new Set<string>();
@@ -78,6 +83,28 @@ export class LocalStoreSetupService {
   }
 
   /**
+   * Clean up every store this process's setup created and never finished,
+   * except the configured local store. Runs when the app quits.
+   */
+  cleanupUnfinishedSetups(configuredLocalStorePath?: null | string): Array<{
+    error?: string;
+    movedTo?: string;
+    removed: boolean;
+    targetPath: string;
+  }> {
+    const configured = configuredLocalStorePath
+      ? path.resolve(configuredLocalStorePath)
+      : null;
+    return [...this.createdDbDirs]
+      .map((dbDir) => path.dirname(dbDir))
+      .filter((targetPath) => targetPath !== configured)
+      .map((targetPath) => ({
+        ...this.cleanupFailedSetup(targetPath, configuredLocalStorePath),
+        targetPath,
+      }));
+  }
+
+  /**
    * Create the database for a new local store. Refuses a directory that
    * already holds anything, and records the directory so a failed setup can
    * clean it up.
@@ -111,6 +138,14 @@ export class LocalStoreSetupService {
       return { exists: false };
     }
     return { error: EXISTING_LOCAL_STORE_MESSAGE, exists: true };
+  }
+
+  /**
+   * The store at `targetPath` is now the local store: its setup finished, so
+   * nothing may clean it up any more.
+   */
+  markSetupComplete(targetPath: string): void {
+    this.createdDbDirs.delete(path.resolve(targetPath, ROMPER_DB_DIR));
   }
 }
 

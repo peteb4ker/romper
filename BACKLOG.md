@@ -89,7 +89,7 @@ This file tracks what's being done about each item.
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
 | RE-70 | Medium | Archive | `file://` archive URLs weren't decoded: `/C:/...` on Windows, `%20` everywhere. | done (#403) |
-| RE-29 | High | Sync | A stereo sample on a mono voice was written to the card as stereo: mono conversion keyed on `samples.is_stereo`, which every add and import path writes as `false`. | done (#PR: planned from the file's channel count and the voice's stereo setting; proven by `npm run validate:full`) |
+| RE-29 | High | Sync | A stereo sample on a mono voice was written to the card as stereo: mono conversion keyed on `samples.is_stereo`, which every add and import path writes as `false`. | done (#404: planned from the file's channel count and the voice's stereo setting; proven by `npm run validate:full`) |
 | RE-68 | High | Tests | The e2e suite overwrote the installed app's settings (same userData folder), resetting its local store. | done (#400) |
 | RE-15 | High | Platform | Electron 39.8.10 is out of support (its last patch was 2026-05-05; supported majors are 42 to 44). | done (#392: Electron 44, better-sqlite3 13) |
 | RE-63 | Medium | Sync | Sample conversion truncates instead of rounding: re-encoding an unchanged 16-bit sample alters about a third of its samples, and 24- to 16-bit conversion has twice the quantization error. | done (#396) |

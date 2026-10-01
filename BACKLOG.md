@@ -28,7 +28,6 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
-| RE-08 | High | Sync | The WAV header parser requires the `fmt ` chunk at byte 12 with size 16. | open |
 | RE-11 | High | Renderer | Toast messages never appear. `useMessageDisplay()` creates local state. | open |
 | RE-12 | High | Renderer | There is no React error boundary. Any exception during render unmounts the whole tree and leaves a blank window with no way to recover. | open |
 | RE-13 | High | Playback | The voice choke can fail after any kit refresh. Step, condition, mode, volume and alias edits reload all kits, which resets the "playing" map while samples are still playing, so the next trigger on that voice does not stop them. | partly done: sounds now choke at the audio layer (`voiceChoke.ts`), so the audible choke no longer depends on this state; the state itself is unchanged |
@@ -94,6 +93,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-08 | High | Sync | The WAV header parser requires the `fmt ` chunk at byte 12 with size 16. | done (#381) |
 | RE-07 | High | Sync | Sync blocks the main process for the whole run: every file is copied or converted with synchronous calls, so no IPC (including Cancel) runs until it finishes. | done (#379) |
 | RE-05 | High | Sync | Sync only adds or overwrites. Removed, moved or renamed samples and deleted kits stay on the card. | done (#376; the card mirrors the store) |
 | RE-06 | High | Sync | Sync writes `<card>/<kit>/<voice>/<file>`, but SD import and rescan read only WAVs at the kit root and take the voice from the first character of the file name. | done (#372; spec: [`sd-card-layout.md`](docs/developer/sd-card-layout.md)) |

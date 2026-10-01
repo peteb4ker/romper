@@ -4,7 +4,7 @@ priority: high
 status: specification (approved 2026-10-01)
 updated: 2026-10-01
 context_size: large
-implementation_status: harness (PR 2, #402), e2e error guard (PR 3, #411) and traceability (PR 4, #PR) built; PR 5 onward in validation-fix-plan.md
+implementation_status: harness (PR 2, #402), e2e error guard (PR 3, #411) and traceability (PR 4, #415) built; PR 5 onward in validation-fix-plan.md
 -->
 
 # Full-pipeline validation, test layering and traceability
@@ -381,7 +381,7 @@ behaviour checks, and RE-51 makes tests type-check.
 | 1 | This spec; the new findings (RE-64 to RE-67, RE-29 raised to High); the `sd-card-layout.md` counts. |
 | 2 | The harness: user-data isolation, the archive copy, the error collector, the reference WAV reader and converter, the scenario, the report, `npm run validate:full` and `validate-full.yml`. Known failures marked with their RE IDs. |
 | 3 | The e2e error guard (section 2, item 6) across the existing suite, plus fixing whatever it uncovers. Done in #411. |
-| 4 | `use-cases.md`; tests tagged with use case IDs; `scripts/traceability.mjs`, the generated matrix and the CI check. Done in #PR. |
+| 4 | `use-cases.md`; tests tagged with use case IDs; `scripts/traceability.mjs`, the generated matrix and the CI check. Done in #415. |
 | 5 onward | The focused tests from section 2 and fixes for the bugs found (RE-29 and RE-64 first), one PR per finding. |
 
 ## First results (2026-10-01, macOS arm64, 23 s with the local archive copy)

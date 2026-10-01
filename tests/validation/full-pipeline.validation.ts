@@ -294,15 +294,19 @@ test("[UC-02] [UC-14] [UC-19] [UC-24] [UC-28] [UC-34] factory download to card, 
             .textContent();
           throw new Error(`Setup failed: ${text}`);
         }
-        // The factory set has 7 files over the 12-per-voice limit, so setup
-        // should end on guidance that says which were left out
+        // The factory set has 7 files over the 12-per-voice limit (S62
+        // voice 2: 6 of 18; S67 voice 4: 1 of 13), so setup should end on
+        // guidance that names them (RE-42)
+        const notice = p.locator('[data-testid="truncation-warnings"]');
+        const noticeText =
+          outcome === "guidance" && (await notice.isVisible())
+            ? ((await notice.textContent()) ?? "")
+            : "";
         report.check(
           "setup says which factory samples didn't fit (2 voices over 12)",
-          outcome === "guidance" &&
-            (await p
-              .locator('[data-testid="truncation-warnings"]')
-              .isVisible()),
-          { details: `wizard ${outcome}`, knownBug: "RE-42" },
+          /S62.*Voice 2.*6 of 18/.test(noticeText) &&
+            /S67.*Voice 4.*1 of 13/.test(noticeText),
+          { details: noticeText.trim() || `wizard ${outcome}, no notice` },
         );
         if (outcome === "guidance") {
           await p.locator('[data-testid="post-init-continue-btn"]').click();

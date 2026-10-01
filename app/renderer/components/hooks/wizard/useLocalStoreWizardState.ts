@@ -13,7 +13,6 @@ export interface LocalStoreWizardState {
   source: LocalStoreSource | null;
   sourceConfirmed?: boolean;
   targetPath: string;
-  truncationWarnings?: TruncationWarning[];
 }
 
 export interface ProgressEvent {

@@ -189,6 +189,42 @@ describe("useLocalStoreWizard", () => {
     expect(result.current.state.isInitializing).toBe(false);
   });
 
+  // RE-42: the caller shows the notice from this result
+  it("returns the samples a voice over 12 left out", async () => {
+    const root = "/mock/home/Documents/romper";
+    vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
+      async (dir) =>
+        dir === root
+          ? ["A0"]
+          : Array.from(
+              { length: 13 },
+              (_, i) => `1 kick ${String(i + 1).padStart(2, "0")}.wav`,
+            ),
+    );
+    const { result } = renderHook(() => useLocalStoreWizard());
+    await waitForAsync(() => result.current.defaultPath !== "");
+    act(() => {
+      result.current.setTargetPath(root);
+      result.current.setSource("squarp");
+    });
+    let outcome: Awaited<ReturnType<typeof result.current.initialize>>;
+    await act(async () => {
+      outcome = await result.current.initialize();
+    });
+    expect(outcome!).toEqual({
+      success: true,
+      truncationWarnings: [
+        expect.objectContaining({
+          kept: 12,
+          kitName: "A0",
+          skipped: 1,
+          total: 13,
+          voiceNumber: 1,
+        }),
+      ],
+    });
+  });
+
   it("handles download/extract error", async () => {
     vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
       async () => ({

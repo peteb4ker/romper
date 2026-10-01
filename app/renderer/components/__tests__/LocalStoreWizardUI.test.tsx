@@ -1,4 +1,10 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // DRY: Common mock for useLocalStoreWizard
@@ -156,5 +162,64 @@ describe("LocalStoreWizardUI", () => {
     render(<LocalStoreWizardUI onClose={() => {}} />);
     // Should NOT show the SD card path display during the source step
     expect(screen.queryByTestId("wizard-sdcard-path-env")).toBeNull();
+  });
+  // RE-42: the notice comes from this run's result, not from wizard state
+  // captured before the run (which never had the warnings)
+  describe("[UC-02] after setup", () => {
+    const readyToInitialize = (initialize: () => Promise<unknown>) =>
+      getMockUseLocalStoreWizard({
+        canInitialize: true,
+        initialize,
+        state: {
+          error: null,
+          isInitializing: false,
+          source: "squarp",
+          targetPath: "/tmp/store",
+        },
+      });
+
+    it("names the samples left out when a voice had more than 12", async () => {
+      vi.resetModules();
+      const onSuccess = vi.fn();
+      const mockHook = readyToInitialize(async () => ({
+        success: true,
+        truncationWarnings: [
+          { kept: 12, kitName: "S62", skipped: 6, total: 18, voiceNumber: 2 },
+        ],
+      }));
+      vi.doMock("../hooks/wizard/useLocalStoreWizard", () => ({
+        useLocalStoreWizard: () => mockHook,
+      }));
+      const { default: LocalStoreWizardUI } =
+        await import("../LocalStoreWizardUI");
+      render(<LocalStoreWizardUI onClose={() => {}} onSuccess={onSuccess} />);
+
+      fireEvent.click(screen.getByTestId("wizard-initialize-btn"));
+
+      const notice = await screen.findByTestId("truncation-warnings");
+      expect(notice).toHaveTextContent("S62");
+      expect(notice).toHaveTextContent("6 of 18 samples skipped");
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+
+    it("finishes straight away when nothing was left out", async () => {
+      vi.resetModules();
+      const onSuccess = vi.fn();
+      const mockHook = readyToInitialize(async () => ({
+        success: true,
+        truncationWarnings: [],
+      }));
+      vi.doMock("../hooks/wizard/useLocalStoreWizard", () => ({
+        useLocalStoreWizard: () => mockHook,
+      }));
+      const { default: LocalStoreWizardUI } =
+        await import("../LocalStoreWizardUI");
+      render(<LocalStoreWizardUI onClose={() => {}} onSuccess={onSuccess} />);
+
+      fireEvent.click(screen.getByTestId("wizard-initialize-btn"));
+
+      await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
+      expect(screen.queryByTestId("truncation-warnings")).toBeNull();
+    });
   });
 });

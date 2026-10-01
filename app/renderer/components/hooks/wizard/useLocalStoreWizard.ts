@@ -122,9 +122,6 @@ export function useLocalStoreWizard(
       const { dbDir, truncationWarnings, validKits } =
         await fileOpsHook.createAndPopulateDb(state.targetPath);
       log.debug("initialize - database creation completed");
-      if (truncationWarnings && truncationWarnings.length > 0) {
-        stateHook.setWizardState({ truncationWarnings });
-      }
 
       // Run scanning operations as the final step
       log.debug("initialize - starting scanning operations");
@@ -135,7 +132,9 @@ export function useLocalStoreWizard(
       await setLocalStorePathHelper();
 
       log.debug("initialize completed successfully");
-      return { success: true };
+      // Returned, not stored: the caller decides what to show from this
+      // run's result, never from state captured before it ran (RE-42)
+      return { success: true, truncationWarnings: truncationWarnings ?? [] };
     } catch (e: unknown) {
       log.error("initialize error:", e);
       const errorMessage = e instanceof Error ? e.message : "Unknown error";

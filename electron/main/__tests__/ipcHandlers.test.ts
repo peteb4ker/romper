@@ -434,7 +434,7 @@ describe("registerIpcHandlers", () => {
     expect(result).toBeNull();
   });
 
-  it("registers select-existing-local-store and validates path", async () => {
+  it("[UC-04] registers select-existing-local-store and validates path", async () => {
     const electron = await import("electron");
     vi.mocked(electron.dialog.showOpenDialog).mockResolvedValue({
       canceled: false,

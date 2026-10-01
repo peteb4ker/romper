@@ -167,7 +167,7 @@ describe("useKitPlayback", () => {
     expect(result.current.playOptions["1:kick.wav"]?.stopAt).toBe(2500);
   });
 
-  describe("voice choke tracking (RE-13)", () => {
+  describe("[UC-29] voice choke tracking (RE-13)", () => {
     it("keeps choking across re-renders, such as a kit reload", () => {
       const { rerender, result } = renderHook(() => useKitPlayback());
       act(() => {

@@ -83,4 +83,27 @@ test.describe("Simple Fixture Loading Test", () => {
     const kitItems = await window.locator('[data-testid^="kit-item-"]').count();
     expect(kitItems).toBe(2);
   });
+
+  test("[UC-09] search narrows the grid by kit name and sample name", async () => {
+    // The fixture has kits A0 and B1, each with 1_kick.wav and 2_snare.wav.
+    await window.waitForSelector('[data-testid="kit-grid"]', {
+      timeout: 10000,
+    });
+    const kits = window.locator('[data-testid^="kit-item-"]');
+    await expect(kits).toHaveCount(2);
+    const search = window.getByLabel("Search kits");
+
+    await search.fill("B1");
+    await expect(kits).toHaveCount(1);
+    await expect(window.locator('[data-testid="kit-item-B1"]')).toBeVisible();
+
+    await search.fill("kick");
+    await expect(kits).toHaveCount(2);
+
+    await search.fill("no such sample");
+    await expect(kits).toHaveCount(0);
+
+    await window.getByLabel("Clear search").click();
+    await expect(kits).toHaveCount(2);
+  });
 });

@@ -94,7 +94,7 @@ describe("triggerConditionUtils", () => {
     });
   });
 
-  describe("shouldTrigger", () => {
+  describe("[UC-31] shouldTrigger", () => {
     it("should always return true for null condition", () => {
       for (let cycle = 0; cycle < 10; cycle++) {
         expect(shouldTrigger(null, cycle)).toBe(true);

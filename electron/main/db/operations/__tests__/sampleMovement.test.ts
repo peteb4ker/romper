@@ -158,7 +158,7 @@ describe("sampleMovement", () => {
     });
   });
 
-  describe("moveSampleInsertOnly", () => {
+  describe("[UC-21] moveSampleInsertOnly", () => {
     it("validates fromSlot lower bound", () => {
       mockWithDbTransaction.mockImplementation((_dbDir, fn) => {
         try {

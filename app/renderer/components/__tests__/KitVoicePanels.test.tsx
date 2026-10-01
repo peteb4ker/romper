@@ -508,7 +508,7 @@ describe("KitVoicePanels", () => {
     });
   });
 
-  describe("Voice linking layout", () => {
+  describe("[UC-28] Voice linking layout", () => {
     it("should hide secondary voice panel when linked", () => {
       const voices = [
         {

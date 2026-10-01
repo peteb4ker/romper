@@ -67,7 +67,7 @@ test.describe("[UC-14] Create a kit", () => {
     await expect(window.getByTestId("empty-library-hint")).toHaveCount(0);
   });
 
-  test("[UC-14] creates a kit in a bank with no kits", async () => {
+  test("[UC-07] [UC-14] creates a kit in a bank with no kits", async () => {
     // The fixture has kits in banks A and B only
     await launch();
 

@@ -72,7 +72,7 @@ describe("KitService Integration Tests", () => {
     fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
   });
 
-  describe("Kit Duplication Integration", () => {
+  describe("[UC-15] Kit Duplication Integration", () => {
     it("should fully duplicate a kit with all samples", () => {
       // Setup: Create a source kit with multiple samples
       const sourceKitRecord: NewKit = {

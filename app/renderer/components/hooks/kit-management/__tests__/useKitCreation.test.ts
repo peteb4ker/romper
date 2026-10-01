@@ -79,7 +79,7 @@ describe("useKitCreation", () => {
     });
   });
 
-  describe("handleCreateKitInBank", () => {
+  describe("[UC-14] handleCreateKitInBank", () => {
     it("should create a kit in the next available slot for the bank", async () => {
       mockCreateKit.mockResolvedValueOnce(undefined);
       const { result } = renderHook(() => useKitCreation(defaultProps));

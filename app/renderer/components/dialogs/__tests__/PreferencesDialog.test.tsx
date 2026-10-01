@@ -13,7 +13,7 @@ vi.mock("../../../utils/SettingsContext", () => ({
 
 const mockUseSettings = vi.mocked(useSettings);
 
-describe("PreferencesDialog", () => {
+describe("[UC-35] PreferencesDialog", () => {
   const mockSetThemeMode = vi.fn();
   const mockSetConfirmDestructiveActions = vi.fn();
   const mockSetLocalStorePath = vi.fn();
@@ -256,7 +256,7 @@ describe("PreferencesDialog", () => {
     });
   });
 
-  describe("Advanced tab functionality", () => {
+  describe("[UC-06] Advanced tab functionality", () => {
     it("navigates to advanced tab and shows advanced settings", () => {
       render(<PreferencesDialog isOpen={true} onClose={mockOnClose} />);
 

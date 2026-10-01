@@ -32,7 +32,7 @@ beforeEach(() => {
   global.cancelAnimationFrame = vi.fn();
 });
 
-describe("AboutDialog", () => {
+describe("[UC-37] AboutDialog", () => {
   const defaultProps = {
     isOpen: true,
     onClose: vi.fn(),

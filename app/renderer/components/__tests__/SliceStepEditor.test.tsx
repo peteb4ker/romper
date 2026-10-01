@@ -18,7 +18,7 @@ function setup(step: SliceStep) {
   return { lastEdit, onChange };
 }
 
-describe("SliceStepEditor", () => {
+describe("[UC-33] SliceStepEditor", () => {
   afterEach(() => {
     cleanup();
   });

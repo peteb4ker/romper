@@ -47,7 +47,7 @@ function generateSineWave(numSamples: number, frequency = 440): Float32Array {
   return data;
 }
 
-describe("formatConverter integration tests", () => {
+describe("[UC-34] formatConverter integration tests", () => {
   beforeEach(() => {
     TEST_DIR = fs.mkdtempSync(
       path.join(os.tmpdir(), "romper-format-converter-"),
@@ -196,7 +196,7 @@ describe("formatConverter integration tests", () => {
     });
   });
 
-  describe("convertSampleToRampleFormat - gain", () => {
+  describe("[UC-24] convertSampleToRampleFormat - gain", () => {
     it("should apply positive gain (amplification)", async () => {
       const inputPath = path.join(TEST_DIR, "gain-pos-in.wav");
       const outputPath = path.join(TEST_DIR, "gain-pos-out.wav");

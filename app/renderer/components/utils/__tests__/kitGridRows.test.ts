@@ -17,7 +17,7 @@ const summarize = (rows: GridRow[]) =>
     return `${row.type}:${row.bank}`;
   });
 
-describe("buildGridRows", () => {
+describe("[UC-07] buildGridRows", () => {
   it("groups kits by bank with an add-kit card after each bank's kits", () => {
     const { rowIndexByKitIndex, rows } = buildGridRows(
       [kit("A0"), kit("A1"), kit("B0")],

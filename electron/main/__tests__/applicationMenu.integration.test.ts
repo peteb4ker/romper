@@ -193,7 +193,7 @@ describe("Menu IPC Integration Tests", () => {
     });
   });
 
-  describe("Edit > Undo and Redo (RE-65)", () => {
+  describe("[UC-26] Edit > Undo and Redo (RE-65)", () => {
     const editItem = async (label: string) => {
       const { createApplicationMenu } = await import("../applicationMenu");
       createApplicationMenu();
@@ -244,7 +244,7 @@ describe("Menu IPC Integration Tests", () => {
     });
   });
 
-  it("should open external links for Help menu manual items", async () => {
+  it("[UC-37] should open external links for Help menu manual items", async () => {
     const { createApplicationMenu } = await import("../applicationMenu");
 
     createApplicationMenu();
@@ -298,7 +298,7 @@ describe("Menu IPC Integration Tests", () => {
     expect(viewRoles).toContain("toggleDevTools");
   });
 
-  it("should route the macOS app-menu About entry to the custom AboutDialog IPC", async () => {
+  it("[UC-37] should route the macOS app-menu About entry to the custom AboutDialog IPC", async () => {
     const originalPlatform = process.platform;
     Object.defineProperty(process, "platform", { value: "darwin" });
 
@@ -344,7 +344,7 @@ describe("Menu IPC Integration Tests", () => {
     }
   });
 
-  it("should omit dev tools from View menu when packaged and ROMPER_ENABLE_DEVTOOLS is unset", async () => {
+  it("[UC-37] should omit dev tools from View menu when packaged and ROMPER_ENABLE_DEVTOOLS is unset", async () => {
     vi.resetModules();
     const electron = await import("electron");
     // @ts-expect-error -- mock object, writable in test
@@ -372,7 +372,7 @@ describe("Menu IPC Integration Tests", () => {
     }
   });
 
-  it("should include dev tools in View menu when packaged but ROMPER_ENABLE_DEVTOOLS=1", async () => {
+  it("[UC-37] should include dev tools in View menu when packaged but ROMPER_ENABLE_DEVTOOLS=1", async () => {
     vi.resetModules();
     const electron = await import("electron");
     // @ts-expect-error -- mock object, writable in test

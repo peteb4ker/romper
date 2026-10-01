@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useVoiceNameEditor } from "../useVoiceNameEditor";
 
-describe("useVoiceNameEditor", () => {
+describe("[UC-27] useVoiceNameEditor", () => {
   const defaultProps = {
     onSaveVoiceName: vi.fn(),
     voice: 1,

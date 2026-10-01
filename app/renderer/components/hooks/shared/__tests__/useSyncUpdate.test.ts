@@ -264,7 +264,7 @@ describe("useSyncUpdate", () => {
     });
   });
 
-  describe("cancelSync", () => {
+  describe("[UC-34] cancelSync", () => {
     it("asks main to stop and leaves the result to the running write (RE-07)", () => {
       const { result } = renderHook(() =>
         useSyncUpdate({ electronAPI: mockElectronAPI }),

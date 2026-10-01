@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useMessageDisplay } from "../useMessageDisplay";
 
-describe("useMessageDisplay", () => {
+describe("[UC-36] useMessageDisplay", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });

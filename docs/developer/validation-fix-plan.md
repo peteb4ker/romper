@@ -4,7 +4,7 @@ priority: high
 status: plan
 updated: 2026-10-01
 context_size: medium
-implementation_status: RE-29 in #404, RE-64 in #401, validation CI in #403, RE-65 in #406, RE-24 in #405, hygiene in #409, RE-69 in #407, e2e error guard in #411; the rest to do
+implementation_status: RE-29 in #404, RE-64 in #401, validation CI in #403, RE-65 in #406, RE-24 in #405, hygiene in #409, RE-69 in #407, e2e error guard in #411, RE-34 in #413, use case traceability in #PR; the rest to do
 -->
 
 # Fixing what the full-pipeline validation found
@@ -42,7 +42,7 @@ Severity and details for each ID are in the findings register
 | RE-24 | Medium | Download has no status, redirect, timeout or checksum; temp zip kept; extraction errors ignored | #405 | done |
 | RE-65 | Medium | Edit > Undo/Redo never reach Romper's undo | #406 | done |
 | Low | Low | Test and tooling hygiene (below) | #409 | done |
-| RE-67 | Medium | E2E error guard; use case register and traceability | #411 (8), 9 | 8 done in PR; 9 to do |
+| RE-67 | Medium | E2E error guard; use case register and traceability | #411 (8), #PR (9) | 8 and 9 done in PR |
 | Docs | Low | About 29 doc promises the code doesn't keep | 10 | to do |
 
 ## 1. Stereo is a voice setting, everywhere (RE-69)
@@ -197,15 +197,18 @@ A shared Playwright fixture built on the harness's `MessageCollector` fails any 
 
 ## 9. Use cases and traceability (RE-67, PR 4)
 
-- `docs/developer/use-cases.md` with UC-01 to UC-37: status, entry points, tests and known issues.
-- Tests tagged `[UC-NN]`.
-- `scripts/traceability.mjs` generates the matrix, and a CI check fails on unknown IDs or supported use cases without a test above unit level.
+Done in #PR:
+
+- [`use-cases.md`](use-cases.md): UC-01 to UC-37 with status, entry points checked against the code, doc gaps and known issues. 15 supported, 20 partial, 2 not built.
+- Tests tagged `[UC-NN]` in unit, integration, e2e and validation titles.
+- `scripts/traceability.mjs` writes [`traceability.md`](traceability.md). `npm run trace:check` (in the Lint workflow) fails on an unknown ID, a supported use case with no test above unit level and no declared `**Test gap:**`, a closed gap still declared, or a stale matrix.
+- New findings from the audit: RE-71, RE-72, RE-73.
 
 **Size:** M.
 
 ## 10. Docs that promise what the code doesn't do
 
-Fix the docs, or build the feature if it's wanted. The audit list is in the validation plan ("Doc corrections"). RE-29 already corrected the manual's stereo section; the rest goes in one docs PR after items 1-6 settle, so it describes the code as it ends up.
+Fix the docs, or build the feature if it's wanted. The audit list is in the validation plan ("Doc corrections"); the "Doc gaps" entries in [`use-cases.md`](use-cases.md) check each one against the code, by use case, and add more. Decisions needed: kit locking (UC-17), replace (UC-20) and cross-kit moves (UC-22), which have backend code but no UI. RE-29 already corrected the manual's stereo section; the rest goes in one docs PR after items 1-6 settle, so it describes the code as it ends up.
 
 **Size:** M (docs only).
 

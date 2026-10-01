@@ -12,7 +12,7 @@ import {
 } from "../kitFavoritesOperations.js";
 import { addSample } from "../sampleCrudOperations.js";
 
-describe("Kit Favorites Operations - Integration Tests", () => {
+describe("[UC-10] Kit Favorites Operations - Integration Tests", () => {
   let tempDir: string;
   let dbDir: string;
 

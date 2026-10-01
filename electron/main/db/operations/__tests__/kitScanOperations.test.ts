@@ -39,7 +39,7 @@ function row(overrides: Partial<Sample> & Pick<Sample, "filename">): Sample {
 
 const factoryKit = { editable: false, locked: false, name: "A0" };
 
-describe("planKitScanMerge", () => {
+describe("[UC-13] planKitScanMerge", () => {
   it("adds a new folder file in the next free slot and keeps existing rows", () => {
     const existing = [row({ filename: "1 kick.wav", id: 1 })];
 

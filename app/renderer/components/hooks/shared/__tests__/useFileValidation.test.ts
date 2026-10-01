@@ -214,7 +214,7 @@ describe("useFileValidation", () => {
     });
   });
 
-  describe("validateDroppedFile", () => {
+  describe("[UC-19] validateDroppedFile", () => {
     const testFilePath = "/path/to/test.wav";
 
     it("should validate file successfully", async () => {

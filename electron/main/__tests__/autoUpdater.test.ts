@@ -27,7 +27,7 @@ function setPlatform(platform: NodeJS.Platform): void {
   });
 }
 
-describe("initAutoUpdater", () => {
+describe("[UC-37] initAutoUpdater", () => {
   beforeEach(() => {
     updateElectronApp.mockReset();
     mockApp.isPackaged = false;

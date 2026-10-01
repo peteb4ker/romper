@@ -9,7 +9,7 @@ import { LocalStoreSetupService } from "../localStoreSetupService.js";
 // RE-10: pointing setup at a folder that already has a store used to hit a
 // primary-key clash on the first kit insert, and the failure cleanup then
 // deleted the user's database. Real database, real filesystem.
-describe("LocalStoreSetupService with a real database (RE-10)", () => {
+describe("[UC-01] [UC-02] [UC-03] LocalStoreSetupService with a real database (RE-10)", () => {
   let tmpRoot: string;
   let target: string;
   let dbDir: string;

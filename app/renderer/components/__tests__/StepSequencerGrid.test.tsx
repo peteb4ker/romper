@@ -161,7 +161,7 @@ describe("StepSequencerGrid", () => {
     expect(defaultProps.handleStepGridKeyDown).toHaveBeenCalled();
   });
 
-  describe("Per-voice controls", () => {
+  describe("[UC-32] Per-voice controls", () => {
     it("renders volume sliders for all 4 voices", () => {
       render(
         <StepSequencerGrid
@@ -297,7 +297,7 @@ describe("StepSequencerGrid", () => {
     });
   });
 
-  describe("Mute toggle", () => {
+  describe("[UC-32] Mute toggle", () => {
     it("renders mute buttons for all 4 voices", () => {
       render(<StepSequencerGrid {...defaultProps} />);
 
@@ -382,7 +382,7 @@ describe("StepSequencerGrid", () => {
     });
   });
 
-  describe("Trigger conditions", () => {
+  describe("[UC-31] Trigger conditions", () => {
     it("renders condition indicator on active step with condition set", () => {
       const triggerConditions = Array.from({ length: 4 }, () =>
         Array(16).fill(null),
@@ -524,7 +524,7 @@ describe("StepSequencerGrid", () => {
     });
   });
 
-  describe("slice rows", () => {
+  describe("[UC-33] slice rows", () => {
     function sliceProps(overrides = {}) {
       const pattern = Array.from({ length: 4 }, () => Array(16).fill(0));
       pattern[0][0] = 127;

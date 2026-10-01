@@ -258,7 +258,7 @@ describe("Drizzle ORM Database Operations", () => {
     });
   });
 
-  describe("Voice Operations with ORM", () => {
+  describe("[UC-27] Voice Operations with ORM", () => {
     beforeEach(async () => {
       await createRomperDbFile(TEST_DB_DIR);
 
@@ -311,7 +311,7 @@ describe("Drizzle ORM Database Operations", () => {
     });
   });
 
-  describe("Step Pattern Operations with ORM", () => {
+  describe("[UC-30] Step Pattern Operations with ORM", () => {
     beforeEach(async () => {
       await createRomperDbFile(TEST_DB_DIR);
 
@@ -392,7 +392,7 @@ describe("Drizzle ORM Database Operations", () => {
     });
   });
 
-  describe("Sample Move Operations", () => {
+  describe("[UC-21] Sample Move Operations", () => {
     beforeEach(() => {
       // Create database and kit
       createRomperDbFile(TEST_DB_DIR);

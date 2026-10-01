@@ -158,7 +158,7 @@ describe("useLocalStoreWizard", () => {
     expect(result.current.state.targetPath).toBe("/foo/custom/romper");
   });
 
-  it("initializes from Squarp.net archive (downloads and extracts)", async () => {
+  it("[UC-02] initializes from Squarp.net archive (downloads and extracts)", async () => {
     vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
       async (destDir) => {
         if (!destDir.includes("romper")) throw new Error("Invalid destDir");
@@ -179,7 +179,7 @@ describe("useLocalStoreWizard", () => {
   });
 
   // RE-42: the caller shows the notice from this result
-  it("returns the samples a voice over 12 left out", async () => {
+  it("[UC-01] [UC-02] returns the samples a voice over 12 left out", async () => {
     const root = "/mock/home/Documents/romper";
     vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
       async (dir) => (dir === root ? ["A0"] : []),
@@ -287,7 +287,7 @@ describe("useLocalStoreWizard", () => {
     expect(result.current.progress).toBeNull();
   });
 
-  it("initializes blank folder (no files copied, only folder created)", async () => {
+  it("[UC-03] initializes blank folder (no files copied, only folder created)", async () => {
     let ensureDirCalled = false;
     vi.mocked(window.electronAPI.ensureDir).mockImplementation(async (dir) => {
       ensureDirCalled = true;
@@ -362,7 +362,7 @@ describe("useLocalStoreWizard", () => {
     expect(result.current.state.isInitializing).toBe(false);
   });
 
-  it("copies all valid kit folders from SD card to local store", async () => {
+  it("[UC-01] copies all valid kit folders from SD card to local store", async () => {
     // SD card returns two kit folders, local store returns same kit folders
     vi.mocked(window.electronAPI.listFilesInRoot)
       .mockImplementationOnce(async () => ["A0", "B12", "notakit"]) // SD card

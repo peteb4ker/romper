@@ -25,7 +25,7 @@ vi.mock("../../../../utils/kitSearchUtils", () => ({
   }),
 }));
 
-describe("useKitSearch", () => {
+describe("[UC-09] useKitSearch", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });

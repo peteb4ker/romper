@@ -41,7 +41,7 @@ vi.mock("@phosphor-icons/react", () => ({
 // Setup centralized electronAPI mock
 setupElectronAPIMock();
 
-describe("InvalidLocalStoreDialog", () => {
+describe("[UC-05] InvalidLocalStoreDialog", () => {
   const defaultProps = {
     errorMessage: "Local store is not writable",
     isOpen: true,

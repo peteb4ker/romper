@@ -266,7 +266,7 @@ describe("useInternalDragHandlers", () => {
     });
   });
 
-  describe("handleSampleDrop", () => {
+  describe("[UC-21] handleSampleDrop", () => {
     it("does nothing when not editable", async () => {
       const { result } = renderHook(() =>
         useInternalDragHandlers({ ...defaultProps, isEditable: false }),

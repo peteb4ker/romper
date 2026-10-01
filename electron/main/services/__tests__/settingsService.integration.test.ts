@@ -23,7 +23,7 @@ import { SettingsService } from "../settingsService.js";
 
 const mockApp = vi.mocked(app);
 
-describe("SettingsService Integration Tests", () => {
+describe("[UC-35] SettingsService Integration Tests", () => {
   let settingsService: SettingsService;
   let mockInMemorySettings: InMemorySettings;
 
@@ -253,7 +253,7 @@ describe("SettingsService Integration Tests", () => {
       expect(fileContents.clearThis).toBeNull();
     });
 
-    it("should handle updating the localStorePath", () => {
+    it("[UC-06] should handle updating the localStorePath", () => {
       settingsService.writeSetting(
         mockInMemorySettings,
         "localStorePath",

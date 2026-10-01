@@ -55,7 +55,7 @@ describe("useLocalStoreWizardFileOps", () => {
   });
 
   // --- Test validateSdCardFolder (working tests) ---
-  describe("validateSdCardFolder", () => {
+  describe("[UC-01] validateSdCardFolder", () => {
     it("should return null for empty path", async () => {
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
@@ -134,7 +134,7 @@ describe("useLocalStoreWizardFileOps", () => {
   });
 
   // --- Test validateAndCopySdCardKits ---
-  describe("validateAndCopySdCardKits", () => {
+  describe("[UC-01] validateAndCopySdCardKits", () => {
     it("should validate and copy kit folders successfully", async () => {
       mockApi.listFilesInRoot = vi.fn(() =>
         Promise.resolve(["A0", "B1", "file.txt"]),
@@ -221,7 +221,7 @@ describe("useLocalStoreWizardFileOps", () => {
   });
 
   // --- Test extractSquarpArchive ---
-  describe("extractSquarpArchive", () => {
+  describe("[UC-02] extractSquarpArchive", () => {
     it("should extract archive successfully", async () => {
       mockApi.downloadAndExtractArchive = vi.fn(() =>
         Promise.resolve({ success: true }),
@@ -332,7 +332,7 @@ describe("useLocalStoreWizardFileOps", () => {
   });
 
   // --- Test createAndPopulateDb ---
-  describe("createAndPopulateDb", () => {
+  describe("[UC-01] [UC-02] createAndPopulateDb", () => {
     beforeEach(() => {
       // Database utilities are already mocked at the top level
       vi.clearAllMocks();

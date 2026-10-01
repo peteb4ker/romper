@@ -40,3 +40,9 @@ jobs:
         # lint:check (no --fix) so violations fail CI instead of being
         # silently auto-fixed in the throwaway runner workspace.
         run: npm run lint:check
+
+      - name: Check use case traceability
+        # Fails on unknown [UC-NN] tags, supported use cases with no test
+        # above unit level, or a stale docs/developer/traceability.md
+        # (RE-67). Fix the last with `npm run trace`.
+        run: npm run trace:check

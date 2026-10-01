@@ -7,7 +7,7 @@ import {
   voiceOfCardFile,
 } from "../rampleCardLayout";
 
-describe("rampleCardLayout", () => {
+describe("[UC-34] rampleCardLayout", () => {
   describe("cardSampleFileName", () => {
     it("puts the voice first and a 1-based, zero-padded slot after it", () => {
       expect(cardSampleFileName(1, 0, "kick.wav")).toBe("1-01 kick.wav");

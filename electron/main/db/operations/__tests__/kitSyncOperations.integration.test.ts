@@ -11,7 +11,7 @@ import {
   markKitsAsSynced,
 } from "../kitSyncOperations.js";
 
-describe("Kit Sync Operations - Integration Tests", () => {
+describe("[UC-34] Kit Sync Operations - Integration Tests", () => {
   let tempDir: string;
   let dbDir: string;
 

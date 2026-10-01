@@ -105,7 +105,7 @@ describe("useKitEditorKeyboardNav", () => {
     });
   });
 
-  describe("kit navigation", () => {
+  describe("[UC-18] kit navigation", () => {
     it("comma triggers onPrevKit", () => {
       const { fire, props } = setup();
       const e = fire(",");

@@ -11,7 +11,7 @@ import {
   filterKitsWithSearch,
 } from "../kitSearchUtils";
 
-describe("kitSearchUtils", () => {
+describe("[UC-09] kitSearchUtils", () => {
   const mockKit: KitWithRelations = {
     alias: "Custom Kit",
     bank: {

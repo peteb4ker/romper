@@ -8,7 +8,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe("BankHeader", () => {
+describe("[UC-12] BankHeader", () => {
   describe("grid variant (default)", () => {
     it("renders bank letter and name", () => {
       render(<BankHeader bank="A" bankName="Test Artist" />);

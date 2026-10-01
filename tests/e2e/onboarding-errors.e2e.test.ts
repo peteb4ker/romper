@@ -99,7 +99,7 @@ test.describe("Onboarding Error Recovery E2E Tests", () => {
     return { electronApp, window };
   }
 
-  test("should show error when SD card has no valid kit folders", async () => {
+  test("[UC-01] should show error when SD card has no valid kit folders", async () => {
     // Create an SD card directory with files that are NOT valid kit folders
     const fakeSdCard = await createTempDir("romper-e2e-invalid-sdcard-");
     await fs.writeFile(
@@ -156,7 +156,7 @@ test.describe("Onboarding Error Recovery E2E Tests", () => {
     }
   });
 
-  test("should show post-init guidance for blank folder", async () => {
+  test("[UC-03] should show post-init guidance for blank folder", async () => {
     const { electronApp, window } = await launchWizardApp({});
 
     try {
@@ -219,7 +219,7 @@ test.describe("Onboarding Error Recovery E2E Tests", () => {
     }
   });
 
-  test("should refuse a target that already has a local store (RE-10)", async () => {
+  test("[UC-01] [UC-02] [UC-03] should refuse a target that already has a local store (RE-10)", async () => {
     const targetPath = await createTempDir("romper-e2e-existing-store-");
     const dbFile = path.join(targetPath, ".romperdb", "romper.sqlite");
     await fs.outputFile(dbFile, "existing user data");

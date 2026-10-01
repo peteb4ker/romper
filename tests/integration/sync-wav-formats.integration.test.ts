@@ -71,7 +71,7 @@ function cardFormat(file: string) {
   };
 }
 
-describe("Syncing WAV files with unusual headers (RE-08)", () => {
+describe("[UC-34] Syncing WAV files with unusual headers (RE-08)", () => {
   let tempDir: string;
   let dbDir: string;
   let sdCardPath: string;

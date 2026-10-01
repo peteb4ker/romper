@@ -158,7 +158,7 @@ beforeEach(async () => {
   registerIpcHandlers({}, {});
 });
 
-describe("download-and-extract-archive handler", () => {
+describe("[UC-02] download-and-extract-archive handler", () => {
   it("emits progress events for download and extraction", async () => {
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await invokeWithArchiveUrl(
@@ -393,7 +393,7 @@ describe("download-and-extract-archive handler", () => {
   }, 15000);
 });
 
-describe("temporary archive cleanup (RE-24)", () => {
+describe("[UC-02] temporary archive cleanup (RE-24)", () => {
   const tempZip = expect.stringMatching(/romper_download_\d+\.zip$/);
 
   it("deletes the downloaded zip after a successful setup", async () => {
@@ -437,7 +437,7 @@ describe("temporary archive cleanup (RE-24)", () => {
   }, 15000);
 });
 
-describe("factory archive checksum (RE-24)", () => {
+describe("[UC-02] factory archive checksum (RE-24)", () => {
   async function downloadOptionsFor(url: string | undefined) {
     const { archiveService } = await import("../archiveService");
     const { downloadArchive } = await import("../../archiveUtils");

@@ -4,7 +4,7 @@ priority: high
 status: specification (approved 2026-10-01)
 updated: 2026-10-01
 context_size: large
-implementation_status: harness built (PR 2); PRs 3 onward to do
+implementation_status: harness (PR 2, #402), e2e error guard (PR 3, #411) and traceability (PR 4, #PR) built; PR 5 onward in validation-fix-plan.md
 -->
 
 # Full-pipeline validation, test layering and traceability
@@ -254,7 +254,10 @@ RE-13's choke tests).
 
 ### Use case register
 
-A new `docs/developer/use-cases.md` gives every supported use case an ID,
+The register is [`use-cases.md`](use-cases.md), and the generated matrix of
+use cases by test layer is [`traceability.md`](traceability.md).
+
+[`use-cases.md`](use-cases.md) gives every supported use case an ID,
 written from the user's side. The IDs are fixed here so tests can cite them
 from the first harness PR:
 
@@ -325,15 +328,22 @@ listed as "not built" with a decision.
   validation tests and writes `docs/developer/traceability.md`: a matrix of use
   cases × test layers, with links to each test. It runs in CI (`npm run
   trace:check`) and fails if:
-  - a supported use case has no test above unit level;
-  - a test names an unknown use case ID.
+  - a supported use case has no test above unit level, unless its register
+    entry declares the gap with a `**Test gap:**` line (and the check also
+    fails once a declared gap is closed, so the line goes);
+  - a test names an unknown use case ID;
+  - the committed matrix differs from what the script writes.
 - The matrix is generated, never edited by hand, so it can't go stale. The
   register (descriptions, status, entry points) is edited by hand and reviewed
   in PRs.
 
 ### Doc corrections
 
-Raised by the audit, to fix or register:
+Raised by the audit, to fix or register. The "Doc gaps" entries in
+[`use-cases.md`](use-cases.md) recheck these against the code by use case
+(the "Treat Stereo as Mono" setting is already gone from the manual) and add
+the ones found since.
+
 - **Missing features the manual describes:** a "Treat Stereo as Mono" setting,
   a global preview volume slider, the "Validate Store" and "New Kit" header
   buttons, "Duplicate" in the kit view, kit locking.
@@ -371,7 +381,7 @@ behaviour checks, and RE-51 makes tests type-check.
 | 1 | This spec; the new findings (RE-64 to RE-67, RE-29 raised to High); the `sd-card-layout.md` counts. |
 | 2 | The harness: user-data isolation, the archive copy, the error collector, the reference WAV reader and converter, the scenario, the report, `npm run validate:full` and `validate-full.yml`. Known failures marked with their RE IDs. |
 | 3 | The e2e error guard (section 2, item 6) across the existing suite, plus fixing whatever it uncovers. Done in #411. |
-| 4 | `use-cases.md`; tests tagged with use case IDs; `scripts/traceability.mjs`, the generated matrix and the CI check. |
+| 4 | `use-cases.md`; tests tagged with use case IDs; `scripts/traceability.mjs`, the generated matrix and the CI check. Done in #PR. |
 | 5 onward | The focused tests from section 2 and fixes for the bugs found (RE-29 and RE-64 first), one PR per finding. |
 
 ## First results (2026-10-01, macOS arm64, 23 s with the local archive copy)

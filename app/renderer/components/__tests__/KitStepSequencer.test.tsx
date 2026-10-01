@@ -138,7 +138,7 @@ describe("KitStepSequencer", () => {
     );
   });
 
-  it("records step edits on the kit's undo stack", () => {
+  it("[UC-26] [UC-30] records step edits on the kit's undo stack", () => {
     const onAddUndoAction = vi.fn();
     render(
       <KitStepSequencer
@@ -603,7 +603,7 @@ describe("KitStepSequencer", () => {
     });
   });
 
-  describe("slicer", () => {
+  describe("[UC-33] slicer", () => {
     function renderSequencer(extra = {}) {
       return render(
         <KitStepSequencer

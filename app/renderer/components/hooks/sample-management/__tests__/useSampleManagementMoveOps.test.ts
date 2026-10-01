@@ -56,7 +56,7 @@ describe("useSampleManagementMoveOps", () => {
     (window as unknown).electronAPI = mockElectronAPI;
   });
 
-  describe("handleSampleMove - within kit", () => {
+  describe("[UC-21] handleSampleMove - within kit", () => {
     it("should handle successful same-kit move with undo recording", async () => {
       const mockSamples = [
         {

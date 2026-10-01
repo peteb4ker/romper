@@ -162,7 +162,7 @@ describe("SampleValidation Integration Tests", () => {
     });
   });
 
-  describe("SampleValidationService.validateSampleFile", () => {
+  describe("[UC-19] SampleValidationService.validateSampleFile", () => {
     it("should accept a valid WAV file", () => {
       const wavPath = path.join(testWavDir, "valid.wav");
       createTestWavFile(wavPath);
@@ -189,7 +189,7 @@ describe("SampleValidation Integration Tests", () => {
     });
   });
 
-  describe("SampleValidationService.validateSampleMovement", () => {
+  describe("[UC-21] SampleValidationService.validateSampleMovement", () => {
     it("should accept valid movement parameters", () => {
       const result = sampleValidationService.validateSampleMovement(1, 0, 2, 0);
       expect(result.success).toBe(true);
@@ -433,7 +433,7 @@ describe("SampleValidation Integration Tests", () => {
     });
   });
 
-  describe("SampleValidator.validateSampleFile (file system integration)", () => {
+  describe("[UC-19] SampleValidator.validateSampleFile (file system integration)", () => {
     it("should accept a well-formed WAV file", () => {
       const wavPath = path.join(testWavDir, "good.wav");
       createTestWavFile(wavPath);

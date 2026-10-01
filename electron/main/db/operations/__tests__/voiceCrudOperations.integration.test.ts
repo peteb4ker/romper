@@ -35,7 +35,7 @@ describe("Voice CRUD Operations - Integration Tests", () => {
     rmSync(tempDir, { force: true, recursive: true });
   });
 
-  describe("updateVoiceAlias", () => {
+  describe("[UC-27] updateVoiceAlias", () => {
     test("sets voice alias for a specific voice", () => {
       const result = updateVoiceAlias(dbDir, testKitName, 1, "Kick");
       expect(result.success).toBe(true);
@@ -111,7 +111,7 @@ describe("Voice CRUD Operations - Integration Tests", () => {
     });
   });
 
-  describe("updateVoiceVolume", () => {
+  describe("[UC-32] updateVoiceVolume", () => {
     test("sets voice volume for a specific voice", () => {
       const result = updateVoiceVolume(dbDir, testKitName, 1, 75);
       expect(result.success).toBe(true);
@@ -149,7 +149,7 @@ describe("Voice CRUD Operations - Integration Tests", () => {
     });
   });
 
-  describe("updateVoiceSampleMode", () => {
+  describe("[UC-32] updateVoiceSampleMode", () => {
     test("sets sample mode for a specific voice", () => {
       const result = updateVoiceSampleMode(dbDir, testKitName, 2, "random");
       expect(result.success).toBe(true);
@@ -194,7 +194,7 @@ describe("Voice CRUD Operations - Integration Tests", () => {
     });
   });
 
-  describe("updateVoiceSliceSettings", () => {
+  describe("[UC-33] updateVoiceSliceSettings", () => {
     test("new voices default to slice mode off with default roll settings", () => {
       const kit = getKit(dbDir, testKitName);
       const voice1 = kit.data!.voices!.find((v) => v.voice_number === 1);
@@ -230,7 +230,7 @@ describe("Voice CRUD Operations - Integration Tests", () => {
     });
   });
 
-  describe("kit slicer fields", () => {
+  describe("[UC-33] kit slicer fields", () => {
     test("default to /16 and no slice data", () => {
       const kit = getKit(dbDir, testKitName);
       expect(kit.data!.slicer_division).toBe(16);

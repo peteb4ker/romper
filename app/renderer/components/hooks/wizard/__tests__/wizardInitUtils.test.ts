@@ -27,7 +27,7 @@ describe("wizardInitUtils", () => {
     });
   });
 
-  describe("runPreChecks", () => {
+  describe("[UC-01] [UC-02] [UC-03] runPreChecks", () => {
     const writable = vi
       .fn()
       .mockResolvedValue({ writable: true } as { writable: boolean });

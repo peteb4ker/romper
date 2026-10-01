@@ -117,7 +117,7 @@ describe("ScanService Integration Tests", () => {
     fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
   });
 
-  describe("rescanKit", () => {
+  describe("[UC-13] rescanKit", () => {
     it("should return error when localStorePath is not configured", () => {
       const result = scanService.rescanKit({}, "A1");
 
@@ -366,7 +366,7 @@ describe("ScanService Integration Tests", () => {
     });
   });
 
-  describe("scanBanks", () => {
+  describe("[UC-12] scanBanks", () => {
     it("should return error when localStorePath is not configured", () => {
       const result = scanService.scanBanks({});
 

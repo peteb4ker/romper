@@ -8,7 +8,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe("AddKitCard", () => {
+describe("[UC-14] AddKitCard", () => {
   const defaultProps = {
     bankLetter: "A",
     isCreating: false,

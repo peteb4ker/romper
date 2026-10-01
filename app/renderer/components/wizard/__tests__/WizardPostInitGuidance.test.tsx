@@ -9,7 +9,7 @@ afterEach(() => {
 });
 
 describe("WizardPostInitGuidance", () => {
-  it("renders blank folder guidance when isBlankFolder is true", () => {
+  it("[UC-03] renders blank folder guidance when isBlankFolder is true", () => {
     render(<WizardPostInitGuidance isBlankFolder={true} onDismiss={vi.fn()} />);
     expect(screen.getByTestId("blank-folder-guidance")).toBeInTheDocument();
     expect(screen.getByTestId("post-init-continue-btn")).toHaveTextContent(

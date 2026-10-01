@@ -19,7 +19,7 @@ const METADATA = {
   wav_sample_rate: 44100,
 };
 
-describe("mergeKitScan - Integration Tests", () => {
+describe("[UC-13] mergeKitScan - Integration Tests", () => {
   let tempDir: string;
   let dbDir: string;
   let kitPath: string;
@@ -185,7 +185,7 @@ describe("mergeKitScan - Integration Tests", () => {
     expect(slots).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
   });
 
-  test("infers names only for unnamed voices", () => {
+  test("[UC-13] [UC-27] infers names only for unnamed voices", () => {
     updateVoiceAlias(dbDir, "A0", 2, "My Snares");
 
     mergeKitScan(dbDir, "A0", folder(["1 kick.wav"], ["2 snare.wav"]), io);

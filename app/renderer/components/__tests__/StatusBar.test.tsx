@@ -194,7 +194,7 @@ describe("StatusBar", () => {
     });
   });
 
-  describe("links", () => {
+  describe("[UC-37] links", () => {
     it("should render Romper Manual link", () => {
       render(<StatusBar />);
       const manualLink = screen.getByRole("link", { name: "Romper Manual" });

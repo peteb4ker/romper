@@ -80,7 +80,7 @@ function sliceStartsByBuffer(starts: SourceStart[]): Map<number, number> {
   return counts;
 }
 
-test.describe("Slicer playback", () => {
+test.describe("[UC-33] Slicer playback", () => {
   let electronApp: ElectronApplication;
   let window: Page;
   let testEnv: E2ETestEnvironment;
@@ -140,7 +140,7 @@ test.describe("Slicer playback", () => {
     expect(probe.starts.every((s) => s.durationMs != null)).toBe(true);
   });
 
-  test("sequencer playback doesn't keep creating VU meter nodes", async () => {
+  test("[UC-30] sequencer playback doesn't keep creating VU meter nodes", async () => {
     await window.locator('[data-testid="slice-toggle-0"]').click();
     for (let step = 0; step < 16; step++) {
       await window.locator(`[data-testid="seq-step-0-${step}"]`).click();

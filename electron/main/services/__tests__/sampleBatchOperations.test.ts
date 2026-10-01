@@ -49,7 +49,7 @@ describe("SampleBatchOperationsService", () => {
     );
   });
 
-  describe("deleteSampleFromSlot", () => {
+  describe("[UC-23] deleteSampleFromSlot", () => {
     it("should successfully delete a sample", () => {
       mockSampleValidation.sampleValidationService.checkSampleExists.mockReturnValue(
         {
@@ -219,7 +219,7 @@ describe("SampleBatchOperationsService", () => {
     });
   });
 
-  describe("moveSampleInKit", () => {
+  describe("[UC-21] moveSampleInKit", () => {
     const mockMoveResult = {
       data: {
         affectedSamples: [{ ...mockSample, original_slot_number: 2 }],
@@ -391,7 +391,7 @@ describe("SampleBatchOperationsService", () => {
     });
   });
 
-  describe("executeCrossKitMove", () => {
+  describe("[UC-22] executeCrossKitMove", () => {
     const mockAddSampleToSlot = vi.fn();
 
     it("should successfully execute cross-kit move", () => {

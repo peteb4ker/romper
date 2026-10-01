@@ -10,7 +10,7 @@ const mockAction = {
   type: "ADD_SAMPLE" as const,
 };
 
-describe("useUndoRedoState", () => {
+describe("[UC-26] useUndoRedoState", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

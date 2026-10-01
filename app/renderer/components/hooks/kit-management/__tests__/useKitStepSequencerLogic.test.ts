@@ -347,7 +347,7 @@ describe("useKitStepSequencerLogic", () => {
     });
   });
 
-  describe("Sample Selection Modes", () => {
+  describe("[UC-32] Sample Selection Modes", () => {
     it("should use first sample in 'first' mode (default)", () => {
       const params = {
         ...getDefaultParams(),
@@ -542,7 +542,7 @@ describe("useKitStepSequencerLogic", () => {
     });
   });
 
-  describe("Step Pattern Management", () => {
+  describe("[UC-30] Step Pattern Management", () => {
     it("should toggle step from 0 to 127", () => {
       const { result } = renderHook(() =>
         useKitStepSequencerLogic(getDefaultParams()),
@@ -1133,7 +1133,7 @@ describe("useKitStepSequencerLogic", () => {
     });
   });
 
-  describe("Voice Muting", () => {
+  describe("[UC-32] Voice Muting", () => {
     it("should skip muted voices during playback", () => {
       const params = {
         ...getDefaultParams(),
@@ -1338,7 +1338,7 @@ describe("useKitStepSequencerLogic", () => {
     });
   });
 
-  describe("Slice mode", () => {
+  describe("[UC-33] Slice mode", () => {
     const sliceOn = {
       1: { enabled: true, maxLength: 2, rollAmount: 100, varyLength: false },
     };
@@ -1456,7 +1456,7 @@ describe("useKitStepSequencerLogic", () => {
     });
   });
 
-  describe("Scheduled timing", () => {
+  describe("[UC-30] Scheduled timing", () => {
     it("schedules each step ahead of its ideal time from the worker", () => {
       const { result } = renderHook(() =>
         useKitStepSequencerLogic(getDefaultParams()),

@@ -27,7 +27,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("loadSettings", () => {
+describe("[UC-35] loadSettings", () => {
   it("returns empty settings when file does not exist", () => {
     vi.spyOn(fs, "existsSync").mockReturnValue(false);
     const result = loadSettings("/mock/settings.json");
@@ -94,7 +94,7 @@ describe("loadSettings", () => {
   });
 });
 
-describe("validateAndFixLocalStore", () => {
+describe("[UC-05] validateAndFixLocalStore", () => {
   it("returns settings unchanged when no localStorePath and no env override", () => {
     const settings = { localStorePath: null };
     const result = validateAndFixLocalStore(settings, "/mock/settings.json");

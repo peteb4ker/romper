@@ -140,7 +140,7 @@ describe("SampleService Integration Tests", () => {
     fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
   });
 
-  describe("addSampleToSlot", () => {
+  describe("[UC-19] addSampleToSlot", () => {
     it("should add a sample to an empty slot", () => {
       const wavPath = path.join(testWavDir, "kick.wav");
       createTestWavFile(wavPath);
@@ -206,7 +206,7 @@ describe("SampleService Integration Tests", () => {
       expect(samplesResult.data).toHaveLength(3);
     });
 
-    it("should mark kit as modified after adding a sample", () => {
+    it("[UC-11] should mark kit as modified after adding a sample", () => {
       const wavPath = path.join(testWavDir, "kick.wav");
       createTestWavFile(wavPath);
 
@@ -303,7 +303,7 @@ describe("SampleService Integration Tests", () => {
     });
   });
 
-  describe("replaceSampleInSlot", () => {
+  describe("[UC-20] replaceSampleInSlot", () => {
     it("should replace an existing sample in a slot", () => {
       const wavPath1 = path.join(testWavDir, "kick.wav");
       const wavPath2 = path.join(testWavDir, "snare.wav");
@@ -372,7 +372,7 @@ describe("SampleService Integration Tests", () => {
     });
   });
 
-  describe("deleteSampleFromSlot", () => {
+  describe("[UC-23] deleteSampleFromSlot", () => {
     it("should delete a sample and reindex remaining slots", () => {
       const wavPath1 = path.join(testWavDir, "s0.wav");
       const wavPath2 = path.join(testWavDir, "s1.wav");
@@ -421,7 +421,7 @@ describe("SampleService Integration Tests", () => {
       expect(result.error).toContain("No sample found");
     });
 
-    it("should mark kit as modified after deletion", () => {
+    it("[UC-11] should mark kit as modified after deletion", () => {
       const wavPath = path.join(testWavDir, "kick.wav");
       createTestWavFile(wavPath);
 
@@ -500,7 +500,7 @@ describe("SampleService Integration Tests", () => {
     });
   });
 
-  describe("moveSampleInKit", () => {
+  describe("[UC-21] moveSampleInKit", () => {
     it("should move a sample from one voice to another within the same kit", () => {
       const wavPath = path.join(testWavDir, "kick.wav");
       createTestWavFile(wavPath);
@@ -597,7 +597,7 @@ describe("SampleService Integration Tests", () => {
       expect(result.error).toContain("Cannot move sample to the same position");
     });
 
-    it("should mark kit as modified after move", () => {
+    it("[UC-11] should mark kit as modified after move", () => {
       const wavPath = path.join(testWavDir, "kick.wav");
       createTestWavFile(wavPath);
 
@@ -618,7 +618,7 @@ describe("SampleService Integration Tests", () => {
     });
   });
 
-  describe("moveSampleBetweenKits", () => {
+  describe("[UC-22] moveSampleBetweenKits", () => {
     beforeEach(() => {
       // Create a second kit for cross-kit moves
       const kit2: NewKit = {
@@ -999,7 +999,7 @@ describe("SampleService Integration Tests", () => {
     });
   });
 
-  describe("getSampleAudioBuffer", () => {
+  describe("[UC-29] getSampleAudioBuffer", () => {
     it("should return audio buffer for an existing sample", () => {
       const wavPath = path.join(testWavDir, "kick.wav");
       createTestWavFile(wavPath);

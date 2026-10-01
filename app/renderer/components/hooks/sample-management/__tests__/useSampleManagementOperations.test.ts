@@ -151,7 +151,7 @@ describe("useSampleManagementOperations", () => {
     });
   });
 
-  describe("handleSampleReplace", () => {
+  describe("[UC-20] handleSampleReplace", () => {
     it("should replace sample successfully", async () => {
       const mockOldSample = {
         source_path: "/path/to/old.wav",
@@ -233,7 +233,7 @@ describe("useSampleManagementOperations", () => {
     });
   });
 
-  describe("handleSampleDelete", () => {
+  describe("[UC-23] handleSampleDelete", () => {
     it("should delete sample successfully", async () => {
       const mockSampleToDelete = {
         filename: "test.wav",

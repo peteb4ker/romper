@@ -20,7 +20,7 @@ import {
   markKitsAsSynced,
 } from "../../electron/main/db/romperDbCoreORM";
 
-describe("Sync Unsaved State Integration", () => {
+describe("[UC-11] [UC-34] Sync Unsaved State Integration", () => {
   // A temp folder per test, not one in the source tree
   let TEST_DB_DIR: string;
 

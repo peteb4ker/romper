@@ -130,7 +130,7 @@ describe("KitBankNav", () => {
   });
 });
 
-describe("A-Z hotkey navigation and bank highlighting", () => {
+describe("[UC-07] A-Z hotkey navigation and bank highlighting", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

@@ -86,7 +86,9 @@ export class SyncSampleProcessingService {
       kits.add(sample.kit_name);
       if (sample.voice_number === 1) kitsWithVoiceOne.add(sample.kit_name);
     }
-    return [...kits].filter((kit) => !kitsWithVoiceOne.has(kit)).sort();
+    return [...kits]
+      .filter((kit) => !kitsWithVoiceOne.has(kit))
+      .sort((a, b) => a.localeCompare(b));
   }
 
   /**

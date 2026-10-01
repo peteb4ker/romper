@@ -70,7 +70,7 @@ export function findStaleCardEntries(
       stale.push(entry.name);
     }
   }
-  return stale.sort();
+  return stale.sort((a, b) => a.localeCompare(b));
 }
 
 /**

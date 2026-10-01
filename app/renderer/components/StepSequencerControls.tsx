@@ -150,7 +150,7 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
       </TransportBlock>
 
       {/* Which loop of four is playing; A:B conditions count these */}
-      <TransportBlock label="Loop">
+      <TransportBlock>
         <div
           aria-label={
             isSeqPlaying

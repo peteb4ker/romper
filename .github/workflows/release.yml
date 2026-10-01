@@ -11,10 +11,9 @@ on:
         required: false
         default: "manual test run"
 
+# Least privilege (RE-19): each job asks for what it needs below.
 permissions:
-  contents: write
-  issues: write
-  id-token: write # Required for Azure Trusted Signing OIDC
+  contents: read
 
 jobs:
   # Nothing is built until the tag and the code are known to be releasable
@@ -27,12 +26,14 @@ jobs:
       contents: read
       issues: write
     outputs:
+      mac-signing: ${{ steps.signing.outputs.mac-signing }}
       windows-signed: ${{ steps.signing.outputs.windows-signed }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Check the tag is on main and matches package.json
         if: startsWith(github.ref, 'refs/tags/')
@@ -55,10 +56,14 @@ jobs:
       # macOS secrets. Windows may ship unsigned only while the repo
       # variable ALLOW_UNSIGNED_WINDOWS is "true", and the release notes
       # then say so.
+      #
+      # The build job gates its signing steps on these outputs, so no
+      # signing secret has to sit in a job-level environment (RE-19).
+      # Manual runs sign when the secrets exist and skip signing otherwise.
       - name: Check signing is configured
         id: signing
-        if: startsWith(github.ref, 'refs/tags/')
         env:
+          IS_TAG: ${{ startsWith(github.ref, 'refs/tags/') }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           ASC_API_KEY_JSON: ${{ secrets.ASC_API_KEY_JSON }}
@@ -75,11 +80,19 @@ jobs:
             echo "${out[*]}"
           }
           APPLE_MISSING=$(missing APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD ASC_API_KEY_JSON)
+          AZURE_MISSING=$(missing AZURE_TENANT_ID AZURE_CLIENT_ID AZURE_CLIENT_SECRET AZURE_SIGNING_ACCOUNT AZURE_CERTIFICATE_PROFILE)
+          if [ "$IS_TAG" != "true" ]; then
+            # A manual run: sign what can be signed, release nothing
+            [ -z "$APPLE_MISSING" ] && echo "mac-signing=true" >> "$GITHUB_OUTPUT"
+            [ -z "$AZURE_MISSING" ] && echo "windows-signed=true" >> "$GITHUB_OUTPUT"
+            echo "Manual run: macOS signing ${APPLE_MISSING:+not }configured, Windows signing ${AZURE_MISSING:+not }configured"
+            exit 0
+          fi
           if [ -n "$APPLE_MISSING" ]; then
             echo "::error::macOS signing secrets are missing: $APPLE_MISSING. An unsigned macOS build can't be released."
             exit 1
           fi
-          AZURE_MISSING=$(missing AZURE_TENANT_ID AZURE_CLIENT_ID AZURE_CLIENT_SECRET AZURE_SIGNING_ACCOUNT AZURE_CERTIFICATE_PROFILE)
+          echo "mac-signing=true" >> "$GITHUB_OUTPUT"
           if [ -z "$AZURE_MISSING" ]; then
             echo "windows-signed=true" >> "$GITHUB_OUTPUT"
           elif [ "$ALLOW_UNSIGNED_WINDOWS" = "true" ]; then
@@ -189,15 +202,17 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
-    # The `secrets` context cannot be used in step `if:` conditions, so surface
-    # the gating secrets as job-level env and gate steps on `env.*` instead.
-    env:
-      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+    permissions:
+      contents: read
+    # Signing steps gate on preflight's outputs. Secrets appear only in the
+    # steps that use them, never in the job's environment, so `npm ci` and
+    # the build don't run with them (RE-19).
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
@@ -236,7 +251,7 @@ jobs:
         run: npx electron-forge package -p darwin -a arm64
 
       - name: Materialize signing inputs — macOS
-        if: matrix.os == 'macos-latest' && env.APPLE_CERTIFICATE != ''
+        if: matrix.os == 'macos-latest' && needs.preflight.outputs.mac-signing == 'true'
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           ASC_API_KEY_JSON: ${{ secrets.ASC_API_KEY_JSON }}
@@ -249,8 +264,8 @@ jobs:
           chmod 600 "$RUNNER_TEMP/asc-api-key.json"
 
       - name: Sign Romper.app — macOS
-        if: matrix.os == 'macos-latest' && env.APPLE_CERTIFICATE != ''
-        uses: indygreg/apple-code-sign-action@v1
+        if: matrix.os == 'macos-latest' && needs.preflight.outputs.mac-signing == 'true'
+        uses: indygreg/apple-code-sign-action@44d0985b7f4363198e80b6fea63ac3e9dd3e9957 # v1.1
         with:
           input_path: out/Romper-darwin-arm64/Romper.app
           p12_file: ${{ runner.temp }}/cert.p12
@@ -273,7 +288,7 @@ jobs:
       # service occasionally exceeds that (sub 8b66b65c-3708-41dd-bf4a-…
       # took ~16h during a 2026-06-02 outage). Bumped to 30 min here.
       - name: Install rcodesign for notarization
-        if: matrix.os == 'macos-latest' && env.APPLE_CERTIFICATE != ''
+        if: matrix.os == 'macos-latest' && needs.preflight.outputs.mac-signing == 'true'
         run: |
           set -euo pipefail
           VERSION="0.29.0"
@@ -296,13 +311,22 @@ jobs:
       # carries a signed-but-not-stapled .app and offline macOS shows the
       # "cannot verify developer" warning until first online launch.
       - name: Notarize + staple Romper.app — macOS
-        if: matrix.os == 'macos-latest' && env.APPLE_CERTIFICATE != ''
+        if: matrix.os == 'macos-latest' && needs.preflight.outputs.mac-signing == 'true'
         run: |
           rcodesign notary-submit \
             --staple \
             --max-wait-seconds 1800 \
             --api-key-file "$RUNNER_TEMP/asc-api-key.json" \
             out/Romper-darwin-arm64/Romper.app
+
+      # The packaged app's smoke test and Forge's makers run third-party
+      # code; the signing inputs aren't on disk while they do (RE-19). They
+      # are written again for the DMG below.
+      - name: Remove signing inputs — macOS
+        if: always() && matrix.os == 'macos-latest'
+        run: |
+          rm -P "$RUNNER_TEMP/cert.p12" 2>/dev/null || true
+          rm -P "$RUNNER_TEMP/asc-api-key.json" 2>/dev/null || true
 
       # Unit and e2e tests run the unpackaged app, which skips the updater;
       # only a packaged run shows it loads (RE-16).
@@ -315,7 +339,7 @@ jobs:
         run: npx electron-forge make --skip-package -p darwin -a arm64
 
       - name: Locate DMG artifact — macOS
-        if: matrix.os == 'macos-latest' && env.APPLE_CERTIFICATE != ''
+        if: matrix.os == 'macos-latest' && needs.preflight.outputs.mac-signing == 'true'
         id: dmg_path
         run: |
           DMG=$(find out/make -maxdepth 3 -name '*.dmg' -type f | head -1)
@@ -327,9 +351,22 @@ jobs:
           echo "path=$DMG" >> "$GITHUB_OUTPUT"
           echo "Found DMG: $DMG"
 
+      - name: Materialize signing inputs for the DMG — macOS
+        if: matrix.os == 'macos-latest' && needs.preflight.outputs.mac-signing == 'true'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          ASC_API_KEY_JSON: ${{ secrets.ASC_API_KEY_JSON }}
+        run: |
+          # Decode p12 from base64 secret
+          echo "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          chmod 600 "$RUNNER_TEMP/cert.p12"
+          # Write ASC API key JSON (produced by `rcodesign encode-app-store-connect-api-key`)
+          printf '%s' "$ASC_API_KEY_JSON" > "$RUNNER_TEMP/asc-api-key.json"
+          chmod 600 "$RUNNER_TEMP/asc-api-key.json"
+
       - name: Sign DMG — macOS
-        if: matrix.os == 'macos-latest' && env.APPLE_CERTIFICATE != ''
-        uses: indygreg/apple-code-sign-action@v1
+        if: matrix.os == 'macos-latest' && needs.preflight.outputs.mac-signing == 'true'
+        uses: indygreg/apple-code-sign-action@44d0985b7f4363198e80b6fea63ac3e9dd3e9957 # v1.1
         with:
           input_path: ${{ steps.dmg_path.outputs.path }}
           p12_file: ${{ runner.temp }}/cert.p12
@@ -339,7 +376,7 @@ jobs:
       # inside) carries a ticket — needed for offline Gatekeeper checks
       # during DMG mount.
       - name: Notarize + staple DMG — macOS
-        if: matrix.os == 'macos-latest' && env.APPLE_CERTIFICATE != ''
+        if: matrix.os == 'macos-latest' && needs.preflight.outputs.mac-signing == 'true'
         run: |
           rcodesign notary-submit \
             --staple \
@@ -354,8 +391,8 @@ jobs:
 
       # ── Windows: Sign artifacts with Azure Trusted Signing ──
       - name: Sign Windows artifacts with Azure Trusted Signing
-        if: matrix.os == 'windows-latest' && env.AZURE_CLIENT_ID != ''
-        uses: azure/trusted-signing-action@v0.5.0
+        if: matrix.os == 'windows-latest' && needs.preflight.outputs.windows-signed == 'true'
+        uses: azure/trusted-signing-action@07c81171dd46a04e1b9f382b6c693815828bbbf7 # v0.5.0
         with:
           azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -410,6 +447,8 @@ jobs:
   release:
     needs: [preflight, build]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the release
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
 
     steps:
@@ -417,6 +456,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0  # Need full history for commit parsing
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
@@ -454,7 +494,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1.21.0
         with:
           tag: ${{ github.ref_name }}
           name: Romper Sample Manager ${{ github.ref_name }}

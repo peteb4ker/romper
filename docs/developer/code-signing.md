@@ -20,6 +20,19 @@ unsigned, the run warns, and the release notes tell Windows users how to
 get past SmartScreen. Remove the variable once Azure Trusted Signing is
 set up.
 
+Secrets are exposed as narrowly as the workflow allows (RE-19):
+- They appear only in the steps that use them, never in a job's
+  environment, so `npm ci` and the build run without them. The signing
+  steps gate on the preflight job's `mac-signing` and `windows-signed`
+  outputs instead.
+- The `.p12` and the App Store Connect key are on disk only while the app,
+  and later the DMG, are signed and notarized. They are deleted before the
+  packaged app's smoke test and Forge's makers run.
+- Each job asks only for the permissions it needs, and checkouts don't keep
+  the GitHub token.
+- Third-party actions that receive secrets or a write token are pinned by
+  commit SHA. Update the SHA, not just the comment, when upgrading one.
+
 ## macOS: rcodesign
 
 Romper signs with [rcodesign](https://github.com/indygreg/apple-platform-rs)

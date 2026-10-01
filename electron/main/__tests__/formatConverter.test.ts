@@ -1,4 +1,3 @@
-import * as wav from "node-wav";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,36 +9,23 @@ import {
   convertToRampleDefault,
   getRequiredConversionOptions,
 } from "../formatConverter";
+import { decodeWav, encodeWav } from "../wavCodec";
 
 // Mock dependencies
 vi.mock("node:fs", async (importOriginal) =>
   vi.mockObject(await importOriginal<typeof import("node:fs")>()),
 );
-vi.mock("node-wav");
 vi.mock("node:path", async (importOriginal) =>
   vi.mockObject(await importOriginal<typeof import("node:path")>()),
 );
 vi.mock("../audioUtils");
-// Header parsing has its own tests (wavHeader.test.ts); these cover conversion
-vi.mock("../wavHeader", () => ({
-  parseWavHeader: vi.fn(() => ({
-    data: {
-      bitDepth: 16,
-      blockAlign: 2,
-      channels: 1,
-      dataOffset: 44,
-      dataSize: 0,
-      encoding: "pcm",
-      extensible: false,
-      sampleRate: 44100,
-    },
-    success: true,
-  })),
-  toPlainWav: vi.fn((buffer: Buffer) => buffer),
-}));
+// Decoding and encoding have their own tests (wavCodec.test.ts); these
+// cover conversion
+vi.mock("../wavCodec");
 
 const mockFs = vi.mocked(fs);
-const mockWav = vi.mocked(wav);
+const mockDecodeWav = vi.mocked(decodeWav);
+const mockEncodeWav = vi.mocked(encodeWav);
 const mockPath = vi.mocked(path);
 const mockGetAudioMetadata = vi.mocked(getAudioMetadata);
 
@@ -130,14 +116,14 @@ describe("formatConverter", () => {
         new Float32Array([1.0, 0.5, -0.5]),
         new Float32Array([0.5, -0.5, 1.0]),
       ];
-      mockWav.decode.mockReturnValue({
+      mockDecodeWav.mockReturnValue({
         channelData: mockChannelData,
         sampleRate: 44100,
       });
 
       // Mock WAV encode
       const mockEncodedBuffer = Buffer.from("encoded wav data");
-      mockWav.encode.mockReturnValue(mockEncodedBuffer);
+      mockEncodeWav.mockReturnValue(mockEncodedBuffer);
 
       // Mock file system operations
       mockFs.promises.readFile.mockResolvedValue(Buffer.from("input wav data"));
@@ -155,14 +141,7 @@ describe("formatConverter", () => {
 
       expect(result.success).toBe(true);
       expect(result.data?.convertedFormat.channels).toBe(1);
-      expect(mockWav.encode).toHaveBeenCalledWith(
-        expect.any(Array),
-        expect.objectContaining({
-          bitDepth: 16,
-          float: false,
-          sampleRate: 44100,
-        }),
-      );
+      expect(mockEncodeWav).toHaveBeenCalledWith(expect.any(Array), 44100, 16);
     });
 
     it("converts mono to stereo when target channels is 2", async () => {
@@ -173,12 +152,12 @@ describe("formatConverter", () => {
       });
 
       const mockChannelData = [new Float32Array([1.0, 0.5, -0.5])];
-      mockWav.decode.mockReturnValue({
+      mockDecodeWav.mockReturnValue({
         channelData: mockChannelData,
         sampleRate: 44100,
       });
 
-      mockWav.encode.mockReturnValue(Buffer.from("encoded wav data"));
+      mockEncodeWav.mockReturnValue(Buffer.from("encoded wav data"));
       mockFs.promises.readFile.mockResolvedValue(Buffer.from("input wav data"));
       mockPath.dirname.mockReturnValue("/output/dir");
       mockFs.promises.mkdir.mockResolvedValue(undefined);
@@ -204,12 +183,12 @@ describe("formatConverter", () => {
       });
 
       const mockChannelData = [new Float32Array([1.0, 0.5])];
-      mockWav.decode.mockReturnValue({
+      mockDecodeWav.mockReturnValue({
         channelData: mockChannelData,
         sampleRate: 22050,
       });
 
-      mockWav.encode.mockReturnValue(Buffer.from("encoded wav data"));
+      mockEncodeWav.mockReturnValue(Buffer.from("encoded wav data"));
       mockFs.promises.readFile.mockResolvedValue(Buffer.from("input wav data"));
       mockPath.dirname.mockReturnValue("/output/dir");
       mockFs.promises.mkdir.mockResolvedValue(undefined);
@@ -235,12 +214,12 @@ describe("formatConverter", () => {
       });
 
       const mockChannelData = [new Float32Array([1.0])];
-      mockWav.decode.mockReturnValue({
+      mockDecodeWav.mockReturnValue({
         channelData: mockChannelData,
         sampleRate: 44100,
       });
 
-      mockWav.encode.mockReturnValue(Buffer.from("encoded wav data"));
+      mockEncodeWav.mockReturnValue(Buffer.from("encoded wav data"));
       mockFs.promises.readFile.mockResolvedValue(Buffer.from("input wav data"));
       mockPath.dirname.mockReturnValue("/output/dir");
       mockFs.promises.writeFile.mockResolvedValue(undefined);
@@ -265,7 +244,9 @@ describe("formatConverter", () => {
       });
 
       mockFs.promises.readFile.mockResolvedValue(Buffer.from("input wav data"));
-      mockWav.decode.mockReturnValue(null);
+      mockDecodeWav.mockImplementation(() => {
+        throw new Error("No fmt chunk");
+      });
 
       const result = await convertSampleToRampleFormat(
         "input.wav",
@@ -273,7 +254,7 @@ describe("formatConverter", () => {
       );
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("Failed to decode input WAV file");
+      expect(result.error).toBe("Audio conversion failed: No fmt chunk");
     });
 
     it("handles empty channel data", async () => {
@@ -284,7 +265,7 @@ describe("formatConverter", () => {
       });
 
       mockFs.promises.readFile.mockResolvedValue(Buffer.from("input wav data"));
-      mockWav.decode.mockReturnValue({ channelData: [], sampleRate: 44100 });
+      mockDecodeWav.mockReturnValue({ channelData: [], sampleRate: 44100 });
 
       const result = await convertSampleToRampleFormat(
         "input.wav",
@@ -322,12 +303,12 @@ describe("formatConverter", () => {
       });
 
       const mockChannelData = [new Float32Array([1.0, 0.5])];
-      mockWav.decode.mockReturnValue({
+      mockDecodeWav.mockReturnValue({
         channelData: mockChannelData,
         sampleRate: 44100,
       });
 
-      mockWav.encode.mockReturnValue(Buffer.from("encoded wav data"));
+      mockEncodeWav.mockReturnValue(Buffer.from("encoded wav data"));
       mockFs.promises.readFile.mockResolvedValue(Buffer.from("input wav data"));
       mockPath.dirname.mockReturnValue("/output/dir");
       mockFs.promises.mkdir.mockResolvedValue(undefined);
@@ -355,12 +336,12 @@ describe("formatConverter", () => {
       });
 
       const mockChannelData = [new Float32Array([1.0])];
-      mockWav.decode.mockReturnValue({
+      mockDecodeWav.mockReturnValue({
         channelData: mockChannelData,
         sampleRate: 48000,
       });
 
-      mockWav.encode.mockReturnValue(Buffer.from("encoded wav data"));
+      mockEncodeWav.mockReturnValue(Buffer.from("encoded wav data"));
       mockFs.promises.readFile.mockResolvedValue(Buffer.from("input wav data"));
       mockPath.dirname.mockReturnValue("/output/dir");
       mockFs.promises.writeFile.mockResolvedValue(undefined);

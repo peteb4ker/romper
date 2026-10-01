@@ -1,4 +1,3 @@
-import * as wav from "node-wav";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -8,14 +7,14 @@ import { getAudioMetadata } from "../audioUtils.js";
 import {
   convertSampleToRampleFormat,
   convertToRampleDefault,
-  decodeWav,
   getRequiredConversionOptions,
 } from "../formatConverter.js";
+import { decodeWav, type EncodeBitDepth, encodeWav } from "../wavCodec.js";
 
 /**
  * Integration tests for formatConverter.ts
  *
- * These tests use REAL WAV files created via node-wav encode,
+ * These tests use REAL WAV files created with encodeWav,
  * REAL filesystem I/O, and verify the actual converted output
  * can be decoded back to valid audio.
  */
@@ -24,22 +23,18 @@ import {
 // so nothing is written into the source tree.
 let TEST_DIR: string;
 
-/** Create a real WAV file on disk using node-wav encode */
+/** Create a real WAV file on disk */
 function createTestWavFile(
   filePath: string,
   channelData: Float32Array[],
   sampleRate: number,
-  bitDepth = 16,
+  bitDepth: EncodeBitDepth = 16,
 ): void {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  const encoded = wav.encode(channelData, {
-    bitDepth,
-    float: false,
-    sampleRate,
-  });
+  const encoded = encodeWav(channelData, sampleRate, bitDepth);
   fs.writeFileSync(filePath, encoded);
 }
 
@@ -79,14 +74,9 @@ describe("formatConverter integration tests", () => {
       const numSamples = 441;
       const left = generateSineWave(numSamples, 440);
       const right = generateSineWave(numSamples, 880);
-      const encoded = wav.encode([left, right], {
-        bitDepth: 16,
-        float: false,
-        sampleRate: 44100,
-      });
-      // Offset larger than the file itself: node-wav alone returns undefined here
+      const encoded = encodeWav([left, right], 44100, 16);
+      // Offset larger than the file itself
       const pooled = toOffsetView(encoded, encoded.length + 8);
-      expect(wav.decode(pooled)).toBeUndefined();
 
       const decoded = decodeWav(pooled);
 
@@ -103,9 +93,7 @@ describe("formatConverter integration tests", () => {
       const numSamples = 441;
       const mono = generateSineWave(numSamples, 440);
       const standalone = Buffer.from(
-        new Uint8Array(
-          wav.encode([mono], { bitDepth: 16, float: false, sampleRate: 44100 }),
-        ).buffer,
+        new Uint8Array(encodeWav([mono], 44100, 16)).buffer,
       );
       expect(standalone.byteOffset).toBe(0);
 
@@ -745,7 +733,6 @@ describe("formatConverter integration tests", () => {
         }
         channels.push(data);
       }
-      // node-wav can only encode up to stereo reliably, so we use stereo for this test
       createTestWavFile(inputPath, [channels[0], channels[1]], 48000);
 
       // Convert

@@ -1,4 +1,3 @@
-import * as wav from "node-wav";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -12,11 +11,12 @@ import {
   validateFileExtension,
   validateSampleFormat,
 } from "../audioUtils.js";
+import { type EncodeBitDepth, encodeWav } from "../wavCodec";
 
 /**
  * Integration tests for audioUtils.ts
  *
- * These tests use REAL WAV files created via node-wav encode and
+ * These tests use REAL WAV files created with encodeWav and
  * raw Buffer construction. They validate getAudioMetadata,
  * validateSampleFormat, and validateAudioFormat against actual
  * files on the filesystem.
@@ -61,22 +61,18 @@ function createRawWavHeader(config: {
   return buffer;
 }
 
-/** Create a real WAV file on disk using node-wav encode */
+/** Create a real WAV file on disk */
 function createTestWavFile(
   filePath: string,
   channelData: Float32Array[],
   sampleRate: number,
-  bitDepth = 16,
+  bitDepth: EncodeBitDepth = 16,
 ): void {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  const encoded = wav.encode(channelData, {
-    bitDepth,
-    float: false,
-    sampleRate,
-  });
+  const encoded = encodeWav(channelData, sampleRate, bitDepth);
   fs.writeFileSync(filePath, encoded);
 }
 
@@ -89,7 +85,7 @@ describe("audioUtils integration tests", () => {
     fs.rmSync(TEST_DIR, { force: true, recursive: true });
   });
 
-  describe("getAudioMetadata - with real node-wav generated files", () => {
+  describe("getAudioMetadata - with real generated files", () => {
     it("should extract metadata from a mono 16-bit 44.1kHz WAV file", () => {
       const filePath = path.join(TEST_DIR, "mono16.wav");
       const numSamples = 44100; // 1 second

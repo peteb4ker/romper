@@ -470,6 +470,58 @@ describe("SampleWaveform", () => {
       });
     }
 
+    /** Two players: slot 1 on `voiceA` and slot 2 on `voiceB`. */
+    async function renderPair(voiceA: number, voiceB: number) {
+      const pair = (a: number, b: number) => (
+        <>
+          <SampleWaveform
+            kitName="A1"
+            playOptions={{ region: { length: 0.125, start: 0 } }}
+            playTrigger={a}
+            slotNumber={1}
+            voiceNumber={voiceA}
+          />
+          <SampleWaveform
+            kitName="A1"
+            playTrigger={b}
+            slotNumber={2}
+            voiceNumber={voiceB}
+          />
+        </>
+      );
+      const { rerender } = render(pair(0, 0));
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      });
+      return async (a: number, b: number) => {
+        await act(async () => {
+          rerender(pair(a, b));
+        });
+      };
+    }
+
+    it("chokes another slot's sound on the same voice, whatever started it", async () => {
+      const { sources } = setupRegionMocks();
+      const play = await renderPair(1, 1);
+
+      await play(1, 0); // slot 1 plays a slice
+      await play(1, 1); // slot 2 starts on the same voice
+
+      // The audio layer stops slot 1's sound with no help from React state
+      expect(sources[0].stop).toHaveBeenCalled();
+      expect(sources[1].stop).not.toHaveBeenCalled();
+    });
+
+    it("lets different voices sound together", async () => {
+      const { sources } = setupRegionMocks();
+      const play = await renderPair(1, 2);
+
+      await play(1, 0);
+      await play(1, 1);
+
+      expect(sources[0].stop).not.toHaveBeenCalled();
+    });
+
     it("releases a finished slice's source and envelope", async () => {
       const { gainNodes, sources } = setupRegionMocks();
       await renderAndPlay({ length: 0.125, start: 0.25 });

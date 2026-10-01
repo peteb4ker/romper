@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { PlayOptions, PlayRegion } from "./kitTypes";
 
 import { clearVoiceLevel, setVoiceLevel } from "./led-icon/audioLevels";
+import { claimVoice } from "./voiceChoke";
 
 // Short gain ramp at slice edges and on choke, so slices don't click
 const ANTI_CLICK_SECONDS = 0.002;
@@ -208,6 +209,8 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   // Per-source envelope used for region (slice) playback anti-click fades
   const envelopeRef = useRef<GainNode | null>(null);
+  // Releases this component's sound from the voice-choke registry
+  const releaseVoiceRef = useRef<(() => void) | null>(null);
   const animationRef = useRef<null | number>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
@@ -354,6 +357,8 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
         sourceRef.current = null;
         envelopeRef.current = null;
       }
+      releaseVoiceRef.current?.();
+      releaseVoiceRef.current = null;
       setIsPlaying(false);
       setPlayhead(0);
       clearVoiceLevel(voiceNumber);
@@ -435,6 +440,22 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       playRegion ? { offset, playLength } : undefined,
     );
     sourceRef.current = source;
+    // The voice is monophonic: this sound stops anything else on it,
+    // whichever slot or component started it (and is stopped in turn)
+    const sliceEnvelopeForChoke = envelopeRef.current;
+    const releaseVoice = claimVoice(
+      voiceNumber,
+      (atMs) => {
+        const at = toContextTime(ctx, atMs);
+        if (sourceRef.current === source) {
+          stopPlayback(at);
+        } else {
+          stopSource(source, sliceEnvelopeForChoke, ctx, at);
+        }
+      },
+      playOptions?.startAt,
+    );
+    releaseVoiceRef.current = releaseVoice;
     setIsPlaying(true);
     function animate() {
       if (!audioBuffer) return;
@@ -470,6 +491,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       // Release the finished source and its slice envelope from the graph
       source.disconnect();
       sliceEnvelope?.disconnect();
+      releaseVoice();
       setIsPlaying(false);
       setPlayhead(0);
       clearVoiceLevel(voiceNumber);

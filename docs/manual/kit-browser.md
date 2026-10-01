@@ -21,7 +21,7 @@ The **bank navigation bar** runs along the left side of the kit grid. Click any 
 
 ![Bank navigation bar]({{ site.baseurl }}/images/manual/bank-nav.png){: .img-left}
 
-Banks that contain kits are displayed with their full name (e.g., "Bank A ALWIS"). Empty banks are skipped in the grid view.
+Banks that contain kits are displayed with their full name (e.g., "Bank A ALWIS"). Empty banks are skipped in the grid view, and their letters are dimmed in the navigation bar. Click a dimmed letter to open that bank with an **Add Kit** card, so you can create its first kit.
 
 ### Editing Bank Names
 
@@ -51,9 +51,13 @@ Click any kit card to open it in the [Kit Editor](kit-editor) view.
 
 ## Creating Kits
 
-Click the **New Kit** button in the header bar to create a blank kit. You'll choose a bank and slot for it. The new kit appears in the browser ready for editing.
+Click the **Add Kit** card at the end of a bank's kit list to create a blank kit in that bank. Romper puts it in the bank's first free slot (for example `B2` after `B0` and `B1`), and it appears in the browser ready for editing.
 
-You can also click one of the **Add Kit** cards that appear at the end of each bank's kit list. These let you add a new kit directly into a specific bank.
+To create the first kit in an empty bank, click the bank's dimmed letter in the navigation bar. The bank opens in the grid with an **Add Kit** card.
+
+If your library has no kits yet (for example after choosing **Create Empty Library** during setup), the browser shows bank **A** with an **Add Kit** card, which creates kit `A0`. To start in another bank, pick its letter in the navigation bar.
+
+Add Kit cards are hidden while a search or filter is active.
 
 ### Duplicating Kits
 

@@ -60,7 +60,7 @@ If you want to build everything from scratch:
 
 1. Select **Create Empty Library**
 2. Choose a directory for your local store
-3. After setup completes, Romper will suggest next steps: you can import from an SD card, download factory samples, or proceed to the Kit Browser with an empty library
+3. After setup completes, Romper will suggest next steps: you can import from an SD card, download factory samples, or proceed to the Kit Browser with an empty library, where the **Add Kit** card creates your first kit (see [Creating Kits](kit-browser#creating-kits))
 
 ### Recovering an Existing Store
 
@@ -72,7 +72,7 @@ Once setup is complete, you'll see the Kit Browser -- Romper's main view.
 
 The interface has three main areas:
 
-**Header Bar** -- Contains the Sync button, New Kit button, filter toggles (Favorites, Modified), the Validate Store button, and Settings access.
+**Header Bar** -- Contains search, filter toggles (Favorites, Modified), the Write button for syncing to an SD card, and Settings access.
 
 **Kit Grid** -- The central area showing all your kits as cards, organized by bank. Each card shows the kit ID, name, voice sample counts, and status indicators.
 

@@ -409,6 +409,22 @@ describe("useKitBankNavigation", () => {
     });
   });
 
+  describe("[UC-14] showing an empty bank (RE-64)", () => {
+    it("shows and selects a bank with no kits", () => {
+      const { result } = renderHook(() => useKitBankNavigation(defaultProps));
+      expect(result.current.shownEmptyBank).toBeNull();
+
+      act(() => {
+        result.current.showEmptyBank("C");
+        // A visible-bank update fired while the grid scrolls to it
+        result.current.handleVisibleBankChange("A");
+      });
+
+      expect(result.current.shownEmptyBank).toBe("C");
+      expect(result.current.selectedBank).toBe("C");
+    });
+  });
+
   describe("programmatic scroll suppression", () => {
     it("should suppress handleVisibleBankChange during bank click", () => {
       const { result } = renderHook(() => useKitBankNavigation(defaultProps));

@@ -24,7 +24,6 @@ This file tracks what's being done about each item.
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
 | RE-69 | High | Stereo | Unlinking a stereo pair silently does nothing when the voice holds a 2-channel file; the `is_stereo` rules contradict "stereo is a voice setting". | open (plan item 1) |
-| RE-64 | High | Kits | A kit can only be created in a bank that already has one, so an empty local store can't create its first kit. | open |
 
 ## Next
 
@@ -87,6 +86,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-64 | High | Kits | A kit can only be created in a bank that already has one, so an empty local store can't create its first kit. | done (#PR) |
 | RE-65 | Medium | Undo | Edit > Undo and Edit > Redo use Electron's native roles and never reach Romper's undo; only Cmd/Ctrl+Z works. | done (#406) |
 | RE-70 | Medium | Archive | `file://` archive URLs weren't decoded: `/C:/...` on Windows, `%20` everywhere. | done (#403) |
 | RE-29 | High | Sync | A stereo sample on a mono voice was written to the card as stereo: mono conversion keyed on `samples.is_stereo`, which every add and import path writes as `false`. | done (#404: planned from the file's channel count and the voice's stereo setting; proven by `npm run validate:full`) |

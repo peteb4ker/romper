@@ -96,6 +96,56 @@ describe("KitGrid", () => {
     expect(screen.getByTestId("kit-item-BKit3")).toBeInTheDocument();
   });
 
+  describe("[UC-14] creating a kit where there are none (RE-64)", () => {
+    it("shows the hint and an add-kit card for bank A in an empty library", () => {
+      const onCreateKitInBank = vi.fn();
+      render(
+        <KitGrid
+          {...baseProps}
+          emptyBank="A"
+          kits={[]}
+          onCreateKitInBank={onCreateKitInBank}
+        />,
+      );
+
+      expect(screen.getByTestId("empty-library-hint")).toBeInTheDocument();
+      fireEvent.click(screen.getByTestId("add-kit-A"));
+      expect(onCreateKitInBank).toHaveBeenCalledWith("A");
+    });
+
+    it("shows an add-kit card for an empty bank between banks", () => {
+      const onCreateKitInBank = vi.fn();
+      render(
+        <KitGrid
+          {...baseProps}
+          emptyBank="C"
+          kits={[
+            ...mockKits,
+            { ...mockKits[2], bank_letter: "D", name: "DKit4" },
+          ]}
+          onCreateKitInBank={onCreateKitInBank}
+        />,
+      );
+
+      expect(screen.queryByTestId("empty-library-hint")).toBeNull();
+      fireEvent.click(screen.getByTestId("add-kit-C"));
+      expect(onCreateKitInBank).toHaveBeenCalledWith("C");
+    });
+
+    it("hides the empty bank while filtered", () => {
+      render(
+        <KitGrid
+          {...baseProps}
+          emptyBank="C"
+          isFiltered
+          onCreateKitInBank={vi.fn()}
+        />,
+      );
+
+      expect(screen.queryByTestId("add-kit-C")).toBeNull();
+    });
+  });
+
   describe("Keyboard navigation", () => {
     it("does not throw errors on keyboard events", () => {
       render(<KitGrid {...baseProps} />);

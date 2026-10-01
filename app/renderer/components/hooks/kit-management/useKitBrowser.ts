@@ -58,12 +58,14 @@ export function useKitBrowser({
       kitCreation.newlyCreatedKit || kitDuplication.newlyDuplicatedKit,
     scrollContainerRef: bankNavigation.scrollContainerRef,
     selectedBank: bankNavigation.selectedBank,
-
     setBankNames: bankNavigation.setBankNames,
     setDuplicateKitDest: kitDuplication.setDuplicateKitDest,
+
     setDuplicateKitError: kitDuplication.setDuplicateKitError,
     setDuplicateKitSource: kitDuplication.setDuplicateKitSource,
     setFocusedKit: bankNavigation.setFocusedKit,
     setSelectedBank: bankNavigation.setSelectedBank,
+    showEmptyBank: bankNavigation.showEmptyBank,
+    shownEmptyBank: bankNavigation.shownEmptyBank,
   };
 }

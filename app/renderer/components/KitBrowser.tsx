@@ -122,11 +122,20 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
       scrollContainerRef,
       selectedBank,
       setFocusedKit,
+      showEmptyBank,
+      shownEmptyBank,
     } = logic;
 
     // Compute whether filters are active (hide add-kit cards when filtered)
     const isFiltered =
       !!props.searchQuery?.trim() || !!showFavoritesOnly || !!showModifiedOnly;
+
+    // A bank with no kits to show with an add-kit card (RE-64): the one
+    // picked in the bank index, or bank A when the library is empty
+    let emptyBank: null | string = null;
+    if (!isFiltered) {
+      emptyBank = shownEmptyBank ?? (kits.length === 0 ? "A" : null);
+    }
 
     // Dialog management hook
     const dialogs = useKitDialogs({ onMessage, setLocalStorePath });
@@ -223,10 +232,12 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
             bankNames={bankNames}
             kits={kits}
             onBankClick={onBankClickWithScroll}
+            onEmptyBankClick={isFiltered ? undefined : showEmptyBank}
             selectedBank={selectedBank}
           />
           <KitGrid
             bankNames={bankNames}
+            emptyBank={emptyBank}
             focusedKit={focusedKit}
             getKitFavoriteState={props.getKitFavoriteState}
             isCreatingKit={isCreatingKit}

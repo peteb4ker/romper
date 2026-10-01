@@ -6,6 +6,9 @@ interface KitBankNavProps {
   bankNames?: Record<string, string>;
   kits: KitWithRelations[];
   onBankClick: (bank: string) => void;
+  // When set, banks with no kits stay clickable so a kit can be added to
+  // them (RE-64); otherwise they're disabled
+  onEmptyBankClick?: (bank: string) => void;
   selectedBank?: string;
 }
 
@@ -35,6 +38,7 @@ const KitBankNav: React.FC<KitBankNavProps> = ({
   bankNames = {},
   kits,
   onBankClick,
+  onEmptyBankClick,
   selectedBank,
 }) => {
   const navRef = useRef<HTMLElement>(null);
@@ -94,9 +98,13 @@ const KitBankNav: React.FC<KitBankNavProps> = ({
           (k) =>
             k?.name && typeof k.name === "string" && k.name.startsWith(bank),
         );
-        const isSelected = enabled && selectedBank === bank;
+        const isEmptyClickable = !enabled && !!onEmptyBankClick;
+        const isSelected =
+          (enabled || isEmptyClickable) && selectedBank === bank;
         const scale = isHovering ? getScale(i, hoverIndex) : BASE_SCALE;
         const isNearest = bank === nearestBank;
+        const label =
+          bankNames[bank] || (isEmptyClickable ? "Empty: add a kit" : null);
 
         return (
           <button
@@ -110,12 +118,15 @@ const KitBankNav: React.FC<KitBankNavProps> = ({
                 if (isSelected) return "bg-accent-primary text-text-inverse";
                 if (isNearest && isHovering) return "text-accent-primary";
                 if (enabled) return "text-text-secondary";
+                if (isEmptyClickable) return "text-text-tertiary/50";
                 return "text-text-tertiary/30 cursor-default";
               })()}
             `}
-            disabled={!enabled}
+            disabled={!enabled && !isEmptyClickable}
             key={bank}
-            onClick={() => onBankClick(bank)}
+            onClick={() =>
+              enabled ? onBankClick(bank) : onEmptyBankClick?.(bank)
+            }
             style={{
               fontSize: `${BASE_FONT_SIZE}px`,
               height: `${BASE_HEIGHT}px`,
@@ -131,16 +142,14 @@ const KitBankNav: React.FC<KitBankNavProps> = ({
             title={isHovering ? undefined : bankNames[bank] || undefined}
           >
             {bank}
-            {/* Floating label — only when there's a bank name to show */}
-            {isNearest && isHovering && bankNames[bank] && (
+            {/* Floating label — the bank name, or a prompt for an empty bank */}
+            {isNearest && isHovering && label && (
               <div
                 className="absolute left-full ml-2 px-2.5 py-1
                   bg-surface-3 border border-border-subtle rounded-md shadow-lg
                   pointer-events-none whitespace-nowrap z-50"
               >
-                <span className="text-sm text-text-secondary">
-                  {bankNames[bank]}
-                </span>
+                <span className="text-sm text-text-secondary">{label}</span>
               </div>
             )}
           </button>

@@ -430,6 +430,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
             cycleCount={logic.cycleCount}
             isSeqPlaying={logic.isSeqPlaying}
             kitName={props.kitName}
+            onShowKeys={() => setKeysOpen(true)}
             setIsSeqPlaying={logic.setIsSeqPlaying}
           />
           {/* Grid with integrated voice controls on right */}
@@ -446,7 +447,6 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
             onConditionChange={handleConditionChange}
             onMuteToggle={handleMuteToggle}
             onSampleModeChange={handleSampleModeChange}
-            onShowKeys={() => setKeysOpen(true)}
             onSliceStepUpdate={slicer.updateSliceStep}
             onSliceToggle={slicer.handleSliceToggle}
             onStepClick={slicer.handleStepClick}

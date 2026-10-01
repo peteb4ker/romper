@@ -202,7 +202,7 @@ function useWaveformPeaks(
 const selectClass =
   "h-6 px-1 text-xs rounded border border-border-default bg-surface-2 text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary";
 const buttonClass =
-  "flex items-center gap-1 h-6 px-2 text-xs font-semibold rounded border border-border-default bg-surface-2 hover:bg-surface-3 focus:outline-none focus:ring-1 focus:ring-accent-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed";
+  "btn-secondary h-6 px-2 text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary";
 
 /** Roll settings, behind a small menu next to Roll: how much a roll
  * changes and whether it varies slice length. */

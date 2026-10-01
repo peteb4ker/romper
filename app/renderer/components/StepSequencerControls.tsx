@@ -1,6 +1,7 @@
 import { PlayIcon, StopIcon } from "@phosphor-icons/react";
 import React from "react";
 
+import { SequencerKeysButton } from "./SequencerHelp";
 import { TRANSPORT_WIDTH } from "./sequencerLayout";
 
 interface BpmLogic {
@@ -16,6 +17,8 @@ interface StepSequencerControlsProps {
   cycleCount?: number;
   isSeqPlaying: boolean;
   kitName: string;
+  /** Opens the keyboard shortcut list. */
+  onShowKeys?: () => void;
   setIsSeqPlaying: (playing: boolean) => void;
 }
 
@@ -31,6 +34,7 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
   cycleCount = 0,
   isSeqPlaying,
   kitName: _kitName,
+  onShowKeys,
   setIsSeqPlaying,
 }) => {
   const [inputValue, setInputValue] = React.useState(bpmLogic.bpm.toString());
@@ -156,6 +160,12 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
           Loop
         </span>
       </div>
+
+      {onShowKeys && (
+        <div className="mt-1">
+          <SequencerKeysButton onClick={onShowKeys} />
+        </div>
+      )}
     </div>
   );
 };

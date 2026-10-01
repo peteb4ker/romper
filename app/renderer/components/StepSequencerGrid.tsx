@@ -22,7 +22,6 @@ import {
   type TriggerCondition,
 } from "./hooks/shared/stepPatternConstants";
 import { usePopoverDismiss } from "./hooks/shared/usePopoverDismiss";
-import { SequencerKeysButton } from "./SequencerHelp";
 import {
   LABEL_GAP,
   LABEL_WIDTH,
@@ -365,8 +364,6 @@ interface StepSequencerGridProps {
   ) => void;
   onMuteToggle?: (voiceNumber: number) => void;
   onSampleModeChange?: (voiceNumber: number, mode: SampleMode) => void;
-  /** Opens the keyboard shortcut list (a "?" button in the header). */
-  onShowKeys?: () => void;
   onSliceStepUpdate?: (
     voiceIdx: number,
     stepIdx: number,
@@ -415,7 +412,6 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
   onConditionChange,
   onMuteToggle,
   onSampleModeChange,
-  onShowKeys,
   onSliceStepUpdate,
   onSliceToggle,
   onStepClick,
@@ -571,13 +567,11 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
             Sample
           </span>
           <span
-            className="flex items-end justify-between"
+            aria-hidden
+            className={headerClass}
             style={{ width: LEVEL_COLUMN_WIDTH }}
           >
-            <span aria-hidden className={headerClass}>
-              Level
-            </span>
-            {onShowKeys && <SequencerKeysButton onClick={onShowKeys} />}
+            Level
           </span>
         </div>
       </div>

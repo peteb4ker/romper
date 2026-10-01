@@ -1,13 +1,16 @@
-import { groupSamplesByVoice } from "@romper/shared/kitUtilsShared";
+import type { KitScanResult } from "@romper/shared/db/schema";
+
+import { isValidKit } from "@romper/shared/kitUtilsShared";
 import { useCallback, useMemo } from "react";
 
 import type { ElectronAPI } from "../../../electron.d";
 import type {
   LocalStoreWizardState,
   ProgressEvent,
+  TruncationWarning,
 } from "./useLocalStoreWizardState";
 
-import { createRomperDb, insertKit, insertSample } from "../../utils/romperDb";
+import { createRomperDb, importSetupKit } from "../../utils/romperDb";
 
 export interface UseLocalStoreWizardFileOpsOptions {
   api: ElectronAPI;
@@ -148,58 +151,14 @@ export function useLocalStoreWizardFileOps({
         throw new Error("listFilesInRoot is not available");
       const kitFolders = await api.listFilesInRoot(targetPath);
       const validKits = getKitFolders(kitFolders);
-      const truncationWarnings: Array<{
-        kept: number;
-        kitName: string;
-        skipped: number;
-        total: number;
-        voiceNumber: number;
-      }> = [];
+      const truncationWarnings: TruncationWarning[] = [];
       if (validKits.length > 0) {
         await reportStepProgress({
           items: validKits,
           onStep: async (kitName) => {
-            const kitPath = `${targetPath}/${kitName}`;
-            if (!api.listFilesInRoot)
-              throw new Error("listFilesInRoot is not available");
-            const files = await api.listFilesInRoot(kitPath);
-            const wavFiles = files.filter((f: string) => /\.wav$/i.test(f));
-            // Extract bank letter from kit name (e.g., "A0" -> "A", "B12" -> "B")
-            const bankLetter = kitName.charAt(0);
-            const insertedKitName = await insertKit(dbDir, {
-              bank_letter: bankLetter,
-              editable: false,
-              name: kitName,
-            });
-            const voices = groupSamplesByVoice(wavFiles);
-            for (const voiceNum of Object.keys(voices)) {
-              const voiceSamples = voices[Number(voiceNum)];
-              if (voiceSamples && voiceSamples.length > 0) {
-                // Only process the first 12 samples per voice (slot limit)
-                const maxSamples = Math.min(voiceSamples.length, 12);
-                for (let idx = 0; idx < maxSamples; idx++) {
-                  const filename = voiceSamples[idx];
-                  // Set source_path to the absolute path for reference-only architecture
-                  const sourcePath = `${kitPath}/${filename}`;
-                  await insertSample(dbDir, {
-                    filename,
-                    kit_name: insertedKitName,
-                    slot_number: idx, // 0-based slot indexing (0-11)
-                    source_path: sourcePath,
-                    voice_number: Number(voiceNum),
-                  });
-                }
-                if (voiceSamples.length > 12) {
-                  truncationWarnings.push({
-                    kept: 12,
-                    kitName,
-                    skipped: voiceSamples.length - 12,
-                    total: voiceSamples.length,
-                    voiceNumber: Number(voiceNum),
-                  });
-                }
-              }
-            }
+            // Main imports the kit: samples, WAV metadata and voice names
+            const result = await importSetupKit(dbDir, kitName);
+            truncationWarnings.push(...voiceFullWarnings(kitName, result));
           },
           phase: "Writing to database",
         });
@@ -226,7 +185,31 @@ export function useLocalStoreWizardFileOps({
 }
 
 // --- Helpers ---
+// The folders the Rample reads as kits (A0-Z99); main imports only these
 function getKitFolders(files: string[]): string[] {
-  const kitRegex = /^\p{Lu}.*?(?:[1-9]?\d)$/u;
-  return files.filter((f) => kitRegex.test(f));
+  return files.filter(isValidKit);
+}
+
+/** One warning per voice that had more files than its 12 slots */
+function voiceFullWarnings(
+  kitName: string,
+  result: KitScanResult,
+): TruncationWarning[] {
+  const skippedByVoice = new Map<number, number>();
+  for (const file of result.skippedFiles) {
+    if (file.reason !== "voice_full") continue;
+    skippedByVoice.set(
+      file.voiceNumber,
+      (skippedByVoice.get(file.voiceNumber) ?? 0) + 1,
+    );
+  }
+  return [...skippedByVoice]
+    .sort(([a], [b]) => a - b)
+    .map(([voiceNumber, skipped]) => ({
+      kept: 12,
+      kitName,
+      skipped,
+      total: 12 + skipped,
+      voiceNumber,
+    }));
 }

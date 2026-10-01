@@ -6,8 +6,6 @@ import type {
   KitScanResult,
   KitWithRelations,
   LocalStoreValidationDetailedResult,
-  NewKit,
-  NewSample,
   Sample,
 } from "./db/schema.js";
 import type { SliceStep, VoiceSliceSettings } from "./sliceTypes.js";
@@ -60,7 +58,7 @@ export interface ElectronAPI {
   copyKit: (sourceKit: string, destKit: string) => Promise<DbResult>;
   createKit: (kitSlot: string) => Promise<DbResult>;
   /**
-   * Setup-wizard channels (createRomperDb, insertKit, insertSample) name the
+   * Setup-wizard channels (createRomperDb, setupImportKit) name the
    * new store's `.romperdb` folder because it isn't configured yet; main
    * rejects any folder outside the roots it has granted (RE-03).
    */
@@ -113,11 +111,6 @@ export interface ElectronAPI {
   ) => Promise<DbResult<ArrayBuffer | null>>;
   getSetting: (key: SettingsKey) => Promise<unknown>;
   getUserHomeDir: () => Promise<string>;
-  insertKit: (dbDir: string, kit: NewKit) => Promise<DbResult>;
-  insertSample: (
-    dbDir: string,
-    sample: NewSample,
-  ) => Promise<DbResult<{ sampleId: number }>>;
   listFilesInRoot: (localStorePath: string) => Promise<string[]>;
   moveSampleBetweenKits: (
     fromKit: string,
@@ -184,6 +177,15 @@ export interface ElectronAPI {
   selectLocalStorePath: () => Promise<string | undefined>;
   selectSdCard: () => Promise<null | string>;
   setSetting: (key: SettingsKey, value: unknown) => Promise<void>;
+  /**
+   * Import one kit folder into the store setup is creating, in main: the
+   * kit, its samples (12 per voice), WAV metadata and voice names. Files
+   * over the limit come back in `skippedFiles` (RE-34).
+   */
+  setupImportKit: (
+    dbDir: string,
+    kitName: string,
+  ) => Promise<DbResult<KitScanResult>>;
   showItemInFolder: (path: string) => Promise<unknown>;
   startKitSync: (options: SyncOptions) => Promise<DbResult<SyncOutcome>>;
   toggleKitFavorite: (

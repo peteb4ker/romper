@@ -154,8 +154,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
     it("registers all expected IPC handlers", () => {
       const expectedHandlers = [
         "create-romper-db",
-        "insert-kit",
-        "insert-sample",
+        "setup-import-kit",
         "get-kit",
         "update-kit-metadata",
         "get-all-kits",
@@ -192,15 +191,20 @@ describe("dbIpcHandlers - Routing Tests", () => {
       );
     });
 
-    it("insert-kit routes to addKit", async () => {
-      const handler = handlerRegistry["insert-kit"];
-      const kit = { bank_letter: "A", name: "A5" };
-      await handler({}, "/test/path/.romperdb", kit);
-
-      expect(romperDbCore.addKit).toHaveBeenCalledWith(
+    it("setup-import-kit routes to the setup service (RE-34)", async () => {
+      const { localStoreSetupService } =
+        await import("../services/localStoreSetupService.js");
+      const importSetupKit = vi
+        .spyOn(localStoreSetupService, "importSetupKit")
+        .mockReturnValue({ success: true });
+      await handlerRegistry["setup-import-kit"](
+        {},
         "/test/path/.romperdb",
-        kit,
+        "A5",
       );
+
+      expect(importSetupKit).toHaveBeenCalledWith("/test/path/.romperdb", "A5");
+      importSetupKit.mockRestore();
     });
 
     it("get-all-kits routes to database with settings validation", async () => {
@@ -439,8 +443,6 @@ describe("dbIpcHandlers - Routing Tests", () => {
   });
 
   describe("Path authorization (RE-03)", () => {
-    const dbDir = "/new/store/.romperdb";
-
     it("create-romper-db refuses a database folder outside the roots", async () => {
       const { localStoreSetupService } =
         await import("../services/localStoreSetupService.js");
@@ -462,51 +464,22 @@ describe("dbIpcHandlers - Routing Tests", () => {
       createSetupDatabase.mockRestore();
     });
 
-    it("insert-kit refuses a denied database folder", async () => {
+    it("setup-import-kit refuses a denied database folder", async () => {
+      const { localStoreSetupService } =
+        await import("../services/localStoreSetupService.js");
+      const importSetupKit = vi.spyOn(localStoreSetupService, "importSetupKit");
       vi.mocked(checkDatabaseDirAccess).mockReturnValueOnce(DENIED);
-      const result = await handlerRegistry["insert-kit"]({}, "/elsewhere", {
-        bank_letter: "A",
-        name: "A0",
-      });
-      expect(result.success).toBe(false);
-      expect(romperDbCore.addKit).not.toHaveBeenCalled();
-    });
-
-    it("insert-sample checks the database folder and the sample's source path", async () => {
-      const sample = {
-        filename: "1 kick.wav",
-        kit_name: "A0",
-        slot_number: 0,
-        source_path: "/new/store/A0/1 kick.wav",
-        voice_number: 1,
-      };
-      const ok = await handlerRegistry["insert-sample"]({}, dbDir, sample);
-      expect(ok.success).toBe(true);
-      expect(checkDatabaseDirAccess).toHaveBeenCalledWith(dbDir);
-      expect(checkPathAccess).toHaveBeenCalledWith(sample.source_path);
-      expect(romperDbCore.addSample).toHaveBeenCalledWith(dbDir, sample);
-    });
-
-    it("insert-sample refuses a source path outside the roots", async () => {
-      vi.mocked(checkPathAccess).mockReturnValueOnce(DENIED);
-      const result = await handlerRegistry["insert-sample"]({}, dbDir, {
-        filename: "id_rsa",
-        kit_name: "A0",
-        slot_number: 0,
-        source_path: "/Users/me/.ssh/id_rsa",
-        voice_number: 1,
-      });
+      const result = await handlerRegistry["setup-import-kit"](
+        {},
+        "/Users/me/Library/.romperdb",
+        "A0",
+      );
+      expect(checkDatabaseDirAccess).toHaveBeenCalledWith(
+        "/Users/me/Library/.romperdb",
+      );
       expect(result).toEqual({ error: DENIED.error, success: false });
-      expect(romperDbCore.addSample).not.toHaveBeenCalled();
-    });
-
-    it("insert-sample refuses a denied database folder", async () => {
-      vi.mocked(checkDatabaseDirAccess).mockReturnValueOnce(DENIED);
-      const result = await handlerRegistry["insert-sample"]({}, "/x", {
-        source_path: "",
-      });
-      expect(result.success).toBe(false);
-      expect(romperDbCore.addSample).not.toHaveBeenCalled();
+      expect(importSetupKit).not.toHaveBeenCalled();
+      importSetupKit.mockRestore();
     });
 
     it("get-all-samples reads the configured store, not a renderer path", async () => {

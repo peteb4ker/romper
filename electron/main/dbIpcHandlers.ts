@@ -1,4 +1,3 @@
-import type { NewKit, NewSample } from "@romper/shared/db/schema.js";
 import type { VoiceSliceSettings } from "@romper/shared/sliceTypes.js";
 
 import {
@@ -14,8 +13,6 @@ import { getAudioMetadata, validateSampleFormat } from "./audioUtils.js";
 import { registerFavoritesIpcHandlers } from "./db/favoritesIpcHandlers.js";
 import { createDbHandler } from "./db/ipcHandlerUtils.js";
 import {
-  addKit,
-  addSample,
   getAllBanks,
   getAllSamples,
   getKit,
@@ -56,32 +53,20 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   // Setup-wizard database operations. They run before the new store is
   // configured, so they name its .romperdb folder; it must sit inside a
   // writable root (RE-03). create-romper-db also refuses a folder that
-  // already holds a store (RE-10).
+  // already holds a store (RE-10), and setup-import-kit only imports into
+  // a store this setup created (RE-34).
   ipcMain.handle("create-romper-db", (_event, dbDir: string) => {
     const access = checkDatabaseDirAccess(dbDir);
     if (!access.ok) return { error: access.error, success: false };
     return localStoreSetupService.createSetupDatabase(dbDir);
   });
 
-  ipcMain.handle("insert-kit", (_event, dbDir: string, kit: NewKit) => {
-    const access = checkDatabaseDirAccess(dbDir);
-    if (!access.ok) return { error: access.error, success: false };
-    return addKit(dbDir, kit);
-  });
-
   ipcMain.handle(
-    "insert-sample",
-    (_event, dbDir: string, sample: NewSample) => {
+    "setup-import-kit",
+    (_event, dbDir: string, kitName: string) => {
       const access = checkDatabaseDirAccess(dbDir);
-      // The wizard only records files inside the store it is creating.
-      const sourceAccess =
-        access.ok && sample?.source_path
-          ? checkPathAccess(sample.source_path)
-          : access;
-      if (!sourceAccess.ok) {
-        return { error: sourceAccess.error, success: false };
-      }
-      return addSample(dbDir, sample);
+      if (!access.ok) return { error: access.error, success: false };
+      return localStoreSetupService.importSetupKit(dbDir, kitName);
     },
   );
 

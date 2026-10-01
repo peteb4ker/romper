@@ -51,9 +51,7 @@ This file tracks what's being done about each item.
 | RE-27 | Medium | Samples | Moving a sample to another kit is not atomic and rebuilds the row from `source_path` only, dropping gain, WAV metadata and the stereo flag. | open |
 | RE-28 | Medium | DB | Multi-step writes run without a transaction: kit plus its four voices; delete plus reindex (the reindex opens a second connection while the first is open); write plus the modified flag; scan insert plus metadata. | open |
 | RE-31 | Medium | Setup | A failed SD-card setup cannot be retried: the directory copy uses a non-recursive `mkdirSync`, which fails because the earlier cleanup left the copied kit folders behind. | open (needs a decision: a recursive copy would overwrite same-named kit folders; see #359) |
-| RE-32 | Medium | Kits | Kit names are checked inconsistently. Import accepts names such as `Drum01`; `insert-kit` checks nothing; `kitService` rejects anything outside `^\p{Lu}\d{1,2}$`, so such kits cannot be deleted or duplicated. | open |
 | RE-33 | Medium | DB | Migration upkeep: 0008 is missing and there are two 0009 migrations, handled by a custom repair that runs `ALTER` statements outside a transaction. | open (#407 fixed the `kits.artist` snapshot drift) |
-| RE-34 | Medium | Setup | Voice naming in the first-run wizard does nothing: its alias writes are rejected because the store path is saved only afterwards. | open |
 | RE-35 | Medium | Sync | "Modified since sync" is set only by sample add, delete and move. | partly done (#360: scan sets it when it adds samples) |
 | RE-36 | Medium | Performance | Almost every edit reloads the whole library (`getKits()` with all samples); sample operations cost three or more IPC calls. | open |
 | RE-37 | Medium | Renderer | Favourites have two sources of truth. The browser keeps a shadow map that overrides the database value; the editor toggles through `useKitDataManager`. | open |
@@ -83,6 +81,8 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-34 | Medium | Setup | Voice naming in the setup wizard did nothing (its writes went to a store not yet configured), and setup read every WAV over IPC. | done (#PR: setup imports kits in main with the rescan merge: samples, WAV metadata and voice names in one transaction per kit) |
+| RE-32 | Medium | Kits | Kit names were checked inconsistently: setup imported folders such as `Drum01` that the kit service then refused to delete or duplicate. | done (#PR: setup imports only folders named like kits, A0-Z99, the same rule `kitService` uses; `insert-kit` is gone) |
 | RE-69 | High | Stereo | Unlinking a stereo pair silently did nothing when the voice held a 2-channel file; the `is_stereo` rules contradicted "stereo is a voice setting". | done (#407: unlink only clears `voices.stereo_mode`; `samples.is_stereo` dropped; main refuses samples on the right-hand voice of a linked pair; proven by `npm run validate:full`) |
 | RE-42 | Medium | Setup | The notice naming samples left out by the 12-per-voice limit never showed after SD or factory setup: the UI read the warnings from before `initialize()` ran. | done (#410) |
 | Low | Low | Tests | Test and tooling hygiene from the validation audit: an empty `ROMPER_LOCAL_PATH` counted as an override (Test Mode banner); dead `VITE_ROMPER_TEST_MODE` branch; screenshots used the installed app's settings; an integration test wrote into the source tree; `coverage:total` read the wrong folder; `worktree:create` hid the failing command. | done (#409, plan item 7) |

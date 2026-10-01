@@ -520,6 +520,7 @@ describe("getFactorySamplesArchiveUrl (RE-03)", () => {
       "https://data.squarp.net/RampleSamplesV1-2.zip",
       "/mock/dest",
       expect.any(Function),
+      expect.any(AbortSignal),
     );
     spy.mockRestore();
   });

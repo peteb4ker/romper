@@ -135,6 +135,38 @@ describe("useLocalStoreWizardFileOps", () => {
 
   // --- Test validateAndCopySdCardKits ---
   describe("[UC-01] validateAndCopySdCardKits", () => {
+    it("stops when a kit can't be copied from the card", async () => {
+      mockApi.listFilesInRoot = vi.fn(() => Promise.resolve(["A0", "B1"]));
+      mockApi.copyDir = vi.fn(() =>
+        Promise.resolve({ error: "card removed", success: false }),
+      );
+      const runSteps = vi.fn(
+        async ({
+          items,
+          onStep,
+        }: {
+          items: string[];
+          onStep: (item: string) => Promise<void>;
+        }) => {
+          for (const item of items) await onStep(item);
+        },
+      );
+      const { result } = renderHook(() =>
+        useLocalStoreWizardFileOps({
+          api: mockApi,
+          reportProgress: mockReportProgress,
+          reportStepProgress: runSteps,
+          setError: mockSetError,
+          setWizardState: mockSetWizardState,
+        }),
+      );
+
+      await expect(
+        result.current.validateAndCopySdCardKits("/sd", "/store"),
+      ).rejects.toThrow("Couldn't copy kit A0 from the card: card removed");
+      expect(mockApi.copyDir).toHaveBeenCalledTimes(1);
+    });
+
     it("should validate and copy kit folders successfully", async () => {
       mockApi.listFilesInRoot = vi.fn(() =>
         Promise.resolve(["A0", "B1", "file.txt"]),

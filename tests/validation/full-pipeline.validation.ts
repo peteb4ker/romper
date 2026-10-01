@@ -148,7 +148,16 @@ test("[UC-02] [UC-14] [UC-19] [UC-24] [UC-28] [UC-34] factory download to card, 
   };
   for (const dir of Object.values(dirs))
     await fs.mkdir(dir, { recursive: true });
-  await fs.rm(REPORT_DIR, { force: true, recursive: true });
+  // Only this run's own files: other scenarios report into subfolders
+  for (const entry of [
+    "report.md",
+    "report.json",
+    "main.log",
+    "renderer.log",
+    "screens",
+  ]) {
+    await fs.rm(path.join(REPORT_DIR, entry), { force: true, recursive: true });
+  }
   await fs.mkdir(path.join(REPORT_DIR, "screens"), { recursive: true });
 
   const report = new ValidationReport(REPORT_DIR, {

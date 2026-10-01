@@ -199,7 +199,8 @@ export class ValidationReport {
   private summarySection(failures: string[]): string[] {
     const lines: string[] = [];
     const verdict = failures.length === 0 ? "PASSED" : "FAILED";
-    lines.push(`# Full-pipeline validation: ${verdict}`, "");
+    const title = this.meta.scenario ?? "Full-pipeline validation";
+    lines.push(`# ${title}: ${verdict}`, "");
     for (const [k, v] of Object.entries(this.meta)) lines.push(`- ${k}: ${v}`);
     lines.push("");
 

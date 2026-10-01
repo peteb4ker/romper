@@ -512,6 +512,56 @@ describe("useLocalStoreWizard", () => {
       );
     });
 
+    // RE-66: Cancel stops setup between kits and cleans up, without an
+    // error and without saving the store
+    it("stops between kits when cancelled, cleans up, and saves nothing", async () => {
+      vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
+        async (dir) => (dir === root ? ["A0", "A1", "A2"] : []),
+      );
+      const { result } = renderHook(() => useLocalStoreWizard());
+      await waitForAsync(() => result.current.defaultPath !== "");
+      act(() => {
+        result.current.setTargetPath(root);
+        result.current.setSource("squarp");
+      });
+      vi.mocked(window.electronAPI.setupImportKit).mockImplementationOnce(
+        async () => {
+          await result.current.cancelSetup();
+          return { data: importResult([]), success: true };
+        },
+      );
+
+      let outcome: unknown;
+      await act(async () => {
+        outcome = await result.current.initialize();
+      });
+
+      expect(outcome).toEqual({ cancelled: true, success: false });
+      expect(window.electronAPI.cancelSetup).toHaveBeenCalled();
+      expect(window.electronAPI.setupImportKit).toHaveBeenCalledTimes(1);
+      expect(window.electronAPI.cleanupPartialInit).toHaveBeenCalledWith(root);
+      expect(window.electronAPI.setSetting).not.toHaveBeenCalledWith(
+        "localStorePath",
+        expect.anything(),
+      );
+      expect(result.current.state.error).toBeNull();
+    });
+
+    it("doesn't retry the download after main cancelled it", async () => {
+      vi.mocked(window.electronAPI.downloadAndExtractArchive).mockResolvedValue(
+        { cancelled: true, error: "Setup cancelled", success: false },
+      );
+
+      const result = await startSetup();
+
+      expect(
+        window.electronAPI.downloadAndExtractArchive,
+      ).toHaveBeenCalledTimes(1);
+      expect(window.electronAPI.setupImportKit).not.toHaveBeenCalled();
+      expect(window.electronAPI.cleanupPartialInit).toHaveBeenCalledWith(root);
+      expect(result.current.state.error).toBeNull();
+    });
+
     it("imports nothing when there are no kit folders", async () => {
       vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
         async () => [],

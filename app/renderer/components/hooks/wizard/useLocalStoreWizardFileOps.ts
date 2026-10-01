@@ -11,6 +11,7 @@ import type {
 } from "./useLocalStoreWizardState";
 
 import { createRomperDb, importSetupKit } from "../../utils/romperDb";
+import { SetupCancelledError } from "./setupCancelled";
 
 export interface UseLocalStoreWizardFileOpsOptions {
   api: ElectronAPI;
@@ -22,6 +23,8 @@ export interface UseLocalStoreWizardFileOpsOptions {
   }) => Promise<void>;
   setError: (error: null | string) => void;
   setWizardState: (patch: Partial<LocalStoreWizardState>) => void;
+  /** Throws once the user has cancelled setup (RE-66) */
+  throwIfCancelled?: () => void;
 }
 
 /**
@@ -34,6 +37,7 @@ export function useLocalStoreWizardFileOps({
   reportStepProgress,
   setError,
   setWizardState,
+  throwIfCancelled = () => {},
 }: UseLocalStoreWizardFileOpsOptions) {
   // --- Kit folder validation ---
   const validateSdCardFolder = useCallback(
@@ -79,10 +83,16 @@ export function useLocalStoreWizardFileOps({
         items: kitFolders,
         onStep: async (kit) => {
           if (!api.copyDir) throw new Error("Missing Electron API");
-          await api.copyDir(
+          const copied = await api.copyDir(
             `${sdCardSourcePath}/${kit}`,
             `${targetPath}/${kit}`,
           );
+          // A failed copy used to go unnoticed and the import carried on
+          if (copied && !copied.success) {
+            throw new Error(
+              `Couldn't copy kit ${kit} from the card: ${copied.error ?? "unknown error"}`,
+            );
+          }
         },
         phase: "Copying kits...",
       });
@@ -124,6 +134,9 @@ export function useLocalStoreWizardFileOps({
         );
 
         if (result?.success) return;
+        // Cancelled in main, or here between attempts: never retry
+        if (result?.cancelled) throw new SetupCancelledError();
+        throwIfCancelled();
 
         if (attempt < maxRetries) {
           const delay = attempt * 2000;
@@ -139,7 +152,7 @@ export function useLocalStoreWizardFileOps({
         }
       }
     },
-    [api, reportProgress, setError],
+    [throwIfCancelled, api, reportProgress, setError],
   );
 
   const createAndPopulateDb = useCallback(

@@ -40,9 +40,31 @@ export const EXISTING_LOCAL_STORE_MESSAGE =
  * Cancel on first run) is cleaned up on quit (RE-66), so the next launch can
  * set up the same folder. Saving the store as the local store marks its
  * setup finished.
+ *
+ * Setup can be cancelled (RE-66): `cancelSetup` aborts the download or
+ * extraction in progress, and the wizard stops between steps. Cleanup also
+ * removes the kit folders this setup extracted or copied into the target
+ * (only entries that weren't there before), so a retry starts clean.
  */
 export class LocalStoreSetupService {
+  /**
+   * The signal for the setup work running now. `cancelSetup` aborts it;
+   * work started afterwards gets a fresh one.
+   */
+  get setupSignal(): AbortSignal {
+    return this.setupAbort.signal;
+  }
   private readonly createdDbDirs = new Set<string>();
+  /** Target folder → top-level entries this process's setup created in it */
+  private readonly createdEntries = new Map<string, Set<string>>();
+
+  private setupAbort = new AbortController();
+
+  /** Stop the setup download or extraction in progress (RE-66). */
+  cancelSetup(): void {
+    this.setupAbort.abort(new SetupCancelledError());
+    this.setupAbort = new AbortController();
+  }
 
   /**
    * Move a `.romperdb` created by this process's setup out of the way after
@@ -52,12 +74,22 @@ export class LocalStoreSetupService {
   cleanupFailedSetup(
     targetPath: string,
     configuredLocalStorePath?: null | string,
-  ): { error?: string; movedTo?: string; removed: boolean } {
-    const dbDir = path.resolve(targetPath, ROMPER_DB_DIR);
+  ): {
+    error?: string;
+    movedTo?: string;
+    removed: boolean;
+    removedEntries?: number;
+  } {
+    const target = path.resolve(targetPath);
+    const dbDir = path.join(target, ROMPER_DB_DIR);
+    const createdDb = this.createdDbDirs.has(dbDir);
+    const entries = this.createdEntries.get(target);
 
-    if (!this.createdDbDirs.has(dbDir)) {
-      console.warn(
-        `[Setup] Refusing to clean up ${dbDir}: this setup did not create it`,
+    if (!createdDb && !entries) {
+      // Nothing of this setup's to remove: a no-op, not a problem (a setup
+      // that failed before writing anything still asks)
+      logger.log(
+        `[Setup] Nothing to clean up in ${target}: this setup created nothing there`,
       );
       return {
         error:
@@ -68,7 +100,7 @@ export class LocalStoreSetupService {
 
     if (
       configuredLocalStorePath &&
-      path.resolve(configuredLocalStorePath) === path.resolve(targetPath)
+      path.resolve(configuredLocalStorePath) === target
     ) {
       return {
         error: "Refusing to clean up the configured local store",
@@ -77,15 +109,22 @@ export class LocalStoreSetupService {
     }
 
     this.createdDbDirs.delete(dbDir);
+    this.createdEntries.delete(target);
 
     try {
-      if (!fs.existsSync(dbDir)) {
-        return { removed: true };
+      // Kit folders this setup extracted or copied: they came from the
+      // archive or the card, so they can simply be made again
+      for (const entry of entries ?? []) {
+        fs.rmSync(entry, { force: true, recursive: true });
+      }
+      const removed = entries ? { removedEntries: entries.size } : {};
+      if (!createdDb || !fs.existsSync(dbDir)) {
+        return { removed: true, ...removed };
       }
       const movedTo = `${dbDir}.failed-${Date.now()}`;
       fs.renameSync(dbDir, movedTo);
       logger.log(`[Setup] Moved failed setup database aside to ${movedTo}`);
-      return { movedTo, removed: true };
+      return { movedTo, removed: true, ...removed };
     } catch (error) {
       return {
         error: `Failed to clean up the partial local store: ${error instanceof Error ? error.message : String(error)}`,
@@ -107,8 +146,11 @@ export class LocalStoreSetupService {
     const configured = configuredLocalStorePath
       ? path.resolve(configuredLocalStorePath)
       : null;
-    return [...this.createdDbDirs]
-      .map((dbDir) => path.dirname(dbDir))
+    const targets = new Set([
+      ...[...this.createdDbDirs].map((dbDir) => path.dirname(dbDir)),
+      ...this.createdEntries.keys(),
+    ]);
+    return [...targets]
       .filter((targetPath) => targetPath !== configured)
       .map((targetPath) => ({
         ...this.cleanupFailedSetup(targetPath, configuredLocalStorePath),
@@ -225,6 +267,39 @@ export class LocalStoreSetupService {
    */
   markSetupComplete(targetPath: string): void {
     this.createdDbDirs.delete(path.resolve(targetPath, ROMPER_DB_DIR));
+    this.createdEntries.delete(path.resolve(targetPath));
+  }
+
+  /**
+   * Run setup work that writes into `targetPath` (extracting the archive,
+   * copying a kit from the card) and record the top-level entries it
+   * created, even when it fails part way, so cleanup can remove them.
+   * Entries that were there before are never recorded.
+   */
+  async trackCreatedEntries<T>(
+    targetPath: string,
+    work: () => Promise<T> | T,
+  ): Promise<T> {
+    const target = path.resolve(targetPath);
+    const before = new Set(listEntries(target));
+    try {
+      return await work();
+    } finally {
+      const created = listEntries(target).filter((name) => !before.has(name));
+      if (created.length > 0) {
+        const record = this.createdEntries.get(target) ?? new Set<string>();
+        for (const name of created) record.add(path.join(target, name));
+        this.createdEntries.set(target, record);
+      }
+    }
+  }
+}
+
+/** Setup was cancelled by the user (RE-66). */
+export class SetupCancelledError extends Error {
+  constructor() {
+    super("Setup cancelled");
+    this.name = "SetupCancelledError";
   }
 }
 
@@ -235,6 +310,14 @@ function isEmptyOrMissingDirectory(dirPath: string): boolean {
     return stats.isDirectory() && fs.readdirSync(dirPath).length === 0;
   } catch (error) {
     return (error as NodeJS.ErrnoException).code === "ENOENT";
+  }
+}
+
+function listEntries(dirPath: string): string[] {
+  try {
+    return fs.readdirSync(dirPath);
+  } catch {
+    return [];
   }
 }
 

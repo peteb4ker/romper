@@ -50,7 +50,6 @@ This file tracks what's being done about each item.
 | RE-26 | Medium | Samples | Replace deletes the old sample, then adds the new one, with no transaction. | open |
 | RE-27 | Medium | Samples | Moving a sample to another kit is not atomic and rebuilds the row from `source_path` only, dropping gain, WAV metadata and the stereo flag. | open |
 | RE-28 | Medium | DB | Multi-step writes run without a transaction: kit plus its four voices; delete plus reindex (the reindex opens a second connection while the first is open); write plus the modified flag; scan insert plus metadata. | open |
-| RE-31 | Medium | Setup | A failed SD-card setup cannot be retried: the directory copy uses a non-recursive `mkdirSync`, which fails because the earlier cleanup left the copied kit folders behind. | open (needs a decision: a recursive copy would overwrite same-named kit folders; see #359) |
 | RE-33 | Medium | DB | Migration upkeep: 0008 is missing and there are two 0009 migrations, handled by a custom repair that runs `ALTER` statements outside a transaction. | open (#407 fixed the `kits.artist` snapshot drift) |
 | RE-35 | Medium | Sync | "Modified since sync" is set only by sample add, delete and move. | partly done (#360: scan sets it when it adds samples) |
 | RE-36 | Medium | Performance | Almost every edit reloads the whole library (`getKits()` with all samples); sample operations cost three or more IPC calls. | open |
@@ -75,15 +74,16 @@ This file tracks what's being done about each item.
 | RE-56 | Medium | Dead code | About 942 LOC of unused main-process files (`stereoSyncProcessor`, `rampleNamingService`, `db/fileOperations`, `stepPatternUtils`, `sampleSlotService`, two utils) and about 1,100 LOC in the renderer (9 test-only modules, the unreachable `AboutView` route and `ValidationResultsDialog`). | partly done (#372 deletes `rampleNamingService` and `stereoSyncProcessor`) |
 | RE-57 | Medium | Contract | The bridge contract does not bind main. `SyncChangeSummary` does not match what main returns (the renderer casts it); `SyncProgress` is defined four times with different fields and status values; several return types differ from the contract (null versus undefined, `unknown`, an `"overwrite"` mode main rejects). | open |
 | RE-58 | Medium | Tooling | The pre-commit tests fail with Vitest worker-start timeouts when the machine is busy (load average above ~20, for example several sessions testing at once), because `vitest.config.fast.ts` always starts 10 workers. | open |
-| RE-66 | Medium | Setup | Cancel during setup quits mid-import on first run and leaves a half-built store that blocks a retry in the same folder. | partly done (#408: quitting cleans up an unfinished setup; next: real cancel, [`validation-fix-plan.md`](docs/developer/validation-fix-plan.md) item 4 step 2) |
 | RE-72 | Medium | About | The About dialog shows "Version: dev" in every build: nothing defines `VITE_APP_VERSION`. | open |
-| RE-73 | Medium | Setup | SD-card setup ignores a failed kit copy and imports whatever was copied, with no message. | open |
 
 ## Done
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
 | RE-71 | Medium | Stereo | Stereo link and unlink worked on kits that aren't editable, changing what the next write puts on the card. | done (#416: linking is an edit; read-only kits show the pair but offer no link or unlink, and main refuses the change) |
+| RE-73 | Medium | Setup | SD-card setup ignored a failed kit copy and imported whatever was copied, with no message. | done (#414: a failed copy stops setup with the reason) |
+| RE-66 | Medium | Setup | Cancel during setup quit mid-import on first run and left a half-built store that blocked a retry in the same folder. | done (#408 cleans up on quit; #414: Cancel stops the download, extraction or import, removes what setup wrote, and closes once it has stopped) |
+| RE-31 | Medium | Setup | A failed SD-card setup couldn't be retried: the kit folders it had copied were left behind, and the next copy refused them. | done (#414: cleanup removes the kit folders setup created, and only those, so nothing is overwritten) |
 | RE-34 | Medium | Setup | Voice naming in the setup wizard did nothing (its writes went to a store not yet configured), and setup read every WAV over IPC. | done (#413: setup imports kits in main with the rescan merge: samples, WAV metadata and voice names in one transaction per kit) |
 | RE-32 | Medium | Kits | Kit names were checked inconsistently: setup imported folders such as `Drum01` that the kit service then refused to delete or duplicate. | done (#413: setup imports only folders named like kits, A0-Z99, the same rule `kitService` uses; `insert-kit` is gone) |
 | RE-69 | High | Stereo | Unlinking a stereo pair silently did nothing when the voice held a 2-channel file; the `is_stereo` rules contradicted "stereo is a voice setting". | done (#407: unlink only clears `voices.stereo_mode`; `samples.is_stereo` dropped; main refuses samples on the right-hand voice of a linked pair; proven by `npm run validate:full`) |

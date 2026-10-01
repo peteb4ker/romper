@@ -141,6 +141,10 @@ const electronAPI = {
     isDev && console.debug("[IPC] cancelKitSync invoked");
     return ipcRenderer.invoke("cancelKitSync");
   },
+  cancelSetup: () => {
+    isDev && console.debug("[IPC] cancelSetup invoked");
+    return ipcRenderer.invoke("cancel-setup");
+  },
   checkDiskSpace: (targetPath: string, requiredBytes: number) => {
     isDev &&
       console.debug("[IPC] checkDiskSpace invoked", targetPath, requiredBytes);

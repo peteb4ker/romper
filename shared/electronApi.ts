@@ -33,6 +33,8 @@ export interface ElectronAPI {
     filePath: string,
   ) => Promise<DbResult<{ sampleId: number }>>;
   cancelKitSync: () => Promise<unknown>;
+  /** Stop the setup download or extraction in progress (RE-66) */
+  cancelSetup: () => Promise<{ success: boolean }>;
   checkDiskSpace: (
     targetPath: string,
     requiredBytes: number,
@@ -54,7 +56,10 @@ export interface ElectronAPI {
     targetPath: string,
   ) => Promise<{ error?: string; movedTo?: string; removed: boolean }>;
   closeApp: () => Promise<void>;
-  copyDir: (src: string, dest: string) => Promise<unknown>;
+  copyDir: (
+    src: string,
+    dest: string,
+  ) => Promise<{ error?: string; success: boolean }>;
   copyKit: (sourceKit: string, destKit: string) => Promise<DbResult>;
   createKit: (kitSlot: string) => Promise<DbResult>;
   /**
@@ -81,7 +86,7 @@ export interface ElectronAPI {
     destDir: string,
     onProgress?: (p: unknown) => void,
     onError?: (e: unknown) => void,
-  ) => Promise<DbResult>;
+  ) => Promise<{ cancelled?: boolean } & DbResult>;
   ensureDir: (dir: string) => Promise<unknown>;
   generateSyncChangeSummary: (
     sdCardPath?: string,

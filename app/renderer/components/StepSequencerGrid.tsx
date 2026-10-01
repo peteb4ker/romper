@@ -23,6 +23,7 @@ import {
 } from "./hooks/shared/stepPatternConstants";
 import { usePopoverDismiss } from "./hooks/shared/usePopoverDismiss";
 import {
+  HEADER_HEIGHT,
   LABEL_GAP,
   LABEL_WIDTH,
   MUTE_GAP,
@@ -544,7 +545,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
       )}
 
       {/* Header: step ruler and the row-settings column titles */}
-      <div className="flex items-end">
+      <div className="flex items-end" style={{ height: HEADER_HEIGHT }}>
         <StepRuler isSeqPlaying={isSeqPlaying} playheadStep={currentSeqStep} />
         <div
           className="flex items-end gap-2.5"

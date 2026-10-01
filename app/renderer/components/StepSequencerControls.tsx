@@ -2,7 +2,7 @@ import { PlayIcon, StopIcon } from "@phosphor-icons/react";
 import React from "react";
 
 import { SequencerKeysButton } from "./SequencerHelp";
-import { TRANSPORT_WIDTH } from "./sequencerLayout";
+import { HEADER_HEIGHT, ROW_GAP, TRANSPORT_WIDTH } from "./sequencerLayout";
 
 interface BpmLogic {
   bpm: number;
@@ -25,16 +25,18 @@ interface StepSequencerControlsProps {
 /** Size and shape shared by the column's small blocks (BPM, loop, keys). */
 const BLOCK_CLASS = "w-full h-8 rounded-md";
 
-/** A transport block with its small-caps label underneath. */
+/** A transport block with its small-caps label underneath, if any. */
 const TransportBlock: React.FC<{
   children: React.ReactNode;
-  label: string;
+  label?: string;
 }> = ({ children, label }) => (
   <div className="flex flex-col items-stretch">
     {children}
-    <span className="mt-1 text-center text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
-      {label}
-    </span>
+    {label && (
+      <span className="mt-1 text-center text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
+        {label}
+      </span>
+    )}
   </div>
 );
 
@@ -106,7 +108,8 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
     <div
       className="flex flex-col items-stretch gap-2 shrink-0"
       data-testid="kit-step-sequencer-controls"
-      style={{ width: TRANSPORT_WIDTH }}
+      // Start level with row 1, below the grid's step-number header
+      style={{ marginTop: HEADER_HEIGHT + ROW_GAP, width: TRANSPORT_WIDTH }}
     >
       {/* One column, one width: every block is the column's width, and the
           small blocks share a height and a label underneath */}
@@ -174,7 +177,7 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
       </TransportBlock>
 
       {onShowKeys && (
-        <TransportBlock label="Keys">
+        <TransportBlock>
           <SequencerKeysButton className={BLOCK_CLASS} onClick={onShowKeys} />
         </TransportBlock>
       )}

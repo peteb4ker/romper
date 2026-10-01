@@ -187,4 +187,34 @@ describe("useKitCreation", () => {
       expect(mockCreateKit).toHaveBeenCalledWith("A2");
     });
   });
+
+  describe("[UC-14] first kit in an empty library or bank (RE-64)", () => {
+    it("creates A0 when the library has no kits", async () => {
+      mockCreateKit.mockResolvedValueOnce(undefined);
+      const onRefreshKits = vi.fn();
+      const { result } = renderHook(() =>
+        useKitCreation({ kits: [], onMessage: vi.fn(), onRefreshKits }),
+      );
+
+      await act(async () => {
+        await result.current.handleCreateKitInBank("A");
+      });
+
+      expect(mockCreateKit).toHaveBeenCalledWith("A0");
+      expect(onRefreshKits).toHaveBeenCalledWith("A0");
+      expect(result.current.newlyCreatedKit).toBe("A0");
+    });
+
+    it("creates the first slot of a bank after the last one with kits", async () => {
+      mockCreateKit.mockResolvedValueOnce(undefined);
+      const { result } = renderHook(() => useKitCreation(defaultProps));
+
+      await act(async () => {
+        await result.current.handleCreateKitInBank("Z");
+      });
+
+      expect(mockCreateKit).toHaveBeenCalledWith("Z0");
+      expect(defaultProps.onRefreshKits).toHaveBeenCalledWith("Z0");
+    });
+  });
 });

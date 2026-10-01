@@ -1,6 +1,5 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import { getNextSlotInBank } from "@romper/shared/kitUtilsShared";
 import React, {
   forwardRef,
   useCallback,
@@ -24,6 +23,7 @@ import { useKitListLogic } from "./hooks/kit-management/useKitListLogic";
 import { useKitListNavigation } from "./hooks/kit-management/useKitListNavigation";
 import { useKitGridKeyboard } from "./hooks/useKitGridKeyboard";
 import { KitGridCard } from "./KitGridCard";
+import { buildGridRows, type GridRow, type KitsRow } from "./utils/kitGridRows";
 
 // Expose imperative scroll/focus API for parent components
 export interface KitGridHandle {
@@ -33,6 +33,7 @@ export interface KitGridHandle {
 
 interface KitGridProps {
   bankNames: Record<string, string>;
+  emptyBank?: null | string; // bank with no kits to show with an add-kit card (RE-64)
   focusedKit?: null | string; // externally controlled focus
   getKitFavoriteState?: (kitName: string) => boolean; // Still needed for computing state
   isCreatingKit?: boolean;
@@ -71,31 +72,9 @@ const MAX_COLUMNS = 6;
 const KIT_ROW_HEIGHT = CARD_HEIGHT + GAP; // card + bottom gap
 const BANK_HEADER_HEIGHT = 60; // header content + bottom gap
 const BANK_SPACING = 16; // extra top spacing before non-first banks
+const HINT_ROW_HEIGHT = 40; // empty-library hint above the first bank
 const MATCH_LINE_HEIGHT = 20; // per matched-sample line when a card expands
 const OVERSCAN_ROW_COUNT = 2;
-
-// Virtualized row model: each list row is a bank header, a row of up to
-// `columnCount` kit cards (optionally ending with the add-kit card), or a
-// standalone add-kit row when the bank's kit count fills its final row.
-interface AddRow {
-  bank: string;
-  type: "add";
-}
-
-type GridRow = AddRow | HeaderRow | KitsRow;
-
-interface HeaderRow {
-  bank: string;
-  isFirstBank: boolean;
-  type: "header";
-}
-
-interface KitsRow {
-  bank: string;
-  kits: KitWithRelations[];
-  showAddCard: boolean;
-  type: "kits";
-}
 
 // Hook for responsive column calculation
 const useResponsiveColumns = (containerWidth: number) => {
@@ -173,57 +152,6 @@ interface GridRowData {
   setFocus: (index: number) => void;
 }
 
-// Build the flattened row model from sorted kits
-function buildGridRows(
-  kitsToDisplay: KitWithRelations[],
-  columnCount: number,
-  showAddCards: boolean,
-): { rowIndexByKitIndex: number[]; rows: GridRow[] } {
-  const rows: GridRow[] = [];
-  const rowIndexByKitIndex: number[] = new Array(kitsToDisplay.length);
-  const existingNames = kitsToDisplay.map((k) => k.name);
-
-  let i = 0;
-  let isFirstBank = true;
-  while (i < kitsToDisplay.length) {
-    const bank = kitsToDisplay[i].name[0];
-    const bankStart = i;
-    const bankKits: KitWithRelations[] = [];
-    while (i < kitsToDisplay.length && kitsToDisplay[i].name[0] === bank) {
-      bankKits.push(kitsToDisplay[i]);
-      i++;
-    }
-
-    rows.push({ bank, isFirstBank, type: "header" });
-    isFirstBank = false;
-
-    const bankHasRoom =
-      showAddCards && getNextSlotInBank(bank, existingNames) !== null;
-
-    for (let c = 0; c < bankKits.length; c += columnCount) {
-      const chunk = bankKits.slice(c, c + columnCount);
-      const isLastChunk = c + columnCount >= bankKits.length;
-      const rowIdx = rows.length;
-      for (let j = 0; j < chunk.length; j++) {
-        rowIndexByKitIndex[bankStart + c + j] = rowIdx;
-      }
-      rows.push({
-        bank,
-        kits: chunk,
-        showAddCard: bankHasRoom && isLastChunk && chunk.length < columnCount,
-        type: "kits",
-      });
-    }
-
-    // Add-kit card gets its own row when the bank's final row is full
-    if (bankHasRoom && bankKits.length % columnCount === 0) {
-      rows.push({ bank, type: "add" });
-    }
-  }
-
-  return { rowIndexByKitIndex, rows };
-}
-
 // Extra row height needed when search-matched samples expand a card
 function getRowExpansionExtra(
   row: KitsRow,
@@ -255,6 +183,20 @@ const GridRowRenderer: React.FC<ListChildComponentProps<GridRowData>> = ({
     margin: "0 auto",
     width: data.gridWidth,
   };
+
+  if (row.type === "hint") {
+    return (
+      <div style={style}>
+        <p
+          className="text-sm text-text-secondary"
+          data-testid="empty-library-hint"
+          style={innerStyle}
+        >
+          No kits yet. Add one below, or pick a bank from the A–Z index.
+        </p>
+      </div>
+    );
+  }
 
   if (row.type === "header") {
     return (
@@ -330,6 +272,7 @@ const GridRowRenderer: React.FC<ListChildComponentProps<GridRowData>> = ({
 const gridRowKey = (index: number, data: GridRowData): string => {
   const row = data.rows[index];
   if (!row) return `row-${index}`;
+  if (row.type === "hint") return "hint";
   if (row.type === "header") return `header-${row.bank}`;
   if (row.type === "add") return `add-${row.bank}`;
   return `kits-${row.kits[0].name}`;
@@ -339,6 +282,7 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
   (
     {
       bankNames,
+      emptyBank,
       focusedKit,
       getKitFavoriteState,
       isCreatingKit,
@@ -384,14 +328,16 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
     // Flatten bank-grouped kits into virtualized rows
     const showAddCards = !isFiltered && !!onCreateKitInBank;
     const { rowIndexByKitIndex, rows } = useMemo(
-      () => buildGridRows(kitsToDisplay, columnCount, showAddCards),
-      [kitsToDisplay, columnCount, showAddCards],
+      () =>
+        buildGridRows(kitsToDisplay, { columnCount, emptyBank, showAddCards }),
+      [kitsToDisplay, columnCount, emptyBank, showAddCards],
     );
 
     const getItemSize = useCallback(
       (index: number) => {
         const row = rows[index];
         if (!row) return KIT_ROW_HEIGHT;
+        if (row.type === "hint") return HINT_ROW_HEIGHT;
         if (row.type === "header") {
           return BANK_HEADER_HEIGHT + (row.isFirstBank ? 0 : BANK_SPACING);
         }
@@ -429,6 +375,18 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       [rowIndexByKitIndex, rows, kitsToDisplay],
     );
 
+    // Bring a newly shown empty bank into view (RE-64)
+    const scrolledEmptyBankRef = useRef<null | string>(null);
+    useEffect(() => {
+      if (!emptyBank || emptyBank === scrolledEmptyBankRef.current) return;
+      const headerIdx = rows.findIndex(
+        (row) => row.type === "header" && row.bank === emptyBank,
+      );
+      if (headerIdx === -1) return;
+      scrolledEmptyBankRef.current = emptyBank;
+      listRef.current?.scrollToItem(headerIdx, "start");
+    }, [emptyBank, rows]);
+
     // Use keyboard navigation hook
     const { handleKeyDown, scrollAndFocusKitByIndex, scrollToKit } =
       useKitGridKeyboard({
@@ -459,7 +417,8 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
     const handleItemsRendered = useCallback(
       ({ visibleStartIndex }: ListOnItemsRenderedProps) => {
         if (!onVisibleBankChange) return;
-        const bank = rows[visibleStartIndex]?.bank;
+        const row = rows[visibleStartIndex];
+        const bank = row && "bank" in row ? row.bank : undefined;
         if (bank && bank !== lastVisibleBankRef.current) {
           lastVisibleBankRef.current = bank;
           onVisibleBankChange(bank);

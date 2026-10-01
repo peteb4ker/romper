@@ -24,6 +24,9 @@ export function useKitBankNavigation({
   const [selectedBank, setSelectedBank] = useState<string>("A");
   const [focusedKit, setFocusedKit] = useState<null | string>(null);
   const [bankNames, setBankNames] = useState<BankNames>({});
+  // A bank with no kits the user picked in the bank index, shown in the
+  // grid so a kit can be added to it (RE-64)
+  const [shownEmptyBank, setShownEmptyBank] = useState<null | string>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const isProgrammaticScrollRef = useRef(false);
   const scrollTargetBankRef = useRef<null | string>(null);
@@ -105,6 +108,22 @@ export function useKitBankNavigation({
     [kits, handleBankClick],
   );
 
+  // Select a bank and keep it selected while the grid scrolls to it, so
+  // visible-bank updates fired mid-scroll don't override the choice
+  const holdSelectedBankWhileScrolling = useCallback((bank: string) => {
+    isProgrammaticScrollRef.current = true;
+    scrollTargetBankRef.current = bank;
+    setSelectedBank(bank);
+    setTimeout(() => {
+      isProgrammaticScrollRef.current = false;
+      // Restore correct bank in case IO fired during scroll
+      if (scrollTargetBankRef.current) {
+        setSelectedBank(scrollTargetBankRef.current);
+        scrollTargetBankRef.current = null;
+      }
+    }, 1000);
+  }, []);
+
   // Virtualization-based bank focus/scroll logic
   const focusBankInKitList = useCallback(
     (bank: string) => {
@@ -114,9 +133,7 @@ export function useKitBankNavigation({
         kitListRef?.current &&
         typeof kitListRef.current.scrollAndFocusKitByIndex === "function"
       ) {
-        isProgrammaticScrollRef.current = true;
-        scrollTargetBankRef.current = bank;
-        setSelectedBank(bank);
+        holdSelectedBankWhileScrolling(bank);
         // Call for focus side-effects (setFocus + onFocusKit)
         kitListRef.current.scrollAndFocusKitByIndex(idx);
         setFocusedKit(kits[idx].name);
@@ -125,18 +142,19 @@ export function useKitBankNavigation({
         if (bankHeader) {
           bankHeader.scrollIntoView({ behavior: "smooth", block: "start" });
         }
-        setTimeout(() => {
-          isProgrammaticScrollRef.current = false;
-          // Restore correct bank in case IO fired during scroll
-          if (scrollTargetBankRef.current) {
-            setSelectedBank(scrollTargetBankRef.current);
-            scrollTargetBankRef.current = null;
-          }
-        }, 1000);
       }
       // If no kit in that bank, do not update selectedBank or focusedKit
     },
-    [kits, kitListRef],
+    [kits, kitListRef, holdSelectedBankWhileScrolling],
+  );
+
+  // Show a bank with no kits in the grid so a kit can be added to it
+  const showEmptyBank = useCallback(
+    (bank: string) => {
+      holdSelectedBankWhileScrolling(bank);
+      setShownEmptyBank(bank);
+    },
+    [holdSelectedBankWhileScrolling],
   );
 
   // Global A-Z hotkey handler: select bank and scroll/focus first kit
@@ -209,10 +227,12 @@ export function useKitBankNavigation({
     scrollContainerRef,
     // State
     selectedBank,
-
     setBankNames,
+
     setFocusedKit,
     // Setters
     setSelectedBank,
+    showEmptyBank,
+    shownEmptyBank,
   };
 }

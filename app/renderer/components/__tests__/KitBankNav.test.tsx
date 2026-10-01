@@ -74,6 +74,47 @@ describe("KitBankNav", () => {
     expect(onBankClick).not.toHaveBeenCalled();
   });
 
+  describe("[UC-14] empty banks with onEmptyBankClick (RE-64)", () => {
+    const kits = [createMockKitWithRelations({ bank_letter: "A", name: "A1" })];
+
+    it("keeps empty banks clickable and reports them separately", () => {
+      const onBankClick = vi.fn();
+      const onEmptyBankClick = vi.fn();
+      render(
+        <KitBankNav
+          kits={kits}
+          onBankClick={onBankClick}
+          onEmptyBankClick={onEmptyBankClick}
+        />,
+      );
+
+      const cButton = screen.getByRole("button", { name: "Jump to bank C" });
+      expect(cButton).not.toBeDisabled();
+      fireEvent.click(cButton);
+      expect(onEmptyBankClick).toHaveBeenCalledWith("C");
+      expect(onBankClick).not.toHaveBeenCalled();
+
+      fireEvent.click(screen.getByRole("button", { name: "Jump to bank A" }));
+      expect(onBankClick).toHaveBeenCalledWith("A");
+      expect(onEmptyBankClick).toHaveBeenCalledTimes(1);
+    });
+
+    it("highlights a selected empty bank", () => {
+      render(
+        <KitBankNav
+          kits={kits}
+          onBankClick={() => {}}
+          onEmptyBankClick={() => {}}
+          selectedBank="C"
+        />,
+      );
+
+      expect(
+        screen.getByRole("button", { name: "Jump to bank C" }),
+      ).toHaveAttribute("aria-current", "true");
+    });
+  });
+
   it("shows bankNames as title if provided", () => {
     const mockKits = [
       createMockKitWithRelations({ bank_letter: "A", name: "A1" }),

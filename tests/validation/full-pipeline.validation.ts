@@ -46,6 +46,19 @@ const REPORT_DIR = path.resolve(
  * or error level fails the run.
  */
 const EXPECTED: Expectation[] = [
+  // Chromium's own logging about the CI machine, not about Romper
+  {
+    pattern: /:ERROR:dbus\/(bus|object_proxy)\.cc:\d+\]/,
+    reason: "Linux CI runners have no D-Bus session for Chromium to connect to",
+    sources: ["main-stderr"],
+  },
+  {
+    pattern:
+      /:ERROR:sandbox\/mac\/system_services\.cc:\d+\] SetApplicationIsDaemon/,
+    reason:
+      "Chromium logs this on macOS runners when the app runs as an accessory (hidden window)",
+    sources: ["main-stderr"],
+  },
   {
     pattern:
       /^(Debugger (listening|ending) on ws:|For help, see: https:\/\/nodejs\.org)/,
@@ -193,7 +206,9 @@ test("[UC-02] [UC-14] [UC-19] [UC-24] [UC-28] [UC-34] factory download to card, 
       } finally {
         if (page) {
           await collector.harvest(page);
-          const file = `${String(++screen).padStart(2, "0")} ${name}.png`;
+          // Artifact uploads refuse characters such as ":" in file names
+          const safe = name.replaceAll(/[^\w .-]/g, "");
+          const file = `${String(++screen).padStart(2, "0")} ${safe}.png`;
           await page
             .screenshot({ path: path.join(REPORT_DIR, "screens", file) })
             .catch(() => {});
@@ -347,7 +362,11 @@ test("[UC-02] [UC-14] [UC-19] [UC-24] [UC-28] [UC-34] factory download to card, 
       );
       report.check(
         "voice 1 shows the stereo badge",
-        await p.locator('[data-testid="stereo-badge-1"]').isVisible(),
+        await p
+          .locator('[data-testid="stereo-badge-1"]')
+          .waitFor({ timeout: 10_000 })
+          .then(() => true)
+          .catch(() => false),
       );
     });
 

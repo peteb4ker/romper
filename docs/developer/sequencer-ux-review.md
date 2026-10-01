@@ -1,7 +1,7 @@
 <!--
 title: Step Sequencer UX Review and Proposal
 priority: medium
-status: accepted; Phase 0 merged (#371); refresh #373; polish (C4, C9, slice choke) in progress
+status: accepted; Phase 0 merged (#371); refresh #373; polish #375; trim in progress
 updated: 2026-09-30
 context_size: medium
 -->
@@ -173,12 +173,13 @@ each other and can land in any order.
 
 ### Polish (after #373)
 
-- **C4:** a status line under the grid with the keys that matter where
-  focus is (the slicer's keys on a slice row), a `?` overlay with every
-  shortcut (`?` again or Escape closes it), and an `S` keycap on the
-  Show/Hide handle.
-- **C9:** a grip on the drawer's top edge sets the pad height; the drag
-  is shared by the four rows so the edge tracks the pointer.
+- **C4:** a `?` overlay with every shortcut (`?` again or Escape closes
+  it), opened by `?` or a **? Keys** button in the grid header, and an
+  `S` keycap on the Show/Hide handle. #375 also added a status line under
+  the grid; Pete removed it (too busy), keeping only the button.
+- **C9:** #375 added a grip to set the pad height by dragging the
+  drawer's edge. Pete removed it: the layout has one sweet spot, and
+  other heights look wrong. Pads keep the window-driven size.
 - **Slice auditions always choke.** Pete heard slice auditions overlap.
   Retriggering one slot already stopped its previous sound, and the cases
   reproduced in the app choked correctly, but the choke between slots

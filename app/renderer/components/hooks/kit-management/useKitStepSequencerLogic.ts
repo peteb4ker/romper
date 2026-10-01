@@ -436,9 +436,10 @@ export function useKitStepSequencerLogic(
   const handleStepGridKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (!sequencerOpen) return;
-      // Popovers are portals: their keys bubble through React to the grid,
-      // but they aren't grid keys
-      if (!isInside(e.currentTarget, e.target)) return;
+      // Only the grid and its step pads take grid keys. The row controls
+      // (mute, mode, level, ?) keep theirs, and portalled popovers bubble
+      // through React to the grid but aren't part of it.
+      if (!isGridKeyTarget(e.currentTarget, e.target)) return;
 
       const { step, voice } = focusedStep;
 
@@ -522,11 +523,16 @@ export function useKitStepSequencerLogic(
   };
 }
 
-/** Whether a key event's target is in the element's own DOM subtree. */
-function isInside(container: EventTarget | null, target: EventTarget | null) {
-  const el = container as Node | null;
-  if (!el?.contains) return true; // no DOM to check (tests): assume inside
-  return el.contains(target as Node | null);
+/** Whether a key event came from the grid itself or one of its pads. */
+function isGridKeyTarget(
+  container: EventTarget | null,
+  target: EventTarget | null,
+): boolean {
+  const grid = container as HTMLElement | null;
+  if (!grid?.contains) return true; // no DOM to check (tests): assume a pad
+  if (target === grid) return true;
+  const el = target as HTMLElement | null;
+  return !!el && grid.contains(el) && el.getAttribute?.("role") === "gridcell";
 }
 
 /**
@@ -555,13 +561,14 @@ function isVoiceDue(args: {
 
 /**
  * Controls where Space has its own meaning (typing, pressing a button,
- * ticking a box, opening a select). The step grid is not one of them: its
- * own handler turns Space into play/stop.
+ * ticking a box, opening a select). The grid and its step pads are not:
+ * the grid's own handler turns Space into play/stop.
  */
 function usesSpaceItself(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null;
   if (!el?.tagName) return false;
-  if (el.closest?.('[role="grid"]')) return false;
+  const role = el.getAttribute?.("role");
+  if (role === "grid" || role === "gridcell") return false;
   return (
     ["BUTTON", "INPUT", "SELECT", "TEXTAREA"].includes(el.tagName) ||
     el.isContentEditable === true

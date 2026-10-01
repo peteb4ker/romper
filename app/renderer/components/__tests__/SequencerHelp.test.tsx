@@ -2,29 +2,18 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { SequencerKeysOverlay, SequencerStatusLine } from "../SequencerHelp";
+import { SequencerKeysButton, SequencerKeysOverlay } from "../SequencerHelp";
 
 afterEach(() => cleanup());
 
-describe("SequencerStatusLine", () => {
-  it("shows the general keys, and the slicer keys on a slice row", () => {
-    const { rerender } = render(
-      <SequencerStatusLine onShowKeys={vi.fn()} sliceRow={false} />,
-    );
-    const line = screen.getByTestId("sequencer-status-line");
-    expect(line).toHaveTextContent("play / stop");
-    expect(line).not.toHaveTextContent("roll");
-
-    rerender(<SequencerStatusLine onShowKeys={vi.fn()} sliceRow={true} />);
-    expect(line).toHaveTextContent("roll");
-    expect(line).not.toHaveTextContent("play / stop");
-  });
-
-  it("opens the full list", () => {
-    const onShowKeys = vi.fn();
-    render(<SequencerStatusLine onShowKeys={onShowKeys} sliceRow={false} />);
-    fireEvent.click(screen.getByTestId("sequencer-keys-button"));
-    expect(onShowKeys).toHaveBeenCalled();
+describe("SequencerKeysButton", () => {
+  it("opens the shortcut list", () => {
+    const onClick = vi.fn();
+    render(<SequencerKeysButton onClick={onClick} />);
+    const button = screen.getByTestId("sequencer-keys-button");
+    expect(button).toHaveAccessibleName("Keyboard shortcuts");
+    fireEvent.click(button);
+    expect(onClick).toHaveBeenCalled();
   });
 });
 

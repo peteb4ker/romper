@@ -21,21 +21,6 @@ interface Shortcut {
   keys: React.ReactNode[];
 }
 
-const GENERAL: Shortcut[] = [
-  { does: "play / stop", keys: ["Space"] },
-  { does: "toggle step", keys: ["Enter"] },
-  { does: "move", keys: ["←", "↑", "↓", "→"] },
-  { does: "undo", keys: [UNDO] },
-];
-
-const SLICES: Shortcut[] = [
-  { does: "slice", keys: ["[", "]"] },
-  { does: "length", keys: ["{", "}"] },
-  { does: "random", keys: ["R"] },
-  { does: "lock", keys: ["L"] },
-  { does: "roll", keys: ["D"] },
-];
-
 /** Every sequencer shortcut, grouped. */
 const ALL_SHORTCUTS: { group: string; items: Shortcut[] }[] = [
   {
@@ -68,49 +53,21 @@ const ALL_SHORTCUTS: { group: string; items: Shortcut[] }[] = [
   },
 ];
 
-interface SequencerStatusLineProps {
-  onShowKeys: () => void;
-  /** The focused step is on a slice row: show the slicer keys. */
-  sliceRow: boolean;
-}
-
-function ShortcutList({ items }: { items: Shortcut[] }) {
-  return (
-    <>
-      {items.map((s) => (
-        <span className="inline-flex items-center gap-1" key={s.does}>
-          {s.keys.map((k) => (
-            <Kbd key={String(k)}>{k}</Kbd>
-          ))}
-          <span>{s.does}</span>
-        </span>
-      ))}
-    </>
-  );
-}
-
-/** One line of the shortcuts that matter where focus is. */
-export const SequencerStatusLine: React.FC<SequencerStatusLineProps> = ({
-  onShowKeys,
-  sliceRow,
+/** Opens the shortcut list: a "?" keycap with a label. */
+export const SequencerKeysButton: React.FC<{ onClick: () => void }> = ({
+  onClick,
 }) => (
-  <div
-    className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-text-tertiary"
-    data-testid="sequencer-status-line"
+  <button
+    aria-label="Keyboard shortcuts"
+    className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-tertiary hover:text-text-primary hover:bg-surface-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+    data-testid="sequencer-keys-button"
+    onClick={onClick}
+    title="Keyboard shortcuts (?)"
+    type="button"
   >
-    <ShortcutList items={sliceRow ? SLICES : GENERAL} />
-    <span>Right-click a step for options</span>
-    <button
-      className="inline-flex items-center gap-1 rounded px-1 hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
-      data-testid="sequencer-keys-button"
-      onClick={onShowKeys}
-      title="All sequencer shortcuts (?)"
-      type="button"
-    >
-      <Kbd>?</Kbd>
-      <span>all keys</span>
-    </button>
-  </div>
+    <Kbd>?</Kbd>
+    Keys
+  </button>
 );
 
 /** The full shortcut list, over the sequencer. */

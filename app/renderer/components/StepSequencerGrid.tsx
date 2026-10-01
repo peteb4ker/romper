@@ -22,6 +22,7 @@ import {
   type TriggerCondition,
 } from "./hooks/shared/stepPatternConstants";
 import { usePopoverDismiss } from "./hooks/shared/usePopoverDismiss";
+import { SequencerKeysButton } from "./SequencerHelp";
 import {
   LABEL_GAP,
   LABEL_WIDTH,
@@ -364,6 +365,8 @@ interface StepSequencerGridProps {
   ) => void;
   onMuteToggle?: (voiceNumber: number) => void;
   onSampleModeChange?: (voiceNumber: number, mode: SampleMode) => void;
+  /** Opens the keyboard shortcut list (a "?" button in the header). */
+  onShowKeys?: () => void;
   onSliceStepUpdate?: (
     voiceIdx: number,
     stepIdx: number,
@@ -412,6 +415,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
   onConditionChange,
   onMuteToggle,
   onSampleModeChange,
+  onShowKeys,
   onSliceStepUpdate,
   onSliceToggle,
   onStepClick,
@@ -547,12 +551,12 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
       <div className="flex items-end">
         <StepRuler isSeqPlaying={isSeqPlaying} playheadStep={currentSeqStep} />
         <div
-          aria-hidden
           className="flex items-end gap-2.5"
           style={{ marginLeft: SETTINGS_GAP }}
         >
           {onSliceToggle && (
             <span
+              aria-hidden
               className={`${headerClass} text-center`}
               style={{ width: SLICE_COLUMN_WIDTH }}
             >
@@ -560,13 +564,20 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
             </span>
           )}
           <span
+            aria-hidden
             className={`${headerClass} text-center`}
             style={{ width: MODE_COLUMN_WIDTH }}
           >
             Sample
           </span>
-          <span className={headerClass} style={{ width: LEVEL_COLUMN_WIDTH }}>
-            Level
+          <span
+            className="flex items-end justify-between"
+            style={{ width: LEVEL_COLUMN_WIDTH }}
+          >
+            <span aria-hidden className={headerClass}>
+              Level
+            </span>
+            {onShowKeys && <SequencerKeysButton onClick={onShowKeys} />}
           </span>
         </div>
       </div>

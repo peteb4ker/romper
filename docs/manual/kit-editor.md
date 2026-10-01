@@ -77,7 +77,7 @@ The primary way to add samples is drag and drop:
 
 ### Stereo and Mono Handling
 
-Stereo is set per voice, as on the Rample. Click the link icon between two neighbouring voices to link them as a stereo pair; the left voice shows a **Stereo** badge, and its samples play in stereo across both voices' outputs. Nothing can be added to the right-hand voice while the pair is linked. Click the **Stereo** badge to unlink the pair: the voice keeps its samples, and any stereo files on it are mixed down to mono at the next write.
+Stereo is set per voice, as on the Rample. Click the link icon between two neighbouring voices to link them as a stereo pair; the left voice shows a **Stereo** badge, and its samples play in stereo across both voices' outputs. Nothing can be added to the right-hand voice while the pair is linked. Click the **Stereo** badge to unlink the pair: the voice keeps its samples, and any stereo files on it are mixed down to mono at the next write. Linking and unlinking change what the next write puts on the card, so, like other edits, they need the kit to be editable; on a read-only kit the badge shows the pair but doesn't unlink it.
 
 When you write to the card:
 

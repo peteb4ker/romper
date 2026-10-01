@@ -704,4 +704,31 @@ describe("KitVoicePanels", () => {
       });
     });
   });
+  // RE-71: stereo linking is an edit
+  describe("[UC-28] on a read-only kit", () => {
+    it("offers no link control", () => {
+      render(<MultiVoicePanelsTestWrapper isEditable={false} />);
+      expect(screen.queryByTestId(/^link-button-/)).toBeNull();
+    });
+
+    it("shows the stereo pair without letting it be unlinked", () => {
+      const voices = [
+        {
+          samples: ["kick.wav"],
+          stereo_mode: true,
+          voice: 1,
+          voiceName: "Kick",
+        },
+        { samples: [], voice: 2, voiceName: "Hat" },
+        { samples: [], voice: 3, voiceName: "Tom" },
+        { samples: [], voice: 4, voiceName: "Perc" },
+      ];
+      render(
+        <MultiVoicePanelsTestWrapper isEditable={false} voices={voices} />,
+      );
+      const badge = screen.getByTestId("stereo-badge-1");
+      expect(badge.tagName).not.toBe("BUTTON");
+      expect(badge).toHaveTextContent("Stereo");
+    });
+  });
 });

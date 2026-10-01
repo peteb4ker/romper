@@ -76,7 +76,6 @@ This file tracks what's being done about each item.
 | RE-57 | Medium | Contract | The bridge contract does not bind main. `SyncChangeSummary` does not match what main returns (the renderer casts it); `SyncProgress` is defined four times with different fields and status values; several return types differ from the contract (null versus undefined, `unknown`, an `"overwrite"` mode main rejects). | open |
 | RE-58 | Medium | Tooling | The pre-commit tests fail with Vitest worker-start timeouts when the machine is busy (load average above ~20, for example several sessions testing at once), because `vitest.config.fast.ts` always starts 10 workers. | open |
 | RE-66 | Medium | Setup | Cancel during setup quits mid-import on first run and leaves a half-built store that blocks a retry in the same folder. | partly done (#408: quitting cleans up an unfinished setup; next: real cancel, [`validation-fix-plan.md`](docs/developer/validation-fix-plan.md) item 4 step 2) |
-| RE-71 | Medium | Stereo | Stereo link and unlink work on kits that aren't editable, changing what the next write puts on the card. | open (needs a decision: is stereo an edit?) |
 | RE-72 | Medium | About | The About dialog shows "Version: dev" in every build: nothing defines `VITE_APP_VERSION`. | open |
 | RE-73 | Medium | Setup | SD-card setup ignores a failed kit copy and imports whatever was copied, with no message. | open |
 
@@ -84,6 +83,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-71 | Medium | Stereo | Stereo link and unlink worked on kits that aren't editable, changing what the next write puts on the card. | done (#PR: linking is an edit; read-only kits show the pair but offer no link or unlink, and main refuses the change) |
 | RE-34 | Medium | Setup | Voice naming in the setup wizard did nothing (its writes went to a store not yet configured), and setup read every WAV over IPC. | done (#413: setup imports kits in main with the rescan merge: samples, WAV metadata and voice names in one transaction per kit) |
 | RE-32 | Medium | Kits | Kit names were checked inconsistently: setup imported folders such as `Drum01` that the kit service then refused to delete or duplicate. | done (#413: setup imports only folders named like kits, A0-Z99, the same rule `kitService` uses; `insert-kit` is gone) |
 | RE-69 | High | Stereo | Unlinking a stereo pair silently did nothing when the voice held a 2-channel file; the `is_stereo` rules contradicted "stereo is a voice setting". | done (#407: unlink only clears `voices.stereo_mode`; `samples.is_stereo` dropped; main refuses samples on the right-hand voice of a linked pair; proven by `npm run validate:full`) |

@@ -10,7 +10,7 @@ Regenerate with `npm run trace`; CI runs `npm run trace:check`, which
 fails on an unknown ID, on a supported use case with no test above unit
 level (unless the register declares the gap), and when this file is stale.
 
-37 use cases: 15 supported, 20 partial, 2 not built. 1318 of 4339 tests carry a use case tag.
+37 use cases: 15 supported, 20 partial, 2 not built. 1321 of 4344 tests carry a use case tag.
 
 ## Matrix
 
@@ -43,7 +43,7 @@ level (unless the register declares the gap), and when this file is stale.
 | [UC-25](use-cases.md#uc-25-reveal-a-sample-in-finder-or-explorer) Reveal a sample in Finder or Explorer | supported | [5](#uc-25) | - | - | - |
 | [UC-26](use-cases.md#uc-26-undo-and-redo) Undo and redo | partial | [44](#uc-26) | [3](#uc-26) | [3](#uc-26) | - |
 | [UC-27](use-cases.md#uc-27-name-voices) Name voices | supported | [33](#uc-27) | [8](#uc-27) | - | - |
-| [UC-28](use-cases.md#uc-28-link-a-voice-pair-as-stereo) Link a voice pair as stereo | supported | [15](#uc-28) | [9](#uc-28) | [1](#uc-28) | [1](#uc-28) |
+| [UC-28](use-cases.md#uc-28-link-a-voice-pair-as-stereo) Link a voice pair as stereo | supported | [17](#uc-28) | [9](#uc-28) | [2](#uc-28) | [1](#uc-28) |
 | [UC-29](use-cases.md#uc-29-play-a-sample) Play a sample | partial | [20](#uc-29) | [4](#uc-29) | [3](#uc-29) | - |
 | [UC-30](use-cases.md#uc-30-step-sequencer) Step sequencer | supported | [6](#uc-30) | [3](#uc-30) | [1](#uc-30) | - |
 | [UC-31](use-cases.md#uc-31-trigger-conditions) Trigger conditions | supported | [42](#uc-31) | [1](#uc-31) | - | - |
@@ -355,7 +355,7 @@ Partial or not-built use cases with no test above unit level:
 
 [UC-28](use-cases.md#uc-28-link-a-voice-pair-as-stereo) Link a voice pair as stereo (supported)
 
-- Unit: [`app/renderer/components/__tests__/KitVoicePanels.test.tsx`](../../app/renderer/components/__tests__/KitVoicePanels.test.tsx#L511) (9 tests)
+- Unit: [`app/renderer/components/__tests__/KitVoicePanels.test.tsx`](../../app/renderer/components/__tests__/KitVoicePanels.test.tsx#L511) (11 tests)
 - Unit: [`app/renderer/components/hooks/sample-management/__tests__/useStereoHandling.test.ts`](../../app/renderer/components/hooks/sample-management/__tests__/useStereoHandling.test.ts#L175) (1 test)
 - Unit: [`electron/main/services/__tests__/sampleBatchOperations.test.ts`](../../electron/main/services/__tests__/sampleBatchOperations.test.ts#L322) (1 test)
 - Unit: [`electron/main/services/__tests__/sampleValidation.test.ts`](../../electron/main/services/__tests__/sampleValidation.test.ts#L79) (1 test)
@@ -364,7 +364,7 @@ Partial or not-built use cases with no test above unit level:
 - Integration: [`electron/main/db/operations/__tests__/voiceCrudOperations.integration.test.ts`](../../electron/main/db/operations/__tests__/voiceCrudOperations.integration.test.ts#L90) (1 test)
 - Integration: [`electron/main/services/__tests__/sampleValidation.integration.test.ts`](../../electron/main/services/__tests__/sampleValidation.integration.test.ts#L515) (5 tests)
 - Integration: [`tests/integration/sync-stereo.integration.test.ts`](../../tests/integration/sync-stereo.integration.test.ts#L59) (3 tests)
-- E2E: [`tests/e2e/stereo-voice.e2e.test.ts`](../../tests/e2e/stereo-voice.e2e.test.ts#L66) (1 test)
+- E2E: [`tests/e2e/stereo-voice.e2e.test.ts`](../../tests/e2e/stereo-voice.e2e.test.ts#L66) (2 tests)
 - Validation: [`tests/validation/full-pipeline.validation.ts`](../../tests/validation/full-pipeline.validation.ts#L141) (1 test)
 
 ### UC-29

@@ -1,8 +1,17 @@
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 
-import type { PlayOptions, VoiceSamples } from "../../kitTypes";
+import type { PlayOptions } from "../../kitTypes";
 
-export function useKitPlayback(samples: null | undefined | VoiceSamples) {
+/**
+ * Playback state for the kit editor's samples, keyed "voice:sample". The
+ * maps start empty; a missing entry reads as 0 or not playing.
+ *
+ * Nothing here resets when the kit's samples are reloaded. It used to: every
+ * step, condition, mode, volume or alias edit reloads the kit, and the reset
+ * cleared "playing" while samples still sounded, so the next trigger on that
+ * voice didn't choke them (RE-13).
+ */
+export function useKitPlayback() {
   const [playbackError, setPlaybackError] = useState<null | string>(null);
   const [playTriggers, setPlayTriggers] = useState<{ [key: string]: number }>(
     {},
@@ -14,31 +23,11 @@ export function useKitPlayback(samples: null | undefined | VoiceSamples) {
     [key: string]: boolean;
   }>({});
 
-  // Initialize playback states for all existing samples
-  useEffect(() => {
-    if (!samples) return;
-
-    const newPlayTriggers: { [key: string]: number } = {};
-    const newStopTriggers: { [key: string]: number } = {};
-    const newSamplePlaying: { [key: string]: boolean } = {};
-
-    // Initialize states for all samples across all voices
-    for (let voice = 1; voice <= 4; voice++) {
-      const voiceSamples = samples?.[voice] || [];
-      voiceSamples.forEach((sample: string) => {
-        if (sample) {
-          const sampleKey = voice + ":" + sample;
-          newPlayTriggers[sampleKey] = 0;
-          newStopTriggers[sampleKey] = 0;
-          newSamplePlaying[sampleKey] = false;
-        }
-      });
-    }
-
-    setPlayTriggers(newPlayTriggers);
-    setStopTriggers(newStopTriggers);
-    setSamplePlaying(newSamplePlaying);
-  }, [samples]);
+  // Samples triggered and not yet finished. The voice choke reads this, not
+  // samplePlaying: it updates as soon as a sample is triggered (a sequencer
+  // can trigger the next sound before the first reports that it's playing)
+  // and nothing re-renders or resets it.
+  const activeSamples = useRef(new Set<string>());
 
   const [playVolumes, setPlayVolumes] = useState<{ [key: string]: number }>({});
   const [playOptions, setPlayOptions] = useState<{
@@ -53,33 +42,32 @@ export function useKitPlayback(samples: null | undefined | VoiceSamples) {
   ) => {
     const key = voice + ":" + sample;
 
-    // Voice choke: stop any other sample currently playing on this voice
+    // Voice choke: stop any other sample still sounding on this voice
     const voicePrefix = voice + ":";
-    setSamplePlaying((state) => {
-      const chokeKeys = Object.keys(state).filter(
-        (k) => k.startsWith(voicePrefix) && k !== key && state[k],
-      );
-      if (chokeKeys.length > 0) {
-        // Stop the choked samples when the new one starts, not before
-        if (options?.startAt != null) {
-          setPlayOptions((prev) => {
-            const next = { ...prev };
-            for (const k of chokeKeys) {
-              next[k] = { ...prev[k], stopAt: options.startAt };
-            }
-            return next;
-          });
-        }
-        setStopTriggers((triggers) => {
-          const updates: { [key: string]: number } = {};
+    const chokeKeys = [...activeSamples.current].filter(
+      (k) => k.startsWith(voicePrefix) && k !== key,
+    );
+    for (const k of chokeKeys) activeSamples.current.delete(k);
+    activeSamples.current.add(key);
+    if (chokeKeys.length > 0) {
+      // Stop the choked samples when the new one starts, not before
+      if (options?.startAt != null) {
+        setPlayOptions((prev) => {
+          const next = { ...prev };
           for (const k of chokeKeys) {
-            updates[k] = (triggers[k] || 0) + 1;
+            next[k] = { ...prev[k], stopAt: options.startAt };
           }
-          return { ...triggers, ...updates };
+          return next;
         });
       }
-      return state;
-    });
+      setStopTriggers((triggers) => {
+        const updates: { [key: string]: number } = {};
+        for (const k of chokeKeys) {
+          updates[k] = (triggers[k] || 0) + 1;
+        }
+        return { ...triggers, ...updates };
+      });
+    }
 
     setPlayTriggers((triggers) => ({
       ...triggers,
@@ -96,6 +84,7 @@ export function useKitPlayback(samples: null | undefined | VoiceSamples) {
     setPlaybackError(null);
   };
   const handleStop = (voice: number, sample: string) => {
+    activeSamples.current.delete(voice + ":" + sample);
     setStopTriggers((triggers) => ({
       ...triggers,
       [voice + ":" + sample]: (triggers[voice + ":" + sample] || 0) + 1,
@@ -107,6 +96,9 @@ export function useKitPlayback(samples: null | undefined | VoiceSamples) {
     sample: string,
     playing: boolean,
   ) => {
+    const key = voice + ":" + sample;
+    if (playing) activeSamples.current.add(key);
+    else activeSamples.current.delete(key);
     setSamplePlaying((state) => ({
       ...state,
       [voice + ":" + sample]: playing,

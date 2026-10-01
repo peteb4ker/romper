@@ -338,6 +338,20 @@ describe("download-and-extract-archive handler", () => {
     );
   }, 15000);
 
+  it("decodes a file:// URL to a real path (escapes, Windows drives)", async () => {
+    vi.mocked(fs.existsSync).mockReturnValue(false);
+    const { pathToFileURL } = await import("node:url");
+    const local =
+      process.platform === "win32"
+        ? String.raw`C:\My Samples\archive.zip`
+        : "/My Samples/archive.zip";
+
+    const handler = ipcMainHandlers["download-and-extract-archive"];
+    await invokeWithArchiveUrl(handler, pathToFileURL(local).href);
+
+    expect(fs.existsSync).toHaveBeenCalledWith(local);
+  }, 15000);
+
   it("handles file:// URLs for non-existent local files", async () => {
     vi.mocked(fs.existsSync).mockReturnValue(false);
 

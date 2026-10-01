@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
   countZipEntries,
@@ -159,7 +160,9 @@ export class ArchiveService {
    * Handle local file URL
    */
   private handleFileUrl(url: string): string {
-    const tmpZipPath = url.replace("file://", "");
+    // fileURLToPath, not string slicing: on Windows file:///C:/x.zip is
+    // C:\x.zip, and %20 and other escapes must be decoded on every platform
+    const tmpZipPath = fileURLToPath(url);
     logger.log("[ArchiveService] Using local file for extraction:", tmpZipPath);
 
     if (!fs.existsSync(tmpZipPath)) {

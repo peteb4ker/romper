@@ -62,7 +62,6 @@ This file tracks what's being done about each item.
 | RE-39 | Medium | Renderer | Kit-grid keyboard navigation is broken: index 0 is treated as "nothing focused", so arrow keys and Enter do nothing from the first kit (the default). | open |
 | RE-40 | Medium | Renderer | More silent failures: stereo link errors are ignored; rejected drops (duplicate, bad format, full voice) go only to the console; undo errors never reach the UI; the sync-failure toast reads a stale value. | open |
 | RE-41 | Medium | Renderer | Toggling "editable" and editing the kit alias rethrow IPC errors into click and blur handlers with no catch, giving unhandled rejections. | open |
-| RE-42 | Medium | Setup | Truncation guidance ("some samples were skipped") is never shown after SD or factory imports, because the UI reads the warnings from before `initialize()` ran. | open |
 | RE-43 | Medium | Scan | "Scan All" from the menu scans only the kits that pass the current filters, and with the editor open it scans banks only. | open |
 | RE-44 | Medium | Settings | The "Confirm destructive actions" preference is shown but never read; sample delete and replace run immediately. | open |
 | RE-45 | Medium | Playback | Playback triggers and sample metadata are keyed by file name, so two samples with the same name in one voice play together (bypassing the choke), and same-named files in different voices share gain and metadata in the UI. | partly done: sounds now choke at the audio layer (`voiceChoke.ts`), so the audible choke no longer depends on this state; the state itself is unchanged |
@@ -85,6 +84,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-42 | Medium | Setup | The notice naming samples left out by the 12-per-voice limit never showed after SD or factory setup: the UI read the warnings from before `initialize()` ran. | done (#410) |
 | Low | Low | Tests | Test and tooling hygiene from the validation audit: an empty `ROMPER_LOCAL_PATH` counted as an override (Test Mode banner); dead `VITE_ROMPER_TEST_MODE` branch; screenshots used the installed app's settings; an integration test wrote into the source tree; `coverage:total` read the wrong folder; `worktree:create` hid the failing command. | done (#409, plan item 7) |
 | RE-24 | Medium | Archive | The factory download had no status check, redirect handling, timeout or checksum; the ~313 MiB zip was never deleted; extraction ignored write and mkdir errors. | done (#405: fetch with an idle timeout, pinned SHA-256, zip deleted in `finally`, extraction fails on any write error) |
 | RE-64 | High | Kits | A kit can only be created in a bank that already has one, so an empty local store can't create its first kit. | done (#401) |

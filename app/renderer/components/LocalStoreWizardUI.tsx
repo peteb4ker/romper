@@ -6,6 +6,8 @@ import {
 } from "@phosphor-icons/react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
+import type { TruncationWarning } from "./hooks/wizard/useLocalStoreWizardState";
+
 import { config } from "../config";
 import { useLocalStoreWizard } from "./hooks/wizard/useLocalStoreWizard";
 import FilePickerButton from "./utils/FilePickerButton";
@@ -48,6 +50,9 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
     );
     const [isSelectingExisting, setIsSelectingExisting] = useState(false);
     const [showPostInitGuidance, setShowPostInitGuidance] = useState(false);
+    const [truncationWarnings, setTruncationWarnings] = useState<
+      TruncationWarning[]
+    >([]);
     const {
       canInitialize, // from hook
       defaultPath,
@@ -108,8 +113,10 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
     const handleInitialize = useCallback(async () => {
       const result = await initialize();
       if (result.success) {
-        const hasWarnings =
-          state.truncationWarnings && state.truncationWarnings.length > 0;
+        // From this run's result: `state` here is the render before it ran
+        const warnings = result.truncationWarnings ?? [];
+        setTruncationWarnings(warnings);
+        const hasWarnings = warnings.length > 0;
         const isBlankFolder = state.source === "blank";
 
         if (isBlankFolder || hasWarnings) {
@@ -118,7 +125,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
           onSuccess();
         }
       }
-    }, [initialize, onSuccess, state.truncationWarnings, state.source]);
+    }, [initialize, onSuccess, state.source]);
 
     // Helper function to validate electronAPI availability
     const validateElectronAPI = useCallback(() => {
@@ -257,7 +264,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
               setShowPostInitGuidance(false);
               if (onSuccess) onSuccess();
             }}
-            truncationWarnings={state.truncationWarnings}
+            truncationWarnings={truncationWarnings}
           />
         )}
 

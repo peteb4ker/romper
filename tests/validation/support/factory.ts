@@ -123,6 +123,30 @@ export async function verifyFactoryImport(
     byteProblems.length === 0,
     { details: byteProblems.slice(0, 5).join("; ") },
   );
+  // RE-34: setup imports in main, which reads every file's WAV header and
+  // names voices from their first sample's file name
+  const withoutMetadata = store.samples.filter(
+    (s) =>
+      s.wav_sample_rate === null ||
+      s.wav_bit_depth === null ||
+      s.wav_channels === null,
+  );
+  report.check(
+    "every imported sample has its WAV format recorded",
+    withoutMetadata.length === 0,
+    {
+      details: withoutMetadata
+        .slice(0, 5)
+        .map((s) => `${s.kit_name}/${s.filename}`)
+        .join(", "),
+    },
+  );
+  report.fact("voices named at setup", store.voiceNames.size);
+  report.check(
+    "setup names voices from their samples (A0 voice 2 holds snares)",
+    /snare/i.test(store.voiceNames.get("A0:2") ?? ""),
+    { details: `A0 voice 2: ${store.voiceNames.get("A0:2") ?? "unnamed"}` },
+  );
   report.check(
     "no files outside the archive's kits were imported",
     store.samples.every((s) =>

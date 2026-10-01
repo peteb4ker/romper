@@ -1,25 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createRomperDb, insertKit, insertSample } from "../romperDb";
+import { createRomperDb, importSetupKit } from "../romperDb";
+
+const imported = {
+  addedSamples: 4,
+  locked: false,
+  metadataUpdated: 0,
+  missingSamples: [],
+  scannedSamples: 4,
+  skippedFiles: [],
+  updatedVoices: 2,
+};
 
 describe("romperDb", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Set up default mock behaviors
     vi.mocked(window.electronAPI.createRomperDb).mockImplementation(
       async (dbDir: string) => ({
         dbPath: dbDir + "/romper.sqlite",
         success: true,
       }),
     );
-    vi.mocked(window.electronAPI.insertKit).mockImplementation(async () => ({
-      kitId: 42,
+    vi.mocked(window.electronAPI.setupImportKit).mockResolvedValue({
+      data: imported,
       success: true,
-    }));
-    vi.mocked(window.electronAPI.insertSample).mockImplementation(async () => ({
-      data: { sampleId: 99 },
-      success: true,
-    }));
+    });
   });
 
   it("should return the expected sqlite path for a given dbDir", async () => {
@@ -36,57 +41,22 @@ describe("romperDb", () => {
     await expect(createRomperDb("/fail/path")).rejects.toThrow("fail");
   });
 
-  it("should call insertKit and return kitId", async () => {
-    const kit = { editable: true, name: "Test Kit" };
-    const kitId = await insertKit("/mock/path", kit);
-    expect(window.electronAPI.insertKit).toHaveBeenCalledWith(
-      "/mock/path",
-      kit,
+  it("imports a kit through main and returns what it imported", async () => {
+    const result = await importSetupKit("/mock/path/.romperdb", "A0");
+    expect(window.electronAPI.setupImportKit).toHaveBeenCalledWith(
+      "/mock/path/.romperdb",
+      "A0",
     );
-    expect(kitId).toBe("Test Kit");
+    expect(result).toEqual(imported);
   });
 
-  it("should throw if insertKit fails", async () => {
-    vi.mocked(window.electronAPI.insertKit).mockResolvedValueOnce({
-      error: "kit fail",
+  it("throws main's error when the import fails", async () => {
+    vi.mocked(window.electronAPI.setupImportKit).mockResolvedValueOnce({
+      error: "Not a kit folder name: Drums",
       success: false,
     });
     await expect(
-      insertKit("/fail/path", { editable: false, name: "fail" }),
-    ).rejects.toThrow("kit fail");
-  });
-
-  it("should call insertSample and return sampleId", async () => {
-    const sample = {
-      filename: "kick.wav",
-      kit_id: 1,
-      slot_number: 100,
-    };
-    const sampleId = await insertSample("/mock/path", sample);
-    expect(window.electronAPI.insertSample).toHaveBeenCalledWith("/mock/path", {
-      filename: "kick.wav",
-      kit_id: 1,
-      slot_number: 100,
-      source_path: "",
-      wav_bit_depth: null,
-      wav_bitrate: null,
-      wav_channels: null,
-      wav_sample_rate: null,
-    });
-    expect(sampleId).toBe(99);
-  });
-
-  it("should throw if insertSample fails", async () => {
-    vi.mocked(window.electronAPI.insertSample).mockResolvedValueOnce({
-      error: "sample fail",
-      success: false,
-    });
-    await expect(
-      insertSample("/fail/path", {
-        filename: "fail.wav",
-        kit_id: 1,
-        slot_number: 100,
-      }),
-    ).rejects.toThrow("sample fail");
+      importSetupKit("/mock/path/.romperdb", "Drums"),
+    ).rejects.toThrow("Not a kit folder name: Drums");
   });
 });

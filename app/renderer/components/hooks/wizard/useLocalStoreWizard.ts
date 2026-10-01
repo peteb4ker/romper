@@ -5,7 +5,6 @@ import type { ElectronAPI } from "../../../electron.d";
 import { config } from "../../../config";
 import { createLogger } from "../../../utils/logger";
 import { useLocalStoreWizardFileOps } from "./useLocalStoreWizardFileOps";
-import { useLocalStoreWizardScanning } from "./useLocalStoreWizardScanning";
 import {
   type LocalStoreSource,
   type ProgressEvent,
@@ -54,12 +53,6 @@ export function useLocalStoreWizard(
     reportStepProgress,
     setError: stateHook.setError,
     setWizardState: stateHook.setWizardState,
-  });
-
-  // Scanning operations hook
-  const scanningHook = useLocalStoreWizardScanning({
-    api,
-    reportStepProgress,
   });
 
   // Helper function to set the local store path
@@ -116,17 +109,13 @@ export function useLocalStoreWizard(
       // Process source-specific operations
       await processSource();
 
-      // Create and populate database
+      // Create the database and import the kits (main names the voices)
       log.debug("initialize - creating and populating database");
       dbCreationStarted = true;
-      const { dbDir, truncationWarnings, validKits } =
-        await fileOpsHook.createAndPopulateDb(state.targetPath);
+      const { truncationWarnings } = await fileOpsHook.createAndPopulateDb(
+        state.targetPath,
+      );
       log.debug("initialize - database creation completed");
-
-      // Run scanning operations as the final step
-      log.debug("initialize - starting scanning operations");
-      await scanningHook.runScanning(state.targetPath, dbDir, validKits);
-      log.debug("initialize - scanning operations completed");
 
       // Set the local store path only after everything is ready
       await setLocalStorePathHelper();
@@ -167,7 +156,6 @@ export function useLocalStoreWizard(
     state,
     api,
     fileOpsHook,
-    scanningHook,
     stateHook,
     setLocalStorePathHelper,
     processSource,

@@ -1,7 +1,7 @@
-// Handles Romper DB (SQLite) operations for plans, kits, and samples.
-// This is a stub for initial DB creation logic for 2.2
+// The setup wizard's database calls: create the new store's database and
+// import its kit folders. Main does the work (RE-34).
 
-import type { NewKit } from "@romper/shared/db/schema.js";
+import type { KitScanResult } from "@romper/shared/db/schema.js";
 
 import { createLogger } from "../../utils/logger";
 
@@ -21,48 +21,20 @@ export async function createRomperDb(dbDir: string) {
   return result.dbPath;
 }
 
-export async function insertKit(dbDir: string, kit: NewKit) {
-  if (!globalThis.electronAPI?.insertKit) throw new Error("IPC not available");
-
-  const result = await globalThis.electronAPI.insertKit(dbDir, kit);
-  if (!result.success) throw new Error(result.error || "Failed to insert kit");
-  return kit.name; // Return the kit name instead of an ID
-}
-
-export async function insertSample(
+/**
+ * Import one kit folder into the store setup is creating. Main adds the
+ * kit, its samples (12 per voice), WAV metadata and voice names (RE-34).
+ */
+export async function importSetupKit(
   dbDir: string,
-  sample: {
-    filename: string;
-    kit_name: string;
-    slot_number: number;
-    source_path?: string;
-    voice_number: number;
-    wav_bit_depth?: number;
-    wav_bitrate?: number;
-    wav_channels?: number;
-    wav_sample_rate?: number;
-  },
-) {
-  if (!globalThis.electronAPI?.insertSample)
+  kitName: string,
+): Promise<KitScanResult> {
+  if (!globalThis.electronAPI?.setupImportKit) {
     throw new Error("IPC not available");
-
-  // Provide default values for required fields
-  const sampleWithDefaults = {
-    ...sample,
-    source_path: sample.source_path || "",
-    wav_bit_depth: sample.wav_bit_depth || null,
-    wav_bitrate: sample.wav_bitrate || null,
-    wav_channels: sample.wav_channels || null,
-    wav_sample_rate: sample.wav_sample_rate || null,
-  };
-
-  const result = await globalThis.electronAPI.insertSample(
-    dbDir,
-    sampleWithDefaults,
-  );
-  if (!result.success)
-    throw new Error(result.error || "Failed to insert sample");
-  // The id lives in the DbResult payload (the old top-level read was
-  // always undefined)
-  return result.data?.sampleId;
+  }
+  const result = await globalThis.electronAPI.setupImportKit(dbDir, kitName);
+  if (!result.success || !result.data) {
+    throw new Error(result.error || `Failed to import kit ${kitName}`);
+  }
+  return result.data;
 }

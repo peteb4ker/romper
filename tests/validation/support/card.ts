@@ -40,6 +40,9 @@ export interface StoreSample {
   slot_number: number;
   source_path: string;
   voice_number: number;
+  wav_bit_depth: null | number;
+  wav_channels: null | number;
+  wav_sample_rate: null | number;
 }
 
 export interface StoreSnapshot {
@@ -48,6 +51,8 @@ export interface StoreSnapshot {
   samples: StoreSample[];
   /** `${kit}:${voice}` → stereo_mode */
   stereoVoices: Set<string>;
+  /** `${kit}:${voice}` → the voice's name, for named voices */
+  voiceNames: Map<string, string>;
 }
 
 /**
@@ -122,7 +127,8 @@ export function readStore(storePath: string): StoreSnapshot {
     ).map((k) => k.name);
     const samples = db
       .prepare(
-        `SELECT kit_name, voice_number, slot_number, filename, source_path, gain_db
+        `SELECT kit_name, voice_number, slot_number, filename, source_path, gain_db,
+                wav_bit_depth, wav_channels, wav_sample_rate
          FROM samples ORDER BY kit_name, voice_number, slot_number`,
       )
       .all() as StoreSample[];
@@ -138,7 +144,20 @@ export function readStore(storePath: string): StoreSnapshot {
     const banks = db
       .prepare("SELECT letter, artist FROM banks ORDER BY letter")
       .all() as StoreSnapshot["banks"];
-    return { banks, kits, samples, stereoVoices };
+    const voiceNames = new Map(
+      (
+        db
+          .prepare(
+            "SELECT kit_name, voice_number, voice_alias FROM voices WHERE voice_alias IS NOT NULL AND voice_alias != ''",
+          )
+          .all() as {
+          kit_name: string;
+          voice_alias: string;
+          voice_number: number;
+        }[]
+      ).map((v) => [`${v.kit_name}:${v.voice_number}`, v.voice_alias]),
+    );
+    return { banks, kits, samples, stereoVoices, voiceNames };
   } finally {
     db.close();
   }

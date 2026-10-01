@@ -86,8 +86,6 @@ describe("preload/index.tsx", () => {
         getSampleAudioBuffer: expect.any(Function),
         getSetting: expect.any(Function),
         getUserHomeDir: expect.any(Function),
-        insertKit: expect.any(Function),
-        insertSample: expect.any(Function),
         listFilesInRoot: expect.any(Function),
         readFile: expect.any(Function),
         readSettings: expect.any(Function),
@@ -679,14 +677,9 @@ describe("preload/index.tsx", () => {
     // Parameterized test for methods with object parameters
     const objectParameterMethods = [
       {
-        args: ["/db/path", { bank_letter: "A", name: "TestKit" }],
-        ipcChannel: "insert-kit",
-        method: "insertKit",
-      },
-      {
-        args: ["/db/path", { filename: "test.wav", kit_name: "TestKit" }],
-        ipcChannel: "insert-sample",
-        method: "insertSample",
+        args: ["/db/path", "A0"],
+        ipcChannel: "setup-import-kit",
+        method: "setupImportKit",
       },
       {
         args: ["TestKit", { alias: "Updated Kit", artist: "Test Artist" }],

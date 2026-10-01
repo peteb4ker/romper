@@ -79,11 +79,16 @@ in `electron/main/security/`.
 - The factory-samples archive URL is fixed in main
   (`getFactorySamplesArchiveUrl`, overridable only by the
   `ROMPER_SQUARP_ARCHIVE_URL` launch environment). Wizard database channels
-  (`createRomperDb`, `insertKit`, `insertSample`) still name the new store's
-  `.romperdb` folder because it isn't configured yet; main requires it to be
-  a `.romperdb` folder inside a writable root, and an inserted sample's
-  `source_path` to be inside a root. Other database channels derive the path
-  from the configured store.
+  (`createRomperDb`, `setupImportKit`) still name the new store's `.romperdb`
+  folder because it isn't configured yet; main requires it to be a
+  `.romperdb` folder inside a writable root, and imports kits only into a
+  store this setup created, from folders named like kits (A0-Z99). Other
+  database channels derive the path from the configured store.
+- Setup imports each kit in main (`LocalStoreSetupService.importSetupKit`,
+  RE-34) with the same merge a rescan uses (`mergeKitScan`): up to 12
+  samples per voice in card order, WAV metadata, and voice names inferred
+  from file names, in one transaction per kit. The renderer only drives the
+  steps and shows progress and the "samples left out" notice.
 
 ## Data
 

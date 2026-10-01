@@ -1,4 +1,3 @@
-import type { NewKit, NewSample } from "@romper/shared/db/types.js";
 import type {
   ElectronAPI,
   SettingsData,
@@ -323,14 +322,6 @@ const electronAPI = {
     isDev && console.debug("[IPC] getUserHomeDir invoked");
     return ipcRenderer.invoke("get-user-home-dir");
   },
-  insertKit: (dbDir: string, kit: NewKit) => {
-    isDev && console.debug("[IPC] insertKit invoked", dbDir, kit);
-    return ipcRenderer.invoke("insert-kit", dbDir, kit);
-  },
-  insertSample: (dbDir: string, sample: NewSample) => {
-    isDev && console.debug("[IPC] insertSample invoked", dbDir, sample);
-    return ipcRenderer.invoke("insert-sample", dbDir, sample);
-  },
   listFilesInRoot: (localStorePath: string): Promise<string[]> => {
     isDev && console.debug("[IPC] listFilesInRoot invoked", localStorePath);
     return ipcRenderer.invoke("list-files-in-root", localStorePath);
@@ -455,6 +446,10 @@ const electronAPI = {
   },
   setSetting: async (key: SettingsKey, value: unknown): Promise<void> => {
     return await settingsManager.setSetting(key, value as SettingsValue);
+  },
+  setupImportKit: (dbDir: string, kitName: string) => {
+    isDev && console.debug("[IPC] setupImportKit invoked", dbDir, kitName);
+    return ipcRenderer.invoke("setup-import-kit", dbDir, kitName);
   },
   showItemInFolder: (path: string): Promise<void> => {
     isDev && console.debug("[IPC] showItemInFolder invoked", path);

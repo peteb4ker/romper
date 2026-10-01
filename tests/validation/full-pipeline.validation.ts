@@ -57,21 +57,6 @@ const EXPECTED: Expectation[] = [
   },
   {
     pattern:
-      /Failed to set voice alias for kit \w+, voice \d: No local store path configured/,
-    reason:
-      "voice naming in the setup wizard runs before the store path is saved",
-    ref: "RE-34",
-    sources: ["renderer-console"],
-  },
-  {
-    pattern:
-      /Scan warnings for kit \w+: \[\{"error":"No voice types could be inferred from filenames"/,
-    reason:
-      "voice names can't be guessed for factory kits whose file names have no drum words (logged as a warning, though it's a normal outcome)",
-    sources: ["renderer-console"],
-  },
-  {
-    pattern:
       /Sample has format issues that will require conversion during SD card sync/,
     reason:
       "dropping a 24-bit, 48 kHz or float file notes it will be converted at write",

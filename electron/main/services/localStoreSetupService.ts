@@ -1,8 +1,20 @@
+import type { DbResult, KitScanResult } from "@romper/shared/db/schema.js";
+
+import {
+  groupSamplesByVoice,
+  isValidKit,
+} from "@romper/shared/kitUtilsShared.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import { createRomperDbFile } from "../db/romperDbCoreORM.js";
+import { mergeKitScan } from "../db/operations/kitScanOperations.js";
+import {
+  addKit,
+  createRomperDbFile,
+  markKitsAsSynced,
+} from "../db/romperDbCoreORM.js";
 import { logger } from "../utils/logger.js";
+import { readWavMetadata } from "./scanService.js";
 
 const ROMPER_DB_DIR = ".romperdb";
 
@@ -138,6 +150,73 @@ export class LocalStoreSetupService {
       return { exists: false };
     }
     return { error: EXISTING_LOCAL_STORE_MESSAGE, exists: true };
+  }
+
+  /**
+   * Import one kit folder into the store this setup is creating (RE-34).
+   *
+   * The kit is added, then its folder is merged the way a rescan merges it
+   * (`mergeKitScan`, one transaction): up to 12 samples per voice in card
+   * order, WAV metadata, and voice names inferred from file names. Files
+   * over the 12-per-voice limit come back as `voice_full` skips, which the
+   * wizard reports. Like every imported kit, it starts with nothing to
+   * write to the card ("modified since sync" off).
+   *
+   * Refuses any store this process's setup didn't create, and any name
+   * that isn't a kit folder name, so the renderer can't point it elsewhere.
+   */
+  importSetupKit(dbDir: string, kitName: string): DbResult<KitScanResult> {
+    const resolved = path.resolve(dbDir);
+    if (!this.createdDbDirs.has(resolved)) {
+      return {
+        error: "Setup can only import kits into the store it is creating",
+        success: false,
+      };
+    }
+    if (!isValidKit(kitName)) {
+      return { error: `Not a kit folder name: ${kitName}`, success: false };
+    }
+
+    const kitPath = path.join(path.dirname(resolved), kitName);
+    let wavFiles: string[];
+    try {
+      wavFiles = fs
+        .readdirSync(kitPath)
+        .filter((file) => file.toLowerCase().endsWith(".wav"));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return {
+        error: `Can't read kit folder ${kitPath}: ${message}`,
+        success: false,
+      };
+    }
+
+    const added = addKit(resolved, {
+      bank_letter: kitName.charAt(0),
+      editable: false,
+      name: kitName,
+    });
+    if (!added.success) {
+      return { error: added.error, success: false };
+    }
+
+    const merged = mergeKitScan(
+      resolved,
+      kitName,
+      { filesByVoice: groupSamplesByVoice(wavFiles), kitPath },
+      { fileExists: fs.existsSync, readMetadata: readWavMetadata },
+    );
+    if (!merged.success) {
+      return merged;
+    }
+
+    // The merge flags kits it adds samples to as changed since the last
+    // write, which is right for a rescan but not for a fresh import
+    const cleared = markKitsAsSynced(resolved, [kitName]);
+    if (!cleared.success) {
+      return { error: cleared.error, success: false };
+    }
+    return merged;
   }
 
   /**

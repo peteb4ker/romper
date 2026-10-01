@@ -1,12 +1,8 @@
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { importSetupKit } from "../../../utils/romperDb";
 import { useLocalStoreWizardFileOps } from "../useLocalStoreWizardFileOps";
-
-// Mock dependencies
-vi.mock("@romper/shared/kitUtilsShared", () => ({
-  groupSamplesByVoice: vi.fn(() => new Map()),
-}));
 
 vi.mock("../../../../config", () => ({
   config: {
@@ -17,8 +13,7 @@ vi.mock("../../../../config", () => ({
 
 vi.mock("../../../utils/romperDb", () => ({
   createRomperDb: vi.fn().mockResolvedValue(undefined),
-  insertKit: vi.fn().mockResolvedValue(undefined),
-  insertSample: vi.fn().mockResolvedValue(undefined),
+  importSetupKit: vi.fn(),
 }));
 
 describe("useLocalStoreWizardFileOps", () => {
@@ -31,12 +26,6 @@ describe("useLocalStoreWizardFileOps", () => {
   beforeEach(() => {
     // Use centralized mocks instead of manual assignment
     vi.mocked(window.electronAPI.createRomperDb).mockResolvedValue({
-      success: true,
-    });
-    vi.mocked(window.electronAPI.insertKit).mockResolvedValue({
-      success: true,
-    });
-    vi.mocked(window.electronAPI.insertSample).mockResolvedValue({
       success: true,
     });
     mockApi = {
@@ -347,6 +336,15 @@ describe("useLocalStoreWizardFileOps", () => {
     beforeEach(() => {
       // Database utilities are already mocked at the top level
       vi.clearAllMocks();
+      vi.mocked(importSetupKit).mockResolvedValue({
+        addedSamples: 1,
+        locked: false,
+        metadataUpdated: 0,
+        missingSamples: [],
+        scannedSamples: 1,
+        skippedFiles: [],
+        updatedVoices: 0,
+      });
     });
 
     it("should create database and populate with kits", async () => {
@@ -416,6 +414,58 @@ describe("useLocalStoreWizardFileOps", () => {
       const dbResult = await result.current.createAndPopulateDb("/target/path");
 
       expect(dbResult.validKits).toEqual(["A0", "B12"]);
+    });
+    // RE-34: main imports each kit; its "voice full" skips become the
+    // wizard's notice, one line per voice
+    it("[UC-02] turns main's voice-full skips into one warning per voice", async () => {
+      mockApi.listFilesInRoot = vi.fn().mockResolvedValue(["S62"]);
+      const runSteps = vi.fn(
+        async ({
+          items,
+          onStep,
+        }: {
+          items: string[];
+          onStep: (item: string) => Promise<void>;
+        }) => {
+          for (const item of items) await onStep(item);
+        },
+      );
+      vi.mocked(importSetupKit).mockResolvedValue({
+        addedSamples: 24,
+        locked: false,
+        metadataUpdated: 0,
+        missingSamples: [],
+        scannedSamples: 30,
+        skippedFiles: [
+          ...Array.from({ length: 6 }, (_, i) => ({
+            filename: `2 tom ${i + 13}.wav`,
+            reason: "voice_full" as const,
+            voiceNumber: 2,
+          })),
+          { filename: "4 hat.wav", reason: "kit_editable", voiceNumber: 4 },
+        ],
+        updatedVoices: 2,
+      });
+
+      const { result } = renderHook(() =>
+        useLocalStoreWizardFileOps({
+          api: mockApi,
+          reportProgress: mockReportProgress,
+          reportStepProgress: runSteps,
+          setError: mockSetError,
+          setWizardState: mockSetWizardState,
+        }),
+      );
+
+      const dbResult = await result.current.createAndPopulateDb("/target/path");
+
+      expect(importSetupKit).toHaveBeenCalledWith(
+        "/target/path/.romperdb",
+        "S62",
+      );
+      expect(dbResult.truncationWarnings).toEqual([
+        { kept: 12, kitName: "S62", skipped: 6, total: 18, voiceNumber: 2 },
+      ]);
     });
   });
 });

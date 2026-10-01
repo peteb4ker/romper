@@ -1,15 +1,25 @@
+import type {
+  KitScanResult,
+  KitScanSkippedFile,
+} from "@romper/shared/db/schema";
+
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { executeFullKitScan } from "../../../utils/scanners/orchestrationFunctions";
 import { useLocalStoreWizard } from "../useLocalStoreWizard";
 
-// Mock the scanner orchestration functions
-vi.mock("../../../utils/scanners/orchestrationFunctions", () => ({
-  executeFullKitScan: vi.fn(),
-}));
-
-const mockExecuteFullKitScan = vi.mocked(executeFullKitScan);
+/** What main's setup import returns, with the given skipped files */
+function importResult(skippedFiles: KitScanSkippedFile[]): KitScanResult {
+  return {
+    addedSamples: 12,
+    locked: false,
+    metadataUpdated: 0,
+    missingSamples: [],
+    scannedSamples: 12 + skippedFiles.length,
+    skippedFiles,
+    updatedVoices: 1,
+  };
+}
 
 // Replace all usage of waitFor with manual polling for async state
 function waitForAsync(fn: () => boolean, timeout = 1000) {
@@ -30,20 +40,6 @@ describe("useLocalStoreWizard", () => {
     vi.clearAllMocks();
 
     // Set up scanner mock with default successful response
-    mockExecuteFullKitScan.mockResolvedValue({
-      completedOperations: 3,
-      errors: [],
-      results: {
-        rtfArtist: {
-          bankArtists: { A0: "Test Artist", B12: "Another Artist" },
-        },
-        voiceInference: {
-          voiceNames: { 1: "kick", 2: "snare", 3: "hat", 4: "tom" },
-        },
-      },
-      success: true,
-      totalOperations: 3,
-    });
 
     // DRY: Always mock all required electronAPI methods for all tests
     vi.mocked(window.electronAPI.createRomperDb).mockImplementation(
@@ -67,15 +63,8 @@ describe("useLocalStoreWizard", () => {
     vi.mocked(window.electronAPI.copyDir).mockImplementation(
       async (_src, _dest) => {},
     );
-    vi.mocked(window.electronAPI.insertKit).mockImplementation(
-      async (_dbDir, _kit) => ({
-        success: true,
-      }),
-    );
-    vi.mocked(window.electronAPI.insertSample).mockImplementation(
-      async (_dbDir, _sample) => ({
-        success: true,
-      }),
+    vi.mocked(window.electronAPI.setupImportKit).mockImplementation(
+      async () => ({ data: importResult([]), success: true }),
     );
     vi.mocked(window.electronAPI.updateKit).mockImplementation(
       async (_dbDir, _kitName, _updates) => ({
@@ -193,13 +182,16 @@ describe("useLocalStoreWizard", () => {
   it("returns the samples a voice over 12 left out", async () => {
     const root = "/mock/home/Documents/romper";
     vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
-      async (dir) =>
-        dir === root
-          ? ["A0"]
-          : Array.from(
-              { length: 13 },
-              (_, i) => `1 kick ${String(i + 1).padStart(2, "0")}.wav`,
-            ),
+      async (dir) => (dir === root ? ["A0"] : []),
+    );
+    // Main imported the first 12 of voice 1's 13 files
+    vi.mocked(window.electronAPI.setupImportKit).mockImplementation(
+      async () => ({
+        data: importResult([
+          { filename: "1 kick 13.wav", reason: "voice_full", voiceNumber: 1 },
+        ]),
+        success: true,
+      }),
     );
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
@@ -355,12 +347,6 @@ describe("useLocalStoreWizard", () => {
       .mockImplementationOnce(async () => ["A0"]) // local store
       .mockImplementation(async () => []); // kit folder contents
     vi.mocked(window.electronAPI.copyDir).mockImplementation();
-    vi.mocked(window.electronAPI.insertKit).mockImplementation(async () => ({
-      success: true,
-    }));
-    vi.mocked(window.electronAPI.insertSample).mockImplementation(async () => ({
-      success: true,
-    }));
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
     act(() => {
@@ -384,12 +370,6 @@ describe("useLocalStoreWizard", () => {
       .mockImplementation(async () => []); // kit folder contents
     const copyDir = vi.fn();
     vi.mocked(window.electronAPI.copyDir).mockImplementation(copyDir);
-    vi.mocked(window.electronAPI.insertKit).mockImplementation(async () => ({
-      success: true,
-    }));
-    vi.mocked(window.electronAPI.insertSample).mockImplementation(async () => ({
-      success: true,
-    }));
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
     act(() => {
@@ -454,12 +434,6 @@ describe("useLocalStoreWizard", () => {
       },
     );
     vi.mocked(window.electronAPI.copyDir).mockImplementation(async () => {});
-    vi.mocked(window.electronAPI.insertKit).mockImplementation(async () => ({
-      success: true,
-    }));
-    vi.mocked(window.electronAPI.insertSample).mockImplementation(async () => ({
-      success: true,
-    }));
     // Use the new progress callback for testability
     const { result } = renderHook(() =>
       useLocalStoreWizard((p) => progressEvents.push(p)),
@@ -478,159 +452,75 @@ describe("useLocalStoreWizard", () => {
     );
   });
 
-  it("runs scanning operations after database creation", async () => {
-    const progressEvents: unknown[] = [];
-    vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
-      async (path) => {
-        if (path === "/mock/home/Documents/romper") return ["A0", "B12"];
-        if (path === "/mock/home/Documents/romper/A0")
-          return ["1kick.wav", "2snare.wav", "artist.rtf"];
-        if (path === "/mock/home/Documents/romper/B12")
-          return ["1hat.wav", "3tom.wav"];
-        return [];
-      },
-    );
+  // RE-34: main imports each kit (samples, WAV metadata, voice names); the
+  // renderer neither reads WAVs nor writes voice names any more
+  describe("[UC-02] importing kits", () => {
+    const root = "/mock/home/Documents/romper";
+    const startSetup = async () => {
+      const { result } = renderHook(() => useLocalStoreWizard());
+      await waitForAsync(() => result.current.defaultPath !== "");
+      act(() => {
+        result.current.setTargetPath(root);
+        result.current.setSource("squarp");
+      });
+      await act(async () => {
+        await result.current.initialize();
+      });
+      return result;
+    };
 
-    const { result } = renderHook(() =>
-      useLocalStoreWizard((p) => progressEvents.push(p)),
-    );
+    it("asks main to import each kit folder, and nothing else", async () => {
+      vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
+        async (dir) => (dir === root ? ["A0", "B12", "notakit"] : []),
+      );
 
-    await waitForAsync(() => result.current.defaultPath !== "");
+      const result = await startSetup();
 
-    act(() => {
-      result.current.setTargetPath("/mock/home/Documents/romper");
-      result.current.setSource("blank");
+      expect(result.current.state.error).toBeNull();
+      expect(window.electronAPI.setupImportKit).toHaveBeenCalledTimes(2);
+      expect(window.electronAPI.setupImportKit).toHaveBeenCalledWith(
+        `${root}/.romperdb`,
+        "A0",
+      );
+      expect(window.electronAPI.setupImportKit).toHaveBeenCalledWith(
+        `${root}/.romperdb`,
+        "B12",
+      );
+      expect(window.electronAPI.readFile).not.toHaveBeenCalled();
+      expect(window.electronAPI.updateVoiceAlias).not.toHaveBeenCalled();
+      expect(window.electronAPI.setSetting).toHaveBeenCalledWith(
+        "localStorePath",
+        root,
+      );
     });
 
-    await act(async () => {
-      await result.current.initialize();
-    });
-
-    // Verify scanning was called for each kit
-    expect(mockExecuteFullKitScan).toHaveBeenCalledTimes(2);
-
-    // Verify the scanning input for the first kit (A0)
-    expect(mockExecuteFullKitScan).toHaveBeenCalledWith(
-      expect.objectContaining({
-        fileReader: expect.any(Function),
-        samples: { 1: ["1kick.wav"], 2: ["2snare.wav"], 3: [], 4: [] },
-        wavFiles: [
-          "/mock/home/Documents/romper/A0/1kick.wav",
-          "/mock/home/Documents/romper/A0/2snare.wav",
-        ],
-      }),
-      undefined,
-      "continue",
-    );
-
-    // Verify voice aliases were updated
-    expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
-      "A0",
-      1,
-      "kick",
-    );
-    expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
-      "A0",
-      2,
-      "snare",
-    );
-    expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
-      "A0",
-      3,
-      "hat",
-    );
-    expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
-      "A0",
-      4,
-      "tom",
-    );
-
-    // Verify scanning progress was reported
-    expect(
-      progressEvents.some((e) => e.phase === "Scanning kits for metadata..."),
-    ).toBe(true);
-  });
-
-  it("handles scanning errors gracefully and continues with other kits", async () => {
-    // Set up mock to fail for one kit but succeed for another
-    mockExecuteFullKitScan
-      .mockResolvedValueOnce({
-        completedOperations: 0,
-        errors: [{ error: "Mock error", operation: "voiceInference" }],
-        results: {},
+    it("stops, and doesn't save the store, when main can't import a kit", async () => {
+      vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
+        async (dir) => (dir === root ? ["A0"] : []),
+      );
+      vi.mocked(window.electronAPI.setupImportKit).mockResolvedValue({
+        error: "Can't read kit folder A0",
         success: false,
-        totalOperations: 3,
-      })
-      .mockResolvedValueOnce({
-        completedOperations: 3,
-        errors: [],
-        results: {
-          rtfArtist: { bankArtists: { B12: "Another Artist" } },
-        },
-        success: true,
-        totalOperations: 3,
       });
 
-    vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
-      async (path) => {
-        if (path === "/mock/home/Documents/romper") return ["A0", "B12"];
-        if (path === "/mock/home/Documents/romper/A0") return ["1kick.wav"];
-        if (path === "/mock/home/Documents/romper/B12") return ["1hat.wav"];
-        return [];
-      },
-    );
+      const result = await startSetup();
 
-    const { result } = renderHook(() => useLocalStoreWizard());
-
-    await waitForAsync(() => result.current.defaultPath !== "");
-
-    act(() => {
-      result.current.setTargetPath("/mock/home/Documents/romper");
-      result.current.setSource("blank");
+      expect(result.current.state.error).toMatch(/Can't read kit folder A0/);
+      expect(window.electronAPI.setSetting).not.toHaveBeenCalledWith(
+        "localStorePath",
+        expect.anything(),
+      );
     });
 
-    await act(async () => {
-      await result.current.initialize();
+    it("imports nothing when there are no kit folders", async () => {
+      vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
+        async () => [],
+      );
+
+      await startSetup();
+
+      expect(window.electronAPI.setupImportKit).not.toHaveBeenCalled();
     });
-
-    // Should complete successfully even with scan failures
-    expect(result.current.state.isInitializing).toBe(false);
-    expect(result.current.state.error).toBe(null);
-
-    // Should have called scanning for both kits
-    expect(mockExecuteFullKitScan).toHaveBeenCalledTimes(2);
-
-    // Artist metadata updates are now handled by bank scanning system, not kit scanning
-  });
-
-  it("skips scanning when no kits are found", async () => {
-    vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
-      async (path) => {
-        if (path === "/mock/home/Documents/romper") return []; // No kit folders
-        return [];
-      },
-    );
-
-    const { result } = renderHook(() => useLocalStoreWizard());
-
-    await waitForAsync(() => result.current.defaultPath !== "");
-
-    act(() => {
-      result.current.setTargetPath("/mock/home/Documents/romper");
-      result.current.setSource("blank");
-    });
-
-    await act(async () => {
-      await result.current.initialize();
-    });
-
-    // Should complete successfully
-    expect(result.current.state.isInitializing).toBe(false);
-    expect(result.current.state.error).toBe(null);
-
-    // Should not call scanning when no kits found
-    expect(mockExecuteFullKitScan).not.toHaveBeenCalled();
-    expect(window.electronAPI.updateKit).not.toHaveBeenCalled();
   });
 
   it("shows disk space error when insufficient space for squarp download", async () => {
@@ -752,7 +642,7 @@ describe("useLocalStoreWizard", () => {
     expect(result.current.state.error).toMatch(
       /already contains a Romper local store/,
     );
-    expect(window.electronAPI.insertKit).not.toHaveBeenCalled();
+    expect(window.electronAPI.setupImportKit).not.toHaveBeenCalled();
   });
 
   it("does not ask main to clean up when setup fails before creating the database", async () => {

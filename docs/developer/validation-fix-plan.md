@@ -4,7 +4,7 @@ priority: high
 status: plan
 updated: 2026-10-01
 context_size: medium
-implementation_status: RE-29 in #404, RE-64 in #401, validation CI in #403, RE-65 in #406, RE-24 in #405, hygiene in #409, RE-69 in #407, e2e error guard in #PR; the rest to do
+implementation_status: RE-29 in #404, RE-64 in #401, validation CI in #403, RE-65 in #406, RE-24 in #405, hygiene in #409, RE-69 in #407, e2e error guard in #411; the rest to do
 -->
 
 # Fixing what the full-pipeline validation found
@@ -42,7 +42,7 @@ Severity and details for each ID are in the findings register
 | RE-24 | Medium | Download has no status, redirect, timeout or checksum; temp zip kept; extraction errors ignored | #405 | done |
 | RE-65 | Medium | Edit > Undo/Redo never reach Romper's undo | #406 | done |
 | Low | Low | Test and tooling hygiene (below) | #409 | done |
-| RE-67 | Medium | E2E error guard; use case register and traceability | #PR (8), 9 | 8 done in PR; 9 to do |
+| RE-67 | Medium | E2E error guard; use case register and traceability | #411 (8), 9 | 8 done in PR; 9 to do |
 | Docs | Low | About 29 doc promises the code doesn't keep | 10 | to do |
 
 ## 1. Stereo is a voice setting, everywhere (RE-69)

@@ -17,9 +17,11 @@ Environment variables are listed under Configuration in the [README](README.md).
 
 ## Workflow
 
-1. Branch from `origin/main`. For parallel work, `npm run worktree:create
-   <task-name>` creates a worktree on `feature/<task-name>` in
-   `../romper-worktrees/<task-name>`, with its own dev ports.
+1. Branch from `origin/main`. For parallel work,
+   `npm run worktree:create <task-name>` creates a worktree on
+   `feature/<task-name>` in `../romper-worktrees/<task-name>`, with its own
+   dev ports. Once its PR merges, `npm run worktree:remove <task-name>`
+   deletes the worktree and its branch, even if you renamed the branch.
 2. Commit. The pre-commit hook runs typecheck, lint, unit + integration tests,
    and the build; fix anything it reports rather than bypassing it.
 3. Open a PR against `main`. CI runs build, lint, typecheck, unit,

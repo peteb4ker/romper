@@ -31,7 +31,10 @@ export function getWorktreesDir(mainRoot = getMainRoot()) {
   );
 }
 
-/** Parse `git worktree list --porcelain` into [{ path, branch }]. */
+/**
+ * Parse `git worktree list --porcelain` into [{ path, head, branch }].
+ * `branch` is undefined for a detached HEAD.
+ */
 export function listWorktrees(mainRoot = getMainRoot()) {
   const output = execSync("git worktree list --porcelain", {
     cwd: mainRoot,
@@ -43,6 +46,8 @@ export function listWorktrees(mainRoot = getMainRoot()) {
     if (line.startsWith("worktree ")) {
       if (current) worktrees.push(current);
       current = { path: line.slice("worktree ".length) };
+    } else if (line.startsWith("HEAD ") && current) {
+      current.head = line.slice("HEAD ".length);
     } else if (line.startsWith("branch ") && current) {
       current.branch = line.slice("branch refs/heads/".length);
     }

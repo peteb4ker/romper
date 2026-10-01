@@ -1,7 +1,19 @@
 import { copyFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
+import { builtinModules } from "node:module";
 import { resolve } from "node:path";
 import { dirname, join } from "node:path";
 import { defineConfig } from "vite";
+
+import packageJson from "./package.json" with { type: "json" };
+
+// The main process runs on Node, not in a browser (RE-16). Node built-ins
+// and the app's runtime dependencies are left as imports and loaded from
+// Node and the packaged node_modules at runtime. Bundling them for a
+// browser target replaced built-ins such as node:assert and
+// node:timers/promises with empty stubs, and bundled CommonJS packages
+// called a require() that doesn't exist in an ES module, which is why
+// update-electron-app never ran in a packaged build.
+const runtimeDependencies = Object.keys(packageJson.dependencies);
 
 // Plugin to copy a directory from source to dist
 function copyDirectory(srcRelative: string, destRelative: string) {
@@ -33,6 +45,14 @@ function copyDirectory(srcRelative: string, destRelative: string) {
   };
 }
 
+function isExternal(id: string): boolean {
+  if (id === "electron" || id.startsWith("node:")) return true;
+  if (builtinModules.includes(id)) return true;
+  return runtimeDependencies.some(
+    (dependency) => id === dependency || id.startsWith(`${dependency}/`),
+  );
+}
+
 export default defineConfig({
   build: {
     emptyOutDir: true,
@@ -45,28 +65,7 @@ export default defineConfig({
     minify: false,
     outDir: "dist/electron/main",
     rollupOptions: {
-      external: [
-        "electron",
-        "better-sqlite3",
-        "fs",
-        "path",
-        "os",
-        "crypto",
-        "stream",
-        "util",
-        "events",
-        "buffer",
-        "url",
-        "querystring",
-        "child_process",
-        "net",
-        "tls",
-        "http",
-        "https",
-        "zlib",
-        "unzipper",
-        "play-sound",
-      ],
+      external: isExternal,
       output: {
         entryFileNames: "[name].js",
       },
@@ -86,22 +85,6 @@ export default defineConfig({
     alias: {
       "@": resolve(__dirname, "."),
       "@romper/shared": resolve(__dirname, "shared"),
-      "node:buffer": "buffer",
-      "node:child_process": "child_process",
-      "node:crypto": "crypto",
-      "node:events": "events",
-      "node:fs": "fs",
-      "node:http": "http",
-      "node:https": "https",
-      "node:net": "net",
-      "node:os": "os",
-      "node:path": "path",
-      "node:querystring": "querystring",
-      "node:stream": "stream",
-      "node:tls": "tls",
-      "node:url": "url",
-      "node:util": "util",
-      "node:zlib": "zlib",
     },
   },
 });

@@ -22,6 +22,22 @@ interface StepSequencerControlsProps {
   setIsSeqPlaying: (playing: boolean) => void;
 }
 
+/** Size and shape shared by the column's small blocks (BPM, loop, keys). */
+const BLOCK_CLASS = "w-full h-8 rounded-md";
+
+/** A transport block with its small-caps label underneath. */
+const TransportBlock: React.FC<{
+  children: React.ReactNode;
+  label: string;
+}> = ({ children, label }) => (
+  <div className="flex flex-col items-stretch">
+    {children}
+    <span className="mt-1 text-center text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
+      {label}
+    </span>
+  </div>
+);
+
 /** Loops shown by the loop indicator: the longest trigger condition cycle. */
 const LOOP_PIPS = 4;
 
@@ -88,16 +104,18 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
 
   return (
     <div
-      className="flex flex-col items-center justify-start gap-2.5 shrink-0"
+      className="flex flex-col items-stretch gap-2 shrink-0"
       data-testid="kit-step-sequencer-controls"
       style={{ width: TRANSPORT_WIDTH }}
     >
+      {/* One column, one width: every block is the column's width, and the
+          small blocks share a height and a label underneath */}
       <button
         aria-label={isSeqPlaying ? "Stop sequencer" : "Play sequencer"}
-        className={`flex items-center justify-center w-14 h-14 rounded-xl border-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary transition-all ${
+        className={`flex items-center justify-center h-12 rounded-lg border-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary transition-all ${
           isSeqPlaying
             ? "bg-transport-play/25 border-transport-play text-transport-play shadow-[0_0_14px_-2px_var(--transport-play)]"
-            : "bg-surface-2 border-border-default hover:bg-surface-3 text-text-primary"
+            : "bg-surface-2 border-border-strong hover:bg-surface-3 text-text-primary"
         }`}
         data-testid={
           isSeqPlaying ? "stop-step-sequencer" : "play-step-sequencer"
@@ -107,15 +125,15 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
         type="button"
       >
         {isSeqPlaying ? (
-          <StopIcon size={24} weight="fill" />
+          <StopIcon size={22} weight="fill" />
         ) : (
-          <PlayIcon size={24} weight="fill" />
+          <PlayIcon size={22} weight="fill" />
         )}
       </button>
 
-      <label className="flex flex-col items-center">
+      <TransportBlock label="BPM">
         <input
-          className="text-base font-semibold text-center w-16 px-1 py-1 border border-border-default rounded-md bg-surface-2 tabular-nums cursor-ns-resize focus:cursor-text focus:outline-none focus:ring-2 focus:ring-accent-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          className={`${BLOCK_CLASS} text-sm font-semibold text-center border border-border-strong bg-surface-2 tabular-nums cursor-ns-resize focus:cursor-text focus:outline-none focus:ring-2 focus:ring-accent-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
           data-testid="bpm-input"
           max={180}
           min={30}
@@ -126,45 +144,39 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
           type="number"
           value={inputValue}
         />
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary mt-1">
-          BPM
-        </span>
-      </label>
+      </TransportBlock>
 
       {/* Which loop of four is playing; A:B conditions count these */}
-      <div
-        aria-label={
-          isSeqPlaying
-            ? `Loop ${loop + 1} of ${LOOP_PIPS}`
-            : `Loop counter, ${LOOP_PIPS} loops`
-        }
-        className="flex flex-col items-center"
-        data-testid="cycle-counter"
-        role="status"
-        title="Trigger conditions like 2:4 play on one loop of every 2 or 4"
-      >
-        <span className="flex gap-1">
+      <TransportBlock label="Loop">
+        <div
+          aria-label={
+            isSeqPlaying
+              ? `Loop ${loop + 1} of ${LOOP_PIPS}`
+              : `Loop counter, ${LOOP_PIPS} loops`
+          }
+          className={`${BLOCK_CLASS} flex items-center justify-center gap-1.5 bg-surface-3`}
+          data-testid="cycle-counter"
+          role="status"
+          title="Trigger conditions like 2:4 play on one loop of every 2 or 4"
+        >
           {Array.from({ length: LOOP_PIPS }, (_, i) => {
             const lit = isSeqPlaying && i === loop;
             return (
               <span
-                className={`block w-2 h-2 rounded-full ${lit ? "bg-transport-play" : "bg-border-default"}`}
+                className={`block w-2 h-2 rounded-full ${lit ? "bg-transport-play" : "bg-border-strong"}`}
                 data-lit={lit || undefined}
                 data-testid={`loop-pip-${i}`}
                 key={i}
               />
             );
           })}
-        </span>
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary mt-1">
-          Loop
-        </span>
-      </div>
+        </div>
+      </TransportBlock>
 
       {onShowKeys && (
-        <div className="mt-1">
-          <SequencerKeysButton onClick={onShowKeys} />
-        </div>
+        <TransportBlock label="Keys">
+          <SequencerKeysButton className={BLOCK_CLASS} onClick={onShowKeys} />
+        </TransportBlock>
       )}
     </div>
   );

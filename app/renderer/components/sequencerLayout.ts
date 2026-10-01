@@ -10,7 +10,7 @@ import type React from "react";
  */
 
 /** Width of the transport column (play, BPM, loop) and the gap after it. */
-export const TRANSPORT_WIDTH = 88;
+export const TRANSPORT_WIDTH = 64;
 export const TRANSPORT_GAP = 12;
 /** Row label chip, mute button, and the gaps after each. */
 export const LABEL_WIDTH = 36;

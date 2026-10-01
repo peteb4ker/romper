@@ -3,8 +3,10 @@ import type { SyncFileOperation } from "./syncFileOperations.js";
 import { getKit } from "../db/romperDbCoreORM.js";
 
 /**
- * Annotate file operations with per-file forceMonoConversion based on voice stereo_mode.
- * Stereo samples on mono voices get forceMonoConversion=true; stereo voices pass through.
+ * Mark files for mono conversion: a file with more than one channel on a
+ * voice that isn't linked as stereo is mixed down to mono when it's written
+ * (RE-29). Stereo is a voice setting (`voices.stereo_mode`); the file's own
+ * channel count only says whether there is anything to mix.
  */
 export function annotateMonoConversion(
   allFiles: SyncFileOperation[],
@@ -17,11 +19,11 @@ export function annotateMonoConversion(
       `${fileOp.kitName}:${fileOp.voiceNumber}`,
     );
 
-    if (voiceStereoMode === false && fileOp.isStereo) {
+    if (voiceStereoMode === false && (fileOp.channels ?? 1) > 1) {
       fileOp.forceMonoConversion = true;
       if (fileOp.operation === "copy") {
         fileOp.operation = "convert";
-        fileOp.reason = "Stereo sample on mono voice requires mono conversion";
+        fileOp.reason = `Stereo file on voice ${fileOp.voiceNumber}, which isn't linked as stereo: mixed to mono`;
       }
     }
   }

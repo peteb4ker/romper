@@ -336,9 +336,8 @@ describe("SyncSampleProcessingService", () => {
       );
 
       expect(mockCategorizeSyncFileOperation).toHaveBeenCalledTimes(1);
-      expect(results.warnings).toContain(
-        'Stereo sample "stereo_kick.wav" on voice 1 will play across voices 1 and 2',
-      );
+      // Stereo is a voice setting: the sample's is_stereo flag adds nothing
+      expect(results.warnings).toEqual([]);
     });
 
     it("should process stereo sample from voice 4 without warning", () => {
@@ -425,7 +424,7 @@ describe("SyncSampleProcessingService", () => {
       testResults.warnings = [];
     });
 
-    it("should add warning for stereo samples on voices 1-3", () => {
+    it("doesn't warn from the sample's is_stereo flag (RE-29)", () => {
       const voice2Stereo = { ...testStereoSample, voice_number: 2 };
 
       syncSampleProcessingService.processSampleForSync(
@@ -434,9 +433,7 @@ describe("SyncSampleProcessingService", () => {
         testResults,
       );
 
-      expect(testResults.warnings).toContain(
-        'Stereo sample "stereo_kick.wav" on voice 2 will play across voices 2 and 3',
-      );
+      expect(testResults.warnings).toEqual([]);
     });
 
     it("should not add cross-voice warning for stereo sample on voice 4", () => {

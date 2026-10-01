@@ -90,8 +90,6 @@ export function expectedCardFiles(
     expected.set(cardPath, {
       gainDb: s.gain_db,
       kind: reasons.length === 0 ? "copy" : "convert",
-      // Mono conversion never runs today (RE-29)
-      knownBug: forceMono ? "RE-29" : undefined,
       outputChannels,
       reason: reasons.join(", ") || "Rample-native",
       source: s.source_path,
@@ -193,7 +191,7 @@ async function checkContents(
   );
   for (const [ref, list] of known) {
     if (list.length > 0) {
-      report.check("stereo files on mono voices are converted to mono", false, {
+      report.check(`card files that depend on ${ref} being fixed`, false, {
         details: summarise(list),
         knownBug: ref,
       });

@@ -167,8 +167,11 @@ Stereo is a **voice** setting (`voices.stereo_mode`), not a sample property.
 A stereo voice pairs with the next voice. Never infer stereo from a file's
 channel count, and never copy samples to the adjacent voice based on the
 sample's `is_stereo` flag; doing so created phantom samples that couldn't be
-deleted. At sync, `syncMonoAnnotation.ts` marks stereo files on mono voices
-for downmixing (channel average, in `formatConverter.ts`).
+deleted. When a sync is planned, `syncMonoAnnotation.ts` marks files with
+more than one channel (read from the file's header) on voices that aren't
+linked for downmixing (channel average, in `formatConverter.ts`), so the
+summary shows the conversion too (RE-29). That's the one place a file's
+channel count matters, and it never changes the voice's setting.
 
 ## Sync to SD card
 

@@ -23,11 +23,14 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-29 | High | Sync | A stereo sample on a mono voice is written to the card as stereo: mono conversion keys on `samples.is_stereo`, which every add and import path writes as `false`. Converting to mono is the intended behaviour. | open (#360 stopped the scan guessing stereo from filenames) |
+| RE-64 | High | Kits | A kit can only be created in a bank that already has one, so an empty local store can't create its first kit. | open |
 
 ## Next
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-67 | Medium | Tests | The suites never run the core promise for real: no stereo or real audio through a sync, almost no byte checks on the card, and no test fails on an unexpected error. | open (plan: [`validation-and-traceability.md`](docs/developer/validation-and-traceability.md)) |
 | RE-18 | High | Release | Signing is silently optional. Windows v1.3.1 shipped **unsigned** (the Azure step was skipped because `AZURE_CLIENT_ID` is empty). | partly done (#387: signing required, Apple credentials checked first; Windows needs ALLOW_UNSIGNED_WINDOWS until OPS-2) |
 
 ## Owner (needs Pete)
@@ -50,7 +53,6 @@ This file tracks what's being done about each item.
 | RE-26 | Medium | Samples | Replace deletes the old sample, then adds the new one, with no transaction. | open |
 | RE-27 | Medium | Samples | Moving a sample to another kit is not atomic and rebuilds the row from `source_path` only, dropping gain, WAV metadata and the stereo flag. | open |
 | RE-28 | Medium | DB | Multi-step writes run without a transaction: kit plus its four voices; delete plus reindex (the reindex opens a second connection while the first is open); write plus the modified flag; scan insert plus metadata. | open |
-| RE-29 | Medium | Sync | Mono conversion is effectively dead. It runs only when `samples.is_stereo` is true, but that is `false` for every added or imported sample and is guessed from the file name on rescan (`/stereo\ | partly done (#360 stops the scan guessing stereo from filenames) |
 | RE-31 | Medium | Setup | A failed SD-card setup cannot be retried: the directory copy uses a non-recursive `mkdirSync`, which fails because the earlier cleanup left the copied kit folders behind. | open (needs a decision: a recursive copy would overwrite same-named kit folders; see #359) |
 | RE-32 | Medium | Kits | Kit names are checked inconsistently. Import accepts names such as `Drum01`; `insert-kit` checks nothing; `kitService` rejects anything outside `^\p{Lu}\d{1,2}$`, so such kits cannot be deleted or duplicated. | open |
 | RE-33 | Medium | DB | Migration upkeep: 0008 is missing and there are two 0009 migrations, handled by a custom repair that runs `ALTER` statements outside a transaction. | open |
@@ -79,6 +81,8 @@ This file tracks what's being done about each item.
 | RE-56 | Medium | Dead code | About 942 LOC of unused main-process files (`stereoSyncProcessor`, `rampleNamingService`, `db/fileOperations`, `stepPatternUtils`, `sampleSlotService`, two utils) and about 1,100 LOC in the renderer (9 test-only modules, the unreachable `AboutView` route and `ValidationResultsDialog`). | partly done (#372 deletes `rampleNamingService` and `stereoSyncProcessor`) |
 | RE-57 | Medium | Contract | The bridge contract does not bind main. `SyncChangeSummary` does not match what main returns (the renderer casts it); `SyncProgress` is defined four times with different fields and status values; several return types differ from the contract (null versus undefined, `unknown`, an `"overwrite"` mode main rejects). | open |
 | RE-58 | Medium | Tooling | The pre-commit tests fail with Vitest worker-start timeouts when the machine is busy (load average above ~20, for example several sessions testing at once), because `vitest.config.fast.ts` always starts 10 workers. | open |
+| RE-65 | Medium | Undo | Edit > Undo and Edit > Redo use Electron's native roles and never reach Romper's undo; only Cmd/Ctrl+Z works. | open |
+| RE-66 | Medium | Setup | Cancel in the setup wizard closes it but leaves the download and import running in main. | open |
 
 ## Done
 

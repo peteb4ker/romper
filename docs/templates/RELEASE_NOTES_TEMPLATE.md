@@ -100,7 +100,7 @@ sudo rpm -i romper-{{version}}-1.x86_64.rpm
 
 ## 📋 System Requirements
 
-- **Operating System**: Windows 10+, macOS 11+, or Linux (Ubuntu 20.04+)
+- **Operating System**: Windows 10+, macOS 13 (Ventura)+, or Linux (Ubuntu 20.04+)
 - **Memory**: 4GB RAM minimum (8GB recommended)
 - **Storage**: 500MB available space
 - **Display**: 1280x720 minimum resolution

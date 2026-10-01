@@ -236,7 +236,7 @@ In rough priority order. Each new test names the use cases it covers (section 3)
 
 6. A shared fixture that fails any e2e test on an unexpected `console.error`,
    `pageerror`, error toast or error boundary, using the harness's collector.
-   Existing tests declare the messages they expect. Done in #PR:
+   Existing tests declare the messages they expect. Done in #411:
    `tests/utils/e2e-error-guard.ts`.
 7. Editing flows: create a kit; add samples by a real drop; link and unlink
    stereo; rename a voice; delete and undo; move a sample.
@@ -370,7 +370,7 @@ behaviour checks, and RE-51 makes tests type-check.
 |---|---|
 | 1 | This spec; the new findings (RE-64 to RE-67, RE-29 raised to High); the `sd-card-layout.md` counts. |
 | 2 | The harness: user-data isolation, the archive copy, the error collector, the reference WAV reader and converter, the scenario, the report, `npm run validate:full` and `validate-full.yml`. Known failures marked with their RE IDs. |
-| 3 | The e2e error guard (section 2, item 6) across the existing suite, plus fixing whatever it uncovers. Done in #PR. |
+| 3 | The e2e error guard (section 2, item 6) across the existing suite, plus fixing whatever it uncovers. Done in #411. |
 | 4 | `use-cases.md`; tests tagged with use case IDs; `scripts/traceability.mjs`, the generated matrix and the CI check. |
 | 5 onward | The focused tests from section 2 and fixes for the bugs found (RE-29 and RE-64 first), one PR per finding. |
 

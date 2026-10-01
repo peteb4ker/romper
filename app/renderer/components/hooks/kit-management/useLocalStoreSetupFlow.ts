@@ -2,13 +2,6 @@ import type { LocalStoreValidationDetailedResult } from "@romper/shared/db/schem
 
 import { useCallback, useEffect, useState } from "react";
 
-interface ImportMetaEnv {
-  env: {
-    MODE?: string;
-    VITE_ROMPER_TEST_MODE?: string;
-  };
-}
-
 interface UseLocalStoreSetupFlowParams {
   closeWizard: () => void;
   isInitialized: boolean;
@@ -37,31 +30,21 @@ export function useLocalStoreSetupFlow({
   refreshLocalStoreStatus,
   setShowWizard,
 }: UseLocalStoreSetupFlowParams) {
-  // Determine local store configuration state according to requirements
-  // A1-A3: No local store configured - show setup wizard
-  // Also includes test environment overrides with invalid paths (for wizard tests)
-  const isTestEnvironment =
-    (import.meta as unknown as ImportMetaEnv).env.MODE === "test" ||
-    (import.meta as unknown as ImportMetaEnv).env.VITE_ROMPER_TEST_MODE ===
-      "true";
   const isEnvironmentOverride =
     localStoreStatus?.isEnvironmentOverride || false;
+
+  // A1-A3: No local store configured - show setup wizard
   const needsLocalStoreSetup =
     isInitialized &&
     localStoreStatus !== null &&
-    (!localStoreStatus.hasLocalStore ||
-      (isTestEnvironment &&
-        isEnvironmentOverride &&
-        !localStoreStatus.isValid));
+    !localStoreStatus.hasLocalStore;
 
   // C1-C6: Local store configured but invalid - show modal blocking error dialog
-  // Exception: In test environment with env override, don't block - let tests proceed
   const hasInvalidLocalStore =
     isInitialized &&
     localStoreStatus !== null &&
     Boolean(localStoreStatus.hasLocalStore) &&
-    !localStoreStatus.isValid &&
-    !(isTestEnvironment && isEnvironmentOverride);
+    !localStoreStatus.isValid;
 
   // Critical environment variable error - should close app
   const hasCriticalEnvironmentError = Boolean(
@@ -121,7 +104,6 @@ export function useLocalStoreSetupFlow({
     hasCriticalEnvironmentError,
     hasInvalidLocalStore,
     isEnvironmentOverride,
-    isTestEnvironment,
     isWizardInitializing,
     needsLocalStoreSetup,
     setIsWizardInitializing,

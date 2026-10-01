@@ -49,16 +49,19 @@ async function runWizardTest(
   },
   testName?: string,
 ) {
+  // Its own settings, so no earlier launch's saved store stops the wizard
+  // from opening
+  const userData = fs.mkdtempSync(path.join(os.tmpdir(), "romper-e2e-wizard-"));
   const env = Object.fromEntries(
     Object.entries({
       ...process.env,
+      ROMPER_USER_DATA_DIR: userData,
       ...(source === "sdcard" && fixturePath
         ? { ROMPER_SDCARD_PATH: fixturePath }
         : {}),
       ...(source === "squarp" && squarpArchiveUrl
         ? { ROMPER_SQUARP_ARCHIVE_URL: squarpArchiveUrl }
         : {}),
-      ROMPER_LOCAL_PATH: "", // Empty string triggers wizard (no local store override)
     }).filter(([_, v]) => typeof v === "string"),
   ) as { [key: string]: string };
 
@@ -152,7 +155,7 @@ async function runWizardTest(
     }
   }
 
-  // 2. target - generate dynamic path since ROMPER_LOCAL_PATH is empty
+  // 2. target - generate dynamic path, since no store is configured
   const targetPath = path.join(
     os.tmpdir(),
     `romper-e2e-${source}-${Date.now()}`,
@@ -215,6 +218,7 @@ async function runWizardTest(
   expect(await fs.pathExists(dbPath)).toBe(true);
 
   await electronApp.close();
+  await fs.remove(userData);
 }
 
 // Wait for a file to exist (polling, idiomatic for Playwright E2E)

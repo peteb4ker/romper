@@ -221,7 +221,7 @@ real defect with a workaround or a limited blast radius. **Low** is hygiene.
   flows); the grid scroll position is lost when returning from the editor;
   `isDarkMode` goes stale in "system" mode; the gain knob sends an IPC call
   on every mouse move.
-- **Tooling**: `coverage:total` reads the wrong folder; the Sonar lcov path
+- **Tooling**: `coverage:total` reads the wrong folder (fixed in #409); the Sonar lcov path
   is declared twice; dead Vitest options; a global mock makes
   `errorHandling.test.ts` vacuous; the Forge ignore list ships `.claude/`,
   `aidlc-docs/`, `.aidlc-rule-details/` and TypeScript sources inside the
@@ -241,16 +241,17 @@ real defect with a workaround or a limited blast radius. **Low** is hygiene.
   `VITE_ROMPER_TEST_MODE` is read in `useLocalStoreSetupFlow.ts:45` but
   nothing sets it, so its branches never run;
   `sync-unsaved-state.integration` writes into
-  `tests/integration/sync-test-data` instead of a temp folder.
+  `tests/integration/sync-test-data` instead of a temp folder (both fixed
+  in #409).
 - **Found by the full-pipeline validation (2026-10-01)**: an empty
   `ROMPER_LOCAL_PATH` (what the e2e specs set to force the wizard) shows the
   "Test Mode: Using ROMPER_LOCAL_PATH" banner although nothing is
-  overridden; every factory import logs 43 "No voice types could be
+  overridden (fixed in #409); every factory import logs 43 "No voice types could be
   inferred from filenames" warnings for kits whose file names have no drum
   words, a normal outcome logged as a warning
   (`useLocalStoreWizardScanning.ts:92`); `scripts/capture-screenshots.ts`
   still launches with the installed app's settings folder (RE-68 covered
-  e2e only).
+  e2e only; fixed in #409).
 
 ## Technical Debt
 

@@ -167,8 +167,7 @@ const KitsView: React.FC = () => {
       {/* Environment Variable Test Mode Banner */}
       {setupFlow.showEnvironmentBanner &&
         setupFlow.isEnvironmentOverride &&
-        !setupFlow.hasCriticalEnvironmentError &&
-        !setupFlow.isTestEnvironment && (
+        !setupFlow.hasCriticalEnvironmentError && (
           <EnvironmentBanner
             localStorePath={localStoreStatus?.localStorePath}
             onDismiss={setupFlow.dismissEnvironmentBanner}

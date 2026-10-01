@@ -194,7 +194,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: peteb4ker/romper
-          files: ./coverage/coverage-final.json
+          files: ./coverage/merged/coverage-final.json
           disable_search: true
 
       # sonarcloud-github-action was deprecated and its bundled scanner

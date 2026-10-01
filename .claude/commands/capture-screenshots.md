@@ -1,6 +1,6 @@
 ---
 description: Capture app screenshots for the website and manual documentation. Required after any UI change that shows in a captured view.
-argument-hint: "[--all | --target <name>[,<name>...] | --list]  Optionally specify which screenshots to capture"
+argument-hint: "[--all | --target <name>[,<name>...] | --list] [--store <path>]  Optionally specify which screenshots to capture"
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 ---
 
@@ -22,7 +22,7 @@ This is part of the change, not a follow-up chore:
 
 This command:
 
-1. Builds the app and launches it with the local Romper instance via Playwright
+1. Builds the app and launches it on a real local store via Playwright, with temporary settings
 2. Navigates to each view and captures screenshots
 3. Saves them to `docs/images/` (website) and `docs/images/manual/` (manual)
 4. Optionally updates the manual markdown files to reference new screenshots
@@ -57,15 +57,19 @@ Then run `npm run screenshots -- <args>` with the user's argument.
 `--target` takes one name or a comma-separated list, captured in one build:
 
 ```
-ROMPER_LOCAL_PATH=<store> ROMPER_HEADLESS=true npm run screenshots -- --target manual-step-sequencer,manual-transport-controls
+ROMPER_HEADLESS=true npm run screenshots -- --target manual-step-sequencer,manual-transport-controls
 ```
 
-- **`ROMPER_LOCAL_PATH` is required.** The script launches the built app,
-  which reads `romper-settings.json` from a different userData folder than
-  `npm run dev` does, so without it the app has no store and every kit
-  target times out. Use the user's store (find it in
-  `~/Library/Application Support/Electron/romper-settings.json`); the
-  targets only navigate and open menus, they don't edit kits.
+- **The store:** `--store <path>` picks the local store to capture. Without
+  it, the script uses the installed app's store, read from its
+  `romper-settings.json` (`~/Library/Application Support/Romper` on macOS),
+  which it only reads. Use the user's store: the targets only navigate and
+  open menus, they don't edit kits.
+- **Its own settings:** the app runs with a temporary userData folder
+  (`--user-data-dir` and `ROMPER_USER_DATA_DIR`) holding a fresh
+  `romper-settings.json` with that store, deleted when the script ends. The
+  app never reads or writes the installed app's settings, and it doesn't use
+  `ROMPER_LOCAL_PATH` (unset for the run), so there's no Test Mode banner.
 - **`ROMPER_HEADLESS=true`** keeps the window off the user's screen. Hidden
   windows don't draw sample waveforms, so for `manual-voice-panel` (or any
   view with waveforms) run without it.
@@ -99,8 +103,8 @@ When adding new screenshots that need hover states, use `captureOverride` with `
 ## Important Notes
 
 - The app must be buildable (`npm run build` must succeed)
-- The script uses the local Romper instance (your real local store with actual kits) -- no e2e fixtures
-- Romper must have been set up at least once so `romper-settings.json` exists in the Electron userData directory
+- The script uses a real local store with actual kits (`--store`, or the installed app's), not the e2e fixtures
+- Without `--store`, Romper must have been set up at least once so the installed app's `romper-settings.json` names a store
 - Screenshots use a fixed 1280x800 viewport for consistency
 - The script resets to the Kit Browser between captures
 - If a `data-testid` selector is missing from a component, add it to the React component before capturing

@@ -112,6 +112,27 @@ describe("LocalStoreService", () => {
       expect(mockValidateAndDb).not.toHaveBeenCalled();
     });
 
+    it.each(["", "  "])(
+      "treats ROMPER_LOCAL_PATH=%j as unset, not as an override",
+      (envPath) => {
+        expect(localStoreService.getLocalStoreStatus(null, envPath)).toEqual({
+          error: "No local store configured",
+          hasLocalStore: false,
+          isCriticalEnvironmentError: false,
+          isEnvironmentOverride: false,
+          isValid: false,
+          localStorePath: null,
+        });
+
+        const saved = localStoreService.getLocalStoreStatus(
+          "/local/path",
+          envPath,
+        );
+        expect(saved.isEnvironmentOverride).toBe(false);
+        expect(saved.localStorePath).toBe("/local/path");
+      },
+    );
+
     it("returns invalid status when validation fails", () => {
       mockValidateAndDb.mockReturnValue({
         details: { hasDb: false },

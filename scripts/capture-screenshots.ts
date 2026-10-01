@@ -1,16 +1,17 @@
 /**
  * Screenshot Capture Script for Romper Documentation
  *
- * Launches the Electron app using the local Romper instance (your real
- * local store with actual kits) and captures screenshots of specified
- * views/elements for use in the website and manual.
+ * Launches the built app on a real local store (with actual kits) and
+ * captures screenshots of specified views/elements for use in the website
+ * and manual.
  *
- * Prerequisites:
- *   - A configured Romper local store with kits (the app must have been
- *     set up at least once so romper-settings.json exists)
+ * The app runs with its own temporary settings folder, never the installed
+ * app's: the store is written into a fresh romper-settings.json there, and
+ * the folder is deleted afterwards. The store comes from --store, or else
+ * from the installed app's settings, which are only read.
  *
  * Usage:
- *   npm run screenshots -- [--target <name>] [--all] [--list]
+ *   npm run screenshots -- [--target <name>] [--all] [--list] [--store <path>]
  *
  * Targets are defined in SCREENSHOT_TARGETS below. New targets can be added
  * by appending to that array -- each target specifies a name, the navigation
@@ -27,7 +28,14 @@
 import type { Page } from "playwright";
 
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { inflateSync } from "node:zlib";
@@ -556,6 +564,44 @@ if (targets.length === 0 || unknown.length > 0) {
   process.exit(1);
 }
 
+const storeArg = args.includes("--store")
+  ? args[args.indexOf("--store") + 1]
+  : null;
+
+/** The installed app's settings file, which this script only reads */
+function installedSettingsFile(): string {
+  const appData =
+    process.platform === "darwin"
+      ? path.join(os.homedir(), "Library", "Application Support")
+      : process.platform === "win32"
+        ? (process.env.APPDATA ?? path.join(os.homedir(), "AppData", "Roaming"))
+        : (process.env.XDG_CONFIG_HOME ?? path.join(os.homedir(), ".config"));
+  return path.join(appData, "Romper", "romper-settings.json");
+}
+
+/** The local store to capture: --store, else the installed app's */
+function resolveStore(): string {
+  if (storeArg) return path.resolve(storeArg);
+  const file = installedSettingsFile();
+  let store: unknown;
+  try {
+    store = JSON.parse(readFileSync(file, "utf8")).localStorePath;
+  } catch {
+    store = undefined;
+  }
+  if (typeof store !== "string" || !store) {
+    console.error(`No local store in ${file}. Pass one with --store <path>.`);
+    process.exit(1);
+  }
+  return store;
+}
+
+const store = resolveStore();
+if (!existsSync(path.join(store, ".romperdb"))) {
+  console.error(`Not a Romper local store (no .romperdb): ${store}`);
+  process.exit(1);
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -567,6 +613,20 @@ async function main() {
   const { mkdirSync } = await import("node:fs");
   mkdirSync(path.join(DOCS_IMAGES, "manual"), { recursive: true });
 
+  // Settings of its own, so the installed app's are never read or written
+  // by the app. Saved settings rather than ROMPER_LOCAL_PATH, so there's no
+  // Test Mode banner in the screenshots.
+  const userData = mkdtempSync(path.join(os.tmpdir(), "romper-screenshots-"));
+  writeFileSync(
+    path.join(userData, "romper-settings.json"),
+    JSON.stringify({ localStorePath: store }, null, 2),
+  );
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    ROMPER_USER_DATA_DIR: userData,
+  };
+  delete env.ROMPER_LOCAL_PATH;
+
   let electronApp;
   try {
     // Build the app first
@@ -574,13 +634,13 @@ async function main() {
     const { execSync } = await import("node:child_process");
     execSync("npm run build", { cwd: ROOT, stdio: "inherit" });
 
-    // Launch Electron using the local Romper instance (real local store)
-    console.log("Launching Electron with local store...");
+    console.log(`Launching Electron with local store ${store} ...`);
     electronApp = await electron.launch({
-      args: [path.join(ROOT, "dist/electron/main/index.js")],
-      env: {
-        ...process.env,
-      },
+      args: [
+        path.join(ROOT, "dist/electron/main/index.js"),
+        `--user-data-dir=${userData}`,
+      ],
+      env,
       timeout: 30000,
     });
 
@@ -664,6 +724,7 @@ async function main() {
     console.log("\nDone.\n");
   } finally {
     if (electronApp) await electronApp.close();
+    rmSync(userData, { force: true, recursive: true });
   }
 }
 

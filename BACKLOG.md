@@ -85,6 +85,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| Low | Low | Tests | Test and tooling hygiene from the validation audit: an empty `ROMPER_LOCAL_PATH` counted as an override (Test Mode banner); dead `VITE_ROMPER_TEST_MODE` branch; screenshots used the installed app's settings; an integration test wrote into the source tree; `coverage:total` read the wrong folder; `worktree:create` hid the failing command. | done (#409, plan item 7) |
 | RE-24 | Medium | Archive | The factory download had no status check, redirect handling, timeout or checksum; the ~313 MiB zip was never deleted; extraction ignored write and mkdir errors. | done (#405: fetch with an idle timeout, pinned SHA-256, zip deleted in `finally`, extraction fails on any write error) |
 | RE-64 | High | Kits | A kit can only be created in a bank that already has one, so an empty local store can't create its first kit. | done (#401) |
 | RE-65 | Medium | Undo | Edit > Undo and Edit > Redo use Electron's native roles and never reach Romper's undo; only Cmd/Ctrl+Z works. | done (#406) |

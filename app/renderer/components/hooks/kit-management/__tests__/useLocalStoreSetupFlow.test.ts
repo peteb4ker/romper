@@ -6,9 +6,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
 import { useLocalStoreSetupFlow } from "../useLocalStoreSetupFlow";
 
-// Note: vitest runs with import.meta.env.MODE === "test", so the hook's
-// isTestEnvironment branch is active in all of these tests.
-
 const makeStatus = (
   overrides: Partial<LocalStoreValidationDetailedResult>,
 ): LocalStoreValidationDetailedResult =>
@@ -75,13 +72,14 @@ describe("useLocalStoreSetupFlow", () => {
       expect(setShowWizard).not.toHaveBeenCalled();
     });
 
-    it("routes an invalid env-override store to setup instead of blocking in test env", () => {
+    it("blocks on an invalid env-override store, as for a saved one", () => {
       const { result } = render(
         makeStatus({ isEnvironmentOverride: true, isValid: false }),
       );
 
-      expect(result.current.needsLocalStoreSetup).toBe(true);
-      expect(result.current.hasInvalidLocalStore).toBe(false);
+      expect(result.current.hasInvalidLocalStore).toBe(true);
+      expect(result.current.needsLocalStoreSetup).toBe(false);
+      expect(setShowWizard).not.toHaveBeenCalled();
     });
 
     it("flags critical environment errors", () => {

@@ -1,7 +1,7 @@
 <!--
 title: Step Sequencer UX Review and Proposal
 priority: medium
-status: accepted; Phase 0 merged (#371); refresh (Phases 1, 2, 4 and part of 3) in progress
+status: accepted; Phase 0 merged (#371); refresh #373; polish (C4, C9, slice choke) in progress
 updated: 2026-09-30
 context_size: medium
 -->
@@ -168,8 +168,24 @@ each other and can land in any order.
 | 0. Fixes and keys | A1–A4, B3 | M | Merged in #371; see "Keyboard routing" below. |
 | 1. Readability | B1, B2, B4 (visual), B6, C2, C5, C6, D2 | M | Done in the refresh branch (`claude/sequencer-refresh`). |
 | 2. Row controls | C1, C3, B7, B8 | M | Done in the refresh, except B8: transport keeps its amber. |
-| 3. Discoverability | B4 (menu), B5, C4 | S–M | B4 menu and B5 done in the refresh; C4 (status line, `?` overlay, keycaps) open. |
-| 4. Slicer layout | C7, C8, C9 | M | C7 and C8 done in the refresh; C9 partly (the drawer may grow to 640 px; no drag handle). |
+| 3. Discoverability | B4 (menu), B5, C4 | S–M | B4 menu and B5 in #373; C4 (status line, `?` overlay, `S` keycap) in the polish branch. |
+| 4. Slicer layout | C7, C8, C9 | M | C7 and C8 in #373; C9 in the polish branch: drag the drawer's top edge to set pad height (28–60 px, remembered, double-click resets). |
+
+### Polish (after #373)
+
+- **C4:** a status line under the grid with the keys that matter where
+  focus is (the slicer's keys on a slice row), a `?` overlay with every
+  shortcut (`?` again or Escape closes it), and an `S` keycap on the
+  Show/Hide handle.
+- **C9:** a grip on the drawer's top edge sets the pad height; the drag
+  is shared by the four rows so the edge tracks the pointer.
+- **Slice auditions always choke.** Pete heard slice auditions overlap.
+  Retriggering one slot already stopped its previous sound, and the cases
+  reproduced in the app choked correctly, but the choke between slots
+  depended on React state that kit refreshes reset (RE-13) and that is
+  keyed by file name (RE-45). A per-voice registry at the audio layer
+  (`voiceChoke.ts`) now stops any other sound on a voice when one starts,
+  whichever component started it.
 
 ### The refresh, as built
 

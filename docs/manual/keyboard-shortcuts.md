@@ -45,6 +45,7 @@ The slash key triggers a rescan of the current kit, re-analyzing sample filename
 | Navigate between steps | Arrow keys |
 | Undo / redo a step, condition or slice edit | `Cmd+Z` / `Cmd+Shift+Z` (macOS), `Ctrl+Z` / `Ctrl+Y` (Windows/Linux) |
 | Close the step options, then the slicer, then the kit | `Escape` |
+| Show all sequencer shortcuts | `?` |
 
 While the sequencer is showing, `Space` plays and stops it, as in a DAW, unless a button or field has focus. When the grid is focused, the arrow keys move between steps in the 4x16 grid and `Enter` toggles the step under the cursor.
 

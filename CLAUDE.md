@@ -120,7 +120,10 @@ Hooks in `.claude/hooks/` and `.husky/` enforce the first two.
   bootstrap and the app never opens a window; only e2e notices. SonarCloud
   S7785 flags this line; it's a won't-fix.
 - **Voices are monophonic (voice choke).** Triggering a sample stops whatever
-  else is playing on that voice (`handlePlay` in `useKitPlayback.ts`).
+  else is playing on that voice. `claimVoice` in `voiceChoke.ts` enforces it
+  at the audio layer for every sound (sequencer, previews, slicer
+  auditions); `handlePlay` in `useKitPlayback.ts` also chokes through React
+  state, which kit refreshes reset (RE-13).
 - **Stereo is a voice setting, not a sample property.** `voices.stereo_mode`
   drives stereo behavior. Never infer it from a file's channel count, and
   never copy samples onto the adjacent voice based on `is_stereo`; that

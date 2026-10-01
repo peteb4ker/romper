@@ -601,7 +601,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
             >
               {/* Voice number chip: lit in the voice color, flashes on a hit */}
               <span
-                className="relative flex items-center justify-center h-9 text-sm font-bold rounded-md shrink-0"
+                className="relative flex items-center justify-center h-[min(36px,var(--seq-pad-h))] text-sm font-bold rounded-md shrink-0"
                 data-testid={`seq-voice-label-${voiceIdx}`}
                 style={{
                   background: `var(--voice-${voiceNumber})`,
@@ -625,7 +625,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
               <button
                 aria-label={`${isMuted ? "Unmute" : "Mute"} voice ${voiceNumber}`}
                 aria-pressed={isMuted}
-                className={`flex items-center justify-center h-[30px] rounded-md border text-xs font-bold shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary transition-colors ${isMuted ? "bg-accent-warning border-accent-warning text-[#1a1d23]" : "bg-surface-2 border-border-default text-text-tertiary hover:text-text-primary hover:bg-surface-3"}`}
+                className={`flex items-center justify-center h-[min(30px,var(--seq-pad-h))] rounded-md border text-xs font-bold shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary transition-colors ${isMuted ? "bg-accent-warning border-accent-warning text-[#1a1d23]" : "bg-surface-2 border-border-default text-text-tertiary hover:text-text-primary hover:bg-surface-3"}`}
                 data-testid={`voice-mute-${voiceIdx}`}
                 onClick={() => onMuteToggle?.(voiceNumber)}
                 style={{ marginRight: MUTE_GAP, width: MUTE_WIDTH }}
@@ -694,7 +694,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
                   <button
                     aria-label={`Slice mode for voice ${voiceNumber}`}
                     aria-pressed={sliceEnabled[voiceNumber] ?? false}
-                    className={`flex items-center justify-center h-[30px] rounded-md border focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${sliceEnabled[voiceNumber] ? "bg-surface-3 border-border-strong" : "bg-surface-2 border-border-default text-text-tertiary hover:text-text-primary hover:bg-surface-3"}`}
+                    className={`flex items-center justify-center h-[min(30px,var(--seq-pad-h))] rounded-md border focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${sliceEnabled[voiceNumber] ? "bg-surface-3 border-border-strong" : "bg-surface-2 border-border-default text-text-tertiary hover:text-text-primary hover:bg-surface-3"}`}
                     data-testid={`slice-toggle-${voiceIdx}`}
                     disabled={
                       !sliceEnabled[voiceNumber] &&
@@ -720,7 +720,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
                 {/* Sample mode: which of the voice's samples each hit plays */}
                 <div
                   aria-label={`Sample mode for voice ${voiceNumber}`}
-                  className="flex h-[30px] rounded-md border border-border-default bg-surface-2 p-0.5"
+                  className="flex h-[min(30px,var(--seq-pad-h))] rounded-md border border-border-default bg-surface-2 p-0.5"
                   data-testid={`sample-mode-${voiceIdx}`}
                   role="group"
                   style={{ width: MODE_COLUMN_WIDTH }}

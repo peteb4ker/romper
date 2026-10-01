@@ -1,5 +1,7 @@
 import React from "react";
 
+import { Kbd } from "./SequencerHelp";
+
 interface StepSequencerDrawerProps {
   children: React.ReactNode;
   sequencerOpen: boolean;
@@ -21,7 +23,7 @@ const StepSequencerDrawer: React.FC<StepSequencerDrawerProps> = ({
         aria-label={
           sequencerOpen ? "Hide step sequencer" : "Show step sequencer"
         }
-        className={`absolute left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-36 h-6 border-b-0 rounded-t-sm bg-surface-3 border border-border-default shadow-md hover:bg-surface-4 transition-colors focus:outline-none pointer-events-auto ${sequencerOpen ? "-top-4" : "top-2"}`}
+        className={`absolute left-1/2 -translate-x-1/2 z-10 flex items-center justify-center px-3 h-6 border-b-0 rounded-t-sm bg-surface-3 border border-border-default shadow-md hover:bg-surface-4 transition-colors focus:outline-none pointer-events-auto ${sequencerOpen ? "-top-4" : "top-2"}`}
         data-testid="kit-step-sequencer-handle"
         onClick={() => setSequencerOpen(!sequencerOpen)}
         style={{
@@ -32,6 +34,9 @@ const StepSequencerDrawer: React.FC<StepSequencerDrawerProps> = ({
         <span className="w-6 h-1 rounded bg-text-tertiary block" />
         <span className="ml-2 text-xs font-semibold">
           {sequencerOpen ? "Hide" : "Show"} Sequencer
+        </span>
+        <span className="ml-1.5">
+          <Kbd>S</Kbd>
         </span>
       </button>
 

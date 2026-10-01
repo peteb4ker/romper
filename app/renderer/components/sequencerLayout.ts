@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 
 /**
  * Shared geometry for the step sequencer, so the slice strip's waveform can
@@ -50,3 +50,87 @@ export function stepOffset(step: number): string {
 
 /** Width of all 16 step columns, each with its share of the gap. */
 export const STEPS_SPAN = "calc(var(--seq-pitch) * 16)";
+
+const PAD_HEIGHT_KEY = "romper.sequencer.padHeight";
+const PAD_HEIGHT_MIN = 28;
+const PAD_HEIGHT_MAX = 60;
+
+/**
+ * Pad height chosen by dragging the sequencer drawer's top edge (null: the
+ * default, which follows the window). Dragging up makes the pads taller;
+ * the four rows share the drag, so the edge follows the pointer. The choice
+ * is remembered on this computer.
+ */
+export function usePadHeight() {
+  const [value, setValue] = React.useState<null | number>(readPadHeight);
+
+  const onPointerDown = React.useCallback(
+    (e: React.PointerEvent<HTMLElement>) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      const pad = document.querySelector<HTMLElement>(
+        '[data-testid="seq-step-0-0"]',
+      );
+      const startHeight = value ?? pad?.offsetHeight ?? 40;
+      const startY = e.clientY;
+      let latest = startHeight;
+      const onMove = (move: PointerEvent) => {
+        latest = Math.round(
+          Math.min(
+            PAD_HEIGHT_MAX,
+            Math.max(PAD_HEIGHT_MIN, startHeight - (move.clientY - startY) / 4),
+          ),
+        );
+        setValue(latest);
+      };
+      const onUp = () => {
+        globalThis.removeEventListener("pointermove", onMove);
+        globalThis.removeEventListener("pointerup", onUp);
+        writePadHeight(latest);
+      };
+      globalThis.addEventListener("pointermove", onMove);
+      globalThis.addEventListener("pointerup", onUp);
+    },
+    [value],
+  );
+
+  const reset = React.useCallback(() => {
+    setValue(null);
+    writePadHeight(null);
+  }, []);
+
+  const style = React.useMemo(
+    () =>
+      (value == null
+        ? {}
+        : { "--seq-pad-h": `${value}px` }) as React.CSSProperties,
+    [value],
+  );
+
+  return {
+    max: PAD_HEIGHT_MAX,
+    min: PAD_HEIGHT_MIN,
+    onPointerDown,
+    reset,
+    style,
+    value,
+  };
+}
+
+function readPadHeight(): null | number {
+  try {
+    const stored = Number(globalThis.localStorage?.getItem(PAD_HEIGHT_KEY));
+    return stored >= PAD_HEIGHT_MIN && stored <= PAD_HEIGHT_MAX ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+function writePadHeight(height: null | number) {
+  try {
+    if (height == null) globalThis.localStorage?.removeItem(PAD_HEIGHT_KEY);
+    else globalThis.localStorage?.setItem(PAD_HEIGHT_KEY, String(height));
+  } catch {
+    // Storage unavailable: the size just isn't remembered
+  }
+}

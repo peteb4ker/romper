@@ -1,4 +1,3 @@
-import { expect, test } from "@playwright/test";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -11,6 +10,7 @@ import {
 import type { ElectronAPI } from "../../shared/electronApi";
 
 import { dropFiles } from "../utils/e2e-drop";
+import { expect, test } from "../utils/e2e-error-guard";
 import {
   cleanupE2EFixture,
   type E2ETestEnvironment,

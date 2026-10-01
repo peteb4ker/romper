@@ -17,53 +17,110 @@ permissions:
   id-token: write # Required for Azure Trusted Signing OIDC
 
 jobs:
-  quality-gate:
+  # Nothing is built until the tag and the code are known to be releasable
+  # (RE-17): the tag is on main and matches package.json, SonarCloud's gate
+  # passes, and the test suites below pass on the tagged commit.
+  preflight:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Check the tag is on main and matches package.json
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::$GITHUB_REF_NAME ($GITHUB_SHA) is not on main. Tag a commit that has merged to main."
+            exit 1
+          fi
+          VERSION="v$(node -p "require('./package.json').version")"
+          if [ "$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match package.json version $VERSION."
+            exit 1
+          fi
+          echo "$GITHUB_REF_NAME is on main and matches package.json"
 
       - name: Check SonarCloud Quality Gate
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          STATUS=$(curl -s -u "$SONAR_TOKEN:" \
-            "https://sonarcloud.io/api/qualitygates/project_status?projectKey=peteb4ker_romper" \
-            | jq -r '.projectStatus.status')
-
-          ISSUES=$(curl -s -u "$SONAR_TOKEN:" \
-            "https://sonarcloud.io/api/issues/search?projectKeys=peteb4ker_romper&severities=CRITICAL,BLOCKER&statuses=OPEN,CONFIRMED&ps=1" \
-            | jq -r '.total')
-
-          HOTSPOTS=$(curl -s -u "$SONAR_TOKEN:" \
-            "https://sonarcloud.io/api/hotspots/search?projectKey=peteb4ker_romper&status=TO_REVIEW&ps=1" \
-            | jq -r '.paging.total')
+          # Fail closed: an unreachable API, an empty answer or a gate that
+          # isn't OK all block the release.
+          sonar() {
+            curl -sSf -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/$1"
+          }
+          STATUS=$(sonar "qualitygates/project_status?projectKey=peteb4ker_romper" | jq -r '.projectStatus.status')
+          ISSUES=$(sonar "issues/search?projectKeys=peteb4ker_romper&severities=CRITICAL,BLOCKER&statuses=OPEN,CONFIRMED&ps=1" | jq -r '.total')
+          HOTSPOTS=$(sonar "hotspots/search?projectKey=peteb4ker_romper&status=TO_REVIEW&ps=1" | jq -r '.paging.total')
 
           echo "Quality Gate: $STATUS | Critical/Blocker: $ISSUES | Hotspots: $HOTSPOTS"
 
+          if [ "$STATUS" != "OK" ]; then
+            echo "::error::Release blocked: SonarCloud quality gate is '$STATUS', not OK"
+            exit 1
+          fi
+          if ! [[ "$ISSUES" =~ ^[0-9]+$ && "$HOTSPOTS" =~ ^[0-9]+$ ]]; then
+            echo "::error::Release blocked: SonarCloud returned no issue or hotspot counts"
+            exit 1
+          fi
           if [ "$ISSUES" -gt 0 ] || [ "$HOTSPOTS" -gt 0 ]; then
             echo "::error::Release blocked: $ISSUES critical/blocker issues, $HOTSPOTS security hotspots"
             exit 1
           fi
 
       - name: Create GitHub issue on failure
-        if: failure()
+        if: failure() && startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh issue create \
             --repo ${{ github.repository }} \
-            --title "Release ${{ github.ref_name }} blocked: SonarCloud quality gate" \
+            --title "Release ${{ github.ref_name }} blocked: preflight failed" \
             --label "bug,priority:high" \
-            --body "Release **${{ github.ref_name }}** blocked by SonarCloud issues. Fix issues and re-tag.
+            --body "Release **${{ github.ref_name }}** didn't pass preflight (tag on main and matching package.json, SonarCloud gate). See [the run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).
           - [Issues](https://sonarcloud.io/project/issues?id=peteb4ker_romper&severities=CRITICAL,BLOCKER)
           - [Hotspots](https://sonarcloud.io/project/security_hotspots?id=peteb4ker_romper)
 
           _Auto-created by release workflow._"
 
+  # The same suites CI runs, on the tagged commit. CI on main can't stand in:
+  # a push to main replaces the previous main run while it is still queued,
+  # so many commits never get a complete run.
+  lint:
+    needs: preflight
+    permissions:
+      contents: read
+    uses: ./.github/workflows/lint.yml
+
+  typecheck:
+    needs: preflight
+    permissions:
+      contents: read
+    uses: ./.github/workflows/typecheck.yml
+
+  tests:
+    needs: preflight
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    uses: ./.github/workflows/test.yml
+
+  e2e:
+    needs: preflight
+    permissions:
+      contents: read
+    uses: ./.github/workflows/e2e.yml
+
   build:
-    needs: quality-gate
+    needs: [preflight, lint, typecheck, tests, e2e]
     strategy:
       fail-fast: false
       matrix:
@@ -195,6 +252,12 @@ jobs:
             --max-wait-seconds 1800 \
             --api-key-file "$RUNNER_TEMP/asc-api-key.json" \
             out/Romper-darwin-arm64/Romper.app
+
+      # Unit and e2e tests run the unpackaged app, which skips the updater;
+      # only a packaged run shows it loads (RE-16).
+      - name: Smoke-test the packaged app — macOS
+        if: matrix.os == 'macos-latest'
+        run: node scripts/smoke-packaged-app.mjs out/Romper-darwin-arm64/Romper.app/Contents/MacOS/romper
 
       - name: Make installers (skip package) — macOS
         if: matrix.os == 'macos-latest'

@@ -29,14 +29,24 @@ condensed checklist for these steps.
    git push origin v1.4.0
    ```
 
-4. **Watch the workflow** at https://github.com/peteb4ker/romper/actions:
-   1. SonarCloud quality gate. Any open CRITICAL/BLOCKER issue or unreviewed
-      security hotspot blocks the release and files a GitHub issue; fix the
-      issues and re-tag.
-   2. Builds on macOS (rcodesign sign + notarize, see
+4. **Watch the workflow** at https://github.com/peteb4ker/romper/actions.
+   Nothing is built until the first two steps pass (RE-17):
+   1. Preflight. The tag must be on `main` and match `package.json`'s
+      version, and SonarCloud's quality gate must be `OK` with no open
+      CRITICAL/BLOCKER issue or unreviewed security hotspot. An unreachable
+      SonarCloud API also blocks. A failure files a GitHub issue; fix it and
+      re-tag.
+   2. Lint, typecheck, unit and integration tests (all three OSes) and e2e
+      tests (all three OSes), run on the tagged commit by calling the CI
+      workflows. CI results on `main` don't count: a push to `main` replaces
+      the queued run for the previous commit, so many commits never get a
+      complete run.
+   3. Builds on macOS (rcodesign sign + notarize, see
       [code-signing.md](code-signing.md)), Windows (Azure Trusted Signing),
-      and Linux.
-   3. GitHub Release with notes from
+      and Linux. The macOS job launches the packaged app
+      (`scripts/smoke-packaged-app.mjs`) and fails unless it starts its
+      auto-updater, which no unpackaged test can check (RE-16).
+   4. GitHub Release with notes from
       `scripts/generate-github-release-notes.js`, which renders
       `docs/templates/RELEASE_NOTES_TEMPLATE.md` from the conventional
       commits since the last tag.
@@ -69,6 +79,9 @@ repeating the process with the final version; semver orders
 
 ## When something goes wrong
 
+- **Preflight failed:** the run says which check. Tag a commit that's on
+  `main`, bump `package.json` to match the tag, or fix what SonarCloud
+  reports; then delete and re-push the tag.
 - **Platform build failed:** re-run only the failed job
   (`gh run rerun <run-id> --failed`). A macOS notarization 403 mentioning
   agreements means the Apple Developer account holder must re-accept the

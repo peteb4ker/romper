@@ -1,5 +1,7 @@
 import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
+import { writeSequenceSnapshot } from "./sequenceUndo";
+
 export interface UseRedoActionHandlersOptions {
   kitName: string;
 }
@@ -57,6 +59,12 @@ export function useRedoActionHandlers({
           action.data.voice,
           action.data.slot,
           action.data.newSample.source_path,
+        );
+      case "SEQUENCE_EDIT":
+        return writeSequenceSnapshot(
+          kitName,
+          action.data.after,
+          action.data.before,
         );
       default:
         throw new Error(

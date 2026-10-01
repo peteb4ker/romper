@@ -3,7 +3,7 @@ import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
 import React from "react";
 
-import type { VoiceSamples } from "./kitTypes";
+import type { SequenceUndo, VoiceSamples } from "./kitTypes";
 
 import KitEditor from "./KitEditor";
 
@@ -27,6 +27,7 @@ interface KitEditorContainerProps {
   ) => Promise<DbResult<{ isFavorite: boolean }>>;
   onUpdateKitAlias?: (kitName: string, alias: string) => Promise<void>;
   samples: VoiceSamples;
+  sequenceUndo?: SequenceUndo;
 }
 
 /**
@@ -52,6 +53,7 @@ const KitEditorContainer: React.FC<KitEditorContainerProps> = (props) => {
     onToggleFavorite,
     onUpdateKitAlias,
     samples,
+    sequenceUndo,
   } = props;
 
   // Memoize callbacks to prevent unnecessary re-renders
@@ -92,6 +94,7 @@ const KitEditorContainer: React.FC<KitEditorContainerProps> = (props) => {
       onToggleFavorite={onToggleFavorite}
       onUpdateKitAlias={onUpdateKitAlias}
       samples={samples}
+      sequenceUndo={sequenceUndo}
     />
   );
 };

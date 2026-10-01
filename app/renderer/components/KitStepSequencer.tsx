@@ -1,11 +1,13 @@
 import type { SliceStep } from "@romper/shared/sliceTypes";
+import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
 import React from "react";
 
 import type { SliceView } from "./hooks/shared/sliceConstants";
-import type { PlayOptions } from "./kitTypes";
+import type { PlayOptions, SequenceUndo } from "./kitTypes";
 
 import { useKitStepSequencerLogic } from "./hooks/kit-management/useKitStepSequencerLogic";
+import { useSequenceHistory } from "./hooks/kit-management/useSequenceHistory";
 import {
   type SlicerVoiceData,
   useSlicerEditor,
@@ -33,6 +35,8 @@ interface KitStepSequencerProps {
   bpm?: number;
   gridRef?: React.RefObject<HTMLDivElement>;
   kitName: string;
+  /** Records sequencer edits on the kit's undo stack. */
+  onAddUndoAction?: (action: AnyUndoAction) => void;
   onPlaySample: (
     voice: number,
     sample: string,
@@ -45,6 +49,7 @@ interface KitStepSequencerProps {
   selectedSampleIdx?: number;
   selectedVoice?: number;
   sequencerOpen: boolean;
+  sequenceUndo?: SequenceUndo;
   setSequencerOpen: (open: boolean) => void;
   setStepPattern: (pattern: number[][]) => void;
   setTriggerConditions: (conditions: (null | string)[][]) => void;
@@ -65,12 +70,7 @@ interface VoiceData extends SlicerVoiceData {
 const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
   // Destructure props used inside useCallback to satisfy exhaustive-deps
   // without depending on the whole `props` object.
-  const {
-    kitName,
-    onVoiceSettingChanged,
-    setTriggerConditions,
-    triggerConditions,
-  } = props;
+  const { kitName, onVoiceSettingChanged, triggerConditions } = props;
 
   // Manage BPM state at this level to ensure sequencer logic gets live updates
   const bpmLogic = useBpm({ initialBpm: props.bpm, kitName: props.kitName });
@@ -165,19 +165,6 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
     [kitName, onVoiceSettingChanged],
   );
 
-  // Handle trigger condition change — update local state + persist
-  const handleConditionChange = React.useCallback(
-    (voiceIdx: number, stepIdx: number, condition: TriggerCondition) => {
-      const newConditions = triggerConditions.map((row, v) =>
-        v === voiceIdx
-          ? row.map((c, s) => (s === stepIdx ? condition : c))
-          : row,
-      );
-      setTriggerConditions(newConditions);
-    },
-    [triggerConditions, setTriggerConditions],
-  );
-
   // Compute stereo-linked voice pairs from voice data
   const stereoLinks = React.useMemo<StereoLinks>(() => {
     const linkedSecondaries = new Set<number>();
@@ -204,6 +191,33 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
     kitName,
     onSaved: onVoiceSettingChanged,
   });
+  // Every step, condition and slice edit goes on the kit's undo stack
+  const history = useSequenceHistory({
+    onAddUndoAction: props.onAddUndoAction,
+    setSliceSteps: slicerData.setSliceSteps,
+    setStepPattern: props.setStepPattern,
+    setTriggerConditions: props.setTriggerConditions,
+    sliceSteps: slicerData.sliceSteps,
+    stepPattern: props.stepPattern,
+    triggerConditions,
+  });
+  const setHistoryTriggerConditions = history.setTriggerConditions;
+
+  // Handle trigger condition change — update local state + persist
+  const handleConditionChange = React.useCallback(
+    (voiceIdx: number, stepIdx: number, condition: TriggerCondition) => {
+      const newConditions = triggerConditions.map((row, v) =>
+        v === voiceIdx
+          ? row.map((c, s) => (s === stepIdx ? condition : c))
+          : row,
+      );
+      setHistoryTriggerConditions(newConditions, {
+        description: `Set step ${stepIdx + 1} on voice ${voiceIdx + 1} to ${condition ?? "always"}`,
+      });
+    },
+    [triggerConditions, setHistoryTriggerConditions],
+  );
+
   const { sliceSettings, updateSliceSettings } = useVoiceSliceSettings(
     kitName,
     props.voices,
@@ -236,6 +250,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
     onGridKeyDown,
     onSliceTriggered,
     sampleModes,
+    setStepPattern: history.setStepPattern,
     slicerDivision: slicerData.slicerDivision,
     sliceSettings,
     sliceSteps: slicerData.sliceSteps,
@@ -254,7 +269,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
     selectedSampleIdx: props.selectedSampleIdx,
     selectedVoice: props.selectedVoice,
     setFocusedStep: logic.setFocusedStep,
-    setSliceSteps: slicerData.setSliceSteps,
+    setSliceSteps: history.setSliceSteps,
     slicerDivision: slicerData.slicerDivision,
     sliceSettings,
     sliceSteps: slicerData.sliceSteps,
@@ -316,7 +331,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
       {slicer.editorOpen && editingVoice != null && (
         <div className="w-full max-w-[960px] px-4">
           <SliceStrip
-            canUndoRoll={slicer.canUndoRoll}
+            canUndo={props.sequenceUndo?.canUndo ?? false}
             division={slicerData.slicerDivision}
             editingVoice={editingVoice}
             hoverView={
@@ -337,7 +352,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
             onSettingsChange={(update) =>
               slicer.handleSliceSettingsChange(editingVoice, update)
             }
-            onUndoRoll={slicer.undoRoll}
+            onUndo={() => props.sequenceUndo?.undo()}
             playingView={
               slicer.playingSlice?.voiceNumber === editingVoice
                 ? slicer.playingSlice.view

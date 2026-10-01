@@ -10,6 +10,7 @@ import type {
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createSequenceEditAction } from "../sequenceUndo";
 import { useUndoActionHandlers } from "../useUndoActionHandlers";
 
 // Use centralized mocks from vitest.setup.ts
@@ -539,6 +540,28 @@ describe("useUndoActionHandlers", () => {
           result.current.executeUndoAction(unknownAction),
         ).rejects.toThrow("Unknown action type: UNKNOWN_ACTION");
       });
+    });
+  });
+
+  describe("sequencer edits", () => {
+    it("undo writes the before-state back", async () => {
+      const before = {
+        sliceSteps: [[null]],
+        stepPattern: [[0]],
+        triggerConditions: [[null]],
+      };
+      const after = { ...before, stepPattern: [[127]] };
+      const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
+
+      const outcome = await result.current.executeUndoAction(
+        createSequenceEditAction("Turn step 1 on voice 1 on", before, after),
+      );
+
+      expect(outcome).toEqual({ success: true });
+      expect(window.electronAPI.updateStepPattern).toHaveBeenCalledWith(
+        "TestKit",
+        [[0]],
+      );
     });
   });
 });

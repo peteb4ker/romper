@@ -424,6 +424,33 @@ describe("StepSequencerGrid", () => {
       expect(popover).toBeInTheDocument();
     });
 
+    it("right-click selects the step it opens options for", () => {
+      render(<StepSequencerGrid {...defaultProps} />);
+
+      fireEvent.contextMenu(screen.getByTestId("seq-step-2-5"));
+
+      expect(defaultProps.setFocusedStep).toHaveBeenCalledWith({
+        step: 5,
+        voice: 2,
+      });
+    });
+
+    it("focuses the popover, and returns focus to the grid on close", () => {
+      const gridRef = { current: null as HTMLDivElement | null };
+      render(<StepSequencerGrid {...defaultProps} gridRef={gridRef} />);
+
+      fireEvent.contextMenu(screen.getByTestId("seq-step-0-0"));
+      // The current condition ("Always") takes focus, so Escape and typing
+      // reach the popover rather than the grid or the kit behind it
+      expect(document.activeElement).toBe(
+        screen.getByTestId("condition-option-always"),
+      );
+
+      fireEvent.keyDown(document.activeElement!, { key: "Escape" });
+      expect(screen.queryByTestId("condition-popover")).not.toBeInTheDocument();
+      expect(document.activeElement).toBe(gridRef.current);
+    });
+
     it("selecting a condition calls onConditionChange", () => {
       const mockOnConditionChange = vi.fn();
       render(

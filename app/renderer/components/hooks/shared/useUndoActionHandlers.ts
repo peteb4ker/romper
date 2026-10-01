@@ -11,6 +11,7 @@ import type {
 import { dbSlotToUiSlot } from "@romper/shared/slotUtils";
 
 import { createLogger } from "../../../utils/logger";
+import { writeSequenceSnapshot } from "./sequenceUndo";
 
 const log = createLogger("UNDO");
 
@@ -330,6 +331,12 @@ export function useUndoActionHandlers({
         return await undoReindexSamples(action);
       case "REPLACE_SAMPLE":
         return await undoReplaceSample(action);
+      case "SEQUENCE_EDIT":
+        return await writeSequenceSnapshot(
+          kitName,
+          action.data.before,
+          action.data.after,
+        );
       default:
         throw new Error(
           `Unknown action type: ${(action as AnyUndoAction).type}`,

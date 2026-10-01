@@ -2,6 +2,8 @@ import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
 import { useCallback, useEffect, useState } from "react";
 
+import { mergeSequenceEdit } from "./sequenceUndo";
+
 export interface UseUndoRedoStateOptions {
   kitName: string;
 }
@@ -27,14 +29,20 @@ export function useUndoRedoState({ kitName }: UseUndoRedoStateOptions) {
     undoStack: [],
   });
 
-  // Add action to undo stack (called immediately after successful operations)
+  // Add action to undo stack (called immediately after successful operations).
+  // A sequencer edit that continues the previous one (same merge key) merges.
   const addAction = useCallback((action: AnyUndoAction) => {
-    setState((prev) => ({
-      ...prev,
-      error: null,
-      redoStack: [], // Clear redo stack when new action is added
-      undoStack: [action, ...prev.undoStack],
-    }));
+    setState((prev) => {
+      const merged = mergeSequenceEdit(prev.undoStack[0], action);
+      return {
+        ...prev,
+        error: null,
+        redoStack: [], // Clear redo stack when new action is added
+        undoStack: merged
+          ? [merged, ...prev.undoStack.slice(1)]
+          : [action, ...prev.undoStack],
+      };
+    });
   }, []);
 
   // Clear error

@@ -26,7 +26,7 @@ When you press a bank letter, focus jumps to the first kit in that bank.
 | Next kit | `.` (period) |
 | Scan/rescan kit | `/` (slash) |
 | Navigate sample slots | Up / Down arrows |
-| Play selected sample | `Space` or `Enter` |
+| Play selected sample (sequencer hidden) | `Space` or `Enter` |
 | Toggle step sequencer | `S` |
 
 ### Kit Navigation
@@ -40,10 +40,15 @@ The slash key triggers a rescan of the current kit, re-analyzing sample filename
 | Action | Shortcut |
 |--------|----------|
 | Show / hide sequencer | `S` |
-| Toggle current step | `Space` or `Enter` |
+| Play / stop | `Space` |
+| Toggle current step | `Enter` |
 | Navigate between steps | Arrow keys |
+| Undo / redo a step, condition or slice edit | `Cmd+Z` / `Cmd+Shift+Z` (macOS), `Ctrl+Z` / `Ctrl+Y` (Windows/Linux) |
+| Close the step options, then the slicer, then the kit | `Escape` |
 
-When the sequencer is focused, the arrow keys move between steps in the 4x16 grid. Space toggles the step under the cursor on or off.
+While the sequencer is showing, `Space` plays and stops it, as in a DAW, unless a button or field has focus. When the grid is focused, the arrow keys move between steps in the 4x16 grid and `Enter` toggles the step under the cursor.
+
+Sequencer edits go into the kit's undo history alongside sample edits, and you can undo them in locked kits too. Quick repeated edits to one step, such as scrolling through slices, undo in one go.
 
 ### Slicer
 
@@ -56,7 +61,7 @@ These work on a step in a row with slice mode (✂) turned on. Everything they d
 | Random slice each time on / off | `R` |
 | Lock on / off (rolls skip it) | `L` |
 | Roll the row | `D` |
-| Undo the last roll | `Cmd+Z` / `Ctrl+Z` |
+| Undo the last roll (or any sequencer edit) | `Cmd+Z` / `Ctrl+Z` |
 | Change slice / length with the mouse | Scroll wheel / Shift + scroll wheel over the step |
 
 ## Menu Shortcuts

@@ -1,5 +1,5 @@
-import { fireEvent, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, renderHook } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useGlobalKeyboardShortcuts } from "../useGlobalKeyboardShortcuts";
 import { useUndoRedo } from "../useUndoRedo";
@@ -8,6 +8,10 @@ import { useUndoRedo } from "../useUndoRedo";
 vi.mock("../useUndoRedo");
 
 describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
+  // Unmount each test's hook so its document listener can't handle (and
+  // mark handled) the next test's key events
+  afterEach(() => cleanup());
+
   // Create fresh mocks for each test
   let mockUndo: unknown;
   let mockRedo: unknown;
@@ -388,6 +392,89 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     });
   });
 
+  describe("key ownership", () => {
+    const sequenceEdit = {
+      data: {
+        after: { sliceSteps: [], stepPattern: [], triggerConditions: [] },
+        before: { sliceSteps: [], stepPattern: [], triggerConditions: [] },
+      },
+      description: "Turn step 1 on voice 1 on",
+      id: "seq-1",
+      timestamp: new Date(),
+      type: "SEQUENCE_EDIT" as const,
+    };
+
+    function mockNextUndo(nextUndo: unknown) {
+      vi.mocked(useUndoRedo).mockReturnValue({
+        ...vi.mocked(useUndoRedo)(""),
+        nextRedo: null,
+        nextUndo,
+      } as ReturnType<typeof useUndoRedo>);
+    }
+
+    it("undoes a sequencer edit in a locked kit", () => {
+      mockNextUndo(sequenceEdit);
+      renderHook(() =>
+        useGlobalKeyboardShortcuts({
+          currentKitName: "test-kit",
+          isEditMode: false,
+        }),
+      );
+
+      fireEvent.keyDown(document, { key: "z", metaKey: true });
+
+      expect(mockUndo).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not undo a sample edit in a locked kit", () => {
+      mockNextUndo({ ...sequenceEdit, type: "ADD_SAMPLE" });
+      renderHook(() =>
+        useGlobalKeyboardShortcuts({
+          currentKitName: "test-kit",
+          isEditMode: false,
+        }),
+      );
+
+      fireEvent.keyDown(document, { key: "z", metaKey: true });
+
+      expect(mockUndo).not.toHaveBeenCalled();
+    });
+
+    it("leaves Cmd+Z in a text field to the field", () => {
+      renderHook(() =>
+        useGlobalKeyboardShortcuts({
+          currentKitName: "test-kit",
+          isEditMode: true,
+        }),
+      );
+      const input = document.createElement("input");
+      document.body.appendChild(input);
+
+      fireEvent.keyDown(input, { key: "z", metaKey: true });
+
+      expect(mockUndo).not.toHaveBeenCalled();
+      input.remove();
+    });
+
+    it("does not go back on an Escape a component already handled", () => {
+      renderHook(() =>
+        useGlobalKeyboardShortcuts({
+          currentKitName: "test-kit",
+          isEditMode: true,
+          onBackNavigation: mockOnBackNavigation as () => void,
+        }),
+      );
+      const button = document.createElement("button");
+      button.addEventListener("keydown", (e) => e.preventDefault());
+      document.body.appendChild(button);
+
+      fireEvent.keyDown(button, { key: "Escape" });
+
+      expect(mockOnBackNavigation).not.toHaveBeenCalled();
+      button.remove();
+    });
+  });
+
   describe("cleanup", () => {
     it("should remove event listeners on unmount", () => {
       const removeEventListenerSpy = vi.spyOn(document, "removeEventListener");
@@ -404,7 +491,6 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
       expect(removeEventListenerSpy).toHaveBeenCalledWith(
         "keydown",
         expect.any(Function),
-        true,
       );
 
       removeEventListenerSpy.mockRestore();

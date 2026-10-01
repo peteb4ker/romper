@@ -4,6 +4,7 @@ import React from "react";
 
 import type { StereoLinks } from "../../KitStepSequencer";
 import type { PlayOptions } from "../../kitTypes";
+import type { SequenceEditMeta } from "./useSequenceHistory";
 
 import { createLogger } from "../../../utils/logger";
 import {
@@ -54,7 +55,7 @@ interface UseKitStepSequencerLogicParams {
   samples: { [voice: number]: string[] };
   sequencerOpen: boolean;
   setSequencerOpen: (open: boolean) => void;
-  setStepPattern: (pattern: number[][]) => void;
+  setStepPattern: (pattern: number[][], meta?: SequenceEditMeta) => void;
   slicerDivision?: number;
   sliceSettings?: Record<number, VoiceSliceSettings>;
   sliceSteps?: (null | SliceStep)[][];
@@ -349,7 +350,11 @@ export function useKitStepSequencerLogic(
       );
 
       log.debug(`New pattern for voice ${voiceIdx + 1}:`, newPattern[voiceIdx]);
-      setStepPattern(newPattern);
+      setStepPattern(newPattern, {
+        description: `Turn step ${stepIdx + 1} on voice ${voiceIdx + 1} ${newVelocity > 0 ? "on" : "off"}`,
+        // A slice click can toggle a step and assign its slice: one undo
+        mergeKey: `step:${voiceIdx}:${stepIdx}`,
+      });
     },
     [stepPattern, setStepPattern],
   );
@@ -402,6 +407,9 @@ export function useKitStepSequencerLogic(
   const handleStepGridKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (!sequencerOpen) return;
+      // Popovers are portals: their keys bubble through React to the grid,
+      // but they aren't grid keys
+      if (!isInside(e.currentTarget, e.target)) return;
 
       const { step, voice } = focusedStep;
 
@@ -410,14 +418,18 @@ export function useKitStepSequencerLogic(
         return;
       }
 
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
       if (e.key === "ArrowRight") moveFocus("right");
       else if (e.key === "ArrowLeft") moveFocus("left");
       else if (e.key === "ArrowDown") moveFocus("down");
       else if (e.key === "ArrowUp") moveFocus("up");
-      else if (e.key === " " || e.key === "Enter") {
-        e.preventDefault();
-        toggleStep(voice, step);
-        return;
+      else if (e.key === "Enter") toggleStep(voice, step);
+      else if (e.key === " ") {
+        // Space is the transport, as in every DAW. Stop it here so the
+        // sequencer-wide Space handler doesn't toggle playback twice.
+        e.stopPropagation();
+        setIsSeqPlaying((playing) => !playing);
       } else {
         return;
       }
@@ -425,6 +437,21 @@ export function useKitStepSequencerLogic(
     },
     [sequencerOpen, focusedStep, moveFocus, toggleStep, onGridKeyDown],
   );
+
+  // Space plays and stops while the sequencer is open, wherever focus is,
+  // unless a control that uses Space itself has it.
+  React.useEffect(() => {
+    if (!sequencerOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== " " || e.defaultPrevented) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (usesSpaceItself(e.target)) return;
+      e.preventDefault();
+      setIsSeqPlaying((playing) => !playing);
+    };
+    globalThis.addEventListener("keydown", onKeyDown);
+    return () => globalThis.removeEventListener("keydown", onKeyDown);
+  }, [sequencerOpen]);
 
   // Focus management when sequencer opens
   const gridRefInternal = React.useRef<HTMLDivElement>(null);
@@ -465,6 +492,13 @@ export function useKitStepSequencerLogic(
   };
 }
 
+/** Whether a key event's target is in the element's own DOM subtree. */
+function isInside(container: EventTarget | null, target: EventTarget | null) {
+  const el = container as Node | null;
+  if (!el?.contains) return true; // no DOM to check (tests): assume inside
+  return el.contains(target as Node | null);
+}
+
 /**
  * Whether a voice should fire on this step: not a stereo-linked secondary,
  * not muted, step on, and its A:B condition met this cycle.
@@ -487,4 +521,19 @@ function isVoiceDue(args: {
   const condition = (args.triggerConditions?.[voiceIdx]?.[step] ??
     null) as TriggerCondition;
   return shouldTrigger(condition, cycleCount);
+}
+
+/**
+ * Controls where Space has its own meaning (typing, pressing a button,
+ * ticking a box, opening a select). The step grid is not one of them: its
+ * own handler turns Space into play/stop.
+ */
+function usesSpaceItself(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el?.tagName) return false;
+  if (el.closest?.('[role="grid"]')) return false;
+  return (
+    ["BUTTON", "INPUT", "SELECT", "TEXTAREA"].includes(el.tagName) ||
+    el.isContentEditable === true
+  );
 }

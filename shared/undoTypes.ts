@@ -1,6 +1,8 @@
 // Memory-only undo/redo action types
 // Simplified for immediate renderer state management
 
+import type { SliceStep } from "./sliceTypes";
+
 export interface AddSampleAction extends UndoAction {
   data: {
     addedSample: {
@@ -21,7 +23,8 @@ export type AnyUndoAction =
   | MoveSampleAction
   | MoveSampleBetweenKitsAction
   | ReindexSamplesAction
-  | ReplaceSampleAction;
+  | ReplaceSampleAction
+  | SequenceEditAction;
 
 export interface DeleteSampleAction extends UndoAction {
   data: {
@@ -156,6 +159,28 @@ export interface ReplaceSampleAction extends UndoAction {
   type: "REPLACE_SAMPLE";
 }
 
+/**
+ * A sequencer edit: steps, trigger conditions and slices, before and after.
+ * Undo writes `before` back; redo writes `after`.
+ */
+export interface SequenceEditAction extends UndoAction {
+  data: {
+    after: SequenceSnapshot;
+    before: SequenceSnapshot;
+    /** Consecutive edits with the same key (e.g. scroll-wheel nudges of
+     * one step) merge into one undo step. */
+    mergeKey?: string;
+  };
+  type: "SEQUENCE_EDIT";
+}
+
+/** Everything a sequencer edit can change. */
+export interface SequenceSnapshot {
+  sliceSteps: (null | SliceStep)[][];
+  stepPattern: number[][];
+  triggerConditions: (null | string)[][];
+}
+
 export interface UndoAction {
   description: string; // Human-readable description for UI
   id: string; // Unique ID for the action
@@ -166,7 +191,8 @@ export interface UndoAction {
     | "MOVE_SAMPLE_BETWEEN_KITS"
     | "MOVE_SAMPLE"
     | "REINDEX_SAMPLES"
-    | "REPLACE_SAMPLE";
+    | "REPLACE_SAMPLE"
+    | "SEQUENCE_EDIT";
 }
 
 // Helper to create action IDs
@@ -189,6 +215,8 @@ export function getActionDescription(action: AnyUndoAction): string {
       return `Undo reindex samples in voice ${action.data.voice} after deleting slot ${action.data.deletedSlot + 1}`;
     case "REPLACE_SAMPLE":
       return `Undo replace sample in voice ${action.data.voice}, slot ${action.data.slot + 1}`;
+    case "SEQUENCE_EDIT":
+      return `Undo ${action.description.charAt(0).toLowerCase()}${action.description.slice(1)}`;
     default:
       return "Undo last action";
   }

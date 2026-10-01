@@ -133,8 +133,43 @@ describe("KitStepSequencer", () => {
         samples: defaultSamples,
         sequencerOpen,
         setSequencerOpen,
-        setStepPattern,
         stepPattern,
+      }),
+    );
+  });
+
+  it("records step edits on the kit's undo stack", () => {
+    const onAddUndoAction = vi.fn();
+    render(
+      <KitStepSequencer
+        bpm={120}
+        kitName="TestKit"
+        onAddUndoAction={onAddUndoAction}
+        onPlaySample={onPlaySample}
+        samples={defaultSamples}
+        sequencerOpen={sequencerOpen}
+        setSequencerOpen={setSequencerOpen}
+        setStepPattern={setStepPattern}
+        stepPattern={stepPattern}
+      />,
+    );
+
+    // The logic hook gets a setter that records, then saves
+    const { setStepPattern: recordingSetter } =
+      mockUseKitStepSequencerLogic.mock.calls.at(-1)![0];
+    const original = stepPattern;
+    const next = stepPattern.map((row) => row.map(() => 127));
+    recordingSetter(next, { description: "Turn step 1 on voice 1 on" });
+
+    expect(setStepPattern).toHaveBeenCalledWith(next);
+    expect(onAddUndoAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          after: expect.objectContaining({ stepPattern: next }),
+          before: expect.objectContaining({ stepPattern: original }),
+        }),
+        description: "Turn step 1 on voice 1 on",
+        type: "SEQUENCE_EDIT",
       }),
     );
   });

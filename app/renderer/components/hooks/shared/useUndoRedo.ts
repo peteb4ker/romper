@@ -128,6 +128,9 @@ export function useUndoRedo(kitName: string) {
     error: state.error,
     isRedoing: state.isRedoing,
     isUndoing: state.isUndoing,
+    // The actions undo and redo would apply next
+    nextRedo: state.redoStack[0] ?? null,
+    nextUndo: state.undoStack[0] ?? null,
     redo,
     // Counts
     redoCount: state.redoCount,

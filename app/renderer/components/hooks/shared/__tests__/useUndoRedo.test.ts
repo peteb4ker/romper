@@ -45,7 +45,6 @@ describe("useUndoRedo - Basic Tests", () => {
         data: {
           addedSample: {
             filename: "test.wav",
-            is_stereo: false,
             source_path: "/path/to/test.wav",
           },
           slot: 0,
@@ -70,7 +69,6 @@ describe("useUndoRedo - Basic Tests", () => {
         data: {
           addedSample: {
             filename: "test.wav",
-            is_stereo: false,
             source_path: "/path/to/test.wav",
           },
           slot: 2,
@@ -107,7 +105,6 @@ describe("useUndoRedo - Basic Tests", () => {
         data: {
           addedSample: {
             filename: "test.wav",
-            is_stereo: false,
             source_path: "/path/to/test.wav",
           },
           slot: 0,
@@ -135,7 +132,6 @@ describe("useUndoRedo - Basic Tests", () => {
         {
           sample: {
             filename: "sample1.wav",
-            is_stereo: false,
             source_path: "/path/1.wav",
           },
           slot: 0,
@@ -144,7 +140,6 @@ describe("useUndoRedo - Basic Tests", () => {
         {
           sample: {
             filename: "sample2.wav",
-            is_stereo: false,
             source_path: "/path/2.wav",
           },
           slot: 1,
@@ -153,7 +148,6 @@ describe("useUndoRedo - Basic Tests", () => {
         {
           sample: {
             filename: "sample3.wav",
-            is_stereo: false,
             source_path: "/path/3.wav",
           },
           slot: 2,
@@ -162,7 +156,6 @@ describe("useUndoRedo - Basic Tests", () => {
         {
           sample: {
             filename: "sample4.wav",
-            is_stereo: false,
             source_path: "/path/4.wav",
           },
           slot: 3,
@@ -171,7 +164,6 @@ describe("useUndoRedo - Basic Tests", () => {
         {
           sample: {
             filename: "sample5.wav",
-            is_stereo: false,
             source_path: "/path/5.wav",
           },
           slot: 4,
@@ -180,7 +172,6 @@ describe("useUndoRedo - Basic Tests", () => {
         {
           sample: {
             filename: "sample6.wav",
-            is_stereo: false,
             source_path: "/path/6.wav",
           },
           slot: 5,
@@ -189,7 +180,6 @@ describe("useUndoRedo - Basic Tests", () => {
         {
           sample: {
             filename: "sample7.wav",
-            is_stereo: false,
             source_path: "/path/7.wav",
           },
           slot: 6,
@@ -198,7 +188,6 @@ describe("useUndoRedo - Basic Tests", () => {
         {
           sample: {
             filename: "sample8.wav",
-            is_stereo: false,
             source_path: "/path/8.wav",
           },
           slot: 7,
@@ -207,7 +196,6 @@ describe("useUndoRedo - Basic Tests", () => {
         {
           sample: {
             filename: "sample9.wav",
-            is_stereo: false,
             source_path: "/path/9.wav",
           },
           slot: 8,
@@ -216,7 +204,6 @@ describe("useUndoRedo - Basic Tests", () => {
         {
           sample: {
             filename: "sample10.wav",
-            is_stereo: false,
             source_path: "/path/10.wav",
           },
           slot: 9,
@@ -225,7 +212,6 @@ describe("useUndoRedo - Basic Tests", () => {
         {
           sample: {
             filename: "sample11.wav",
-            is_stereo: false,
             source_path: "/path/11.wav",
           },
           slot: 10,
@@ -234,7 +220,6 @@ describe("useUndoRedo - Basic Tests", () => {
         {
           sample: {
             filename: "sample12.wav",
-            is_stereo: false,
             source_path: "/path/12.wav",
           },
           slot: 11,
@@ -247,84 +232,72 @@ describe("useUndoRedo - Basic Tests", () => {
       const currentStateAfterMove = [
         {
           filename: "sample1.wav",
-          is_stereo: false,
           slot_number: 0,
           source_path: "/path/1.wav",
           voice_number: 1,
         },
         {
           filename: "sample2.wav",
-          is_stereo: false,
           slot_number: 1,
           source_path: "/path/2.wav",
           voice_number: 1,
         },
         {
           filename: "sample3.wav",
-          is_stereo: false,
           slot_number: 2,
           source_path: "/path/3.wav",
           voice_number: 1,
         },
         {
           filename: "sample4.wav",
-          is_stereo: false,
           slot_number: 3,
           source_path: "/path/4.wav",
           voice_number: 1,
         },
         {
           filename: "sample5.wav",
-          is_stereo: false,
           slot_number: 4,
           source_path: "/path/5.wav",
           voice_number: 1,
         },
         {
           filename: "sample6.wav",
-          is_stereo: false,
           slot_number: 5,
           source_path: "/path/6.wav",
           voice_number: 1,
         },
         {
           filename: "sample7.wav",
-          is_stereo: false,
           slot_number: 6,
           source_path: "/path/7.wav",
           voice_number: 1,
         },
         {
           filename: "sample8.wav",
-          is_stereo: false,
           slot_number: 7,
           source_path: "/path/8.wav",
           voice_number: 1,
         },
         {
           filename: "sample12.wav",
-          is_stereo: false,
           slot_number: 8,
           source_path: "/path/12.wav",
           voice_number: 1,
         }, // moved here
         {
           filename: "sample9.wav",
-          is_stereo: false,
           slot_number: 9,
           source_path: "/path/9.wav",
           voice_number: 1,
         }, // shifted
         {
           filename: "sample10.wav",
-          is_stereo: false,
           slot_number: 10,
           source_path: "/path/10.wav",
           voice_number: 1,
         }, // shifted
         {
           filename: "sample11.wav",
-          is_stereo: false,
           slot_number: 11,
           source_path: "/path/11.wav",
           voice_number: 1,
@@ -357,7 +330,6 @@ describe("useUndoRedo - Basic Tests", () => {
               oldSlot: 9,
               sample: {
                 filename: "sample9.wav",
-                is_stereo: false,
                 source_path: "/path/9.wav",
               },
               voice: 1,
@@ -367,7 +339,6 @@ describe("useUndoRedo - Basic Tests", () => {
               oldSlot: 10,
               sample: {
                 filename: "sample10.wav",
-                is_stereo: false,
                 source_path: "/path/10.wav",
               },
               voice: 1,
@@ -377,7 +348,6 @@ describe("useUndoRedo - Basic Tests", () => {
               oldSlot: 11,
               sample: {
                 filename: "sample11.wav",
-                is_stereo: false,
                 source_path: "/path/11.wav",
               },
               voice: 1,
@@ -388,7 +358,6 @@ describe("useUndoRedo - Basic Tests", () => {
           mode: "insert" as const,
           movedSample: {
             filename: "sample12.wav",
-            is_stereo: false,
             source_path: "/path/12.wav",
           },
           stateSnapshot,
@@ -462,7 +431,6 @@ describe("useUndoRedo - Basic Tests", () => {
           data: {
             addedSample: {
               filename: "test.wav",
-              is_stereo: false,
               source_path: "/path/to/test.wav",
             },
             slot: 0,
@@ -506,7 +474,6 @@ describe("useUndoRedo - Basic Tests", () => {
           data: {
             deletedSample: {
               filename: "deleted.wav",
-              is_stereo: true,
               source_path: "/path/to/deleted.wav",
             },
             slot: 1,
@@ -539,7 +506,6 @@ describe("useUndoRedo - Basic Tests", () => {
           data: {
             addedSample: {
               filename: "test.wav",
-              is_stereo: false,
               source_path: "/path/to/test.wav",
             },
             slot: 0,
@@ -577,7 +543,6 @@ describe("useUndoRedo - Basic Tests", () => {
           data: {
             deletedSample: {
               filename: "deleted.wav",
-              is_stereo: true,
               source_path: "/path/to/deleted.wav",
             },
             slot: 3,
@@ -609,12 +574,10 @@ describe("useUndoRedo - Basic Tests", () => {
           data: {
             newSample: {
               filename: "new.wav",
-              is_stereo: true,
               source_path: "/path/to/new.wav",
             },
             oldSample: {
               filename: "old.wav",
-              is_stereo: false,
               source_path: "/path/to/old.wav",
             },
             slot: 1,
@@ -688,7 +651,6 @@ describe("useUndoRedo - Basic Tests", () => {
           data: {
             addedSample: {
               filename: "test.wav",
-              is_stereo: false,
               source_path: "/path/to/test.wav",
             },
             slot: 0,
@@ -722,7 +684,6 @@ describe("useUndoRedo - Basic Tests", () => {
           data: {
             addedSample: {
               filename: "test.wav",
-              is_stereo: false,
               source_path: "/path/to/test.wav",
             },
             slot: 0,
@@ -766,7 +727,6 @@ describe("useUndoRedo - Basic Tests", () => {
           data: {
             addedSample: {
               filename: "test.wav",
-              is_stereo: false,
               source_path: "/path/to/test.wav",
             },
             slot: 0,

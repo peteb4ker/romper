@@ -137,9 +137,9 @@ Hooks in `.claude/hooks/` and `.husky/` enforce the first two.
   auditions); `handlePlay` in `useKitPlayback.ts` also chokes through React
   state, which kit refreshes reset (RE-13).
 - **Stereo is a voice setting, not a sample property.** `voices.stereo_mode`
-  drives stereo behavior. Never infer it from a file's channel count, and
-  never copy samples onto the adjacent voice based on `is_stereo`; that
-  created undeletable phantom samples.
+  drives stereo behavior; samples have no stereo flag. Never infer it from
+  a file's channel count, and never copy samples onto the adjacent voice
+  because a file is stereo; that created undeletable phantom samples.
 - **Renderer code reaches IPC through `globalThis.electronAPI`.** In tests,
   override the default mock (wired up in `vitest.setup.ts`) with
   `vi.mocked(globalThis.electronAPI.someMethod)`; don't reassign

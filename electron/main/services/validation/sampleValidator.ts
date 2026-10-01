@@ -1,53 +1,16 @@
-import type { DbResult, Sample } from "@romper/shared/db/schema.js";
+import type { DbResult } from "@romper/shared/db/schema.js";
 
 import { getErrorMessage } from "@romper/shared/errorUtils.js";
 import * as fs from "node:fs";
 
 import { getAudioMetadata } from "../../audioUtils.js";
-import { getKitSamples } from "../../db/romperDbCoreORM.js";
+import { getKit, getKitSamples } from "../../db/romperDbCoreORM.js";
 
 /**
  * Service for sample validation operations
- * Handles file validation, voice/slot validation, and stereo constraints
+ * Handles file validation, voice/slot validation, and linked-voice rules
  */
 export class SampleValidator {
-  /**
-   * Helper method to check stereo conflicts for cross-kit moves
-   */
-  checkStereoConflicts(
-    sampleToMove: Sample,
-    toVoice: number,
-    toSlot: number,
-    destSamples: Sample[],
-    mode: "insert",
-    toKit: string,
-  ): { error?: string; hasConflict: boolean } {
-    // Check for stereo conflicts at destination
-    if (sampleToMove.is_stereo && toVoice === 4) {
-      return {
-        error:
-          "Cannot move stereo sample to voice 4 (no adjacent voice available)",
-        hasConflict: true,
-      };
-    }
-
-    if (sampleToMove.is_stereo && mode === "insert") {
-      // Check if destination's adjacent voice has a sample in the same slot
-      const conflictingDestSample = destSamples.find(
-        (s) => s.voice_number === toVoice + 1 && s.slot_number === toSlot,
-      );
-
-      if (conflictingDestSample) {
-        return {
-          error: `Cannot move stereo sample to voice ${toVoice} slot ${toSlot + 1} in kit ${toKit}. Voice ${toVoice + 1} already has a sample at slot ${toSlot + 1}.`,
-          hasConflict: true,
-        };
-      }
-    }
-
-    return { hasConflict: false };
-  }
-
   /**
    * Validates a sample file for format and accessibility
    */
@@ -136,45 +99,6 @@ export class SampleValidator {
   }
 
   /**
-   * Validate stereo sample move constraints
-   */
-  validateStereoSampleMove(
-    sampleToMove: Sample,
-    toVoice: number,
-    toSlot: number,
-    mode: "insert",
-    existingSamples: Sample[],
-  ): DbResult<void> {
-    if (!sampleToMove.is_stereo) {
-      return { success: true };
-    }
-
-    // Check if moving to voice 4 (no adjacent voice available)
-    if (toVoice === 4) {
-      return {
-        error:
-          "Cannot move stereo sample to voice 4 (no adjacent voice available)",
-        success: false,
-      };
-    }
-
-    // Check for destination conflicts (always insert mode)
-    {
-      const conflictSample = existingSamples.find(
-        (s) => s.voice_number === toVoice + 1 && s.slot_number === toSlot,
-      );
-      if (conflictSample) {
-        return {
-          error: `Stereo sample move would conflict with sample in voice ${toVoice + 1}, slot ${toSlot + 1}`,
-          success: false,
-        };
-      }
-    }
-
-    return { success: true };
-  }
-
-  /**
    * Task 5.2.4: Validates voice number and slot index for sample operations
    * 12-slot limit per voice using voice_number field validation
    */
@@ -195,6 +119,32 @@ export class SampleValidator {
       };
     }
 
+    return { isValid: true };
+  }
+
+  /**
+   * Refuse samples on the right channel of a linked stereo pair. Stereo is a
+   * voice setting (`voices.stereo_mode`): while voice N is linked, voice N+1
+   * is hidden and holds no samples of its own, as linking requires (RE-69).
+   */
+  validateVoiceNotLinkedPartner(
+    dbPath: string,
+    kitName: string,
+    voiceNumber: number,
+  ): { error?: string; isValid: boolean } {
+    if (voiceNumber <= 1) {
+      return { isValid: true };
+    }
+    const kitResult = getKit(dbPath, kitName);
+    const previousVoice = kitResult.data?.voices?.find(
+      (v) => v.voice_number === voiceNumber - 1,
+    );
+    if (previousVoice?.stereo_mode) {
+      return {
+        error: `Voice ${voiceNumber} is linked to voice ${voiceNumber - 1} for stereo. Unlink them to put samples on voice ${voiceNumber}.`,
+        isValid: false,
+      };
+    }
     return { isValid: true };
   }
 }

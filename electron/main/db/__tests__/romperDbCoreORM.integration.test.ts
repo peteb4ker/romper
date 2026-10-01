@@ -94,7 +94,6 @@ describe("Drizzle ORM Database Operations", () => {
     it("should insert kit record with editable mode mapping", async () => {
       const testKit: Kit = {
         alias: "Test Kit",
-        artist: "Test Artist",
         editable: true, // This should map to editable=true in new architecture
         locked: false,
         name: "A0",
@@ -168,7 +167,6 @@ describe("Drizzle ORM Database Operations", () => {
     it("should insert sample record with source_path support", async () => {
       const testSample: Sample = {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 0,
         source_path: "/test/path/kick.wav", // Required field
@@ -186,7 +184,6 @@ describe("Drizzle ORM Database Operations", () => {
       const testSamples: Sample[] = [
         {
           filename: "kick.wav",
-          is_stereo: false,
           kit_name: "A0",
           slot_number: 0,
           source_path: "/test/path/kick.wav",
@@ -194,7 +191,6 @@ describe("Drizzle ORM Database Operations", () => {
         },
         {
           filename: "snare.wav",
-          is_stereo: false,
           kit_name: "A0",
           slot_number: 0,
           source_path: "/test/path/snare.wav",
@@ -223,7 +219,6 @@ describe("Drizzle ORM Database Operations", () => {
       const testSamples: Sample[] = [
         {
           filename: "kick.wav",
-          is_stereo: false,
           kit_name: "A0",
           slot_number: 0,
           source_path: "/test/path/kick.wav",
@@ -231,7 +226,6 @@ describe("Drizzle ORM Database Operations", () => {
         },
         {
           filename: "snare.wav",
-          is_stereo: false,
           kit_name: "A0",
           slot_number: 0,
           source_path: "/test/path/snare.wav",
@@ -239,7 +233,6 @@ describe("Drizzle ORM Database Operations", () => {
         },
         {
           filename: "hihat.wav",
-          is_stereo: false,
           kit_name: "A0",
           slot_number: 0,
           source_path: "/test/path/hihat.wav",
@@ -409,7 +402,6 @@ describe("Drizzle ORM Database Operations", () => {
       const samples = [
         {
           filename: "sample1.wav",
-          is_stereo: false,
           kit_name: "TestKit",
           slot_number: 0,
           source_path: "/test/sample1.wav",
@@ -417,7 +409,6 @@ describe("Drizzle ORM Database Operations", () => {
         },
         {
           filename: "sample2.wav",
-          is_stereo: false,
           kit_name: "TestKit",
           slot_number: 1,
           source_path: "/test/sample2.wav",
@@ -425,7 +416,6 @@ describe("Drizzle ORM Database Operations", () => {
         },
         {
           filename: "sample3.wav",
-          is_stereo: false,
           kit_name: "TestKit",
           slot_number: 2,
           source_path: "/test/sample3.wav",
@@ -433,7 +423,6 @@ describe("Drizzle ORM Database Operations", () => {
         },
         {
           filename: "sample4.wav",
-          is_stereo: false,
           kit_name: "TestKit",
           slot_number: 3,
           source_path: "/test/sample4.wav",
@@ -441,7 +430,6 @@ describe("Drizzle ORM Database Operations", () => {
         },
         {
           filename: "sample5.wav",
-          is_stereo: false,
           kit_name: "TestKit",
           slot_number: 4,
           source_path: "/test/sample5.wav",
@@ -449,7 +437,6 @@ describe("Drizzle ORM Database Operations", () => {
         },
         {
           filename: "sample6.wav",
-          is_stereo: false,
           kit_name: "TestKit",
           slot_number: 5,
           source_path: "/test/sample6.wav",
@@ -522,7 +509,6 @@ describe("Drizzle ORM Database Operations", () => {
       // Add samples to voice 2
       addSample(TEST_DB_DIR, {
         filename: "voice2_sample1.wav",
-        is_stereo: false,
         kit_name: "TestKit",
         slot_number: 0,
         source_path: "/test/v2s1.wav",
@@ -618,7 +604,6 @@ describe("Drizzle ORM Database Operations", () => {
       const samples = [
         {
           filename: "sample1.wav",
-          is_stereo: false,
           kit_name: "TestKit",
           slot_number: 0,
           source_path: "/test/sample1.wav",
@@ -626,7 +611,6 @@ describe("Drizzle ORM Database Operations", () => {
         },
         {
           filename: "sample2.wav",
-          is_stereo: false,
           kit_name: "TestKit",
           slot_number: 1,
           source_path: "/test/sample2.wav",
@@ -666,7 +650,6 @@ describe("Drizzle ORM Database Operations", () => {
       // Add a third sample to make reindexing behavior visible
       addSample(TEST_DB_DIR, {
         filename: "sample3.wav",
-        is_stereo: false,
         kit_name: "TestKit",
         slot_number: 2,
         source_path: "/test/sample3.wav",
@@ -698,7 +681,6 @@ describe("Drizzle ORM Database Operations", () => {
       // Add more samples to test reindexing
       addSample(TEST_DB_DIR, {
         filename: "sample3.wav",
-        is_stereo: false,
         kit_name: "TestKit",
         slot_number: 2,
         source_path: "/test/sample3.wav",
@@ -706,7 +688,6 @@ describe("Drizzle ORM Database Operations", () => {
       });
       addSample(TEST_DB_DIR, {
         filename: "sample4.wav",
-        is_stereo: false,
         kit_name: "TestKit",
         slot_number: 3,
         source_path: "/test/sample4.wav",

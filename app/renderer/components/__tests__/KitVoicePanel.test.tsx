@@ -35,8 +35,6 @@ const baseProps = {
   onSampleReplace: vi.fn(),
   onSampleSelect: vi.fn(),
   onSaveVoiceName: vi.fn(),
-  onStereoDragLeave: vi.fn(),
-  onStereoDragOver: vi.fn(),
   onStop: vi.fn(),
   onWaveformPlayingChange: vi.fn(),
   playTriggers: {},
@@ -148,16 +146,6 @@ describe("KitVoicePanel", () => {
     });
   });
 
-  describe("Stereo drag target styling", () => {
-    it("applies stereo drag target styling when isStereoDragTarget is true", () => {
-      const { container } = renderKitVoicePanel({ isStereoDragTarget: true });
-      const voicePanel = container.querySelector(
-        '[class*="bg-accent-warning"]',
-      );
-      expect(voicePanel).toBeInTheDocument();
-    });
-  });
-
   describe("Voice panel styling based on linking status", () => {
     it("applies standard styling for linked primary voice", () => {
       const { container } = renderKitVoicePanel({
@@ -223,7 +211,6 @@ describe("KitVoicePanel", () => {
     it("renders with sampleMetadata when provided", () => {
       const sampleMetadata = {
         "kick.wav": {
-          is_stereo: false,
           source_path: "/path/to/kick.wav",
           wav_bit_depth: 16,
           wav_bitrate: 1411,

@@ -195,16 +195,15 @@ natural where the hardware has a name. Foreign keys are declared but
 
 ### Sample
 - **Fields**: `id` (PK), `kit_name` (FK), `voice_number`, `slot_number`
-  (0 to 11), `filename`, `source_path` (absolute), `is_stereo`, `gain_db`
+  (0 to 11), `filename`, `source_path` (absolute), `gain_db`
   (-24 to +12), `wav_bit_depth`, `wav_bitrate`, `wav_channels`,
   `wav_sample_rate`.
 - **Relationships**: belongs to a kit; joins to its voice logically on
   (kit_name, voice_number).
 - **Validation**: unique on (kit, voice, slot) and on
   (kit, voice, source_path). Adding a sample requires a `.wav` extension
-  and a RIFF/WAVE header. `is_stereo` is **not** the real channel count:
-  it is `false` for added and imported samples and guessed from the file
-  name on rescan.
+  and a RIFF/WAVE header. There is no stereo flag: stereo is the voice's
+  `stereo_mode` (RE-69 dropped `is_stereo`).
 
 ### KitWithRelations
 A kit row plus its bank, voices and samples, built by batch queries and

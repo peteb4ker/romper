@@ -80,7 +80,6 @@ describe("useUndoActionHandlers", () => {
           data: {
             addedSample: {
               filename: "test.wav",
-              is_stereo: false,
               source_path: "/path/to/test.wav",
             },
             slot: 0,
@@ -114,7 +113,6 @@ describe("useUndoActionHandlers", () => {
           data: {
             deletedSample: {
               filename: "test.wav",
-              is_stereo: false,
               source_path: "/path/to/test.wav",
             },
             slot: 0,
@@ -149,12 +147,10 @@ describe("useUndoActionHandlers", () => {
           data: {
             newSample: {
               filename: "new.wav",
-              is_stereo: false,
               source_path: "/path/to/new.wav",
             },
             oldSample: {
               filename: "old.wav",
-              is_stereo: true,
               source_path: "/path/to/old.wav",
             },
             slot: 0,
@@ -192,7 +188,6 @@ describe("useUndoActionHandlers", () => {
             fromVoice: 1,
             movedSample: {
               filename: "moved.wav",
-              is_stereo: false,
               source_path: "/path/to/moved.wav",
             },
             replacedSample: undefined,
@@ -200,7 +195,6 @@ describe("useUndoActionHandlers", () => {
               {
                 sample: {
                   filename: "original.wav",
-                  is_stereo: false,
                   source_path: "/path/to/original.wav",
                 },
                 slot: 0,
@@ -232,7 +226,6 @@ describe("useUndoActionHandlers", () => {
             fromVoice: 1,
             movedSample: {
               filename: "moved.wav",
-              is_stereo: false,
               source_path: "/path/to/moved.wav",
             },
             replacedSample: undefined,
@@ -272,7 +265,6 @@ describe("useUndoActionHandlers", () => {
             fromVoice: 1,
             movedSample: {
               filename: "moved.wav",
-              is_stereo: false,
               source_path: "/path/to/moved.wav",
             },
             replacedSample: undefined,
@@ -280,7 +272,6 @@ describe("useUndoActionHandlers", () => {
               {
                 sample: {
                   filename: "original.wav",
-                  is_stereo: false,
                   source_path: "/path/to/original.wav",
                 },
                 slot: 0,
@@ -322,7 +313,6 @@ describe("useUndoActionHandlers", () => {
             mode: "insert",
             movedSample: {
               filename: "moved.wav",
-              is_stereo: false,
               source_path: "/path/to/moved.wav",
             },
             replacedSample: undefined,
@@ -361,12 +351,10 @@ describe("useUndoActionHandlers", () => {
             mode: "insert",
             movedSample: {
               filename: "moved.wav",
-              is_stereo: false,
               source_path: "/path/to/moved.wav",
             },
             replacedSample: {
               filename: "replaced.wav",
-              is_stereo: true,
               source_path: "/path/to/replaced.wav",
             },
             toKit: "TargetKit",
@@ -407,7 +395,6 @@ describe("useUndoActionHandlers", () => {
             mode: "insert",
             movedSample: {
               filename: "moved.wav",
-              is_stereo: false,
               source_path: "/path/to/moved.wav",
             },
             replacedSample: undefined,
@@ -442,7 +429,6 @@ describe("useUndoActionHandlers", () => {
                 oldSlot: 1,
                 sample: {
                   filename: "affected.wav",
-                  is_stereo: true,
                   source_path: "/path/to/affected.wav",
                 },
                 voice: 1,
@@ -450,7 +436,6 @@ describe("useUndoActionHandlers", () => {
             ],
             deletedSample: {
               filename: "deleted.wav",
-              is_stereo: false,
               source_path: "/path/to/deleted.wav",
             },
             deletedSlot: 0,
@@ -499,7 +484,6 @@ describe("useUndoActionHandlers", () => {
             affectedSamples: [],
             deletedSample: {
               filename: "deleted.wav",
-              is_stereo: false,
               source_path: "/path/to/deleted.wav",
             },
             deletedSlot: 0,

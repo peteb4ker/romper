@@ -58,7 +58,6 @@ describe("mergeKitScan - Integration Tests", () => {
     addSample(dbDir, {
       filename: "1 kick.wav",
       gain_db: -3,
-      is_stereo: false,
       kit_name: "A0",
       slot_number: 0,
       source_path: join(kitPath, "1 kick.wav"),
@@ -68,7 +67,6 @@ describe("mergeKitScan - Integration Tests", () => {
     addSample(dbDir, {
       filename: "my clap.wav",
       gain_db: 6,
-      is_stereo: false,
       kit_name: "A0",
       slot_number: 1,
       source_path: "/Users/me/Samples/my clap.wav",
@@ -105,7 +103,6 @@ describe("mergeKitScan - Integration Tests", () => {
     });
     expect(rows.get(join(kitPath, "1 snare.wav"))).toMatchObject({
       gain_db: 0,
-      is_stereo: false,
       slot_number: 2,
       voice_number: 1,
       ...METADATA,
@@ -119,7 +116,6 @@ describe("mergeKitScan - Integration Tests", () => {
     const gonePath = join(kitPath, "1 gone.wav");
     addSample(dbDir, {
       filename: "1 gone.wav",
-      is_stereo: false,
       kit_name: "A0",
       slot_number: 0,
       source_path: gonePath,
@@ -145,7 +141,6 @@ describe("mergeKitScan - Integration Tests", () => {
     updateKit(dbDir, "A0", { locked: true });
     addSample(dbDir, {
       filename: "1 kick.wav",
-      is_stereo: false,
       kit_name: "A0",
       slot_number: 0,
       source_path: join(kitPath, "1 kick.wav"),
@@ -205,7 +200,6 @@ describe("mergeKitScan - Integration Tests", () => {
   test("rolls the whole kit back when a write fails part-way", () => {
     addSample(dbDir, {
       filename: "1 kick.wav",
-      is_stereo: false,
       kit_name: "A0",
       slot_number: 0,
       source_path: join(kitPath, "1 kick.wav"),

@@ -146,7 +146,6 @@ describe("localStoreValidator", () => {
               data: [
                 {
                   filename: "1 Kick.wav",
-                  is_stereo: false,
                   kit_name: "A0",
                   slot_number: 100,
                   source_path: path.join(localStorePath, "A0", "1 Kick.wav"),
@@ -154,7 +153,6 @@ describe("localStoreValidator", () => {
                 },
                 {
                   filename: "2 Snare.wav",
-                  is_stereo: false,
                   kit_name: "A0",
                   slot_number: 200,
                   source_path: path.join(localStorePath, "A0", "2 Snare.wav"),
@@ -162,7 +160,6 @@ describe("localStoreValidator", () => {
                 },
                 {
                   filename: "missing.wav",
-                  is_stereo: false,
                   kit_name: "A0",
                   slot_number: 300,
                   source_path: path.join(localStorePath, "A0", "missing.wav"),
@@ -177,7 +174,6 @@ describe("localStoreValidator", () => {
               data: [
                 {
                   filename: "3 Hat.wav",
-                  is_stereo: false,
                   kit_name: "B1",
                   slot_number: 100,
                   source_path: path.join(localStorePath, "B1", "3 Hat.wav"),

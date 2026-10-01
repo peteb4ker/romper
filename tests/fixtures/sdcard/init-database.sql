@@ -29,10 +29,10 @@ INSERT INTO voices (kit_name, voice_number, voice_alias, stereo_mode) VALUES
 ('B1', 4, 'Cymbal', 0);
 
 -- Insert samples (corresponding to actual audio files in fixtures)
-INSERT INTO samples (kit_name, voice_number, slot_number, filename, source_path, is_stereo, wav_sample_rate, wav_bitrate, wav_bit_depth, wav_channels) VALUES
+INSERT INTO samples (kit_name, voice_number, slot_number, filename, source_path, wav_sample_rate, wav_bitrate, wav_bit_depth, wav_channels) VALUES
 -- Kit A0 samples
-('A0', 1, 0, '1_kick.wav', '/FIXTURE_PATH/A0/1_kick.wav', 0, 44100, 16, 16, 1),
-('A0', 2, 0, '2_snare.wav', '/FIXTURE_PATH/A0/2_snare.wav', 0, 44100, 16, 16, 1),
+('A0', 1, 0, '1_kick.wav', '/FIXTURE_PATH/A0/1_kick.wav', 44100, 16, 16, 1),
+('A0', 2, 0, '2_snare.wav', '/FIXTURE_PATH/A0/2_snare.wav', 44100, 16, 16, 1),
 -- Kit B1 samples
-('B1', 1, 0, '1_kick.wav', '/FIXTURE_PATH/B1/1_kick.wav', 0, 44100, 16, 16, 1),
-('B1', 2, 0, '2_snare.wav', '/FIXTURE_PATH/B1/2_snare.wav', 0, 44100, 16, 16, 1);
+('B1', 1, 0, '1_kick.wav', '/FIXTURE_PATH/B1/1_kick.wav', 44100, 16, 16, 1),
+('B1', 2, 0, '2_snare.wav', '/FIXTURE_PATH/B1/2_snare.wav', 44100, 16, 16, 1);

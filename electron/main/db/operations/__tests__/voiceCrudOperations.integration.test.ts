@@ -5,10 +5,12 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 import { createRomperDbFile } from "../../utils/dbUtilities.js";
 import { addKit, getKit, updateKit } from "../kitCrudOperations.js";
+import { markKitAsSynced } from "../kitSyncOperations.js";
 import {
   updateVoiceAlias,
   updateVoiceSampleMode,
   updateVoiceSliceSettings,
+  updateVoiceStereoMode,
   updateVoiceVolume,
 } from "../voiceCrudOperations.js";
 
@@ -81,6 +83,31 @@ describe("Voice CRUD Operations - Integration Tests", () => {
       const otherKit = getKit(dbDir, "OtherKit");
       const voice1 = otherKit.data!.voices!.find((v) => v.voice_number === 1);
       expect(voice1!.voice_alias).toBeNull();
+    });
+  });
+
+  describe("updateVoiceStereoMode", () => {
+    test("[UC-28] links and unlinks a voice, marking the kit modified each time", () => {
+      markKitAsSynced(dbDir, testKitName);
+      expect(updateVoiceStereoMode(dbDir, testKitName, 1, true).success).toBe(
+        true,
+      );
+      let kit = getKit(dbDir, testKitName).data!;
+      expect(kit.voices!.find((v) => v.voice_number === 1)!.stereo_mode).toBe(
+        true,
+      );
+      expect(kit.modified_since_sync).toBe(true);
+
+      // Unlinking changes the next write too: stereo files go out as mono
+      markKitAsSynced(dbDir, testKitName);
+      expect(updateVoiceStereoMode(dbDir, testKitName, 1, false).success).toBe(
+        true,
+      );
+      kit = getKit(dbDir, testKitName).data!;
+      expect(kit.voices!.find((v) => v.voice_number === 1)!.stereo_mode).toBe(
+        false,
+      );
+      expect(kit.modified_since_sync).toBe(true);
     });
   });
 

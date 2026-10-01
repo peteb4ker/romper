@@ -15,25 +15,21 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const dbSamples = [
         {
           filename: "kick.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 1,
         },
         {
           filename: "snare.wav",
-          is_stereo: false,
           slot_number: 2,
           voice_number: 1,
         }, // Gap at slot 1
         {
           filename: "hat.wav",
-          is_stereo: false,
           slot_number: 1,
           voice_number: 2,
         },
         {
           filename: "crash.wav",
-          is_stereo: false,
           slot_number: 11,
           voice_number: 4,
         }, // Last slot
@@ -63,7 +59,6 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
     test("should handle maximum slots per voice (12 slots)", () => {
       const dbSamples = Array.from({ length: 12 }, (_, i) => ({
         filename: `sample${i + 1}.wav`,
-        is_stereo: false,
         slot_number: i,
         voice_number: 1,
       }));
@@ -79,19 +74,16 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const dbSamples = [
         {
           filename: "valid.wav",
-          is_stereo: false,
           slot_number: 5,
           voice_number: 1,
         },
         {
           filename: "invalid.wav",
-          is_stereo: false,
           slot_number: 12,
           voice_number: 1,
         }, // Beyond max slot
         {
           filename: "invalid2.wav",
-          is_stereo: false,
           slot_number: -1,
           voice_number: 1,
         }, // Negative slot
@@ -106,19 +98,16 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const dbSamples = [
         {
           filename: "valid.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 2,
         },
         {
           filename: "invalid.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 0,
         }, // Voice 0
         {
           filename: "invalid2.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 5,
         }, // Voice 5
@@ -136,25 +125,21 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const dbSamples = [
         {
           filename: "slot2.wav",
-          is_stereo: false,
           slot_number: 2,
           voice_number: 1,
         },
         {
           filename: "voice2.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 2,
         },
         {
           filename: "slot0.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 1,
         },
         {
           filename: "slot1.wav",
-          is_stereo: false,
           slot_number: 1,
           voice_number: 1,
         },
@@ -176,7 +161,6 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const dbSamples = [
         {
           filename: "sample.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 1,
         },
@@ -195,7 +179,6 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const dbSamples = [
         {
           filename: "stereo.wav",
-          is_stereo: true,
           slot_number: 0,
           voice_number: 1,
         },
@@ -211,13 +194,11 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const dbSamples = [
         {
           filename: "stereo1.wav",
-          is_stereo: true,
           slot_number: 0,
           voice_number: 1,
         },
         {
           filename: "stereo2.wav",
-          is_stereo: true,
           slot_number: 1,
           voice_number: 1,
         },
@@ -233,7 +214,6 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const dbSamples = [
         {
           filename: "stereo.wav",
-          is_stereo: true,
           slot_number: 0,
           voice_number: 4,
         },
@@ -251,19 +231,16 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const dbSamples = [
         {
           filename: "mono1.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 1,
         },
         {
           filename: "stereo.wav",
-          is_stereo: true,
           slot_number: 1,
           voice_number: 1,
         },
         {
           filename: "mono2.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 2,
         },
@@ -279,7 +256,6 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const dbSamples = [
         {
           filename: "stereo.wav",
-          is_stereo: true,
           slot_number: 2,
           voice_number: 1,
         },
@@ -295,13 +271,11 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const dbSamples = [
         {
           filename: "stereo1.wav",
-          is_stereo: true,
           slot_number: 3,
           voice_number: 2,
         },
         {
           filename: "stereo2.wav",
-          is_stereo: true,
           slot_number: 7,
           voice_number: 3,
         },
@@ -318,10 +292,9 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
   describe("Edge Cases and Error Scenarios", () => {
     test("should handle samples with empty filenames", () => {
       const dbSamples = [
-        { filename: "", is_stereo: false, slot_number: 0, voice_number: 1 },
+        { filename: "", slot_number: 0, voice_number: 1 },
         {
           filename: "valid.wav",
-          is_stereo: false,
           slot_number: 1,
           voice_number: 1,
         },
@@ -332,39 +305,15 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       expect(result[1]).toEqual(["", "valid.wav"]); // Empty filename preserved
     });
 
-    test("should handle samples with null/undefined properties gracefully", () => {
-      const dbSamples = [
-        {
-          filename: "test.wav",
-          is_stereo: null,
-          slot_number: 0,
-          voice_number: 1,
-        },
-        {
-          filename: "test2.wav",
-          is_stereo: undefined,
-          slot_number: 1,
-          voice_number: 1,
-        },
-      ];
-
-      const result = groupDbSamplesByVoice(dbSamples);
-
-      expect(result[1]).toEqual(["test.wav", "test2.wav"]);
-      expect(result[2]).toEqual([]); // No ghost entries regardless of is_stereo value
-    });
-
     test("should handle duplicate samples in same slot (last wins)", () => {
       const dbSamples = [
         {
           filename: "first.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 1,
         },
         {
           filename: "second.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 1,
         }, // Same slot
@@ -379,7 +328,6 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const dbSamples = [
         {
           filename: "valid.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 1,
         },
@@ -406,7 +354,6 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         for (let slot = 0; slot < 12; slot++) {
           dbSamples.push({
             filename: `v${voice}s${slot}.wav`,
-            is_stereo: false,
             slot_number: slot,
             voice_number: voice,
           });
@@ -427,7 +374,6 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const dbSamples = [
         {
           filename: "test.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 1,
         },
@@ -443,7 +389,6 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const dbSamples = [
         {
           filename: "test.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 1,
         },
@@ -461,7 +406,6 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const dbSamples = [
         {
           filename: "test.wav",
-          is_stereo: false,
           slot_number: 11,
           voice_number: 4,
         }, // Only last slot
@@ -481,31 +425,26 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const drumKitSamples = [
         {
           filename: "kick.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 1,
         },
         {
           filename: "snare.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 2,
         },
         {
           filename: "hat_closed.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 3,
         },
         {
           filename: "hat_open.wav",
-          is_stereo: false,
           slot_number: 1,
           voice_number: 3,
         },
         {
           filename: "crash.wav",
-          is_stereo: true,
           slot_number: 0,
           voice_number: 4,
         }, // Stereo crash
@@ -523,25 +462,21 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const pianoSamples = [
         {
           filename: "piano_c3.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 1,
         },
         {
           filename: "piano_d3.wav",
-          is_stereo: false,
           slot_number: 1,
           voice_number: 1,
         },
         {
           filename: "piano_e3.wav",
-          is_stereo: false,
           slot_number: 2,
           voice_number: 1,
         },
         {
           filename: "piano_f3.wav",
-          is_stereo: false,
           slot_number: 3,
           voice_number: 1,
         },
@@ -565,25 +500,21 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
       const mixedSamples = [
         {
           filename: "kick_mono.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 1,
         },
         {
           filename: "snare_stereo.wav",
-          is_stereo: true,
           slot_number: 1,
           voice_number: 1,
         },
         {
           filename: "bass_mono.wav",
-          is_stereo: false,
           slot_number: 0,
           voice_number: 2,
         },
         {
           filename: "pad_stereo.wav",
-          is_stereo: true,
           slot_number: 0,
           voice_number: 3,
         },

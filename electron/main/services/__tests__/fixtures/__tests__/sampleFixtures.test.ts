@@ -16,7 +16,6 @@ describe("Sample Fixtures", () => {
       expect(baseMockSample).toEqual({
         filename: "test.wav",
         id: 1,
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 0,
         source_path: "/path/to/test.wav",
@@ -31,7 +30,6 @@ describe("Sample Fixtures", () => {
 
   describe("mockStereoSample", () => {
     it("should be stereo with correct properties", () => {
-      expect(mockStereoSample.is_stereo).toBe(true);
       expect(mockStereoSample.wav_channels).toBe(2);
       expect(mockStereoSample.filename).toBe("stereo_test.wav");
       expect(mockStereoSample.id).toBe(2);
@@ -40,7 +38,6 @@ describe("Sample Fixtures", () => {
 
   describe("mockMonoSample", () => {
     it("should be mono with correct properties", () => {
-      expect(mockMonoSample.is_stereo).toBe(false);
       expect(mockMonoSample.wav_channels).toBe(1);
       expect(mockMonoSample.filename).toBe("mono_test.wav");
       expect(mockMonoSample.id).toBe(3);
@@ -57,12 +54,12 @@ describe("Sample Fixtures", () => {
       const sample = createMockSample({
         filename: "custom.wav",
         id: 99,
-        is_stereo: true,
+        wav_channels: 2,
       });
 
       expect(sample.id).toBe(99);
       expect(sample.filename).toBe("custom.wav");
-      expect(sample.is_stereo).toBe(true);
+      expect(sample.wav_channels).toBe(2);
       expect(sample.kit_name).toBe("A0"); // Should keep default
     });
 
@@ -107,12 +104,12 @@ describe("Sample Fixtures", () => {
     });
 
     it("should apply base overrides to all samples", () => {
-      const samples = createMockSamples(2, { is_stereo: true, kit_name: "B1" });
+      const samples = createMockSamples(2, { kit_name: "B1", wav_channels: 2 });
 
       expect(samples[0].kit_name).toBe("B1");
-      expect(samples[0].is_stereo).toBe(true);
+      expect(samples[0].wav_channels).toBe(2);
       expect(samples[1].kit_name).toBe("B1");
-      expect(samples[1].is_stereo).toBe(true);
+      expect(samples[1].wav_channels).toBe(2);
     });
 
     it("should handle zero count", () => {

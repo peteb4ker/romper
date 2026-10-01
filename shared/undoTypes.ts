@@ -7,7 +7,6 @@ export interface AddSampleAction extends UndoAction {
   data: {
     addedSample: {
       filename: string;
-      is_stereo: boolean;
       source_path: string;
     };
     slot: number;
@@ -30,7 +29,6 @@ export interface DeleteSampleAction extends UndoAction {
   data: {
     deletedSample: {
       filename: string;
-      is_stereo: boolean;
       source_path: string;
     };
     slot: number;
@@ -48,7 +46,6 @@ export interface MoveSampleAction extends UndoAction {
       oldSlot: number;
       sample: {
         filename: string;
-        is_stereo: boolean;
         source_path: string;
       };
       voice: number;
@@ -58,19 +55,16 @@ export interface MoveSampleAction extends UndoAction {
     mode?: "insert" | "overwrite";
     movedSample: {
       filename: string;
-      is_stereo: boolean;
       source_path: string;
     };
     replacedSample?: {
       filename: string;
-      is_stereo: boolean;
       source_path: string;
     };
     // NEW: Complete snapshot of affected voices before the move
     stateSnapshot?: Array<{
       sample: {
         filename: string;
-        is_stereo: boolean;
         source_path: string;
       };
       slot: number;
@@ -90,7 +84,6 @@ export interface MoveSampleBetweenKitsAction extends UndoAction {
       oldSlot: number;
       sample: {
         filename: string;
-        is_stereo: boolean;
         source_path: string;
       };
       voice: number;
@@ -101,12 +94,10 @@ export interface MoveSampleBetweenKitsAction extends UndoAction {
     mode: "insert" | "overwrite";
     movedSample: {
       filename: string;
-      is_stereo: boolean;
       source_path: string;
     };
     replacedSample?: {
       filename: string;
-      is_stereo: boolean;
       source_path: string;
     };
     toKit: string;
@@ -124,14 +115,12 @@ export interface ReindexSamplesAction extends UndoAction {
       oldSlot: number;
       sample: {
         filename: string;
-        is_stereo: boolean;
         source_path: string;
       };
       voice: number;
     }>;
     deletedSample: {
       filename: string;
-      is_stereo: boolean;
       source_path: string;
     };
     deletedSlot: number;
@@ -144,12 +133,10 @@ export interface ReplaceSampleAction extends UndoAction {
   data: {
     newSample: {
       filename: string;
-      is_stereo: boolean;
       source_path: string;
     };
     oldSample: {
       filename: string;
-      is_stereo: boolean;
       source_path: string;
     };
     slot: number;

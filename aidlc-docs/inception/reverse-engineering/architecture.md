@@ -226,7 +226,7 @@ sequenceDiagram
     P->>M: add-sample-to-slot
     M->>S: addSampleToSlot
     S->>S: check voice, slot and RIFF header
-    S->>DB: INSERT sample with is_stereo false, gain 0
+    S->>DB: INSERT sample, gain 0
     S->>DB: UPDATE kit SET modified_since_sync true
     M-->>H: sampleId
     H->>H: record undo action in memory

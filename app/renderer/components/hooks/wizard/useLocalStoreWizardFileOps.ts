@@ -183,7 +183,6 @@ export function useLocalStoreWizardFileOps({
                   const sourcePath = `${kitPath}/${filename}`;
                   await insertSample(dbDir, {
                     filename,
-                    is_stereo: false,
                     kit_name: insertedKitName,
                     slot_number: idx, // 0-based slot indexing (0-11)
                     source_path: sourcePath,

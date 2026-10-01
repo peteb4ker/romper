@@ -13,12 +13,6 @@ export interface UseExternalDragHandlersOptions {
   };
   isEditable: boolean;
   onBatchDropComplete?: () => void;
-  onStereoDragLeave?: () => void;
-  onStereoDragOver?: (
-    voice: number,
-    slotNumber: number,
-    isStereo: boolean,
-  ) => void;
   sampleProcessing: {
     getCurrentKitSamples: () => Promise<null | unknown[]>;
     isDuplicateSample: (
@@ -34,7 +28,6 @@ export interface UseExternalDragHandlersOptions {
     ) => Promise<boolean>;
   };
   samples: string[];
-  voice: number;
 }
 
 /**
@@ -45,11 +38,8 @@ export function useExternalDragHandlers({
   fileValidation,
   isEditable,
   onBatchDropComplete,
-  onStereoDragLeave,
-  onStereoDragOver,
   sampleProcessing,
   samples,
-  voice,
 }: UseExternalDragHandlersOptions) {
   const [dragOverSlot, setDragOverSlot] = useState<null | number>(null);
   const [dropZone, setDropZone] = useState<{
@@ -83,26 +73,17 @@ export function useExternalDragHandlers({
         const isAppend = slotNumber === currentSampleCount;
         const mode = isAppend ? "append" : "insert";
 
-        const isStereo = fileItems.length === 2;
         setDragOverSlot(slotNumber);
         setDropZone({ mode, slot: slotNumber });
-
-        if (onStereoDragOver) {
-          onStereoDragOver(voice, slotNumber, isStereo);
-        }
       }
     },
-    [isEditable, voice, onStereoDragOver, samples],
+    [isEditable, samples],
   );
 
   const handleDragLeave = useCallback(() => {
     setDragOverSlot(null);
     setDropZone(null);
-
-    if (onStereoDragLeave) {
-      onStereoDragLeave();
-    }
-  }, [onStereoDragLeave]);
+  }, []);
 
   const handleDrop = useCallback(
     async (e: React.DragEvent, slotNumber: number) => {
@@ -116,18 +97,11 @@ export function useExternalDragHandlers({
         log.debug("Drop blocked: voice already has 12 samples");
         setDragOverSlot(null);
         setDropZone(null);
-        if (onStereoDragLeave) {
-          onStereoDragLeave();
-        }
         return;
       }
 
       setDragOverSlot(null);
       setDropZone(null);
-
-      if (onStereoDragLeave) {
-        onStereoDragLeave();
-      }
 
       const files = Array.from(e.dataTransfer.files);
       if (files.length === 0) return;
@@ -195,7 +169,6 @@ export function useExternalDragHandlers({
     [
       isEditable,
       onBatchDropComplete,
-      onStereoDragLeave,
       fileValidation,
       sampleProcessing,
       samples,

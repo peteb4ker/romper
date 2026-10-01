@@ -16,7 +16,6 @@ describe("dbTypesShared", () => {
 
     const sampleRecord: Sample = {
       filename: "test.wav",
-      is_stereo: false,
       kit_name: "test-kit",
       slot_number: 1,
       voice_number: 1,

@@ -61,14 +61,12 @@ describe("useSampleManagementMoveOps", () => {
       const mockSamples = [
         {
           filename: "sample1.wav",
-          is_stereo: false,
           slot_number: 100,
           source_path: "/path/sample1.wav",
           voice_number: 1,
         },
         {
           filename: "sample2.wav",
-          is_stereo: true,
           slot_number: 100,
           source_path: "/path/sample2.wav",
           voice_number: 2,
@@ -110,7 +108,6 @@ describe("useSampleManagementMoveOps", () => {
           expect.objectContaining({
             sample: expect.objectContaining({
               filename: "sample1.wav",
-              is_stereo: false,
               source_path: "/path/sample1.wav",
             }),
             slot: 100,
@@ -119,7 +116,6 @@ describe("useSampleManagementMoveOps", () => {
           expect.objectContaining({
             sample: expect.objectContaining({
               filename: "sample2.wav",
-              is_stereo: true,
               source_path: "/path/sample2.wav",
             }),
             slot: 100,
@@ -360,21 +356,18 @@ describe("useSampleManagementMoveOps", () => {
       const mockSamples = [
         {
           filename: "sample1.wav",
-          is_stereo: false,
           slot_number: 100,
           source_path: "/path/sample1.wav",
           voice_number: 1,
         },
         {
           filename: "sample2.wav",
-          is_stereo: true,
           slot_number: 100,
           source_path: "/path/sample2.wav",
           voice_number: 2,
         },
         {
           filename: "sample3.wav",
-          is_stereo: false,
           slot_number: 100,
           source_path: "/path/sample3.wav",
           voice_number: 3, // Should not be included

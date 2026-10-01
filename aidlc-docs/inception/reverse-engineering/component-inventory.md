@@ -49,7 +49,7 @@
 | `KitEditor.tsx` | 162 | Layout; logic comes from `useKitEditorLogic` |
 | `KitHeader.tsx` | 323 | Back / previous / next, alias edit, favourite, editable toggle, scan, LED icon |
 | `KitForm.tsx` | 126 | Kit metadata form (tag editing disabled) |
-| `KitVoicePanels.tsx` | 485 | Four-voice row, stereo link and unlink, sample metadata fetch, stereo drag indicator |
+| `KitVoicePanels.tsx` | 485 | Four-voice row, stereo link and unlink, sample metadata fetch |
 | `KitVoicePanel.tsx` | 272 | One voice: a `listbox` of 12 slots |
 | `SampleWaveform.tsx` | 392 | Per-slot audio load, decode (its own `AudioContext`), play / stop, canvas waveform, playhead, VU levels |
 | `GainKnob.tsx` | 227 | SVG gain knob, -24 to +12 dB |

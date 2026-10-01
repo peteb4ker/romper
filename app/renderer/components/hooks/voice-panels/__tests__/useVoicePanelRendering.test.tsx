@@ -30,7 +30,6 @@ describe("useVoicePanelRendering", () => {
       dropHintTitle: "Drop hint",
       isDragOver: false,
       isDropZone: false,
-      isStereoHighlight: false,
       slotBaseClass: "base-class",
     })),
   };

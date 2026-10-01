@@ -97,7 +97,6 @@ describe("Kit CRUD Operations - Integration Tests", () => {
       addKit(dbDir, { bank_letter: "A", editable: true, name: "A0" });
       addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 0,
         source_path: "/samples/kick.wav",
@@ -123,7 +122,6 @@ describe("Kit CRUD Operations - Integration Tests", () => {
       // Add samples in non-sequential order
       addSample(dbDir, {
         filename: "v2s0.wav",
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 0,
         source_path: "/samples/v2s0.wav",
@@ -131,7 +129,6 @@ describe("Kit CRUD Operations - Integration Tests", () => {
       });
       addSample(dbDir, {
         filename: "v1s1.wav",
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 1,
         source_path: "/samples/v1s1.wav",
@@ -139,7 +136,6 @@ describe("Kit CRUD Operations - Integration Tests", () => {
       });
       addSample(dbDir, {
         filename: "v1s0.wav",
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 0,
         source_path: "/samples/v1s0.wav",
@@ -165,7 +161,6 @@ describe("Kit CRUD Operations - Integration Tests", () => {
 
       addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 0,
         source_path: "/samples/kick.wav",
@@ -258,7 +253,6 @@ describe("Kit CRUD Operations - Integration Tests", () => {
       addKit(dbDir, { bank_letter: "A", name: "A0" });
       addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 0,
         source_path: "/samples/kick.wav",
@@ -266,7 +260,6 @@ describe("Kit CRUD Operations - Integration Tests", () => {
       });
       addSample(dbDir, {
         filename: "snare.wav",
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 0,
         source_path: "/samples/snare.wav",
@@ -301,7 +294,6 @@ describe("Kit CRUD Operations - Integration Tests", () => {
       addKit(dbDir, { bank_letter: "A", name: "A0" });
       addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 0,
         source_path: "/samples/kick.wav",
@@ -325,7 +317,6 @@ describe("Kit CRUD Operations - Integration Tests", () => {
       addKit(dbDir, { bank_letter: "B", name: "B0" });
       addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: "A0",
         slot_number: 0,
         source_path: "/samples/kick.wav",
@@ -333,7 +324,6 @@ describe("Kit CRUD Operations - Integration Tests", () => {
       });
       addSample(dbDir, {
         filename: "bass.wav",
-        is_stereo: false,
         kit_name: "B0",
         slot_number: 0,
         source_path: "/samples/bass.wav",

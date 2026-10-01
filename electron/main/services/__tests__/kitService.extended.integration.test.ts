@@ -150,7 +150,6 @@ describe("KitService Extended Integration Tests", () => {
 
       const sample: NewSample = {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: "A1",
         slot_number: 0,
         source_path: "/test/kick.wav",
@@ -231,7 +230,6 @@ describe("KitService Extended Integration Tests", () => {
         for (let slot = 0; slot < 3; slot++) {
           addSample(TEST_DB_PATH, {
             filename: `voice${voice}_slot${slot}.wav`,
-            is_stereo: false,
             kit_name: "D1",
             slot_number: slot,
             source_path: `/test/voice${voice}_slot${slot}.wav`,
@@ -282,7 +280,6 @@ describe("KitService Extended Integration Tests", () => {
 
       addSample(TEST_DB_PATH, {
         filename: "a-sample.wav",
-        is_stereo: false,
         kit_name: "A1",
         slot_number: 0,
         source_path: "/test/a.wav",
@@ -293,7 +290,6 @@ describe("KitService Extended Integration Tests", () => {
 
       addSample(TEST_DB_PATH, {
         filename: "b-sample.wav",
-        is_stereo: false,
         kit_name: "B1",
         slot_number: 0,
         source_path: "/test/b.wav",
@@ -332,7 +328,6 @@ describe("KitService Extended Integration Tests", () => {
 
       addSample(TEST_DB_PATH, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: "E1",
         slot_number: 0,
         source_path: "/test/kick.wav",
@@ -343,7 +338,6 @@ describe("KitService Extended Integration Tests", () => {
 
       addSample(TEST_DB_PATH, {
         filename: "snare.wav",
-        is_stereo: false,
         kit_name: "E1",
         slot_number: 0,
         source_path: "/test/snare.wav",
@@ -590,7 +584,6 @@ describe("KitService Extended Integration Tests", () => {
       for (let voice = 1; voice <= 3; voice++) {
         addSample(TEST_DB_PATH, {
           filename: `v${voice}.wav`,
-          is_stereo: false,
           kit_name: "J1",
           slot_number: 0,
           source_path: `/test/v${voice}.wav`,

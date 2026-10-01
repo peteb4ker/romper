@@ -53,7 +53,6 @@ export const sampleArb = fc.record({
   filename: sampleFilenameArb,
   gain_db: gainDbArb,
   id: fc.integer({ max: 10000, min: 1 }),
-  is_stereo: fc.boolean(),
   kit_name: kitNameArb,
   slot_number: slotNumberDbArb,
   source_path: sourcePathArb,

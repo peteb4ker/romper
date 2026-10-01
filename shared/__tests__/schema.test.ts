@@ -16,7 +16,6 @@ describe("schema types", () => {
     const sampleRecord: Sample = {
       filename: "test.wav",
       id: 1,
-      is_stereo: false,
       kit_name: "test-kit",
       slot_number: 1,
       source_path: "/path/to/test.wav",

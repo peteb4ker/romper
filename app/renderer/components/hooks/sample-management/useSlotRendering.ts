@@ -8,10 +8,8 @@ export interface UseSlotRenderingOptions {
   dragOverSlot: null | number;
   dropZone: { mode: "append" | "blocked" | "insert"; slot: number } | null;
   isActive: boolean;
-  isStereoDragTarget: boolean;
   samples: string[];
   selectedIdx: number;
-  stereoDragSlotNumber?: number;
   voice: number;
 }
 
@@ -23,10 +21,8 @@ export function useSlotRendering({
   dragOverSlot,
   dropZone,
   isActive,
-  isStereoDragTarget,
   samples,
   selectedIdx,
-  stereoDragSlotNumber,
   voice,
 }: UseSlotRenderingOptions) {
   // Helper function to calculate render slots
@@ -48,18 +44,13 @@ export function useSlotRendering({
       dropMode?: string;
       isDragOver: boolean;
       isDropZone: boolean;
-      isStereoHighlight: boolean;
       sample?: string;
       voice: number;
     }) => {
       let dragOverClass = "";
       let dropHintTitle = "Drop to assign sample";
 
-      if (
-        !params.isDragOver &&
-        !params.isStereoHighlight &&
-        !params.isDropZone
-      ) {
+      if (!params.isDragOver && !params.isDropZone) {
         return { dragOverClass, dropHintTitle };
       }
 
@@ -82,13 +73,6 @@ export function useSlotRendering({
             " bg-gray-100 dark:bg-gray-800 ring-2 ring-gray-400 dark:ring-gray-300";
           // dropHintTitle keeps its initial value "Drop to assign sample"
         }
-      } else if (params.isStereoHighlight) {
-        dragOverClass =
-          " bg-purple-100 dark:bg-purple-800 ring-2 ring-purple-400 dark:ring-purple-300";
-        dropHintTitle =
-          params.voice > 1
-            ? "Right channel of stereo pair"
-            : "Left channel of stereo pair";
       } else {
         dragOverClass =
           " bg-orange-100 dark:bg-orange-800 ring-2 ring-orange-400 dark:ring-orange-300";
@@ -106,14 +90,11 @@ export function useSlotRendering({
       const slotBaseClass = "flex items-center gap-2 mb-1 min-h-[28px] min-w-0";
       const isDragOver = dragOverSlot === slotNumber;
       const isDropZone = dropZone?.slot === slotNumber;
-      const isStereoHighlight =
-        isStereoDragTarget && stereoDragSlotNumber === slotNumber;
 
       const dragStyling = calculateDragStyling({
         dropMode: dropZone?.mode,
         isDragOver,
         isDropZone,
-        isStereoHighlight,
         sample,
         voice,
       });
@@ -123,18 +104,10 @@ export function useSlotRendering({
         dropHintTitle: dragStyling.dropHintTitle,
         isDragOver,
         isDropZone,
-        isStereoHighlight,
         slotBaseClass,
       };
     },
-    [
-      dragOverSlot,
-      dropZone,
-      isStereoDragTarget,
-      stereoDragSlotNumber,
-      calculateDragStyling,
-      voice,
-    ],
+    [dragOverSlot, dropZone, calculateDragStyling, voice],
   );
 
   // Helper function to get sample slot CSS classes
@@ -155,12 +128,11 @@ export function useSlotRendering({
       slotNumber: number,
       sampleData: SampleData | undefined,
       isDragOver: boolean,
-      isStereoHighlight: boolean,
       isDropZone: boolean,
       dropHintTitle: string,
       filename?: string,
     ) => {
-      if (isDragOver || isStereoHighlight || isDropZone) {
+      if (isDragOver || isDropZone) {
         return dropHintTitle;
       }
 

@@ -39,7 +39,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
     test("adds a sample and returns its id", () => {
       const result = addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 0,
         source_path: "/samples/kick.wav",
@@ -53,7 +52,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
     test("adds multiple samples to different slots", () => {
       addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 0,
         source_path: "/samples/kick.wav",
@@ -61,7 +59,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
       });
       addSample(dbDir, {
         filename: "snare.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 1,
         source_path: "/samples/snare.wav",
@@ -75,7 +72,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
     test("fails when adding duplicate kit/voice/slot", () => {
       addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 0,
         source_path: "/samples/kick.wav",
@@ -84,7 +80,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
 
       const result = addSample(dbDir, {
         filename: "other.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 0,
         source_path: "/samples/other.wav",
@@ -97,7 +92,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
     test("allows same slot number in different voices", () => {
       addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 0,
         source_path: "/samples/kick.wav",
@@ -106,7 +100,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
 
       const result = addSample(dbDir, {
         filename: "snare.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 0,
         source_path: "/samples/snare.wav",
@@ -119,7 +112,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
     test("stores optional WAV metadata", () => {
       const addResult = addSample(dbDir, {
         filename: "hq.wav",
-        is_stereo: true,
         kit_name: testKitName,
         slot_number: 0,
         source_path: "/samples/hq.wav",
@@ -138,7 +130,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
       expect(sample.wav_bitrate).toBe(2304000);
       expect(sample.wav_channels).toBe(2);
       expect(sample.wav_sample_rate).toBe(48000);
-      expect(sample.is_stereo).toBe(true);
     });
   });
 
@@ -154,7 +145,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
 
       addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 0,
         source_path: "/samples/kick.wav",
@@ -162,7 +152,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
       });
       addSample(dbDir, {
         filename: "snare.wav",
-        is_stereo: false,
         kit_name: "OtherKit",
         slot_number: 0,
         source_path: "/samples/snare.wav",
@@ -181,7 +170,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
 
       addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 0,
         source_path: "/samples/kick.wav",
@@ -189,7 +177,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
       });
       addSample(dbDir, {
         filename: "snare.wav",
-        is_stereo: false,
         kit_name: "OtherKit",
         slot_number: 0,
         source_path: "/samples/snare.wav",
@@ -213,7 +200,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
     test("updates WAV metadata fields", () => {
       const addResult = addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 0,
         source_path: "/samples/kick.wav",
@@ -236,7 +222,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
     test("updates filename and source_path", () => {
       const addResult = addSample(dbDir, {
         filename: "old.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 0,
         source_path: "/old/path.wav",
@@ -264,7 +249,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
     test("succeeds with no-op when no recognized fields provided", () => {
       const addResult = addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 0,
         source_path: "/samples/kick.wav",
@@ -281,7 +265,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
     test("deletes all samples for a kit", () => {
       addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 0,
         source_path: "/samples/kick.wav",
@@ -289,7 +272,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
       });
       addSample(dbDir, {
         filename: "snare.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 1,
         source_path: "/samples/snare.wav",
@@ -307,7 +289,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
     test("deletes samples filtered by voice number", () => {
       addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 0,
         source_path: "/samples/kick.wav",
@@ -315,7 +296,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
       });
       addSample(dbDir, {
         filename: "snare.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 0,
         source_path: "/samples/snare.wav",
@@ -335,7 +315,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
     test("deletes a specific sample by voice and slot", () => {
       addSample(dbDir, {
         filename: "s0.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 0,
         source_path: "/samples/s0.wav",
@@ -343,7 +322,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
       });
       addSample(dbDir, {
         filename: "s1.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 1,
         source_path: "/samples/s1.wav",
@@ -351,7 +329,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
       });
       addSample(dbDir, {
         filename: "s2.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 2,
         source_path: "/samples/s2.wav",
@@ -381,7 +358,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
     test("deletes samples but does not reindex remaining slots", () => {
       addSample(dbDir, {
         filename: "s0.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 0,
         source_path: "/samples/s0.wav",
@@ -389,7 +365,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
       });
       addSample(dbDir, {
         filename: "s1.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 1,
         source_path: "/samples/s1.wav",
@@ -397,7 +372,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
       });
       addSample(dbDir, {
         filename: "s2.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 2,
         source_path: "/samples/s2.wav",
@@ -424,7 +398,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
     test("returns deleted samples info", () => {
       addSample(dbDir, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: 0,
         source_path: "/samples/kick.wav",

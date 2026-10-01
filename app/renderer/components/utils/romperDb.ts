@@ -33,7 +33,6 @@ export async function insertSample(
   dbDir: string,
   sample: {
     filename: string;
-    is_stereo: boolean;
     kit_name: string;
     slot_number: number;
     source_path?: string;

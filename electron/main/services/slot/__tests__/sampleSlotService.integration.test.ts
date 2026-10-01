@@ -21,7 +21,6 @@ const createSample = (
   filename: `sample_v${voiceNumber}_s${slotNumber}.wav`,
   gain_db: 0,
   id: voiceNumber * 100 + slotNumber,
-  is_stereo: false,
   kit_name: "TestKit",
   slot_number: slotNumber,
   source_path: `/path/to/sample_v${voiceNumber}_s${slotNumber}.wav`,

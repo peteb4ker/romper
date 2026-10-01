@@ -209,7 +209,6 @@ describe("SyncSampleProcessingService", () => {
   describe("processSampleForSync", () => {
     const monoSample = {
       filename: "kick.wav",
-      is_stereo: false,
       kit_name: "TestKit",
       slot_number: 0,
       source_path: "/source/kick.wav",
@@ -218,7 +217,6 @@ describe("SyncSampleProcessingService", () => {
 
     const stereoSample = {
       filename: "stereo_kick.wav",
-      is_stereo: true,
       kit_name: "TestKit",
       slot_number: 0,
       source_path: "/source/stereo_kick.wav",
@@ -336,7 +334,7 @@ describe("SyncSampleProcessingService", () => {
       );
 
       expect(mockCategorizeSyncFileOperation).toHaveBeenCalledTimes(1);
-      // Stereo is a voice setting: the sample's is_stereo flag adds nothing
+      // Stereo is a voice setting: samples carry no stereo flag to warn about
       expect(results.warnings).toEqual([]);
     });
 
@@ -392,7 +390,6 @@ describe("SyncSampleProcessingService", () => {
   describe("stereo sample processing", () => {
     const testStereoSample = {
       filename: "stereo_kick.wav",
-      is_stereo: true,
       kit_name: "TestKit",
       slot_number: 0,
       source_path: "/source/stereo_kick.wav",
@@ -401,7 +398,6 @@ describe("SyncSampleProcessingService", () => {
 
     const testMonoSample = {
       filename: "kick.wav",
-      is_stereo: false,
       kit_name: "TestKit",
       slot_number: 0,
       source_path: "/source/kick.wav",
@@ -424,7 +420,7 @@ describe("SyncSampleProcessingService", () => {
       testResults.warnings = [];
     });
 
-    it("doesn't warn from the sample's is_stereo flag (RE-29)", () => {
+    it("doesn't warn about a sample on voice 2 (RE-29)", () => {
       const voice2Stereo = { ...testStereoSample, voice_number: 2 };
 
       syncSampleProcessingService.processSampleForSync(

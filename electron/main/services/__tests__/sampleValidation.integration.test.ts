@@ -1,4 +1,4 @@
-import type { NewKit, NewSample, Sample } from "@romper/shared/db/schema.js";
+import type { NewKit, NewSample } from "@romper/shared/db/schema.js";
 
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -10,7 +10,11 @@ import {
   addKit,
   addSample,
   createRomperDbFile,
+  getKitSamples,
+  updateVoiceStereoMode,
 } from "../../db/romperDbCoreORM.js";
+import { sampleCrudService } from "../crud/sampleCrudService.js";
+import { sampleBatchOperationsService } from "../sampleBatchOperations.js";
 import { SampleValidationService } from "../sampleValidation.js";
 import { SampleValidator } from "../validation/sampleValidator.js";
 
@@ -84,26 +88,6 @@ function createTestWavFile(filePath: string): void {
   buffer.writeUInt32LE(dataSize, offset);
 
   fs.writeFileSync(filePath, buffer);
-}
-
-/**
- * Helper to create a Sample object for in-memory validation tests
- */
-function makeSample(overrides: Partial<Sample> = {}): Sample {
-  return {
-    filename: "test.wav",
-    id: 1,
-    is_stereo: false,
-    kit_name: "A1",
-    slot_number: 0,
-    source_path: "/path/to/test.wav",
-    voice_number: 1,
-    wav_bit_depth: null,
-    wav_bitrate: null,
-    wav_channels: null,
-    wav_sample_rate: null,
-    ...overrides,
-  };
 }
 
 describe("SampleValidation Integration Tests", () => {
@@ -270,7 +254,6 @@ describe("SampleValidation Integration Tests", () => {
     it("should return exists=true with sample data for an occupied slot", () => {
       const sample: NewSample = {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: "A1",
         slot_number: 0,
         source_path: "/test/kick.wav",
@@ -292,7 +275,6 @@ describe("SampleValidation Integration Tests", () => {
     it("should not find a sample in a different voice", () => {
       const sample: NewSample = {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: "A1",
         slot_number: 0,
         source_path: "/test/kick.wav",
@@ -312,7 +294,6 @@ describe("SampleValidation Integration Tests", () => {
     it("should not find a sample in a different slot", () => {
       const sample: NewSample = {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: "A1",
         slot_number: 0,
         source_path: "/test/kick.wav",
@@ -334,7 +315,6 @@ describe("SampleValidation Integration Tests", () => {
     it("should return the sample when it exists", () => {
       const sample: NewSample = {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: "A1",
         slot_number: 0,
         source_path: "/test/kick.wav",
@@ -365,171 +345,6 @@ describe("SampleValidation Integration Tests", () => {
     });
   });
 
-  describe("SampleValidationService.getDestinationSamplesAndReplacements", () => {
-    it("should return destination samples for a kit", () => {
-      const sample: NewSample = {
-        filename: "dest_kick.wav",
-        is_stereo: false,
-        kit_name: "A1",
-        slot_number: 0,
-        source_path: "/test/dest_kick.wav",
-        voice_number: 1,
-      };
-      addSample(TEST_DB_PATH, sample);
-
-      const result =
-        sampleValidationService.getDestinationSamplesAndReplacements(
-          TEST_DB_PATH,
-          "A1",
-          1,
-          0,
-          "insert",
-        );
-
-      expect(result.destSamples).toHaveLength(1);
-      expect(result.destSamples[0].filename).toBe("dest_kick.wav");
-      // In insert mode, no sample should be replaced
-      expect(result.replacedSample).toBeUndefined();
-    });
-
-    it("should return empty array for a kit with no samples", () => {
-      const result =
-        sampleValidationService.getDestinationSamplesAndReplacements(
-          TEST_DB_PATH,
-          "A1",
-          1,
-          0,
-          "insert",
-        );
-
-      expect(result.destSamples).toHaveLength(0);
-    });
-  });
-
-  describe("SampleValidationService.validateStereoSampleMove", () => {
-    it("should allow moving a mono sample anywhere", () => {
-      const monoSample = makeSample({ is_stereo: false });
-
-      const result = sampleValidationService.validateStereoSampleMove(
-        monoSample,
-        4,
-        0,
-        "insert",
-        [],
-      );
-      expect(result.success).toBe(true);
-    });
-
-    it("should reject moving a stereo sample to voice 4", () => {
-      const stereoSample = makeSample({ is_stereo: true });
-
-      const result = sampleValidationService.validateStereoSampleMove(
-        stereoSample,
-        4,
-        0,
-        "insert",
-        [],
-      );
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("voice 4");
-    });
-
-    it("should reject stereo sample move when adjacent voice has a sample at the same slot", () => {
-      const stereoSample = makeSample({ is_stereo: true, voice_number: 1 });
-      const existingSamples = [
-        makeSample({ id: 5, slot_number: 0, voice_number: 2 }),
-      ];
-
-      const result = sampleValidationService.validateStereoSampleMove(
-        stereoSample,
-        1,
-        0,
-        "insert",
-        existingSamples,
-      );
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("conflict");
-    });
-
-    it("should allow stereo sample move when adjacent voice slot is empty", () => {
-      const stereoSample = makeSample({ is_stereo: true, voice_number: 1 });
-
-      const result = sampleValidationService.validateStereoSampleMove(
-        stereoSample,
-        1,
-        0,
-        "insert",
-        [],
-      );
-      expect(result.success).toBe(true);
-    });
-  });
-
-  describe("SampleValidator.checkStereoConflicts", () => {
-    it("should detect conflict when moving stereo sample to voice 4", () => {
-      const stereoSample = makeSample({ is_stereo: true });
-
-      const result = sampleValidator.checkStereoConflicts(
-        stereoSample,
-        4,
-        0,
-        [],
-        "insert",
-        "B1",
-      );
-      expect(result.hasConflict).toBe(true);
-      expect(result.error).toContain("voice 4");
-    });
-
-    it("should detect conflict when destination adjacent voice has a sample", () => {
-      const stereoSample = makeSample({ is_stereo: true });
-      const destSamples = [
-        makeSample({ id: 5, slot_number: 0, voice_number: 2 }),
-      ];
-
-      const result = sampleValidator.checkStereoConflicts(
-        stereoSample,
-        1,
-        0,
-        destSamples,
-        "insert",
-        "B1",
-      );
-      expect(result.hasConflict).toBe(true);
-    });
-
-    it("should have no conflict for mono sample", () => {
-      const monoSample = makeSample({ is_stereo: false });
-
-      const result = sampleValidator.checkStereoConflicts(
-        monoSample,
-        1,
-        0,
-        [],
-        "insert",
-        "B1",
-      );
-      expect(result.hasConflict).toBe(false);
-    });
-
-    it("should have no conflict when adjacent voice slot is empty", () => {
-      const stereoSample = makeSample({ is_stereo: true });
-      const destSamples = [
-        makeSample({ id: 5, slot_number: 1, voice_number: 2 }), // Different slot
-      ];
-
-      const result = sampleValidator.checkStereoConflicts(
-        stereoSample,
-        1,
-        0,
-        destSamples,
-        "insert",
-        "B1",
-      );
-      expect(result.hasConflict).toBe(false);
-    });
-  });
-
   describe("SampleValidator.validateSampleSources (database integration)", () => {
     it("should validate all sample sources in a kit with valid files", () => {
       const wavPath1 = path.join(testWavDir, "kick.wav");
@@ -539,7 +354,6 @@ describe("SampleValidation Integration Tests", () => {
 
       addSample(TEST_DB_PATH, {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: "A1",
         slot_number: 0,
         source_path: wavPath1,
@@ -547,7 +361,6 @@ describe("SampleValidation Integration Tests", () => {
       });
       addSample(TEST_DB_PATH, {
         filename: "snare.wav",
-        is_stereo: false,
         kit_name: "A1",
         slot_number: 1,
         source_path: wavPath2,
@@ -565,7 +378,6 @@ describe("SampleValidation Integration Tests", () => {
     it("should report invalid samples when source files are missing", () => {
       addSample(TEST_DB_PATH, {
         filename: "missing.wav",
-        is_stereo: false,
         kit_name: "A1",
         slot_number: 0,
         source_path: "/nonexistent/path/missing.wav",
@@ -590,7 +402,6 @@ describe("SampleValidation Integration Tests", () => {
 
       addSample(TEST_DB_PATH, {
         filename: "valid.wav",
-        is_stereo: false,
         kit_name: "A1",
         slot_number: 0,
         source_path: validPath,
@@ -598,7 +409,6 @@ describe("SampleValidation Integration Tests", () => {
       });
       addSample(TEST_DB_PATH, {
         filename: "missing.wav",
-        is_stereo: false,
         kit_name: "A1",
         slot_number: 1,
         source_path: "/nonexistent/missing.wav",
@@ -701,65 +511,95 @@ describe("SampleValidation Integration Tests", () => {
     });
   });
 
-  describe("SampleValidator.validateStereoSampleMove", () => {
-    it("should pass for mono samples to any valid position", () => {
-      const monoSample = makeSample({ is_stereo: false });
+  describe("validateVoiceNotLinkedPartner", () => {
+    it("[UC-28] refuses voice 2 while voice 1 is linked for stereo", () => {
+      updateVoiceStereoMode(TEST_DB_PATH, "A1", 1, true);
 
-      const result = sampleValidator.validateStereoSampleMove(
-        monoSample,
-        4,
-        0,
-        "insert",
-        [],
+      const serviceResult =
+        sampleValidationService.validateVoiceNotLinkedPartner(
+          TEST_DB_PATH,
+          "A1",
+          2,
+        );
+      expect(serviceResult.isValid).toBe(false);
+      expect(serviceResult.error).toBe(
+        "Voice 2 is linked to voice 1 for stereo. Unlink them to put samples on voice 2.",
       );
-      expect(result.success).toBe(true);
+
+      const validatorResult = sampleValidator.validateVoiceNotLinkedPartner(
+        TEST_DB_PATH,
+        "A1",
+        2,
+      );
+      expect(validatorResult.isValid).toBe(false);
     });
 
-    it("should fail for stereo sample to voice 4", () => {
-      const stereoSample = makeSample({ is_stereo: true });
+    it("[UC-28] accepts voices 1 and 3 while voice 1 is linked", () => {
+      updateVoiceStereoMode(TEST_DB_PATH, "A1", 1, true);
 
-      const result = sampleValidator.validateStereoSampleMove(
-        stereoSample,
-        4,
-        0,
-        "insert",
-        [],
+      for (const voice of [1, 3]) {
+        const result = sampleValidationService.validateVoiceNotLinkedPartner(
+          TEST_DB_PATH,
+          "A1",
+          voice,
+        );
+        expect(result.isValid).toBe(true);
+        expect(result.error).toBeUndefined();
+      }
+    });
+
+    it("[UC-28] accepts voice 2 when no voice is linked", () => {
+      const result = sampleValidationService.validateVoiceNotLinkedPartner(
+        TEST_DB_PATH,
+        "A1",
+        2,
       );
+      expect(result.isValid).toBe(true);
+    });
+
+    it("[UC-28] addSampleToSlot refuses voice 2 while voice 1 is linked", () => {
+      updateVoiceStereoMode(TEST_DB_PATH, "A1", 1, true);
+      const wavPath = path.join(testWavDir, "right.wav");
+      createTestWavFile(wavPath);
+
+      const result = sampleCrudService.addSampleToSlot(
+        { localStorePath: TEST_DB_DIR },
+        "A1",
+        2,
+        0,
+        wavPath,
+      );
+
       expect(result.success).toBe(false);
-      expect(result.error).toContain("voice 4");
+      expect(result.error).toContain("Voice 2 is linked to voice 1");
+      expect(getKitSamples(TEST_DB_PATH, "A1").data).toHaveLength(0);
     });
 
-    it("should fail when adjacent voice has conflicting sample", () => {
-      const stereoSample = makeSample({ is_stereo: true });
-      const existingSamples = [
-        makeSample({ id: 10, slot_number: 0, voice_number: 3 }),
-      ];
+    it("[UC-28] moveSampleInKit refuses voice 2 while voice 1 is linked", () => {
+      addSample(TEST_DB_PATH, {
+        filename: "kick.wav",
+        kit_name: "A1",
+        slot_number: 0,
+        source_path: "/test/kick.wav",
+        voice_number: 1,
+      });
+      updateVoiceStereoMode(TEST_DB_PATH, "A1", 1, true);
 
-      const result = sampleValidator.validateStereoSampleMove(
-        stereoSample,
+      const result = sampleBatchOperationsService.moveSampleInKit(
+        { localStorePath: TEST_DB_DIR },
+        "A1",
+        1,
+        0,
         2,
         0,
         "insert",
-        existingSamples,
       );
+
       expect(result.success).toBe(false);
-      expect(result.error).toContain("conflict");
-    });
-
-    it("should pass when no adjacent voice conflict exists", () => {
-      const stereoSample = makeSample({ is_stereo: true });
-      const existingSamples = [
-        makeSample({ id: 10, slot_number: 5, voice_number: 3 }), // Different slot
-      ];
-
-      const result = sampleValidator.validateStereoSampleMove(
-        stereoSample,
-        2,
-        0,
-        "insert",
-        existingSamples,
-      );
-      expect(result.success).toBe(true);
+      expect(result.error).toContain("Voice 2 is linked to voice 1");
+      const samples = getKitSamples(TEST_DB_PATH, "A1").data!;
+      expect(samples).toHaveLength(1);
+      expect(samples[0].voice_number).toBe(1);
     });
   });
 });

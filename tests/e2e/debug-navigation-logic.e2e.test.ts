@@ -152,13 +152,6 @@ test.describe("Debug Navigation Logic", () => {
             const slotNumber = sample.slot_number;
             if (slotNumber >= 0 && slotNumber < 12) {
               voices[voiceNumber][slotNumber] = sample.filename;
-              if (sample.is_stereo && voiceNumber < 4) {
-                const nextVoice = voiceNumber + 1;
-                if (!Array.isArray(voices[nextVoice])) {
-                  voices[nextVoice] = [];
-                }
-                voices[nextVoice][slotNumber] = sample.filename;
-              }
             }
           }
         });

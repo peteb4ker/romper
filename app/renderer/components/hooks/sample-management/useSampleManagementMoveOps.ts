@@ -62,7 +62,6 @@ export function useSampleManagementMoveOps({
         .map((s) => ({
           sample: {
             filename: s.filename,
-            is_stereo: s.is_stereo,
             source_path: s.source_path,
           },
           slot: s.slot_number,

@@ -15,8 +15,6 @@ interface KitVoicePanelProps {
   isEditable?: boolean;
   isFlashing?: boolean;
   isLinkedPrimary?: boolean;
-  // Task 7.1.3: Props for coordinated stereo drop highlighting
-  isStereoDragTarget?: boolean;
   kitName: string;
   linkedWith?: number;
   onBatchDropComplete?: () => void;
@@ -52,12 +50,6 @@ interface KitVoicePanelProps {
   ) => Promise<void>;
   onSampleSelect?: (voice: number, idx: number) => void;
   onSaveVoiceName: (voice: number, newName: string) => void;
-  onStereoDragLeave?: () => void;
-  onStereoDragOver?: (
-    voice: number,
-    slotNumber: number,
-    isStereo: boolean,
-  ) => void;
 
   onStop: (voice: number, sample: string) => void;
   onVoiceUnlink?: (primaryVoice: number) => void;
@@ -90,7 +82,6 @@ interface KitVoicePanelProps {
     voice: number;
   } | null;
 
-  stereoDragSlotNumber?: number;
   stopTriggers: { [key: string]: number };
   voice: number;
   voiceName: null | string;
@@ -105,7 +96,6 @@ const KitVoicePanel: React.FC<
   isEditable = true,
   isFlashing = false,
   isLinkedPrimary = false,
-  isStereoDragTarget = false,
   kitName,
   linkedWith,
   onBatchDropComplete,
@@ -118,8 +108,6 @@ const KitVoicePanel: React.FC<
   // onSampleKeyNav, // Note: Keyboard navigation now handled by parent component
   onSampleSelect,
   onSaveVoiceName,
-  onStereoDragLeave,
-  onStereoDragOver,
   onStop,
   onVoiceUnlink,
   onWaveformPlayingChange,
@@ -132,7 +120,6 @@ const KitVoicePanel: React.FC<
   selectedIdx = -1,
   setSharedDraggedSample,
   sharedDraggedSample,
-  stereoDragSlotNumber,
   stopTriggers,
   voice,
   voiceName,
@@ -164,8 +151,6 @@ const KitVoicePanel: React.FC<
     onSampleAdd,
     onSampleMove,
     onSampleReplace,
-    onStereoDragLeave,
-    onStereoDragOver,
     samples,
     setSharedDraggedSample,
     sharedDraggedSample,
@@ -186,10 +171,8 @@ const KitVoicePanel: React.FC<
     dragOverSlot: dragAndDrop.dragOverSlot,
     dropZone: dragAndDrop.dropZone,
     isActive,
-    isStereoDragTarget,
     samples,
     selectedIdx,
-    stereoDragSlotNumber,
     voice,
   });
 
@@ -243,8 +226,6 @@ const KitVoicePanel: React.FC<
     "flex-1 p-3 rounded-lg shadow text-text-primary min-h-[80px] border border-border-subtle overflow-hidden",
     // Default background with grain texture
     "card-grain",
-    // Stereo drag target
-    isStereoDragTarget && "bg-accent-warning/15",
     // Flash animation after voice name inference
     isFlashing && "animate-voice-flash",
   ]

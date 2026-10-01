@@ -165,9 +165,11 @@ exist, but see RE-09 below.
 
 Stereo is a **voice** setting (`voices.stereo_mode`), not a sample property.
 A stereo voice pairs with the next voice. Never infer stereo from a file's
-channel count, and never copy samples to the adjacent voice based on the
-sample's `is_stereo` flag; doing so created phantom samples that couldn't be
-deleted. When a sync is planned, `syncMonoAnnotation.ts` marks files with
+channel count, and never copy samples to the adjacent voice because a file
+is stereo; doing so created phantom samples that couldn't be deleted.
+Samples carry no stereo flag (RE-69 dropped `samples.is_stereo`). Unlinking
+only clears `stereo_mode`, and main refuses samples on the right-hand voice
+of a linked pair (`validateVoiceNotLinkedPartner`). When a sync is planned, `syncMonoAnnotation.ts` marks files with
 more than one channel (read from the file's header) on voices that aren't
 linked for downmixing (channel average, in `formatConverter.ts`), so the
 summary shows the conversion too (RE-29). That's the one place a file's

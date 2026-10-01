@@ -62,7 +62,7 @@ export const voices = sqliteTable("voices", {
     .default(false), // Rolls and live-random steps also vary slice length
   stereo_mode: integer("stereo_mode", { mode: "boolean" })
     .notNull()
-    .default(false), // Voice-level stereo mode: if true, all samples in voice must be stereo
+    .default(false), // Stereo is a voice setting: true links this voice with the next as a stereo pair; samples carry no stereo flag
   voice_alias: text("voice_alias"), // Optional user-defined voice name
   voice_number: integer("voice_number").notNull(), // 1-4, explicit voice tracking
   voice_volume: integer("voice_volume").notNull().default(100), // 0-100 volume level
@@ -75,9 +75,6 @@ export const samples = sqliteTable(
     filename: text("filename").notNull(), // Sample filename
     gain_db: real("gain_db").notNull().default(0), // Per-sample gain trim in dB (-24 to +12, 0 = unity)
     id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
-    is_stereo: integer("is_stereo", { mode: "boolean" })
-      .notNull()
-      .default(false),
     kit_name: text("kit_name")
       .notNull()
       .references(() => kits.name), // FK to kits.name

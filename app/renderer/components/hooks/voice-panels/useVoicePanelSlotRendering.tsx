@@ -25,7 +25,6 @@ export interface SlotRenderingHook {
     slotNumber: number,
     sampleData: SampleData | undefined,
     isDragOver: boolean,
-    isStereoHighlight: boolean,
     isDropZone: boolean,
     dropHintTitle: string,
     filename?: string,
@@ -38,7 +37,6 @@ export interface SlotRenderingHook {
     dropHintTitle: string;
     isDragOver: boolean;
     isDropZone: boolean;
-    isStereoHighlight: boolean;
     slotBaseClass: string;
   };
 }
@@ -123,7 +121,6 @@ export function useVoicePanelSlotRendering({
         dropHintTitle,
         isDragOver,
         isDropZone,
-        isStereoHighlight,
         slotBaseClass,
       } = getSlotStylingProps(slotNumber, sample);
       const sampleName = sample;
@@ -146,7 +143,6 @@ export function useVoicePanelSlotRendering({
         slotNumber,
         sampleData,
         isDragOver,
-        isStereoHighlight,
         isDropZone,
         dropHintTitle,
         sampleName,
@@ -290,7 +286,6 @@ export function useVoicePanelSlotRendering({
       dropHintTitle,
       isDragOver,
       isDropZone,
-      isStereoHighlight,
       slotBaseClass,
     } = getSlotStylingProps(nextAvailableSlot);
 
@@ -302,8 +297,7 @@ export function useVoicePanelSlotRendering({
         key={`${voice}-drop-zone`}
         {...getConditionalDragHandlers(nextAvailableSlot)}
         title={(() => {
-          if (isDragOver || isStereoHighlight || isDropZone)
-            return dropHintTitle;
+          if (isDragOver || isDropZone) return dropHintTitle;
           if (isLinkedPrimary && linkedWith)
             return `Drop stereo WAV files here for voices ${voice} and ${linkedWith}`;
           return `Drop WAV files here to add to voice ${voice}`;

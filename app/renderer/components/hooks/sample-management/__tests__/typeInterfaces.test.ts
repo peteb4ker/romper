@@ -35,7 +35,6 @@ describe("Type Interfaces for Sample Management", () => {
         {
           filename: "test.wav",
           id: 1,
-          is_stereo: false,
           kit_name: "TestKit",
           slot_number: 0,
           source_path: "/path/to/test.wav",
@@ -85,7 +84,6 @@ describe("Type Interfaces for Sample Management", () => {
       const mockMovedSample: Sample = {
         filename: "moved.wav",
         id: 1,
-        is_stereo: false,
         kit_name: "TestKit",
         slot_number: 0,
         source_path: "/path/to/moved.wav",
@@ -97,7 +95,6 @@ describe("Type Interfaces for Sample Management", () => {
       const mockReplacedSample: Sample = {
         filename: "replaced.wav",
         id: 2,
-        is_stereo: true,
         kit_name: "TestKit",
         slot_number: 1,
         source_path: "/path/to/replaced.wav",
@@ -125,7 +122,6 @@ describe("Type Interfaces for Sample Management", () => {
       const mockMovedSample: Sample = {
         filename: "moved.wav",
         id: 1,
-        is_stereo: false,
         kit_name: "TestKit",
         slot_number: 0,
         source_path: "/path/to/moved.wav",
@@ -217,7 +213,6 @@ describe("Type Interfaces for Sample Management", () => {
         {
           sample: {
             filename: "snapshot.wav",
-            is_stereo: false,
             source_path: "/path/to/snapshot.wav",
           },
           slot: 0,
@@ -226,7 +221,6 @@ describe("Type Interfaces for Sample Management", () => {
         {
           sample: {
             filename: "snapshot2.wav",
-            is_stereo: true,
             source_path: "/path/to/snapshot2.wav",
           },
           slot: 1,
@@ -236,8 +230,6 @@ describe("Type Interfaces for Sample Management", () => {
 
       expect(stateSnapshot).toHaveLength(2);
       expect(stateSnapshot[0].sample.filename).toBe("snapshot.wav");
-      expect(stateSnapshot[0].sample.is_stereo).toBe(false);
-      expect(stateSnapshot[1].sample.is_stereo).toBe(true);
       expect(stateSnapshot[1].voice).toBe(2);
     });
 
@@ -246,7 +238,6 @@ describe("Type Interfaces for Sample Management", () => {
         {
           sample: {
             filename: "restore1.wav",
-            is_stereo: false,
             source_path: "/path/to/restore1.wav",
           },
           slot: 0,

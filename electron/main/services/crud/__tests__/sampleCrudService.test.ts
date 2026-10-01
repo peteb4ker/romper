@@ -38,6 +38,9 @@ describe("SampleCrudService", () => {
         isValid: true,
       },
     );
+    mockValidation.sampleValidationService.validateVoiceNotLinkedPartner.mockReturnValue(
+      { isValid: true },
+    );
     mockValidation.sampleValidationService.validateSampleFile.mockReturnValue({
       isValid: true,
     });
@@ -83,7 +86,6 @@ describe("SampleCrudService", () => {
       expect(result.data?.sampleId).toBe(123);
       expect(mockORM.addSample).toHaveBeenCalledWith(mockDbPath, {
         filename: "sample.wav",
-        is_stereo: false,
         kit_name: "TestKit",
         slot_number: 0,
         source_path: "/path/to/sample.wav",
@@ -128,6 +130,32 @@ describe("SampleCrudService", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Invalid voice number");
+    });
+
+    it("[UC-28] refuses the linked partner of a stereo voice", () => {
+      const linkError =
+        "Voice 2 is linked to voice 1 for stereo. Unlink them to put samples on voice 2.";
+      mockValidation.sampleValidationService.validateVoiceNotLinkedPartner.mockReturnValue(
+        {
+          error: linkError,
+          isValid: false,
+        },
+      );
+
+      const result = service.addSampleToSlot(
+        mockSettings,
+        "TestKit",
+        2,
+        0,
+        "/path/to/sample.wav",
+      );
+
+      expect(result).toEqual({ error: linkError, success: false });
+      expect(
+        mockValidation.sampleValidationService.validateVoiceNotLinkedPartner,
+      ).toHaveBeenCalledWith(mockDbPath, "TestKit", 2);
+      expect(mockORM.addSample).not.toHaveBeenCalled();
+      expect(mockORM.markKitAsModified).not.toHaveBeenCalled();
     });
 
     it("should fail when file validation fails", () => {

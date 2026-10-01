@@ -24,12 +24,6 @@ export interface UseDragAndDropOptions {
     slotNumber: number,
     filePath: string,
   ) => Promise<void>;
-  onStereoDragLeave?: () => void;
-  onStereoDragOver?: (
-    voice: number,
-    slotNumber: number,
-    isStereo: boolean,
-  ) => void;
   samples: string[];
   setSharedDraggedSample?: (
     sample: {
@@ -48,8 +42,8 @@ export interface UseDragAndDropOptions {
 }
 
 /**
- * Hook for managing drag and drop functionality including file validation,
- * stereo handling, and sample assignment
+ * Hook for managing drag and drop functionality including file validation
+ * and sample assignment
  * Refactored to use extracted sub-hooks for better organization
  */
 export function useDragAndDrop({
@@ -60,8 +54,6 @@ export function useDragAndDrop({
   onSampleAdd,
   onSampleMove,
   onSampleReplace,
-  onStereoDragLeave,
-  onStereoDragOver,
   samples,
   setSharedDraggedSample,
   sharedDraggedSample,
@@ -87,11 +79,8 @@ export function useDragAndDrop({
     fileValidation,
     isEditable: effectiveEditable,
     onBatchDropComplete,
-    onStereoDragLeave,
-    onStereoDragOver,
     sampleProcessing,
     samples,
-    voice,
   });
 
   // Internal drag handlers hook

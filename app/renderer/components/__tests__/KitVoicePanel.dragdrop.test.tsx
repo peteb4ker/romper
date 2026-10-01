@@ -32,8 +32,6 @@ describe("KitVoicePanel Drag & Drop Integration", () => {
     onSampleReplace: vi.fn(),
     onSampleSelect: vi.fn(),
     onSaveVoiceName: vi.fn(),
-    onStereoDragLeave: vi.fn(),
-    onStereoDragOver: vi.fn(),
     onStop: vi.fn(),
     onWaveformPlayingChange: vi.fn(),
     playTriggers: {},

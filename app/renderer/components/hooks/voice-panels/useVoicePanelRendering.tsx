@@ -69,7 +69,6 @@ export interface UseVoicePanelRenderingOptions {
       slotNumber: number,
       sampleData: SampleData | undefined,
       isDragOver: boolean,
-      isStereoHighlight: boolean,
       isDropZone: boolean,
       dropHintTitle: string,
     ) => string;
@@ -81,7 +80,6 @@ export interface UseVoicePanelRenderingOptions {
       dropHintTitle: string;
       isDragOver: boolean;
       isDropZone: boolean;
-      isStereoHighlight: boolean;
       slotBaseClass: string;
     };
   };

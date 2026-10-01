@@ -47,7 +47,6 @@ describe("Drag & Drop Operations - Integration Tests", () => {
     for (let i = 0; i < sampleNames.length; i++) {
       await addSample(dbDir, {
         filename: sampleNames[i],
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: i, // 0-based indexing
         source_path: `/path/to/${sampleNames[i]}`,
@@ -110,7 +109,6 @@ describe("Drag & Drop Operations - Integration Tests", () => {
     for (let i = 0; i < voice1Samples.length; i++) {
       await addSample(dbDir, {
         filename: voice1Samples[i],
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: i,
         source_path: `/path/to/${voice1Samples[i]}`,
@@ -121,7 +119,6 @@ describe("Drag & Drop Operations - Integration Tests", () => {
     for (let i = 0; i < voice2Samples.length; i++) {
       await addSample(dbDir, {
         filename: voice2Samples[i],
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: i,
         source_path: `/path/to/${voice2Samples[i]}`,
@@ -174,7 +171,6 @@ describe("Drag & Drop Operations - Integration Tests", () => {
     for (let i = 0; i < sampleNames.length; i++) {
       await addSample(dbDir, {
         filename: sampleNames[i],
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: i,
         source_path: `/path/to/${sampleNames[i]}`,
@@ -207,7 +203,6 @@ describe("Drag & Drop Operations - Integration Tests", () => {
     for (let i = 0; i < sampleNames.length; i++) {
       await addSample(dbDir, {
         filename: sampleNames[i],
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: i,
         source_path: `/path/to/${sampleNames[i]}`,
@@ -240,7 +235,6 @@ describe("Drag & Drop Operations - Integration Tests", () => {
     for (let i = 0; i < sampleNames.length; i++) {
       await addSample(dbDir, {
         filename: sampleNames[i],
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: i,
         source_path: `/path/to/${sampleNames[i]}`,
@@ -271,7 +265,6 @@ describe("Drag & Drop Operations - Integration Tests", () => {
     for (let i = 0; i < sampleNames.length; i++) {
       await addSample(dbDir, {
         filename: sampleNames[i],
-        is_stereo: false,
         kit_name: testKitName,
         slot_number: i,
         source_path: `/path/to/${sampleNames[i]}`,

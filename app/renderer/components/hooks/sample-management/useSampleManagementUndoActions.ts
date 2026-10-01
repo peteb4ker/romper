@@ -95,7 +95,6 @@ export function useSampleManagementUndoActions({
       data: {
         addedSample: {
           filename: filePath.split("/").pop() || "",
-          is_stereo: false,
           source_path: filePath,
         },
         slot: slotNumber,
@@ -120,12 +119,10 @@ export function useSampleManagementUndoActions({
       data: {
         newSample: {
           filename: filePath.split("/").pop() || "",
-          is_stereo: false,
           source_path: filePath,
         },
         oldSample: {
           filename: oldSample.filename,
-          is_stereo: oldSample.is_stereo,
           source_path: oldSample.source_path,
         },
         slot: slotNumber,
@@ -154,14 +151,12 @@ export function useSampleManagementUndoActions({
             oldSlot: sample.slot_number, // New position after reindexing
             sample: {
               filename: sample.filename,
-              is_stereo: sample.is_stereo,
               source_path: sample.source_path,
             },
             voice: sample.voice_number,
           })) || [],
         deletedSample: {
           filename: sampleToDelete.filename,
-          is_stereo: sampleToDelete.is_stereo,
           source_path: sampleToDelete.source_path,
         },
         deletedSlot: slotNumber,
@@ -181,7 +176,7 @@ export function useSampleManagementUndoActions({
       fromVoice: number;
       result: SampleOperationResult;
       stateSnapshot: {
-        sample: { filename: string; is_stereo: boolean; source_path: string };
+        sample: { filename: string; source_path: string };
         slot: number;
         voice: number;
       }[];
@@ -195,7 +190,6 @@ export function useSampleManagementUndoActions({
             oldSlot: sample.slot_number, // Using slot_number for both since original_slot_number doesn't exist in Sample
             sample: {
               filename: sample.filename,
-              is_stereo: sample.is_stereo,
               source_path: sample.source_path,
             },
             voice: sample.voice_number,
@@ -204,13 +198,11 @@ export function useSampleManagementUndoActions({
         fromVoice: params.fromVoice,
         movedSample: {
           filename: params.result.data?.movedSample?.filename || "",
-          is_stereo: params.result.data?.movedSample?.is_stereo || false,
           source_path: params.result.data?.movedSample?.source_path || "",
         },
         replacedSample: params.result.data?.replacedSample
           ? {
               filename: params.result.data.replacedSample.filename,
-              is_stereo: params.result.data.replacedSample.is_stereo,
               source_path: params.result.data.replacedSample.source_path,
             }
           : undefined,
@@ -242,7 +234,6 @@ export function useSampleManagementUndoActions({
             oldSlot: sample.original_slot_number,
             sample: {
               filename: sample.filename,
-              is_stereo: sample.is_stereo,
               source_path: sample.source_path,
             },
             voice: sample.voice_number,
@@ -253,13 +244,11 @@ export function useSampleManagementUndoActions({
         mode: "insert",
         movedSample: {
           filename: params.result.data?.movedSample?.filename || "",
-          is_stereo: params.result.data?.movedSample?.is_stereo || false,
           source_path: params.result.data?.movedSample?.source_path || "",
         },
         replacedSample: params.result.data?.replacedSample
           ? {
               filename: params.result.data?.replacedSample?.filename || "",
-              is_stereo: params.result.data?.replacedSample?.is_stereo || false,
               source_path:
                 params.result.data?.replacedSample?.source_path || "",
             }

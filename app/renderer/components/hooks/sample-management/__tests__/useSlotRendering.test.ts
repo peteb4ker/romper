@@ -15,10 +15,8 @@ describe("useSlotRendering", () => {
     dragOverSlot: null,
     dropZone: null,
     isActive: true,
-    isStereoDragTarget: false,
     samples: ["kick.wav", "snare.wav", "", ""],
     selectedIdx: 0,
-    stereoDragSlotNumber: undefined,
     voice: 1,
   };
 
@@ -96,7 +94,6 @@ describe("useSlotRendering", () => {
       expect(styling.dragOverClass).toBe("");
       expect(styling.isDragOver).toBe(false);
       expect(styling.isDropZone).toBe(false);
-      expect(styling.isStereoHighlight).toBe(false);
     });
 
     it("applies drag over styling", () => {
@@ -155,37 +152,6 @@ describe("useSlotRendering", () => {
       expect(styling.isDropZone).toBe(true);
       expect(styling.dragOverClass).toContain("bg-red-100");
       expect(styling.dropHintTitle).toBe("Voice is full (12 samples maximum)");
-    });
-
-    it("applies stereo highlight styling", () => {
-      const { result } = renderHook(() =>
-        useSlotRendering({
-          ...defaultProps,
-          isStereoDragTarget: true,
-          stereoDragSlotNumber: 0,
-        }),
-      );
-
-      const styling = result.current.getSlotStyling(0, "kick.wav");
-
-      expect(styling.isStereoHighlight).toBe(true);
-      expect(styling.dragOverClass).toContain("bg-purple-100");
-      expect(styling.dropHintTitle).toBe("Left channel of stereo pair");
-    });
-
-    it("shows right channel hint for voice > 1", () => {
-      const { result } = renderHook(() =>
-        useSlotRendering({
-          ...defaultProps,
-          isStereoDragTarget: true,
-          stereoDragSlotNumber: 0,
-          voice: 2,
-        }),
-      );
-
-      const styling = result.current.getSlotStyling(0, "kick.wav");
-
-      expect(styling.dropHintTitle).toBe("Right channel of stereo pair");
     });
   });
 
@@ -261,7 +227,6 @@ describe("useSlotRendering", () => {
         undefined,
         false,
         false,
-        false,
         "",
       );
 
@@ -277,7 +242,6 @@ describe("useSlotRendering", () => {
       const title = result.current.getSampleSlotTitle(
         1,
         sampleData,
-        false,
         false,
         false,
         "",
@@ -300,26 +264,10 @@ describe("useSlotRendering", () => {
         sampleData,
         true,
         false,
-        false,
         "Custom drop hint",
       );
 
       expect(title).toBe("Custom drop hint");
-    });
-
-    it("returns drop hint title when stereo highlighting", () => {
-      const { result } = renderHook(() => useSlotRendering(defaultProps));
-
-      const title = result.current.getSampleSlotTitle(
-        1,
-        sampleData,
-        false,
-        true,
-        false,
-        "Stereo hint",
-      );
-
-      expect(title).toBe("Stereo hint");
     });
 
     it("returns drop hint title when in drop zone", () => {
@@ -328,7 +276,6 @@ describe("useSlotRendering", () => {
       const title = result.current.getSampleSlotTitle(
         1,
         sampleData,
-        false,
         false,
         true,
         "Drop zone hint",

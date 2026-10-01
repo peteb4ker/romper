@@ -123,7 +123,6 @@ describe("SampleValidator", () => {
           created_at: "2023-01-01",
           filename: "valid.wav",
           id: 1,
-          is_stereo: false,
           kit_name: "TestKit",
           slot_number: 0,
           source_path: "/path/to/valid.wav",
@@ -133,7 +132,6 @@ describe("SampleValidator", () => {
           created_at: "2023-01-01",
           filename: "invalid.wav",
           id: 2,
-          is_stereo: false,
           kit_name: "TestKit",
           slot_number: 1,
           source_path: "/path/to/invalid.wav",
@@ -193,177 +191,55 @@ describe("SampleValidator", () => {
     });
   });
 
-  describe("validateStereoSampleMove", () => {
-    const createSample = (
-      voiceNumber: number,
-      slotNumber: number,
-      isStereo = false,
-    ): Sample => ({
-      created_at: "2023-01-01",
-      filename: `sample_${voiceNumber}_${slotNumber}.wav`,
-      id: voiceNumber * 100 + slotNumber,
-      is_stereo: isStereo,
-      kit_name: "TestKit",
-      slot_number: slotNumber,
-      source_path: `/path/to/sample_${voiceNumber}_${slotNumber}.wav`,
-      voice_number: voiceNumber,
-    });
+  describe("validateVoiceNotLinkedPartner", () => {
+    const kitWithVoice1Linked = (linked: boolean) =>
+      ({
+        data: {
+          voices: [1, 2, 3, 4].map((voice_number) => ({
+            stereo_mode: linked && voice_number === 1,
+            voice_number,
+          })),
+        },
+        success: true,
+      }) as ReturnType<typeof romperDbCoreORM.getKit>;
 
-    it("should allow mono sample moves", () => {
-      const monoSample = createSample(1, 0, false);
-      const existingSamples: Sample[] = [];
+    it("[UC-28] refuses the right channel of a linked pair (RE-69)", () => {
+      mockORM.getKit.mockReturnValue(kitWithVoice1Linked(true));
 
-      const result = validator.validateStereoSampleMove(
-        monoSample,
-        2,
-        1,
-        "insert",
-        existingSamples,
-      );
+      const result = validator.validateVoiceNotLinkedPartner("/db", "A0", 2);
 
-      expect(result.success).toBe(true);
-    });
-
-    it("should reject stereo sample moves to voice 4", () => {
-      const stereoSample = createSample(1, 0, true);
-      const existingSamples: Sample[] = [];
-
-      const result = validator.validateStereoSampleMove(
-        stereoSample,
-        4,
-        1,
-        "insert",
-        existingSamples,
-      );
-
-      expect(result.success).toBe(false);
+      expect(result.isValid).toBe(false);
       expect(result.error).toBe(
-        "Cannot move stereo sample to voice 4 (no adjacent voice available)",
+        "Voice 2 is linked to voice 1 for stereo. Unlink them to put samples on voice 2.",
       );
+      expect(mockORM.getKit).toHaveBeenCalledWith("/db", "A0");
     });
 
-    it("should reject stereo sample moves with conflicts", () => {
-      const stereoSample = createSample(1, 0, true);
-      const conflictingSample = createSample(3, 1, false); // Voice 3, slot 1
-      const existingSamples: Sample[] = [conflictingSample];
+    it("[UC-28] accepts the linked voice itself and voices outside the pair", () => {
+      mockORM.getKit.mockReturnValue(kitWithVoice1Linked(true));
 
-      const result = validator.validateStereoSampleMove(
-        stereoSample,
-        2, // Moving to voice 2, would need voice 3 slot 1 free
-        1,
-        "insert",
-        existingSamples,
-      );
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain(
-        "Stereo sample move would conflict with sample in voice 3, slot 2",
-      );
+      expect(validator.validateVoiceNotLinkedPartner("/db", "A0", 1)).toEqual({
+        isValid: true,
+      });
+      expect(validator.validateVoiceNotLinkedPartner("/db", "A0", 3)).toEqual({
+        isValid: true,
+      });
     });
 
-    it("should allow stereo sample moves without conflicts", () => {
-      const stereoSample = createSample(1, 0, true);
-      const existingSamples: Sample[] = [createSample(3, 0, false)]; // Different slot
+    it("accepts voice 2 once the pair is unlinked", () => {
+      mockORM.getKit.mockReturnValue(kitWithVoice1Linked(false));
 
-      const result = validator.validateStereoSampleMove(
-        stereoSample,
-        2,
-        1,
-        "insert",
-        existingSamples,
-      );
-
-      expect(result.success).toBe(true);
-    });
-  });
-
-  describe("checkStereoConflicts", () => {
-    const createSample = (
-      voiceNumber: number,
-      slotNumber: number,
-      isStereo = false,
-    ): Sample => ({
-      created_at: "2023-01-01",
-      filename: `sample_${voiceNumber}_${slotNumber}.wav`,
-      id: voiceNumber * 100 + slotNumber,
-      is_stereo: isStereo,
-      kit_name: "TestKit",
-      slot_number: slotNumber,
-      source_path: `/path/to/sample_${voiceNumber}_${slotNumber}.wav`,
-      voice_number: voiceNumber,
+      expect(validator.validateVoiceNotLinkedPartner("/db", "A0", 2)).toEqual({
+        isValid: true,
+      });
     });
 
-    it("should not conflict for mono samples", () => {
-      const monoSample = createSample(1, 0, false);
-      const destSamples: Sample[] = [];
+    it("accepts when the kit can't be read", () => {
+      mockORM.getKit.mockReturnValue({ error: "no kit", success: false });
 
-      const result = validator.checkStereoConflicts(
-        monoSample,
-        2,
-        1,
-        destSamples,
-        "insert",
-        "DestKit",
-      );
-
-      expect(result.hasConflict).toBe(false);
-      expect(result.error).toBeUndefined();
-    });
-
-    it("should conflict when moving stereo sample to voice 4", () => {
-      const stereoSample = createSample(1, 0, true);
-      const destSamples: Sample[] = [];
-
-      const result = validator.checkStereoConflicts(
-        stereoSample,
-        4,
-        1,
-        destSamples,
-        "insert",
-        "DestKit",
-      );
-
-      expect(result.hasConflict).toBe(true);
-      expect(result.error).toBe(
-        "Cannot move stereo sample to voice 4 (no adjacent voice available)",
-      );
-    });
-
-    it("should conflict when destination adjacent voice has sample", () => {
-      const stereoSample = createSample(1, 0, true);
-      const conflictingSample = createSample(3, 1, false);
-      const destSamples: Sample[] = [conflictingSample];
-
-      const result = validator.checkStereoConflicts(
-        stereoSample,
-        2, // Adjacent voice 3 has conflict
-        1,
-        destSamples,
-        "insert",
-        "DestKit",
-      );
-
-      expect(result.hasConflict).toBe(true);
-      expect(result.error).toContain(
-        "Cannot move stereo sample to voice 2 slot 2 in kit DestKit",
-      );
-    });
-
-    it("should not conflict when adjacent voice is free", () => {
-      const stereoSample = createSample(1, 0, true);
-      const destSamples: Sample[] = [createSample(3, 0, false)]; // Different slot
-
-      const result = validator.checkStereoConflicts(
-        stereoSample,
-        2,
-        1,
-        destSamples,
-        "insert",
-        "DestKit",
-      );
-
-      expect(result.hasConflict).toBe(false);
-      expect(result.error).toBeUndefined();
+      expect(validator.validateVoiceNotLinkedPartner("/db", "A0", 2)).toEqual({
+        isValid: true,
+      });
     });
   });
 });

@@ -903,7 +903,6 @@ describe("SampleService Integration Tests", () => {
         {
           filename: "s0.wav",
           id: 1,
-          is_stereo: false,
           kit_name: "A1",
           slot_number: 0,
           source_path: "/path/s0.wav",
@@ -916,7 +915,6 @@ describe("SampleService Integration Tests", () => {
         {
           filename: "s1.wav",
           id: 2,
-          is_stereo: false,
           kit_name: "A1",
           slot_number: 1,
           source_path: "/path/s1.wav",
@@ -937,7 +935,6 @@ describe("SampleService Integration Tests", () => {
         {
           filename: "s0.wav",
           id: 1,
-          is_stereo: false,
           kit_name: "A1",
           slot_number: 0,
           source_path: "/path/s0.wav",
@@ -960,7 +957,6 @@ describe("SampleService Integration Tests", () => {
         {
           filename: "s0.wav",
           id: 1,
-          is_stereo: false,
           kit_name: "A1",
           slot_number: 0,
           source_path: "/path/s0.wav",
@@ -981,7 +977,6 @@ describe("SampleService Integration Tests", () => {
         {
           filename: "s0.wav",
           id: 1,
-          is_stereo: false,
           kit_name: "A1",
           slot_number: 0,
           source_path: "/path/s0.wav",

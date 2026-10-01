@@ -24,7 +24,6 @@ describe("SampleBatchOperationsService", () => {
   const mockSample: Sample = {
     filename: "test.wav",
     id: 1,
-    is_stereo: false,
     kit_name: "TestKit",
     slot_number: 2,
     source_path: "/path/test.wav",
@@ -44,6 +43,9 @@ describe("SampleBatchOperationsService", () => {
       {
         isValid: true,
       },
+    );
+    mockSampleValidation.sampleValidationService.validateVoiceNotLinkedPartner.mockReturnValue(
+      { isValid: true },
     );
   });
 
@@ -239,12 +241,6 @@ describe("SampleBatchOperationsService", () => {
         success: true,
       });
 
-      mockSampleValidation.sampleValidationService.validateStereoSampleMove.mockReturnValue(
-        {
-          success: true,
-        },
-      );
-
       mockORM.moveSample.mockReturnValue(mockMoveResult);
       mockORM.markKitAsModified.mockReturnValue({ success: true });
 
@@ -323,7 +319,7 @@ describe("SampleBatchOperationsService", () => {
       expect(result.error).toBe("Invalid movement");
     });
 
-    it("should return error for stereo validation failure", () => {
+    it("[UC-28] refuses a move onto the linked partner of a stereo voice", () => {
       mockSampleValidation.sampleValidationService.validateSampleMovement.mockReturnValue(
         {
           success: true,
@@ -335,10 +331,12 @@ describe("SampleBatchOperationsService", () => {
         success: true,
       });
 
-      mockSampleValidation.sampleValidationService.validateStereoSampleMove.mockReturnValue(
+      const linkError =
+        "Voice 2 is linked to voice 1 for stereo. Unlink them to put samples on voice 2.";
+      mockSampleValidation.sampleValidationService.validateVoiceNotLinkedPartner.mockReturnValue(
         {
-          error: "Stereo conflict",
-          success: false,
+          error: linkError,
+          isValid: false,
         },
       );
 
@@ -347,13 +345,18 @@ describe("SampleBatchOperationsService", () => {
         "TestKit",
         1,
         2,
-        1,
-        3,
+        2,
+        0,
         "insert",
       );
 
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("Stereo conflict");
+      expect(result).toEqual({ error: linkError, success: false });
+      expect(
+        mockSampleValidation.sampleValidationService
+          .validateVoiceNotLinkedPartner,
+      ).toHaveBeenCalledWith(mockDbPath, "TestKit", 2);
+      expect(mockORM.moveSample).not.toHaveBeenCalled();
+      expect(mockORM.markKitAsModified).not.toHaveBeenCalled();
     });
 
     it("should handle database move error", () => {
@@ -367,12 +370,6 @@ describe("SampleBatchOperationsService", () => {
         data: [mockSample],
         success: true,
       });
-
-      mockSampleValidation.sampleValidationService.validateStereoSampleMove.mockReturnValue(
-        {
-          success: true,
-        },
-      );
 
       mockORM.moveSample.mockReturnValue({
         error: "Database move error",
@@ -500,47 +497,6 @@ describe("SampleBatchOperationsService", () => {
         "Failed to delete source sample: Delete failed",
       );
       expect(deleteSpy).toHaveBeenCalledTimes(2); // Delete attempt + rollback
-
-      deleteSpy.mockRestore();
-    });
-
-    it("should handle stereo sample correctly", () => {
-      const stereoSample = { ...mockSample, is_stereo: true };
-      mockAddSampleToSlot.mockReturnValue({
-        data: { sampleId: 123 },
-        success: true,
-      });
-
-      const deleteSpy = vi
-        .spyOn(service, "deleteSampleFromSlot")
-        .mockReturnValue({
-          data: {
-            affectedSamples: [stereoSample],
-            deletedSamples: [stereoSample],
-          },
-          success: true,
-        });
-
-      const result = service.executeCrossKitMove({
-        addSampleToSlot: mockAddSampleToSlot,
-        fromKit: "SourceKit",
-        fromSlot: 2,
-        fromVoice: 1,
-        inMemorySettings: mockSettings,
-        sampleToMove: stereoSample,
-        toKit: "DestKit",
-        toSlot: 0,
-        toVoice: 2,
-      });
-
-      expect(result.success).toBe(true);
-      expect(mockAddSampleToSlot).toHaveBeenCalledWith(
-        mockSettings,
-        "DestKit",
-        2,
-        0,
-        stereoSample.source_path,
-      );
 
       deleteSpy.mockRestore();
     });

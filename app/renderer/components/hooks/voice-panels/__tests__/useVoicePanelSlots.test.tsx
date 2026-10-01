@@ -45,7 +45,6 @@ describe("useVoicePanelSlots", () => {
       dropHintTitle: "Drop hint",
       isDragOver: false,
       isDropZone: false,
-      isStereoHighlight: false,
       slotBaseClass: "base-class",
     })),
   };
@@ -217,7 +216,6 @@ describe("useVoicePanelSlots", () => {
     expect(mockSlotRenderingHook.getSampleSlotTitle).toHaveBeenCalledWith(
       0,
       propsWithMetadata.sampleMetadata["sample1.wav"],
-      false,
       false,
       false,
       "Drop hint",

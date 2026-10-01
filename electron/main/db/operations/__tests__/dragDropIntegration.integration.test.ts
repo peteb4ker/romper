@@ -55,7 +55,6 @@ describe("Drag and Drop Integration Tests", () => {
     const testSamples = [
       {
         filename: "sample1.wav",
-        is_stereo: false,
         kit_name: "TEST",
         slot_number: 0,
         source_path: "/path/to/sample1.wav",
@@ -63,7 +62,6 @@ describe("Drag and Drop Integration Tests", () => {
       },
       {
         filename: "sample2.wav",
-        is_stereo: false,
         kit_name: "TEST",
         slot_number: 1,
         source_path: "/path/to/sample2.wav",
@@ -71,7 +69,6 @@ describe("Drag and Drop Integration Tests", () => {
       },
       {
         filename: "sample3.wav",
-        is_stereo: false,
         kit_name: "TEST",
         slot_number: 2,
         source_path: "/path/to/sample3.wav",
@@ -79,7 +76,6 @@ describe("Drag and Drop Integration Tests", () => {
       },
       {
         filename: "sample4.wav",
-        is_stereo: false,
         kit_name: "TEST",
         slot_number: 3,
         source_path: "/path/to/sample4.wav",
@@ -87,7 +83,6 @@ describe("Drag and Drop Integration Tests", () => {
       },
       {
         filename: "sample5.wav",
-        is_stereo: false,
         kit_name: "TEST",
         slot_number: 4,
         source_path: "/path/to/sample5.wav",
@@ -103,7 +98,6 @@ describe("Drag and Drop Integration Tests", () => {
     const voice2Samples = [
       {
         filename: "voice2_1.wav",
-        is_stereo: false,
         kit_name: "TEST",
         slot_number: 0,
         source_path: "/path/to/voice2_1.wav",
@@ -111,7 +105,6 @@ describe("Drag and Drop Integration Tests", () => {
       },
       {
         filename: "voice2_2.wav",
-        is_stereo: false,
         kit_name: "TEST",
         slot_number: 1,
         source_path: "/path/to/voice2_2.wav",
@@ -119,7 +112,6 @@ describe("Drag and Drop Integration Tests", () => {
       },
       {
         filename: "voice2_3.wav",
-        is_stereo: false,
         kit_name: "TEST",
         slot_number: 2,
         source_path: "/path/to/voice2_3.wav",

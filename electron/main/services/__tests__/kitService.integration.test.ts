@@ -91,7 +91,6 @@ describe("KitService Integration Tests", () => {
       // Add sample data to the source kit
       const sample1: NewSample = {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: "A1",
         slot_number: 0,
         source_path: "/test/path/kick.wav",
@@ -102,7 +101,6 @@ describe("KitService Integration Tests", () => {
 
       const sample2: NewSample = {
         filename: "snare.wav",
-        is_stereo: true,
         kit_name: "A1",
         slot_number: 1,
         source_path: "/test/path/snare.wav",
@@ -113,7 +111,6 @@ describe("KitService Integration Tests", () => {
 
       const sample3: NewSample = {
         filename: "hat.wav",
-        is_stereo: false,
         kit_name: "A1",
         slot_number: 0,
         source_path: "/test/path/hat.wav",
@@ -182,7 +179,6 @@ describe("KitService Integration Tests", () => {
           expect(destKick.kit_name).toBe("B5");
           expect(destKick.filename).toBe("kick.wav");
           expect(destKick.source_path).toBe("/test/path/kick.wav");
-          expect(destKick.is_stereo).toBe(false);
           expect(destKick.wav_bitrate).toBe(16);
           expect(destKick.wav_sample_rate).toBe(44100);
         }
@@ -191,7 +187,6 @@ describe("KitService Integration Tests", () => {
           expect(destSnare.kit_name).toBe("B5");
           expect(destSnare.filename).toBe("snare.wav");
           expect(destSnare.source_path).toBe("/test/path/snare.wav");
-          expect(destSnare.is_stereo).toBe(true);
           expect(destSnare.wav_bitrate).toBe(24);
           expect(destSnare.wav_sample_rate).toBe(48000);
         }
@@ -200,7 +195,6 @@ describe("KitService Integration Tests", () => {
           expect(destHat.kit_name).toBe("B5");
           expect(destHat.filename).toBe("hat.wav");
           expect(destHat.source_path).toBe("/test/path/hat.wav");
-          expect(destHat.is_stereo).toBe(false);
           expect(destHat.wav_bitrate).toBe(16);
           expect(destHat.wav_sample_rate).toBe(44100);
         }
@@ -286,7 +280,6 @@ describe("KitService Integration Tests", () => {
       const sample: NewSample = {
         filename: "kick.wav",
         gain_db: -6,
-        is_stereo: false,
         kit_name: "E1",
         slot_number: 0,
         source_path: "/test/path/kick.wav",
@@ -359,7 +352,6 @@ describe("KitService Integration Tests", () => {
 
       const sample1: NewSample = {
         filename: "kick.wav",
-        is_stereo: false,
         kit_name: "A1",
         slot_number: 0,
         source_path: "/test/path/kick.wav",

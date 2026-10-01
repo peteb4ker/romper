@@ -17,6 +17,7 @@ import {
   type Page,
   test,
 } from "@playwright/test";
+import { readFileSync } from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -35,7 +36,7 @@ import {
 import { type Expectation, MessageCollector } from "./support/collector";
 import { openFactoryArchive, verifyFactoryImport } from "./support/factory";
 import { ValidationReport } from "./support/report";
-import { encodeTestWav, sine } from "./support/wav";
+import { encodeTestWav, readWavInfo, sine } from "./support/wav";
 
 const FRESH = process.env.ROMPER_VALIDATE_FRESH === "true";
 const REPORT_DIR = path.resolve(
@@ -520,6 +521,51 @@ test("[UC-02] [UC-14] [UC-19] [UC-24] [UC-28] [UC-34] factory download to card, 
       await writeCard(["gain mono"]);
       await compare();
     });
+
+    await step(
+      "Unlink voices 1 and 2 and write: voice 1's stereo files go to the card as mono",
+      async () => {
+        const p = ui();
+        const card = p.locator(`[data-testid="kit-item-${kit}"]`);
+        await card.scrollIntoViewIfNeeded();
+        await card.click();
+        await p.locator('[data-testid="kit-editor"]').waitFor();
+        const stereoFiles = readStore(dirs.store).samples.filter(
+          (s) =>
+            s.kit_name === kit &&
+            s.voice_number === 1 &&
+            readWavInfo(readFileSync(s.source_path)).channels > 1,
+        );
+        report.fact("2-channel files on voice 1", stereoFiles.length);
+        await p.locator('[data-testid="stereo-badge-1"]').click();
+        const unlinked = await poll(
+          () =>
+            readStore(dirs.store).stereoVoices.has(`${kit}:1`)
+              ? undefined
+              : true,
+          10_000,
+        ).catch(() => false);
+        // RE-69: unlinking a voice that held a 2-channel file did nothing
+        report.check(
+          "unlinking voice 1 clears its stereo setting, though it holds 2-channel files",
+          unlinked === true && stereoFiles.length > 0,
+          { details: `${stereoFiles.length} 2-channel files on voice 1` },
+        );
+        report.check(
+          "voice 1 no longer shows the stereo badge",
+          await p
+            .locator('[data-testid="stereo-badge-1"]')
+            .waitFor({ state: "detached", timeout: 10_000 })
+            .then(() => true)
+            .catch(() => false),
+        );
+        await p.locator('button[title="Back"]').click();
+        await p.locator('[data-testid="kit-grid"]').waitFor();
+        // The card comparison derives mono output from voices.stereo_mode
+        await writeCard([]);
+        await compare();
+      },
+    );
   } finally {
     if (page) await collector.harvest(page).catch(() => {});
     await app?.close().catch(() => {});

@@ -71,7 +71,6 @@ Individual sample file assignments to voice slots.
 | slot_number | INTEGER | NOT NULL | Slot position (0-11, zero-based) |
 | filename | TEXT | NOT NULL | Filename for SD card |
 | source_path | TEXT | NOT NULL | Absolute path to original file |
-| is_stereo | BOOLEAN | NOT NULL, default false | Stereo or mono |
 | gain_db | REAL | NOT NULL, default 0.0 | Per-sample gain trim (-24 to +12 dB) |
 | wav_bit_depth | INTEGER | nullable | WAV metadata: 8, 16, 24, or 32 bits |
 | wav_channels | INTEGER | nullable | WAV metadata: 1 (mono) or 2 (stereo) |

@@ -10,6 +10,7 @@ import {
 } from "react-router-dom";
 
 import AboutDialog from "./components/dialogs/AboutDialog";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useMessageDisplay } from "./components/hooks/shared/useMessageDisplay";
 import MessageDisplay from "./components/MessageDisplay";
 import { MessageDisplayContext } from "./components/MessageDisplayContext";
@@ -40,11 +41,13 @@ const AppContent = () => {
         <MessageDisplay />
         <div className="flex flex-1 min-h-0">
           <main className="flex-1 min-h-0 flex flex-col h-full pb-10">
-            <Routes>
-              <Route element={<Navigate replace to="/kits" />} path="/" />
-              <Route element={<KitsView />} path="/kits" />
-              <Route element={<AboutView />} path="/about" />
-            </Routes>
+            <ErrorBoundary area="Romper">
+              <Routes>
+                <Route element={<Navigate replace to="/kits" />} path="/" />
+                <Route element={<KitsView />} path="/kits" />
+                <Route element={<AboutView />} path="/about" />
+              </Routes>
+            </ErrorBoundary>
           </main>
         </div>
         <StatusBar />

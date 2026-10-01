@@ -4,7 +4,7 @@ priority: high
 status: plan
 updated: 2026-10-01
 context_size: medium
-implementation_status: RE-29 in #404, RE-64 in #401, validation CI in #403, RE-65 in #406; the rest to do
+implementation_status: RE-29 in #404, RE-64 in #401, validation CI in #403, RE-65 in #406, RE-24 in #405; the rest to do
 -->
 
 # Fixing what the full-pipeline validation found
@@ -39,7 +39,7 @@ Severity and details for each ID are in the findings register
 | RE-42 | Medium | No truncation notice after setup | 2 | to do |
 | RE-34 | Medium | Setup's voice naming does nothing; 2,373 file reads over IPC | 3 | to do |
 | RE-66 | Medium | Cancel during setup quits mid-import and leaves a store that blocks a retry | 4 | to do |
-| RE-24 | Medium | Download has no status, redirect, timeout or checksum; temp zip kept; extraction errors ignored | 5 | to do |
+| RE-24 | Medium | Download has no status, redirect, timeout or checksum; temp zip kept; extraction errors ignored | #405 | done in PR |
 | RE-65 | Medium | Edit > Undo/Redo never reach Romper's undo | #406 | done in PR |
 | Low | Low | Test and tooling hygiene (below) | 7 | to do |
 | RE-67 | Medium | E2E error guard; use case register and traceability | 8, 9 | to do |

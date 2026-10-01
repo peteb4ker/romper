@@ -19,8 +19,10 @@ the pieces fit.
   `KitEditor` gets its state and handlers from `useKitEditorLogic`.
 - Keep a hook to one job. When one grows several unrelated concerns, split it
   and compose the pieces in a `use<Thing>Logic` hook.
-- Show user-facing errors through `useMessageDisplay`, with a sentence the
-  user can act on rather than the raw error.
+- Show user-facing errors through `useMessageApi()` (the
+  `MessageDisplayContext`), with a sentence the user can act on rather than
+  the raw error. Don't call `useMessageDisplay()` in a component: it creates
+  a separate message store that nothing renders (RE-11).
 - Memoize where profiling or list size calls for it. `KitGrid` virtualizes
   with react-window; follow that pattern for any other long list.
 

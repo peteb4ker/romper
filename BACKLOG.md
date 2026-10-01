@@ -51,7 +51,7 @@ This file tracks what's being done about each item.
 | RE-27 | Medium | Samples | Moving a sample to another kit is not atomic and rebuilds the row from `source_path` only, dropping gain, WAV metadata and the stereo flag. | open |
 | RE-28 | Medium | DB | Multi-step writes run without a transaction: kit plus its four voices; delete plus reindex (the reindex opens a second connection while the first is open); write plus the modified flag; scan insert plus metadata. | open |
 | RE-33 | Medium | DB | Migration upkeep: 0008 is missing and there are two 0009 migrations, handled by a custom repair that runs `ALTER` statements outside a transaction. | open (#407 fixed the `kits.artist` snapshot drift) |
-| RE-35 | Medium | Sync | "Modified since sync" is set only by sample add, delete and move. | partly done (#360: scan sets it when it adds samples) |
+| RE-35 | Medium | Sync | "Modified since sync" is set by sample add, delete and move and by stereo link changes, but not by gain, voice name or bank edits. | partly done (#360: scan sets it when it adds samples; #407: stereo link changes set it) |
 | RE-36 | Medium | Performance | Almost every edit reloads the whole library (`getKits()` with all samples); sample operations cost three or more IPC calls. | open |
 | RE-37 | Medium | Renderer | Favourites have two sources of truth. The browser keeps a shadow map that overrides the database value; the editor toggles through `useKitDataManager`. | open |
 | RE-38 | Medium | Renderer | Keyboard shortcuts clash. "F" jumps to bank F and toggles the favourite on the focused kit. | open |
@@ -75,6 +75,13 @@ This file tracks what's being done about each item.
 | RE-57 | Medium | Contract | The bridge contract does not bind main. `SyncChangeSummary` does not match what main returns (the renderer casts it); `SyncProgress` is defined four times with different fields and status values; several return types differ from the contract (null versus undefined, `unknown`, an `"overwrite"` mode main rejects). | open |
 | RE-58 | Medium | Tooling | The pre-commit tests fail with Vitest worker-start timeouts when the machine is busy (load average above ~20, for example several sessions testing at once), because `vitest.config.fast.ts` always starts 10 workers. | open |
 | RE-72 | Medium | About | The About dialog shows "Version: dev" in every build: nothing defines `VITE_APP_VERSION`. | open |
+| RE-74 | Medium | Samples | Dropping onto a filled slot says "Insert sample here (other samples will shift down)", but the file is appended. | open |
+| RE-75 | Medium | Voices | In an editable kit, Scan Kit and `/` overwrite voice names typed by hand. | open |
+| RE-76 | Medium | Sync | A card that only needs removals can't be written: **Start Write** is disabled when the library has no samples. | open |
+| RE-77 | Medium | Setup | A factory archive with the wrong checksum is downloaded three times, and the reason is replaced by a generic network error. | open |
+| RE-78 | Medium | Settings | Changing the local store reports success whether or not it worked; the Invalid Local Store dialog's **Re-run Setup Wizard** button never renders. | open |
+| RE-79 | Medium | Release | Windows signing signs only the Setup `.exe`, leaving the installed app unsigned once OPS-2 is done (unconfirmed). | open (before OPS-2) |
+| RE-80 | Medium | Settings | A local store on a drive that isn't mounted at launch is forgotten; the first-run wizard opens. | open |
 
 ## Done
 

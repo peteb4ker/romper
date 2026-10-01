@@ -17,9 +17,9 @@ This guide walks you through installing Romper, setting up your local store, and
 
 Download the latest release for your operating system from the [Releases page](https://github.com/peteb4ker/romper/releases):
 
-- **macOS** -- `Romper-x.x.x.dmg` (drag to Applications)
-- **Windows** -- `Romper-Setup-x.x.x.exe` (run the installer)
-- **Linux** -- `Romper-x.x.x.AppImage` (make executable and run)
+- **macOS** (Apple silicon) -- `Romper.dmg` (drag to Applications)
+- **Windows** -- `Romper-x.x.x.Setup.exe` (run the installer)
+- **Linux** -- `romper_x.x.x_amd64.deb` (Debian, Ubuntu) or `romper-x.x.x-1.x86_64.rpm` (Fedora, openSUSE), or the `Romper-linux-x64-x.x.x.zip` archive
 
 Romper requires no additional dependencies and works offline. It goes online only to download the factory samples, if you choose to, and on macOS to check for updates.
 
@@ -29,42 +29,48 @@ When you open Romper for the first time, the setup wizard walks you through choo
 
 ### Choosing a Local Store
 
-Romper needs a directory on your computer to keep its database and configuration. This is your **local store**. The wizard gives you several options:
+Romper needs a directory on your computer to keep its database and kits. This is your **local store**. The wizard has three steps: choose a source, choose a target folder, then click **Initialize Local Store**.
+
+For the target, type a path, click **Choose…** to pick a folder (Romper puts the store in a `romper` folder inside it, unless its name already ends in `romper`), or click **Use Default** for `Documents/romper` in your home folder. If a path wasn't picked with **Choose…**, Romper asks you to confirm it with **Use This Folder**. The folder must not already hold a local store.
 
 **Start from an SD Card**
 
 If you already have a Rample SD card with kits on it:
 
 1. Insert your SD card and mount it on your computer
-2. Select **Load from SD Card** in the wizard
-3. Choose the mounted SD card volume
-4. Romper reads the kit folders at the root of the card (`A0` to `Z99`) and imports all existing kits
+2. Click **Rample SD Card** in the wizard and choose the mounted SD card volume
+3. Choose a target folder and click **Initialize Local Store**
+4. Romper copies the kit folders at the root of the card (`A0` to `Z99`) into your local store and imports them, naming each voice from its sample filenames. Other folders on the card are ignored.
 
-Your kits, sample references, and metadata will appear in the Kit Browser immediately.
+Your kits then appear in the Kit Browser.
 
 **Start with Factory Samples**
 
 If you're new to the Rample or want a clean starting point:
 
-1. Select **Download Factory Samples** in the wizard
-2. Romper downloads the official Squarp sample packs (about 300 MB, requires internet)
-3. Factory kits are imported into your local store
+1. Click **Squarp.net Factory Samples** in the wizard
+2. Choose a target folder and click **Initialize Local Store**
+3. Romper downloads Squarp's factory sample archive (about 313 MiB, requires internet), checks that it's the file Romper expects, extracts it into your local store and imports the kits. The downloaded archive is deleted afterwards.
 
-This gives you professionally organized kits to explore and learn from. If the download is interrupted, Romper will automatically retry up to 3 times.
+This gives you professionally organized kits to explore and learn from. If the download fails, Romper tries again, up to 3 attempts in all. Each attempt starts the download from the beginning.
 
-**Disk space:** Ensure you have at least **1 GB of free space** at your target location for factory samples.
+**Disk space:** Setup checks for at least **1 GB of free space** at your target location for factory samples, and 500 MB for an SD card import.
 
 **Start with an Empty Library**
 
 If you want to build everything from scratch:
 
-1. Select **Create Empty Library**
-2. Choose a directory for your local store
-3. After setup completes, Romper will suggest next steps: you can import from an SD card, download factory samples, or proceed to the Kit Browser with an empty library, where the **Add Kit** card creates your first kit (see [Creating Kits](kit-browser#creating-kits))
+1. Click **Blank Folder** in the wizard
+2. Choose a target folder and click **Initialize Local Store**
+3. When setup completes, click **Open Kit Browser**. The browser shows bank A with an **Add Kit** card, which creates your first kit (see [Creating Kits](kit-browser#creating-kits))
+
+### Cancelling Setup
+
+To stop setup while it runs, click **Cancel** and confirm. Romper stops the download, copy or import, removes what setup wrote to the target folder, and closes the wizard. On first launch, closing the wizard quits Romper; the wizard opens again the next time you start it.
 
 ### Recovering an Existing Store
 
-If you've used Romper before and your settings were lost (reinstall, new machine), you can point Romper at an existing `.romperdb` directory to pick up where you left off. Select **Choose Existing Local Store** in the wizard and browse to the directory.
+If you've used Romper before and your settings were lost (reinstall, new machine), you can point Romper at an existing local store to pick up where you left off. Click **Choose Existing Store** in the wizard, then **Browse for Existing Store**, and choose the folder that contains the `.romperdb` folder (not the `.romperdb` folder itself).
 
 ## The Main Interface
 
@@ -72,37 +78,41 @@ Once setup is complete, you'll see the Kit Browser -- Romper's main view.
 
 The interface has three main areas:
 
-**Header Bar** -- Contains search, filter toggles (Favorites, Modified), the Write button for syncing to an SD card, and Settings access.
+**Header Bar** -- Contains the Romper icon (click it for the About dialog), search, filter toggles (Favorites, Modified), the **Write** button for syncing to an SD card, and the Settings gear.
 
-**Kit Grid** -- The central area showing all your kits as cards, organized by bank. Each card shows the kit ID, name, voice sample counts, and status indicators.
+**Kit Grid** -- The central area showing all your kits as cards, organized by bank. Each card shows the kit ID, alias, voice sample counts, and status indicators.
 
-**Status Bar** -- Fixed at the bottom, showing your local store path, theme toggle, and links to the Rample manual and About dialog.
+**Status Bar** -- Fixed at the bottom, showing your local store path, links to the Romper and Rample manuals, and a theme toggle.
 
 ![Status bar]({{ site.baseurl }}/images/manual/status-bar.png)
+
+**Settings** -- Click the gear in the header, or press `Cmd+,` (macOS) / `Ctrl+,` (Windows/Linux), to open Preferences. **Appearance** sets a light, dark or system theme, and **Advanced** shows the local store path and lets you switch to another local store. The **Confirm destructive actions** option on the **Sample Management** tab has no effect: deleting a sample never asks first. Romper starts with the system theme each time it opens.
 
 ## Connecting Your SD Card
 
 You can connect an SD card at any time, not just during initial setup:
 
 1. Insert your Rample SD card into your computer
-2. Use the **Sync to SD Card** button in the header to interact with it
-3. Romper validates your kits and copies them to the card
+2. Click **Write** in the header
+3. Romper checks your kits and writes them to the card
 
 For full details on the sync process, see [Syncing](syncing).
 
 ## Troubleshooting Setup
 
-**"No kit folders found"** -- The SD card path you selected doesn't contain the expected folder structure. Rample kits use folders named with an uppercase letter followed by a number (e.g., A0, B1, C12). Make sure you're selecting the correct mounted volume.
+**"No kit folders found"** -- The SD card path you selected doesn't contain the expected folder structure. Rample kits use folders at the root of the card named with an uppercase letter followed by a number from 0 to 99 (e.g., A0, B1, C12). Make sure you're selecting the correct mounted volume.
 
-**"Not enough disk space"** -- Factory samples require ~1 GB and SD card imports vary by library size. Free up space at your target location and try again.
+**"Not enough disk space"** -- Setup checks for about 1 GB free for factory samples and 500 MB for an SD card import. Free up space at your target location and try again.
 
-**"Cannot write to path"** -- The target directory isn't writable. Choose a location in your Documents folder or another directory you have write access to.
+**"Cannot write to" the target** -- The target directory isn't writable. Choose a location in your Documents folder or another directory you have write access to.
 
-**"Download failed after 3 attempts"** -- Check your internet connection and try again. The factory samples download is about 300 MB and needs a stable connection.
+**"This folder already contains a Romper local store"** -- Choose another folder, or click **Choose Existing Store** to use the store that's there.
 
-**Sample limit notice** -- Rample supports a maximum of 12 samples per voice. If your kits contain more, Romper keeps the first 12 and tells you how many were skipped.
+**"Factory samples download failed after 3 attempts"** -- Check your internet connection and click **Initialize Local Store** to try again. The factory samples download is about 313 MiB and needs a stable connection. Romper also refuses an archive that isn't the exact file it expects, so if Squarp changes the file on its server, every attempt fails; update Romper, or set up from an SD card instead.
 
-**Local store becomes invalid** -- If you move or delete your local store folder, Romper will show a recovery dialog. You can choose a new directory, point to the existing one, or re-run the setup wizard.
+**Sample limit notice** -- Rample supports a maximum of 12 samples per voice. If a voice on your card has more, Romper keeps the first 12, and after setup it lists each kit and voice with how many samples were skipped. Click **Continue** to open the Kit Browser.
+
+**Local store becomes invalid** -- If you move or delete your local store folder, or it's on a drive that isn't connected when Romper starts, Romper forgets it and opens the setup wizard. To carry on with the same store, put the folder back (or connect the drive), then click **Choose Existing Store**.
 
 ## What's Next
 

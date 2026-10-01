@@ -44,7 +44,7 @@ The pipeline, in `release.yml` order:
 
 1. `electron-forge package -p darwin -a arm64` produces an **unsigned**
    `out/Romper-darwin-arm64/Romper.app`. Forge does no signing.
-2. `indygreg/apple-code-sign-action@v1` signs the `.app` with
+2. `indygreg/apple-code-sign-action` (v1.1, pinned by SHA) signs the `.app` with
    `--for-notarization` (hardened runtime, timestamp, Developer ID checks)
    and `--config-file electron/resources/rcodesign.toml`.
 3. rcodesign (a pinned, SHA-checked download) runs
@@ -52,9 +52,12 @@ The pipeline, in `release.yml` order:
    notarization ticket is embedded before it's wrapped. The action's own
    notarize step is not used because it hard-codes a 10-minute wait, and
    Apple's notary service sometimes takes longer.
-4. `electron-forge make --skip-package` builds the DMG and zip around the
-   signed `.app`.
-5. The DMG is signed, notarized, and stapled on its own, so offline
+4. The signing inputs are deleted, and `scripts/smoke-packaged-app.mjs`
+   launches the packaged app and waits for it to start its auto-updater
+   (RE-16).
+5. `electron-forge make --skip-package -p darwin -a arm64` builds the DMG
+   and zip around the signed `.app`.
+6. The DMG is signed, notarized, and stapled on its own, so offline
    Gatekeeper checks pass when mounting it.
 
 ### Per-helper entitlements (`rcodesign.toml`)
@@ -85,7 +88,10 @@ step, so validate any change here with a real (or RC) tag build.
 | `ASC_API_KEY_JSON` | App Store Connect API key, encoded with `rcodesign encode-app-store-connect-api-key <issuer-id> <key-id> <AuthKey.p8>` |
 
 The team ID comes from the certificate. `APPLE_ID`, `APPLE_ID_PASSWORD`, and
-`APPLE_TEAM_ID` belonged to the old notarization flow and are unused.
+`APPLE_TEAM_ID` belonged to the old notarization flow and are unused; the
+workflow never reads them, and they can be deleted (OPS-3).
+`npm run pre-release` still looks for them, so ignore its macOS signing
+warning.
 
 If the preflight's App Store Connect check, or notarization, fails with HTTP
 403 (`REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`), the Apple Developer account
@@ -93,6 +99,9 @@ holder must accept the updated agreement at developer.apple.com. Then re-run
 the failed job.
 
 ## Windows: Azure Trusted Signing
+
+**Status:** not set up yet (OPS-2). Releases ship an unsigned Windows build
+while the repository variable `ALLOW_UNSIGNED_WINDOWS` is `true`.
 
 **Cost**: $9.99/month (pay only during release months — see [Cost optimization](#cost-optimization))
 

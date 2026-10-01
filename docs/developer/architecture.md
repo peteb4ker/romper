@@ -107,9 +107,12 @@ in `electron/main/security/`.
   other tables use as the foreign key. Slots are 0-based in the database.
   Details: [romper-db.md](romper-db.md).
 - Migrations live in `electron/main/db/migrations/` (drizzle-kit).
-- The `postinstall` step rebuilds better-sqlite3 for Electron's Node ABI. That
-  is why integration tests run inside Electron (`ELECTRON_RUN_AS_NODE`)
-  rather than plain Node.
+- better-sqlite3 ships N-API prebuilds (`prebuilds/<platform>-<arch>.node`)
+  that load in both Node and Electron, so nothing is rebuilt at install
+  (Forge's `rebuildConfig` rebuilds no modules). Integration tests run
+  inside Electron as Node (`ELECTRON_RUN_AS_NODE`, via
+  `electron/run-vitest-in-electron.cjs`), so they use the Node that ships
+  with Electron.
 
 Pass database shapes (e.g. `KitWithRelations`) down the component tree as
 they are, and derive display data where it's consumed (e.g.
@@ -118,17 +121,23 @@ they are, and derive display data where it's consumed (e.g.
 ## Local store and samples
 
 Setup creates a local store from an SD card, the Squarp factory samples, or
-an empty folder. That baseline is never modified.
+an empty folder. Romper never changes the sample files in that baseline; apart
+from its database in `.romperdb/`, the only files it writes there are the
+bank name `.rtf` files.
 
 Samples the user adds are **referenced, not copied**: the database stores the
 file's absolute `source_path`. Preview plays from that path; conversion and
-copying happen only at sync time. Sync validation checks that referenced files
-exist, but see RE-09 below.
+copying happen only at sync time. Sync validation checks that each
+referenced file exists and is a WAV Romper can read; samples that fail are
+listed in the write summary, and nothing is written until the user agrees
+to skip them (RE-09).
 
 ## Kits
 
-- Kit flags: `editable` (user kits on, factory kits off), `locked`,
-  `is_favorite`, and `modified_since_sync`.
+- Kit flags: `editable` (on for kits the user creates or duplicates, off
+  for kits imported at setup), `locked` (scan and kit delete respect it,
+  but nothing in the UI sets it), `is_favorite`, and
+  `modified_since_sync`.
 - Each kit stores its step-sequencer pattern (`step_pattern`), A:B trigger
   conditions (`trigger_conditions`), both JSON, and `bpm`.
 - The sequencer slicer adds per-step slice data (`slice_steps`, JSON, in
@@ -147,8 +156,10 @@ exist, but see RE-09 below.
   them would undo in-app deletions). Locked kits are not touched. Voice
   names are inferred only for voices without one. "Scan All" asks for
   confirmation first.
-- User-facing messages go through `MessageDisplayContext` /
-  `useMessageDisplay`.
+- User-facing messages go through `MessageDisplayContext`: components call
+  `useMessageApi()`. `useMessageDisplay()` creates the message state and is
+  called once, in `main.tsx`; a second call makes a separate store that
+  nothing renders (RE-11).
 
 ## Playback
 

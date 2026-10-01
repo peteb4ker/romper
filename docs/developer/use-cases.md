@@ -18,7 +18,9 @@ Each entry has:
 - a description with a link to the manual;
 - entry points (renderer component or hook, IPC channels, main service),
   checked against the code on 2026-10-01;
-- **Doc gaps:** what the docs promise that the code doesn't do;
+- **Doc gaps:** what the docs promise that the code doesn't do. The docs
+  pass (#PR) fixed the docs for every gap found by the audit; record new ones
+  here;
 - **Known issues:** open or partly done findings from
   [`BACKLOG.md`](../../BACKLOG.md) and the
   [findings register](../../aidlc-docs/inception/reverse-engineering/code-quality-assessment.md).
@@ -76,12 +78,7 @@ samples keeps the first 12, and the wizard names the files it left out. See
   `electron/main/db/operations/kitScanOperations.ts` (`mergeKitScan`): up
   to 12 samples per voice, WAV metadata and voice names, in one transaction
   per kit.
-- **Doc gaps:**
-  - The wizard's labels differ from the manual ("Rample SD Card", not
-    "Load from SD Card"; also "Squarp.net Factory Samples", "Blank Folder",
-    "Choose Existing Store").
-  - `troubleshooting.md:47-52` describes a bank-folder card layout; the
-    import reads kit folders at the card root.
+- **Doc gaps:** none since the docs pass (#PR).
 - **Known issues:** RE-67 (the e2e only checks that the database
   exists).
 
@@ -103,16 +100,11 @@ and [Factory Samples](../manual/syncing.md#factory-samples).
 - **Main:** `electron/main/services/archiveService.ts` (`downloadAndExtractArchive`,
   `getFactorySamplesArchiveUrl`); `electron/main/archiveUtils.ts`
   (`downloadArchive`, `extractZipEntries`); `electron/main/services/scanService.ts` (`scanBanks`).
-- **Doc gaps:**
-  - "Partial downloads are resumed automatically where possible"
-    (`troubleshooting.md:64`): each attempt downloads the whole archive.
-  - "You can always import factory samples later" (`troubleshooting.md:65`,
-    also `syncing.md:72` and `README.md`): the wizard only opens when no
-    store is configured, so there's no way to add them later.
-  - The download is "about 300 MB" in some pages and "approximately 1 GB"
-    in `troubleshooting.md:62` and `faq.md:83`.
-- **Known issues:** RE-67 (the e2e uses a 928-byte stub archive;
-  `npm run validate:full` runs the real one, including a cancelled setup).
+- **Doc gaps:** none since the docs pass (#PR).
+- **Known issues:** RE-77 (a checksum mismatch is downloaded three times,
+  behind a generic network error), RE-67 (the e2e uses a 928-byte stub
+  archive; `npm run validate:full` runs the real one, including a cancelled
+  setup).
 
 ### UC-03 Set up an empty library
 
@@ -127,12 +119,7 @@ and [Creating Kits](../manual/kit-browser.md#creating-kits).
   `app/renderer/components/wizard/WizardPostInitGuidance.tsx`; then `app/renderer/components/KitBrowser.tsx` (UC-14).
 - **IPC:** as UC-01, without `copy-dir` and `check-disk-space`.
 - **Main:** `electron/main/services/localStoreSetupService.ts` (`createSetupDatabase`).
-- **Doc gaps:**
-  - "Romper will suggest next steps: you can import from an SD card,
-    download factory samples, or proceed to the Kit Browser"
-    (`getting-started.md:63`): the guidance offers only "Open Kit Browser".
-  - The guidance suggests changing the local store to an SD card, which
-    fails validation (a card has no `.romperdb`).
+- **Doc gaps:** none since the docs pass (#PR).
 - **Known issues:** none.
 
 ### UC-04 Choose an existing local store
@@ -175,19 +162,8 @@ and [Validating Your Store](../manual/kit-browser.md#validating-your-store).
   `select-local-store-path`, `write-settings`.
 - **Main:** `electron/main/services/localStoreService.ts` (`getLocalStoreStatus`);
   `electron/main/localStoreValidator.ts` (`validateLocalStoreAgainstDb`).
-- **Doc gaps:**
-  - "Romper will show a recovery dialog. You can choose a new directory,
-    point to the existing one, or re-run the setup wizard"
-    (`getting-started.md:105`): at launch, main erases the saved path and
-    the first-run wizard opens. The recovery dialog shows only if the store
-    goes bad during a session, and its "Re-run Setup Wizard" button never
-    renders (no `onRerunWizard` is passed).
-  - "Romper will attempt to recover existing data" (`troubleshooting.md:97`):
-    there's no recovery; the wizard refuses a folder that holds a store.
-  - The **Validate Store** header button (`kit-browser.md:107`) doesn't
-    exist; `ValidationResultsDialog` is unreachable.
-  - A store on a drive that isn't mounted at launch loses its saved path.
-- **Known issues:** RE-21, RE-56, RE-48.
+- **Doc gaps:** none since the docs pass (#PR).
+- **Known issues:** RE-78 (store-change dialogs report success unconditionally; Re-run Setup Wizard never renders), RE-80 (a store on an unmounted drive is forgotten at launch), RE-21, RE-56, RE-48.
 
 ### UC-06 Change the local store
 
@@ -209,13 +185,8 @@ describes it.
   `select-existing-local-store`, `write-settings`, `get-local-store-status`.
 - **Main:** `electron/main/applicationMenu.ts`; `electron/main/services/settingsService.ts`;
   `electron/main/localStoreValidator.ts`.
-- **Doc gaps:**
-  - No manual section. The PRD puts it in a Tools menu and says the app
-    restarts; it's in the File menu and applies in place.
-  - The menu dialog always reports success, even when saving failed;
-    Preferences ignores an invalid folder without a message; the two paths
-    validate differently.
-- **Known issues:** RE-21, RE-37 (favourite state can carry over by kit
+- **Doc gaps:** none since the docs pass (#PR).
+- **Known issues:** RE-78, RE-21, RE-37 (favourite state can carry over by kit
   name). With `ROMPER_LOCAL_PATH` set, a change has no effect.
 
 ## Browse and organise
@@ -255,14 +226,7 @@ See [Kit Cards](../manual/kit-browser.md#kit-cards).
   `app/renderer/components/shared/KitIconRenderer.tsx`, `app/renderer/components/shared/kitItemUtils.ts`;
   `app/renderer/components/hooks/kit-management/useKitItem.ts`.
 - **IPC:** `get-all-kits`.
-- **Doc gaps:**
-  - "Status badges: Editable, Unsaved, or locked" (`kit-browser.md:47`)
-    and "Click the lock icon to toggle this" (`kit-browser.md:103`): no
-    such badges, and the lock icon marks read-only kits and can't be
-    clicked (kit locking, UC-17).
-  - The name is said to come from an alias or "the Rample's label file";
-    the card shows the alias only.
-  - Partial voices are said to be light green; they're the accent blue.
+- **Doc gaps:** none since the docs pass (#PR).
 - **Known issues:** RE-47, RE-48. Nothing tests the cards above unit
   level.
 
@@ -492,18 +456,8 @@ file is checked and added to the voice's next free slot, up to 12. See
 - **Main:** `electron/main/services/sampleService.ts` → `electron/main/services/crud/sampleCrudService.ts`
   (`addSampleToSlot`, which refuses the right-hand voice of a linked pair) →
   `electron/main/db/operations/sampleCrudOperations.ts` (`addSample`).
-- **Doc gaps:**
-  - "Other formats are rejected with a warning" (`kit-editor.md:72`): the
-    rejection goes only to the console.
-  - "Dropping a duplicate sample that already exists in a different voice
-    triggers a warning" (`kit-editor.md:75`): there's no cross-voice check;
-    same-voice duplicates are dropped silently.
-  - Over 12 files: the rest are dropped with only a console warning, and a
-    drop on a full voice is ignored without notice.
-  - Dropping "onto a specific slot" shows "Insert sample here (other samples
-    will shift down)", but the file is appended to the next free slot.
-  - Drops on a non-editable kit are ignored; undocumented.
-- **Known issues:** RE-40 (rejected drops only reach the console), RE-28,
+- **Doc gaps:** none since the docs pass (#PR).
+- **Known issues:** RE-74 (the drop hint says insert; the file is appended), RE-40 (rejected drops only reach the console), RE-28,
   RE-36.
 
 ### UC-20 Replace a sample
@@ -644,18 +598,7 @@ focused text field keeps its own undo. See
 - **IPC:** `menu-undo`, `menu-redo` (pushed from main); undo replays the
   sample channels above.
 - **Main:** `electron/main/applicationMenu.ts` (Edit > Undo and Redo).
-- **Doc gaps:**
-  - The FAQ promises "full undo and redo for all sample operations",
-    including "clearing a voice or kit" (`faq.md:54-59`). There's no clear
-    feature, and gain, alias, the editable switch, voice names, stereo link
-    and kit create, duplicate and delete aren't undoable.
-  - The sequencer docs say undo covers "any sequencer edit"
-    (`step-sequencer.md:92, 157`); BPM, level, sample mode, the slicer
-    division and roll settings aren't on the stack.
-  - "Undo history is maintained for the duration of your session"
-    (`faq.md:62`): it's cleared whenever the open kit changes, including
-    Back.
-  - Sample undo silently does nothing in a non-editable kit.
+- **Doc gaps:** none since the docs pass (#PR).
 - **Known issues:** RE-40 (undo errors never reach the UI).
 
 ## Voices and stereo
@@ -673,7 +616,7 @@ and scans name unnamed voices from their file names and keep names set by hand. 
   `app/renderer/components/KitVoicePanel.tsx`.
 - **IPC:** `update-voice-alias`.
 - **Main:** `electron/main/db/operations/voiceCrudOperations.ts` (`updateVoiceAlias`).
-- **Known issues:** RE-48 (the name input has no label). A failed save only reaches
+- **Known issues:** RE-75 (Scan Kit in an editable kit overwrites hand-set names), RE-48 (the name input has no label). A failed save only reaches
   the console.
 
 ### UC-28 Link a voice pair as stereo
@@ -716,11 +659,7 @@ choke). See
 - **IPC:** `get-sample-audio-buffer` (`electron/main/ipcHandlers.ts`).
 - **Main:** `electron/main/services/sampleService.ts` (`getSampleAudioBuffer`) →
   `electron/main/services/metadata/sampleMetadataService.ts`.
-- **Doc gaps:**
-  - "Adjust the global preview volume using the slider in the status bar"
-    (`kit-editor.md:128`): there's no slider.
-  - "Play selected sample: Space or Enter" (`keyboard-shortcuts.md:29`):
-    Enter was removed.
+- **Doc gaps:** none since the docs pass (#PR).
 - **Known issues:** RE-45 (same-named samples in one voice share triggers),
   RE-46 (the waveform redraws every frame). No e2e presses Play; the e2e
   tests cover loading and decoding the audio.
@@ -827,20 +766,8 @@ Rample's own `_save` folder alone. Cancel stops between files. See
   `electron/main/services/syncValidationService.ts`, `electron/main/services/syncMonoAnnotation.ts`,
   `electron/main/services/syncProgressManager.ts`, `electron/main/services/sdCardSafety.ts`, `electron/main/services/rtfFileService.ts`;
   `electron/main/formatConverter.ts`; `shared/rampleCardLayout.ts`.
-- **Doc gaps:**
-  - The button is **Write**, not "Sync to SD Card" (`syncing.md:36`,
-    `getting-started.md:88`); progress shows in the write panel, not the
-    status bar (`syncing.md:39`); success is the panel's "Write Complete",
-    not a message.
-  - Validation skips samples, not kits (`syncing.md:20, 32`), and checks
-    only that each file exists and is a usable WAV. The naming, duplicate
-    and 12-slot checks and "re-validate" (`syncing.md:26-30`) don't exist.
-  - `troubleshooting.md:47-49` describes bank folders (`A/0`) on the card;
-    kit folders sit at the card root (`sd-card-layout.md`).
-  - The factory download is given as about 300 MB and as 1 GB in different
-    pages; it's about 313 MiB.
-  - Gain-only conversions don't show as conversions in the summary.
-- **Known issues:** RE-35 (the Modified filter misses gain and bank edits),
+- **Doc gaps:** none since the docs pass (#PR).
+- **Known issues:** RE-76 (a card that only needs removals can't be written), RE-35 (the Modified filter misses gain and bank edits),
   RE-40 (the failure toast reads a stale value), RE-57 (contract drift in
   `SyncChangeSummary` and `SyncProgress`), RE-23 (a cleared bank name is
   still written), RE-48 (the write panel has no dialog role or Escape).
@@ -865,14 +792,7 @@ the theme. The manual has no Preferences section; see
 - **IPC:** `read-settings`, `write-settings`; push `menu-preferences`.
 - **Main:** `electron/main/services/settingsService.ts` (`readSettings`,
   `writeSetting`); `electron/main/mainProcessSetup.ts` (`loadSettings`).
-- **Doc gaps:**
-  - "Confirm destructive actions" ("Show confirmation prompts before
-    replacing or deleting samples") is never read (RE-44).
-  - The theme isn't kept across launches: `loadSettings` keeps only the
-    store and card paths (RE-21), though the PRD promises a persistent
-    preference.
-  - The global preview volume slider is UC-29's gap.
-  - No manual section, and `Cmd/Ctrl+,` isn't in the shortcut list.
+- **Doc gaps:** none since the docs pass (#PR).
 - **Known issues:** RE-21, RE-44, RE-48.
 
 ### UC-36 Messages and error containment
@@ -916,14 +836,29 @@ and [Installation](../manual/getting-started.md#installation).
 - **Main:** `electron/main/applicationMenu.ts` (`createApplicationMenu`:
   About, Help links, the DevTools opt-in); `electron/main/autoUpdater.ts`
   (`initAutoUpdater`).
-- **Doc gaps:**
-  - About shows "Version: dev" in every build: nothing sets
-    `VITE_APP_VERSION` (RE-72).
-  - The status bar has no About link (`getting-started.md:79`).
-  - A Linux AppImage is promised (`getting-started.md:22`, `README.md:99`)
-    but not built.
-  - `ROMPER_ENABLE_DEVTOOLS=1 open -a Romper` (`troubleshooting.md:111`)
-    probably doesn't pass the variable through `open`; to check.
-  - Updates are macOS only; logs aren't documented.
-- **Known issues:** RE-72, RE-18, RE-55 (no Intel Mac build), RE-56 (dead
+- **Doc gaps:** none since the docs pass (#PR).
+- **Known issues:** RE-79 (Windows signing would leave the installed app unsigned), RE-72, RE-18, RE-55 (no Intel Mac build), RE-56 (dead
   `AboutView`).
+
+## Promised, not built
+
+The docs pass (#PR) removed these promises from the user docs, because the
+code doesn't do them. The product requirements still list most of them,
+marked not built. Build any that are wanted, then document them again.
+
+- A global preview volume slider (UC-29).
+- A **Validate Store** button and its results dialog (UC-05).
+- Kit locking from the UI, and status badges on kit cards (UC-08, UC-17).
+- Importing factory samples after setup (UC-02).
+- Resuming a partial download (UC-02).
+- A warning when a dropped file is already in another voice; a visible
+  message for rejected drops (UC-19; RE-40).
+- Undo for gain, voice names, the editable switch, stereo links, kit
+  create, duplicate and delete, and the sequencer's BPM, level, sample mode
+  and slicer settings (UC-26).
+- Write-time naming, duplicate and 12-slot checks, and "re-validate"
+  (UC-34).
+- A Linux AppImage (UC-37).
+- An About link in the status bar (UC-37).
+- Export and sharing of kit configurations, and batch operations (README).
+

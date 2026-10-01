@@ -12,7 +12,10 @@ condensed checklist for these steps.
 ## Steps
 
 1. **Validate (optional):** `npm run pre-release` checks the Forge config,
-   icons, makers, package metadata, and the signing environment.
+   icons, makers, and package metadata. Its signing checks look for local
+   environment variables (`APPLE_ID`, `WINDOWS_CERTIFICATE_FILE`) that the
+   release workflow doesn't use, so treat those warnings as noise; signing
+   is checked by the workflow's preflight.
 2. **Bump the version through a PR.** Direct pushes to `main` are blocked.
 
    ```bash
@@ -38,14 +41,15 @@ condensed checklist for these steps.
       CRITICAL/BLOCKER issue or unreviewed security hotspot. An unreachable
       SonarCloud API also blocks. A failure files a GitHub issue; fix it and
       re-tag.
-   2. Lint, typecheck, unit and integration tests (all three OSes) and e2e
-      tests (all three OSes), run on the tagged commit by calling the CI
+   2. Lint, typecheck, unit tests (Ubuntu), integration tests (all three
+      OSes) and e2e tests (all three OSes), run on the tagged commit by calling the CI
       workflows. CI results on `main` don't count: a push to `main` replaces
       the queued run for the previous commit, so many commits never get a
       complete run.
-   3. Builds on macOS (rcodesign sign + notarize, see
-      [code-signing.md](code-signing.md)), Windows (Azure Trusted Signing),
-      and Linux. The macOS job launches the packaged app
+   3. Builds on macOS, arm64 only (rcodesign sign + notarize, see
+      [code-signing.md](code-signing.md)), Windows x64 (Azure Trusted
+      Signing, or unsigned while `ALLOW_UNSIGNED_WINDOWS` is `true`), and
+      Linux x64. The macOS job launches the packaged app
       (`scripts/smoke-packaged-app.mjs`) and fails unless it starts its
       auto-updater, which no unpackaged test can check (RE-16).
    4. GitHub Release with notes from
@@ -75,9 +79,13 @@ repeating the process with the final version; semver orders
 
 | Platform | Files |
 | --- | --- |
-| Windows | `Romper-X.Y.Z.Setup.exe` |
+| Windows (x64) | `Romper-X.Y.Z.Setup.exe` |
 | macOS (arm64) | `Romper.dmg`, `Romper-darwin-arm64-X.Y.Z.zip` |
-| Linux | `romper_X.Y.Z_amd64.deb`, `romper-X.Y.Z-1.x86_64.rpm`, `Romper-linux-x64-X.Y.Z.zip` |
+| Linux (x64) | `romper_X.Y.Z_amd64.deb`, `romper-X.Y.Z-1.x86_64.rpm`, `Romper-linux-x64-X.Y.Z.zip` |
+
+There is no Intel Mac, ARM Windows or ARM Linux build (RE-55), and no
+AppImage. Only macOS updates itself (`electron/main/autoUpdater.ts`); Windows
+and Linux users download each release.
 
 ## When something goes wrong
 

@@ -43,7 +43,7 @@ Severity and details for each ID are in the findings register
 | RE-65 | Medium | Edit > Undo/Redo never reach Romper's undo | #406 | done |
 | Low | Low | Test and tooling hygiene (below) | #409 | done |
 | RE-67 | Medium | E2E error guard; use case register and traceability | #411 (8), #415 (9) | 8 and 9 done in PR |
-| Docs | Low | About 29 doc promises the code doesn't keep | 10 | to do |
+| Docs | Low | About 29 doc promises the code doesn't keep | #PR | done in PR |
 
 ## 1. Stereo is a voice setting, everywhere (RE-69)
 

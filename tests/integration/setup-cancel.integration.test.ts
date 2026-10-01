@@ -1,4 +1,5 @@
 import AdmZip from "adm-zip";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -16,6 +17,22 @@ import {
   LocalStoreSetupService,
   SetupCancelledError,
 } from "../../electron/main/services/localStoreSetupService.js";
+
+/**
+ * Whether this process still has `file` open. Windows can't delete an open
+ * file, so a leaked handle fails cleanup there; lsof finds the leak on
+ * macOS and Linux too. Null where lsof isn't available.
+ */
+function holdsOpen(file: string): boolean | null {
+  try {
+    const out = execFileSync("lsof", ["-p", String(process.pid)], {
+      encoding: "utf8",
+    });
+    return out.includes(fs.realpathSync(file));
+  } catch {
+    return null;
+  }
+}
 
 // RE-66: setup can be cancelled. Main aborts the extraction in progress, and
 // cleanup removes only what this setup wrote into the target (kit folders it
@@ -82,8 +99,10 @@ describe("[UC-02] Cancelling setup (RE-66)", () => {
       removedEntries: extracted.length,
     });
     expect(fs.readdirSync(target)).toEqual(["notes.txt"]);
-    // The archive itself (a file:// source) is never deleted
+    // The archive itself (a file:// source) is never deleted, and nothing
+    // still has it open
     expect(fs.existsSync(zipPath)).toBe(true);
+    expect(holdsOpen(zipPath)).not.toBe(true);
   });
 
   it("cleans up a copied kit and the database, and nothing else", async () => {
@@ -148,5 +167,23 @@ describe("[UC-02] Cancelling setup (RE-66)", () => {
     expect(first.aborted).toBe(true);
     expect(first.reason).toBeInstanceOf(SetupCancelledError);
     expect(setup.setupSignal.aborted).toBe(false);
+  });
+  it("closes the zip after a complete extraction", async () => {
+    const zip = new AdmZip();
+    for (let kit = 0; kit < 3; kit++) {
+      zip.addFile(`A${kit}/1 kick.wav`, Buffer.alloc(1024, 1));
+    }
+    const zipPath = path.join(tempDir, "small.zip");
+    zip.writeZip(zipPath);
+
+    const result = await new ArchiveService().downloadAndExtractArchive(
+      pathToFileURL(zipPath).href,
+      target,
+    );
+
+    expect(result.success).toBe(true);
+    expect(holdsOpen(zipPath)).not.toBe(true);
+    // What Windows needs: the file can go
+    fs.rmSync(zipPath);
   });
 });

@@ -64,23 +64,13 @@ export class LocalStoreService {
     isValid: boolean;
     localStorePath: null | string;
   } {
-    // Treat empty string as explicit "no local store" override
-    const isEnvironmentOverride = envPath !== undefined;
-    const isEmptyOverride = envPath === "";
-
-    if (isEmptyOverride) {
-      return {
-        error: "No local store configured (environment override)",
-        hasLocalStore: false,
-        isCriticalEnvironmentError: false,
-        isEnvironmentOverride: true,
-        isValid: false,
-        localStorePath: null,
-      };
-    }
+    // An empty or blank ROMPER_LOCAL_PATH is unset, as every other reader
+    // of it treats it
+    const envOverride = envPath?.trim() ? envPath : undefined;
+    const isEnvironmentOverride = envOverride !== undefined;
 
     // Check environment variable first, then fall back to provided path
-    const resolvedPath = envPath || localStorePath;
+    const resolvedPath = envOverride ?? localStorePath;
 
     if (!resolvedPath) {
       return {

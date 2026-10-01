@@ -41,13 +41,15 @@ async function importWizardTest() {
 async function runWizardTest({ fixturePath, source }) {
   const { _electron: electron } = await import("@playwright/test");
   
-  // An empty ROMPER_LOCAL_PATH means "no override", so the wizard auto-opens;
-  // the target is typed into the wizard instead.
+  // Empty settings of its own, never the installed app's: no store is
+  // configured, so the wizard auto-opens and the target is typed into it.
+  const userData = await fs.mkdtemp(path.join(os.tmpdir(), "romper-fixtures-userdata-"));
   const env = {
     ...process.env,
     ROMPER_SDCARD_PATH: fixturePath,
-    ROMPER_LOCAL_PATH: "",
+    ROMPER_USER_DATA_DIR: userData,
   };
+  delete env.ROMPER_LOCAL_PATH;
   const targetPath = path.join(os.tmpdir(), `romper-e2e-${source}-${Date.now()}`);
 
   console.log(`[E2E Wizard] Target local store: ${targetPath}`);
@@ -116,6 +118,7 @@ async function runWizardTest({ fixturePath, source }) {
   await waitForFileExists(dbPath);
   
   await electronApp.close();
+  await fs.remove(userData);
   
   return { localStorePath: targetPath, dbPath };
 }

@@ -1596,12 +1596,49 @@ describe("KitsView", () => {
   });
 
   describe("Environment override scenarios", () => {
-    // NOTE: The environment banner test cannot run in Vitest because
-    // import.meta.env.MODE is always "test" in the test environment,
-    // and the banner rendering condition includes !isTestEnvironment.
-    // Vite statically replaces import.meta.env.MODE at compile time,
-    // so vi.stubEnv cannot override it at runtime.
-    // This behavior is covered by manual/E2E testing in development mode.
+    it("shows the Test Mode banner for a ROMPER_LOCAL_PATH override", async () => {
+      const TestSettingsProviderOverride: React.FC<{
+        children: React.ReactNode;
+      }> = ({ children }) => {
+        const contextValue = {
+          clearError: vi.fn(),
+          confirmDestructiveActions: true,
+          error: null,
+          isDarkMode: false,
+          isInitialized: true,
+          isLoading: false,
+          localStorePath: "/env/store",
+          localStoreStatus: {
+            error: null,
+            hasLocalStore: true,
+            isEnvironmentOverride: true,
+            isValid: true,
+            localStorePath: "/env/store",
+          },
+          refreshLocalStoreStatus: vi.fn(),
+          setConfirmDestructiveActions: vi.fn(),
+          setLocalStorePath: vi.fn(),
+          setThemeMode: vi.fn(),
+          themeMode: "light" as const,
+        };
+
+        return (
+          <SettingsContext.Provider value={contextValue}>
+            {children}
+          </SettingsContext.Provider>
+        );
+      };
+
+      render(
+        <TestSettingsProviderOverride>
+          <KitsView />
+        </TestSettingsProviderOverride>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText(/Test Mode/)).toBeInTheDocument();
+      });
+    });
 
     it("shows critical error dialog for invalid environment path", async () => {
       const TestSettingsProviderCriticalError: React.FC<{

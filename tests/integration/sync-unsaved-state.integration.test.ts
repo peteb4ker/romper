@@ -5,6 +5,7 @@
 import type { Kit } from "@romper/shared/db/schema";
 
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -20,7 +21,8 @@ import {
 } from "../../electron/main/db/romperDbCoreORM";
 
 describe("Sync Unsaved State Integration", () => {
-  const TEST_DB_DIR = path.join(__dirname, "sync-test-data");
+  // A temp folder per test, not one in the source tree
+  let TEST_DB_DIR: string;
 
   async function cleanupSqliteFiles(dir: string) {
     if (!fs.existsSync(dir)) return;
@@ -43,10 +45,7 @@ describe("Sync Unsaved State Integration", () => {
   beforeEach(() => {
     // Clear migration cache to ensure fresh database setup
     clearMigrationCache();
-    // Ensure the test directory exists
-    if (!fs.existsSync(TEST_DB_DIR)) {
-      fs.mkdirSync(TEST_DB_DIR, { recursive: true });
-    }
+    TEST_DB_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "romper-sync-state-"));
 
     // Create a fresh database
     const dbResult = createRomperDbFile(TEST_DB_DIR);
@@ -57,6 +56,7 @@ describe("Sync Unsaved State Integration", () => {
 
   afterEach(async () => {
     await cleanupSqliteFiles(TEST_DB_DIR);
+    fs.rmSync(TEST_DB_DIR, { force: true, maxRetries: 5, recursive: true });
   });
 
   it("should clear modified_since_sync flag when kit is marked as synced", () => {

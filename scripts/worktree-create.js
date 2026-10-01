@@ -18,12 +18,24 @@ function runCommand(command, options = {}) {
       ...options,
     });
   } catch (error) {
+    error.failedCommand = command;
     if (!options.silent) {
       console.error(`Command failed: ${command}`);
       console.error(error.message);
+      error.reported = true;
     }
     throw error;
   }
+}
+
+// What went wrong: the failing command, and its error unless runCommand
+// already printed it
+function describeFailure(error) {
+  if (error.reported) return `: ${error.failedCommand} failed (output above)`;
+  const output = error.stderr?.toString().trim() || error.message;
+  return error.failedCommand
+    ? `\n  ${error.failedCommand}\n  ${output}`
+    : `\n  ${output}`;
 }
 
 // Set up Claude settings.local.json symlink in a worktree
@@ -249,8 +261,8 @@ function main() {
     console.log("");
     console.log(`  cd ${worktreePath} && npm run dev`);
     console.log("=".repeat(50));
-  } catch {
-    console.error("Failed to create worktree");
+  } catch (error) {
+    console.error(`Failed to create worktree${describeFailure(error)}`);
     process.exit(1);
   }
 }

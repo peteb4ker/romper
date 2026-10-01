@@ -36,10 +36,11 @@ test.describe("Onboarding Error Recovery E2E Tests", () => {
   }
 
   /**
-   * Helper to launch Electron with wizard-triggering environment.
-   * Setting ROMPER_LOCAL_PATH to empty string forces the wizard to open.
+   * Helper to launch Electron with its own empty settings, so no store is
+   * configured and the setup wizard opens.
    */
   async function launchWizardApp(env: Record<string, string>) {
+    const userData = await createTempDir("romper-e2e-userdata-");
     const electronApp = await electron.launch({
       args: [
         "dist/electron/main/index.js",
@@ -47,7 +48,7 @@ test.describe("Onboarding Error Recovery E2E Tests", () => {
       ],
       env: {
         ...process.env,
-        ROMPER_LOCAL_PATH: "", // Empty string triggers wizard
+        ROMPER_USER_DATA_DIR: userData,
         ...env,
       },
       timeout: 30000,

@@ -16,6 +16,7 @@ describe("SyncUpdateDialog", () => {
     ],
     fileCount: 15,
     kitCount: 8,
+    removals: [],
     validationErrors: [],
     warnings: [],
   };
@@ -117,46 +118,69 @@ describe("SyncUpdateDialog", () => {
       expect(screen.getByText("convert")).toBeInTheDocument();
     });
 
-    it("should display wipe SD card option", () => {
+    it("lists what sync will remove from the card", () => {
       render(
         <SyncUpdateDialog
           isOpen={true}
           kitName="A0"
-          localChangeSummary={mockChangeSummary}
-          onClose={mockOnClose}
-          onConfirm={mockOnConfirm}
-        />,
-      );
-
-      expect(
-        screen.getByText("Remove existing kits from the card first"),
-      ).toBeInTheDocument();
-      expect(screen.getByTestId("wipe-sd-card-checkbox")).toBeInTheDocument();
-      // The explanation only appears once the option is ticked
-      expect(
-        screen.queryByTestId("wipe-sd-card-warning"),
-      ).not.toBeInTheDocument();
-    });
-
-    it("explains exactly what will be removed, naming the card path", async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-
-      render(
-        <SyncUpdateDialog
-          isOpen={true}
-          kitName="A0"
-          localChangeSummary={mockChangeSummary}
+          localChangeSummary={{
+            ...mockChangeSummary,
+            removals: ["A0/1-02 old.wav", "B3"],
+          }}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
           sdCardPath="/Volumes/RAMPLE"
         />,
       );
 
-      await user.click(screen.getByTestId("wipe-sd-card-checkbox"));
+      const removals = screen.getByTestId("card-removals");
+      expect(removals).toHaveTextContent(
+        "2 items no longer in your library will be removed from the card",
+      );
+      expect(removals).toHaveTextContent("A0/1-02 old.wav");
+      expect(removals).toHaveTextContent("B3");
+    });
 
-      const warning = screen.getByTestId("wipe-sd-card-warning");
-      expect(warning).toHaveTextContent(
-        "Deletes kit folders (A0 to Z99) and bank name files in /Volumes/RAMPLE. Other files on the card are kept.",
+    it("shows no removals when the card has nothing stale", () => {
+      render(
+        <SyncUpdateDialog
+          isOpen={true}
+          kitName="A0"
+          localChangeSummary={mockChangeSummary}
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+        />,
+      );
+
+      expect(screen.queryByTestId("card-removals")).not.toBeInTheDocument();
+    });
+
+    it("summarizes against the card, again when the user picks another", async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const onGenerate = vi.fn().mockResolvedValue(mockChangeSummary);
+      vi.mocked(globalThis.electronAPI.selectSdCard).mockResolvedValueOnce(
+        "/Volumes/OTHER",
+      );
+
+      render(
+        <SyncUpdateDialog
+          isOpen={true}
+          kitName="A0"
+          localChangeSummary={null}
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+          onGenerateChangeSummary={onGenerate}
+          sdCardPath="/Volumes/RAMPLE"
+        />,
+      );
+      await waitFor(() =>
+        expect(onGenerate).toHaveBeenCalledWith("/Volumes/RAMPLE"),
+      );
+
+      await user.click(screen.getByTestId("select-sd-card"));
+
+      await waitFor(() =>
+        expect(onGenerate).toHaveBeenLastCalledWith("/Volumes/OTHER"),
       );
     });
 
@@ -197,7 +221,6 @@ describe("SyncUpdateDialog", () => {
       expect(mockOnConfirm).toHaveBeenCalledWith({
         sdCardPath: "/path/to/sd",
         skipInvalidFiles: false,
-        wipeSdCard: false,
       });
     });
 
@@ -234,7 +257,6 @@ describe("SyncUpdateDialog", () => {
         expect(mockOnConfirm).toHaveBeenCalledWith({
           sdCardPath: "/path/to/sd",
           skipInvalidFiles: true,
-          wipeSdCard: false,
         });
       });
 
@@ -302,31 +324,6 @@ describe("SyncUpdateDialog", () => {
       vi.advanceTimersByTime(250);
       await waitFor(() => {
         expect(mockOnClose).toHaveBeenCalledTimes(1);
-      });
-    });
-
-    it("should handle wipe SD card option", async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-
-      render(
-        <SyncUpdateDialog
-          isOpen={true}
-          kitName="A0"
-          localChangeSummary={mockChangeSummary}
-          onClose={mockOnClose}
-          onConfirm={mockOnConfirm}
-          sdCardPath="/path/to/sd"
-        />,
-      );
-
-      const wipeCheckbox = screen.getByTestId("wipe-sd-card-checkbox");
-      await user.click(wipeCheckbox);
-
-      await user.click(screen.getByText("Start Write"));
-      expect(mockOnConfirm).toHaveBeenCalledWith({
-        sdCardPath: "/path/to/sd",
-        skipInvalidFiles: false,
-        wipeSdCard: true,
       });
     });
 
@@ -458,33 +455,6 @@ describe("SyncUpdateDialog", () => {
         "/path/to/sd",
       );
     });
-
-    it("should reset wipe option when dialog opens", () => {
-      const { rerender } = render(
-        <SyncUpdateDialog
-          isOpen={false}
-          kitName="A0"
-          localChangeSummary={mockChangeSummary}
-          onClose={mockOnClose}
-          onConfirm={mockOnConfirm}
-        />,
-      );
-
-      rerender(
-        <SyncUpdateDialog
-          isOpen={true}
-          kitName="A0"
-          localChangeSummary={mockChangeSummary}
-          onClose={mockOnClose}
-          onConfirm={mockOnConfirm}
-        />,
-      );
-
-      const wipeCheckbox = screen.getByTestId(
-        "wipe-sd-card-checkbox",
-      ) as HTMLInputElement;
-      expect(wipeCheckbox.checked).toBe(false);
-    });
   });
 
   describe("summary generation failure", () => {
@@ -505,7 +475,7 @@ describe("SyncUpdateDialog", () => {
       const banner = await screen.findByTestId("summary-error");
       expect(banner).toHaveTextContent(/could not scan kits/i);
 
-      // Confirm must be disabled — no summary, so no write (and no wipe)
+      // Confirm must be disabled — no summary, so no write
       expect(screen.getByTestId("confirm-sync")).toBeDisabled();
     });
 

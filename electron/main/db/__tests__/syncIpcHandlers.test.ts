@@ -87,7 +87,7 @@ describe("startKitSync path authorization (RE-03)", () => {
     });
     const result = await getStartKitSync()(
       {},
-      { sdCardPath: "/Users/me/Library/LaunchAgents", wipeSdCard: true },
+      { sdCardPath: "/Users/me/Library/LaunchAgents" },
     );
     expect(checkPathAccess).toHaveBeenCalledWith(
       "/Users/me/Library/LaunchAgents",
@@ -103,6 +103,45 @@ describe("startKitSync path authorization (RE-03)", () => {
     expect(syncService.startKitSync).toHaveBeenCalledWith(
       { localStorePath: "/store" },
       options,
+    );
+  });
+});
+
+describe("generateSyncChangeSummary path authorization (RE-05)", () => {
+  function getSummary() {
+    registerSyncIpcHandlers({ localStorePath: "/store" });
+    const call = vi
+      .mocked(ipcMain.handle)
+      .mock.calls.find(([channel]) => channel === "generateSyncChangeSummary");
+    return call![1] as (
+      event: unknown,
+      sdCardPath?: string,
+    ) => Promise<unknown>;
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("reads only a card folder Romper was given", async () => {
+    vi.mocked(checkPathAccess).mockReturnValueOnce({
+      error: "Access denied",
+      ok: false,
+    });
+    const result = await getSummary()({}, "/Users/me/Documents");
+    expect(checkPathAccess).toHaveBeenCalledWith("/Users/me/Documents", {
+      write: true,
+    });
+    expect(result).toEqual({ error: "Access denied", success: false });
+    expect(syncService.generateChangeSummary).not.toHaveBeenCalled();
+  });
+
+  it("summarizes without a card path and without a check", async () => {
+    await getSummary()({}, "");
+    expect(checkPathAccess).not.toHaveBeenCalled();
+    expect(syncService.generateChangeSummary).toHaveBeenCalledWith(
+      { localStorePath: "/store" },
+      "",
     );
   });
 });

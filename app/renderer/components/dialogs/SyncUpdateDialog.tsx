@@ -10,7 +10,7 @@ import {
   WarningIcon,
   XIcon,
 } from "@phosphor-icons/react";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import type {
   SyncChangeSummary,
@@ -31,7 +31,6 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   sdCardPath,
   syncProgress,
 }) => {
-  const [wipeSdCard, setWipeSdCard] = useState(false);
   const [skipInvalidFiles, setSkipInvalidFiles] = useState(false);
   const [localSdCardPath, setLocalSdCardPath] = useState<null | string>(
     sdCardPath || null,
@@ -42,6 +41,48 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [summaryError, setSummaryError] = useState<null | string>(null);
   const [isClosing, setIsClosing] = useState(false);
+
+  // The summary reads the card (to list what sync will remove), so it is
+  // regenerated whenever the card changes. Only the latest request counts:
+  // an earlier one (say, before the saved card path loaded) can finish last.
+  const latestSummaryRequest = useRef(0);
+  const loadSummary = useCallback(
+    (cardPath: string) => {
+      if (!onGenerateChangeSummary) return;
+
+      const request = ++latestSummaryRequest.current;
+      const isCurrent = () => request === latestSummaryRequest.current;
+      setIsGeneratingSummary(true);
+      setSummaryError(null);
+      onGenerateChangeSummary(cardPath)
+        .then((summary) => {
+          if (!isCurrent()) return;
+          if (summary) {
+            setChangeSummary(summary);
+          } else {
+            // A null summary means generation failed — distinguish it from a
+            // genuine "nothing to sync" so the user doesn't confirm a write
+            // against a summary that never loaded.
+            setSummaryError(
+              "Could not scan kits for changes. Please check the SD card and try again.",
+            );
+          }
+        })
+        .catch((error) => {
+          if (!isCurrent()) return;
+          console.error("Failed to generate change summary:", error);
+          setSummaryError(
+            error instanceof Error
+              ? `Could not scan kits for changes: ${error.message}`
+              : "Could not scan kits for changes.",
+          );
+        })
+        .finally(() => {
+          if (isCurrent()) setIsGeneratingSummary(false);
+        });
+    },
+    [onGenerateChangeSummary],
+  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -56,34 +97,8 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
       return;
     }
 
-    if (!onGenerateChangeSummary) return;
-
-    setIsGeneratingSummary(true);
-    onGenerateChangeSummary("")
-      .then((summary) => {
-        if (summary) {
-          setChangeSummary(summary);
-        } else {
-          // A null summary means generation failed — distinguish it from a
-          // genuine "nothing to sync" so the user doesn't confirm a write
-          // (including the wipe option) against a summary that never loaded.
-          setSummaryError(
-            "Could not scan kits for changes. Please check the SD card and try again.",
-          );
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to generate change summary:", error);
-        setSummaryError(
-          error instanceof Error
-            ? `Could not scan kits for changes: ${error.message}`
-            : "Could not scan kits for changes.",
-        );
-      })
-      .finally(() => {
-        setIsGeneratingSummary(false);
-      });
-  }, [isOpen, sdCardPath, localChangeSummary, onGenerateChangeSummary]);
+    loadSummary(sdCardPath || "");
+  }, [isOpen, sdCardPath, localChangeSummary, loadSummary]);
 
   const handleSdCardSelect = async () => {
     if (!globalThis.electronAPI?.selectSdCard) return;
@@ -93,10 +108,11 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
 
     setLocalSdCardPath(selectedPath);
     onSdCardPathChange?.(selectedPath);
+    loadSummary(selectedPath);
   };
 
   const handleConfirm = () => {
-    onConfirm({ sdCardPath: localSdCardPath, skipInvalidFiles, wipeSdCard });
+    onConfirm({ sdCardPath: localSdCardPath, skipInvalidFiles });
   };
 
   const handleClose = () => {
@@ -115,6 +131,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   const conversionsNeeded = banks.some((b) => b.hasConversions);
   const invalidFiles = changeSummary?.validationErrors || [];
   const warnings = changeSummary?.warnings || [];
+  const removals = changeSummary?.removals || [];
   // Samples that can't be written are skipped only once the user says so.
   const needsSkipConfirmation = invalidFiles.length > 0 && !skipInvalidFiles;
 
@@ -415,6 +432,27 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
           </div>
         )}
 
+        {/* What the card no longer needs */}
+        {removals.length > 0 && (
+          <div className="px-4 py-2" data-testid="card-removals">
+            <div className="p-2.5 rounded border border-border-subtle bg-surface-3/30 text-[11px] space-y-1.5">
+              <div className="flex items-center gap-1.5 text-text-secondary">
+                <TrashIcon size={11} />
+                {removals.length === 1
+                  ? "1 item no longer in your library will be removed from the card"
+                  : `${removals.length} items no longer in your library will be removed from the card`}
+              </div>
+              <ul className="max-h-24 overflow-y-auto space-y-0.5 font-mono text-text-tertiary">
+                {removals.map((entry) => (
+                  <li className="break-all" key={entry}>
+                    {entry}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
         {/* SD Card Selection */}
         <div className="px-4 py-2 space-y-2">
           <div
@@ -454,46 +492,6 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
               {localSdCardPath ? "Change" : "Select"}
             </button>
           </div>
-
-          {/* Wipe SD Card */}
-          <label
-            className="flex items-center gap-2 px-2 py-1.5 cursor-pointer group"
-            htmlFor="wipeSdCard"
-          >
-            <input
-              checked={wipeSdCard}
-              className="sr-only peer"
-              data-testid="wipe-sd-card-checkbox"
-              disabled={isLoading}
-              id="wipeSdCard"
-              onChange={(e) => setWipeSdCard(e.target.checked)}
-              type="checkbox"
-            />
-            <div className="w-3.5 h-3.5 rounded-sm border border-border-default bg-surface-3 shrink-0 flex items-center justify-center peer-checked:bg-accent-danger peer-checked:border-accent-danger transition-colors">
-              {wipeSdCard && (
-                <CheckIcon className="text-white" size={10} weight="bold" />
-              )}
-            </div>
-            <span className="text-[11px] text-text-tertiary flex items-center gap-1 group-hover:text-text-secondary transition-colors">
-              <TrashIcon size={11} />
-              Remove existing kits from the card first
-            </span>
-          </label>
-          {wipeSdCard && (
-            <p
-              className="px-2 pb-1 text-[11px] leading-snug text-accent-danger"
-              data-testid="wipe-sd-card-warning"
-            >
-              Deletes kit folders (A0 to Z99) and bank name files
-              {localSdCardPath ? (
-                <>
-                  {" in "}
-                  <span className="font-mono break-all">{localSdCardPath}</span>
-                </>
-              ) : null}
-              . Other files on the card are kept.
-            </p>
-          )}
         </div>
       </div>
 

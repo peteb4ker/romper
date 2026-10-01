@@ -176,15 +176,14 @@ Rample firmware and Squarp's factory kits use: the first character is the
 voice, and the zero-padded slot keeps the layer order. The naming and
 voice-parsing rules live in `shared/rampleCardLayout.ts`, which sync, the
 setup wizard's import and rescan share; the spec is
-[sd-card-layout.md](sd-card-layout.md). Sync never touches the device's
-`_save/` folder. The user can choose to wipe the card first; `sdCardSafety.ts`
-guards which folders may be cleared.
+[sd-card-layout.md](sd-card-layout.md).
 
-Known gap, tracked in the findings register
-([aidlc-docs/inception/reverse-engineering/code-quality-assessment.md](../../aidlc-docs/inception/reverse-engineering/code-quality-assessment.md)):
-
-- **RE-05:** sync only adds or overwrites, so samples removed from a kit
-  stay on the card.
+The card mirrors the store. Once every file is written (and only if the
+sync wasn't cancelled), sync deletes the Rample content the store no
+longer has: kit folders, anything inside a kit folder that isn't one of
+its samples, and bank name files (`sdCardSafety.findStaleCardEntries`).
+The write summary lists the same entries first. Sync never touches the
+device's `_save/` folder or anything else on the card.
 
 ## Testing
 

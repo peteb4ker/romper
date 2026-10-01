@@ -80,14 +80,12 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
     async (options: {
       sdCardPath: null | string;
       skipInvalidFiles: boolean;
-      wipeSdCard: boolean;
     }) => {
       if (!options.sdCardPath) return;
 
       const success = await startSync({
         sdCardPath: options.sdCardPath,
         skipInvalidFiles: options.skipInvalidFiles,
-        wipeSdCard: options.wipeSdCard,
       });
       if (success) {
         // Keep the dialog open so the user sees the "Write Complete" state.

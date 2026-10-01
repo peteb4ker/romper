@@ -25,7 +25,7 @@ vi.mock("../../audioUtils.js", () => ({
 }));
 
 vi.mock("../../db/romperDbCoreORM.js", () => ({
-  getAllBanks: vi.fn(),
+  getAllBanks: vi.fn(() => ({ data: [], success: true })),
   getKits: vi.fn(),
   getKitSamples: vi.fn(),
   markKitsAsSynced: vi.fn(),
@@ -40,18 +40,24 @@ vi.mock("../syncMonoAnnotation.js", () => ({
 }));
 
 vi.mock("../sdCardSafety.js", () => ({
-  clearRampleContent: vi.fn(() => ({ removed: [] })),
+  findStaleCardEntries: vi.fn(() => []),
+  removeCardEntries: vi.fn(),
   validateSdCardTarget: vi.fn(() => ({ ok: true })),
 }));
 
 import { getAudioMetadata, validateSampleFormat } from "../../audioUtils.js";
 import {
+  getAllBanks,
   getKits,
   getKitSamples,
   markKitsAsSynced,
 } from "../../db/romperDbCoreORM.js";
 import { convertToRampleDefault } from "../../formatConverter.js";
-import { clearRampleContent, validateSdCardTarget } from "../sdCardSafety.js";
+import {
+  findStaleCardEntries,
+  removeCardEntries,
+  validateSdCardTarget,
+} from "../sdCardSafety.js";
 import { syncFileOperationsService } from "../syncFileOperations.js";
 import { syncProgressManager } from "../syncProgressManager.js";
 import { syncSampleProcessingService } from "../syncSampleProcessing.js";
@@ -68,7 +74,8 @@ const mockMarkKitsAsSynced = vi.mocked(markKitsAsSynced);
 const _mockConvertToRampleDefault = vi.mocked(convertToRampleDefault);
 const mockBrowserWindow = vi.mocked(BrowserWindow);
 const mockValidateSdCardTarget = vi.mocked(validateSdCardTarget);
-const mockClearRampleContent = vi.mocked(clearRampleContent);
+const mockFindStaleCardEntries = vi.mocked(findStaleCardEntries);
+const mockRemoveCardEntries = vi.mocked(removeCardEntries);
 
 describe("SyncService", () => {
   let mockWindow: unknown;
@@ -249,7 +256,6 @@ describe("SyncService", () => {
 
     const mockOptions = {
       sdCardPath: "/sd/card",
-      wipeSdCard: false,
     };
 
     it("successfully syncs files", async () => {
@@ -336,7 +342,6 @@ describe("SyncService", () => {
 
       const result = await syncService.startKitSync(mockSettings, {
         sdCardPath: "/Users/someone",
-        wipeSdCard: true,
       });
 
       expect(result).toEqual({
@@ -346,7 +351,7 @@ describe("SyncService", () => {
       expect(
         syncSampleProcessingService.gatherAllSamples,
       ).not.toHaveBeenCalled();
-      expect(mockClearRampleContent).not.toHaveBeenCalled();
+      expect(mockRemoveCardEntries).not.toHaveBeenCalled();
       expect(syncFileOperationsService.processAllFiles).not.toHaveBeenCalled();
     });
 
@@ -366,74 +371,73 @@ describe("SyncService", () => {
       ]);
     });
 
-    it("clears only Rample content when the clear option is ticked", async () => {
-      const result = await syncService.startKitSync(mockSettings, {
-        sdCardPath: "/sd/card",
-        wipeSdCard: true,
-      });
-
-      expect(result.success).toBe(true);
-      expect(mockClearRampleContent).toHaveBeenCalledWith("/sd/card");
-      // The old implementation removed every entry directly; it must not.
-      expect(mockFs.rmSync).not.toHaveBeenCalled();
-      expect(mockFs.unlinkSync).not.toHaveBeenCalled();
-    });
-
-    it("clears before any file is written", async () => {
+    it("removes what the store no longer has, after every file is written (RE-05)", async () => {
       const order: string[] = [];
-      mockClearRampleContent.mockImplementationOnce(() => {
-        order.push("clear");
-        return { removed: [] };
-      });
       vi.mocked(
         syncFileOperationsService.processAllFiles,
       ).mockImplementationOnce(async () => {
         order.push("write");
         return 0;
       });
-
-      await syncService.startKitSync(mockSettings, {
-        sdCardPath: "/sd/card",
-        wipeSdCard: true,
-      });
-
-      expect(order).toEqual(["clear", "write"]);
-    });
-
-    it("does not clear the card when the option is not ticked", async () => {
-      await syncService.startKitSync(mockSettings, {
-        sdCardPath: "/sd/card",
-        wipeSdCard: false,
-      });
-
-      expect(mockClearRampleContent).not.toHaveBeenCalled();
-    });
-
-    it("reports a failed clear as a sync error and writes nothing", async () => {
-      mockClearRampleContent.mockImplementationOnce(() => {
-        throw new Error("SD card path does not exist: /sd/card");
+      mockFindStaleCardEntries.mockReturnValueOnce(["B3", "A0/1-02 old.wav"]);
+      mockRemoveCardEntries.mockImplementationOnce(() => {
+        order.push("remove");
       });
 
       const result = await syncService.startKitSync(mockSettings, {
         sdCardPath: "/sd/card",
-        wipeSdCard: true,
       });
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain(
-        "Failed to clear SD card: SD card path does not exist",
+      expect(result.success).toBe(true);
+      expect(order).toEqual(["write", "remove"]);
+      expect(mockRemoveCardEntries).toHaveBeenCalledWith("/sd/card", [
+        "B3",
+        "A0/1-02 old.wav",
+      ]);
+    });
+
+    it("removes nothing when the sync is cancelled", async () => {
+      vi.spyOn(syncProgressManager, "finalizeSyncJob").mockReturnValueOnce(
+        true,
       );
-      expect(syncFileOperationsService.processAllFiles).not.toHaveBeenCalled();
+
+      const result = await syncService.startKitSync(mockSettings, {
+        sdCardPath: "/sd/card",
+      });
+
+      expect(result).toEqual({
+        error: "Sync operation was cancelled",
+        success: false,
+      });
+      expect(mockRemoveCardEntries).not.toHaveBeenCalled();
+    });
+
+    it("keeps a name file for every named bank", async () => {
+      vi.mocked(getAllBanks).mockReturnValue({
+        data: [
+          { artist: "ALWIS", letter: "A" },
+          { artist: null, letter: "B" },
+        ],
+        success: true,
+      } as never);
+
+      await syncService.startKitSync(mockSettings, { sdCardPath: "/sd/card" });
+
+      expect([...mockFindStaleCardEntries.mock.calls[0][1].bankFiles]).toEqual([
+        "A - ALWIS.rtf",
+      ]);
+      vi.mocked(getAllBanks).mockReturnValue({ data: [], success: true });
     });
   });
 
   describe("samples that can't be written (RE-09)", () => {
     const mockSettings = { localStorePath: "/local/store" };
-    const sample = (kitName: string, filename: string) =>
+    const sample = (kitName: string, filename: string, slotNumber = 0) =>
       ({
         filename,
         kit_name: kitName,
         kitName,
+        slot_number: slotNumber,
         voice_number: 1,
       }) as unknown as Sample;
 
@@ -445,7 +449,7 @@ describe("SyncService", () => {
       ).mockResolvedValue({
         data: [
           sample("A1", "kick.wav"),
-          sample("A1", "missing.wav"),
+          sample("A1", "missing.wav", 1),
           sample("B2", "gone.wav"),
           sample("C3", "snare.wav"),
         ],
@@ -482,6 +486,22 @@ describe("SyncService", () => {
 
     afterEach(() => {
       vi.restoreAllMocks();
+    });
+
+    it("lists what sync will remove from the card (RE-05)", async () => {
+      mockGetKits.mockReturnValue({ data: [{}, {}, {}], success: true });
+      mockFindStaleCardEntries.mockReturnValueOnce(["B3"]);
+
+      const withCard = await syncService.generateChangeSummary(
+        mockSettings,
+        "/sd/card",
+      );
+      const withoutCard = await syncService.generateChangeSummary(mockSettings);
+
+      expect(withCard.data?.removals).toEqual(["B3"]);
+      expect(mockFindStaleCardEntries).toHaveBeenCalledTimes(1);
+      expect(mockFindStaleCardEntries.mock.calls[0][0]).toBe("/sd/card");
+      expect(withoutCard.data?.removals).toEqual([]);
     });
 
     it("warns about kits the Rample won't open because voice 1 is empty", async () => {
@@ -530,7 +550,6 @@ describe("SyncService", () => {
     it("refuses to sync without confirmation, before wiping or writing anything", async () => {
       const result = await syncService.startKitSync(mockSettings, {
         sdCardPath: "/sd/card",
-        wipeSdCard: true,
       });
 
       expect(result).toEqual({
@@ -538,7 +557,7 @@ describe("SyncService", () => {
           "2 samples can't be written to the card. Nothing was written. Confirm skipping them in the write summary to continue.",
         success: false,
       });
-      expect(mockClearRampleContent).not.toHaveBeenCalled();
+      expect(mockRemoveCardEntries).not.toHaveBeenCalled();
       expect(syncFileOperationsService.processAllFiles).not.toHaveBeenCalled();
       expect(mockMarkKitsAsSynced).not.toHaveBeenCalled();
     });
@@ -547,7 +566,6 @@ describe("SyncService", () => {
       const result = await syncService.startKitSync(mockSettings, {
         sdCardPath: "/sd/card",
         skipInvalidFiles: true,
-        wipeSdCard: true,
       });
 
       expect(result.success).toBe(true);
@@ -557,12 +575,18 @@ describe("SyncService", () => {
         "gone.wav",
       ]);
       expect(result.data?.warnings).toHaveLength(2);
-      expect(mockClearRampleContent).toHaveBeenCalledWith("/sd/card");
       expect(
         vi
           .mocked(syncFileOperationsService.processAllFiles)
           .mock.calls[0][0].map((f) => f.filename),
       ).toEqual(["kick.wav", "snare.wav"]);
+      // A skipped sample keeps its last copy on the card
+      const kits = mockFindStaleCardEntries.mock.calls[0][1].kits;
+      expect([...kits.get("A1")!]).toEqual([
+        "1-01 kick.wav",
+        "1-02 missing.wav",
+      ]);
+      expect([...kits.get("B2")!]).toEqual(["1-01 gone.wav"]);
     });
 
     it("leaves kits with a skipped sample marked as modified", async () => {
@@ -585,7 +609,6 @@ describe("SyncService", () => {
 
     const mockOptions = {
       sdCardPath: "/sd/card",
-      wipeSdCard: false,
     };
 
     it("fails when the kits can't be loaded", async () => {
@@ -605,6 +628,7 @@ describe("SyncService", () => {
           {
             filename: "kick.wav",
             kit_name: "A01",
+            slot_number: 0,
             source_path: "/source/kick.wav",
             voice_number: 1,
           },

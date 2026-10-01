@@ -123,7 +123,7 @@ describe("Sync IPC Integration Tests", () => {
 
       const handler = handlerCall[1];
       const mockEvent = {};
-      const mockSettings = { localStorePath: "/local/store" };
+      const mockSettings = "/sd/card";
 
       const result = await handler(mockEvent, mockSettings);
 
@@ -148,7 +148,7 @@ describe("Sync IPC Integration Tests", () => {
         (call) => call[0] === "generateSyncChangeSummary",
       );
       const handler = handlerCall[1];
-      const result = await handler({}, { localStorePath: "/invalid" });
+      const result = await handler({}, "/sd/card");
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Failed to read local store");
@@ -183,7 +183,6 @@ describe("Sync IPC Integration Tests", () => {
       const mockEvent = {};
       const mockSyncRequest = {
         sdCardPath: "/sd/card",
-        wipeSdCard: false,
       };
 
       const result = await handler(mockEvent, mockSyncRequest);
@@ -192,7 +191,6 @@ describe("Sync IPC Integration Tests", () => {
         {},
         {
           sdCardPath: "/sd/card",
-          wipeSdCard: false,
         },
       );
       expect(result.success).toBe(true);
@@ -215,37 +213,11 @@ describe("Sync IPC Integration Tests", () => {
         {},
         {
           sdCardPath: "/nonexistent",
-          wipeSdCard: false,
         },
       );
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("SD card not found");
-    });
-
-    it("should handle wipe SD card option", async () => {
-      registerSyncIpcHandlers({});
-
-      const handlerCall = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "startKitSync",
-      );
-      const handler = handlerCall[1];
-      const result = await handler(
-        {},
-        {
-          sdCardPath: "/sd/card",
-          wipeSdCard: true,
-        },
-      );
-
-      expect(mockSyncService.startKitSync).toHaveBeenCalledWith(
-        {},
-        {
-          sdCardPath: "/sd/card",
-          wipeSdCard: true,
-        },
-      );
-      expect(result.success).toBe(true);
     });
 
     it("should handle invalid sync request", async () => {
@@ -257,12 +229,7 @@ describe("Sync IPC Integration Tests", () => {
       const handler = handlerCall[1];
 
       // Test with missing sdCardPath: refused before the sync service runs
-      const result = await handler(
-        {},
-        {
-          wipeSdCard: false,
-        },
-      );
+      const result = await handler({}, {});
 
       expect(result.success).toBe(false);
       expect(mockSyncService.startKitSync).not.toHaveBeenCalled();
@@ -277,7 +244,7 @@ describe("Sync IPC Integration Tests", () => {
 
       const result = await handler(
         {},
-        { sdCardPath: "/Users/test/Library/LaunchAgents", wipeSdCard: true },
+        { sdCardPath: "/Users/test/Library/LaunchAgents" },
       );
 
       expect(result.success).toBe(false);
@@ -295,7 +262,7 @@ describe("Sync IPC Integration Tests", () => {
         (call) => call[0] === "generateSyncChangeSummary",
       )[1];
 
-      const settings = { localStorePath: "/local/store" };
+      const settings = "/sd/card";
       const summaryResult = await generateSummaryHandler({}, settings);
 
       expect(summaryResult.success).toBe(true);
@@ -308,7 +275,6 @@ describe("Sync IPC Integration Tests", () => {
 
       const syncRequest = {
         sdCardPath: "/sd/card",
-        wipeSdCard: false,
       };
 
       const syncResult = await startSyncHandler({}, syncRequest);
@@ -326,38 +292,6 @@ describe("Sync IPC Integration Tests", () => {
       );
     });
 
-    it("should handle workflow with wipe SD card enabled", async () => {
-      registerSyncIpcHandlers({});
-
-      const generateSummaryHandler = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "generateSyncChangeSummary",
-      )[1];
-      const startSyncHandler = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "startKitSync",
-      )[1];
-
-      // Generate summary
-      const settings = { localStorePath: "/local/store" };
-      await generateSummaryHandler({}, settings);
-
-      // Start sync with wipe enabled
-      const syncRequest = {
-        sdCardPath: "/sd/card",
-        wipeSdCard: true,
-      };
-
-      const syncResult = await startSyncHandler({}, syncRequest);
-      expect(syncResult.success).toBe(true);
-
-      expect(mockSyncService.startKitSync).toHaveBeenCalledWith(
-        {},
-        {
-          sdCardPath: "/sd/card",
-          wipeSdCard: true,
-        },
-      );
-    });
-
     it("should handle error propagation through IPC chain", async () => {
       // Mock a failure in generateChangeSummary
       mockSyncService.generateChangeSummary.mockResolvedValue({
@@ -371,10 +305,7 @@ describe("Sync IPC Integration Tests", () => {
         (call) => call[0] === "generateSyncChangeSummary",
       )[1];
 
-      const result = await generateSummaryHandler(
-        {},
-        { localStorePath: "/corrupt" },
-      );
+      const result = await generateSummaryHandler({}, "/sd/card");
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Local store corrupted");
@@ -389,7 +320,6 @@ describe("Sync IPC Integration Tests", () => {
         {},
         {
           sdCardPath: "/sd/card",
-          wipeSdCard: false,
         },
       );
 
@@ -411,7 +341,7 @@ describe("Sync IPC Integration Tests", () => {
       )[1];
 
       try {
-        await handler({}, { localStorePath: "/test" });
+        await handler({}, "/sd/card");
         expect.fail("Expected handler to throw an error");
       } catch (error) {
         expect(error).toBeInstanceOf(Error);
@@ -442,9 +372,9 @@ describe("Sync IPC Integration Tests", () => {
 
       // Simulate concurrent requests
       const promises = [
-        handler({}, { localStorePath: "/store1" }),
-        handler({}, { localStorePath: "/store2" }),
-        handler({}, { localStorePath: "/store3" }),
+        handler({}, "/sd/card"),
+        handler({}, "/sd/card"),
+        handler({}, "/sd/card"),
       ];
 
       const results = await Promise.all(promises);

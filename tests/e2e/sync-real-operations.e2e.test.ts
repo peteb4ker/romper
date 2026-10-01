@@ -178,9 +178,14 @@ test.describe("Sync Real Operations E2E Tests", () => {
       await expect(window.locator('[data-testid="kit-grid"]')).toBeVisible();
     });
 
-    test("should handle sync with existing files on SD card correctly", async () => {
-      // Pre-populate SD card with some existing kit folders
+    test("removes what the store no longer has from the card, and keeps the Rample's own files (RE-05)", async () => {
+      // A previously-written card: a sample and a kit the store no longer
+      // has, and the settings the Rample saved itself
       await createExistingFilesOnSdCard();
+      await fs.ensureDir(path.join(tempSdCardDir, "Z9"));
+      await fs.writeFile(path.join(tempSdCardDir, "Z9", "1-01 old.wav"), "x");
+      await fs.ensureDir(path.join(tempSdCardDir, "_save"));
+      await fs.writeFile(path.join(tempSdCardDir, "_save", "A0.rpl"), "x");
 
       await window.waitForSelector('[data-testid="kit-grid"]', {
         timeout: 10000,
@@ -203,6 +208,14 @@ test.describe("Sync Real Operations E2E Tests", () => {
       const sampleCountText = await totalSamples.textContent();
       expect(Number(sampleCountText)).toBe(4);
 
+      // The summary lists what will be removed
+      const removals = window.locator('[data-testid="card-removals"]');
+      await expect(removals).toContainText(
+        "2 items no longer in your library will be removed from the card",
+      );
+      await expect(removals).toContainText(path.join("A0", "SP-01-001.wav"));
+      await expect(removals).toContainText("Z9");
+
       // Confirm button should be enabled
       const confirmButton = window.locator('[data-testid="confirm-sync"]');
       await expect(confirmButton).toBeEnabled();
@@ -220,9 +233,18 @@ test.describe("Sync Real Operations E2E Tests", () => {
         "[E2E Sync Test] Sync with existing files completed successfully",
       );
 
-      // Verify the SD card still has content (wasn't wiped since we didn't check the wipe option)
-      const sdCardContents = await fs.readdir(tempSdCardDir);
-      expect(sdCardContents.length).toBeGreaterThan(0);
+      // The card now mirrors the store; the Rample's _save folder is kept
+      expect((await fs.readdir(tempSdCardDir)).sort()).toEqual([
+        "A0",
+        "B1",
+        "_save",
+      ]);
+      expect((await fs.readdir(path.join(tempSdCardDir, "A0"))).sort()).toEqual(
+        ["1-01 kick.wav", "2-01 snare.wav"],
+      );
+      expect(
+        await fs.pathExists(path.join(tempSdCardDir, "_save", "A0.rpl")),
+      ).toBe(true);
 
       // Close sync dialog
       const closeButton = window.locator('[data-testid="cancel-sync"]');

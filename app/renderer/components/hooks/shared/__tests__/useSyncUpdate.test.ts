@@ -172,13 +172,11 @@ describe("useSyncUpdate", () => {
       await act(async () => {
         success = await result.current.startSync({
           sdCardPath: "/path/to/sd",
-          wipeSdCard: false,
         });
       });
 
       expect(mockElectronAPI.startKitSync).toHaveBeenCalledWith({
         sdCardPath: "/path/to/sd",
-        wipeSdCard: false,
       });
       expect(success).toBe(true);
       expect(result.current.syncProgress?.status).toBe("completed");
@@ -218,7 +216,6 @@ describe("useSyncUpdate", () => {
       await act(async () => {
         await result.current.startSync({
           sdCardPath: "/path/to/sd",
-          wipeSdCard: false,
         });
       });
 

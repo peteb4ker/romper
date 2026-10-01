@@ -519,7 +519,7 @@ describe("preload/index.tsx", () => {
         method: "selectExistingLocalStore",
       },
       {
-        args: [],
+        args: ["/Volumes/RAMPLE"],
         ipcChannel: "generateSyncChangeSummary",
         method: "generateSyncChangeSummary",
       },
@@ -891,9 +891,10 @@ describe("preload/index.tsx", () => {
 
       mockElectron.ipcRenderer.invoke.mockResolvedValue("success");
 
-      await api.generateSyncChangeSummary();
+      await api.generateSyncChangeSummary("/Volumes/RAMPLE");
       expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
         "generateSyncChangeSummary",
+        "/Volumes/RAMPLE",
       );
 
       const syncData = { filesToConvert: [], filesToCopy: [] };

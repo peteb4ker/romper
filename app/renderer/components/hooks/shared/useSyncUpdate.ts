@@ -127,7 +127,6 @@ export function useSyncUpdate(
         const result = await electronAPI.startKitSync({
           sdCardPath: options.sdCardPath,
           skipInvalidFiles: options.skipInvalidFiles,
-          wipeSdCard: options.wipeSdCard,
         });
 
         if (!result.success) {

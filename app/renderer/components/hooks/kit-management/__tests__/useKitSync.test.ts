@@ -89,13 +89,11 @@ describe("useKitSync", () => {
       await act(async () => {
         await result.current.handleConfirmSync({
           sdCardPath: "/path/to/sd",
-          wipeSdCard: false,
         });
       });
 
       expect(mockStartSync).toHaveBeenCalledWith({
         sdCardPath: "/path/to/sd",
-        wipeSdCard: false,
       });
       // Dialog stays open so user sees "Write Complete" state
       expect(result.current.showSyncDialog).toBe(true);
@@ -117,13 +115,11 @@ describe("useKitSync", () => {
       await act(async () => {
         await result.current.handleConfirmSync({
           sdCardPath: "/path/to/sd",
-          wipeSdCard: false,
         });
       });
 
       expect(mockStartSync).toHaveBeenCalledWith({
         sdCardPath: "/path/to/sd",
-        wipeSdCard: false,
       });
     });
 
@@ -133,7 +129,6 @@ describe("useKitSync", () => {
       await act(async () => {
         await result.current.handleConfirmSync({
           sdCardPath: null,
-          wipeSdCard: false,
         });
       });
 
@@ -155,7 +150,6 @@ describe("useKitSync", () => {
       await act(async () => {
         await result.current.handleConfirmSync({
           sdCardPath: "/path/to/sd",
-          wipeSdCard: false,
         });
       });
 
@@ -177,7 +171,6 @@ describe("useKitSync", () => {
       await act(async () => {
         await result.current.handleConfirmSync({
           sdCardPath: "/path/to/sd",
-          wipeSdCard: false,
         });
       });
 
@@ -202,7 +195,6 @@ describe("useKitSync", () => {
       await act(async () => {
         await result.current.handleConfirmSync({
           sdCardPath: "/path/to/sd",
-          wipeSdCard: false,
         });
       });
 

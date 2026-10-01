@@ -795,7 +795,7 @@ describe("SampleService Integration Tests", () => {
 
       const result = sampleService.validateSampleFile(tinyPath);
       expect(result.isValid).toBe(false);
-      expect(result.error).toContain("File too small to be a valid WAV file");
+      expect(result.error).toContain("Not a WAV file");
     });
 
     it("should reject a file with wrong RIFF signature", () => {
@@ -806,7 +806,7 @@ describe("SampleService Integration Tests", () => {
 
       const result = sampleService.validateSampleFile(fakePath);
       expect(result.isValid).toBe(false);
-      expect(result.error).toContain("missing RIFF signature");
+      expect(result.error).toContain("Not a WAV file");
     });
 
     it("should reject a file with RIFF but missing WAVE format", () => {
@@ -819,7 +819,7 @@ describe("SampleService Integration Tests", () => {
 
       const result = sampleService.validateSampleFile(fakePath);
       expect(result.isValid).toBe(false);
-      expect(result.error).toContain("missing WAVE format identifier");
+      expect(result.error).toContain("Not a WAV file");
     });
   });
 

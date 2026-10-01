@@ -13,6 +13,10 @@ export interface AudioMetadata {
   bitDepth?: number;
   channels?: number;
   duration?: number;
+  /** Integer PCM or IEEE float samples */
+  encoding?: "float" | "pcm";
+  /** WAVE_FORMAT_EXTENSIBLE header (sync rewrites it as plain PCM) */
+  extensible?: boolean;
   fileSize?: number;
   sampleRate?: number;
 }
@@ -27,6 +31,7 @@ export interface FormatIssue {
   type:
     | "bitDepth"
     | "channels"
+    | "encoding"
     | "extension"
     | "fileAccess"
     | "invalidFormat"

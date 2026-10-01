@@ -150,36 +150,16 @@ describe("SyncFileOperationsService", () => {
       expect(mockConvertToRampleDefault).toHaveBeenCalled();
     });
 
-    it("should handle WAV format errors by copying instead", async () => {
+    it("never copies a file it failed to convert (RE-08)", async () => {
       mockConvertToRampleDefault.mockResolvedValue({
-        error: "Missing fmt chunk in WAV file",
+        error: "Unsupported WAV encoding (format 0x0002)",
         success: false,
       });
 
       await expect(
         syncFileOperationsService.executeFileOperation(fileOp, {}),
-      ).resolves.not.toThrow();
-
-      expect(mockFs.promises.copyFile).toHaveBeenCalledWith(
-        "/source/file.wav",
-        "/dest/file.wav",
-      );
-    });
-
-    it("should handle invalid WAV files by copying instead", async () => {
-      mockConvertToRampleDefault.mockResolvedValue({
-        error: "Invalid WAV file format",
-        success: false,
-      });
-
-      await expect(
-        syncFileOperationsService.executeFileOperation(fileOp, {}),
-      ).resolves.not.toThrow();
-
-      expect(mockFs.promises.copyFile).toHaveBeenCalledWith(
-        "/source/file.wav",
-        "/dest/file.wav",
-      );
+      ).rejects.toThrow("Failed to convert file.wav");
+      expect(mockFs.promises.copyFile).not.toHaveBeenCalled();
     });
 
     it("should throw error for non-WAV format errors", async () => {
@@ -191,18 +171,6 @@ describe("SyncFileOperationsService", () => {
       await expect(
         syncFileOperationsService.executeFileOperation(fileOp, {}),
       ).rejects.toThrow("Failed to convert file.wav: Unsupported file format");
-    });
-
-    it("should handle copy errors when falling back from WAV errors", async () => {
-      mockConvertToRampleDefault.mockResolvedValue({
-        error: "Missing fmt chunk in WAV file",
-        success: false,
-      });
-
-      // WAV format errors should fall back to copy, which should succeed
-      await expect(
-        syncFileOperationsService.executeFileOperation(fileOp, {}),
-      ).resolves.not.toThrow();
     });
   });
 
@@ -303,6 +271,86 @@ describe("SyncFileOperationsService", () => {
   });
 
   describe("categorizeSyncFileOperation", () => {
+    it("lists an unusable file as a sample that can't be written (RE-08)", () => {
+      vi.mocked(syncValidationService.validateSampleFormat).mockReturnValueOnce(
+        {
+          data: {
+            issues: [
+              {
+                message:
+                  "Unable to read audio file: Unsupported WAV encoding (format 0x0002)",
+                type: "fileAccess",
+              },
+            ],
+            isValid: false,
+          },
+          success: true,
+        },
+      );
+      const results = {
+        filesToConvert: [],
+        filesToCopy: [],
+        hasFormatWarnings: false,
+        validationErrors: [],
+        warnings: [],
+      };
+
+      syncFileOperationsService.categorizeSyncFileOperation(
+        { filename: "adpcm.wav", voice_number: 1 } as never,
+        "adpcm.wav",
+        "/src/adpcm.wav",
+        "/dest/1-01 adpcm.wav",
+        results,
+      );
+
+      expect(results.filesToConvert).toEqual([]);
+      expect(results.filesToCopy).toEqual([]);
+      expect(results.validationErrors).toEqual([
+        {
+          error:
+            "Unable to read audio file: Unsupported WAV encoding (format 0x0002)",
+          filename: "adpcm.wav",
+          sourcePath: "/src/adpcm.wav",
+          type: "invalid_format",
+        },
+      ]);
+    });
+
+    it("converts a readable file with format issues", () => {
+      vi.mocked(syncValidationService.validateSampleFormat).mockReturnValueOnce(
+        {
+          data: {
+            issues: [
+              {
+                message: "The file has an extended WAV header",
+                type: "encoding",
+              },
+            ],
+            isValid: false,
+          },
+          success: true,
+        },
+      );
+      const results = {
+        filesToConvert: [],
+        filesToCopy: [],
+        hasFormatWarnings: false,
+        validationErrors: [],
+        warnings: [],
+      };
+
+      syncFileOperationsService.categorizeSyncFileOperation(
+        { filename: "ext.wav", voice_number: 1 } as never,
+        "ext.wav",
+        "/src/ext.wav",
+        "/dest/1-01 ext.wav",
+        results,
+      );
+
+      expect(results.validationErrors).toEqual([]);
+      expect(results.filesToConvert).toHaveLength(1);
+    });
+
     it("should be a function", () => {
       expect(typeof syncFileOperationsService.categorizeSyncFileOperation).toBe(
         "function",

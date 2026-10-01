@@ -20,6 +20,23 @@ vi.mock("node:path", async (importOriginal) =>
   vi.mockObject(await importOriginal<typeof import("node:path")>()),
 );
 vi.mock("../audioUtils");
+// Header parsing has its own tests (wavHeader.test.ts); these cover conversion
+vi.mock("../wavHeader", () => ({
+  parseWavHeader: vi.fn(() => ({
+    data: {
+      bitDepth: 16,
+      blockAlign: 2,
+      channels: 1,
+      dataOffset: 44,
+      dataSize: 0,
+      encoding: "pcm",
+      extensible: false,
+      sampleRate: 44100,
+    },
+    success: true,
+  })),
+  toPlainWav: vi.fn((buffer: Buffer) => buffer),
+}));
 
 const mockFs = vi.mocked(fs);
 const mockWav = vi.mocked(wav);

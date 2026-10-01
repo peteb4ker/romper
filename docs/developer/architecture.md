@@ -185,6 +185,16 @@ its samples, and bank name files (`sdCardSafety.findStaleCardEntries`).
 The write summary lists the same entries first. Sync never touches the
 device's `_save/` folder or anything else on the card.
 
+WAV headers are read by walking RIFF chunks (`wavHeader.ts`, RE-08), so
+`fmt ` and `data` can sit anywhere: Squarp's factory kits have `junk`
+chunks, and other tools write `JUNK`, `bext` or `LIST` chunks and 18- or
+40-byte `fmt ` chunks. Metadata, conversion (which hands node-wav a plain
+copy of the header) and adding a sample all use it. A file that isn't
+uncompressed PCM or float is refused when added and listed in the write
+summary as a sample that can't be written; float files and
+WAVE_FORMAT_EXTENSIBLE headers are converted to plain 16-bit PCM. A file
+is never copied to the card unconverted when its conversion fails.
+
 Sync doesn't block the main process (RE-07): file I/O is asynchronous and
 `syncFileOperations.processAllFiles` yields to the event loop after every
 file, so progress events and `cancelKitSync` are handled while it runs.

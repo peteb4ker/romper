@@ -225,7 +225,7 @@ describe("audioUtils integration tests", () => {
       const result = getAudioMetadata(filePath);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("header too short");
+      expect(result.error).toContain("Not a WAV file");
     });
 
     it("should return error for file with invalid RIFF header", () => {
@@ -238,7 +238,7 @@ describe("audioUtils integration tests", () => {
       const result = getAudioMetadata(filePath);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("missing RIFF header");
+      expect(result.error).toContain("Not a WAV file");
     });
 
     it("should return error for RIFF file that is not WAVE", () => {
@@ -252,7 +252,7 @@ describe("audioUtils integration tests", () => {
       const result = getAudioMetadata(filePath);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("not WAVE format");
+      expect(result.error).toContain("Not a WAV file");
     });
 
     it("should return error for file without fmt chunk", () => {
@@ -267,10 +267,10 @@ describe("audioUtils integration tests", () => {
       const result = getAudioMetadata(filePath);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("missing fmt chunk");
+      expect(result.error).toContain("No fmt chunk");
     });
 
-    it("should return error for non-PCM audio format", () => {
+    it("reads IEEE float files (sync converts them)", () => {
       const filePath = path.join(TEST_DIR, "non-pcm.wav");
       const buffer = createRawWavHeader({
         audioFormat: 3, // IEEE Float
@@ -282,26 +282,26 @@ describe("audioUtils integration tests", () => {
 
       const result = getAudioMetadata(filePath);
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain(
-        "Only uncompressed PCM format is supported",
-      );
+      expect(result.success).toBe(true);
+      expect(result.data).toMatchObject({ bitDepth: 32, encoding: "float" });
     });
 
-    it("should return error for non-standard fmt chunk size", () => {
+    it("rejects an unknown encoding", () => {
       const filePath = path.join(TEST_DIR, "bad-fmt-size.wav");
       const buffer = Buffer.alloc(44);
       buffer.write("RIFF", 0);
       buffer.writeUInt32LE(36, 4);
       buffer.write("WAVE", 8);
       buffer.write("fmt ", 12);
-      buffer.writeUInt32LE(18, 16); // Not 16 (non-PCM size)
+      buffer.writeUInt32LE(18, 16); // format tag 0: not PCM or float
       fs.writeFileSync(filePath, buffer);
 
       const result = getAudioMetadata(filePath);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("Only PCM format is supported");
+      expect(result.error).toContain(
+        "Unsupported WAV encoding (format 0x0000)",
+      );
     });
   });
 

@@ -1,34 +1,13 @@
+import type {
+  FormatIssue,
+  FormatValidationResult,
+} from "@romper/shared/audioTypes";
+
 import { useCallback } from "react";
 
 // Extended File interface for Electron context where dropped files may have a path property
 interface ElectronFile extends File {
   path?: string;
-}
-
-// Local type definitions to avoid import issues
-interface FormatIssue {
-  current?: number | string;
-  message: string;
-  required?: number | readonly (number | string)[] | string;
-  type:
-    | "bitDepth"
-    | "channels"
-    | "extension"
-    | "fileAccess"
-    | "invalidFormat"
-    | "sampleRate";
-}
-
-interface FormatValidationResult {
-  issues: FormatIssue[];
-  isValid: boolean;
-  metadata?: {
-    bitDepth?: number;
-    channels?: number;
-    duration?: number;
-    fileSize?: number;
-    sampleRate?: number;
-  };
 }
 
 /**

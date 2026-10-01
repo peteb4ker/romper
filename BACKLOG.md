@@ -79,7 +79,7 @@ This file tracks what's being done about each item.
 | RE-56 | Medium | Dead code | About 942 LOC of unused main-process files (`stereoSyncProcessor`, `rampleNamingService`, `db/fileOperations`, `stepPatternUtils`, `sampleSlotService`, two utils) and about 1,100 LOC in the renderer (9 test-only modules, the unreachable `AboutView` route and `ValidationResultsDialog`). | partly done (#372 deletes `rampleNamingService` and `stereoSyncProcessor`) |
 | RE-57 | Medium | Contract | The bridge contract does not bind main. `SyncChangeSummary` does not match what main returns (the renderer casts it); `SyncProgress` is defined four times with different fields and status values; several return types differ from the contract (null versus undefined, `unknown`, an `"overwrite"` mode main rejects). | open |
 | RE-58 | Medium | Tooling | The pre-commit tests fail with Vitest worker-start timeouts when the machine is busy (load average above ~20, for example several sessions testing at once), because `vitest.config.fast.ts` always starts 10 workers. | open |
-| RE-66 | Medium | Setup | Cancel during setup quits mid-import on first run and leaves a half-built store that blocks a retry in the same folder. | open (plan: [`validation-fix-plan.md`](docs/developer/validation-fix-plan.md) item 4) |
+| RE-66 | Medium | Setup | Cancel during setup quits mid-import on first run and leaves a half-built store that blocks a retry in the same folder. | partly done (#408: quitting cleans up an unfinished setup; next: real cancel, [`validation-fix-plan.md`](docs/developer/validation-fix-plan.md) item 4 step 2) |
 
 ## Done
 

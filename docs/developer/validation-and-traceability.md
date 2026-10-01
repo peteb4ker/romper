@@ -390,6 +390,8 @@ behaviour checks, and RE-51 makes tests type-check.
   empty override, a warning logged for a normal voice-inference outcome, and
   `scripts/capture-screenshots.ts` still using the installed app's settings.
 
+Fixes for these, in order: [`validation-fix-plan.md`](validation-fix-plan.md).
+
 ## Decisions (Pete, 2026-10-01)
 
 1. **Stereo file on an unlinked voice**: convert to mono when writing to the

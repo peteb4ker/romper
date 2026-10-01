@@ -1,7 +1,7 @@
 <!-- 
 title: 🎛️ Rample Sample Manager
 owners: maintainer
-last_reviewed: 2025-08-15
+last_reviewed: 2026-10-01
 tags: documentation
 -->
 
@@ -24,7 +24,6 @@ The **Squarp Rample** is a powerful 4-voice sampler in Eurorack format that read
 - **Audio preview** with built-in playback and step sequencer
 - **Safe sample management** that never modifies your original files
 - **Kit editing tools** with drag-and-drop sample assignment
-- **Batch operations** for organizing large sample libraries
 - **Format validation** to ensure compatibility with your Rample hardware
 
 Built with modern web technologies (**Electron**, **React**, **TypeScript**, **Drizzle ORM**), Romper brings the convenience of modern music software to hardware sample management.
@@ -33,7 +32,7 @@ Built with modern web technologies (**Electron**, **React**, **TypeScript**, **D
 
 ### 🎵 **Intuitive Kit Management**
 - Visual browser for all your Rample sample kits with rich metadata
-- Organize kits by banks (A-Z) and slots (00-99) matching your hardware
+- Organize kits by banks (A-Z) and slots (0-99) matching your hardware
 - Quick search and filtering to find the perfect kit instantly
 - Favorites system to bookmark your most-used kits
 
@@ -46,13 +45,12 @@ Built with modern web technologies (**Electron**, **React**, **TypeScript**, **D
 ### ✏️ **Powerful Kit Editing**
 - Drag-and-drop sample assignment to kit slots
 - **Undo/redo support** for safe experimentation
-- Bulk operations for organizing large sample collections
-- Smart sample validation and format conversion
+- Format checks when you add a sample, and conversion to a format the Rample plays when you write the card
 
 ### 📁 **Reference-Only Architecture**
 - **Never modifies your original samples** - works with references only
 - Safe to use with existing sample libraries and workflows
-- Supports both local sample libraries and direct SD card management
+- Start from an existing Rample SD card, Squarp's factory samples, or an empty folder
 - Your library is the master copy: sync rewrites the card to match it, and never touches the Rample's own saved settings
 
 ### 💾 **Hardware Integration**
@@ -64,8 +62,7 @@ Built with modern web technologies (**Electron**, **React**, **TypeScript**, **D
 ### 🎛️ **Professional Workflow**
 - **Dark/Light theme** support for any studio environment
 - Keyboard shortcuts for power users
-- **Import official Squarp factory samples** automatically
-- Export and share kit configurations with other users
+- **Set up from the official Squarp factory samples**, downloaded and checked during setup
 
 ## 👥 Who is Romper for?
 
@@ -86,7 +83,6 @@ Built with modern web technologies (**Electron**, **React**, **TypeScript**, **D
 
 ### 🔧 **Sample Library Curators**
 - Manage large collections of samples from various sources
-- Create themed sample packs for sharing with the community
 - Quality control and format validation for professional sample distribution
 
 ## 📥 Installation & Quick Start
@@ -94,30 +90,35 @@ Built with modern web technologies (**Electron**, **React**, **TypeScript**, **D
 ### Download & Install
 
 1. **Download** the latest release for your operating system:
-   - **Windows**: `Romper-Setup-x.x.x.exe`
-   - **macOS**: `Romper-x.x.x.dmg` 
-   - **Linux**: `Romper-x.x.x.AppImage`
+   - **Windows** (x64): `Romper-x.x.x.Setup.exe`
+   - **macOS** (Apple silicon): `Romper.dmg`, or `Romper-darwin-arm64-x.x.x.zip`
+   - **Linux** (x64): `romper_x.x.x_amd64.deb`, `romper-x.x.x-1.x86_64.rpm`, or `Romper-linux-x64-x.x.x.zip`
+
+   There's no build for Intel Macs or for ARM Windows and Linux yet. On macOS,
+   Romper checks for updates at launch and then weekly; on Windows and Linux,
+   download new releases yourself.
 
 2. **Install** and launch Romper
 
-3. **Connect your Rample SD card** or **choose a local folder** to get started
+3. The setup wizard asks where your library should start from and where to
+   keep it (the **local store**, a folder on your computer)
 
 ### First Time Setup
 
 **🎛️ If you have an existing Rample SD card:**
-- Insert your SD card and select it in Romper
-- Your existing kits and samples will be automatically detected
+- Insert your SD card and choose **Rample SD Card** in the wizard
+- Romper copies the card's kit folders (`A0` to `Z99`) into the local store and imports them
 - Start browsing, editing, and organizing immediately
 
 **📁 Starting fresh:**
-- Create a new folder for your sample library
-- Download official Squarp factory samples (optional)
-- Import your own samples and begin creating kits
+- Choose **Blank Folder** to create an empty local store
+- Create kits and drag your own samples into them
 
 **🏭 Using factory samples:**
-- Romper can automatically download official Squarp sample packs
+- Choose **Squarp.net Factory Samples**: Romper downloads Squarp's sample archive (about 313 MiB), checks it against a known SHA-256, and imports it
 - Perfect starting point for new Rample users
 - Provides professionally organized examples to learn from
+- The wizard runs only when no local store is set up, so choose this when you first set up Romper
 
 ## 🏗️ Project Structure
 
@@ -126,7 +127,7 @@ romper/
   app/renderer/    # React UI (components, hooks, styles)
   electron/        # Electron main process and preload
   shared/          # Types and Drizzle schema shared by main and renderer
-  tests/           # Integration and end-to-end tests
+  tests/           # Integration, end-to-end and validation tests; shared mocks and fixtures
   docs/            # Website, user manual, developer docs
 ```
 
@@ -152,16 +153,16 @@ romper/
 
 Romper can be configured using environment variables for advanced use cases:
 
-- **`ROMPER_SDCARD_PATH`** - Default SD card directory path
-- **`ROMPER_LOCAL_PATH`** - Default local sample library path  
-- **`ROMPER_SQUARP_ARCHIVE_URL`** - Custom factory samples archive URL
+- **`ROMPER_SDCARD_PATH`** - SD card folder, used instead of the saved one
+- **`ROMPER_LOCAL_PATH`** - Local store folder, used instead of the saved one (while it's set, changing the local store in the app has no effect)
+- **`ROMPER_SQUARP_ARCHIVE_URL`** - Factory samples archive to use instead of Squarp's (`https://` or `file://`; only Squarp's own archive is checked against its SHA-256)
 - **`ROMPER_ENABLE_DEVTOOLS`** - Set to `1` to expose Reload / Toggle Developer Tools in the View menu of a packaged build (off by default; intended for diagnosing issues in installed releases)
 
 ## 🛠️ Development
 
 ### Prerequisites
 
-- **Node.js** 22 with npm
+- **Node.js** 22.12 or later, with npm (`.nvmrc` pins 22, and CI uses it)
 - **Git** for version control  
 - **Squarp Rample** (optional, for testing with real hardware)
 
@@ -193,4 +194,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 ## 📄 License & Privacy
 
 - **License:** [MIT License](LICENSE) — feel free to fork and contribute!
-- **Privacy:** [Privacy Policy](PRIVACY.md) — We collect NO user data
+- **Privacy:** [Privacy Policy](PRIVACY.md) — We collect NO user data. Romper goes online only to download the factory samples when you ask, and on macOS to check for updates

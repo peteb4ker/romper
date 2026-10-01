@@ -10,7 +10,7 @@ Romper is a desktop application for managing sample kits on the [Squarp Rample](
 
 ## What Romper Does
 
-The Squarp Rample reads sample kits from an SD card organized in a strict folder structure: 26 banks (A through Z), up to 100 kit slots per bank (00 through 99), and 4 voices per kit with up to 12 sample layers each. Romper automates the folder structure, naming, and organization so you can focus on choosing the right samples.
+The Squarp Rample reads sample kits from an SD card organized in a strict folder structure: 26 banks (A through Z), up to 100 kit slots per bank (0 through 99), and 4 voices per kit with up to 12 sample layers each. Romper automates the folder structure, naming, and organization so you can focus on choosing the right samples.
 
 Romper manages that complexity for you:
 
@@ -40,7 +40,7 @@ Romper never modifies your original sample files. When you assign a sample to a 
 
 ### Local Store
 
-Romper keeps its database and metadata in a local store directory (a `.romperdb` folder). This is where kit configurations, favorites, and sequencer patterns are saved. The local store is separate from your SD card -- think of it as your working copy.
+Romper keeps its database in a `.romperdb` folder inside a local store directory, next to the kit folders it imported during setup. This is where kit configurations, favorites, and sequencer patterns are saved. The local store is separate from your SD card. It's the master copy of your library: Romper writes the card from it.
 
 ## Manual Contents
 

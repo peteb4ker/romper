@@ -45,13 +45,12 @@ If Romper cannot see your SD card when syncing:
 When Romper imports from an SD card but finds no kits, the folder structure may not match what the Rample expects.
 
 The Rample uses this naming convention:
-- Bank folders are single letters: `A`, `B`, `C`, ... `Z`
-- Kit folders within a bank are numbered: `A/0`, `A/1`, ... `A/99`
-- Voice sample files within a kit follow specific naming patterns
+- Kit folders sit at the root of the card, named with a bank letter and a number from 0 to 99: `A0`, `A1`, ... `Z99`
+- The WAV files sit directly in the kit folder, and each file name starts with its voice number (1 to 4), for example `1 KICK.wav`
 
-If your SD card has a different structure (e.g., folders named `Bank_A` or `Kit_01`), Romper will not recognize them. Check the [Rample manual](https://squarp.net/rample/manual/) for the exact folder structure specification.
+Romper imports only folders named like this and ignores everything else on the card. If your SD card has a different structure (e.g., folders named `Bank_A` or `Kit_01`), Romper will not recognize them. Check the [Rample manual](https://squarp.net/rample/manual/) for the exact folder structure specification.
 
-**Quick fix**: Start fresh by choosing "Factory Samples" or "Empty Library" in the Romper setup wizard, then rebuild your kits from within Romper.
+**Quick fix**: Start fresh by choosing **Squarp.net Factory Samples** or **Blank Folder** in the Romper setup wizard, then rebuild your kits from within Romper.
 
 ---
 
@@ -59,10 +58,11 @@ If your SD card has a different structure (e.g., folders named `Bank_A` or `Kit_
 
 Downloading the Rample factory samples requires an internet connection. If the download fails:
 
-- **Check your connection** -- Ensure you have a stable internet connection. The factory sample set is approximately 1 GB.
+- **Check your connection** -- Ensure you have a stable internet connection. The factory sample archive is about 313 MiB.
 - **Firewall or proxy** -- If you are behind a corporate firewall or proxy, the download may be blocked. Try from a different network.
-- **Retry** -- Romper will offer to retry the download. Partial downloads are resumed automatically where possible.
-- **Skip for now** -- You can skip the factory download during setup and start with an empty library. You can always import factory samples later.
+- **Retry** -- Romper makes up to 3 attempts, each downloading the whole archive again. If all of them fail, click **Initialize Local Store** to try again.
+- **Archive changed** -- Romper checks that the download is the exact archive it expects. If Squarp changes the file on its server, every attempt fails. Update Romper, or set up from an SD card instead.
+- **Use another source** -- You can set up from an SD card or a blank folder instead. Romper can only download the factory samples during first-time setup, so you can't add them to a library later.
 
 ---
 
@@ -70,11 +70,11 @@ Downloading the Rample factory samples requires an internet connection. If the d
 
 Romper needs space for its local store and for syncing to the SD card.
 
-- **Local store**: Requires a few MB for the database, plus space for any cached data.
+- **Local store**: The database takes a few MB. Kits imported during setup, from an SD card or the factory archive, are copied into the local store, so it also needs room for their WAV files.
 - **SD card sync**: The SD card needs enough free space for all the WAV files in your configured kits. Check the card's capacity -- standard Rample SD cards are typically 4 GB or larger.
-- **Factory samples**: If downloading factory samples, ensure you have approximately 1 GB of free disk space on the drive where your local store is located.
+- **Factory samples**: Setup checks for at least 1 GB of free disk space on the drive where your local store will be, and 500 MB for an SD card import.
 
-**To free up space on the SD card**: Remove unused kits from banks you are not using. Romper's kit browser makes it easy to see which slots are occupied.
+**To free up space on the SD card**: Delete kits you don't use in Romper's kit browser (a kit must be editable to delete it). The next write removes them from the card.
 
 ---
 
@@ -92,10 +92,11 @@ If samples do not produce sound when you click play or use the step sequencer:
 
 ## Local store became invalid
 
-If Romper reports that your local store is invalid or corrupted:
+If your local store is missing or invalid when Romper starts (for example, you moved or deleted the folder, or it's on a drive that isn't connected), Romper forgets it and opens the setup wizard:
 
-- **Re-run the setup wizard** -- Romper will prompt you to set up a new local store. You can point it to the same directory, and Romper will attempt to recover existing data.
-- **Choose a new directory** -- If recovery fails, choose a fresh directory for your local store and reimport your kits from your SD card.
+- **Use the same store** -- Put the folder back or connect the drive, then click **Choose Existing Store** and choose the folder that contains `.romperdb`. The setup steps themselves won't use a folder that already holds a local store.
+- **Choose a new directory** -- If the store is lost, set up a fresh local store and reimport your kits from your SD card.
+- **Invalid Local Store dialog** -- If this dialog appears while Romper is running, click **Choose New Local Store Directory**, pick a folder that holds a local store, and click **Use This Directory**. Otherwise click **Exit App**.
 - **Check disk health** -- Corrupted stores can indicate disk issues. Run your operating system's disk checking utility.
 - **Backup consideration** -- The local store is the master copy of your library; the SD card is a copy Romper writes from it. Include the local store folder in your own backups. Without it, importing your SD card brings the kits and audio back, but not Romper's own data: kit and voice names, sequencer patterns, and where each sample came from.
 
@@ -107,8 +108,10 @@ If something is misbehaving and you want to capture diagnostic output for a bug 
 
 **macOS** (terminal):
 
+Quit Romper first, then run:
+
 ```sh
-ROMPER_ENABLE_DEVTOOLS=1 open -a Romper
+ROMPER_ENABLE_DEVTOOLS=1 /Applications/Romper.app/Contents/MacOS/romper
 ```
 
 **Linux** (terminal):
@@ -120,7 +123,7 @@ ROMPER_ENABLE_DEVTOOLS=1 romper
 **Windows** (PowerShell):
 
 ```powershell
-$env:ROMPER_ENABLE_DEVTOOLS = "1"; & "$env:LOCALAPPDATA\Programs\Romper\Romper.exe"
+$env:ROMPER_ENABLE_DEVTOOLS = "1"; & "$env:LOCALAPPDATA\Romper\romper.exe"
 ```
 
 Once the app is running with the variable set, the View menu gains a separator followed by the standard DevTools entries. The default shortcut is `Cmd+Option+I` on macOS and `Ctrl+Shift+I` on Windows / Linux. Use the **Console** tab for renderer errors and the **Network** tab to see whether assets failed to load.

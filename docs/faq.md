@@ -20,9 +20,9 @@ When you edit your SD card directly, you're working with the raw folder structur
 
 Romper gives you a visual interface on top of that process with several key advantages:
 
-- **Non-destructive editing** -- Romper stores references to your samples rather than moving the files themselves. Your original sample library stays untouched until you explicitly sync.
-- **Full undo/redo support** -- Every sample assignment, removal, and rearrangement can be undone. Try different kit arrangements without worrying about losing your work.
-- **Validation before sync** -- Romper checks your kits for issues (missing files, format problems, naming conflicts) before writing anything to the SD card.
+- **Non-destructive editing** -- Romper stores references to your samples rather than moving the files themselves. Your original sample files are never changed; sync copies them to the card.
+- **Undo/redo support** -- Adding, removing and moving samples in the kit you're editing can be undone. Try different kit arrangements without worrying about losing your work.
+- **Validation before sync** -- Romper checks your kits for issues (missing files and unsupported formats) before writing anything to the SD card.
 - **Your library is the master copy** -- Sync rewrites the card to match your library, so the card can always be rebuilt from it. Include your local store folder in your own backups; Romper doesn't back up the card.
 
 Think of Romper as a working copy for your Rample kits. You experiment freely, then commit the results to the SD card when you're ready.
@@ -51,14 +51,16 @@ Your sample files are only copied during an explicit sync operation, and only to
 
 ## Can I undo changes?
 
-**Yes.** Romper provides full undo and redo for all sample operations:
+**Yes, in the kit you're editing.** Romper can undo and redo:
 
 - Assigning a sample to a voice slot
 - Removing a sample from a voice slot
-- Reordering sample layers
-- Clearing a voice or kit
+- Moving sample layers within the kit
+- Step sequencer edits: steps, trigger conditions, slices and rolls
 
-Use the standard keyboard shortcuts (**Cmd+Z** / **Ctrl+Z** to undo, **Cmd+Shift+Z** / **Ctrl+Shift+Z** to redo) or the Edit menu. Undo history is maintained for the duration of your session.
+Sample changes undo only while the kit is editable; sequencer edits undo in read-only kits too. Use the standard keyboard shortcuts (**Cmd+Z** / **Ctrl+Z** to undo, **Cmd+Shift+Z** / **Ctrl+Shift+Z** to redo, or **Ctrl+Y** on Windows and Linux) or the Edit menu. The undo history is cleared when you open another kit or go back to the Kit Browser.
+
+Other changes can't be undone, including sample gain, kit and voice names, stereo links, the editable switch, and creating, duplicating or deleting kits.
 
 ---
 
@@ -67,7 +69,7 @@ Use the standard keyboard shortcuts (**Cmd+Z** / **Ctrl+Z** to undo, **Cmd+Shift
 Romper works with the standard Rample SD card folder structure:
 
 - **26 banks** labeled A through Z
-- **Up to 100 kit slots** per bank (00 through 99)
+- **Up to 100 kit slots** per bank (0 through 99)
 - **4 voices per kit** with up to 12 sample layers each
 - Standard FAT32-formatted SD cards (the same format the Rample expects)
 
@@ -79,12 +81,12 @@ If your SD card is already set up for the Rample, Romper will recognize it. You 
 
 Disk space depends on how many samples you work with:
 
-- **Romper application** -- Approximately 200 MB installed
-- **Factory samples** -- Approximately 1 GB if you choose to download the Rample factory sample set during setup
-- **Local store** -- The Romper database and metadata are small (a few MB). The bulk of space goes to your sample files.
+- **Romper application** -- About 130 to 180 MB to download, depending on your platform (about 470 MB once installed on macOS)
+- **Factory samples** -- About 313 MiB to download if you choose the Rample factory sample set during setup; setup checks for 1 GB of free space
+- **Local store** -- The Romper database and metadata are small (a few MB). Kits imported during setup, from an SD card or the factory archive, are copied into the local store, so the bulk of space goes to their sample files.
 - **Your sample library** -- Varies based on your collection. WAV files range from a few KB (short one-shots) to tens of MB (long stereo recordings).
 
-Romper references your existing sample files in place, so it does not duplicate your sample library. The only copies made are to the SD card during sync.
+Samples you add to kits are referenced in place, so Romper does not duplicate your sample library. Apart from the kits imported during setup, the only copies made are to the SD card during sync.
 
 ---
 

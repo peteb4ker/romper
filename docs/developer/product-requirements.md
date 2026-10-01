@@ -14,6 +14,14 @@ Kits are editable, enabling users to create new kits or modify existing kits bef
 
 This software is open source and not developed or endorsed by Squarp.
 
+> **Status notes (2026-10-01).** This document mixes requirements with
+> descriptions of the app. Where it describes something as current
+> behaviour that isn't built, or that the code does differently, a note in
+> italics says so: _Status (2026-10-01): not built_, or _Built differently
+> (2026-10-01): ..._. The requirements themselves stay. The status of every
+> use case is in [`use-cases.md`](use-cases.md); open defects are in
+> [`BACKLOG.md`](../../BACKLOG.md).
+
 ## 1.1 Problem Statement
 
 Managing samples for the Squarp Rample currently requires manual file management using a basic file browser. Users must:
@@ -59,15 +67,15 @@ The three main user journeys are:
 
 #### Setup Edge Cases & Recovery
 
-- **Corrupted SD card**: Auto-detect corruption, offer factory samples as fallback
-- **Network failure during download**: Resume download, offer retry with exponential backoff
+- **Corrupted SD card**: Auto-detect corruption, offer factory samples as fallback _Status (2026-10-01): not built. The wizard only checks that the card has kit folders (`A0` to `Z99`)._
+- **Network failure during download**: Resume download, offer retry with exponential backoff _Built differently (2026-10-01): the wizard tries the whole download up to three times, 2 and 4 seconds apart; a partial download isn't resumed._
 - **Settings file collision**: Use romper-specific settings filename to avoid conflicts with other Electron apps
 - **Lost/corrupt settings**: Provide "Choose Existing Local Store" option when user already has a local store but settings are missing
-- **Existing local store recovery**: Allow user to browse and select existing `.romperdb` directory when settings are lost
+- **Existing local store recovery**: Allow user to browse and select existing `.romperdb` directory when settings are lost _Built differently (2026-10-01): the picker wants the folder that contains `.romperdb`, not `.romperdb` itself (UC-04)._
 - **Insufficient space**: Calculate space needed, guide user to free space or choose different location
 - **Permission denied**: Guide user to fix permissions or choose accessible location
-- **Partial previous installation**: Detect existing state, offer to clean up or resume
-- **Invalid SD card structure**: Show expected vs actual structure, offer to initialize anyway
+- **Partial previous installation**: Detect existing state, offer to clean up or resume _Built differently (2026-10-01): the wizard refuses a folder that already holds a store, and an unfinished setup is deleted when Romper quits (RE-66). Nothing resumes._
+- **Invalid SD card structure**: Show expected vs actual structure, offer to initialize anyway _Built differently (2026-10-01): the wizard lists what it found and the expected kit folder names, and won't continue._
 
 ### Kit Creation and Management Journey
 
@@ -83,12 +91,12 @@ The three main user journeys are:
 #### Typical Kit Creation Workflows
 
 1. **From scratch**: Create new kit → Add samples one by one → Preview → Assign to bank/slot
-2. **From existing kit**: Duplicate kit → Replace some samples → Preview changes → Save
-3. **Bulk creation**: Drop multiple samples → Auto-assign to voices → Batch preview → Organize
+2. **From existing kit**: Duplicate kit → Replace some samples → Preview changes → Save _Replacing a sample isn't built (UC-20); changes save as they're made._
+3. **Bulk creation**: Drop multiple samples → Auto-assign to voices → Batch preview → Organize _Built differently (2026-10-01): files dropped on a voice fill that voice's free slots; nothing assigns files across voices._
 
 #### Common Mistakes & Solutions
 
-- **Wrong file format**: Clear format requirements, auto-conversion offers
+- **Wrong file format**: Clear format requirements, auto-conversion offers _Built differently (2026-10-01): any uncompressed PCM or float WAV is accepted and converted automatically when the card is written; other files are refused, with the reason only in the console (UC-19, RE-40)._
 - **Overfilling voices**: Clear slot limits, visual indicators for full voices
 - **Forgetting to save**: Auto-save with clear state indicators
 - **Losing editable state**: Clear visual indicators, easy toggle controls
@@ -97,9 +105,9 @@ The three main user journeys are:
 #### Iteration Patterns
 
 - **Rapid prototyping**: Quick sample swapping with immediate preview
-- **A/B testing**: Duplicate kit, modify, compare side-by-side
+- **A/B testing**: Duplicate kit, modify, compare side-by-side _Side-by-side comparison: not built (status 2026-10-01)._
 - **Progressive refinement**: Start with rough samples, gradually replace with better ones
-- **Batch operations**: Select multiple kits, apply changes to all
+- **Batch operations**: Select multiple kits, apply changes to all _Status (2026-10-01): not built._
 
 ### Sync to Hardware Journey
 
@@ -113,7 +121,12 @@ The three main user journeys are:
 - **Key Steps**: Select kits → Resolve conflicts → Batch sync → Verify on hardware
 - **Success Criteria**: User can sync multiple kits reliably without data loss
 
-#### Sync Scenarios (NOTE: only Full Sync is initially implemented)
+#### Sync Scenarios
+
+_Built differently (2026-10-01): there is one write. It plans every kit,
+writes every sample, then deletes the Rample content the store no longer
+has, so the card mirrors the store ([`sd-card-layout.md`](sd-card-layout.md)).
+There's no kit selection, no incremental write and no card wipe._
 
 1. **Single kit sync**: Select kit → Check for issues → Sync → Verify
 2. **Batch sync**: Select multiple kits → Resolve conflicts → Sync all → Progress tracking
@@ -127,6 +140,11 @@ The three main user journeys are:
 - **Format issues**: Show conversion details, confirm before proceeding
 - **Space constraints**: Show space needed vs available, help prioritize kits
 
+_Status (2026-10-01): slot conflicts can't arise (kits are named by their
+slot), and space isn't checked before a write. Missing or unreadable
+samples are listed in the write summary and can be skipped, but not
+located. Conversions are listed in the summary before the user confirms._
+
 #### Batch Operations
 
 - **Select all**: Quick selection of all kits for sync
@@ -134,12 +152,16 @@ The three main user journeys are:
 - **Smart selection**: Auto-select kits that have changed since last sync
 - **Progress tracking**: Real-time progress with ability to pause/resume
 
+_Status (2026-10-01): not built, apart from progress tracking. A write
+covers every kit; it shows progress and can be cancelled between files,
+but not paused or resumed._
+
 #### Verification & Recovery
 
-- **Sync verification**: Check that files were written correctly
-- **Rollback capability**: Restore previous SD card state if sync fails
-- **Partial sync recovery**: Resume interrupted sync from last successful kit
-- **Hardware verification**: Guide user to test kits on actual Rample hardware
+- **Sync verification**: Check that files were written correctly _Status (2026-10-01): not built. Nothing reads the card back._
+- **Rollback capability**: Restore previous SD card state if sync fails _Status (2026-10-01): not built. There's no backup; the local store is the master copy (RE-20)._
+- **Partial sync recovery**: Resume interrupted sync from last successful kit _Built differently (2026-10-01): a cancelled or failed write keeps the files written so far and deletes nothing; the next write rewrites everything._
+- **Hardware verification**: Guide user to test kits on actual Rample hardware _Status (2026-10-01): not built._
 
 ### Common Workflow Patterns
 
@@ -154,7 +176,7 @@ The three main user journeys are:
 #### Power User Flow
 
 1. **Kit Creation**: Rapid prototyping with keyboard shortcuts → Batch preview → Organize
-2. **Tag and organize**: Copy kits → Tag kits → Easily find kits
+2. **Tag and organize**: Copy kits → Tag kits → Easily find kits _Tags aren't built (status 2026-10-01); kits can be favourited._
 
 ## 2. Goals
 
@@ -199,7 +221,7 @@ The three main user journeys are:
   - _Acceptance Criteria_: Can create new empty kit, duplicate existing kit, modify samples without affecting original, save changes with clear state indicators
 
 - **As a Rample owner, I want to add, replace, or remove samples in a kit and see the changes before saving, so I can experiment without risk.**
-  - _Acceptance Criteria_: All changes show in preview mode, can undo/redo any action, clear visual distinction between original and modified state, can abandon changes without saving
+  - _Acceptance Criteria_: All changes show in preview mode, can undo/redo any action, clear visual distinction between original and modified state, can abandon changes without saving _Built differently (2026-10-01): changes save as they're made, so there's nothing to abandon; undo covers sample adds, deletes and moves and sequencer edits (UC-26); kits changed since the last write get an amber border._
 
 - **As a Rample owner, I want to move samples within a kit to reorganize them efficiently, so I can perfect my sample arrangement.**
   - _Acceptance Criteria_: Can drag samples between slots and voices within a kit, samples maintain contiguity (no gaps), clear visual feedback for insert vs append operations, supports undo for complex multi-sample moves, 12-sample limit per voice enforced
@@ -209,12 +231,12 @@ The three main user journeys are:
 
 - As a Rample owner, I want to drag and drop multiple samples into a kit and have them automatically assigned to available slots, so I can quickly build kits.
 - As a Rample owner, I want to undo or redo changes to my kit, so I can easily correct mistakes.
-- As a Rample owner, I want to lock kits to prevent accidental overwriting so my work is protected.
+- As a Rample owner, I want to lock kits to prevent accidental overwriting so my work is protected. _Status (2026-10-01): not built. `kits.locked` exists, but nothing in the UI sets it (UC-17)._
 
 ### Preview and Audition User Stories
 
 - **As a Rample owner, I want to preview individual samples and entire kits so I can audition sounds before syncing.**
-  - _Acceptance Criteria_: Can click any sample to hear it immediately, can play entire kit using sequencer, audio matches what will play on hardware, global volume control works
+  - _Acceptance Criteria_: Can click any sample to hear it immediately, can play entire kit using sequencer, audio matches what will play on hardware, global volume control works _Global volume control: not built (status 2026-10-01)._
 
 - **As a Rample owner, I want to program a step sequence for a kit so I can preview how the kit sounds in a musical context.**
   - _Acceptance Criteria_: Can toggle steps on/off with mouse and keyboard, pattern plays back accurately, can start/stop playback, pattern saves automatically with kit
@@ -223,13 +245,13 @@ The three main user journeys are:
   - _Acceptance Criteria_: Waveform displays immediately when sample is loaded, shows accurate representation of audio content, updates when sample is replaced
 
 - As a Rample owner, I want to preview how my kit will sound before updating the SD card, so I can be sure how the kit will sound before I move the kit to the SD card and play on hardware.
-- As a Rample owner, I want to control the application volume so I can audition samples at comfortable levels.
+- As a Rample owner, I want to control the application volume so I can audition samples at comfortable levels. _Status (2026-10-01): not built._
 - As a Rample owner, I want to use both mouse and keyboard to toggle steps and navigate the grid for fast editing.
 - As a Rample owner, I want my test pattern to be saved with the kit so I can return to it later.
 
 ### Organization and Metadata User Stories
 
-- As a Rample owner, I want to tag and favorite samples and kits so I can organize and find them easily.
+- As a Rample owner, I want to tag and favorite samples and kits so I can organize and find them easily. _Status (2026-10-01): kits can be favourited; tags, and favourite samples, aren't built._
 - As a Rample owner, I want persistent metadata storage so I can quickly understand all of my kits using a rich UI, instead of depending on the limited UI on the romper or mounting the SD card to use a file browser.
 - As a Rample owner, I want persistent metadata storage so my kit plans and tags are always saved.
 
@@ -267,7 +289,7 @@ The three main user journeys are:
 - As an admin user, I want to see the current local store directory so I know where my kits and samples are managed
 - As an admin user, I want to change the local store directory to a new valid location so I can manage a different set of kits
 - As an admin user, I want to be warned if the selected directory is not a valid Romper local store (missing .romperdb folder)
-- As an admin user, I want clear instructions to restart the app after changing the local store directory so the new location is used
+- As an admin user, I want clear instructions to restart the app after changing the local store directory so the new location is used _Built differently (2026-10-01): the change applies at once, without a restart (UC-06)._
 
 ## 4. Functional Requirements
 
@@ -278,11 +300,11 @@ The three main user journeys are:
 **Core Kit Operations**
 
 - Create, duplicate, and delete kits locally without SD card present
-- Add, replace, and remove samples in kit slots via drag-and-drop from OS file explorer
+- Add, replace, and remove samples in kit slots via drag-and-drop from OS file explorer _Replace: not built (status 2026-10-01, UC-20)._
 - Move samples within kit using drag-and-drop with automatic contiguity maintenance
 - Support for 4 voices per kit, each with up to 12 sample slots
 - Enable/disable editable mode for safe kit experimentation
-- Provide undo/redo functionality for all kit editing actions, including complex multi-sample moves
+- Provide undo/redo functionality for all kit editing actions, including complex multi-sample moves _Status (2026-10-01): partial; gain, alias, the editable switch, voice names, stereo links and kit create, duplicate and delete aren't undoable (UC-26)._
 
 **Sample Contiguity System**
 
@@ -294,7 +316,7 @@ The three main user journeys are:
 **Insert-Only Drag & Drop System**
 
 - All sample operations use insert-only behavior - samples are never overwritten or replaced during drag/drop
-- Dropping sample A onto sample B inserts A before B, shifting B and subsequent samples down
+- Dropping sample A onto sample B inserts A before B, shifting B and subsequent samples down _Built differently (2026-10-01): this holds for moving a sample within a kit; a file dropped from outside is added to the voice's next free slot (UC-19)._
 - Only one empty slot is shown at the end of each voice for new sample drops
 - External file drops are blocked when voice has 12 samples (visual feedback shows "blocked" state)
 - Internal sample moves are allowed within full voices (12 samples), enabling rearrangement
@@ -303,10 +325,10 @@ The three main user journeys are:
 
 **File Handling & Validation**
 
-- Accept only valid WAV files (8 or 16 bit, 44100 Hz, mono or stereo)
+- Accept only valid WAV files (8 or 16 bit, 44100 Hz, mono or stereo) _Built differently (2026-10-01): any WAV Romper can read as uncompressed PCM or float is accepted; bit depth, rate and channels are converted when the card is written._
 - Validate file extensions and audio formats on drop
 - Handle multiple file drops with incremental slot assignment until 12-slot limit reached
-- User prompts for bulk operations that will exceed voice limits
+- User prompts for bulk operations that will exceed voice limits _Status (2026-10-01): not built. Files past the 12th are dropped with only a console warning (UC-19)._
 - Prevent duplicate samples within voices while allowing cross-voice and cross-kit duplicates
 - Store source file paths for preview without copying files locally
 
@@ -314,7 +336,7 @@ The three main user journeys are:
 
 - Support user-defined voice names with automatic inference from sample names
 - Classify kits by type (Drum, Loop, Vocal, FX, Synth/Bass) based on voice content
-- Enable tagging and favoriting of kits and samples
+- Enable tagging and favoriting of kits and samples _Status (2026-10-01): kit favourites only._
 - Assign kits to specific SD card bank/slot locations (A0-Z99)
 
 ### 4.2 Preview and Audition Capabilities
@@ -323,15 +345,15 @@ The three main user journeys are:
 
 - Preview individual samples and complete kits before syncing
 - Display waveform visualizations for all samples
-- Handle stereo-to-mono conversion to match Rample hardware behavior
-- Provide global volume control for comfortable audition levels
+- Handle stereo-to-mono conversion to match Rample hardware behavior _Built differently (2026-10-01): preview plays the file as it is; stereo files on a mono voice are mixed to mono only when the card is written._
+- Provide global volume control for comfortable audition levels _Status (2026-10-01): not built._
 
 **XOX Step Sequencer**
 
 - 4x16 step grid interface (4 voices × 16 steps) for kit audition
 - Color-coded rows matching voice panel indicators
 - Mouse and keyboard navigation (arrows to move, spacebar to toggle)
-- Playback at 120 BPM with start/stop controls
+- Playback at 120 BPM with start/stop controls _Built differently (2026-10-01): BPM is set per kit, 30 to 180 (default 120), and saved with the kit._
 - Save/load test patterns per kit in database
 - Support concurrent sample playback with voice choking behavior
 
@@ -342,7 +364,7 @@ The three main user journeys are:
 - Copy and convert samples to SD card with user confirmation
 - Handle format conversion (16 bit 44100 Hz, mono/stereo as needed)
 - Detect and warn about missing source files before sync
-- Prevent sync of invalid or incomplete kits
+- Prevent sync of invalid or incomplete kits _Built differently (2026-10-01): validation is per sample. Samples that are missing or can't be read are listed, and the write goes ahead only if the user agrees to skip them._
 - Update kit state to 'synced' after successful SD card write
 
 **Format & File Management**
@@ -350,7 +372,7 @@ The three main user journeys are:
 - Enforce SD card naming conventions (?X format: A0, B1, Z99, etc.)
 - Convert stereo samples to mono (channel average) when their voice is mono
 - Preserve original files while storing converted versions on SD card
-- Validate minimum kit requirements (voice 1 sample) for sync eligibility
+- Validate minimum kit requirements (voice 1 sample) for sync eligibility _Built differently (2026-10-01): a kit with no voice 1 sample is still written, with a warning that the Rample won't open it._
 
 ### 4.4 Setup and Configuration Capabilities
 
@@ -377,34 +399,34 @@ The three main user journeys are:
 
 **Administrative: Change Local Store Directory**
 
-1. Add a "Change Local Store Directory" item to the Tools menu
+1. Add a "Change Local Store Directory" item to the Tools menu _Built differently (2026-10-01): it's File > **Change Local Store...**, and also Settings > Advanced (UC-06)._
 2. When selected, show a dialog displaying the current local store directory and an option to change it
 3. Allow the user to select a new directory using a system file picker
 4. Validate that the selected directory contains a `.romperdb` folder
 5. If valid, save the new local store directory path to settings
 6. If invalid, show a warning and do not update the directory
-7. After a successful update, inform the user that the app must be restarted for the change to take effect
+7. After a successful update, inform the user that the app must be restarted for the change to take effect _Built differently (2026-10-01): the change applies at once; the kit browser reloads in place._
 
 **Kit Browser Interface**
 
 - Display kit metadata cards with ID, name, type icon, and sample counts
-- Color-coded sample count indicators (red=0, light green=1-11, bold green=12)
+- Color-coded sample count indicators (red=0, light green=1-11, bold green=12) _Built differently (2026-10-01): partly filled voices use the accent blue (UC-08)._
 - Show deduplicated voice name labels for quick kit identification
 - Previous/next navigation with appropriate button state management
 
 **Keyboard Navigation & Accessibility**
 
 - A-Z hotkeys for bank navigation with focus management
-- Arrow key navigation within kit browser and detail views
+- Arrow key navigation within kit browser and detail views _Known issue: arrow keys do nothing from the first kit (RE-39)._
 - Spacebar sample preview and Enter kit selection
-- Light/dark mode toggle with persistent preference
+- Light/dark mode toggle with persistent preference _Status (2026-10-01): the theme isn't kept across launches (UC-35, RE-21)._
 - Visible focus indicators and accessible UI elements
 
 **Messaging & Progress System**
 
-- Centralized message display at top of application
+- Centralized message display at top of application _Built differently (2026-10-01): messages are toasts at the top right._
 - Support for multiple simultaneous messages (info, warning, error)
-- Individual message dismissal and auto-timeout for non-critical messages
+- Individual message dismissal and auto-timeout for non-critical messages _Built differently (2026-10-01): errors also dismiss themselves, after 7 seconds._
 - Progress indicators for long-running operations (conversion, sync, download)
 - Link to Squarp Rample manual for hardware reference
 
@@ -425,7 +447,7 @@ The three main user journeys are:
 - No cloud sync or account system
 - No need to track sample versions or support collaboration features
 - Migration of existing kits/metadata is not supported at this time
-- No customization options are provided
+- No customization options are provided _Built differently (2026-10-01): Settings has a theme choice and a "Confirm destructive actions" preference, which nothing reads yet (RE-44)._
 
 ### Kit Non-Goals
 
@@ -443,7 +465,7 @@ The three main user journeys are:
 - Advanced sequencing features
 - swing (later)
 - probability (never)
-- Adjustable tempo (later).
+- Adjustable tempo (later). _Built (2026-10-01): BPM 30 to 180 per kit._
 - Choke groups
 
 ## 5.1 Error Handling Strategy
@@ -456,6 +478,14 @@ The three main user journeys are:
 - **Data protection**: Never corrupt user data or SD card contents
 
 ### Error Categories
+
+_Status (2026-10-01): most of this isn't built. Built: missing and
+unreadable samples are listed before a write; formats are converted
+automatically when the card is written, and the summary lists the
+conversions before the user confirms; the write summary shows what will
+change on the card. Not built: locating or replacing missing files,
+pausing when the card is removed, checking space before a write, retries
+with backoff, and database backup or restore._
 
 #### File System Errors
 
@@ -490,10 +520,18 @@ The three main user journeys are:
 - **Forgiving workflow**: Easy undo/redo, non-destructive by default
 - **Efficient for power users**: Keyboard shortcuts, batch operations
 - **Accessible to newcomers**: Clear visual hierarchy, guided workflows
-- **Respectful of user data**: Always confirm destructive actions
+- **Respectful of user data**: Always confirm destructive actions _Status (2026-10-01): kit delete confirms; sample delete doesn't (RE-44)._
 - **Hardware-accurate**: Preview experience matches Rample hardware behavior
 
 ## 6.1 Kit List and Navigation Design (Post-UX Improvements)
+
+_Status (2026-10-01): mostly not built. Built: an amber border on kits
+changed since the last write; the favourite star and a Favorites filter
+with a count; a Modified filter with a count; Show in Finder/Explorer for a
+sample; a responsive kit grid. Not built: green and gray type borders,
+status badges, priority markers, the Browse/Edit/Sync modes, sample
+location labels, a Recent filter, the Quick Access panel and location
+filtering._
 
 ### Kit Visual Identification System
 
@@ -593,7 +631,7 @@ Optimized layout addresses whitespace and scanning efficiency:
 - The app consists of a main kit browser and a kit detail page.
 - Action buttons are located at the top of the page.
 - A status bar at the bottom displays pertinent information.
-- Information, errors, and warning messages are displayed in a central location at the top of the screen and are styled appropriately.
+- Information, errors, and warning messages are displayed in a central location at the top of the screen and are styled appropriately. _Built differently (2026-10-01): they're toasts at the top right._
 - Edge cases (invalid/corrupt files, SD removal, duplication, slot/voice limits, missing samples, etc.) are handled and more are added as needed.
 - A-Z hotkeys scroll to the corresponding bank and move keyboard focus to the first kit in that bank.
 - Focus indicators are visible and accessible.
@@ -612,10 +650,10 @@ Optimized layout addresses whitespace and scanning efficiency:
 ### Kit Design Considerations
 
 - UI clearly indicates editable mode status (on/off) for each kit.
-- Drag-and-drop targets provide clear feedback ('Add sample', 'Replace sample').
+- Drag-and-drop targets provide clear feedback ('Add sample', 'Replace sample'). _Replace: not built (status 2026-10-01, UC-20)._
 - Warnings for format conversion are visible but non-blocking.
 - The SD card update action is prominent and requires confirmation.
-- The setup wizard is accessible from settings and on first launch if not configured.
+- The setup wizard is accessible from settings and on first launch if not configured. _Built differently (2026-10-01): the wizard opens only when no local store is configured; Settings can change the store but not rerun the wizard (UC-05)._
 - Undo/redo controls are easily accessible.
 
 ### Preview and Audition Design Considerations
@@ -674,9 +712,9 @@ Optimized layout addresses whitespace and scanning efficiency:
 - Should there be a way to batch update multiple kits to SD card at once?
 - Yes
 - Are there additional user prompts or confirmations needed for destructive actions (e.g., deleting a sample, overwriting a slot)?
-- Yes - destructive actions require a prompt.
+- Yes - destructive actions require a prompt. _Status (2026-10-01): kit delete prompts; sample delete doesn't (RE-44)._
 - Should the SD card update process be cancellable or undoable after starting?
-- No
+- No _Built differently (2026-10-01): a write can be cancelled between files (RE-07); it can't be undone._
 
 ---
 
@@ -695,19 +733,19 @@ See [romper-db.md](romper-db.md).
 - Built with Electron, React, Vite, and Tailwind CSS.
 - Cross-platform: macOS, Linux and Windows support.
 - Uses `better-sqlite3` for local storage.
-- Uses native filesystem APIs for file operations (no browser sandboxing).
-- Distributed via GitHub releases, with macOS and Windows support.
-- Destructive sync (wiping the card first) requires confirmation.
+- Uses native filesystem APIs for file operations (no browser sandboxing). _Built differently (2026-10-01): the renderer is sandboxed; the main process does all file I/O, and checks every path the UI sends (RE-03)._
+- Distributed via GitHub releases, with macOS and Windows support. _Built differently (2026-10-01): releases are built for macOS (Apple silicon), Windows (x64) and Linux (x64: deb, rpm and zip)._
+- Destructive sync (wiping the card first) requires confirmation. _Built differently (2026-10-01): there is no wipe. A write deletes the Rample content the store no longer has, and the summary lists it before the user confirms._
 - No user data is collected.
-- The app is standalone and isolated; the only external interaction is syncing with the SD card.
+- The app is standalone and isolated; the only external interaction is syncing with the SD card. _Built differently (2026-10-01): Romper also downloads the factory samples when the user chooses them in the wizard, and on macOS checks update.electronjs.org for updates (see [`PRIVACY.md`](../../PRIVACY.md))._
 - Data is persisted locally only; no cloud sync is needed.
 - No multi-user or multi-computer sync is required.
 - Unit testing uses vitest.
 - At least one integration test checks that the application loads successfully.
 - Tests for A-Z hotkey navigation.
 - Tests for info/error/warning message display.
-- Tests for kit locking/prevent unauthorized changes.
-- Tests for tagging/favoriting.
+- Tests for kit locking/prevent unauthorized changes. _Kit locking isn't built (status 2026-10-01)._
+- Tests for tagging/favoriting. _Tagging isn't built (status 2026-10-01)._
 - Tests for missing sample detection/warning.
 - Precompute and memoize kit sample counts and voice label sets in the kit browser. These values are calculated only once per kit list load/change, not on every render, to maximize performance and minimize UI update latency.
 
@@ -723,7 +761,7 @@ See [romper-db.md](romper-db.md).
 - Only one local store and associated DB are active at a time, as set in application settings.
 - **Immutable Baseline Architecture**: The local store can be initialized from SD card, Squarp.net archive (https://data.squarp.net/RampleSamplesV1-2.zip), or a blank folder. Once initialized, this becomes an immutable baseline that is never modified - it preserves the exact initial state chosen during setup.
 - **Local Store Initialization Sources**:
-  - **SD Card Source**: Any folder can be chosen. It is valid if it contains at least one subfolder matching ^[A-Z].\*?(?:[1-9]?\d)$; otherwise, a warning is shown and the user chooses another folder.
+  - **SD Card Source**: Any folder can be chosen. It is valid if it contains at least one subfolder matching ^[A-Z].\*?(?:[1-9]?\d)$; otherwise, a warning is shown and the user chooses another folder. _Built differently (2026-10-01): only folders named like kits, a letter and 0 to 99 (`A0` to `Z99`, `isValidKit`), count and are imported (RE-32)._
   - **Factory Samples**: Downloads and extracts official Squarp factory samples as the baseline.
   - **Empty Folder**: Creates minimal structure for users starting from scratch.
 - **Reference-Only Sample Management**: User-added samples are referenced by `source_path` in the database but never copied to the local store. This prevents bloat and maintains the immutable baseline concept.
@@ -741,9 +779,9 @@ See [romper-db.md](romper-db.md).
 ### Multi-Sample Drop Handling
 
 - Users can add multiple samples in one action, with samples incrementally added to the voice until the 12-slot limit is reached
-- If bulk drop will exceed voice limits, prompt user before proceeding with the operation
+- If bulk drop will exceed voice limits, prompt user before proceeding with the operation _Status (2026-10-01): not built. Files past the 12th are dropped with only a console warning (UC-19)._
 - Slot limit enforcement prevents adding more than 12 samples per voice
-- User receives clear feedback when slot limits are reached during bulk operations
+- User receives clear feedback when slot limits are reached during bulk operations _Status (2026-10-01): not built._
 
 ### Voice Name Inference Logic
 
@@ -789,9 +827,9 @@ In the kit browser, kit item cards show useful kit metadata including:
 
 - **Reference-Based Preview**: Sample preview uses `source_path` references for playback without copying files to local store.
 - **Conversion Timing**: Sample format conversion (16 bit 44100 Hz, stereo-to-mono) occurs only during sync, not during preview.
-- **Voice-Aware Sequencer**: XOX sequencer pattern data is stored in the Romper DB per kit, with sequencer playback using the first sample in each voice based on `voice_number` assignment.
+- **Voice-Aware Sequencer**: XOX sequencer pattern data is stored in the Romper DB per kit, with sequencer playback using the first sample in each voice based on `voice_number` assignment. _Built differently (2026-10-01): each voice picks its sample by `sample_mode` (first, random or round-robin), and a voice in slice mode plays a region of it._
 - **External File Dependencies**: Preview system must handle missing source files gracefully, displaying appropriate warnings when files cannot be located.
-- Future enhancements may include adjustable tempo, per-step sample selection, and additional SQLite persistence features.
+- Future enhancements may include adjustable tempo, per-step sample selection, and additional SQLite persistence features. _Adjustable tempo is built (status 2026-10-01)._
 
 ## 12. Setup Wizard Flow
 
@@ -820,11 +858,15 @@ The progress bar in the wizard is used for:
 
 - The wizard must enforce the step order and only enable the next step when the current step is valid.
 - The user must be able to go back to previous steps to change their choices before initialization.
-- The cancel action must be available at all times and immediately stop any in-progress operation.
+- The cancel action must be available at all times and immediately stop any in-progress operation. _Status (2026-10-01): partial. On first run, Cancel quits Romper mid-import, and the unfinished store is deleted as it quits (RE-66)._
 - Progress and error states must be clearly displayed during long-running actions (download, unzip, DB write).
 - All UI must be accessible in both light and dark modes, with keyboard navigation and visible focus indicators.
 
 ## 13. Centralized Message Display (Info, Warning, Error)
+
+_Built differently (2026-10-01): messages are toasts at the top right, and
+errors also dismiss themselves, after 7 seconds. There's no message
+history (UC-36)._
 
 - The application displays all information, warning, and error messages in a central location at the top of the screen.
 - The message display system supports multiple simultaneous messages, displaying them in a stack or queue (not just the latest message).
@@ -835,6 +877,8 @@ The progress bar in the wizard is used for:
 
 ## 14. Accessibility Requirements
 
+_Status (2026-10-01): known gaps are listed in RE-48._
+
 - All UI elements must be accessible to users with disabilities, following WCAG 2.1 AA guidelines where possible.
 - All interactive elements must be keyboard-navigable and have visible focus indicators.
 - All UI elements must have sufficient color contrast in both light and dark mode.
@@ -843,4 +887,4 @@ The progress bar in the wizard is used for:
 
 ---
 
-_Last updated: 2025-07-18_
+_Last updated: 2025-07-18; status notes added 2026-10-01_

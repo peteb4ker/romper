@@ -157,7 +157,7 @@ real defect with a workaround or a limited blast radius. **Low** is hygiene.
 | RE-32 | Kits | Kit names are checked inconsistently. Import accepts names such as `Drum01`; `insert-kit` checks nothing; `kitService` rejects anything outside `^\p{Lu}\d{1,2}$`, so such kits cannot be deleted or duplicated. `\p{Lu}` also accepts non-ASCII capitals. | `kitService.ts:149-154`; `useLocalStoreWizardFileOps.ts:233` | One shared `^[A-Z]\d{1,2}$` check, applied at insert and import. |
 | RE-33 | DB | Migration upkeep: 0008 is missing and there are two 0009 migrations, handled by a custom repair that runs `ALTER` statements outside a transaction. The 0011 and 0012 snapshots still had `kits.artist`, which the schema had removed; migration 0013 (#407) drops it, so the snapshot matches the schema again. Folders relative to the working directory are accepted as migration sources in production. No backup is taken before migrating. | `dbMigrations.ts:126-156, 193-272`; `migrations/meta/0011_snapshot.json` | Regenerate the snapshot; accept only the bundled path; copy the database before migrating. |
 | RE-34 | Setup | Voice naming in the first-run wizard does nothing: its alias writes are rejected because the store path is saved only afterwards. Only a warning is logged. E2E hides this by setting `ROMPER_LOCAL_PATH`. | `useLocalStoreWizardScanning.ts:138-143`; `ipcHandlerUtils.ts:110-117`; `useLocalStoreWizard.ts:128-132` | Save the path (or pass the DB folder) before scanning. |
-| RE-35 | Sync | "Modified since sync" is set only by sample add, delete and move. Gain, stereo mode, voice alias and bank edits do not set it, so the "Modified" filter misses changes that do alter the card. | `dbIpcHandlers.ts:96-207`; `kitSyncOperations.ts` | Mark the kit modified in every update that affects the card. |
+| RE-35 | Sync | "Modified since sync" is set only by sample add, delete and move. Gain, voice alias and bank edits do not set it (a stereo link change does, since RE-69), so the "Modified" filter misses changes that do alter the card. | `dbIpcHandlers.ts:96-207`; `kitSyncOperations.ts` | Mark the kit modified in every update that affects the card. |
 | RE-36 | Performance | Almost every edit reloads the whole library (`getKits()` with all samples); sample operations cost three or more IPC calls. The DB layer opens a new connection per operation, sync queries each kit separately, and validation calls `existsSync` per sample. Slow for large libraries (the factory set has about 2,600 kits). | `useKitEditorLogic.ts:105-116`; `useKitDataManager.ts:171-188`; `syncSampleProcessing.ts:22-42` | Patch one kit from the update result; reuse `getKits` data; share a connection per request. |
 | RE-37 | Renderer | Favourites have two sources of truth. The browser keeps a shadow map that overrides the database value; the editor toggles through `useKitDataManager`. After toggling in both places, the browser shows a stale star and filters wrongly. | `useKitFilters.ts:22-46, 66-99` | One toggle path; remove the shadow map. |
 | RE-38 | Renderer | Keyboard shortcuts clash. "F" jumps to bank F and toggles the favourite on the focused kit. Handlers ignore modifier keys, so Cmd/Ctrl combinations and menu accelerators can also trigger bank jumps, sequencer toggles or kit navigation. | `useKitKeyboardNav.ts:28-44`; `useKitBankNavigation.ts:143-163`; `useKitEditorKeyboardNav.ts:56-81` | Ignore events with modifiers; give "F" one meaning; ignore keys while a modal is open. |
@@ -191,6 +191,13 @@ real defect with a workaround or a limited blast radius. **Low** is hygiene.
 | RE-71 | Stereo | Linking and unlinking a stereo pair works on a kit that isn't editable: the chain icon and the Stereo badge ignore editable mode, and main doesn't check it. The link decides what the next write puts on the card (stereo or a mono mix), so a read-only kit's card output can change. Found by the use case audit (UC-28). | `KitVoicePanels.tsx` (`showChainIcon`); `useVoicePanelUI.tsx` (`stereo-badge-N` `onClick`); `dbIpcHandlers.ts` (`update-voice-stereo-mode`) | Decide whether stereo is an edit: if so, hide the controls on read-only kits and refuse the channel in main for them. Decided 2026-10-01 (Pete): linking is an edit. Fixed in #416. |
 | RE-72 | About | The About dialog shows "Version: dev" in every build. It reads `import.meta.env.VITE_APP_VERSION`, which nothing defines (no Vite `define`, no env file, no workflow step), and `AboutDialog.test.tsx` sets the variable itself, so the fallback is never seen. Found by the use case audit (UC-37). | `AboutDialog.tsx:18-19`; `vite.config.ts` | Define the version from `package.json` in the renderer build, and test the built value. |
 | RE-73 | Setup | SD-card setup ignores a failed kit copy: `copy-dir` returns `{ success: false, error }`, but the wizard discards the result and imports whatever reached the store, with no message. A retry after a failed run also goes ahead on the partial copy, so RE-31's "can't be retried" may no longer hold. Found by the use case audit (UC-01). | `useLocalStoreWizardFileOps.ts` (`validateAndCopySdCardKits`); `archiveService.ts` (`copyDirectory`); `shared/electronApi.ts` (`copyDir: Promise<unknown>`) | Type the result, stop setup on a failed copy and run the failure cleanup; recheck RE-31. Fixed in #414. |
+| RE-74 | Samples | Dragging files over a filled slot shows "Insert sample here (other samples will shift down)" and an insert highlight, but the drop always appends after the last sample. The hint promises a behaviour that doesn't happen. Found by the docs pass (UC-19). | `useSlotRendering.ts:61`; `useExternalDragHandlers.ts:72-77, 128-136` | Insert at the slot (shifting the rest), or show the append target and wording. |
+| RE-75 | Voices | In an editable kit, **Scan Kit** and `/` rename every voice whose first sample suggests a type, overwriting names typed by hand. Main's scan merge only fills missing names, and UC-27 says hand-set names are kept. Found by the docs pass. | `useKitScanning.ts:142-163` (`handleInferVoiceNames`); `KitEditor.tsx:63-67`; `useKitEditorKeyboardNav.ts:67-73` | Fill only voices without a name, as `inferMissingVoiceAliases` does, or route the editable scan through main's merge. |
+| RE-76 | Sync | **Start Write** is disabled when the library has no samples, so a card that only needs removals (after deleting every kit, say) can never be cleared, although the summary lists the removals. Found by the docs pass (UC-34). | `SyncUpdateDialog.tsx:608` | Enable the write when there are removals, even with nothing to copy. |
+| RE-77 | Setup | A factory archive whose checksum doesn't match is downloaded again twice (about 313 MiB each time), and main's "the archive has changed" message is replaced by the generic "check your internet connection" error. Found by the docs pass. | `useLocalStoreWizardFileOps.ts:97-139` | Don't retry a checksum or other non-network failure; show main's message. |
+| RE-78 | Settings | Changing the local store reports success whether or not it worked: the **Invalid Local Store** dialog doesn't wait for the save (`void setLocalStorePath`), the File menu's **Change Local Store** dialog always reports success, and Preferences ignores an invalid folder without a message. The dialog's **Re-run Setup Wizard** button never renders (no `onRerunWizard` is passed). Found by the docs pass (UC-05, UC-06). | `InvalidLocalStoreDialog.tsx:141-143`; `views/KitsView.tsx:256-267`; `ChangeLocalStoreDirectoryDialog.tsx` | Await the save and report its result; wire or remove the re-run button. |
+| RE-79 | Release | Windows signing would leave the installed app unsigned: the release workflow signs only `out/make/squirrel.windows/x64/*.exe` after Forge has built the installer, so the `romper.exe` inside the `.nupkg` stays unsigned and SmartScreen may flag it once OPS-2 is done. `forge.config.cjs:61-68` still has an unused pfx signing path. Unconfirmed without a signed build. Found by the docs pass. | `.github/workflows/release.yml` ("Sign Windows artifacts"); `forge.config.cjs:61-68` | Sign inside Forge (the Squirrel maker's signing hook) before Squirrel packs the app; drop the pfx path. |
+| RE-80 | Settings | A local store on a drive that isn't mounted at launch is forgotten: startup validation clears the saved path and the first-run wizard opens, so the user must find the store again with **Choose Existing Store** after mounting the drive. Found by the use-case audit (UC-05). | `mainProcessSetup.ts` (`validateAndFixLocalStore`) | Keep the saved path and show the Invalid Local Store dialog with a retry when the store is missing. |
 
 ### Low
 
@@ -255,6 +262,20 @@ real defect with a workaround or a limited blast radius. **Low** is hygiene.
   (`useLocalStoreWizardScanning.ts:92`); `scripts/capture-screenshots.ts`
   still launches with the installed app's settings folder (RE-68 covered
   e2e only; fixed in #409).
+- **Found by the docs pass (2026-10-01)**: `isValidKit`
+  (`shared/kitUtilsShared.ts:127-131`) uses `\p{Lu}`, so it accepts
+  non-ASCII capitals ("Ä1") and leading zeros ("A05"), though its comment
+  says A-Z (RE-32 left it); the blank-folder guidance suggests changing the
+  local store to an SD card, which fails validation
+  (`WizardPostInitGuidance.tsx:47-52`); the lock icon's tooltip says
+  "Factory kit (read-only)" on any non-editable kit, including the user's
+  own imports (`KitGridItem.tsx:141`); the Scan All prompt says it re-reads
+  every kit folder, though it scans only the kits shown (RE-43;
+  `useKitScan.ts:79`); `WizardTargetStep.tsx:30` treats any path ending in
+  "romper" (`myromper`) as the `romper` folder; startup logs the preload as
+  `index.mjs` but loads `index.cjs` (`electron/main/index.ts:55-56`); the
+  website links to GitHub Discussions, which are turned off
+  (`docs/index.html:377`).
 
 ## Technical Debt
 
@@ -316,7 +337,14 @@ real defect with a workaround or a limited blast radius. **Low** is hygiene.
 
 ## Documentation Drift
 
-Many developer and user docs no longer match the code. The most serious:
+Updated 2026-10-01: the docs pass (#PR) brought the manual, FAQ,
+troubleshooting, README, website, privacy and security pages and the
+developer docs in line with the code, including every row below and the
+smaller items. The product requirements now mark what isn't built or was
+built differently. What the docs promised but the code doesn't do is listed
+by use case in `docs/developer/use-cases.md`. The table is kept as a record.
+
+Many developer and user docs no longer matched the code. The most serious:
 
 | Doc | Claim | Reality |
 |---|---|---|
@@ -330,8 +358,8 @@ Many developer and user docs no longer match the code. The most serious:
 | `docs/developer/architecture.md:126-146` | Atomic sync with temp files, locking, rollback | Direct sequential writes (RE-05, RE-07) |
 | `docs/developer/architecture.md:181-182` | Path validation blocks unauthorised access | Channels accept any path (RE-03) |
 | `docs/developer/romper-db.md:41`, `romper-db.mmd`, `romper-db-erd.png` | `kits.voice_volume`; `Kit.id`, `Sample.kit_id`, no Bank or Voice | Wrong columns and a 2025-era diagram |
-| `docs/developer/development-workflow.md:23-29, 402` | Pre-commit runs SonarCloud; e2e and Sonar are required checks | Neither is true |
-| `README.md:99, 184`; getting-started | Linux AppImage; Node 18+ | No AppImage; Node 20.19+ / 22.12+ needed |
+| `docs/developer/development-workflow.md:23-29, 402` (since removed) | Pre-commit runs SonarCloud; e2e and Sonar are required checks | Neither is true |
+| `README.md:99, 184`; getting-started | Linux AppImage; Node 18+ | No AppImage; Node 22.12 or later needed (Electron and better-sqlite3 13) |
 | `docs/developer/code-signing.md:95-97, 144-145` | `APPLE_ID` secrets | Obsolete; `ASC_API_KEY_JSON` is what notarisation uses |
 
 About 40 more drift items of medium or low severity were found in

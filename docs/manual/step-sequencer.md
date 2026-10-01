@@ -48,7 +48,7 @@ Each condition uses an **A:B** format, meaning "fire on the Ath repetition of ev
 
 | Condition | Meaning | Effective pattern length |
 |-----------|---------|--------------------------|
-| **Always** (default) | Fires every cycle | 16 steps |
+| **All** (default) | Fires every cycle | 16 steps |
 | **1:2** | Fires on odd cycles (1st of every 2) | 32 steps |
 | **2:2** | Fires on even cycles (2nd of every 2) | 32 steps |
 | **1:4** | Fires on the 1st of every 4 cycles | 64 steps |
@@ -81,7 +81,7 @@ The slicer plays **parts of a long sample** from each step -- a drum break, a vo
 3. A waveform strip appears above the grid, cut into slices, and every lit step in the row shows the slice it plays. Step 1 plays slice 1, step 2 plays slice 2 and so on, so a one-bar loop sliced into 16 plays back as the original loop at its own tempo.
 4. Press **Play**, then start changing things.
 
-**To choose what a step plays**, click the step, then click a slice on the waveform. Drag across several slices for a longer hit. Hovering a step shows its slice on the waveform; clicking a slice plays it so you can explore the sample by ear (Alt/Option-click plays it without assigning it). The line under the waveform always tells you what to do next.
+**To choose what a step plays**, click the step, then click a slice on the waveform. Drag across several slices for a longer hit. Hovering a step shows its slice on the waveform; while the sequencer is stopped, clicking a slice plays it so you can explore the sample by ear (hold Alt/Option while you click or drag to play it without assigning it). The line under the waveform always tells you what to do next.
 
 On a slice row, clicking a lit step **selects** it; clicking the selected step again turns it off. The scroll wheel over a step moves it to the previous or next slice (Shift + scroll changes its length), and right-clicking a step lets you type a slice number, change the length, make it random, or lock it.
 
@@ -89,7 +89,7 @@ On a slice row, clicking a lit step **selects** it; clicking the selected step a
 
 ### Happy accidents
 
-- **🎲 Roll** gives the row's steps random slices. The result stays put, so when something great comes up, keep it. **Undo** takes back the last roll, or any other sequencer edit.
+- **🎲 Roll** gives the row's steps random slices. The result stays put, so when something great comes up, keep it. **Undo** takes back the last roll, or any other change to steps, trigger conditions or slices.
 - **Amount** (in the ▾ menu next to Roll) decides how much a roll changes: 25% nudges the pattern, 100% rewrites it.
 - **Lock** a step (right-click, or `L`) to keep it while you roll everything else -- for example, keep the kick on step 1.
 - **Random slice each time** (right-click, or `R`) makes a step pick a new slice every time it plays, shown as a dice on the step, so the pattern never repeats exactly.
@@ -121,7 +121,7 @@ When two voices are configured for stereo playback (e.g., Voices 1+2 or Voices 3
 
 ## Persistence
 
-Sequencer patterns, trigger conditions, BPM, sample modes, and slicer settings are all saved per-kit in the database. Your patterns persist across sessions. Voice mutes are session-only.
+Sequencer patterns, trigger conditions, BPM, levels, sample modes, and slicer settings are all saved per-kit in the database. Your patterns persist across sessions. Voice mutes are session-only.
 
 ## Example: Building a Pattern with the C0 Factory Kit
 
@@ -154,8 +154,8 @@ Here's what's programmed in each voice:
 | Play / stop | `Space` |
 | Toggle step | `Enter` |
 | Navigate steps | Arrow keys |
-| Undo / redo any sequencer edit | `Cmd+Z` / `Cmd+Shift+Z` (`Ctrl+Z` / `Ctrl+Y`) |
-| Close step options, then the slicer | `Escape` |
+| Undo / redo a step, condition or slice edit | `Cmd+Z` / `Cmd+Shift+Z` (`Ctrl+Z` / `Ctrl+Y`) |
+| Close step options, then the slicer, then the kit | `Escape` |
 | All sequencer shortcuts | `?` |
 | Previous / next slice (slice rows) | `[` / `]` |
 | Shorter / longer slice (slice rows) | `{` / `}` |

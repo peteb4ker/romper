@@ -5,7 +5,7 @@ title: Database Schema
 
 # Romper Database Schema
 
-The Romper SQLite database is created in the `.romperdb` folder inside the local store. The schema is implemented using **Drizzle ORM** with **better-sqlite3** for type safety and synchronous access.
+The Romper SQLite database is `romper.sqlite`, in the `.romperdb` folder inside the local store. The schema is implemented using **Drizzle ORM** with **better-sqlite3** for type safety and synchronous access.
 
 ## Tables
 
@@ -20,7 +20,7 @@ Stores artist metadata for each bank (A-Z).
 | rtf_filename | TEXT | nullable | Original RTF filename for reference |
 | scanned_at | INTEGER | nullable | Unix timestamp of last bank scan |
 
-Pre-populated with all 26 letters (A-Z) during initial migration.
+Pre-populated with all 26 letters (A-Z) by migration `0001`.
 
 ### kits
 
@@ -32,9 +32,9 @@ Central table for kit configurations and sequencer state.
 | alias | TEXT | nullable | Human-readable custom name |
 | bank_letter | TEXT | FK → banks.letter, nullable | Bank assignment |
 | bpm | INTEGER | NOT NULL, default 120 | Step sequencer BPM (30-180) |
-| editable | BOOLEAN | NOT NULL, default false | Whether kit can be modified |
+| editable | BOOLEAN | NOT NULL, default false | Whether kit can be modified (kits created or duplicated in the app start editable; kits imported at setup don't) |
 | is_favorite | BOOLEAN | NOT NULL, default false | Favorites system flag |
-| locked | BOOLEAN | NOT NULL, default false | Protection against accidental edits |
+| locked | BOOLEAN | NOT NULL, default false | Protection against accidental edits. Scan leaves a locked kit alone and delete refuses it, but nothing in the UI sets this yet |
 | modified_since_sync | BOOLEAN | NOT NULL, default false | Tracks changes since last SD card sync |
 | slice_steps | TEXT (JSON) | nullable | Sequencer slicer: 4 voices x 16 steps of `{ start, length, random, locked }` in ticks of 384 per sample (null = sequential default) |
 | slicer_division | INTEGER | NOT NULL, default 16 | Kit-wide slice count (8, 12, 16, 24, 32, 48, 64, 128), like the Rample's SLICER setting |
@@ -56,7 +56,7 @@ Per-voice settings within a kit. Each kit always has exactly 4 voice records.
 | slice_max_length | INTEGER | NOT NULL, default 2 | Longest random slice length when varying length (1, 2, 4, 8) |
 | slice_roll_amount | INTEGER | NOT NULL, default 100 | Percent of eligible steps a roll changes (25, 50, 75, 100) |
 | slice_vary_length | BOOLEAN | NOT NULL, default false | Rolls and random steps also vary slice length |
-| stereo_mode | BOOLEAN | NOT NULL, default false | Stereo pair mode |
+| stereo_mode | BOOLEAN | NOT NULL, default false | Links this voice with the next as a stereo pair. Stereo is a voice setting: samples have no stereo flag (`samples.is_stereo` was dropped in migration `0013`, RE-69) |
 | voice_volume | INTEGER | NOT NULL, default 100 | Per-voice volume (0-100) |
 
 ### samples
@@ -91,7 +91,7 @@ Individual sample file assignments to voice slots.
 ## Key Design Decisions
 
 - **Natural keys**: Kit names (A0, B1) as primary keys matching Rample hardware naming
-- **Reference-only storage**: `source_path` stores absolute path to original file — files are never copied locally, only during SD card sync
+- **Reference-only storage**: `source_path` stores the absolute path to the original file. Samples the user adds are never copied into the local store; files are copied only to the SD card when it's written. (Setup copies the SD card's or factory archive's kit folders into the store once, and their rows point at those copies.)
 - **Explicit voice tracking**: `voice_number` (1-4) stored explicitly, never inferred from position
 - **Zero-based slots**: Database uses 0-11; UI displays as 1-12
 - **Synchronous access**: better-sqlite3 provides synchronous operations (no async/await needed for DB calls)
@@ -102,4 +102,4 @@ Defined in `shared/db/schema.ts` using Drizzle ORM. Migrations in `electron/main
 
 ---
 
-_Last updated: 2026-04-09_
+_Last updated: 2026-10-01_

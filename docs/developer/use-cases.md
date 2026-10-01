@@ -19,7 +19,7 @@ Each entry has:
 - entry points (renderer component or hook, IPC channels, main service),
   checked against the code on 2026-10-01;
 - **Doc gaps:** what the docs promise that the code doesn't do. The docs
-  pass (#PR) fixed the docs for every gap found by the audit; record new ones
+  pass (#417) fixed the docs for every gap found by the audit; record new ones
   here;
 - **Known issues:** open or partly done findings from
   [`BACKLOG.md`](../../BACKLOG.md) and the
@@ -78,7 +78,7 @@ samples keeps the first 12, and the wizard names the files it left out. See
   `electron/main/db/operations/kitScanOperations.ts` (`mergeKitScan`): up
   to 12 samples per voice, WAV metadata and voice names, in one transaction
   per kit.
-- **Doc gaps:** none since the docs pass (#PR).
+- **Doc gaps:** none since the docs pass (#417).
 - **Known issues:** RE-67 (the e2e only checks that the database
   exists).
 
@@ -100,7 +100,7 @@ and [Factory Samples](../manual/syncing.md#factory-samples).
 - **Main:** `electron/main/services/archiveService.ts` (`downloadAndExtractArchive`,
   `getFactorySamplesArchiveUrl`); `electron/main/archiveUtils.ts`
   (`downloadArchive`, `extractZipEntries`); `electron/main/services/scanService.ts` (`scanBanks`).
-- **Doc gaps:** none since the docs pass (#PR).
+- **Doc gaps:** none since the docs pass (#417).
 - **Known issues:** RE-77 (a checksum mismatch is downloaded three times,
   behind a generic network error), RE-67 (the e2e uses a 928-byte stub
   archive; `npm run validate:full` runs the real one, including a cancelled
@@ -119,7 +119,7 @@ and [Creating Kits](../manual/kit-browser.md#creating-kits).
   `app/renderer/components/wizard/WizardPostInitGuidance.tsx`; then `app/renderer/components/KitBrowser.tsx` (UC-14).
 - **IPC:** as UC-01, without `copy-dir` and `check-disk-space`.
 - **Main:** `electron/main/services/localStoreSetupService.ts` (`createSetupDatabase`).
-- **Doc gaps:** none since the docs pass (#PR).
+- **Doc gaps:** none since the docs pass (#417).
 - **Known issues:** none.
 
 ### UC-04 Choose an existing local store
@@ -162,7 +162,7 @@ and [Validating Your Store](../manual/kit-browser.md#validating-your-store).
   `select-local-store-path`, `write-settings`.
 - **Main:** `electron/main/services/localStoreService.ts` (`getLocalStoreStatus`);
   `electron/main/localStoreValidator.ts` (`validateLocalStoreAgainstDb`).
-- **Doc gaps:** none since the docs pass (#PR).
+- **Doc gaps:** none since the docs pass (#417).
 - **Known issues:** RE-78 (store-change dialogs report success unconditionally; Re-run Setup Wizard never renders), RE-80 (a store on an unmounted drive is forgotten at launch), RE-21, RE-56, RE-48.
 
 ### UC-06 Change the local store
@@ -185,7 +185,7 @@ describes it.
   `select-existing-local-store`, `write-settings`, `get-local-store-status`.
 - **Main:** `electron/main/applicationMenu.ts`; `electron/main/services/settingsService.ts`;
   `electron/main/localStoreValidator.ts`.
-- **Doc gaps:** none since the docs pass (#PR).
+- **Doc gaps:** none since the docs pass (#417).
 - **Known issues:** RE-78, RE-21, RE-37 (favourite state can carry over by kit
   name). With `ROMPER_LOCAL_PATH` set, a change has no effect.
 
@@ -226,7 +226,7 @@ See [Kit Cards](../manual/kit-browser.md#kit-cards).
   `app/renderer/components/shared/KitIconRenderer.tsx`, `app/renderer/components/shared/kitItemUtils.ts`;
   `app/renderer/components/hooks/kit-management/useKitItem.ts`.
 - **IPC:** `get-all-kits`.
-- **Doc gaps:** none since the docs pass (#PR).
+- **Doc gaps:** none since the docs pass (#417).
 - **Known issues:** RE-47, RE-48. Nothing tests the cards above unit
   level.
 
@@ -456,7 +456,7 @@ file is checked and added to the voice's next free slot, up to 12. See
 - **Main:** `electron/main/services/sampleService.ts` → `electron/main/services/crud/sampleCrudService.ts`
   (`addSampleToSlot`, which refuses the right-hand voice of a linked pair) →
   `electron/main/db/operations/sampleCrudOperations.ts` (`addSample`).
-- **Doc gaps:** none since the docs pass (#PR).
+- **Doc gaps:** none since the docs pass (#417).
 - **Known issues:** RE-74 (the drop hint says insert; the file is appended), RE-40 (rejected drops only reach the console), RE-28,
   RE-36.
 
@@ -598,7 +598,7 @@ focused text field keeps its own undo. See
 - **IPC:** `menu-undo`, `menu-redo` (pushed from main); undo replays the
   sample channels above.
 - **Main:** `electron/main/applicationMenu.ts` (Edit > Undo and Redo).
-- **Doc gaps:** none since the docs pass (#PR).
+- **Doc gaps:** none since the docs pass (#417).
 - **Known issues:** RE-40 (undo errors never reach the UI).
 
 ## Voices and stereo
@@ -659,7 +659,7 @@ choke). See
 - **IPC:** `get-sample-audio-buffer` (`electron/main/ipcHandlers.ts`).
 - **Main:** `electron/main/services/sampleService.ts` (`getSampleAudioBuffer`) →
   `electron/main/services/metadata/sampleMetadataService.ts`.
-- **Doc gaps:** none since the docs pass (#PR).
+- **Doc gaps:** none since the docs pass (#417).
 - **Known issues:** RE-45 (same-named samples in one voice share triggers),
   RE-46 (the waveform redraws every frame). No e2e presses Play; the e2e
   tests cover loading and decoding the audio.
@@ -766,7 +766,7 @@ Rample's own `_save` folder alone. Cancel stops between files. See
   `electron/main/services/syncValidationService.ts`, `electron/main/services/syncMonoAnnotation.ts`,
   `electron/main/services/syncProgressManager.ts`, `electron/main/services/sdCardSafety.ts`, `electron/main/services/rtfFileService.ts`;
   `electron/main/formatConverter.ts`; `shared/rampleCardLayout.ts`.
-- **Doc gaps:** none since the docs pass (#PR).
+- **Doc gaps:** none since the docs pass (#417).
 - **Known issues:** RE-76 (a card that only needs removals can't be written), RE-35 (the Modified filter misses gain and bank edits),
   RE-40 (the failure toast reads a stale value), RE-57 (contract drift in
   `SyncChangeSummary` and `SyncProgress`), RE-23 (a cleared bank name is
@@ -792,7 +792,7 @@ the theme. The manual has no Preferences section; see
 - **IPC:** `read-settings`, `write-settings`; push `menu-preferences`.
 - **Main:** `electron/main/services/settingsService.ts` (`readSettings`,
   `writeSetting`); `electron/main/mainProcessSetup.ts` (`loadSettings`).
-- **Doc gaps:** none since the docs pass (#PR).
+- **Doc gaps:** none since the docs pass (#417).
 - **Known issues:** RE-21, RE-44, RE-48.
 
 ### UC-36 Messages and error containment
@@ -836,13 +836,13 @@ and [Installation](../manual/getting-started.md#installation).
 - **Main:** `electron/main/applicationMenu.ts` (`createApplicationMenu`:
   About, Help links, the DevTools opt-in); `electron/main/autoUpdater.ts`
   (`initAutoUpdater`).
-- **Doc gaps:** none since the docs pass (#PR).
+- **Doc gaps:** none since the docs pass (#417).
 - **Known issues:** RE-79 (Windows signing would leave the installed app unsigned), RE-72, RE-18, RE-55 (no Intel Mac build), RE-56 (dead
   `AboutView`).
 
 ## Promised, not built
 
-The docs pass (#PR) removed these promises from the user docs, because the
+The docs pass (#417) removed these promises from the user docs, because the
 code doesn't do them. The product requirements still list most of them,
 marked not built. Build any that are wanted, then document them again.
 

@@ -337,7 +337,7 @@ real defect with a workaround or a limited blast radius. **Low** is hygiene.
 
 ## Documentation Drift
 
-Updated 2026-10-01: the docs pass (#PR) brought the manual, FAQ,
+Updated 2026-10-01: the docs pass (#417) brought the manual, FAQ,
 troubleshooting, README, website, privacy and security pages and the
 developer docs in line with the code, including every row below and the
 smaller items. The product requirements now mark what isn't built or was

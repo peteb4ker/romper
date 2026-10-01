@@ -226,6 +226,15 @@ function registerAllIpcHandlers(settings: InMemorySettings) {
 
 app.setName("Romper");
 
+// ROMPER_USER_DATA_DIR moves settings, window state and Chromium's profile
+// to another folder. The e2e suite sets it so test runs never touch the
+// installed app's settings, which share the "Romper" folder (RE-68). It has
+// to be set before the app is ready.
+const userDataOverride = process.env.ROMPER_USER_DATA_DIR;
+if (userDataOverride) {
+  app.setPath("userData", userDataOverride);
+}
+
 if (isHeadless && process.platform === "darwin") {
   // Accessory apps get no Dock icon and don't activate on launch, so a
   // headless run never takes keyboard focus from the user.

@@ -88,6 +88,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-68 | High | Tests | The e2e suite overwrote the installed app's settings (same userData folder), resetting its local store. | done (#PR) |
 | RE-15 | High | Platform | Electron 39.8.10 is out of support (its last patch was 2026-05-05; supported majors are 42 to 44). | done (#392: Electron 44, better-sqlite3 13) |
 | RE-63 | Medium | Sync | Sample conversion truncates instead of rounding: re-encoding an unchanged 16-bit sample alters about a third of its samples, and 24- to 16-bit conversion has twice the quantization error. | done (#396) |
 | RE-14 | High | Playback | Each play connects a new analyser (and a splitter for stereo) to the slot's gain node, and nothing disconnects them. | done (#366 node leak; #397 one shared AudioContext) |

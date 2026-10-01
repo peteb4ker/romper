@@ -18,8 +18,11 @@ Playwright (e2e).
 - `npm run test:e2e` -- builds, then runs Playwright against the built app.
   Run it when you touch `electron/main` or app startup; unit and integration
   tests can't see startup failures. The window stays hidden
-  (`ROMPER_HEADLESS=true`, set in `playwright.config.ts`), so it's safe to run
-  while the user is working; `npm run test:e2e:headed` shows it. To rerun
+  (`ROMPER_HEADLESS=true`) and settings go to a temp folder
+  (`ROMPER_USER_DATA_DIR`), both set in `playwright.config.ts`, so it's safe
+  to run while the user is working; `npm run test:e2e:headed` shows it. A
+  script that launches the app itself must set `ROMPER_USER_DATA_DIR` too, or
+  it overwrites the installed app's settings. To rerun
   one spec against an existing build, use
   `npm run test:play -- tests/e2e/<file>`. It doesn't rebuild, so run
   `npm run build` first after changing code.

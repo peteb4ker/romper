@@ -7,11 +7,13 @@ import {
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import { mergeKitScan } from "../db/operations/kitScanOperations.js";
 import {
-  addKit,
+  addKitTx,
+  closeDbConnection,
   createRomperDbFile,
-  markKitsAsSynced,
+  markKitsAsSyncedTx,
+  mergeKitScanTx,
+  withDbTransaction,
 } from "../db/romperDbCoreORM.js";
 import { logger } from "../utils/logger.js";
 import { readWavMetadata } from "./scanService.js";
@@ -110,6 +112,8 @@ export class LocalStoreSetupService {
 
     this.createdDbDirs.delete(dbDir);
     this.createdEntries.delete(target);
+    // An open database can't be renamed on Windows
+    closeDbConnection(dbDir);
 
     try {
       // Kit folders this setup extracted or copied: they came from the
@@ -198,7 +202,7 @@ export class LocalStoreSetupService {
    * Import one kit folder into the store this setup is creating (RE-34).
    *
    * The kit is added, then its folder is merged the way a rescan merges it
-   * (`mergeKitScan`, one transaction): up to 12 samples per voice in card
+   * (`mergeKitScan`), all in one transaction: up to 12 samples per voice in card
    * order, WAV metadata, and voice names inferred from file names. Files
    * over the 12-per-voice limit come back as `voice_full` skips, which the
    * wizard reports. Like every imported kit, it starts with nothing to
@@ -233,32 +237,24 @@ export class LocalStoreSetupService {
       };
     }
 
-    const added = addKit(resolved, {
-      bank_letter: kitName.charAt(0),
-      editable: false,
-      name: kitName,
-    });
-    if (!added.success) {
-      return { error: added.error, success: false };
-    }
-
-    const merged = mergeKitScan(
-      resolved,
-      kitName,
-      { filesByVoice: groupSamplesByVoice(wavFiles), kitPath },
-      { fileExists: fs.existsSync, readMetadata: readWavMetadata },
-    );
-    if (!merged.success) {
+    // The kit, its voices and samples go in together, or not at all (RE-28)
+    return withDbTransaction(resolved, (db) => {
+      addKitTx(db, {
+        bank_letter: kitName.charAt(0),
+        editable: false,
+        name: kitName,
+      });
+      const merged = mergeKitScanTx(
+        db,
+        kitName,
+        { filesByVoice: groupSamplesByVoice(wavFiles), kitPath },
+        { fileExists: fs.existsSync, readMetadata: readWavMetadata },
+      );
+      // The merge flags kits it adds samples to as changed since the last
+      // write, which is right for a rescan but not for a fresh import
+      markKitsAsSyncedTx(db, [kitName]);
       return merged;
-    }
-
-    // The merge flags kits it adds samples to as changed since the last
-    // write, which is right for a rescan but not for a fresh import
-    const cleared = markKitsAsSynced(resolved, [kitName]);
-    if (!cleared.success) {
-      return { error: cleared.error, success: false };
-    }
-    return merged;
+    });
   }
 
   /**

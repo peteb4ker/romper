@@ -2,7 +2,8 @@ import type { Kit, KitWithRelations } from "@romper/shared/db/schema.js";
 
 import * as schema from "@romper/shared/db/schema.js";
 import { inArray } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+
+import type { RomperDb } from "../utils/dbConnections.js";
 
 const { banks, samples, voices } = schema;
 
@@ -80,7 +81,7 @@ export function createKitLookups(relatedData: KitRelatedData): KitLookups {
  * This eliminates N+1 query problems by fetching all related data at once
  */
 export function fetchKitRelatedData(
-  db: ReturnType<typeof drizzle<typeof schema>>,
+  db: RomperDb,
   kitNames: string[],
 ): KitRelatedData {
   const allBanks = db.select().from(banks).all();

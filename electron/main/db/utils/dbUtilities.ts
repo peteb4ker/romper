@@ -1,26 +1,39 @@
 import type { DbResult } from "@romper/shared/db/schema.js";
 
 import * as schema from "@romper/shared/db/schema.js";
-// Database utility functions for connection, creation, and validation.
-// Migration machinery lives in dbMigrations.ts and is re-exported below.
+// Database connection, units of work, creation and validation. Each store
+// has one connection, opened and migrated on first use and kept open
+// (RE-81); the registry is in dbConnections.ts. Migration machinery lives
+// in dbMigrations.ts and is re-exported below.
 import BetterSqlite3 from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
-import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
 import { logger } from "../../utils/logger.js";
 import {
+  closeAllDbConnections,
+  closeDbConnection,
+  getOpenDbConnection,
+  registerDbConnection,
+  type RomperDb,
+  type StoreConnection,
+} from "./dbConnections.js";
+import {
   DB_FILENAME,
-  ensureDatabaseMigrations,
   getMigrationsPath,
+  migrateDatabase,
 } from "./dbMigrations.js";
 
 export {
+  closeAllDbConnections,
+  closeDbConnection,
+  openDbConnectionCount,
+  type RomperDb,
+} from "./dbConnections.js";
+export {
   checkMigrationState,
-  clearMigrationCache,
   DB_FILENAME,
-  ensureDatabaseMigrations,
   executeMigrations,
   getMigrationsPath,
   logMigrationError,
@@ -28,7 +41,16 @@ export {
 } from "./dbMigrations.js";
 
 /**
- * Initialize database with schema using Drizzle migrations
+ * Close every connection, so the next operation on each store reopens and
+ * re-migrates it. For tests that rebuild a database at the same path.
+ */
+export function clearMigrationCache(): void {
+  closeAllDbConnections();
+}
+
+/**
+ * Create a new store's database and bring its schema up to date. The
+ * connection stays open: it's the store's connection from now on.
  */
 export function createRomperDbFile(dbDir: string): {
   dbPath?: string;
@@ -36,30 +58,24 @@ export function createRomperDbFile(dbDir: string): {
   success: boolean;
 } {
   const dbPath = path.join(dbDir, DB_FILENAME);
-  let sqlite: null | ReturnType<typeof openDatabase> = null;
+  // A connection left from a database that used to be here would write to
+  // the old file
+  closeDbConnection(dbDir);
   try {
     fs.mkdirSync(dbDir, { recursive: true });
-    sqlite = openDatabase(dbPath);
-    const db = drizzle(sqlite, { schema });
-    const migrationsPath = getMigrationsPath();
-    if (!migrationsPath) {
+    if (!getMigrationsPath()) {
       console.error(
         "[Main] Migrations folder not found at any known location.",
       );
       return { error: `Migrations folder not found.`, success: false };
     }
-    logger.log(
-      "[Main] Creating database with migrations path:",
-      migrationsPath,
-    );
-    migrate(db, { migrationsFolder: migrationsPath });
+    const { sqlite } = connect(dbDir, { create: true });
     logger.log("[Main] Initial migrations completed successfully");
-    // Close before validating, which opens its own connection
-    sqlite.close();
-    sqlite = null;
     // Validate the schema was created correctly
-    const validation = validateDatabaseSchema(dbDir);
+    const validation = checkSchema(sqlite);
     if (!validation.success) {
+      // Close it so a failed setup can rename or delete the folder
+      closeDbConnection(dbDir);
       console.error(
         "[Main] Database validation failed after creation:",
         validation.error,
@@ -72,24 +88,39 @@ export function createRomperDbFile(dbDir: string): {
     logger.log("[Main] Database created and validated successfully");
     return { dbPath, success: true };
   } catch (e) {
+    closeDbConnection(dbDir);
     const error = e instanceof Error ? e.message : String(e);
     console.error("[Main] Database creation error:", error);
     return { error, success: false };
-  } finally {
-    // A failed migration must not leave the file open: Windows then can't
-    // delete or rename it (cleanup after a failed setup, test teardown).
-    sqlite?.close();
+  }
+}
+
+/**
+ * Open the store's connection if it isn't open yet, and run any pending
+ * migrations on it. Throws when the file is missing (unless creating) or a
+ * migration fails.
+ */
+export function ensureDatabaseMigrations(dbDir: string): DbResult<boolean> {
+  try {
+    connect(dbDir);
+    return { data: true, success: true };
+  } catch (e) {
+    return {
+      error: e instanceof Error ? e.message : String(e),
+      success: false,
+    };
   }
 }
 
 /**
  * Open a SQLite connection with the standard per-connection settings.
  *
- * Connections are opened fresh for every operation, so pragmas must be
- * applied on each open:
+ * Each store has one connection, opened on first use (`connect`); these
+ * apply for its lifetime:
  * - busy_timeout: wait for a lock instead of failing immediately with
- *   SQLITE_BUSY when another connection (sync run, parallel IPC call)
- *   holds the write lock
+ *   SQLITE_BUSY when another connection holds the write lock. Nothing stops
+ *   a second Romper instance (there's no single-instance lock), and tests
+ *   and tools open the file too.
  * - WAL journal mode + synchronous=NORMAL: readers no longer block the
  *   writer and vice versa; the standard pairing. journal_mode is set
  *   tolerantly — on filesystems without shared-memory support SQLite
@@ -117,14 +148,89 @@ export function openDatabase(
 }
 
 /**
- * Validate that the database schema is correctly set up
+ * Validate that the database schema is correctly set up. Uses the store's
+ * connection when it's open; otherwise opens the file read-only for the
+ * check (a store the wizard is about to open, say) and closes it again.
  */
 export function validateDatabaseSchema(dbDir: string): DbResult<boolean> {
+  const open = getOpenDbConnection(dbDir);
+  if (open) return checkSchema(open.sqlite);
+
   const dbPath = path.join(dbDir, DB_FILENAME);
-
+  let sqlite: BetterSqlite3.Database | null = null;
   try {
-    const sqlite = openDatabase(dbPath, { readonly: true });
+    sqlite = openDatabase(dbPath, { readonly: true });
+    return checkSchema(sqlite);
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    return { error: `Schema validation failed: ${error}`, success: false };
+  } finally {
+    sqlite?.close();
+  }
+}
 
+/**
+ * Run `fn` on the store's connection. Not a transaction by itself: use it
+ * for reads and single statements. Called inside `withDbTransaction` on the
+ * same store, it joins that transaction.
+ */
+export function withDb<T>(dbDir: string, fn: (db: RomperDb) => T): DbResult<T> {
+  let connection: StoreConnection;
+  try {
+    connection = connect(dbDir);
+  } catch (e) {
+    return {
+      error: e instanceof Error ? e.message : String(e),
+      success: false,
+    };
+  }
+  try {
+    return { data: fn(connection.db), success: true };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    console.error(`[Main] Database operation error:`, error);
+    return { error, success: false };
+  }
+}
+
+/**
+ * Run `fn` as one unit of work: everything it writes commits together, or
+ * nothing does if it throws. Reentrant: called inside another transaction
+ * on the same store, it becomes a savepoint, so a failure rolls back only
+ * its own writes and returns a failed result; the caller decides whether
+ * to throw and roll back the rest.
+ *
+ * The outermost call begins IMMEDIATE, taking the write lock up front, so
+ * a writer in another process is waited for (busy_timeout) at BEGIN rather
+ * than failing mid-transaction.
+ */
+export function withDbTransaction<T>(
+  dbDir: string,
+  fn: (db: RomperDb, sqlite: BetterSqlite3.Database) => T,
+): DbResult<T> {
+  let connection: StoreConnection;
+  try {
+    connection = connect(dbDir);
+  } catch (e) {
+    return {
+      error: e instanceof Error ? e.message : String(e),
+      success: false,
+    };
+  }
+  const { db, sqlite } = connection;
+  try {
+    // better-sqlite3 uses SAVEPOINT for a nested call, whatever the variant
+    const data = sqlite.transaction(() => fn(db, sqlite)).immediate();
+    return { data, success: true };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    console.error(`[Main] Database transaction error:`, error);
+    return { error, success: false };
+  }
+}
+
+function checkSchema(sqlite: BetterSqlite3.Database): DbResult<boolean> {
+  try {
     // Check that all expected tables exist
     const expectedTables = ["banks", "kits", "samples", "voices"];
     const actualTables = sqlite
@@ -139,8 +245,6 @@ export function validateDatabaseSchema(dbDir: string): DbResult<boolean> {
     const missingTables = expectedTables.filter(
       (table) => !actualTableNames.includes(table),
     );
-
-    sqlite.close();
 
     if (missingTables.length > 0) {
       return {
@@ -157,82 +261,33 @@ export function validateDatabaseSchema(dbDir: string): DbResult<boolean> {
 }
 
 /**
- * Execute a function with a database connection, handling errors and cleanup
+ * The store's connection: the open one, or a new one, opened and migrated
+ * once (RE-81). Throws if the file doesn't exist (unless `create`) or a
+ * migration fails; a connection that fails to migrate is closed.
  */
-export function withDb<T>(
+function connect(
   dbDir: string,
-  fn: (db: ReturnType<typeof drizzle<typeof schema>>) => T,
-): DbResult<T> {
+  { create = false }: { create?: boolean } = {},
+): StoreConnection {
+  const open = getOpenDbConnection(dbDir);
+  if (open) return open;
+
   const dbPath = path.join(dbDir, DB_FILENAME);
-
-  // Ensure migrations are up to date
-  const migrationResult = ensureDatabaseMigrations(dbDir);
-  if (!migrationResult.success) {
-    return migrationResult as DbResult<T>;
+  if (!create && !fs.existsSync(dbPath)) {
+    throw new Error(`Database file does not exist: ${dbPath}`);
   }
 
-  let sqlite: BetterSqlite3.Database | null = null;
+  const sqlite = openDatabase(dbPath);
   try {
-    sqlite = openDatabase(dbPath);
     const db = drizzle(sqlite, { schema });
-    const result = fn(db);
-    return { data: result, success: true };
+    migrateDatabase(sqlite, db, dbPath, dbDir);
+    const connection = { db, sqlite };
+    registerDbConnection(dbDir, connection);
+    return connection;
   } catch (e) {
+    sqlite.close();
+    if (create) throw e;
     const error = e instanceof Error ? e.message : String(e);
-    console.error(`[Main] Database operation error:`, error);
-    return { error, success: false };
-  } finally {
-    if (sqlite) {
-      sqlite.close();
-    }
-  }
-}
-
-/**
- * Execute a function within a database transaction, handling errors, rollback, and cleanup
- */
-export function withDbTransaction<T>(
-  dbDir: string,
-  fn: (
-    db: ReturnType<typeof drizzle<typeof schema>>,
-    sqlite: BetterSqlite3.Database,
-  ) => T,
-): DbResult<T> {
-  const dbPath = path.join(dbDir, DB_FILENAME);
-
-  // Ensure migrations are up to date
-  const migrationResult = ensureDatabaseMigrations(dbDir);
-  if (!migrationResult.success) {
-    return migrationResult as DbResult<T>;
-  }
-
-  let sqlite: BetterSqlite3.Database | null = null;
-  try {
-    sqlite = openDatabase(dbPath);
-    const db = drizzle(sqlite, { schema });
-
-    // IMMEDIATE takes the write lock up front, so a concurrent writer is
-    // rejected at BEGIN (after busy_timeout) instead of mid-transaction
-    sqlite.exec("BEGIN IMMEDIATE TRANSACTION");
-
-    try {
-      const result = fn(db, sqlite);
-
-      // Commit transaction on success
-      sqlite.exec("COMMIT");
-      return { data: result, success: true };
-    } catch (e) {
-      // Rollback transaction on error
-      sqlite.exec("ROLLBACK");
-      throw e;
-    }
-  } catch (e) {
-    const error = e instanceof Error ? e.message : String(e);
-    console.error(`[Main] Database transaction error:`, error);
-    return { error, success: false };
-  } finally {
-    if (sqlite) {
-      sqlite.close();
-    }
+    throw new Error(`Migration failed: ${error}`);
   }
 }

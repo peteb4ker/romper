@@ -1,5 +1,6 @@
 import type { Sample } from "@romper/shared/db/schema.js";
 
+import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { withDb } from "../../utils/dbUtilities.js";
@@ -266,65 +267,82 @@ describe("sampleManagementOps unit tests", () => {
     });
   });
 
-  describe("performVoiceReindexing", () => {
-    it("should reindex multiple voices after deletion", () => {
-      const samplesToDelete: Sample[] = [
+  describe("[Q-02] performVoiceReindexing", () => {
+    /** A handle whose voice query returns `remaining` per voice */
+    function reindexDb(remaining: Record<number, Sample[]>) {
+      const updates: Array<{ id: unknown; slot: number }> = [];
+      let voice = 0;
+      const db = {
+        select: () => ({
+          from: () => ({
+            where: () => ({
+              orderBy: () => ({ all: () => remaining[voice] ?? [] }),
+            }),
+          }),
+        }),
+        update: () => ({
+          set: ({ slot_number }: { slot_number: number }) => ({
+            where: (id: unknown) => ({
+              run: () => updates.push({ id, slot: slot_number }),
+            }),
+          }),
+        }),
+      };
+      // eq(samples.voice_number, n) is mocked: track the voice by call order
+      vi.mocked(eq).mockImplementation(((column: unknown, value: unknown) => {
+        if (column === "voice_number") voice = value as number;
+        return value;
+      }) as never);
+      return { db, updates };
+    }
+
+    it("renumbers each voice that lost samples, on the caller's handle", () => {
+      const { db, updates } = reindexDb({
+        1: [
+          { id: 10, slot_number: 0, voice_number: 1 } as Sample,
+          { id: 11, slot_number: 2, voice_number: 1 } as Sample,
+          { id: 12, slot_number: 5, voice_number: 1 } as Sample,
+        ],
+        2: [],
+      });
+
+      const result = performVoiceReindexing(db as never, testKitName, [
         { id: 1, slot_number: 1, voice_number: 1 } as Sample,
         { id: 2, slot_number: 3, voice_number: 1 } as Sample,
         { id: 3, slot_number: 0, voice_number: 2 } as Sample,
-      ];
+      ]);
 
-      // Mock the database calls for reindexing
-      vi.mocked(withDb).mockImplementation(
-        (_dbDir: string, fn: (db: unknown) => unknown) => {
-          // Mock the database query and update calls for reindexing
-          const mockDb = {
-            all: vi.fn().mockReturnValue([{ id: 4, slot_number: 300 }]), // Reindexed result
-            from: vi.fn().mockReturnThis(),
-            run: vi.fn(),
-            select: vi.fn().mockReturnThis(),
-            set: vi.fn().mockReturnThis(),
-            update: vi.fn().mockReturnThis(),
-            where: vi.fn().mockReturnThis(),
-          };
-          const result = fn(mockDb);
-          return { data: result, success: true };
-        },
-      );
-
-      const result = performVoiceReindexing(
-        testDbDir,
-        testKitName,
-        samplesToDelete,
-      );
-
-      expect(result).toHaveLength(2); // 2 voices to reindex (voice 1 and voice 2)
-      expect(vi.mocked(withDb)).toHaveBeenCalledTimes(2); // One call per voice
+      expect(result.map((s) => [s.id, s.slot_number])).toEqual([
+        [10, 0],
+        [11, 1],
+        [12, 2],
+      ]);
+      // Samples already in place aren't written
+      expect(updates).toEqual([
+        { id: 11, slot: 1 },
+        { id: 12, slot: 2 },
+      ]);
+      expect(vi.mocked(withDb)).not.toHaveBeenCalled();
     });
 
     it("should handle empty deletion list", () => {
-      const result = performVoiceReindexing(testDbDir, testKitName, []);
-
-      expect(result).toEqual([]);
+      const { db } = reindexDb({});
+      expect(performVoiceReindexing(db as never, testKitName, [])).toEqual([]);
     });
 
-    it("should handle reindexing failures gracefully", () => {
-      const samplesToDelete: Sample[] = [
-        { id: 1, slot_number: 1, voice_number: 1 } as Sample,
-      ];
-
-      vi.mocked(withDb).mockReturnValue({
-        error: "Database error",
-        success: false,
+    it("lets a failed update throw, so the caller's transaction rolls back", () => {
+      const { db } = reindexDb({
+        1: [{ id: 11, slot_number: 2, voice_number: 1 } as Sample],
       });
+      db.update = () => {
+        throw new Error("Database error");
+      };
 
-      const result = performVoiceReindexing(
-        testDbDir,
-        testKitName,
-        samplesToDelete,
-      );
-
-      expect(result).toEqual([]);
+      expect(() =>
+        performVoiceReindexing(db as never, testKitName, [
+          { id: 1, slot_number: 1, voice_number: 1 } as Sample,
+        ]),
+      ).toThrow("Database error");
     });
   });
 });

@@ -12,7 +12,7 @@ import { inferVoiceTypeFromFilename } from "@romper/shared/kitUtilsShared.js";
 import { and, eq } from "drizzle-orm";
 import * as path from "node:path";
 
-import { withDbTransaction } from "../utils/dbUtilities.js";
+import { type RomperDb, withDbTransaction } from "../utils/dbUtilities.js";
 
 const { kits, samples, voices } = schema;
 
@@ -61,72 +61,82 @@ export function mergeKitScan(
   folder: KitFolderScan,
   io: KitScanIo,
 ): DbResult<KitScanResult> {
-  return withDbTransaction(dbDir, (db) => {
-    const kit = db.select().from(kits).where(eq(kits.name, kitName)).get();
-    if (!kit) {
-      throw new Error(`Kit not found in database: ${kitName}`);
-    }
+  return withDbTransaction(dbDir, (db) =>
+    mergeKitScanTx(db, kitName, folder, io),
+  );
+}
 
-    const existing = db
-      .select()
-      .from(samples)
-      .where(eq(samples.kit_name, kitName))
-      .all();
-    const kitVoices = db
-      .select()
-      .from(voices)
-      .where(eq(voices.kit_name, kitName))
-      .all();
+/** Merge a kit folder scan on the caller's transaction */
+export function mergeKitScanTx(
+  db: RomperDb,
+  kitName: string,
+  folder: KitFolderScan,
+  io: KitScanIo,
+): KitScanResult {
+  const kit = db.select().from(kits).where(eq(kits.name, kitName)).get();
+  if (!kit) {
+    throw new Error(`Kit not found in database: ${kitName}`);
+  }
 
-    const plan = planKitScanMerge({
-      existing,
-      folder,
-      io,
-      kit,
-      voices: kitVoices,
-    });
+  const existing = db
+    .select()
+    .from(samples)
+    .where(eq(samples.kit_name, kitName))
+    .all();
+  const kitVoices = db
+    .select()
+    .from(voices)
+    .where(eq(voices.kit_name, kitName))
+    .all();
 
-    for (const { id, metadata } of plan.metadataUpdates) {
-      db.update(samples).set(metadata).where(eq(samples.id, id)).run();
-    }
+  const plan = planKitScanMerge({
+    existing,
+    folder,
+    io,
+    kit,
+    voices: kitVoices,
+  });
 
-    for (const row of plan.inserts) {
-      db.insert(samples).values(row).run();
-    }
+  for (const { id, metadata } of plan.metadataUpdates) {
+    db.update(samples).set(metadata).where(eq(samples.id, id)).run();
+  }
 
-    for (const { alias, voiceNumber } of plan.aliasUpdates) {
-      const hasVoiceRow = kitVoices.some((v) => v.voice_number === voiceNumber);
-      if (hasVoiceRow) {
-        db.update(voices)
-          .set({ voice_alias: alias })
-          .where(
-            and(
-              eq(voices.kit_name, kitName),
-              eq(voices.voice_number, voiceNumber),
-            ),
-          )
-          .run();
-      } else {
-        db.insert(voices)
-          .values({
-            kit_name: kitName,
-            voice_alias: alias,
-            voice_number: voiceNumber,
-          })
-          .run();
-      }
-    }
+  for (const row of plan.inserts) {
+    db.insert(samples).values(row).run();
+  }
 
-    if (plan.inserts.length > 0) {
-      // New samples aren't on the SD card yet
-      db.update(kits)
-        .set({ modified_since_sync: true })
-        .where(eq(kits.name, kitName))
+  for (const { alias, voiceNumber } of plan.aliasUpdates) {
+    const hasVoiceRow = kitVoices.some((v) => v.voice_number === voiceNumber);
+    if (hasVoiceRow) {
+      db.update(voices)
+        .set({ voice_alias: alias })
+        .where(
+          and(
+            eq(voices.kit_name, kitName),
+            eq(voices.voice_number, voiceNumber),
+          ),
+        )
+        .run();
+    } else {
+      db.insert(voices)
+        .values({
+          kit_name: kitName,
+          voice_alias: alias,
+          voice_number: voiceNumber,
+        })
         .run();
     }
+  }
 
-    return plan.result;
-  });
+  if (plan.inserts.length > 0) {
+    // New samples aren't on the SD card yet
+    db.update(kits)
+      .set({ modified_since_sync: true })
+      .where(eq(kits.name, kitName))
+      .run();
+  }
+
+  return plan.result;
 }
 
 /**

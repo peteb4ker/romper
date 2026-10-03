@@ -2,10 +2,11 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 
 // Mock the database utilities
 vi.mock("../../utils/dbUtilities.js", () => ({
-  withDb: vi.fn(),
+  withDbTransaction: vi.fn(),
 }));
 
-import { withDb } from "../../utils/dbUtilities.js";
+// The read and the write are one transaction (RE-28)
+import { withDbTransaction } from "../../utils/dbUtilities.js";
 import { toggleKitFavorite } from "../kitCrudOperations.js";
 
 describe("toggleKitFavorite - Unit Tests", () => {
@@ -39,7 +40,7 @@ describe("toggleKitFavorite - Unit Tests", () => {
       }),
     });
 
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
+    vi.mocked(withDbTransaction).mockImplementation((dbDir, fn) => {
       const mockDb = {
         select: mockSelect,
         update: mockUpdate,
@@ -77,7 +78,7 @@ describe("toggleKitFavorite - Unit Tests", () => {
       }),
     });
 
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
+    vi.mocked(withDbTransaction).mockImplementation((dbDir, fn) => {
       const mockDb = {
         select: mockSelect,
         update: mockUpdate,
@@ -101,7 +102,7 @@ describe("toggleKitFavorite - Unit Tests", () => {
       }),
     });
 
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
+    vi.mocked(withDbTransaction).mockImplementation((dbDir, fn) => {
       const mockDb = {
         select: mockSelect,
       };
@@ -139,7 +140,7 @@ describe("toggleKitFavorite - Unit Tests", () => {
       set: mockSet,
     });
 
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
+    vi.mocked(withDbTransaction).mockImplementation((dbDir, fn) => {
       const mockDb = {
         select: mockSelect,
         update: mockUpdate,
@@ -156,7 +157,7 @@ describe("toggleKitFavorite - Unit Tests", () => {
   });
 
   test("should handle database errors gracefully", () => {
-    vi.mocked(withDb).mockReturnValue({
+    vi.mocked(withDbTransaction).mockReturnValue({
       error: "Database connection failed",
       success: false,
     });
@@ -167,13 +168,13 @@ describe("toggleKitFavorite - Unit Tests", () => {
     expect(result.error).toBe("Database connection failed");
   });
 
-  test("should call withDb with correct parameters", () => {
+  test("should run in one transaction with correct parameters", () => {
     const mockKit = {
       is_favorite: false,
       name: "A0",
     };
 
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
+    vi.mocked(withDbTransaction).mockImplementation((dbDir, fn) => {
       const mockDb = {
         select: vi.fn().mockReturnValue({
           from: vi.fn().mockReturnValue({
@@ -195,6 +196,9 @@ describe("toggleKitFavorite - Unit Tests", () => {
 
     toggleKitFavorite(mockDbDir, mockKitName);
 
-    expect(withDb).toHaveBeenCalledWith(mockDbDir, expect.any(Function));
+    expect(withDbTransaction).toHaveBeenCalledWith(
+      mockDbDir,
+      expect.any(Function),
+    );
   });
 });

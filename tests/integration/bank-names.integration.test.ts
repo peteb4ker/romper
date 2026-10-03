@@ -3,6 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { closeAllDbConnections } from "../../electron/main/db/utils/dbConnections.js";
+
 // Capture the IPC handlers main registers, to call them as the renderer would
 const handlers = new Map<string, (...args: unknown[]) => unknown>();
 vi.mock("electron", () => ({
@@ -56,6 +58,8 @@ describe("[UC-12] Naming and clearing a bank (RE-23)", () => {
   });
 
   afterEach(() => {
+    // Windows can't delete a database file that's still open
+    closeAllDbConnections();
     if (savedEnvPath === undefined) delete process.env.ROMPER_LOCAL_PATH;
     else process.env.ROMPER_LOCAL_PATH = savedEnvPath;
     fs.rmSync(tempDir, { force: true, recursive: true });

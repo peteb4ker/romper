@@ -1,10 +1,13 @@
 import type { DbResult, NewSample, Sample } from "@romper/shared/db/schema.js";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 
 import * as schema from "@romper/shared/db/schema.js";
 import { and, eq, type SQL } from "drizzle-orm";
 
-import { withDb, withDbTransaction } from "../utils/dbUtilities.js";
+import {
+  type RomperDb,
+  withDb,
+  withDbTransaction,
+} from "../utils/dbUtilities.js";
 import { flagKitModified } from "./kitSyncOperations.js";
 import { performVoiceReindexing } from "./sampleManagementOps.js";
 
@@ -17,10 +20,16 @@ export function addSample(
   dbDir: string,
   sample: NewSample,
 ): DbResult<{ sampleId: number }> {
-  return withDb(dbDir, (db) => {
-    const result = db.insert(samples).values(sample).run();
-    return { sampleId: result.lastInsertRowid as number };
-  });
+  return withDb(dbDir, (db) => addSampleTx(db, sample));
+}
+
+/** Insert a sample row on the caller's handle */
+export function addSampleTx(
+  db: RomperDb,
+  sample: NewSample,
+): { sampleId: number } {
+  const result = db.insert(samples).values(sample).run();
+  return { sampleId: result.lastInsertRowid as number };
 }
 
 /**
@@ -58,31 +67,30 @@ export function buildDeleteConditions(
 }
 
 /**
- * Delete samples with automatic voice reindexing
+ * Delete samples and close the gaps they leave in their voices, in one
+ * transaction (RE-28)
  */
 export function deleteSamples(
   dbDir: string,
   kitName: string,
   filter?: { slotNumber?: number; voiceNumber?: number },
 ): DbResult<{ affectedSamples: Sample[]; deletedSamples: Sample[] }> {
-  return withDb(dbDir, (db) => {
-    const whereCondition = buildDeleteConditions(kitName, filter);
-    const samplesToDelete = getSamplesToDelete(db, whereCondition);
+  return withDbTransaction(dbDir, (db) => deleteSamplesTx(db, kitName, filter));
+}
 
-    // Delete the samples
-    db.delete(samples).where(whereCondition).run();
-
-    const affectedSamples = performVoiceReindexing(
-      dbDir,
-      kitName,
-      samplesToDelete,
-    );
-
-    return {
-      affectedSamples,
-      deletedSamples: samplesToDelete,
-    };
-  });
+/** Delete samples and reindex their voices, on the caller's transaction */
+export function deleteSamplesTx(
+  db: RomperDb,
+  kitName: string,
+  filter?: { slotNumber?: number; voiceNumber?: number },
+): { affectedSamples: Sample[]; deletedSamples: Sample[] } {
+  const { deletedSamples } = deleteSamplesWithoutReindexingTx(
+    db,
+    kitName,
+    filter,
+  );
+  const affectedSamples = performVoiceReindexing(db, kitName, deletedSamples);
+  return { affectedSamples, deletedSamples };
 }
 
 /**
@@ -93,17 +101,21 @@ export function deleteSamplesWithoutReindexing(
   kitName: string,
   filter?: { slotNumber?: number; voiceNumber?: number },
 ): DbResult<{ deletedSamples: Sample[] }> {
-  return withDb(dbDir, (db) => {
-    const whereCondition = buildDeleteConditions(kitName, filter);
-    const samplesToDelete = getSamplesToDelete(db, whereCondition);
+  return withDbTransaction(dbDir, (db) =>
+    deleteSamplesWithoutReindexingTx(db, kitName, filter),
+  );
+}
 
-    // Delete the samples without reindexing
-    db.delete(samples).where(whereCondition).run();
-
-    return {
-      deletedSamples: samplesToDelete,
-    };
-  });
+/** Delete samples, leaving their slots empty, on the caller's handle */
+export function deleteSamplesWithoutReindexingTx(
+  db: RomperDb,
+  kitName: string,
+  filter?: { slotNumber?: number; voiceNumber?: number },
+): { deletedSamples: Sample[] } {
+  const whereCondition = buildDeleteConditions(kitName, filter);
+  const deletedSamples = getSamplesToDelete(db, whereCondition);
+  db.delete(samples).where(whereCondition).run();
+  return { deletedSamples };
 }
 
 /**
@@ -131,7 +143,7 @@ export function getKitSamples(
  * Helper function to get samples to delete
  */
 export function getSamplesToDelete(
-  db: BetterSQLite3Database<typeof schema>,
+  db: RomperDb,
   whereCondition: SQL,
 ): Sample[] {
   return db.select().from(samples).where(whereCondition).all();

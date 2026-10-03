@@ -10,6 +10,7 @@ import {
   getKitSamples,
   moveSample,
 } from "../../romperDbCoreORM";
+import { closeAllDbConnections } from "../../utils/dbConnections.js";
 
 describe("[UC-21] Drag & Drop Operations - Integration Tests", () => {
   let tempDir: string;
@@ -30,6 +31,8 @@ describe("[UC-21] Drag & Drop Operations - Integration Tests", () => {
   });
 
   afterEach(() => {
+    // Windows can't delete a database file that's still open
+    closeAllDbConnections();
     rmSync(tempDir, { force: true, recursive: true });
   });
 

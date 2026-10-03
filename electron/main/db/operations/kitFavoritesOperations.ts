@@ -3,7 +3,7 @@ import type { DbResult, KitWithRelations } from "@romper/shared/db/schema.js";
 import * as schema from "@romper/shared/db/schema.js";
 import { count, eq } from "drizzle-orm";
 
-import { withDb } from "../utils/dbUtilities.js";
+import { withDb, withDbTransaction } from "../utils/dbUtilities.js";
 import {
   combineKitWithRelations,
   createKitLookups,
@@ -65,7 +65,7 @@ export function toggleKitFavorite(
   dbDir: string,
   kitName: string,
 ): DbResult<{ isFavorite: boolean }> {
-  return withDb(dbDir, (db) => {
+  return withDbTransaction(dbDir, (db) => {
     // First get current state
     const currentKit = db
       .select({ is_favorite: kits.is_favorite })

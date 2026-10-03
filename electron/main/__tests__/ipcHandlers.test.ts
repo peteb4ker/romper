@@ -132,6 +132,10 @@ vi.mock("../security/localStoreAccessPrompt.js", () => ({
   requestLocalStoreAccess: vi.fn(() => Promise.resolve({ granted: true })),
 }));
 
+vi.mock("../db/utils/dbConnections.js", () => ({
+  closeAllDbConnections: vi.fn(),
+}));
+
 const DENIED = { error: "Access denied: outside granted folders", ok: false };
 
 beforeEach(() => {
@@ -163,6 +167,34 @@ describe("registerIpcHandlers", () => {
     registerIpcHandlers(inMemorySettings);
     await ipcMainHandlers["write-settings"]({}, "baz", 42);
     expect(inMemorySettings.baz).toBe(42);
+  });
+
+  it("[Q-02] closes the old store's database when the local store changes (RE-81)", async () => {
+    const { settingsService } = await import("../services/settingsService.js");
+    const { closeAllDbConnections } =
+      await import("../db/utils/dbConnections.js");
+    vi.mocked(settingsService.writeSetting).mockImplementation(
+      (settings, key, value) => {
+        settings[key] = value;
+      },
+    );
+    const { registerIpcHandlers } = await import("../ipcHandlers");
+    registerIpcHandlers({ localStorePath: "/stores/one" });
+
+    await ipcMainHandlers["write-settings"](
+      {},
+      "localStorePath",
+      "/stores/one",
+    );
+    await ipcMainHandlers["write-settings"]({}, "theme", "dark");
+    expect(closeAllDbConnections).not.toHaveBeenCalled();
+
+    await ipcMainHandlers["write-settings"](
+      {},
+      "localStorePath",
+      "/stores/two",
+    );
+    expect(closeAllDbConnections).toHaveBeenCalledTimes(1);
   });
 
   it("registers open-external and opens https URLs in the system browser", async () => {

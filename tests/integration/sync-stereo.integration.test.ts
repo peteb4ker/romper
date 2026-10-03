@@ -3,6 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { closeAllDbConnections } from "../../electron/main/db/utils/dbConnections.js";
+
 vi.mock("electron", () => ({
   BrowserWindow: {
     getAllWindows: vi.fn(() => []),
@@ -110,6 +112,8 @@ describe("[UC-28] [UC-34] Writing stereo files to the card (RE-29)", () => {
   });
 
   afterEach(() => {
+    // Windows can't delete a database file that's still open
+    closeAllDbConnections();
     fs.rmSync(tempDir, { force: true, recursive: true });
   });
 

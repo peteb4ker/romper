@@ -9,7 +9,11 @@ import type { SliceStep } from "@romper/shared/sliceTypes.js";
 import * as schema from "@romper/shared/db/schema.js";
 import { eq } from "drizzle-orm";
 
-import { withDb, withDbTransaction } from "../utils/dbUtilities.js";
+import {
+  type RomperDb,
+  withDb,
+  withDbTransaction,
+} from "../utils/dbUtilities.js";
 import {
   combineKitWithRelations,
   createKitLookups,
@@ -28,28 +32,31 @@ export {
   markKitAsModified,
   markKitAsSynced,
   markKitsAsSynced,
+  markKitsAsSyncedTx,
 } from "./kitSyncOperations.js";
 
 const { banks, kits, samples, voices } = schema;
 
 /**
- * Add a new kit to the database with default voices
+ * Add a new kit with its four voices, in one transaction (RE-28)
  */
 export function addKit(dbDir: string, kit: NewKit): DbResult<void> {
-  return withDb(dbDir, (db) => {
-    // Insert kit directly
-    db.insert(kits).values(kit).run();
+  return withDbTransaction(dbDir, (db) => addKitTx(db, kit));
+}
 
-    // Create the 4 voices
-    const voiceData = Array.from({ length: 4 }, (_, i) => ({
-      kit_name: kit.name,
-      stereo_mode: false, // Default to mono mode
-      voice_alias: null,
-      voice_number: i + 1,
-    }));
-
-    db.insert(voices).values(voiceData).run();
-  });
+/** Insert a kit and its four voices on the caller's transaction */
+export function addKitTx(db: RomperDb, kit: NewKit): void {
+  db.insert(kits).values(kit).run();
+  db.insert(voices)
+    .values(
+      Array.from({ length: 4 }, (_, i) => ({
+        kit_name: kit.name,
+        stereo_mode: false, // Default to mono mode
+        voice_alias: null,
+        voice_number: i + 1,
+      })),
+    )
+    .run();
 }
 
 /**

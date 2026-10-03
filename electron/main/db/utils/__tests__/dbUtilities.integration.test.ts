@@ -5,6 +5,7 @@ import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { deleteDbFileWithRetry } from "../../fileOperations.js";
+import { closeAllDbConnections } from "../dbConnections.js";
 import {
   checkMigrationState,
   clearMigrationCache,
@@ -54,6 +55,8 @@ describe("Database Utilities Integration Tests", () => {
   });
 
   afterEach(async () => {
+    // Windows can't delete a database file that's still open
+    closeAllDbConnections();
     await cleanupSqliteFiles(TEST_DB_DIR);
     fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
   });

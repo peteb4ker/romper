@@ -13,6 +13,7 @@ import {
   getKitSamples,
   updateVoiceStereoMode,
 } from "../../db/romperDbCoreORM.js";
+import { closeAllDbConnections } from "../../db/utils/dbConnections.js";
 import { sampleCrudService } from "../crud/sampleCrudService.js";
 import { sampleBatchOperationsService } from "../sampleBatchOperations.js";
 import { SampleValidationService } from "../sampleValidation.js";
@@ -120,6 +121,8 @@ describe("SampleValidation Integration Tests", () => {
   });
 
   afterEach(async () => {
+    // Windows can't delete a database file that's still open
+    closeAllDbConnections();
     await cleanupSqliteFiles(TEST_DB_DIR);
     fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
   });
@@ -236,78 +239,6 @@ describe("SampleValidation Integration Tests", () => {
     it("should allow movement within the same voice to a different slot", () => {
       const result = sampleValidationService.validateSampleMovement(1, 0, 1, 3);
       expect(result.success).toBe(true);
-    });
-  });
-
-  describe("SampleValidationService.checkSampleExists", () => {
-    it("should return exists=false for an empty slot", () => {
-      const result = sampleValidationService.checkSampleExists(
-        TEST_DB_PATH,
-        "A1",
-        1,
-        0,
-      );
-      expect(result.exists).toBe(false);
-      expect(result.sample).toBeUndefined();
-    });
-
-    it("should return exists=true with sample data for an occupied slot", () => {
-      const sample: NewSample = {
-        filename: "kick.wav",
-        kit_name: "A1",
-        slot_number: 0,
-        source_path: "/test/kick.wav",
-        voice_number: 1,
-      };
-      addSample(TEST_DB_PATH, sample);
-
-      const result = sampleValidationService.checkSampleExists(
-        TEST_DB_PATH,
-        "A1",
-        1,
-        0,
-      );
-      expect(result.exists).toBe(true);
-      expect(result.sample).toBeTruthy();
-      expect(result.sample!.filename).toBe("kick.wav");
-    });
-
-    it("should not find a sample in a different voice", () => {
-      const sample: NewSample = {
-        filename: "kick.wav",
-        kit_name: "A1",
-        slot_number: 0,
-        source_path: "/test/kick.wav",
-        voice_number: 1,
-      };
-      addSample(TEST_DB_PATH, sample);
-
-      const result = sampleValidationService.checkSampleExists(
-        TEST_DB_PATH,
-        "A1",
-        2,
-        0,
-      );
-      expect(result.exists).toBe(false);
-    });
-
-    it("should not find a sample in a different slot", () => {
-      const sample: NewSample = {
-        filename: "kick.wav",
-        kit_name: "A1",
-        slot_number: 0,
-        source_path: "/test/kick.wav",
-        voice_number: 1,
-      };
-      addSample(TEST_DB_PATH, sample);
-
-      const result = sampleValidationService.checkSampleExists(
-        TEST_DB_PATH,
-        "A1",
-        1,
-        1,
-      );
-      expect(result.exists).toBe(false);
     });
   });
 

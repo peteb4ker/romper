@@ -21,6 +21,7 @@ describe("SampleCrudService", () => {
   let service: SampleCrudService;
   const mockSettings = { localStorePath: "/mock/path" };
   const mockDbPath = "/mock/db.sqlite";
+  const mockDb = { handle: "transaction" } as never;
 
   beforeEach(() => {
     service = new SampleCrudService();
@@ -44,13 +45,18 @@ describe("SampleCrudService", () => {
     mockValidation.sampleValidationService.validateSampleFile.mockReturnValue({
       isValid: true,
     });
-    mockValidation.sampleValidationService.checkSampleExists.mockReturnValue({
-      exists: false,
+    // One unit of work: a throw inside becomes a failed result
+    mockORM.withDbTransaction.mockImplementation((_dbDir, fn) => {
+      try {
+        return { data: fn(mockDb, {} as never), success: true };
+      } catch (error) {
+        return { error: (error as Error).message, success: false };
+      }
     });
   });
 
   describe("[UC-19] addSampleToSlot", () => {
-    it("should successfully add a sample", () => {
+    it("[Q-02] adds the sample and flags the kit in one transaction", () => {
       // Mock validation (already set in beforeEach, but override for clarity)
       mockValidation.sampleValidationService.validateVoiceAndSlot.mockReturnValue(
         {
@@ -63,16 +69,7 @@ describe("SampleCrudService", () => {
         },
       );
 
-      // Mock database operations
-      mockValidation.sampleValidationService.checkSampleExists.mockReturnValue({
-        exists: false,
-        sample: undefined,
-      });
-      mockORM.addSample.mockReturnValue({
-        data: { sampleId: 123 },
-        success: true,
-      });
-      mockORM.markKitAsModified.mockReturnValue({ success: true });
+      mockORM.addSampleTx.mockReturnValue({ sampleId: 123 });
 
       const result = service.addSampleToSlot(
         mockSettings,
@@ -84,17 +81,15 @@ describe("SampleCrudService", () => {
 
       expect(result.success).toBe(true);
       expect(result.data?.sampleId).toBe(123);
-      expect(mockORM.addSample).toHaveBeenCalledWith(mockDbPath, {
+      expect(mockORM.withDbTransaction).toHaveBeenCalledTimes(1);
+      expect(mockORM.addSampleTx).toHaveBeenCalledWith(mockDb, {
         filename: "sample.wav",
         kit_name: "TestKit",
         slot_number: 0,
         source_path: "/path/to/sample.wav",
         voice_number: 1,
       });
-      expect(mockORM.markKitAsModified).toHaveBeenCalledWith(
-        mockDbPath,
-        "TestKit",
-      );
+      expect(mockORM.flagKitModified).toHaveBeenCalledWith(mockDb, "TestKit");
     });
 
     it("should fail when local store path is not configured", () => {
@@ -154,8 +149,8 @@ describe("SampleCrudService", () => {
       expect(
         mockValidation.sampleValidationService.validateVoiceNotLinkedPartner,
       ).toHaveBeenCalledWith(mockDbPath, "TestKit", 2);
-      expect(mockORM.addSample).not.toHaveBeenCalled();
-      expect(mockORM.markKitAsModified).not.toHaveBeenCalled();
+      expect(mockORM.addSampleTx).not.toHaveBeenCalled();
+      expect(mockORM.flagKitModified).not.toHaveBeenCalled();
     });
 
     it("should fail when file validation fails", () => {

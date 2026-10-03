@@ -107,6 +107,24 @@ in `electron/main/security/`.
   other tables use as the foreign key. Slots are 0-based in the database.
   Details: [romper-db.md](romper-db.md).
 - Migrations live in `electron/main/db/migrations/` (drizzle-kit).
+- **One connection per store** (RE-81). The first operation on a store opens
+  it in WAL mode, applies pending migrations and keeps the connection
+  (`db/utils/dbConnections.ts` holds them). It's closed when the local store
+  setting changes, before setup cleanup moves a failed store aside, before
+  a database file is deleted, and on `will-quit`, which also checkpoints the
+  write-ahead log into the file. Windows can't delete or rename an open
+  database, so anything that does must call `closeDbConnection` first;
+  tests that delete temp stores call `closeAllDbConnections` in teardown.
+  `busy_timeout` stays: there's no single-instance lock, so another Romper
+  or a tool can hold the write lock.
+- **A unit of work per change** (RE-28). `withDb(dbDir, fn)` runs reads and
+  single statements; `withDbTransaction(dbDir, fn)` runs `fn` as one
+  transaction (`BEGIN IMMEDIATE`) and is reentrant: called inside another,
+  it becomes a savepoint. Multi-step writes are `fooTx(db, …)` cores that
+  take the handle (`RomperDb`) and throw on failure, so an operation
+  composes them in one `withDbTransaction`: a kit with its voices, a delete
+  with its reindex, every sample edit with the kit's modified flag, a setup
+  import with its scan merge.
 - better-sqlite3 ships N-API prebuilds (`prebuilds/<platform>-<arch>.node`)
   that load in both Node and Electron, so nothing is rebuilt at install
   (Forge's `rebuildConfig` rebuilds no modules). Integration tests run

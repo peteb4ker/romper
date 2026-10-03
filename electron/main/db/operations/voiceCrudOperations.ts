@@ -4,7 +4,7 @@ import type { VoiceSliceSettings } from "@romper/shared/sliceTypes.js";
 import * as schema from "@romper/shared/db/schema.js";
 import { and, eq } from "drizzle-orm";
 
-import { withDb, withDbTransaction } from "../utils/dbUtilities.js";
+import { type RomperDb, withDbTransaction } from "../utils/dbUtilities.js";
 import { flagKitModified } from "./kitSyncOperations.js";
 
 const { voices } = schema;
@@ -45,7 +45,7 @@ export function updateVoiceSampleMode(
   voiceNumber: number,
   sampleMode: string,
 ): DbResult<void> {
-  return withDb(dbDir, (db) => {
+  return withDbTransaction(dbDir, (db) => {
     ensureVoiceRow(db, kitName, voiceNumber);
     db.update(voices)
       .set({ sample_mode: sampleMode })
@@ -66,7 +66,7 @@ export function updateVoiceSliceSettings(
   voiceNumber: number,
   settings: Partial<VoiceSliceSettings>,
 ): DbResult<void> {
-  return withDb(dbDir, (db) => {
+  return withDbTransaction(dbDir, (db) => {
     ensureVoiceRow(db, kitName, voiceNumber);
     const updates: Partial<typeof voices.$inferInsert> = {};
     if (settings.enabled !== undefined)
@@ -98,7 +98,7 @@ export function updateVoiceStereoMode(
   voiceNumber: number,
   stereoMode: boolean,
 ): DbResult<void> {
-  return withDb(dbDir, (db) => {
+  return withDbTransaction(dbDir, (db) => {
     ensureVoiceRow(db, kitName, voiceNumber);
     db.update(voices)
       .set({ stereo_mode: stereoMode })
@@ -119,7 +119,7 @@ export function updateVoiceVolume(
   voiceNumber: number,
   volume: number,
 ): DbResult<void> {
-  return withDb(dbDir, (db) => {
+  return withDbTransaction(dbDir, (db) => {
     ensureVoiceRow(db, kitName, voiceNumber);
     db.update(voices)
       .set({ voice_volume: volume })
@@ -134,7 +134,7 @@ export function updateVoiceVolume(
  * Ensure a voice row exists for the given kit/voice, creating it if needed.
  */
 function ensureVoiceRow(
-  db: Parameters<Parameters<typeof withDb>[1]>[0],
+  db: RomperDb,
   kitName: string,
   voiceNumber: number,
 ): void {

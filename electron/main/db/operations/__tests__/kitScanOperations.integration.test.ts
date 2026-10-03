@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 import type { KitScanIo } from "../kitScanOperations.js";
 
+import { closeAllDbConnections } from "../../utils/dbConnections.js";
 import { createRomperDbFile, DB_FILENAME } from "../../utils/dbUtilities.js";
 import { addKit, getKit, updateKit } from "../kitCrudOperations.js";
 import { mergeKitScan } from "../kitScanOperations.js";
@@ -51,6 +52,8 @@ describe("[UC-13] mergeKitScan - Integration Tests", () => {
   });
 
   afterEach(() => {
+    // Windows can't delete a database file that's still open
+    closeAllDbConnections();
     rmSync(tempDir, { force: true, recursive: true });
   });
 

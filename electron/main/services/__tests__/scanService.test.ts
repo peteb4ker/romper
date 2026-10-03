@@ -24,6 +24,11 @@ vi.mock("../../db/romperDbCoreORM.js", () => ({
   getAllSamples: vi.fn(),
   mergeKitScan: vi.fn(),
   updateBank: vi.fn(),
+  // A bank scan commits once; each bank is a nested unit of work
+  withDbTransaction: vi.fn((_dbDir: string, fn: () => unknown) => ({
+    data: fn(),
+    success: true,
+  })),
 }));
 
 // Mock audio utilities

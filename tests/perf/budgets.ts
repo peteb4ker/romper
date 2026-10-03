@@ -37,8 +37,11 @@ export type Budgets = Record<string, Budget>;
 /** The metric every action may report without budgeting it */
 export const TOTAL = "total";
 
-/** RE-81: one persistent connection per store, opened once, not per call */
-const ONE_CONNECTION = { target: 1, until: "RE-81" } as const;
+/**
+ * RE-81: each store's connection is opened once and kept, so an operation
+ * on an open store opens none
+ */
+const NO_NEW_CONNECTION = { max: 0 } as const;
 /** RE-36: edits return the changed kit instead of reloading every kit */
 const NO_RELOAD = { target: 0, until: "RE-36" } as const;
 
@@ -122,33 +125,33 @@ export const BUDGETS = {
    */
   integration: {
     "add sample": {
-      connections: { max: 3, ...ONE_CONNECTION },
-      statements: { max: 12 },
+      connections: NO_NEW_CONNECTION,
+      statements: { max: 2 },
     },
     "delete sample": {
-      connections: { max: 5, ...ONE_CONNECTION },
-      statements: { max: 22 },
+      connections: NO_NEW_CONNECTION,
+      statements: { max: 6 },
     },
     "get kits": {
-      connections: { max: 1 },
-      statements: { max: 7 },
+      connections: NO_NEW_CONNECTION,
+      statements: { max: 4 },
     },
     "move sample between kits": {
-      connections: { max: 10, ...ONE_CONNECTION },
-      statements: { max: 42 },
+      connections: NO_NEW_CONNECTION,
+      statements: { max: 10 },
     },
     "move sample within a kit": {
-      connections: { max: 5, ...ONE_CONNECTION },
-      statements: { max: 34 },
+      connections: NO_NEW_CONNECTION,
+      statements: { max: 17 },
     },
     "plan a sync (write summary)": {
-      connections: { max: 15, target: 1, until: "RE-82" },
-      statements: { max: 84 },
-      syncFsCalls: { max: 513, target: 0, until: "RE-82" },
+      connections: NO_NEW_CONNECTION,
+      statements: { max: 39 },
+      syncFsCalls: { max: 498, target: 0, until: "RE-82" },
     },
     "replace sample": {
-      connections: { max: 6, ...ONE_CONNECTION },
-      statements: { max: 25 },
+      connections: NO_NEW_CONNECTION,
+      statements: { max: 6 },
     },
   },
 

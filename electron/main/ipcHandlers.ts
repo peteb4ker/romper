@@ -3,6 +3,7 @@ import * as path from "node:path";
 
 import type { InMemorySettings } from "./types/settings.js";
 
+import { closeAllDbConnections } from "./db/utils/dbConnections.js";
 import { requestLocalStoreAccess } from "./security/localStoreAccessPrompt.js";
 import { checkPathAccess, pathAccess } from "./security/pathAccess.js";
 import { checkSampleSourceAccess } from "./security/sampleSourceAccess.js";
@@ -42,7 +43,13 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
     if (PATH_SETTING_KEYS.has(key) && !clearing) {
       pathAccess.assertAllowed(value, { write: true });
     }
+    const previousStore = inMemorySettings.localStorePath;
     settingsService.writeSetting(inMemorySettings, key, value);
+    // A different store: close the old one's connection (RE-81). The new
+    // store's connection opens on its first use.
+    if (key === "localStorePath" && value !== previousStore) {
+      closeAllDbConnections();
+    }
     // The wizard saves the store as the last step of a successful setup
     if (key === "localStorePath" && typeof value === "string" && !clearing) {
       localStoreSetupService.markSetupComplete(value);

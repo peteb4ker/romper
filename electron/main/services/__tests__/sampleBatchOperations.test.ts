@@ -20,6 +20,8 @@ describe("SampleBatchOperationsService", () => {
   let service: SampleBatchOperationsService;
   const mockSettings = { localStorePath: "/mock/path" };
   const mockDbPath = "/mock/db.sqlite";
+  const mockDb = { handle: "transaction" } as never;
+  const mockSqlite = {} as never;
 
   const mockSample: Sample = {
     filename: "test.wav",
@@ -47,26 +49,22 @@ describe("SampleBatchOperationsService", () => {
     mockSampleValidation.sampleValidationService.validateVoiceNotLinkedPartner.mockReturnValue(
       { isValid: true },
     );
+    // One unit of work: a throw inside becomes a failed result
+    mockORM.withDbTransaction.mockImplementation((_dbDir, fn) => {
+      try {
+        return { data: fn(mockDb, mockSqlite), success: true };
+      } catch (error) {
+        return { error: (error as Error).message, success: false };
+      }
+    });
   });
 
   describe("[UC-23] deleteSampleFromSlot", () => {
-    it("should successfully delete a sample", () => {
-      mockSampleValidation.sampleValidationService.checkSampleExists.mockReturnValue(
-        {
-          exists: true,
-          sample: mockSample,
-        },
-      );
-
-      mockORM.deleteSamples.mockReturnValue({
-        data: {
-          affectedSamples: [mockSample],
-          deletedSamples: [mockSample],
-        },
-        success: true,
+    it("[Q-02] deletes, reindexes and flags the kit in one transaction", () => {
+      mockORM.deleteSamplesTx.mockReturnValue({
+        affectedSamples: [mockSample],
+        deletedSamples: [mockSample],
       });
-
-      mockORM.markKitAsModified.mockReturnValue({ success: true });
 
       const result = service.deleteSampleFromSlot(
         mockSettings,
@@ -77,26 +75,23 @@ describe("SampleBatchOperationsService", () => {
 
       expect(result.success).toBe(true);
       expect(result.data?.deletedSamples).toEqual([mockSample]);
-      expect(mockORM.deleteSamples).toHaveBeenCalledWith(
+      expect(mockORM.withDbTransaction).toHaveBeenCalledTimes(1);
+      expect(mockORM.withDbTransaction).toHaveBeenCalledWith(
         mockDbPath,
-        "TestKit",
-        {
-          slotNumber: 2,
-          voiceNumber: 1,
-        },
+        expect.any(Function),
       );
-      expect(mockORM.markKitAsModified).toHaveBeenCalledWith(
-        mockDbPath,
-        "TestKit",
-      );
+      expect(mockORM.deleteSamplesTx).toHaveBeenCalledWith(mockDb, "TestKit", {
+        slotNumber: 2,
+        voiceNumber: 1,
+      });
+      expect(mockORM.flagKitModified).toHaveBeenCalledWith(mockDb, "TestKit");
     });
 
     it("should return error when sample doesn't exist", () => {
-      mockSampleValidation.sampleValidationService.checkSampleExists.mockReturnValue(
-        {
-          exists: false,
-        },
-      );
+      mockORM.deleteSamplesTx.mockReturnValue({
+        affectedSamples: [],
+        deletedSamples: [],
+      });
 
       const result = service.deleteSampleFromSlot(
         mockSettings,
@@ -107,6 +102,7 @@ describe("SampleBatchOperationsService", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("No sample found in voice 1, slot 3 to delete");
+      expect(mockORM.flagKitModified).not.toHaveBeenCalled();
     });
 
     it("should return error for invalid voice/slot", () => {
@@ -143,16 +139,8 @@ describe("SampleBatchOperationsService", () => {
     });
 
     it("should handle database deletion error", () => {
-      mockSampleValidation.sampleValidationService.checkSampleExists.mockReturnValue(
-        {
-          exists: true,
-          sample: mockSample,
-        },
-      );
-
-      mockORM.deleteSamples.mockReturnValue({
-        error: "Database error",
-        success: false,
+      mockORM.deleteSamplesTx.mockImplementation(() => {
+        throw new Error("Database error");
       });
 
       const result = service.deleteSampleFromSlot(
@@ -164,20 +152,15 @@ describe("SampleBatchOperationsService", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Database error");
-      expect(mockORM.markKitAsModified).not.toHaveBeenCalled();
+      expect(mockORM.flagKitModified).not.toHaveBeenCalled();
     });
   });
 
   describe("deleteSampleFromSlotWithoutReindexing", () => {
     it("should successfully delete without reindexing", () => {
-      mockORM.deleteSamplesWithoutReindexing.mockReturnValue({
-        data: {
-          deletedSamples: [mockSample],
-        },
-        success: true,
+      mockORM.deleteSamplesWithoutReindexingTx.mockReturnValue({
+        deletedSamples: [mockSample],
       });
-
-      mockORM.markKitAsModified.mockReturnValue({ success: true });
 
       const result = service.deleteSampleFromSlotWithoutReindexing(
         mockSettings,
@@ -189,14 +172,15 @@ describe("SampleBatchOperationsService", () => {
       expect(result.success).toBe(true);
       expect(result.data?.deletedSamples).toEqual([mockSample]);
       expect(result.data?.affectedSamples).toEqual([mockSample]);
-      expect(mockORM.deleteSamplesWithoutReindexing).toHaveBeenCalledWith(
-        mockDbPath,
+      expect(mockORM.deleteSamplesWithoutReindexingTx).toHaveBeenCalledWith(
+        mockDb,
         "TestKit",
         {
           slotNumber: 2,
           voiceNumber: 1,
         },
       );
+      expect(mockORM.flagKitModified).toHaveBeenCalledWith(mockDb, "TestKit");
     });
 
     it("should handle validation error", () => {
@@ -221,12 +205,14 @@ describe("SampleBatchOperationsService", () => {
 
   describe("[UC-21] moveSampleInKit", () => {
     const mockMoveResult = {
-      data: {
-        affectedSamples: [{ ...mockSample, original_slot_number: 2 }],
-        movedSample: mockSample,
-        replacedSample: null,
-      },
-      success: true,
+      affectedSamples: [
+        {
+          ...mockSample,
+          original_slot_number: 2,
+          original_voice_number: 1,
+        },
+      ],
+      movedSample: mockSample,
     };
 
     it("should successfully move sample within kit", () => {
@@ -241,8 +227,7 @@ describe("SampleBatchOperationsService", () => {
         success: true,
       });
 
-      mockORM.moveSample.mockReturnValue(mockMoveResult);
-      mockORM.markKitAsModified.mockReturnValue({ success: true });
+      mockORM.moveSampleTx.mockReturnValue(mockMoveResult);
 
       const result = service.moveSampleInKit(
         mockSettings,
@@ -256,19 +241,17 @@ describe("SampleBatchOperationsService", () => {
 
       expect(result.success).toBe(true);
       expect(result.data?.movedSample).toEqual(mockSample);
-      expect(result.data?.replacedSample).toBeUndefined(); // null converted to undefined
-      expect(mockORM.moveSample).toHaveBeenCalledWith(
-        mockDbPath,
+      expect(result.data?.replacedSample).toBeUndefined();
+      // The move and the modified flag are one transaction (RE-28)
+      expect(mockORM.moveSampleTx).toHaveBeenCalledWith(
+        mockDb,
         "TestKit",
         1,
         2,
         1,
         3,
       );
-      expect(mockORM.markKitAsModified).toHaveBeenCalledWith(
-        mockDbPath,
-        "TestKit",
-      );
+      expect(mockORM.flagKitModified).toHaveBeenCalledWith(mockDb, "TestKit");
     });
 
     it("should return error when sample not found", () => {
@@ -355,8 +338,8 @@ describe("SampleBatchOperationsService", () => {
         mockSampleValidation.sampleValidationService
           .validateVoiceNotLinkedPartner,
       ).toHaveBeenCalledWith(mockDbPath, "TestKit", 2);
-      expect(mockORM.moveSample).not.toHaveBeenCalled();
-      expect(mockORM.markKitAsModified).not.toHaveBeenCalled();
+      expect(mockORM.moveSampleTx).not.toHaveBeenCalled();
+      expect(mockORM.flagKitModified).not.toHaveBeenCalled();
     });
 
     it("should handle database move error", () => {
@@ -371,9 +354,8 @@ describe("SampleBatchOperationsService", () => {
         success: true,
       });
 
-      mockORM.moveSample.mockReturnValue({
-        error: "Database move error",
-        success: false,
+      mockORM.moveSampleTx.mockImplementation(() => {
+        throw new Error("Database move error");
       });
 
       const result = service.moveSampleInKit(
@@ -386,8 +368,8 @@ describe("SampleBatchOperationsService", () => {
         "insert",
       );
 
-      expect(result.success).toBe(false);
-      expect(mockORM.markKitAsModified).not.toHaveBeenCalled();
+      expect(result).toEqual({ error: "Database move error", success: false });
+      expect(mockORM.flagKitModified).not.toHaveBeenCalled();
     });
   });
 

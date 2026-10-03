@@ -1,15 +1,12 @@
 import type { DbResult } from "@romper/shared/db/schema.js";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 
 import * as schema from "@romper/shared/db/schema.js";
 import { and, eq, inArray, notInArray } from "drizzle-orm";
 
 import { logger } from "../../utils/logger.js";
-import { withDb } from "../utils/dbUtilities.js";
+import { type RomperDb, withDb } from "../utils/dbUtilities.js";
 
 const { kits } = schema;
-
-type RomperDb = BetterSQLite3Database<typeof schema>;
 
 /**
  * Flag every kit in a bank as changed since the last write, on an open
@@ -94,38 +91,36 @@ export function markKitsAsSynced(
   dbDir: string,
   kitNames: string[],
 ): DbResult<void> {
-  return withDb(dbDir, (db) => {
-    logger.log(
-      `[markKitsAsSynced] Attempting to mark ${kitNames.length} kits as synced:`,
-      kitNames,
+  return withDb(dbDir, (db) => markKitsAsSyncedTx(db, kitNames));
+}
+
+/** Mark kits as synced on the caller's handle */
+export function markKitsAsSyncedTx(db: RomperDb, kitNames: string[]): void {
+  logger.log(
+    `[markKitsAsSynced] Attempting to mark ${kitNames.length} kits as synced:`,
+    kitNames,
+  );
+
+  if (kitNames.length === 0) {
+    logger.log("[markKitsAsSynced] Successfully updated 0/0 kits");
+    return;
+  }
+
+  const result = db
+    .update(kits)
+    .set({
+      modified_since_sync: false,
+    })
+    .where(inArray(kits.name, kitNames))
+    .run();
+
+  if (result.changes !== kitNames.length) {
+    console.warn(
+      `[markKitsAsSynced] Expected to update ${kitNames.length} kits but updated ${result.changes}`,
     );
+  }
 
-    if (kitNames.length === 0) {
-      logger.log("[markKitsAsSynced] Successfully updated 0/0 kits");
-      return;
-    }
-
-    try {
-      const result = db
-        .update(kits)
-        .set({
-          modified_since_sync: false,
-        })
-        .where(inArray(kits.name, kitNames))
-        .run();
-
-      if (result.changes !== kitNames.length) {
-        console.warn(
-          `[markKitsAsSynced] Expected to update ${kitNames.length} kits but updated ${result.changes}`,
-        );
-      }
-
-      logger.log(
-        `[markKitsAsSynced] Successfully updated ${result.changes}/${kitNames.length} kits`,
-      );
-    } catch (error) {
-      console.error("[markKitsAsSynced] Failed to update kits:", error);
-      throw error;
-    }
-  });
+  logger.log(
+    `[markKitsAsSynced] Successfully updated ${result.changes}/${kitNames.length} kits`,
+  );
 }

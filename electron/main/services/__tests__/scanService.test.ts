@@ -21,7 +21,6 @@ vi.mock("@romper/shared/kitUtilsShared.js", () => ({
 
 // Mock database operations
 vi.mock("../../db/romperDbCoreORM.js", () => ({
-  getAllSamples: vi.fn(),
   mergeKitScan: vi.fn(),
   updateBank: vi.fn(),
   // A bank scan commits once; each bank is a nested unit of work
@@ -41,11 +40,7 @@ import { groupSamplesByVoice } from "@romper/shared/kitUtilsShared.js";
 import type { KitScanIo } from "../../db/operations/kitScanOperations.js";
 
 import { getAudioMetadata } from "../../audioUtils.js";
-import {
-  getAllSamples,
-  mergeKitScan,
-  updateBank,
-} from "../../db/romperDbCoreORM.js";
+import { mergeKitScan, updateBank } from "../../db/romperDbCoreORM.js";
 import { readWavMetadata, ScanService } from "../scanService.js";
 
 const mockFs = vi.mocked(fs);
@@ -303,15 +298,6 @@ describe("ScanService", () => {
         expect.anything(),
       );
     });
-
-    it("reads samples from the override when finding kits to rescan", () => {
-      vi.mocked(getAllSamples).mockReturnValue({ data: [], success: true });
-
-      const result = scanService.rescanKitsWithMissingMetadata(noSavedPath);
-
-      expect(result.success).toBe(true);
-      expect(getAllSamples).toHaveBeenCalledWith("/env/store/.romperdb");
-    });
   });
 
   describe("scanBanks", () => {
@@ -424,169 +410,6 @@ describe("ScanService", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Failed to scan banks: Access denied");
-    });
-  });
-
-  describe("rescanKitsWithMissingMetadata", () => {
-    const mockGetAllSamples = vi.mocked(getAllSamples);
-
-    beforeEach(() => {
-      vi.clearAllMocks();
-      mockFs.existsSync.mockReturnValue(true);
-      mockGetAllSamples.mockReturnValue({ data: [], success: true });
-    });
-
-    it("identifies and rescans kits with missing metadata", () => {
-      // Mock samples with mixed metadata status
-      const mockSamples = [
-        // Kit A0 has complete metadata
-        {
-          filename: "sample1.wav",
-          kit_name: "A0",
-          wav_bit_depth: 16,
-          wav_channels: 2,
-          wav_sample_rate: 44100,
-        },
-        // Kit A1 has missing metadata
-        {
-          filename: "sample2.wav",
-          kit_name: "A1",
-          wav_bit_depth: null,
-          wav_channels: null,
-          wav_sample_rate: null,
-        },
-        // Kit A2 has mixed metadata (some missing)
-        {
-          filename: "sample3.wav",
-          kit_name: "A2",
-          wav_bit_depth: null, // Missing
-          wav_channels: 2,
-          wav_sample_rate: 44100,
-        },
-      ];
-
-      mockGetAllSamples.mockReturnValue({
-        data: mockSamples as unknown[],
-        success: true,
-      });
-
-      // Mock successful kit rescanning
-      const scanService = new ScanService();
-      vi.spyOn(scanService, "rescanKit").mockReturnValue({
-        data: { ...EMPTY_SCAN_RESULT, addedSamples: 1, metadataUpdated: 4 },
-        success: true,
-      });
-
-      const result =
-        scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
-
-      expect(result.success).toBe(true);
-      expect(result.data?.kitsNeedingRescan).toEqual(["A1", "A2"]);
-      expect(result.data?.kitsRescanned).toEqual(["A1", "A2"]);
-      expect(result.data?.totalSamplesUpdated).toBe(10); // (4 + 1) per kit
-    });
-
-    it("handles kits with no missing metadata", () => {
-      // Mock samples with complete metadata
-      const mockSamples = [
-        {
-          filename: "sample1.wav",
-          kit_name: "A0",
-          wav_bit_depth: 16,
-          wav_channels: 2,
-          wav_sample_rate: 44100,
-        },
-      ];
-
-      mockGetAllSamples.mockReturnValue({
-        data: mockSamples as unknown[],
-        success: true,
-      });
-
-      const result =
-        scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
-
-      expect(result.success).toBe(true);
-      expect(result.data?.kitsNeedingRescan).toEqual([]);
-      expect(result.data?.kitsRescanned).toEqual([]);
-      expect(result.data?.totalSamplesUpdated).toBe(0);
-    });
-
-    it("returns error when no local store path configured", () => {
-      const result = scanService.rescanKitsWithMissingMetadata({});
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("No local store path configured");
-    });
-
-    it("returns error when getAllSamples fails", () => {
-      mockGetAllSamples.mockReturnValue({
-        error: "Database error",
-        success: false,
-      });
-
-      const result =
-        scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("Failed to query samples");
-    });
-
-    it("handles individual kit rescan failures gracefully", () => {
-      const mockSamples = [
-        {
-          filename: "sample1.wav",
-          kit_name: "A1",
-          wav_bit_depth: null,
-          wav_channels: null,
-          wav_sample_rate: null,
-        },
-        {
-          filename: "sample2.wav",
-          kit_name: "A2",
-          wav_bit_depth: null,
-          wav_channels: null,
-          wav_sample_rate: null,
-        },
-      ];
-
-      mockGetAllSamples.mockReturnValue({
-        data: mockSamples as unknown[],
-        success: true,
-      });
-
-      const scanService = new ScanService();
-      vi.spyOn(scanService, "rescanKit").mockImplementation((_, kitName) => {
-        if (kitName === "A1") {
-          return { error: "Kit A1 failed", success: false };
-        }
-        return {
-          data: { ...EMPTY_SCAN_RESULT, metadataUpdated: 3 },
-          success: true,
-        };
-      });
-
-      const result =
-        scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
-
-      expect(result.success).toBe(true);
-      expect(result.data?.kitsNeedingRescan).toEqual(["A1", "A2"]);
-      expect(result.data?.kitsRescanned).toEqual(["A2"]); // Only successful one
-      expect(result.data?.totalSamplesUpdated).toBe(3);
-    });
-
-    it("handles exceptions gracefully", () => {
-      mockGetAllSamples.mockImplementation(() => {
-        throw new Error("Database connection failed");
-      });
-
-      const result =
-        scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain(
-        "Failed to rescan kits with missing metadata: Database connection failed",
-      );
     });
   });
 });

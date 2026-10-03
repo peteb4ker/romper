@@ -50,10 +50,10 @@ describe("registerSampleIpcHandlers - Unit Tests", () => {
   });
 
   describe("Handler Registration", () => {
-    it("should register all 8 sample IPC handlers", () => {
+    it("[Q-03] should register all 7 sample IPC handlers", () => {
       registerSampleIpcHandlers(mockInMemorySettings);
 
-      expect(mockIpcMain.handle).toHaveBeenCalledTimes(8);
+      expect(mockIpcMain.handle).toHaveBeenCalledTimes(7);
     });
 
     it("should register handlers with correct IPC channel names", () => {
@@ -71,7 +71,6 @@ describe("registerSampleIpcHandlers - Unit Tests", () => {
         "move-sample-in-kit",
         "move-sample-between-kits",
         "restore-kit-voices",
-        "validate-sample-sources",
       ]);
     });
 

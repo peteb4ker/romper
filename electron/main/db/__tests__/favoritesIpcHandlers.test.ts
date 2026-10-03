@@ -12,8 +12,6 @@ vi.mock("../ipcHandlerUtils.js", () => ({
 }));
 
 vi.mock("../romperDbCoreORM.js", () => ({
-  getFavoriteKits: vi.fn(),
-  getFavoriteKitsCount: vi.fn(),
   toggleKitFavorite: vi.fn(),
 }));
 
@@ -36,10 +34,10 @@ describe("registerFavoritesIpcHandlers - Unit Tests", () => {
   });
 
   describe("Handler Registration", () => {
-    it("should register all 3 favorites IPC handlers", () => {
+    it("[Q-03] should register only the toggle-kit-favorite handler", () => {
       registerFavoritesIpcHandlers(mockInMemorySettings);
 
-      expect(mockIpcMain.handle).toHaveBeenCalledTimes(3);
+      expect(mockIpcMain.handle).toHaveBeenCalledTimes(1);
     });
 
     it("should register handlers with correct IPC channel names", () => {
@@ -49,11 +47,7 @@ describe("registerFavoritesIpcHandlers - Unit Tests", () => {
         (call) => call[0],
       );
 
-      expect(registeredHandlers).toEqual([
-        "toggle-kit-favorite",
-        "get-favorite-kits",
-        "get-favorite-kits-count",
-      ]);
+      expect(registeredHandlers).toEqual(["toggle-kit-favorite"]);
     });
 
     it("should register all handlers with function callbacks", () => {
@@ -69,18 +63,10 @@ describe("registerFavoritesIpcHandlers - Unit Tests", () => {
     it("should use createDbHandler for all favorite operations", () => {
       registerFavoritesIpcHandlers(mockInMemorySettings);
 
-      expect(mockCreateDbHandler).toHaveBeenCalledTimes(3);
+      expect(mockCreateDbHandler).toHaveBeenCalledTimes(1);
       expect(mockCreateDbHandler).toHaveBeenCalledWith(
         mockInMemorySettings,
         romperDbCoreORM.toggleKitFavorite,
-      );
-      expect(mockCreateDbHandler).toHaveBeenCalledWith(
-        mockInMemorySettings,
-        romperDbCoreORM.getFavoriteKits,
-      );
-      expect(mockCreateDbHandler).toHaveBeenCalledWith(
-        mockInMemorySettings,
-        romperDbCoreORM.getFavoriteKitsCount,
       );
     });
 

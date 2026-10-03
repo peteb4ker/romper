@@ -140,8 +140,4 @@ export function registerSampleIpcHandlers(
       return sampleService.restoreVoices(inMemorySettings, kitName, voices);
     },
   );
-
-  ipcMain.handle("validate-sample-sources", async (_event, kitName: string) => {
-    return sampleService.validateSampleSources(inMemorySettings, kitName);
-  });
 }

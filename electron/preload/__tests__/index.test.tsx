@@ -77,17 +77,13 @@ describe("preload/index.tsx", () => {
         deleteSampleFromSlot: expect.any(Function),
         downloadAndExtractArchive: expect.any(Function),
         ensureDir: expect.any(Function),
-        getAllBanks: expect.any(Function),
-        getAllSamples: expect.any(Function),
         getAllSamplesForKit: expect.any(Function),
         getKit: expect.any(Function),
         getKits: expect.any(Function),
         getLocalStoreStatus: expect.any(Function),
         getSampleAudioBuffer: expect.any(Function),
-        getSetting: expect.any(Function),
         getUserHomeDir: expect.any(Function),
         listFilesInRoot: expect.any(Function),
-        readFile: expect.any(Function),
         readSettings: expect.any(Function),
         replaceSampleInSlot: expect.any(Function),
         rescanKit: expect.any(Function),
@@ -103,9 +99,31 @@ describe("preload/index.tsx", () => {
         validateLocalStore: expect.any(Function),
         validateLocalStoreBasic: expect.any(Function),
         validateSampleFormat: expect.any(Function),
-        validateSampleSources: expect.any(Function),
       }),
     );
+  });
+
+  it("[Q-03] does not expose IPC methods the renderer no longer uses", async () => {
+    await import("../index");
+    const api = mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+      (call) => call[0] === "electronAPI",
+    )?.[1];
+    expect(api).toBeDefined();
+    for (const removed of [
+      "getAllBanks",
+      "getAllSamples",
+      "getAudioMetadata",
+      "getFavoriteKits",
+      "getFavoriteKitsCount",
+      "getKitsMetadata",
+      "getSetting",
+      "readFile",
+      "rescanKitsMissingMetadata",
+      "validateSampleSources",
+      "writeSettings",
+    ]) {
+      expect(api).not.toHaveProperty(removed);
+    }
   });
 
   it("exposes electronFileAPI in main world", async () => {
@@ -149,13 +167,6 @@ describe("preload/index.tsx", () => {
       }
       return Promise.resolve();
     });
-
-    // Test getSetting - should call read-settings via IPC
-    const result = await api.getSetting("testKey");
-    expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
-      "read-settings",
-    );
-    expect(result).toBe("test-value");
 
     // Test setSetting - should call write-settings via IPC
     await api.setSetting("testKey", "test-value");
@@ -284,21 +295,35 @@ describe("preload/index.tsx", () => {
   });
 
   describe("SettingsManager", () => {
-    it("returns environment variable for localStorePath in getSetting", async () => {
+    it("[Q-03] readSettings returns ROMPER_LOCAL_PATH as localStorePath", async () => {
       process.env.ROMPER_LOCAL_PATH = "/env/test/path";
+      try {
+        mockElectron.ipcRenderer.invoke.mockImplementation((channel) => {
+          if (channel === "read-settings") {
+            return Promise.resolve({
+              darkMode: true,
+              localStorePath: "/saved/path",
+            });
+          }
+          return Promise.resolve();
+        });
 
-      await import("../index");
+        await import("../index");
 
-      const electronAPICall =
-        mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
-        );
-      const api = electronAPICall[1];
+        const electronAPICall =
+          mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+            (call) => call[0] === "electronAPI",
+          );
+        const api = electronAPICall[1];
 
-      const result = await api.getSetting("localStorePath");
-      expect(result).toBe("/env/test/path");
-
-      delete process.env.ROMPER_LOCAL_PATH;
+        const result = await api.readSettings();
+        expect(result).toEqual({
+          darkMode: true,
+          localStorePath: "/env/test/path",
+        });
+      } finally {
+        delete process.env.ROMPER_LOCAL_PATH;
+      }
     });
 
     it("rethrows when settings read fails so callers can react", async () => {
@@ -522,15 +547,8 @@ describe("preload/index.tsx", () => {
         method: "generateSyncChangeSummary",
       },
       { args: [], ipcChannel: "cancelKitSync", method: "cancelKitSync" },
-      { args: [], ipcChannel: "get-all-banks", method: "getAllBanks" },
       { args: [], ipcChannel: "scan-banks", method: "scanBanks" },
       { args: [], ipcChannel: "get-all-kits", method: "getKits" },
-      { args: [], ipcChannel: "get-favorite-kits", method: "getFavoriteKits" },
-      {
-        args: [],
-        ipcChannel: "get-favorite-kits-count",
-        method: "getFavoriteKitsCount",
-      },
 
       // Methods with single string parameter
       { args: ["A01"], ipcChannel: "create-kit", method: "createKit" },
@@ -544,11 +562,6 @@ describe("preload/index.tsx", () => {
         ipcChannel: "list-files-in-root",
         method: "listFilesInRoot",
       },
-      {
-        args: ["/path/to/file.txt"],
-        ipcChannel: "read-file",
-        method: "readFile",
-      },
       { args: ["TestKit"], ipcChannel: "get-kit", method: "getKit" },
       {
         args: ["TestKit"],
@@ -556,16 +569,6 @@ describe("preload/index.tsx", () => {
         method: "getAllSamplesForKit",
       },
       { args: ["TestKit"], ipcChannel: "rescan-kit", method: "rescanKit" },
-      {
-        args: ["TestKit"],
-        ipcChannel: "validate-sample-sources",
-        method: "validateSampleSources",
-      },
-      {
-        args: ["/path/to/audio.wav"],
-        ipcChannel: "get-audio-metadata",
-        method: "getAudioMetadata",
-      },
       {
         args: ["/path/to/audio.wav"],
         ipcChannel: "validate-sample-format",
@@ -586,11 +589,6 @@ describe("preload/index.tsx", () => {
         args: ["/path/to/db"],
         ipcChannel: "create-romper-db",
         method: "createRomperDb",
-      },
-      {
-        args: [],
-        ipcChannel: "get-all-samples",
-        method: "getAllSamples",
       },
       {
         args: ["/typed/romper"],
@@ -913,12 +911,6 @@ describe("preload/index.tsx", () => {
       const api = electronAPICall[1];
 
       mockElectron.ipcRenderer.invoke.mockResolvedValue("success");
-
-      await api.getAudioMetadata("/path/to/file.wav");
-      expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
-        "get-audio-metadata",
-        "/path/to/file.wav",
-      );
 
       await api.validateSampleFormat("/path/to/file.wav");
       expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(

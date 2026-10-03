@@ -127,9 +127,9 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
       setSdCardPath(path);
 
       // Save to settings if electronAPI is available
-      if (globalThis.electronAPI?.writeSettings) {
+      if (globalThis.electronAPI?.setSetting) {
         try {
-          await globalThis.electronAPI.writeSettings("sdCardPath", path);
+          await globalThis.electronAPI.setSetting("sdCardPath", path);
           log.debug("SD card path saved to settings:", path);
         } catch (error) {
           log.error("Failed to save SD card path to settings:", error);

@@ -49,10 +49,6 @@ describe("useLocalStoreWizard", () => {
       }),
     );
     vi.mocked(window.electronAPI.ensureDir).mockResolvedValue(true);
-    vi.mocked(window.electronAPI.getSetting).mockImplementation(async (key) => {
-      if (key === "localStorePath") return "/mock/saved/path/romper";
-      return undefined;
-    });
     vi.mocked(window.electronAPI.setSetting).mockResolvedValue(undefined);
     vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
       async (_destDir, _onProgress, _onError) => ({ success: true }),
@@ -73,12 +69,6 @@ describe("useLocalStoreWizard", () => {
     );
     vi.mocked(window.electronAPI.updateVoiceAlias).mockImplementation(
       async (_kitName, _voiceNumber, _voiceAlias) => ({
-        success: true,
-      }),
-    );
-    vi.mocked(window.electronAPI.readFile).mockImplementation(
-      async (_filePath) => ({
-        data: new ArrayBuffer(1024),
         success: true,
       }),
     );
@@ -490,7 +480,6 @@ describe("useLocalStoreWizard", () => {
         `${root}/.romperdb`,
         "B12",
       );
-      expect(window.electronAPI.readFile).not.toHaveBeenCalled();
       expect(window.electronAPI.updateVoiceAlias).not.toHaveBeenCalled();
       expect(window.electronAPI.setSetting).toHaveBeenCalledWith(
         "localStorePath",

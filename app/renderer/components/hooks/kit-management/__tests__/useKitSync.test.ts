@@ -242,9 +242,9 @@ describe("useKitSync", () => {
 
   describe("onSdCardPathChange", () => {
     it("updates local state and saves to settings when path is provided", async () => {
-      const mockWriteSettings = vi.fn().mockResolvedValue(undefined);
+      const mockSetSetting = vi.fn().mockResolvedValue(undefined);
       const mockElectronAPI = {
-        writeSettings: mockWriteSettings,
+        setSetting: mockSetSetting,
       };
       globalThis.electronAPI =
         mockElectronAPI as unknown as typeof globalThis.electronAPI;
@@ -258,13 +258,13 @@ describe("useKitSync", () => {
       });
 
       expect(result.current.sdCardPath).toBe(testPath);
-      expect(mockWriteSettings).toHaveBeenCalledWith("sdCardPath", testPath);
+      expect(mockSetSetting).toHaveBeenCalledWith("sdCardPath", testPath);
     });
 
     it("updates local state and saves when path is null to persist clearing selection", async () => {
-      const mockWriteSettings = vi.fn().mockResolvedValue(undefined);
+      const mockSetSetting = vi.fn().mockResolvedValue(undefined);
       const mockElectronAPI = {
-        writeSettings: mockWriteSettings,
+        setSetting: mockSetSetting,
       };
       globalThis.electronAPI =
         mockElectronAPI as unknown as typeof globalThis.electronAPI;
@@ -276,15 +276,15 @@ describe("useKitSync", () => {
       });
 
       expect(result.current.sdCardPath).toBe(null);
-      expect(mockWriteSettings).toHaveBeenCalledWith("sdCardPath", null);
+      expect(mockSetSetting).toHaveBeenCalledWith("sdCardPath", null);
     });
 
     it("handles save errors gracefully", async () => {
-      const mockWriteSettings = vi
+      const mockSetSetting = vi
         .fn()
         .mockRejectedValue(new Error("Save failed"));
       const mockElectronAPI = {
-        writeSettings: mockWriteSettings,
+        setSetting: mockSetSetting,
       };
       globalThis.electronAPI =
         mockElectronAPI as unknown as typeof globalThis.electronAPI;
@@ -298,7 +298,7 @@ describe("useKitSync", () => {
       });
 
       expect(result.current.sdCardPath).toBe(testPath);
-      expect(mockWriteSettings).toHaveBeenCalledWith("sdCardPath", testPath);
+      expect(mockSetSetting).toHaveBeenCalledWith("sdCardPath", testPath);
       expect(mockOnMessage).toHaveBeenCalledWith(
         "Failed to save SD card path",
         "warning",

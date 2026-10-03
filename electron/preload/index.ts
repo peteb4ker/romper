@@ -21,18 +21,6 @@ const isDev = process.env.NODE_ENV === "development";
 type SettingsValue = SettingsData[SettingsKey];
 
 class SettingsManager {
-  async getSetting(key: SettingsKey): Promise<SettingsValue> {
-    isDev && console.debug("[IPC] getSetting invoked", key);
-
-    // For localStorePath, check environment variable first
-    if (key === "localStorePath" && process.env.ROMPER_LOCAL_PATH) {
-      return process.env.ROMPER_LOCAL_PATH;
-    }
-
-    const settings = await this.readSettings();
-    return settings[key];
-  }
-
   async readSettings(): Promise<SettingsData> {
     try {
       const settings = await ipcRenderer.invoke("read-settings");
@@ -257,30 +245,9 @@ const electronAPI = {
     return ipcRenderer.invoke("generateSyncChangeSummary", sdCardPath);
   },
   // Bank operations
-  getAllBanks: () => {
-    isDev && console.debug("[IPC] getAllBanks invoked");
-    return ipcRenderer.invoke("get-all-banks");
-  },
-  getAllSamples: () => {
-    isDev && console.debug("[IPC] getAllSamples invoked");
-    return ipcRenderer.invoke("get-all-samples");
-  },
   getAllSamplesForKit: (kitName: string) => {
     isDev && console.debug("[IPC] getAllSamplesForKit invoked", kitName);
     return ipcRenderer.invoke("get-all-samples-for-kit", kitName);
-  },
-  // Task 6.1: Format validation for WAV files
-  getAudioMetadata: (filePath: string) => {
-    isDev && console.debug("[IPC] getAudioMetadata invoked", filePath);
-    return ipcRenderer.invoke("get-audio-metadata", filePath);
-  },
-  getFavoriteKits: () => {
-    isDev && console.debug("[IPC] getFavoriteKits invoked");
-    return ipcRenderer.invoke("get-favorite-kits");
-  },
-  getFavoriteKitsCount: () => {
-    isDev && console.debug("[IPC] getFavoriteKitsCount invoked");
-    return ipcRenderer.invoke("get-favorite-kits-count");
   },
   // Database methods for kit metadata (replacing JSON file dependency)
   getKit: (kitName: string) => {
@@ -294,10 +261,6 @@ const electronAPI = {
   getKits: () => {
     isDev && console.debug("[IPC] getKits invoked");
     return ipcRenderer.invoke("get-all-kits");
-  },
-  getKitsMetadata: () => {
-    isDev && console.debug("[IPC] getKitsMetadata invoked");
-    return ipcRenderer.invoke("get-kits-metadata");
   },
   getLocalStoreStatus: async () => {
     isDev && console.debug("[IPC] getLocalStoreStatus invoked");
@@ -321,9 +284,6 @@ const electronAPI = {
       voiceNumber,
       slotNumber,
     );
-  },
-  getSetting: async (key: string): Promise<unknown> => {
-    return await settingsManager.getSetting(key as SettingsKey);
   },
   getUserHomeDir: () => {
     isDev && console.debug("[IPC] getUserHomeDir invoked");
@@ -393,10 +353,6 @@ const electronAPI = {
     isDev && console.debug("[IPC] openExternal invoked", url);
     return ipcRenderer.invoke("open-external", url);
   },
-  readFile: (filePath: string) => {
-    isDev && console.debug("[IPC] readFile invoked", filePath);
-    return ipcRenderer.invoke("read-file", filePath);
-  },
   readSettings: async () => {
     isDev && console.debug("[IPC] readSettings invoked");
     return await settingsManager.readSettings();
@@ -430,10 +386,6 @@ const electronAPI = {
   rescanKit: (kitName: string) => {
     isDev && console.debug("[IPC] rescanKit invoked", kitName);
     return ipcRenderer.invoke("rescan-kit", kitName);
-  },
-  rescanKitsMissingMetadata: () => {
-    isDev && console.debug("[IPC] rescanKitsMissingMetadata invoked");
-    return ipcRenderer.invoke("rescan-kits-missing-metadata");
   },
   restoreKitVoices: (kitName: string, voices: VoiceSnapshot[]) => {
     isDev && console.debug("[IPC] restoreKitVoices invoked", kitName);
@@ -658,20 +610,6 @@ const electronAPI = {
   validateSampleFormat: (filePath: string) => {
     isDev && console.debug("[IPC] validateSampleFormat invoked", filePath);
     return ipcRenderer.invoke("validate-sample-format", filePath);
-  },
-
-  // Task 5.2.5: Validate source_path files for existing samples
-  validateSampleSources: (kitName: string) => {
-    isDev && console.debug("[IPC] validateSampleSources invoked", kitName);
-    return ipcRenderer.invoke("validate-sample-sources", kitName);
-  },
-
-  writeSettings: async (key: string, value: unknown): Promise<void> => {
-    isDev && console.debug("[IPC] writeSettings invoked", key, value);
-    return await settingsManager.writeSettings(
-      key as SettingsKey,
-      value as SettingsValue,
-    );
   },
 } satisfies ElectronAPI;
 

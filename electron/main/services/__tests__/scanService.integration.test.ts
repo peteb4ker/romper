@@ -421,26 +421,11 @@ describe("ScanService Integration Tests", () => {
     });
   });
 
-  describe("rescanKitsWithMissingMetadata", () => {
-    it("should return error when localStorePath is not configured", () => {
-      const result = scanService.rescanKitsWithMissingMetadata({});
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("No local store path configured");
-    });
-
-    it("should identify kits with missing metadata and rescan them", () => {
-      // Create two kits
-      const kit1: NewKit = {
-        alias: "Kit With Metadata",
-        bank_letter: "A",
-        editable: true,
-        locked: false,
-        modified_since_sync: false,
-        name: "A1",
-        step_pattern: null,
-      };
-      const kit2: NewKit = {
+  // [Q-03] rescanKitsWithMissingMetadata is gone; rescanKit still backfills
+  // WAV metadata for rows saved before the columns existed.
+  describe("[Q-03] rescanKit metadata backfill", () => {
+    it("fills in missing WAV metadata without replacing the row", () => {
+      addKit(TEST_DB_PATH, {
         alias: "Kit Missing Metadata",
         bank_letter: "A",
         editable: true,
@@ -448,23 +433,7 @@ describe("ScanService Integration Tests", () => {
         modified_since_sync: false,
         name: "A2",
         step_pattern: null,
-      };
-      addKit(TEST_DB_PATH, kit1);
-      addKit(TEST_DB_PATH, kit2);
-
-      // Add sample with metadata to kit1
-      addSample(TEST_DB_PATH, {
-        filename: "1-kick.wav",
-        kit_name: "A1",
-        slot_number: 0,
-        source_path: path.join(TEST_DB_DIR, "A1", "1-kick.wav"),
-        voice_number: 1,
-        wav_bit_depth: 16,
-        wav_channels: 1,
-        wav_sample_rate: 44100,
       });
-
-      // Add sample without metadata to kit2 (null values)
       addSample(TEST_DB_PATH, {
         filename: "1-pad.wav",
         kit_name: "A2",
@@ -472,39 +441,26 @@ describe("ScanService Integration Tests", () => {
         source_path: path.join(TEST_DB_DIR, "A2", "1-pad.wav"),
         voice_number: 1,
       });
+      const kitDir = path.join(TEST_DB_DIR, "A2");
+      fs.mkdirSync(kitDir, { recursive: true });
+      createTestWavFile(path.join(kitDir, "1-pad.wav"));
+      const [before] = getKitSamples(TEST_DB_PATH, "A2").data!;
+      expect(before.wav_sample_rate).toBeNull();
 
-      // Create directories and WAV files for the kits that need rescanning
-      const kit1Dir = path.join(TEST_DB_DIR, "A1");
-      const kit2Dir = path.join(TEST_DB_DIR, "A2");
-      fs.mkdirSync(kit1Dir, { recursive: true });
-      fs.mkdirSync(kit2Dir, { recursive: true });
-      createTestWavFile(path.join(kit1Dir, "1-kick.wav"));
-      createTestWavFile(path.join(kit2Dir, "1-pad.wav"));
-
-      const result =
-        scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
+      const result = scanService.rescanKit(mockInMemorySettings, "A2");
 
       expect(result.success).toBe(true);
-      expect(result.data).toBeTruthy();
-      // Kit A2 has missing metadata, so it needs rescan
-      expect(result.data!.kitsNeedingRescan).toContain("A2");
-      // The merge fills in the metadata without replacing the row
-      expect(result.data!.totalSamplesUpdated).toBe(1);
-      const [pad] = getKitSamples(TEST_DB_PATH, "A2").data!;
-      expect(pad).toMatchObject({
+      expect(result.data).toMatchObject({
+        addedSamples: 0,
+        metadataUpdated: 1,
+      });
+      const rows = getKitSamples(TEST_DB_PATH, "A2").data!;
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({
         filename: "1-pad.wav",
+        id: before.id,
         wav_sample_rate: 44100,
       });
-    });
-
-    it("should return empty arrays when no samples exist", () => {
-      const result =
-        scanService.rescanKitsWithMissingMetadata(mockInMemorySettings);
-
-      expect(result.success).toBe(true);
-      expect(result.data!.kitsNeedingRescan).toHaveLength(0);
-      expect(result.data!.kitsRescanned).toHaveLength(0);
-      expect(result.data!.totalSamplesUpdated).toBe(0);
     });
   });
 });

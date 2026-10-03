@@ -40,7 +40,6 @@ export const createElectronAPIMock = (
   generateSyncChangeSummary: vi
     .fn()
     .mockResolvedValue({ data: null, success: true }),
-  getAllBanks: vi.fn().mockResolvedValue({ data: [], success: true }),
   getAllSamplesForKit: vi.fn().mockImplementation((_: string) => {
     return Promise.resolve({
       data: [
@@ -106,8 +105,6 @@ export const createElectronAPIMock = (
     .fn()
     .mockResolvedValue({ data: new ArrayBuffer(8), success: true }),
   // Settings operations
-  getSetting: vi.fn().mockResolvedValue("/mock/local/store"),
-
   getUserHomeDir: vi.fn().mockResolvedValue("/mock/home"),
   listFilesInRoot: vi.fn().mockImplementation((path: string) => {
     // When called with common local store paths, return kit folders
@@ -132,10 +129,6 @@ export const createElectronAPIMock = (
   onSyncProgress: vi.fn(),
   openExternal: vi.fn().mockResolvedValue(undefined),
 
-  readFile: vi.fn().mockResolvedValue({
-    data: new ArrayBuffer(1024),
-    success: true,
-  }),
   readSettings: vi.fn().mockResolvedValue({
     darkMode: false,
     localStorePath: "/mock/local/store",
@@ -154,10 +147,6 @@ export const createElectronAPIMock = (
       skippedFiles: [],
       updatedVoices: 4,
     },
-    success: true,
-  }),
-  rescanKitsMissingMetadata: vi.fn().mockResolvedValue({
-    data: { kitsRescanned: [], totalSamplesUpdated: 0 },
     success: true,
   }),
   restoreKitVoices: vi.fn().mockResolvedValue({ success: true }),
@@ -212,7 +201,6 @@ export const createElectronAPIMock = (
   validateLocalStoreBasic: vi.fn().mockResolvedValue({ isValid: true }),
 
   validateSampleFormat: vi.fn().mockResolvedValue({ success: true }),
-  validateSampleSources: vi.fn().mockResolvedValue({ success: true }),
 
   // Apply any overrides
   ...overrides,

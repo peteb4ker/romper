@@ -6,7 +6,6 @@ import type { InMemorySettings } from "./types/settings.js";
 import { closeAllDbConnections } from "./db/utils/dbConnections.js";
 import { requestLocalStoreAccess } from "./security/localStoreAccessPrompt.js";
 import { checkPathAccess, pathAccess } from "./security/pathAccess.js";
-import { checkSampleSourceAccess } from "./security/sampleSourceAccess.js";
 import {
   archiveService,
   getFactorySamplesArchiveUrl,
@@ -147,11 +146,6 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
       );
     },
   );
-  ipcMain.handle("read-file", (_event, filePath: string) => {
-    const access = checkSampleSourceAccess(inMemorySettings, filePath);
-    if (!access.ok) return { error: access.error, success: false };
-    return localStoreService.readFile(filePath);
-  });
   ipcMain.handle("get-user-home-dir", async () => {
     const os = await import("node:os");
     return os.homedir();

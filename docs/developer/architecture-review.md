@@ -278,7 +278,7 @@ guide's [performance budgets](coding-guide.md#performance-budgets) section.
 | 6 | Audio: async read by id, renderer cache, no double fetch | RE-83 | S–M | fetches = filled slots; a revisit makes 0 fetches |
 | 7 | Typed channel map, unused channels pruned, one result shape | RE-57, RE-84, RE-41 | M | `tsc` fails on drift |
 | 8 | Kits store with selectors; one favourites path | RE-37, RE-45 | L | favourites repro test; no copies of sample state |
-| 9 | Undo as transactional intent-level operations | RE-86 | M | undo of a delete is 1–2 calls and keeps gain |
+| 9 | **Restore done in #534** (one transactional call, keeps gain); the stack still lives in the keyboard-shortcut hook. Undo as transactional intent-level operations | RE-86 | M | undo of a delete is 1–2 calls and keeps gain |
 | 10 | Playback store; waveform draw path; memoisation; throttled gain | RE-87, RE-46, RE-47, RE-88 | M | gain drag ≤ 10 writes/s; grid cards don't re-render on a toast |
 
 Steps 1–3 are RE-26, RE-27 and RE-28 as already researched; the persistent

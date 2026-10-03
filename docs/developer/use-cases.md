@@ -1,7 +1,7 @@
 <!--
 title: Use case register
 status: living register (RE-67)
-updated: 2026-10-01
+updated: 2026-10-03
 context_size: large
 -->
 
@@ -151,8 +151,8 @@ folder that already holds a local store (one containing `.romperdb`). See
 - **Doc gaps:** the manual says to point Romper at "an existing `.romperdb`
   directory" (`getting-started.md:67`); the picker wants the folder that
   contains it, and choosing `.romperdb` itself fails.
-- **Known issues:** RE-21. Nothing tests the wizard's existing-store panel
-  above unit level.
+- **Known issues:** nothing tests the wizard's existing-store panel above
+  unit level.
 
 ### UC-05 Recover from an invalid or missing store
 
@@ -174,7 +174,7 @@ and [Validating Your Store](../manual/kit-browser.md#validating-your-store).
 - **Main:** `electron/main/services/localStoreService.ts` (`getLocalStoreStatus`);
   `electron/main/localStoreValidator.ts` (`validateLocalStoreAgainstDb`).
 - **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-78 (Preferences ignores an invalid folder without a message), RE-21, RE-56, RE-48.
+- **Known issues:** RE-78 (Preferences ignores an invalid folder without a message), RE-56, RE-48.
 
 ### UC-06 Change the local store
 
@@ -197,7 +197,7 @@ describes it.
 - **Main:** `electron/main/applicationMenu.ts`; `electron/main/services/settingsService.ts`;
   `electron/main/localStoreValidator.ts`.
 - **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-78, RE-21, RE-37 (favourite state can carry over by kit
+- **Known issues:** RE-78, RE-37 (favourite state can carry over by kit
   name). With `ROMPER_LOCAL_PATH` set, a change has no effect.
 
 ## Browse and organise
@@ -800,9 +800,10 @@ the theme. The manual has no Preferences section; see
   `app/renderer/components/hooks/shared/useMenuEvents.ts` (`menu-preferences`).
 - **IPC:** `read-settings`, `write-settings`; push `menu-preferences`.
 - **Main:** `electron/main/services/settingsService.ts` (`readSettings`,
-  `writeSetting`); `electron/main/mainProcessSetup.ts` (`loadSettings`).
+  `writeSetting`); `electron/main/mainProcessSetup.ts` (`loadSettings`);
+  `electron/main/settingsFile.ts` (value checks, atomic write).
 - **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-21, RE-44, RE-48.
+- **Known issues:** RE-44, RE-48.
 
 ### UC-36 Messages and error containment
 

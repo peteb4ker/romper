@@ -19,6 +19,7 @@ let TEST_DATA_DIR: string;
 
 import { app } from "electron";
 
+import { loadSettings } from "../../mainProcessSetup.js";
 import { SettingsService } from "../settingsService.js";
 
 const mockApp = vi.mocked(app);
@@ -321,6 +322,63 @@ describe("[UC-35] SettingsService Integration Tests", () => {
       const settingsPath = path.join(TEST_DATA_DIR, "romper-settings.json");
       const fileContents = JSON.parse(fs.readFileSync(settingsPath, "utf-8"));
       expect(fileContents.localStorePath).toBe("/path2");
+    });
+  });
+
+  // RE-21: what a relaunch does. Load the file, change one setting, load
+  // again: every other setting survives.
+  describe("[UC-04] [UC-06] Load, write, load again", () => {
+    it("keeps the theme and destructive-action preference across a relaunch", () => {
+      const settingsPath = path.join(TEST_DATA_DIR, "romper-settings.json");
+      fs.writeFileSync(
+        settingsPath,
+        JSON.stringify({
+          confirmDestructiveActions: false,
+          fromANewerVersion: { kept: true },
+          localStorePath: "/store",
+          themeMode: "dark",
+        }),
+      );
+
+      // Launch: load, then the user picks a card folder
+      const firstLaunch = loadSettings(settingsPath);
+      settingsService.writeSetting(
+        firstLaunch,
+        "sdCardPath",
+        "/Volumes/RAMPLE",
+      );
+
+      // Next launch
+      const secondLaunch = loadSettings(settingsPath);
+      expect(secondLaunch).toEqual({
+        confirmDestructiveActions: false,
+        fromANewerVersion: { kept: true },
+        localStorePath: "/store",
+        sdCardPath: "/Volumes/RAMPLE",
+        themeMode: "dark",
+      });
+      expect(settingsService.readSettings(secondLaunch).themeMode).toBe("dark");
+    });
+
+    it("saves a preference changed in Preferences for the next launch", () => {
+      const settingsPath = path.join(TEST_DATA_DIR, "romper-settings.json");
+      const settings = loadSettings(settingsPath);
+
+      settingsService.writeSetting(settings, "localStorePath", "/store");
+      settingsService.writeSetting(settings, "themeMode", "light");
+      settingsService.writeSetting(
+        settings,
+        "confirmDestructiveActions",
+        false,
+      );
+      settingsService.writeSetting(settings, "localStorePath", "/other-store");
+
+      expect(loadSettings(settingsPath)).toEqual({
+        confirmDestructiveActions: false,
+        localStorePath: "/other-store",
+        themeMode: "light",
+      });
+      expect(fs.readdirSync(TEST_DATA_DIR)).toEqual(["romper-settings.json"]);
     });
   });
 });

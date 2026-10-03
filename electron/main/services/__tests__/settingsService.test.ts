@@ -1,4 +1,3 @@
-import * as fs from "node:fs";
 import * as path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -9,9 +8,10 @@ vi.mock("electron", () => ({
   },
 }));
 
-// Mock fs
-vi.mock("node:fs", () => ({
-  writeFileSync: vi.fn(),
+// Keep the real value checks; only the file write is mocked
+vi.mock("../../settingsFile.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../settingsFile.js")>()),
+  writeSettingsFile: vi.fn(),
 }));
 
 // Mock path
@@ -21,10 +21,11 @@ vi.mock("node:path", () => ({
 
 import { app } from "electron";
 
+import { writeSettingsFile } from "../../settingsFile.js";
 import { SettingsService } from "../settingsService.js";
 
 const mockApp = vi.mocked(app);
-const mockFs = vi.mocked(fs);
+const mockWriteSettingsFile = vi.mocked(writeSettingsFile);
 const mockPath = vi.mocked(path);
 
 describe("SettingsService", () => {
@@ -68,7 +69,7 @@ describe("SettingsService", () => {
     });
   });
 
-  describe("writeSetting", () => {
+  describe("[UC-35] writeSetting", () => {
     it("updates in-memory settings and writes to file", () => {
       settingsService.writeSetting(mockInMemorySettings, "newKey", "newValue");
 
@@ -81,10 +82,13 @@ describe("SettingsService", () => {
       });
 
       // Should write to persistent storage
-      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+      expect(mockWriteSettingsFile).toHaveBeenCalledWith(
         "/test/userData/romper-settings.json",
-        JSON.stringify(mockInMemorySettings, null, 2),
-        "utf-8",
+        {
+          localStorePath: "/test/local/store",
+          newKey: "newValue",
+          theme: "dark",
+        },
       );
     });
 
@@ -92,17 +96,9 @@ describe("SettingsService", () => {
       settingsService.writeSetting(mockInMemorySettings, "theme", "light");
 
       expect(mockInMemorySettings.theme).toBe("light");
-      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+      expect(mockWriteSettingsFile).toHaveBeenCalledWith(
         "/test/userData/romper-settings.json",
-        JSON.stringify(
-          {
-            localStorePath: "/test/local/store",
-            theme: "light",
-          },
-          null,
-          2,
-        ),
-        "utf-8",
+        { localStorePath: "/test/local/store", theme: "light" },
       );
     });
 
@@ -119,10 +115,9 @@ describe("SettingsService", () => {
       );
 
       expect(mockInMemorySettings.complex).toEqual(complexValue);
-      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+      expect(mockWriteSettingsFile).toHaveBeenCalledWith(
         "/test/userData/romper-settings.json",
-        expect.stringContaining('"complex"'),
-        "utf-8",
+        expect.objectContaining({ complex: complexValue }),
       );
     });
 
@@ -136,11 +131,58 @@ describe("SettingsService", () => {
         "/custom/userData",
         "romper-settings.json",
       );
-      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+      expect(mockWriteSettingsFile).toHaveBeenCalledWith(
         "/custom/userData/romper-settings.json",
-        expect.any(String),
-        "utf-8",
+        expect.any(Object),
       );
+    });
+
+    it("keeps every other setting when writing one (RE-21)", () => {
+      const settings = {
+        confirmDestructiveActions: false,
+        futureSetting: { kept: true },
+        localStorePath: "/store",
+        themeMode: "dark",
+      };
+
+      settingsService.writeSetting(settings, "sdCardPath", "/sd");
+
+      expect(mockWriteSettingsFile).toHaveBeenCalledWith(
+        "/test/userData/romper-settings.json",
+        {
+          confirmDestructiveActions: false,
+          futureSetting: { kept: true },
+          localStorePath: "/store",
+          sdCardPath: "/sd",
+          themeMode: "dark",
+        },
+      );
+    });
+
+    it.each([
+      ["themeMode", "purple"],
+      ["themeMode", null],
+      ["confirmDestructiveActions", "yes"],
+      ["localStorePath", 42],
+      ["sdCardPath", false],
+    ])("refuses %s = %j and leaves memory and file alone", (key, value) => {
+      const before = { ...mockInMemorySettings };
+      expect(() =>
+        settingsService.writeSetting(mockInMemorySettings, key, value),
+      ).toThrow(`Invalid value for setting ${key}`);
+      expect(mockInMemorySettings).toEqual(before);
+      expect(mockWriteSettingsFile).not.toHaveBeenCalled();
+    });
+
+    it("leaves memory unchanged when the file can't be written", () => {
+      mockWriteSettingsFile.mockImplementationOnce(() => {
+        throw new Error("disk full");
+      });
+
+      expect(() =>
+        settingsService.writeSetting(mockInMemorySettings, "themeMode", "dark"),
+      ).toThrow("disk full");
+      expect(mockInMemorySettings).not.toHaveProperty("themeMode");
     });
   });
 

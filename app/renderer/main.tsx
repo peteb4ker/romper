@@ -17,12 +17,21 @@ import { MessageDisplayContext } from "./components/MessageDisplayContext";
 import StatusBar from "./components/StatusBar";
 import { installDocumentDropGuard } from "./utils/documentDropGuard";
 import { SettingsProvider } from "./utils/SettingsContext";
+import { installUnhandledRejectionReporter } from "./utils/unhandledRejectionReporter";
 import AboutView from "./views/AboutView";
 import KitsView from "./views/KitsView";
 
 const AppContent = () => {
   const messageDisplay = useMessageDisplay();
   const [showAboutModal, setShowAboutModal] = useState(false);
+
+  // A promise that rejects outside a render (an IPC call nobody awaited)
+  // gets a message and a log entry, not just the console (RE-92)
+  const { showMessage } = messageDisplay;
+  useEffect(
+    () => installUnhandledRejectionReporter(showMessage),
+    [showMessage],
+  );
 
   const handleCloseAbout = () => {
     setShowAboutModal(false);

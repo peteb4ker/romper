@@ -103,6 +103,15 @@ If Romper can't open your local store (for example, you moved or deleted the fol
 
 ---
 
+## "Something Romper was doing in the background didn't finish"
+
+This message means something Romper started without waiting for it failed, for example a save or a file check. Romper shows the message once for a burst of these failures, not once for each.
+
+- **Check your last change** -- Look at what you just did, such as a sample, a setting or a name. If it didn't take effect, do it again.
+- **If it keeps happening** -- Restart Romper. If the message still comes back, open the Developer Tools (below) and look in the **Console** tab for `A background task failed`. Include that line in a bug report.
+
+---
+
 ## Inspecting Romper with Developer Tools
 
 If something is misbehaving and you want to capture diagnostic output for a bug report -- or you simply want to inspect the running app -- you can enable the Chromium Developer Tools in an installed build by launching Romper with the `ROMPER_ENABLE_DEVTOOLS` environment variable set to `1`. By default this is off, so installed releases do not expose **Reload** / **Force Reload** / **Toggle Developer Tools** in the View menu.

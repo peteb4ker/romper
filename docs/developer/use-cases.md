@@ -725,13 +725,17 @@ the theme. The manual has no Preferences section; see
 Results and errors show as toasts at the top right that dismiss themselves.
 An error boundary around the app, the kit list and the kit editor catches a
 crash in that area and offers Try again, Back or Reload, instead of a blank
-window. No manual page covers this; the requirements are in
+window. A promise that rejects outside a render, such as an IPC call nobody
+awaited, is logged and shows one error message per burst. No manual page
+covers this; [Troubleshooting](../troubleshooting.md) explains the
+background-failure message, and the requirements are in
 [`product-requirements.md`](product-requirements.md).
 
 - **Renderer:** `app/renderer/components/hooks/shared/useMessageDisplay.ts`, `app/renderer/components/hooks/shared/useMessageApi.ts`;
   `app/renderer/components/MessageDisplay.tsx`, `app/renderer/components/MessageDisplayContext.tsx`;
   `app/renderer/components/ErrorBoundary.tsx` (mounted in `app/renderer/main.tsx` and
-  `app/renderer/views/KitsView.tsx`); `app/renderer/components/dialogs/CriticalErrorDialog.tsx`.
+  `app/renderer/views/KitsView.tsx`); `app/renderer/components/dialogs/CriticalErrorDialog.tsx`;
+  `app/renderer/utils/unhandledRejectionReporter.ts` (installed in `app/renderer/main.tsx`).
 - **IPC, main:** none of its own; each feature reports through
   `onMessage`.
 

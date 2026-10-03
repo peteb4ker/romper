@@ -52,7 +52,6 @@ This file tracks what's being done about each item.
 |---|---|---|---|---|
 | RE-21 | Medium | Settings | Your theme and the "Confirm destructive actions" setting reset every time Romper starts. | open |
 | RE-22 | Medium | IPC | Editing a kit's details could change other parts of the kit's record by mistake. | open |
-| RE-23 | Medium | Banks | Clearing a bank's name doesn't stick: the name comes back after a reload and is written to the card. | open |
 | RE-25 | Medium | Validation | Out-of-range volume, gain, tempo or sample mode values aren't rejected, so a glitch could save a value the Rample can't use. | open |
 | RE-26 | Medium | Samples | Replacing a sample can lose the original if something fails partway, and the new sample loses the old one's gain. | open |
 | RE-27 | Medium | Samples | Moving a sample to another kit can fail partway, and the moved sample loses its gain and audio details. | open |
@@ -97,6 +96,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-23 | Medium | Banks | Clearing a bank's name doesn't stick: the name comes back after a reload and is written to the card. | done (#434: clearing removes the name everywhere; main refuses names a card can't hold, with a message; a bank name file the card can't take stops the write with an error) |
 | RE-58 | Medium | Tooling | Romper's own pre-commit checks failed on a busy computer because they always started the same large number of test workers. | done (#423: workers follow the free cores; under load the suite runs on fewer workers instead of timing out) |
 | RE-74 | Medium | Samples | Dropping a sample onto a filled slot said it would insert it there and shift the rest down, but added it at the end. | done (#421: dragging files over a voice highlights the slot after the last sample, where they land) |
 | RE-75 | Medium | Voices | In an editable kit, scanning the kit overwrote voice names you'd typed. | done (#422: only voices without a name are named, as main's scan does) |

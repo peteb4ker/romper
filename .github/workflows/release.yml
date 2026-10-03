@@ -21,7 +21,7 @@ jobs:
   # passes, and the test suites below pass on the tagged commit.
   preflight:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     permissions:
       contents: read
       issues: write
@@ -102,6 +102,26 @@ jobs:
             echo "::error::Windows signing secrets are missing: $AZURE_MISSING. Configure Azure Trusted Signing, or set the repo variable ALLOW_UNSIGNED_WINDOWS to true to ship an unsigned Windows build."
             exit 1
           fi
+
+      # The register's statuses must match the open issues: the testing page
+      # shows the statuses this release ships with. Pull requests only warn
+      # on this (anyone can open an issue); a release fails on it.
+      - name: Set up Node.js
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: "npm"
+
+      - name: Install dependencies
+        if: startsWith(github.ref, 'refs/tags/')
+        run: npm ci
+
+      - name: Check the register matches the open issues
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: npm run trace:check -- --strict-issues
 
       # v1.3.0 was lost to an expired Apple agreement that only showed up at
       # notarize time, after every platform had built.

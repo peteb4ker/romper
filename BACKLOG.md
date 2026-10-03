@@ -14,9 +14,28 @@ issue carries:
   disagree) or `test` (a missing or weak test);
 - a severity: `severity:high`, `severity:medium` or `severity:low`.
 
-`npm run trace:check` (CI's Lint job) fails when an open issue has no UC/Q
-label, and when an entry's status disagrees with its issues: a supported
-entry has no open issues, and a partial one has at least one.
+`npm run trace:check` compares the register with the open issues: a
+supported entry has no open issues, a partial one has at least one, and
+every UC/Q label is in the register. On a pull request (CI's Lint job) a
+disagreement is a warning, an annotation plus a line in the job summary,
+because anyone can open an issue and that mustn't turn every PR red. The
+release fails on it (`npm run trace:check -- --strict-issues` in the
+preflight), so a release always ships statuses that match its issues.
+
+## Triage first
+
+New issues from outside arrive labelled `triage` (the issue template adds
+it) or with no labels at all. They don't count towards any status and never
+fail a check; the Lint job lists them as needing triage. Before picking
+other work, triage them:
+
+```sh
+gh issue list --label triage
+```
+
+Give each one a UC/Q label, a kind and a severity, and remove `triage` (or
+close it, or label it `question`, `duplicate` or `invalid`). If it lands on
+a supported entry, mark the entry **partial** in a pull request.
 
 ## Pick
 
@@ -46,7 +65,8 @@ cloud sessions alike.
   closed (see the `release` skill).
 - If it fixes the entry's last open issue, mark the entry **supported** in
   `use-cases.md` in the same pull request. The check counts the issues a
-  pull request fixes as closed, so it fails until you do.
+  pull request fixes as closed, so it warns until you do, and the next
+  release would fail.
 - Partly fixed: say `Part of #N` instead, and comment on the issue with what
   is done and what is left.
 
@@ -65,8 +85,8 @@ Open an issue:
   with the next free `RE-` ID, end its Fix column with "Tracked in #N.", and
   add a **Finding:** line to the issue.
 - If the entry was supported, mark it **partial** in a pull request straight
-  away: until the register agrees, `npm run trace:check` fails on every
-  branch.
+  away: until the register agrees, every pull request shows the warning and
+  a release can't ship.
 
 ## Fixed before the issue tracker
 

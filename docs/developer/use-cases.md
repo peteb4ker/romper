@@ -28,12 +28,15 @@ do) is an issue too, labelled `documentation`, and a missing test is one
 labelled `test`, so entries no longer list known issues or doc gaps here.
 
 Status follows the issues: a supported entry has no open issues, and a
-partial one has at least one. `npm run trace:check` fails when they
-disagree, when an open issue has no `UC-NN` or `Q-NN` label, or when an
-entry has no label on GitHub. The pull request that closes an entry's last
-open issue (`Fixes #N`) marks it supported; the check counts the issues a
-pull request fixes as closed. See [`BACKLOG.md`](../../BACKLOG.md) for the
-loop.
+partial one has at least one. `npm run trace:check` checks this, along with
+labels the register doesn't have and entries with no label on GitHub. On a
+pull request a disagreement is a warning; the release fails on it
+(`--strict-issues`), so a release ships statuses that match its issues.
+Issues labelled `triage`, or with no `UC-NN` or `Q-NN` label, haven't been
+triaged yet: they don't count towards a status and are listed separately.
+The pull request that closes an entry's last open issue (`Fixes #N`) marks
+it supported; the check counts the issues a pull request fixes as closed.
+See [`BACKLOG.md`](../../BACKLOG.md) for the loop.
 
 The tests for each use case are listed in `traceability.md`, generated
 (not committed) by `npm run trace` from `[UC-NN]` tags in test titles; CI

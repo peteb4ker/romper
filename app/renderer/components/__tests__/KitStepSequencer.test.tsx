@@ -4,6 +4,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
 } from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -449,7 +450,7 @@ describe("KitStepSequencer", () => {
     expect(lastCall[0].voiceMutes[1]).toBe(true);
   });
 
-  it("calls onVoiceSettingChanged immediately for sample mode changes", () => {
+  it("calls onVoiceSettingChanged once the sample mode is saved", async () => {
     const onVoiceSettingChanged = vi.fn();
 
     render(
@@ -473,8 +474,135 @@ describe("KitStepSequencer", () => {
     );
 
     fireEvent.click(screen.getByTestId("sample-mode-0-random"));
-    // Sample mode change calls onVoiceSettingChanged immediately (no debounce)
-    expect(onVoiceSettingChanged).toHaveBeenCalledTimes(1);
+    // No debounce: the kit reloads as soon as main has saved the mode
+    await waitFor(() => expect(onVoiceSettingChanged).toHaveBeenCalledTimes(1));
+  });
+
+  describe("[UC-32] [UC-36] a level or sample mode that isn't saved (RE-91)", () => {
+    const voices = [
+      { sample_mode: "first", voice_number: 1, voice_volume: 80 },
+      { sample_mode: "first", voice_number: 2, voice_volume: 100 },
+      { sample_mode: "first", voice_number: 3, voice_volume: 100 },
+      { sample_mode: "first", voice_number: 4, voice_volume: 100 },
+    ];
+    const renderSequencer = (
+      onMessage = vi.fn(),
+      onVoiceSettingChanged = vi.fn(),
+    ) =>
+      render(
+        <KitStepSequencer
+          bpm={120}
+          kitName="TestKit"
+          onMessage={onMessage}
+          onPlaySample={onPlaySample}
+          onVoiceSettingChanged={onVoiceSettingChanged}
+          samples={defaultSamples}
+          sequencerOpen={true}
+          setSequencerOpen={setSequencerOpen}
+          setStepPattern={setStepPattern}
+          stepPattern={stepPattern}
+          voices={voices}
+        />,
+      );
+    const level = () =>
+      screen.getByTestId("voice-volume-0") as HTMLInputElement;
+
+    it("puts a refused level back and says so", async () => {
+      vi.mocked(window.electronAPI.updateVoiceVolume).mockResolvedValue({
+        error: "SQLITE_BUSY: database is locked",
+        success: false,
+      });
+      const onMessage = vi.fn();
+      renderSequencer(onMessage);
+
+      fireEvent.change(level(), { target: { value: "40" } });
+      expect(level().value).toBe("40");
+
+      await waitFor(() => expect(level().value).toBe("80"));
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      expect(onMessage).toHaveBeenCalledWith(
+        "Couldn't save the level for voice 1, so it's back to 80. Try again.",
+        "error",
+      );
+      expect(onMessage.mock.calls[0][0]).not.toMatch(/SQLITE|Error:/);
+    });
+
+    it("gives one message for a drag whose saves all fail", async () => {
+      vi.mocked(window.electronAPI.updateVoiceVolume).mockRejectedValue(
+        new Error("IPC channel closed"),
+      );
+      const onMessage = vi.fn();
+      renderSequencer(onMessage);
+
+      fireEvent.change(level(), { target: { value: "70" } });
+      fireEvent.change(level(), { target: { value: "60" } });
+      fireEvent.change(level(), { target: { value: "50" } });
+
+      await waitFor(() => expect(level().value).toBe("80"));
+      expect(onMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it("keeps the last level main saved when a later step fails", async () => {
+      vi.mocked(window.electronAPI.updateVoiceVolume)
+        .mockResolvedValueOnce({ success: true })
+        .mockResolvedValueOnce({ error: "x", success: false });
+      const onMessage = vi.fn();
+      renderSequencer(onMessage);
+
+      await act(async () => {
+        fireEvent.change(level(), { target: { value: "70" } });
+      });
+      await act(async () => {
+        fireEvent.change(level(), { target: { value: "60" } });
+      });
+
+      await waitFor(() => expect(onMessage).toHaveBeenCalledTimes(1));
+      expect(level().value).toBe("70");
+      expect(onMessage).toHaveBeenCalledWith(
+        "Couldn't save the level for voice 1, so it's back to 70. Try again.",
+        "error",
+      );
+    });
+
+    it("puts a sample mode that isn't saved back and says so", async () => {
+      vi.mocked(window.electronAPI.updateVoiceSampleMode).mockRejectedValue(
+        new Error("IPC channel closed"),
+      );
+      const onMessage = vi.fn();
+      const onVoiceSettingChanged = vi.fn();
+      renderSequencer(onMessage, onVoiceSettingChanged);
+
+      fireEvent.click(screen.getByTestId("sample-mode-0-random"));
+      expect(
+        screen.getByTestId("sample-mode-0-random").getAttribute("aria-pressed"),
+      ).toBe("true");
+
+      await waitFor(() =>
+        expect(onMessage).toHaveBeenCalledWith(
+          "Couldn't save the sample mode for voice 1, so it's back to 1st. Try again.",
+          "error",
+        ),
+      );
+      expect(
+        screen.getByTestId("sample-mode-0-first").getAttribute("aria-pressed"),
+      ).toBe("true");
+      expect(onVoiceSettingChanged).not.toHaveBeenCalled();
+    });
+
+    it("says nothing when the level and sample mode are saved", async () => {
+      const onMessage = vi.fn();
+      renderSequencer(onMessage);
+
+      fireEvent.change(level(), { target: { value: "40" } });
+      fireEvent.click(screen.getByTestId("sample-mode-0-random"));
+
+      await waitFor(() =>
+        expect(window.electronAPI.updateVoiceSampleMode).toHaveBeenCalled(),
+      );
+      await act(async () => {});
+      expect(level().value).toBe("40");
+      expect(onMessage).not.toHaveBeenCalled();
+    });
   });
 
   describe("Stereo linking", () => {

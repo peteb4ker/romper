@@ -30,7 +30,7 @@ export function useKitVoicePanels({
   kitName: string;
   onPlay: (voice: number, slot: number) => void;
   onSampleSelect: (voice: number, idx: number) => void;
-  onSaveVoiceName: (voice: number, newName: string) => void;
+  onSaveVoiceName: (voice: number, newName: string) => Promise<boolean> | void;
   onStop: (voice: number, slot: number) => void;
   onWaveformPlayingChange: (
     voice: number,

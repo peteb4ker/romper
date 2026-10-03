@@ -99,8 +99,9 @@ describe("useVoiceAlias", () => {
         useVoiceAlias({ kitName: "A0", onUpdate }),
       );
 
+      let saved: boolean | undefined;
       await act(async () => {
-        await result.current.updateVoiceAlias(1, "Kick Drum");
+        saved = await result.current.updateVoiceAlias(1, "Kick Drum");
       });
 
       expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
@@ -108,17 +109,13 @@ describe("useVoiceAlias", () => {
         1,
         "Kick Drum",
       );
+      expect(saved).toBe(false);
       expect(onUpdate).not.toHaveBeenCalled();
-      expect(console.error).toHaveBeenCalledWith(
-        "Failed to update voice alias:",
-        "Database error",
-      );
     });
 
     it("handles API exception gracefully", async () => {
-      const apiError = new Error("Network error");
       vi.mocked(window.electronAPI.updateVoiceAlias).mockRejectedValue(
-        apiError,
+        new Error("Network error"),
       );
 
       const onUpdate = vi.fn();
@@ -127,19 +124,12 @@ describe("useVoiceAlias", () => {
       );
 
       await act(async () => {
-        await result.current.updateVoiceAlias(1, "Kick Drum");
+        await expect(
+          result.current.updateVoiceAlias(1, "Kick Drum"),
+        ).resolves.toBe(false);
       });
 
-      expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
-        "A0",
-        1,
-        "Kick Drum",
-      );
       expect(onUpdate).not.toHaveBeenCalled();
-      expect(console.error).toHaveBeenCalledWith(
-        "Failed to update voice alias:",
-        apiError,
-      );
     });
 
     it("works without onUpdate callback", async () => {
@@ -155,6 +145,65 @@ describe("useVoiceAlias", () => {
         "Kick Drum",
       );
       // Should not throw when onUpdate is undefined
+    });
+  });
+
+  describe("[UC-27] [UC-36] a voice name that isn't saved (RE-91)", () => {
+    it("says so when main refuses the name", async () => {
+      vi.mocked(window.electronAPI.updateVoiceAlias).mockResolvedValue({
+        error: "SQLITE_BUSY: database is locked",
+        success: false,
+      });
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useVoiceAlias({ kitName: "A0", onMessage }),
+      );
+
+      await act(async () => {
+        await result.current.updateVoiceAlias(2, "Snare");
+      });
+
+      expect(onMessage).toHaveBeenCalledWith(
+        "Couldn't save the name for voice 2. Try again.",
+        "error",
+      );
+      expect(onMessage.mock.calls[0][0]).not.toMatch(/SQLITE|Error:/);
+    });
+
+    it("says so when the save throws", async () => {
+      vi.mocked(window.electronAPI.updateVoiceAlias).mockRejectedValue(
+        new Error("IPC channel closed"),
+      );
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useVoiceAlias({ kitName: "A0", onMessage }),
+      );
+
+      await act(async () => {
+        await expect(result.current.updateVoiceAlias(2, "Snare")).resolves.toBe(
+          false,
+        );
+      });
+
+      expect(onMessage).toHaveBeenCalledWith(
+        "Couldn't save the name for voice 2. Try again.",
+        "error",
+      );
+    });
+
+    it("says nothing when the name is saved", async () => {
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useVoiceAlias({ kitName: "A0", onMessage }),
+      );
+
+      await act(async () => {
+        await expect(result.current.updateVoiceAlias(2, "Snare")).resolves.toBe(
+          true,
+        );
+      });
+
+      expect(onMessage).not.toHaveBeenCalled();
     });
   });
 

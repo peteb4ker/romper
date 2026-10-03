@@ -200,15 +200,10 @@ export function useVoicePanelSlotRendering({
           </div>
           {isEditable && (
             <GainKnob
-              onChange={(db) => {
-                void globalThis.electronAPI?.updateSampleGain?.(
-                  kitName,
-                  voice,
-                  slotNumber,
-                  db,
-                );
-                onGainChange?.(voice, slotNumber, sampleName, db);
-              }}
+              onChange={(db) =>
+                // The parent saves it and reports a failure (RE-91)
+                onGainChange?.(voice, slotNumber, sampleName, db)
+              }
               value={sampleData?.gain_db ?? 0}
             />
           )}

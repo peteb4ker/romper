@@ -184,4 +184,42 @@ describe("[UC-27] useVoiceNameEditor", () => {
 
     expect(result.current.editValue).toBe("Updated Voice");
   });
+
+  describe("[UC-36] a name that isn't saved (RE-91)", () => {
+    it("drops the unsaved name from the next edit", async () => {
+      const onSaveVoiceName = vi.fn().mockResolvedValue(false);
+      const { result } = renderHook(() =>
+        useVoiceNameEditor({ ...defaultProps, onSaveVoiceName }),
+      );
+
+      act(() => {
+        result.current.startEditing();
+        result.current.setEditValue("Snare");
+      });
+      await act(async () => {
+        result.current.handleSave();
+      });
+
+      expect(onSaveVoiceName).toHaveBeenCalledWith(1, "Snare");
+      expect(result.current.editing).toBe(false);
+      expect(result.current.editValue).toBe("Test Voice");
+    });
+
+    it("keeps a saved name", async () => {
+      const onSaveVoiceName = vi.fn().mockResolvedValue(true);
+      const { result } = renderHook(() =>
+        useVoiceNameEditor({ ...defaultProps, onSaveVoiceName }),
+      );
+
+      act(() => {
+        result.current.startEditing();
+        result.current.setEditValue("Snare");
+      });
+      await act(async () => {
+        result.current.handleSave();
+      });
+
+      expect(result.current.editValue).toBe("Snare");
+    });
+  });
 });

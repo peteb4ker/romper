@@ -16,10 +16,12 @@ import {
 import {
   type FocusedStep,
   NUM_VOICES,
+  SAMPLE_MODE_LABELS,
   type SampleMode,
   type TriggerCondition,
 } from "./hooks/shared/stepPatternConstants";
 import { useBpm } from "./hooks/shared/useBpm";
+import { useSettingSave } from "./hooks/shared/useSettingSave";
 import { useSliceSteps } from "./hooks/shared/useSliceSteps";
 import { SequencerKeysOverlay } from "./SequencerHelp";
 import {
@@ -45,6 +47,8 @@ interface KitStepSequencerProps {
   kitName: string;
   /** Records sequencer edits on the kit's undo stack. */
   onAddUndoAction?: (action: AnyUndoAction) => void;
+  /** Tells the user a level or sample mode wasn't saved (RE-91) */
+  onMessage?: (text: string, type?: string, duration?: number) => void;
   onPlaySample: (
     voice: number,
     slot: number,
@@ -78,7 +82,8 @@ interface VoiceData extends SlicerVoiceData {
 const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
   // Destructure props used inside useCallback to satisfy exhaustive-deps
   // without depending on the whole `props` object.
-  const { kitName, onVoiceSettingChanged, triggerConditions } = props;
+  const { kitName, onMessage, onVoiceSettingChanged, triggerConditions } =
+    props;
 
   // Manage BPM state at this level to ensure sequencer logic gets live updates
   const bpmLogic = useBpm({ initialBpm: props.bpm, kitName: props.kitName });
@@ -120,6 +125,16 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
     return modes;
   });
 
+  // Level and sample mode saves: a failed one goes back and says so (RE-91)
+  const { reset: resetVolumeSaves, save: saveVolume } = useSettingSave<
+    number,
+    number
+  >();
+  const { reset: resetModeSaves, save: saveMode } = useSettingSave<
+    number,
+    SampleMode
+  >();
+
   // Sync state from voice data when it arrives/changes
   React.useEffect(() => {
     if (!props.voices?.length) return;
@@ -132,7 +147,9 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
     }
     setVoiceVolumes(newVolumes);
     setSampleModes(newModes);
-  }, [props.voices]);
+    resetVolumeSaves();
+    resetModeSaves();
+  }, [props.voices, resetVolumeSaves, resetModeSaves]);
 
   // Debounce kit cache refresh for volume slider drags
   const refreshTimerRef = React.useRef<null | ReturnType<typeof setTimeout>>(
@@ -148,29 +165,59 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
   // Handle volume change — update local state + persist via IPC
   const handleVolumeChange = React.useCallback(
     (voiceNumber: number, volume: number) => {
-      setVoiceVolumes((prev) => ({ ...prev, [voiceNumber]: volume }));
-      void globalThis.electronAPI?.updateVoiceVolume?.(
-        kitName,
-        voiceNumber,
-        volume,
-      );
+      const setVolume = (value: number) =>
+        setVoiceVolumes((prev) => ({ ...prev, [voiceNumber]: value }));
+      setVolume(volume);
+      void saveVolume({
+        current: voiceVolumes[voiceNumber] ?? 100,
+        key: voiceNumber,
+        report: (saved) =>
+          onMessage?.(
+            `Couldn't save the level for voice ${voiceNumber}, so it's back to ${saved}. Try again.`,
+            "error",
+          ),
+        restore: setVolume,
+        send: () =>
+          globalThis.electronAPI?.updateVoiceVolume?.(
+            kitName,
+            voiceNumber,
+            volume,
+          ),
+        value: volume,
+        what: `the level for voice ${voiceNumber}`,
+      });
       debouncedRefresh();
     },
-    [kitName, debouncedRefresh],
+    [kitName, debouncedRefresh, onMessage, saveVolume, voiceVolumes],
   );
 
   // Handle sample mode change — update local state + persist via IPC
   const handleSampleModeChange = React.useCallback(
     (voiceNumber: number, mode: SampleMode) => {
-      setSampleModes((prev) => ({ ...prev, [voiceNumber]: mode }));
-      void globalThis.electronAPI?.updateVoiceSampleMode?.(
-        kitName,
-        voiceNumber,
-        mode,
-      );
-      onVoiceSettingChanged?.();
+      const setMode = (value: SampleMode) =>
+        setSampleModes((prev) => ({ ...prev, [voiceNumber]: value }));
+      setMode(mode);
+      void saveMode({
+        current: sampleModes[voiceNumber] ?? "first",
+        key: voiceNumber,
+        onSaved: () => onVoiceSettingChanged?.(),
+        report: (saved) =>
+          onMessage?.(
+            `Couldn't save the sample mode for voice ${voiceNumber}, so it's back to ${SAMPLE_MODE_LABELS[saved]}. Try again.`,
+            "error",
+          ),
+        restore: setMode,
+        send: () =>
+          globalThis.electronAPI?.updateVoiceSampleMode?.(
+            kitName,
+            voiceNumber,
+            mode,
+          ),
+        value: mode,
+        what: `the sample mode for voice ${voiceNumber}`,
+      });
     },
-    [kitName, onVoiceSettingChanged],
+    [kitName, onMessage, onVoiceSettingChanged, saveMode, sampleModes],
   );
 
   // Compute stereo-linked voice pairs from voice data

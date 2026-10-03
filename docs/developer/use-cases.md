@@ -61,8 +61,8 @@ do) or a quality (how Romper behaves while you do it, under
 
 | Status | Use cases |
 |---|---|
-| supported | Q-04, UC-02, UC-03, UC-09, UC-10, UC-11, UC-13, UC-14, UC-15, UC-16, UC-17, UC-18, UC-19, UC-21, UC-23, UC-25, UC-28, UC-30, UC-31, UC-33, UC-35, UC-37 |
-| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, UC-01, UC-04, UC-05, UC-06, UC-07, UC-08, UC-12, UC-24, UC-26, UC-27, UC-29, UC-32, UC-34, UC-36 |
+| supported | Q-04, UC-02, UC-03, UC-09, UC-10, UC-11, UC-13, UC-14, UC-15, UC-16, UC-17, UC-18, UC-19, UC-21, UC-23, UC-24, UC-25, UC-27, UC-28, UC-30, UC-31, UC-32, UC-33, UC-35, UC-37 |
+| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, UC-01, UC-04, UC-05, UC-06, UC-07, UC-08, UC-12, UC-26, UC-29, UC-34, UC-36 |
 | not built | UC-20, UC-22 |
 
 ## Setup and local store
@@ -492,14 +492,17 @@ asks first. Undo puts it back. See
 
 ### UC-24 Set a sample's gain
 
-**Status:** partial
+**Status:** supported
 
 Each sample in an editable kit has a gain knob, from -24 to +12 dB. Gain is
 applied when the kit is written to the card. See
 [Gain Control](../manual/kit-editor.md#gain-control).
 
 - **Renderer:** `app/renderer/components/GainKnob.tsx`, rendered by
-  `app/renderer/components/hooks/voice-panels/useVoicePanelSlotRendering.tsx`.
+  `app/renderer/components/hooks/voice-panels/useVoicePanelSlotRendering.tsx`;
+  saved by `app/renderer/components/KitVoicePanels.tsx` (`handleGainChange`)
+  through `app/renderer/components/hooks/shared/useSettingSave.ts`, which
+  puts back a gain that isn't saved and says so.
 - **IPC:** `update-sample-gain` (`electron/main/dbIpcHandlers.ts`).
 - **Main:** `electron/main/db/operations/sampleCrudOperations.ts` (`updateSampleGain`);
   applied at write time by `electron/main/formatConverter.ts`
@@ -545,7 +548,7 @@ focused text field keeps its own undo. See
 
 ### UC-27 Name voices
 
-**Status:** partial
+**Status:** supported
 
 In an editable kit, the pencil in a voice header renames the voice. Setup
 and scans name unnamed voices from their file names and keep names set by hand. See
@@ -631,7 +634,7 @@ passes of the loop. See
 
 ### UC-32 Sample mode, level and mute
 
-**Status:** partial
+**Status:** supported
 
 Each voice in the sequencer has a sample mode (first, random or round-robin
 across its samples), a level, and a mute that lasts for the session. See
@@ -639,7 +642,8 @@ across its samples), a level, and a mute that lasts for the session. See
 and [Voice Volume and Mute](../manual/step-sequencer.md#voice-volume-and-mute).
 
 - **Renderer:** `app/renderer/components/KitStepSequencer.tsx` (`handleVolumeChange`,
-  `handleSampleModeChange`, `handleMuteToggle`); `app/renderer/components/StepSequencerGrid.tsx`;
+  `handleSampleModeChange`, `handleMuteToggle`), saving through
+  `app/renderer/components/hooks/shared/useSettingSave.ts`; `app/renderer/components/StepSequencerGrid.tsx`;
   `app/renderer/components/hooks/kit-management/useKitStepSequencerLogic.ts`.
 - **IPC:** `update-voice-volume`, `update-voice-sample-mode`; mute isn't
   saved.

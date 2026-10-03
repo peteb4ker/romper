@@ -273,23 +273,8 @@ describe("[UC-08] KitGridCard", () => {
   });
 
   describe("Favorite state computation", () => {
-    it("uses getKitFavoriteState when provided", () => {
-      const mockGetFavoriteState = vi.fn().mockReturnValue(true);
-
-      render(
-        <KitGridCard
-          {...defaultProps}
-          getKitFavoriteState={mockGetFavoriteState}
-        />,
-      );
-
-      expect(mockGetFavoriteState).toHaveBeenCalledWith("A0");
-      expect(mockKitGridItem).toHaveBeenCalledWith(
-        expect.objectContaining({ isFavorite: true }),
-      );
-    });
-
-    it("falls back to kitData.is_favorite when getKitFavoriteState is not provided", () => {
+    // RE-37: the kit list is the only source of favourite state
+    it("[UC-10] reads is_favorite from kitData", () => {
       const kitData = [{ ...kitA0, is_favorite: true }];
 
       render(<KitGridCard {...defaultProps} kitData={kitData} />);
@@ -299,11 +284,21 @@ describe("[UC-08] KitGridCard", () => {
       );
     });
 
-    it("passes undefined isFavorite when neither source is available", () => {
+    it("falls back to the kit's own is_favorite without kitData", () => {
+      render(
+        <KitGridCard {...defaultProps} kit={{ ...kitA0, is_favorite: true }} />,
+      );
+
+      expect(mockKitGridItem).toHaveBeenCalledWith(
+        expect.objectContaining({ isFavorite: true }),
+      );
+    });
+
+    it("passes false for a kit that isn't a favourite", () => {
       render(<KitGridCard {...defaultProps} />);
 
       expect(mockKitGridItem).toHaveBeenCalledWith(
-        expect.objectContaining({ isFavorite: undefined }),
+        expect.objectContaining({ isFavorite: false }),
       );
     });
   });

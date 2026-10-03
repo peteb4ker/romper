@@ -50,7 +50,6 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
-| RE-21 | Medium | Settings | Your theme and the "Confirm destructive actions" setting reset every time Romper starts. | open |
 | RE-22 | Medium | IPC | Editing a kit's details could change other parts of the kit's record by mistake. | open |
 | RE-23 | Medium | Banks | Clearing a bank's name doesn't stick: the name comes back after a reload and is written to the card. | open |
 | RE-25 | Medium | Validation | Out-of-range volume, gain, tempo or sample mode values aren't rejected, so a glitch could save a value the Rample can't use. | open |
@@ -95,6 +94,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-21 | Medium | Settings | Your theme and the "Confirm destructive actions" setting reset every time Romper started. | done (#433: every saved setting is loaded and kept; saves go through a temporary file) |
 | RE-41 | Medium | Renderer | If turning on editing or renaming a kit fails, nothing tells you. | done (#436: a failed toggle or rename shows a message instead of an unhandled rejection) |
 | RE-40 | Medium | Renderer | Some failures happen silently: a rejected drop, a failed stereo link or undo, and the reason a write failed aren't shown to you. | done (#436: one message names the files a drop didn't add and why; a refused link or unlink, a failed undo or redo, and a failed write each show a message) |
 | RE-58 | Medium | Tooling | Romper's own pre-commit checks failed on a busy computer because they always started the same large number of test workers. | done (#423: workers follow the free cores; under load the suite runs on fewer workers instead of timing out) |

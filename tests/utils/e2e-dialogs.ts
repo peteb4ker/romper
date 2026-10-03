@@ -24,6 +24,22 @@ export async function approveLocalStorePrompts(
   });
 }
 
+/**
+ * Answers every folder picker main opens (`dialog.showOpenDialog`) with
+ * `folder`, as if the user had chosen it.
+ */
+export async function chooseFolderInOpenDialog(
+  app: ElectronApplication,
+  folder: string,
+): Promise<void> {
+  await app.evaluate(({ dialog }, chosen) => {
+    dialog.showOpenDialog = (async () => ({
+      canceled: false,
+      filePaths: [chosen],
+    })) as unknown as typeof dialog.showOpenDialog;
+  }, folder);
+}
+
 /** The folder paths main has asked the user to approve so far. */
 export async function getLocalStorePromptsShown(
   app: ElectronApplication,

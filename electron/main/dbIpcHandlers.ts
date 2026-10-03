@@ -31,6 +31,15 @@ import {
 import { registerSampleIpcHandlers } from "./db/sampleIpcHandlers.js";
 import { registerSyncIpcHandlers } from "./db/syncIpcHandlers.js";
 import {
+  bpmError,
+  firstError,
+  gainError,
+  sampleModeError,
+  slotNumberError,
+  voiceNumberError,
+  volumeError,
+} from "./ipcValidation.js";
+import {
   checkDatabaseDirAccess,
   checkPathAccess,
   pathAccess,
@@ -124,6 +133,8 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
         voiceNumber: number,
         voiceAlias: string,
       ) => {
+        const invalid = firstError(voiceNumberError(voiceNumber));
+        if (invalid) return invalid;
         return updateVoiceAlias(dbDir, kitName, voiceNumber, voiceAlias);
       },
     ),
@@ -140,6 +151,14 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
         slotNumber: number,
         gainDb: number,
       ) => {
+        // Out-of-range or non-numeric settings are refused here, before
+        // they reach the database or the card (RE-25)
+        const invalid = firstError(
+          voiceNumberError(voiceNumber),
+          slotNumberError(slotNumber),
+          gainError(gainDb),
+        );
+        if (invalid) return invalid;
         return updateSampleGain(
           dbDir,
           kitName,
@@ -156,6 +175,11 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     createDbHandler(
       inMemorySettings,
       (dbDir: string, kitName: string, voiceNumber: number, volume: number) => {
+        const invalid = firstError(
+          voiceNumberError(voiceNumber),
+          volumeError(volume),
+        );
+        if (invalid) return invalid;
         return updateVoiceVolume(dbDir, kitName, voiceNumber, volume);
       },
     ),
@@ -171,6 +195,11 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
         voiceNumber: number,
         sampleMode: string,
       ) => {
+        const invalid = firstError(
+          voiceNumberError(voiceNumber),
+          sampleModeError(sampleMode),
+        );
+        if (invalid) return invalid;
         return updateVoiceSampleMode(dbDir, kitName, voiceNumber, sampleMode);
       },
     ),
@@ -186,6 +215,13 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
         voiceNumber: number,
         stereoMode: boolean,
       ) => {
+        const invalid = firstError(
+          voiceNumberError(voiceNumber),
+          typeof stereoMode === "boolean"
+            ? null
+            : "Stereo mode must be true or false",
+        );
+        if (invalid) return invalid;
         // Linking is an edit: it decides what the next write puts on the
         // card (stereo, or a mono mix), so a read-only kit keeps its
         // setting (RE-71)
@@ -210,6 +246,8 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     createDbHandler(
       inMemorySettings,
       (dbDir: string, kitName: string, bpm: number) => {
+        const invalid = firstError(bpmError(bpm));
+        if (invalid) return invalid;
         return updateKit(dbDir, kitName, { bpm });
       },
     ),
@@ -279,6 +317,8 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
         voiceNumber: number,
         settings: Partial<VoiceSliceSettings>,
       ) => {
+        const invalid = firstError(voiceNumberError(voiceNumber));
+        if (invalid) return invalid;
         return updateVoiceSliceSettings(dbDir, kitName, voiceNumber, settings);
       },
     ),

@@ -64,6 +64,26 @@ describe("SampleValidator", () => {
         "Slot index must be between 0 and 11 (12 slots per voice)",
       );
     });
+
+    it.each([Number.NaN, 1.5, Infinity])(
+      "[Q-02] rejects voice %s, which isn't a whole number (RE-25)",
+      (voice) => {
+        expect(validator.validateVoiceAndSlot(voice, 0)).toEqual({
+          error: "Voice number must be between 1 and 4",
+          isValid: false,
+        });
+      },
+    );
+
+    it.each([Number.NaN, 0.5, Infinity])(
+      "[Q-02] rejects slot %s, which isn't a whole number (RE-25)",
+      (slot) => {
+        expect(validator.validateVoiceAndSlot(1, slot)).toEqual({
+          error: "Slot index must be between 0 and 11 (12 slots per voice)",
+          isValid: false,
+        });
+      },
+    );
   });
 
   describe("validateSampleFile", () => {

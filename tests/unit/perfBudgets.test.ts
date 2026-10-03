@@ -131,6 +131,7 @@ describe("performance budgets", () => {
         }),
       ).toEqual([
         {
+          label: "Moving to the next kit",
           max: 1,
           measured: 0,
           metric: "get-all-samples-for-kit",
@@ -140,6 +141,7 @@ describe("performance budgets", () => {
           until: null,
         },
         {
+          label: "Moving to the next kit",
           max: 4,
           measured: 4,
           metric: "get-sample-audio-buffer",
@@ -149,6 +151,7 @@ describe("performance budgets", () => {
           until: "RE-83",
         },
         {
+          label: "Moving to the next kit",
           max: null,
           measured: 5,
           metric: "total",
@@ -160,9 +163,15 @@ describe("performance budgets", () => {
       ]);
     });
 
-    it("appends JSON lines to ROMPER_BUDGET_REPORT", () => {
+    it("labels only e2e rows", () => {
+      expect(
+        budgetReportRows("integration/get kits", { connections: 1 })[0].label,
+      ).toBeNull();
+    });
+
+    it("appends JSON lines to ROMPER_BUDGET_REPORT, creating its folder", () => {
       dir = fs.mkdtempSync(path.join(os.tmpdir(), "romper-budget-report-"));
-      const file = path.join(dir, "budgets.jsonl");
+      const file = path.join(dir, "reports", "budgets-e2e.jsonl");
       vi.stubEnv("ROMPER_BUDGET_REPORT", file);
 
       reportBudgets("e2e/gain: 5 wheel steps", { "update-sample-gain": 5 });
@@ -175,9 +184,19 @@ describe("performance budgets", () => {
         .trim()
         .split("\n")
         .map((line) => JSON.parse(line));
-      expect(rows.map((r) => `${r.name}: ${r.metric}=${r.measured}`)).toEqual([
-        "gain: 5 wheel steps: update-sample-gain=5",
-        "open the write summary: generateSyncChangeSummary=1",
+      expect(rows.map((r) => `${r.label}: ${r.metric}=${r.measured}`)).toEqual([
+        "Changing a sample's volume: update-sample-gain=5",
+        "Preparing a card write: generateSyncChangeSummary=1",
+      ]);
+      expect(Object.keys(rows[0]).sort()).toEqual([
+        "label",
+        "max",
+        "measured",
+        "metric",
+        "name",
+        "suite",
+        "target",
+        "until",
       ]);
     });
 

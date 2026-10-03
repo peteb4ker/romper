@@ -19,15 +19,15 @@ vi.mock("node:path", async (importOriginal) =>
   vi.mockObject(await importOriginal<typeof import("node:path")>()),
 );
 
-vi.mock("../../audioUtils.js", () => ({
-  getAudioMetadata: vi.fn(),
-  validateSampleFormat: vi.fn(),
+vi.mock("../../audioUtils.js", async (importOriginal) => ({
+  isFormatIssueCritical: (
+    await importOriginal<typeof import("../../audioUtils.js")>()
+  ).isFormatIssueCritical,
+  validateSampleFormatAsync: vi.fn(),
 }));
 
 vi.mock("../../db/romperDbCoreORM.js", () => ({
-  getAllBanks: vi.fn(() => ({ data: [], success: true })),
-  getKits: vi.fn(),
-  getKitSamples: vi.fn(),
+  getSyncPlanData: vi.fn(),
   markAllKitsAsSyncedExcept: vi.fn(() => ({ data: 0, success: true })),
 }));
 
@@ -40,16 +40,16 @@ vi.mock("../syncMonoAnnotation.js", () => ({
 }));
 
 vi.mock("../sdCardSafety.js", () => ({
-  findStaleCardEntries: vi.fn(() => []),
+  findStaleCardEntries: vi.fn(async () => []),
   removeCardEntries: vi.fn(),
   validateSdCardTarget: vi.fn(() => ({ ok: true })),
 }));
 
-import { getAudioMetadata, validateSampleFormat } from "../../audioUtils.js";
+import type { SyncPlanData } from "../../db/operations/kitSyncOperations.js";
+
+import { validateSampleFormatAsync } from "../../audioUtils.js";
 import {
-  getAllBanks,
-  getKits,
-  getKitSamples,
+  getSyncPlanData,
   markAllKitsAsSyncedExcept,
 } from "../../db/romperDbCoreORM.js";
 import { convertToRampleDefault } from "../../formatConverter.js";
@@ -67,16 +67,22 @@ import { syncValidationService } from "../syncValidationService.js";
 
 const mockFs = vi.mocked(fs);
 const mockPath = vi.mocked(path);
-const mockGetAudioMetadata = vi.mocked(getAudioMetadata);
-const mockValidateSampleFormat = vi.mocked(validateSampleFormat);
-const mockGetKits = vi.mocked(getKits);
-const mockGetKitSamples = vi.mocked(getKitSamples);
+const mockValidateSampleFormat = vi.mocked(validateSampleFormatAsync);
+const mockGetSyncPlanData = vi.mocked(getSyncPlanData);
 const mockMarkKitsAsSynced = vi.mocked(markAllKitsAsSyncedExcept);
 const _mockConvertToRampleDefault = vi.mocked(convertToRampleDefault);
 const mockBrowserWindow = vi.mocked(BrowserWindow);
 const mockValidateSdCardTarget = vi.mocked(validateSdCardTarget);
 const mockFindStaleCardEntries = vi.mocked(findStaleCardEntries);
 const mockRemoveCardEntries = vi.mocked(removeCardEntries);
+
+/** What planning loads from the store, in its one query (RE-82) */
+function planData(data: Partial<SyncPlanData> = {}) {
+  return {
+    data: { banks: [], kitCount: 0, samples: [], voices: [], ...data },
+    success: true,
+  } as ReturnType<typeof getSyncPlanData>;
+}
 
 describe("[UC-34] SyncService", () => {
   let mockWindow: unknown;
@@ -100,64 +106,31 @@ describe("[UC-34] SyncService", () => {
       return parts.join("/");
     });
 
-    mockFs.existsSync.mockReturnValue(true);
-    mockFs.statSync.mockReturnValue({
+    mockFs.promises.stat.mockResolvedValue({
       isDirectory: () => false,
       isFile: () => true,
       size: 1024 * 1024, // 1MB
-    } as unknown);
-    mockFs.mkdirSync.mockImplementation(() => undefined);
-    mockFs.copyFileSync.mockImplementation(() => undefined);
-
-    mockGetAudioMetadata.mockResolvedValue({
-      data: {
-        bitDepth: 16,
-        channels: 2,
-        duration: 1.5,
-        format: "WAV",
-        sampleRate: 44100,
-      },
-      success: true,
-    });
+    } as unknown as fs.Stats);
 
     mockValidateSampleFormat.mockResolvedValue({
-      bitDepth: 16,
-      channels: 2,
-      format: "WAV",
-      isValid: true,
-      needsConversion: false,
-      sampleRate: 44100,
-    });
-
-    mockGetKits.mockReturnValue({
-      data: [
-        { bank_letter: "A", name: "A01" },
-        { bank_letter: "B", name: "B02" },
-      ],
+      data: { issues: [], isValid: true, metadata: { channels: 2 } },
       success: true,
-    });
+    } as Awaited<ReturnType<typeof validateSampleFormatAsync>>);
 
-    mockGetKitSamples.mockResolvedValue({
-      data: [
-        {
-          created_at: new Date(),
-          end_point: 0,
-          filename: "kick.wav",
-          id: 1,
-          kit_id: 1,
-          pitch: 0,
-          playback_mode: "OneShot",
-          plock: null,
-          reverse: false,
-          slot: 0,
-          source_path: "/source/kick.wav",
-          start_point: 0,
-          updated_at: new Date(),
-          voice: 1,
-        },
-      ],
-      success: true,
-    });
+    mockGetSyncPlanData.mockReturnValue(
+      planData({
+        kitCount: 2,
+        samples: [
+          {
+            filename: "kick.wav",
+            kit_name: "A01",
+            slot_number: 0,
+            source_path: "/source/kick.wav",
+            voice_number: 1,
+          } as Sample,
+        ],
+      }),
+    );
   });
 
   describe("generateChangeSummary", () => {
@@ -179,40 +152,104 @@ describe("[UC-34] SyncService", () => {
     });
 
     it("handles missing source files", async () => {
-      mockFs.existsSync.mockReturnValueOnce(false);
+      mockFs.promises.stat.mockRejectedValueOnce(
+        Object.assign(new Error("ENOENT"), { code: "ENOENT" }),
+      );
 
       const result = await syncService.generateChangeSummary({
         localStorePath: "/local/store",
       });
 
-      expect(result).toBeDefined();
+      expect(result.data?.validationErrors).toEqual([
+        expect.objectContaining({ filename: "kick.wav", kitName: "A01" }),
+      ]);
     });
 
     it("handles files needing conversion", async () => {
       mockValidateSampleFormat.mockResolvedValueOnce({
-        bitDepth: 16,
-        channels: 2,
-        format: "MP3",
-        isValid: false,
-        needsConversion: true,
-        sampleRate: 44100,
-      });
+        data: {
+          issues: [{ message: "Bit depth 24", type: "bitDepth" }],
+          isValid: false,
+          metadata: { channels: 2 },
+        },
+        success: true,
+      } as Awaited<ReturnType<typeof validateSampleFormatAsync>>);
 
       const result = await syncService.generateChangeSummary({
         localStorePath: "/local/store",
       });
 
-      expect(result).toBeDefined();
+      expect(result.data?.banks).toEqual([
+        { bank: "A", fileCount: 1, hasConversions: true, kitCount: 1 },
+      ]);
+    });
+
+    it("[Q-01] plans from one load and counts the kits from it (RE-82)", async () => {
+      const result = await syncService.generateChangeSummary({
+        localStorePath: "/local/store",
+      });
+
+      expect(result.error).toBeUndefined();
+      expect(result.data?.kitCount).toBe(2);
+      expect(result.data?.fileCount).toBe(1);
+      expect(mockGetSyncPlanData).toHaveBeenCalledTimes(1);
+      expect(mockGetSyncPlanData).toHaveBeenCalledWith(
+        "/local/store/.romperdb",
+      );
+    });
+
+    it("[Q-01] checks each source file once (RE-82)", async () => {
+      const validate = vi.spyOn(
+        syncValidationService,
+        "validateSyncSourceFile",
+      );
+      try {
+        await syncService.generateChangeSummary({
+          localStorePath: "/local/store",
+        });
+
+        expect(validate).toHaveBeenCalledTimes(1);
+        expect(mockValidateSampleFormat).toHaveBeenCalledTimes(1);
+      } finally {
+        validate.mockRestore();
+      }
+    });
+
+    it("[UC-28] mixes a stereo file on an unlinked voice to mono, from the loaded voices", async () => {
+      mockGetSyncPlanData.mockReturnValue(
+        planData({
+          samples: [
+            {
+              filename: "pad.wav",
+              kit_name: "A01",
+              slot_number: 0,
+              source_path: "/source/pad.wav",
+              voice_number: 2,
+            } as Sample,
+          ],
+          voices: [{ kit_name: "A01", stereo_mode: false, voice_number: 2 }],
+        }),
+      );
+
+      const result = await syncService.generateChangeSummary({
+        localStorePath: "/local/store",
+      });
+
+      // annotateMonoConversion is mocked here; it gets the plan's voices
+      expect(result.success).toBe(true);
+      const { annotateMonoConversion } =
+        await import("../syncMonoAnnotation.js");
+      expect(vi.mocked(annotateMonoConversion)).toHaveBeenCalledWith(
+        [expect.objectContaining({ filename: "pad.wav" })],
+        [{ kit_name: "A01", stereo_mode: false, voice_number: 2 }],
+      );
     });
   });
 
   describe("ROMPER_LOCAL_PATH override", () => {
     beforeEach(() => {
       vi.stubEnv("ROMPER_LOCAL_PATH", "/env/store");
-      vi.spyOn(
-        syncSampleProcessingService,
-        "gatherAllSamples",
-      ).mockResolvedValue({ data: [], success: true });
+      mockGetSyncPlanData.mockReturnValue(planData());
       vi.spyOn(syncFileOperationsService, "processAllFiles").mockResolvedValue(
         0,
       );
@@ -224,17 +261,12 @@ describe("[UC-34] SyncService", () => {
     });
 
     it("generates the change summary from the override when no path is saved", async () => {
-      mockGetKits.mockReturnValue({ data: [], success: true });
-
       const result = await syncService.generateChangeSummary({
         localStorePath: null,
       });
 
       expect(result.success).toBe(true);
-      expect(mockGetKits).toHaveBeenCalledWith("/env/store/.romperdb");
-      expect(syncSampleProcessingService.gatherAllSamples).toHaveBeenCalledWith(
-        "/env/store/.romperdb",
-      );
+      expect(mockGetSyncPlanData).toHaveBeenCalledWith("/env/store/.romperdb");
     });
 
     it("syncs from the override instead of the saved path", async () => {
@@ -244,9 +276,7 @@ describe("[UC-34] SyncService", () => {
       );
 
       expect(result.success).toBe(true);
-      expect(syncSampleProcessingService.gatherAllSamples).toHaveBeenCalledWith(
-        "/env/store/.romperdb",
-      );
+      expect(mockGetSyncPlanData).toHaveBeenCalledWith("/env/store/.romperdb");
     });
   });
 
@@ -267,9 +297,7 @@ describe("[UC-34] SyncService", () => {
     });
 
     it("handles copy errors gracefully", async () => {
-      mockFs.copyFileSync.mockImplementationOnce(() => {
-        throw new Error("Copy failed");
-      });
+      mockFs.promises.copyFile.mockRejectedValueOnce(new Error("Copy failed"));
 
       const result = await syncService.startKitSync(mockSettings, mockOptions);
 
@@ -319,10 +347,7 @@ describe("[UC-34] SyncService", () => {
 
     beforeEach(() => {
       // Reach the write stage deterministically with nothing to copy.
-      vi.spyOn(
-        syncSampleProcessingService,
-        "gatherAllSamples",
-      ).mockResolvedValue({ data: [], success: true });
+      mockGetSyncPlanData.mockReturnValue(planData());
       vi.spyOn(syncFileOperationsService, "processAllFiles").mockResolvedValue(
         0,
       );
@@ -346,9 +371,7 @@ describe("[UC-34] SyncService", () => {
         error: "Refusing to use your home folder",
         success: false,
       });
-      expect(
-        syncSampleProcessingService.gatherAllSamples,
-      ).not.toHaveBeenCalled();
+      expect(mockGetSyncPlanData).not.toHaveBeenCalled();
       expect(mockRemoveCardEntries).not.toHaveBeenCalled();
       expect(syncFileOperationsService.processAllFiles).not.toHaveBeenCalled();
     });
@@ -377,7 +400,7 @@ describe("[UC-34] SyncService", () => {
         order.push("write");
         return 0;
       });
-      mockFindStaleCardEntries.mockReturnValueOnce(["B3", "A0/1-02 old.wav"]);
+      mockFindStaleCardEntries.mockResolvedValueOnce(["B3", "A0/1-02 old.wav"]);
       mockRemoveCardEntries.mockImplementationOnce(() => {
         order.push("remove");
       });
@@ -425,14 +448,12 @@ describe("[UC-34] SyncService", () => {
       expect(syncProgressManager.getCurrentSyncJob()).toBeNull();
     });
 
-    it("keeps a name file for every named bank", async () => {
-      vi.mocked(getAllBanks).mockReturnValue({
-        data: [
-          { artist: "ALWIS", letter: "A" },
-          { artist: null, letter: "B" },
-        ],
-        success: true,
-      } as never);
+    it("keeps a name file for every named bank, and writes the same banks", async () => {
+      const banks = [
+        { artist: "ALWIS", letter: "A" },
+        { artist: null, letter: "B" },
+      ] as SyncPlanData["banks"];
+      mockGetSyncPlanData.mockReturnValue(planData({ banks }));
       const write = vi
         .spyOn(rtfFileService, "writeAllBankRtfFiles")
         .mockReturnValue(1);
@@ -445,10 +466,10 @@ describe("[UC-34] SyncService", () => {
         expect([
           ...mockFindStaleCardEntries.mock.calls[0][1].bankFiles,
         ]).toEqual(["A - ALWIS.rtf"]);
-        expect(write).toHaveBeenCalledWith("/sd/card", expect.any(Array));
+        // The write uses the banks the plan kept, so the two agree
+        expect(write).toHaveBeenCalledWith("/sd/card", banks);
       } finally {
         write.mockRestore();
-        vi.mocked(getAllBanks).mockReturnValue({ data: [], success: true });
       }
     });
 
@@ -474,15 +495,16 @@ describe("[UC-34] SyncService", () => {
     });
 
     it("[UC-12] warns about a stored bank name that can't be a file name (RE-23)", async () => {
-      vi.mocked(getAllBanks).mockReturnValue({
-        data: [
-          { artist: "AC/DC", letter: "A" },
-          { artist: "ALWIS", letter: "B" },
-        ],
-        success: true,
-      } as never);
+      mockGetSyncPlanData.mockReturnValue(
+        planData({
+          banks: [
+            { artist: "AC/DC", letter: "A" },
+            { artist: "ALWIS", letter: "B" },
+          ] as SyncPlanData["banks"],
+        }),
+      );
 
-      try {
+      {
         const summary = await syncService.generateChangeSummary(
           mockSettings,
           "/sd/card",
@@ -494,8 +516,6 @@ describe("[UC-34] SyncService", () => {
         expect([
           ...mockFindStaleCardEntries.mock.calls[0][1].bankFiles,
         ]).toEqual(["B - ALWIS.rtf"]);
-      } finally {
-        vi.mocked(getAllBanks).mockReturnValue({ data: [], success: true });
       }
     });
   });
@@ -513,22 +533,21 @@ describe("[UC-34] SyncService", () => {
 
     beforeEach(() => {
       // A1/kick.wav can be written; A1/missing.wav and B2/gone.wav can't.
-      vi.spyOn(
-        syncSampleProcessingService,
-        "gatherAllSamples",
-      ).mockResolvedValue({
-        data: [
-          sample("A1", "kick.wav"),
-          sample("A1", "missing.wav", 1),
-          sample("B2", "gone.wav"),
-          sample("C3", "snare.wav"),
-        ],
-        success: true,
-      });
+      mockGetSyncPlanData.mockReturnValue(
+        planData({
+          kitCount: 3,
+          samples: [
+            sample("A1", "kick.wav"),
+            sample("A1", "missing.wav", 1),
+            sample("B2", "gone.wav"),
+            sample("C3", "snare.wav"),
+          ],
+        }),
+      );
       vi.spyOn(
         syncSampleProcessingService,
         "processSampleForSync",
-      ).mockImplementation((s, _store, results) => {
+      ).mockImplementation(async (s, _store, results) => {
         if (s.filename === "missing.wav" || s.filename === "gone.wav") {
           results.validationErrors.push({
             error: `Source file not found: /src/${s.filename}`,
@@ -546,7 +565,6 @@ describe("[UC-34] SyncService", () => {
           operation: "copy",
           sourcePath: `/src/${s.filename}`,
         });
-        results.warnings.push(`note about ${s.filename}`);
       });
       vi.spyOn(syncFileOperationsService, "processAllFiles").mockResolvedValue(
         2,
@@ -559,8 +577,7 @@ describe("[UC-34] SyncService", () => {
     });
 
     it("lists what sync will remove from the card (RE-05)", async () => {
-      mockGetKits.mockReturnValue({ data: [{}, {}, {}], success: true });
-      mockFindStaleCardEntries.mockReturnValueOnce(["B3"]);
+      mockFindStaleCardEntries.mockResolvedValueOnce(["B3"]);
 
       const withCard = await syncService.generateChangeSummary(
         mockSettings,
@@ -575,16 +592,15 @@ describe("[UC-34] SyncService", () => {
     });
 
     it("warns about kits the Rample won't open because voice 1 is empty", async () => {
-      vi.mocked(syncSampleProcessingService.gatherAllSamples).mockResolvedValue(
-        {
-          data: [
+      mockGetSyncPlanData.mockReturnValue(
+        planData({
+          kitCount: 2,
+          samples: [
             sample("A1", "kick.wav"),
             { ...sample("D4", "snare.wav"), voice_number: 2 },
           ],
-          success: true,
-        },
+        }),
       );
-      mockGetKits.mockReturnValue({ data: [{}, {}], success: true });
 
       const result = await syncService.generateChangeSummary(mockSettings);
 
@@ -597,8 +613,6 @@ describe("[UC-34] SyncService", () => {
     });
 
     it("reports them in the summary and counts only files that will be written", async () => {
-      mockGetKits.mockReturnValue({ data: [{}, {}, {}], success: true });
-
       const result = await syncService.generateChangeSummary(mockSettings);
 
       expect(result.success).toBe(true);
@@ -611,10 +625,9 @@ describe("[UC-34] SyncService", () => {
         "missing.wav",
         "gone.wav",
       ]);
-      expect(result.data?.warnings).toEqual([
-        "note about kick.wav",
-        "note about snare.wav",
-      ]);
+      expect(result.data?.kitCount).toBe(3);
+      // B2's only sample can't be written, so it has no voice 1 file either
+      expect(result.data?.warnings).toEqual([]);
     });
 
     it("refuses to sync without confirmation, before wiping or writing anything", async () => {
@@ -644,7 +657,6 @@ describe("[UC-34] SyncService", () => {
         "missing.wav",
         "gone.wav",
       ]);
-      expect(result.data?.warnings).toHaveLength(2);
       expect(
         vi
           .mocked(syncFileOperationsService.processAllFiles)
@@ -674,9 +686,7 @@ describe("[UC-34] SyncService", () => {
     });
 
     it("[UC-11] clears the flag after a write with no files to write (RE-35)", async () => {
-      vi.mocked(syncSampleProcessingService.gatherAllSamples).mockResolvedValue(
-        { data: [], success: true },
-      );
+      mockGetSyncPlanData.mockReturnValue(planData());
 
       const result = await syncService.startKitSync(mockSettings, {
         sdCardPath: "/sd/card",
@@ -700,39 +710,37 @@ describe("[UC-34] SyncService", () => {
     };
 
     it("fails when the kits can't be loaded", async () => {
-      mockGetKits.mockReturnValue({
-        error: "Failed to load kits",
+      mockGetSyncPlanData.mockReturnValue({
+        error: "database is locked",
         success: false,
-      });
-
-      const result = await syncService.startKitSync(mockSettings, mockOptions);
-
-      expect(result).toEqual({ error: "Failed to load kits", success: false });
-    });
-
-    it("reports an unexpected error while planning as a sync failure", async () => {
-      mockGetKitSamples.mockReturnValue({
-        data: [
-          {
-            filename: "kick.wav",
-            kit_name: "A01",
-            slot_number: 0,
-            source_path: "/source/kick.wav",
-            voice_number: 1,
-          },
-        ],
-        success: true,
-      } as unknown as ReturnType<typeof getKitSamples>);
-      mockFs.statSync.mockImplementation(() => {
-        throw new Error("Filesystem error");
       });
 
       const result = await syncService.startKitSync(mockSettings, mockOptions);
 
       expect(result).toEqual({
-        error: "Failed to sync kit: Filesystem error",
+        error: "Failed to gather samples: database is locked",
         success: false,
       });
+    });
+
+    it("reports an unexpected error while planning as a sync failure", async () => {
+      const planSample = vi
+        .spyOn(syncSampleProcessingService, "processSampleForSync")
+        .mockRejectedValue(new Error("Filesystem error"));
+
+      try {
+        const result = await syncService.startKitSync(
+          mockSettings,
+          mockOptions,
+        );
+
+        expect(result).toEqual({
+          error: "Failed to sync kit: Filesystem error",
+          success: false,
+        });
+      } finally {
+        planSample.mockRestore();
+      }
     });
   });
 

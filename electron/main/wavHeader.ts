@@ -12,6 +12,12 @@ import type { DbResult } from "@romper/shared/db/schema.js";
 /** Reads `length` bytes at `offset` (fewer at the end of the file). */
 export type ReadBytes = (offset: number, length: number) => Buffer;
 
+/** {@link ReadBytes}, for a file read without blocking the main thread */
+export type ReadBytesAsync = (
+  offset: number,
+  length: number,
+) => Promise<Buffer>;
+
 /** Sample encodings Romper can read: integer PCM and IEEE float. */
 export type WavEncoding = "float" | "pcm";
 
@@ -41,6 +47,12 @@ const SUPPORTED_BIT_DEPTHS: Record<WavEncoding, readonly number[]> = {
   pcm: [8, 16, 24, 32],
 };
 
+/** The bytes the parser needs next; it resumes with them */
+interface ReadRequest {
+  length: number;
+  offset: number;
+}
+
 /**
  * Find a WAV file's format and sample data by walking its chunks.
  * Fails with a reason a user can act on for anything that isn't an
@@ -50,49 +62,28 @@ export function parseWavHeader(
   read: ReadBytes,
   fileSize: number,
 ): DbResult<WavHeader> {
-  const riff = read(0, 12);
-  if (
-    riff.length < 12 ||
-    riff.toString("ascii", 0, 4) !== "RIFF" ||
-    riff.toString("ascii", 8, 12) !== "WAVE"
-  ) {
-    return { error: "Not a WAV file (no RIFF/WAVE header)", success: false };
+  const parser = wavHeaderParser(fileSize);
+  let step = parser.next();
+  while (!step.done) {
+    step = parser.next(read(step.value.offset, step.value.length));
   }
+  return step.value;
+}
 
-  let format: DbResult<Omit<WavHeader, "dataOffset" | "dataSize">> | null =
-    null;
-  let offset = 12;
-  while (offset + 8 <= fileSize) {
-    const chunkHeader = read(offset, 8);
-    if (chunkHeader.length < 8) break;
-    const id = chunkHeader.toString("ascii", 0, 4);
-    const size = chunkHeader.readUInt32LE(4);
-    const body = offset + 8;
-
-    if (id === "fmt ") {
-      format = parseFormatChunk(read(body, Math.min(size, 40)));
-      if (!format.success) return { error: format.error, success: false };
-    } else if (id === "data") {
-      if (!format?.success) {
-        return { error: "No fmt chunk before the sample data", success: false };
-      }
-      return {
-        data: {
-          ...format.data!,
-          dataOffset: body,
-          // A truncated file holds less than its header says
-          dataSize: Math.min(size, Math.max(0, fileSize - body)),
-        },
-        success: true,
-      };
-    }
-    offset = body + size + (size % 2);
+/**
+ * {@link parseWavHeader} with asynchronous reads, so a caller reading many
+ * headers (sync planning, RE-82) doesn't hold the main thread.
+ */
+export async function parseWavHeaderAsync(
+  read: ReadBytesAsync,
+  fileSize: number,
+): Promise<DbResult<WavHeader>> {
+  const parser = wavHeaderParser(fileSize);
+  let step = parser.next();
+  while (!step.done) {
+    step = parser.next(await read(step.value.offset, step.value.length));
   }
-
-  return {
-    error: format ? "No sample data (no data chunk)" : "No fmt chunk",
-    success: false,
-  };
+  return step.value;
 }
 
 function parseFormatChunk(
@@ -147,5 +138,59 @@ function parseFormatChunk(
       sampleRate,
     },
     success: true,
+  };
+}
+
+/**
+ * The chunk walk, as a generator that yields each read it needs, so the
+ * synchronous and asynchronous readers share one parser.
+ */
+function* wavHeaderParser(
+  fileSize: number,
+): Generator<ReadRequest, DbResult<WavHeader>, Buffer> {
+  const riff = yield { length: 12, offset: 0 };
+  if (
+    riff.length < 12 ||
+    riff.toString("ascii", 0, 4) !== "RIFF" ||
+    riff.toString("ascii", 8, 12) !== "WAVE"
+  ) {
+    return { error: "Not a WAV file (no RIFF/WAVE header)", success: false };
+  }
+
+  let format: DbResult<Omit<WavHeader, "dataOffset" | "dataSize">> | null =
+    null;
+  let offset = 12;
+  while (offset + 8 <= fileSize) {
+    const chunkHeader = yield { length: 8, offset };
+    if (chunkHeader.length < 8) break;
+    const id = chunkHeader.toString("ascii", 0, 4);
+    const size = chunkHeader.readUInt32LE(4);
+    const body = offset + 8;
+
+    if (id === "fmt ") {
+      format = parseFormatChunk(
+        yield { length: Math.min(size, 40), offset: body },
+      );
+      if (!format.success) return { error: format.error, success: false };
+    } else if (id === "data") {
+      if (!format?.success) {
+        return { error: "No fmt chunk before the sample data", success: false };
+      }
+      return {
+        data: {
+          ...format.data!,
+          dataOffset: body,
+          // A truncated file holds less than its header says
+          dataSize: Math.min(size, Math.max(0, fileSize - body)),
+        },
+        success: true,
+      };
+    }
+    offset = body + size + (size % 2);
+  }
+
+  return {
+    error: format ? "No sample data (no data chunk)" : "No fmt chunk",
+    success: false,
   };
 }

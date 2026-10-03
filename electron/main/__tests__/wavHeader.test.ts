@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { decodeSamples as decodeWavSamples } from "../wavCodec";
-import { parseWavHeader } from "../wavHeader";
+import { parseWavHeader, parseWavHeaderAsync } from "../wavHeader";
 
 interface Format {
   bits: number;
@@ -189,5 +189,42 @@ describe("parseWavHeader", () => {
   it("reads only the samples a truncated file has", () => {
     const truncated = PLAIN.subarray(0, PLAIN.length - 4);
     expect(parse(truncated).data?.dataSize).toBe(4);
+  });
+});
+
+// RE-82: sync planning reads headers with fs.promises, so the asynchronous
+// reader must agree with the synchronous one on every file
+describe("[Q-01] parseWavHeaderAsync", () => {
+  it.each([
+    ["a plain PCM file", PLAIN],
+    [
+      "a file with chunks before fmt and data",
+      riff(
+        chunk("JUNK", Buffer.alloc(28)),
+        fmtChunk({ bits: 16, tag: 1 }),
+        chunk("junk", Buffer.alloc(36)),
+        chunk("data", pcm16),
+      ),
+    ],
+    [
+      "an extensible float file",
+      riff(
+        fmtChunk({ bits: 32, fmtSize: 40, subFormat: 3, tag: 0xfffe }),
+        chunk("data", Buffer.alloc(8)),
+      ),
+    ],
+    [
+      "a compressed file",
+      riff(fmtChunk({ bits: 4, tag: 2 }), chunk("data", pcm16)),
+    ],
+    ["a file that isn't a WAV", Buffer.from("ID3 not a wav file")],
+    ["a file with no data chunk", riff(fmtChunk({ bits: 16, tag: 1 }))],
+    ["a truncated file", PLAIN.subarray(0, PLAIN.length - 4)],
+  ])("agrees with parseWavHeader on %s", async (_label, buffer) => {
+    const header = await parseWavHeaderAsync(
+      async (offset, length) => buffer.subarray(offset, offset + length),
+      buffer.length,
+    );
+    expect(header).toEqual(parse(buffer));
   });
 });

@@ -5,11 +5,13 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   getAudioMetadata,
+  getAudioMetadataAsync,
   isFormatIssueCritical,
   RAMPLE_FORMAT_REQUIREMENTS,
   validateAudioFormat,
   validateFileExtension,
   validateSampleFormat,
+  validateSampleFormatAsync,
 } from "../audioUtils.js";
 import { type EncodeBitDepth, encodeWav } from "../wavCodec";
 
@@ -685,5 +687,54 @@ describe("audioUtils integration tests", () => {
       const sampleValidation = validateSampleFormat(filePath);
       expect(sampleValidation.data!.isValid).toBe(false);
     });
+  });
+  // RE-82: sync planning reads every header with the asynchronous readers,
+  // so they must agree with the synchronous ones on every kind of file
+  describe("[Q-01] asynchronous readers", () => {
+    const files: Record<string, (file: string) => void> = {
+      "a 48 kHz WAV": (file) =>
+        createTestWavFile(file, [new Float32Array(480)], 48000, 16),
+      "a corrupt WAV": (file) => fs.writeFileSync(file, Buffer.alloc(20)),
+      "a float WAV": (file) =>
+        fs.writeFileSync(
+          file,
+          createRawWavHeader({
+            audioFormat: 3,
+            bitsPerSample: 32,
+            channels: 1,
+            dataSize: 8,
+            sampleRate: 44100,
+          }),
+        ),
+      "a mono 16-bit WAV": (file) =>
+        createTestWavFile(file, [new Float32Array(441)], 44100, 16),
+      "an MP3": (file) => fs.writeFileSync(file, "fake mp3"),
+      "a stereo 8-bit WAV": (file) =>
+        createTestWavFile(
+          file,
+          [new Float32Array(441), new Float32Array(441)],
+          44100,
+          8,
+        ),
+      "no file at all": () => {},
+    };
+
+    it.each(Object.keys(files))(
+      "agree with the synchronous readers on %s",
+      async (label) => {
+        const file = path.join(
+          TEST_DIR,
+          label === "an MP3" ? "sample.mp3" : "sample.wav",
+        );
+        files[label](file);
+
+        expect(await getAudioMetadataAsync(file)).toEqual(
+          getAudioMetadata(file),
+        );
+        expect(await validateSampleFormatAsync(file)).toEqual(
+          validateSampleFormat(file),
+        );
+      },
+    );
   });
 });

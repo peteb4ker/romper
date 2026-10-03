@@ -1,22 +1,24 @@
+import type { SyncPlanData } from "../db/operations/kitSyncOperations.js";
 import type { SyncFileOperation } from "./syncFileOperations.js";
 
-import { getKit } from "../db/romperDbCoreORM.js";
+type VoiceStereoModes = SyncPlanData["voices"];
 
 /**
  * Mark files for mono conversion: a file with more than one channel on a
  * voice that isn't linked as stereo is mixed down to mono when it's written
  * (RE-29). Stereo is a voice setting (`voices.stereo_mode`); the file's own
- * channel count only says whether there is anything to mix.
+ * channel count only says whether there is anything to mix. The voices come
+ * from the plan's one load, not a query per kit (RE-82).
  */
 export function annotateMonoConversion(
   allFiles: SyncFileOperation[],
-  dbDir: string,
+  voices: VoiceStereoModes,
 ): void {
-  const cache = buildVoiceStereoModeCache(allFiles, dbDir);
+  const stereoModes = buildVoiceStereoModeCache(voices);
 
   for (const fileOp of allFiles) {
-    const voiceStereoMode = cache.get(
-      `${fileOp.kitName}:${fileOp.voiceNumber}`,
+    const voiceStereoMode = stereoModes.get(
+      voiceKey(fileOp.kitName, fileOp.voiceNumber),
     );
 
     if (voiceStereoMode === false && (fileOp.channels ?? 1) > 1) {
@@ -29,34 +31,18 @@ export function annotateMonoConversion(
   }
 }
 
-/**
- * Build a cache of voice stereo_mode from the database for all kits referenced in file operations.
- */
+/** Each voice's stereo_mode, keyed by kit and voice number */
 export function buildVoiceStereoModeCache(
-  allFiles: SyncFileOperation[],
-  dbDir: string,
+  voices: VoiceStereoModes,
 ): Map<string, boolean> {
-  const cache = new Map<string, boolean>();
+  return new Map(
+    voices.map((voice) => [
+      voiceKey(voice.kit_name, voice.voice_number),
+      voice.stereo_mode,
+    ]),
+  );
+}
 
-  for (const fileOp of allFiles) {
-    if (cache.has(fileOp.kitName + ":loaded")) {
-      continue;
-    }
-    try {
-      const kitResult = getKit(dbDir, fileOp.kitName);
-      if (kitResult.success && kitResult.data?.voices) {
-        for (const voice of kitResult.data.voices) {
-          cache.set(
-            `${fileOp.kitName}:${voice.voice_number}`,
-            voice.stereo_mode,
-          );
-        }
-      }
-    } catch {
-      // If kit lookup fails, skip annotation for this kit
-    }
-    cache.set(fileOp.kitName + ":loaded", true);
-  }
-
-  return cache;
+function voiceKey(kitName: string, voiceNumber: number): string {
+  return `${kitName}:${voiceNumber}`;
 }

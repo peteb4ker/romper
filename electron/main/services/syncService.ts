@@ -1,12 +1,12 @@
-import type { DbResult, Sample } from "@romper/shared/db/schema.js";
+import type { Bank, DbResult, Sample } from "@romper/shared/db/schema.js";
 
 import { cardSampleFileName } from "@romper/shared/rampleCardLayout.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { setImmediate as yieldToEventLoop } from "node:timers/promises";
 
 import {
-  getAllBanks,
-  getKits,
+  getSyncPlanData,
   markAllKitsAsSyncedExcept,
 } from "../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
@@ -25,6 +25,7 @@ import {
 import {
   type SyncFileOperation,
   syncFileOperationsService,
+  type SyncResults,
 } from "./syncFileOperations.js";
 import { annotateMonoConversion } from "./syncMonoAnnotation.js";
 import { syncProgressManager } from "./syncProgressManager.js";
@@ -76,14 +77,24 @@ export interface SyncOutcome {
 }
 
 interface SyncPlan {
+  /** The banks the plan was made from; their name files go on the card */
+  banks: Bank[];
   /** What the card should hold once this sync has run */
   cardContents: CardContents;
   dbDir: string;
   files: SyncFileOperation[];
+  kitCount: number;
   localStorePath: string;
   validationErrors: SyncValidationError[];
   warnings: string[];
 }
+
+/**
+ * Samples planned together. Their files are read concurrently, and
+ * planning yields to the event loop between batches, so IPC and window
+ * events are handled while a large library is planned (RE-82).
+ */
+const PLAN_BATCH_SIZE = 16;
 
 class SyncService {
   /**
@@ -109,16 +120,6 @@ class SyncService {
         return { error: planResult.error, success: false };
       }
       const plan = planResult.data;
-
-      // Get kit count
-      const kitsResult = getKits(plan.dbDir);
-      if (!kitsResult.success || !kitsResult.data) {
-        return {
-          error: kitsResult.error ?? "Failed to load kits",
-          success: false,
-        };
-      }
-      const kitCount = kitsResult.data.length;
       const fileCount = plan.files.length;
 
       // Group the planned files by bank (first character of kit name, A-Z)
@@ -153,9 +154,9 @@ class SyncService {
       const summary: SyncChangeSummary = {
         banks,
         fileCount,
-        kitCount,
+        kitCount: plan.kitCount,
         removals: sdCardPath
-          ? findStaleCardEntries(sdCardPath, plan.cardContents)
+          ? await findStaleCardEntries(sdCardPath, plan.cardContents)
           : [],
         validationErrors: plan.validationErrors,
         warnings: plan.warnings,
@@ -208,6 +209,7 @@ class SyncService {
         return { error: planResult.error, success: false };
       }
       const {
+        banks,
         cardContents,
         dbDir,
         files: allFiles,
@@ -250,13 +252,14 @@ class SyncService {
       syncProgressManager.emitCompletionProgress(syncedFiles, allFiles.length);
       syncProgressManager.finalizeSyncJob();
 
-      // Write bank RTF files to SD card root
-      this.writeBankRtfFiles(dbDir, options.sdCardPath);
+      // Write bank RTF files to SD card root, from the banks the plan used,
+      // so the stale-entry check below keeps exactly these
+      this.writeBankRtfFiles(banks, options.sdCardPath);
 
       // The card mirrors the store: delete what the store no longer has.
       // Only after every file is written, so a cancelled or failed sync
       // never leaves a kit with less than it had.
-      this.removeStaleEntries(options.sdCardPath, cardContents);
+      await this.removeStaleEntries(options.sdCardPath, cardContents);
 
       // The card now mirrors the store, so every kit is in step with it,
       // except a kit with a skipped sample: it keeps its "modified since
@@ -347,7 +350,7 @@ class SyncService {
    * keeps its file, so skipping it leaves the card's last copy in place.
    */
   private planCardContents(
-    dbDir: string,
+    banks: Bank[],
     samples: Sample[],
     warnings: string[],
   ): CardContents {
@@ -364,9 +367,8 @@ class SyncService {
       kits.set(sample.kit_name, fileNames);
     }
 
-    const banksResult = getAllBanks(dbDir);
     const bankFiles: string[] = [];
-    for (const bank of banksResult.success ? (banksResult.data ?? []) : []) {
+    for (const bank of banks) {
       if (!bank.artist) continue;
       if (isWritableBankName(bank.artist)) {
         bankFiles.push(bankRtfFileName(bank.letter, bank.artist));
@@ -396,32 +398,44 @@ class SyncService {
     }
 
     const dbDir = ServicePathManager.getDbPath(localStorePath);
-    const samplesResult =
-      await syncSampleProcessingService.gatherAllSamples(dbDir);
-    if (!samplesResult.success) {
-      return { error: samplesResult.error, success: false };
+    // One load for the whole plan: samples, voices, banks and the kit count
+    // (RE-82)
+    const loaded = getSyncPlanData(dbDir);
+    if (!loaded.success || !loaded.data) {
+      return {
+        error: `Failed to gather samples: ${loaded.error ?? "no data"}`,
+        success: false,
+      };
     }
+    const { banks, kitCount, samples, voices } = loaded.data;
 
-    const results = {
-      filesToConvert: [] as SyncFileOperation[],
-      filesToCopy: [] as SyncFileOperation[],
-      hasFormatWarnings: false,
-      validationErrors: [] as SyncValidationError[],
-      warnings: [] as string[],
-    };
-    const samples = samplesResult.data || [];
+    const results = emptySyncResults();
     const cardContents = this.planCardContents(
-      dbDir,
+      banks,
       samples,
       results.warnings,
     );
-    for (const sample of samples) {
-      syncSampleProcessingService.processSampleForSync(
-        sample,
-        localStorePath,
-        results,
-        sdCardPath,
+    for (let start = 0; start < samples.length; start += PLAN_BATCH_SIZE) {
+      const batch = samples.slice(start, start + PLAN_BATCH_SIZE);
+      const planned = await Promise.all(
+        batch.map(async (sample) => {
+          const sampleResults = emptySyncResults();
+          await syncSampleProcessingService.processSampleForSync(
+            sample,
+            localStorePath,
+            sampleResults,
+            sdCardPath,
+          );
+          return sampleResults;
+        }),
       );
+      // Merged in sample order, whatever order the reads finished in
+      for (const sampleResults of planned) {
+        results.filesToCopy.push(...sampleResults.filesToCopy);
+        results.filesToConvert.push(...sampleResults.filesToConvert);
+        results.validationErrors.push(...sampleResults.validationErrors);
+      }
+      await yieldToEventLoop();
     }
     for (const kitName of syncSampleProcessingService.kitsWithoutVoiceOne(
       samples,
@@ -433,13 +447,15 @@ class SyncService {
 
     // Decide mono conversion while planning, so the summary shows it too
     const files = [...results.filesToCopy, ...results.filesToConvert];
-    annotateMonoConversion(files, dbDir);
+    annotateMonoConversion(files, voices);
 
     return {
       data: {
+        banks,
         cardContents,
         dbDir,
         files,
+        kitCount,
         localStorePath,
         validationErrors: results.validationErrors,
         warnings: results.warnings,
@@ -451,11 +467,11 @@ class SyncService {
   /**
    * Delete the Rample content on the card that the store no longer has.
    */
-  private removeStaleEntries(
+  private async removeStaleEntries(
     sdCardPath: string,
     cardContents: CardContents,
-  ): void {
-    const stale = findStaleCardEntries(sdCardPath, cardContents);
+  ): Promise<void> {
+    const stale = await findStaleCardEntries(sdCardPath, cardContents);
     removeCardEntries(sdCardPath, stale);
     if (stale.length > 0) {
       logger.log(
@@ -470,15 +486,8 @@ class SyncService {
    * A failure fails the write, like any other file the card can't take,
    * so it isn't only logged (RE-23).
    */
-  private writeBankRtfFiles(dbDir: string, sdCardPath: string): void {
-    const banksResult = getAllBanks(dbDir);
-    if (!banksResult.success) {
-      throw new Error(`Couldn't read the bank names: ${banksResult.error}`);
-    }
-    const written = rtfFileService.writeAllBankRtfFiles(
-      sdCardPath,
-      banksResult.data ?? [],
-    );
+  private writeBankRtfFiles(banks: Bank[], sdCardPath: string): void {
+    const written = rtfFileService.writeAllBankRtfFiles(sdCardPath, banks);
     if (written > 0) {
       logger.log(`Wrote ${written} bank RTF files to SD card`);
     }
@@ -486,3 +495,13 @@ class SyncService {
 }
 
 export const syncService = new SyncService();
+
+function emptySyncResults(): SyncResults {
+  return {
+    filesToConvert: [],
+    filesToCopy: [],
+    hasFormatWarnings: false,
+    validationErrors: [],
+    warnings: [],
+  };
+}

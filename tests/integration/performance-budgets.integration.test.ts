@@ -318,4 +318,37 @@ describe("[Q-01] performance budgets: main-process operations", () => {
     },
     SLOW_RUNNER_MS,
   );
+  it(
+    "[UC-34] planning a sync lets other work run while it reads the files (RE-82)",
+    async () => {
+      // Load anything planning imports lazily, outside the measured call
+      await invoke("generateSyncChangeSummary", card);
+
+      // Count event-loop turns while the summary is planned: a plan that
+      // held the main thread would let none through until it finished
+      let turns = 0;
+      let planning = true;
+      const tick = () => {
+        if (!planning) return;
+        turns++;
+        setImmediate(tick);
+      };
+      setImmediate(tick);
+      const summary = (await invoke("generateSyncChangeSummary", card)) as {
+        data?: { fileCount: number };
+        success: boolean;
+      };
+      planning = false;
+
+      expect(summary.success).toBe(true);
+      expect(summary.data?.fileCount).toBe(
+        BANKS.length * KITS_PER_BANK * 4 * SAMPLES_PER_VOICE,
+      );
+      // At least one turn per batch of samples
+      expect(turns).toBeGreaterThanOrEqual(
+        (BANKS.length * KITS_PER_BANK * 4 * SAMPLES_PER_VOICE) / 16,
+      );
+    },
+    SLOW_RUNNER_MS,
+  );
 });

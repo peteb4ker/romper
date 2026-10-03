@@ -5,20 +5,19 @@ vi.mock("node:fs", async (importOriginal) => {
   const actual = await importOriginal<typeof fs>();
   return {
     ...actual,
-    existsSync: vi.fn(),
-    statSync: vi.fn(),
+    promises: { ...actual.promises, stat: vi.fn() },
   };
 });
 
 vi.mock("../../audioUtils.js", () => ({
-  validateSampleFormat: vi.fn(),
+  validateSampleFormatAsync: vi.fn(),
 }));
 
-import { validateSampleFormat } from "../../audioUtils.js";
+import { validateSampleFormatAsync } from "../../audioUtils.js";
 import { syncValidationService } from "../syncValidationService.js";
 
 const mockFs = vi.mocked(fs);
-const mockValidateSampleFormat = vi.mocked(validateSampleFormat);
+const mockValidateSampleFormat = vi.mocked(validateSampleFormatAsync);
 
 describe("SyncValidationService", () => {
   beforeEach(() => {
@@ -26,11 +25,13 @@ describe("SyncValidationService", () => {
   });
 
   describe("validateSyncSourceFile", () => {
-    it("should return invalid result when file does not exist", () => {
-      mockFs.existsSync.mockReturnValue(false);
+    it("should return invalid result when file does not exist", async () => {
+      vi.mocked(mockFs.promises.stat).mockRejectedValue(
+        Object.assign(new Error("ENOENT"), { code: "ENOENT" }),
+      );
       const validationErrors: unknown[] = [];
 
-      const result = syncValidationService.validateSyncSourceFile(
+      const result = await syncValidationService.validateSyncSourceFile(
         "test.wav",
         "/path/to/test.wav",
         validationErrors,
@@ -47,12 +48,13 @@ describe("SyncValidationService", () => {
       });
     });
 
-    it("should return valid result with file size when file exists", () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ size: 1024 } as unknown);
+    it("should return valid result with file size when file exists", async () => {
+      vi.mocked(mockFs.promises.stat).mockResolvedValue({
+        size: 1024,
+      } as fs.Stats);
       const validationErrors: unknown[] = [];
 
-      const result = syncValidationService.validateSyncSourceFile(
+      const result = await syncValidationService.validateSyncSourceFile(
         "test.wav",
         "/path/to/test.wav",
         validationErrors,
@@ -65,12 +67,12 @@ describe("SyncValidationService", () => {
   });
 
   describe("validateSampleFormat", () => {
-    it("should delegate to audioUtils validateSampleFormat", () => {
+    it("[Q-01] reads the header asynchronously through audioUtils", async () => {
       const mockResult = { data: { issues: [] }, success: true };
-      mockValidateSampleFormat.mockReturnValue(mockResult);
+      mockValidateSampleFormat.mockResolvedValue(mockResult);
 
       const result =
-        syncValidationService.validateSampleFormat("/path/to/test.wav");
+        await syncValidationService.validateSampleFormat("/path/to/test.wav");
 
       expect(mockValidateSampleFormat).toHaveBeenCalledWith(
         "/path/to/test.wav",

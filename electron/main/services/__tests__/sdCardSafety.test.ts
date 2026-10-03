@@ -128,23 +128,23 @@ describe("[UC-34] sdCardSafety", () => {
       bankFiles: string[] = [],
     ) => ({ bankFiles, kits: new Map(Object.entries(kits)) });
 
-    it("lists kit folders the store doesn't have", () => {
+    it("lists kit folders the store doesn't have", async () => {
       write("A0/1-01 kick.wav");
       write("B3/1-01 old.wav");
 
       expect(
-        findStaleCardEntries(card, contents({ A0: ["1-01 kick.wav"] })),
+        await findStaleCardEntries(card, contents({ A0: ["1-01 kick.wav"] })),
       ).toEqual(["B3"]);
     });
 
-    it("lists files and folders inside a kit that the store doesn't have", () => {
+    it("lists files and folders inside a kit that the store doesn't have", async () => {
       write("A0/1-01 kick.wav");
       write("A0/1-02 removed.wav");
       write("A0/2/old layout.wav");
       write("A0/.DS_Store");
 
       expect(
-        findStaleCardEntries(card, contents({ A0: ["1-01 kick.wav"] })),
+        await findStaleCardEntries(card, contents({ A0: ["1-01 kick.wav"] })),
       ).toEqual([
         path.join("A0", ".DS_Store"),
         path.join("A0", "1-02 removed.wav"),
@@ -152,28 +152,28 @@ describe("[UC-34] sdCardSafety", () => {
       ]);
     });
 
-    it("lists bank name files for banks without a name", () => {
+    it("lists bank name files for banks without a name", async () => {
       write("A - ALWIS.rtf");
       write("B - OLD NAME.rtf");
 
       expect(
-        findStaleCardEntries(card, contents({}, ["A - ALWIS.rtf"])),
+        await findStaleCardEntries(card, contents({}, ["A - ALWIS.rtf"])),
       ).toEqual(["B - OLD NAME.rtf"]);
     });
 
-    it("compares names ignoring case, as FAT32 does", () => {
+    it("compares names ignoring case, as FAT32 does", async () => {
       write("a0/1-01 KICK.wav");
       write("A - alwis.RTF");
 
       expect(
-        findStaleCardEntries(
+        await findStaleCardEntries(
           card,
           contents({ A0: ["1-01 kick.wav"] }, ["A - ALWIS.rtf"]),
         ),
       ).toEqual([]);
     });
 
-    it("leaves everything that isn't Rample content", () => {
+    it("leaves everything that isn't Rample content", async () => {
       write("_save/A0.rpl");
       write("Documents/1kick.wav");
       write("A100/1kick.wav");
@@ -181,21 +181,24 @@ describe("[UC-34] sdCardSafety", () => {
       write("readme.rtf");
       write("D7");
 
-      expect(findStaleCardEntries(card, contents({}))).toEqual([]);
+      expect(await findStaleCardEntries(card, contents({}))).toEqual([]);
     });
 
-    it.skipIf(isWindows)("never follows a symlink named like a kit", () => {
-      const outside = path.join(root, "outside");
-      fs.mkdirSync(outside);
-      fs.writeFileSync(path.join(outside, "precious.wav"), "x");
-      fs.symlinkSync(outside, path.join(card, "C3"));
+    it.skipIf(isWindows)(
+      "never follows a symlink named like a kit",
+      async () => {
+        const outside = path.join(root, "outside");
+        fs.mkdirSync(outside);
+        fs.writeFileSync(path.join(outside, "precious.wav"), "x");
+        fs.symlinkSync(outside, path.join(card, "C3"));
 
-      expect(findStaleCardEntries(card, contents({}))).toEqual([]);
-    });
+        expect(await findStaleCardEntries(card, contents({}))).toEqual([]);
+      },
+    );
 
-    it("returns nothing for a card that doesn't exist", () => {
+    it("returns nothing for a card that doesn't exist", async () => {
       expect(
-        findStaleCardEntries(path.join(root, "missing"), contents({})),
+        await findStaleCardEntries(path.join(root, "missing"), contents({})),
       ).toEqual([]);
     });
   });

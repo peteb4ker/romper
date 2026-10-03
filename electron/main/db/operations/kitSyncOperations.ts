@@ -1,12 +1,28 @@
-import type { DbResult } from "@romper/shared/db/schema.js";
+import type {
+  Bank,
+  DbResult,
+  Sample,
+  Voice,
+} from "@romper/shared/db/schema.js";
 
 import * as schema from "@romper/shared/db/schema.js";
-import { and, eq, inArray, notInArray } from "drizzle-orm";
+import { and, count, eq, inArray, notInArray } from "drizzle-orm";
 
 import { logger } from "../../utils/logger.js";
 import { type RomperDb, withDb } from "../utils/dbUtilities.js";
 
-const { kits } = schema;
+const { banks, kits, samples, voices } = schema;
+
+/** Everything planning a write to the card reads from the store */
+export interface SyncPlanData {
+  /** Every bank, named or not: a named bank's file goes on the card */
+  banks: Bank[];
+  kitCount: number;
+  /** Every sample, by kit, voice and slot */
+  samples: Sample[];
+  /** Each voice's stereo setting, which decides mono conversion */
+  voices: Pick<Voice, "kit_name" | "stereo_mode" | "voice_number">[];
+}
 
 /**
  * Flag every kit in a bank as changed since the last write, on an open
@@ -30,6 +46,32 @@ export function flagKitModified(db: RomperDb, kitName: string): void {
     .set({ modified_since_sync: true })
     .where(eq(kits.name, kitName))
     .run();
+}
+
+/**
+ * Load what sync planning needs in one connection: banks, the kit count,
+ * every sample and every voice's stereo setting. Planning used to load each
+ * kit's samples and voices separately, about two connections per kit
+ * (RE-82).
+ */
+export function getSyncPlanData(dbDir: string): DbResult<SyncPlanData> {
+  return withDb(dbDir, (db) => ({
+    banks: db.select().from(banks).all(),
+    kitCount: db.select({ n: count() }).from(kits).get()?.n ?? 0,
+    samples: db
+      .select()
+      .from(samples)
+      .orderBy(samples.kit_name, samples.voice_number, samples.slot_number)
+      .all(),
+    voices: db
+      .select({
+        kit_name: voices.kit_name,
+        stereo_mode: voices.stereo_mode,
+        voice_number: voices.voice_number,
+      })
+      .from(voices)
+      .all(),
+  }));
 }
 
 /**

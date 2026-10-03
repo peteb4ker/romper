@@ -18,6 +18,7 @@ export {
   getKitDeleteSummary,
   getKits,
   getKitsMetadata,
+  getSyncPlanData,
   markAllKitsAsSyncedExcept,
   markKitAsModified,
   markKitAsSynced,

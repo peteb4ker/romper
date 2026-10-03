@@ -28,6 +28,7 @@ export {
 } from "./kitFavoritesOperations.js";
 
 export {
+  getSyncPlanData,
   markAllKitsAsSyncedExcept,
   markKitAsModified,
   markKitAsSynced,

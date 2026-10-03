@@ -42,10 +42,10 @@ vi.mock("../syncValidationService.js", () => ({
     }),
     validateSampleFormat: vi
       .fn()
-      .mockReturnValue({ data: { issues: [] }, success: true }),
+      .mockResolvedValue({ data: { issues: [] }, success: true }),
     validateSyncSourceFile: vi
       .fn()
-      .mockReturnValue({ fileSize: 1024, isValid: true }),
+      .mockResolvedValue({ fileSize: 1024, isValid: true }),
   },
 }));
 
@@ -271,22 +271,22 @@ describe("[UC-34] SyncFileOperationsService", () => {
   });
 
   describe("categorizeSyncFileOperation", () => {
-    it("lists an unusable file as a sample that can't be written (RE-08)", () => {
-      vi.mocked(syncValidationService.validateSampleFormat).mockReturnValueOnce(
-        {
-          data: {
-            issues: [
-              {
-                message:
-                  "Unable to read audio file: Unsupported WAV encoding (format 0x0002)",
-                type: "fileAccess",
-              },
-            ],
-            isValid: false,
-          },
-          success: true,
+    it("lists an unusable file as a sample that can't be written (RE-08)", async () => {
+      vi.mocked(
+        syncValidationService.validateSampleFormat,
+      ).mockResolvedValueOnce({
+        data: {
+          issues: [
+            {
+              message:
+                "Unable to read audio file: Unsupported WAV encoding (format 0x0002)",
+              type: "fileAccess",
+            },
+          ],
+          isValid: false,
         },
-      );
+        success: true,
+      });
       const results = {
         filesToConvert: [],
         filesToCopy: [],
@@ -295,7 +295,7 @@ describe("[UC-34] SyncFileOperationsService", () => {
         warnings: [],
       };
 
-      syncFileOperationsService.categorizeSyncFileOperation(
+      await syncFileOperationsService.categorizeSyncFileOperation(
         { filename: "adpcm.wav", voice_number: 1 } as never,
         "adpcm.wav",
         "/src/adpcm.wav",
@@ -316,21 +316,21 @@ describe("[UC-34] SyncFileOperationsService", () => {
       ]);
     });
 
-    it("converts a readable file with format issues", () => {
-      vi.mocked(syncValidationService.validateSampleFormat).mockReturnValueOnce(
-        {
-          data: {
-            issues: [
-              {
-                message: "The file has an extended WAV header",
-                type: "encoding",
-              },
-            ],
-            isValid: false,
-          },
-          success: true,
+    it("converts a readable file with format issues", async () => {
+      vi.mocked(
+        syncValidationService.validateSampleFormat,
+      ).mockResolvedValueOnce({
+        data: {
+          issues: [
+            {
+              message: "The file has an extended WAV header",
+              type: "encoding",
+            },
+          ],
+          isValid: false,
         },
-      );
+        success: true,
+      });
       const results = {
         filesToConvert: [],
         filesToCopy: [],
@@ -339,7 +339,7 @@ describe("[UC-34] SyncFileOperationsService", () => {
         warnings: [],
       };
 
-      syncFileOperationsService.categorizeSyncFileOperation(
+      await syncFileOperationsService.categorizeSyncFileOperation(
         { filename: "ext.wav", voice_number: 1 } as never,
         "ext.wav",
         "/src/ext.wav",
@@ -349,6 +349,29 @@ describe("[UC-34] SyncFileOperationsService", () => {
 
       expect(results.validationErrors).toEqual([]);
       expect(results.filesToConvert).toHaveLength(1);
+    });
+
+    it("[Q-01] doesn't check the source again: planning already has", async () => {
+      const results = {
+        filesToConvert: [],
+        filesToCopy: [],
+        hasFormatWarnings: false,
+        validationErrors: [],
+        warnings: [],
+      };
+
+      await syncFileOperationsService.categorizeSyncFileOperation(
+        { filename: "ok.wav", voice_number: 1 } as never,
+        "ok.wav",
+        "/src/ok.wav",
+        "/dest/1-01 ok.wav",
+        results,
+      );
+
+      expect(
+        syncValidationService.validateSyncSourceFile,
+      ).not.toHaveBeenCalled();
+      expect(results.filesToCopy).toHaveLength(1);
     });
 
     it("should be a function", () => {

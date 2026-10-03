@@ -95,8 +95,8 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
-| RE-41 | Medium | Renderer | If turning on editing or renaming a kit fails, nothing tells you. | done (a failed toggle or rename shows a message instead of an unhandled rejection) |
-| RE-40 | Medium | Renderer | Some failures happen silently: a rejected drop, a failed stereo link or undo, and the reason a write failed aren't shown to you. | done (one message names the files a drop didn't add and why; a refused link or unlink, a failed undo or redo, and a failed write each show a message) |
+| RE-41 | Medium | Renderer | If turning on editing or renaming a kit fails, nothing tells you. | done (#436: a failed toggle or rename shows a message instead of an unhandled rejection) |
+| RE-40 | Medium | Renderer | Some failures happen silently: a rejected drop, a failed stereo link or undo, and the reason a write failed aren't shown to you. | done (#436: one message names the files a drop didn't add and why; a refused link or unlink, a failed undo or redo, and a failed write each show a message) |
 | RE-58 | Medium | Tooling | Romper's own pre-commit checks failed on a busy computer because they always started the same large number of test workers. | done (#423: workers follow the free cores; under load the suite runs on fewer workers instead of timing out) |
 | RE-74 | Medium | Samples | Dropping a sample onto a filled slot said it would insert it there and shift the rest down, but added it at the end. | done (#421: dragging files over a voice highlights the slot after the last sample, where they land) |
 | RE-75 | Medium | Voices | In an editable kit, scanning the kit overwrote voice names you'd typed. | done (#422: only voices without a name are named, as main's scan does) |

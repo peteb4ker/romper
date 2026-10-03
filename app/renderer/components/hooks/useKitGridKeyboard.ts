@@ -57,7 +57,7 @@ export function groupKitsByRow(rowIndexByKitIndex: number[]): number[][] {
       kitRows.push([kitIdx]);
       lastRow = rowIdx;
     } else {
-      kitRows[kitRows.length - 1].push(kitIdx);
+      kitRows.at(-1)?.push(kitIdx);
     }
   });
   return kitRows;

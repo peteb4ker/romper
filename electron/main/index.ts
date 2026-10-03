@@ -18,7 +18,7 @@ import {
   loadSettings,
   loadWindowState,
   saveWindowState,
-  validateAndFixLocalStore,
+  validateSavedLocalStore,
 } from "./mainProcessSetup.js";
 import {
   type AppNavigationTarget,
@@ -254,9 +254,8 @@ function onAppReady(): void {
     // Load and validate settings
     const settingsPath = getSettingsPath();
     inMemorySettings = loadSettings(settingsPath);
-    inMemorySettings = validateAndFixLocalStore(
+    inMemorySettings = validateSavedLocalStore(
       inMemorySettings,
-      settingsPath,
       process.env.ROMPER_LOCAL_PATH,
     );
 

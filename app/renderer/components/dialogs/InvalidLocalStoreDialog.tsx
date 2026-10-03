@@ -50,9 +50,9 @@ const PathDisplay: React.FC<PathDisplayProps> = ({ label, path, variant }) => {
 };
 
 /**
- * Modal blocking dialog for invalid local store scenarios (C1-C6)
- * User cannot cancel - must choose new directory or exit app
- * According to requirements: modal, blocking, cannot cancel
+ * Modal blocking dialog for a configured local store that can't be opened
+ * (C1-C6), including one on a drive that isn't connected (RE-80). The user
+ * can try again, choose another directory, set up a new store, or exit.
  */
 const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
   errorMessage,
@@ -70,6 +70,8 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
     isValid: boolean;
   } | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [retryError, setRetryError] = useState<null | string>(null);
 
   // Track component mount status to prevent state updates after unmount
   const isMountedRef = useRef(true);
@@ -138,25 +140,37 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
 
     setIsUpdating(true);
     try {
-      void setLocalStorePath(selectedPath);
-      onMessage?.(
-        "Local store directory updated successfully. Refreshing...",
-        "success",
-      );
-
-      // Give user a moment to see the success message before refresh
-      // Use React-friendly settings refresh instead of window.location.reload()
-      setTimeout(() => {
-        void refreshLocalStoreStatus();
-      }, 1000);
-    } catch (error) {
-      onMessage?.(
-        `Failed to update local store path: ${error instanceof Error ? error.message : String(error)}`,
-        "error",
-      );
+      // Saving refreshes the store status, which closes this dialog
+      if (await setLocalStorePath(selectedPath)) {
+        onMessage?.("Local store directory updated.", "success");
+      } else {
+        onMessage?.("Couldn't save the new local store directory.", "error");
+      }
     } finally {
       if (isMountedRef.current) {
         setIsUpdating(false);
+      }
+    }
+  };
+
+  // The store may be on a drive that wasn't connected (RE-80): check it
+  // again, and reopen the app on it if it's there now
+  const handleTryAgain = async () => {
+    if (!localStorePath) return;
+    setIsRetrying(true);
+    try {
+      const result =
+        await globalThis.electronAPI?.validateLocalStore?.(localStorePath);
+      if (result?.isValid) {
+        await refreshLocalStoreStatus();
+      } else if (isMountedRef.current) {
+        setRetryError(
+          result?.error ?? "Romper still can't open the local store.",
+        );
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setIsRetrying(false);
       }
     }
   };
@@ -225,10 +239,37 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
           )}
 
           <p className="text-sm text-text-tertiary">
-            Please select a new local store directory or exit the application.
-            The app cannot function without a valid local store.
+            If it's on a drive that isn't connected, connect the drive and click{" "}
+            <strong>Try Again</strong>. Otherwise choose another local store
+            directory, or set up a new one.
           </p>
+          {retryError && (
+            <p
+              className="mt-2 text-sm text-accent-danger"
+              data-testid="retry-error"
+            >
+              {retryError}
+            </p>
+          )}
         </div>
+
+        {localStorePath && (
+          <div className="mb-4">
+            <button
+              className="w-full rounded bg-accent-primary px-4 py-2 text-white hover:bg-accent-primary/80 disabled:opacity-50 flex items-center justify-center gap-2"
+              data-testid="retry-local-store-btn"
+              disabled={isRetrying || isUpdating || isSelecting}
+              onClick={handleTryAgain}
+              type="button"
+            >
+              <ArrowsClockwiseIcon
+                className={isRetrying ? "animate-spin" : undefined}
+                size={16}
+              />
+              {isRetrying ? "Checking..." : "Try Again"}
+            </button>
+          </div>
+        )}
 
         {/* Directory Selection */}
         <div className="mb-4">
@@ -238,7 +279,7 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
             isSelecting={isSelecting}
             onClick={handleSelectDirectory}
           >
-            Choose New Local Store Directory
+            Choose Another Local Store Directory
           </FilePickerButton>
         </div>
 
@@ -285,10 +326,11 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
             <button
               className="w-full rounded bg-surface-4 px-4 py-2 text-text-primary hover:bg-surface-3 disabled:opacity-50"
               data-testid="rerun-wizard-btn"
-              disabled={isUpdating || isSelecting}
+              disabled={isUpdating || isSelecting || isRetrying}
               onClick={onRerunWizard}
+              type="button"
             >
-              Re-run Setup Wizard
+              Set Up a New Local Store
             </button>
           )}
         </div>

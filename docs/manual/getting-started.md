@@ -112,7 +112,7 @@ For full details on the sync process, see [Syncing](syncing).
 
 **Sample limit notice** -- Rample supports a maximum of 12 samples per voice. If a voice on your card has more, Romper keeps the first 12, and after setup it lists each kit and voice with how many samples were skipped. Click **Continue** to open the Kit Browser.
 
-**Local store becomes invalid** -- If you move or delete your local store folder, or it's on a drive that isn't connected when Romper starts, Romper forgets it and opens the setup wizard. To carry on with the same store, put the folder back (or connect the drive), then click **Choose Existing Store**.
+**Local store becomes invalid** -- If you move or delete your local store folder, or it's on a drive that isn't connected when Romper starts, Romper shows the **Invalid Local Store** dialog and keeps the store's location. Connect the drive (or put the folder back) and click **Try Again**, choose another store, or set up a new one. See [Troubleshooting]({{ site.baseurl }}/troubleshooting#local-store-became-invalid).
 
 ## What's Next
 

@@ -154,7 +154,8 @@ another. See
 and [Validating Your Store](../manual/kit-browser.md#validating-your-store).
 
 - **Main, at startup:** `electron/main/mainProcessSetup.ts`
-  (`validateAndFixLocalStore`), which erases an invalid saved path.
+  (`validateSavedLocalStore`), which reports an invalid saved store but keeps
+  its path (RE-80).
 - **Renderer:** `app/renderer/utils/SettingsContext.tsx` (`refreshLocalStoreStatus`) →
   `app/renderer/components/hooks/kit-management/useLocalStoreSetupFlow.ts` → `app/renderer/components/dialogs/InvalidLocalStoreDialog.tsx`
   or the setup wizard; `app/renderer/components/dialogs/CriticalErrorDialog.tsx`.
@@ -163,7 +164,7 @@ and [Validating Your Store](../manual/kit-browser.md#validating-your-store).
 - **Main:** `electron/main/services/localStoreService.ts` (`getLocalStoreStatus`);
   `electron/main/localStoreValidator.ts` (`validateLocalStoreAgainstDb`).
 - **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-78 (store-change dialogs report success unconditionally; Re-run Setup Wizard never renders), RE-80 (a store on an unmounted drive is forgotten at launch), RE-21, RE-56, RE-48.
+- **Known issues:** RE-78 (Preferences ignores an invalid folder without a message), RE-21, RE-56, RE-48.
 
 ### UC-06 Change the local store
 

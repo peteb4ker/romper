@@ -92,11 +92,12 @@ If samples do not produce sound when you click play or use the step sequencer:
 
 ## Local store became invalid
 
-If your local store is missing or invalid when Romper starts (for example, you moved or deleted the folder, or it's on a drive that isn't connected), Romper forgets it and opens the setup wizard:
+If Romper can't open your local store (for example, you moved or deleted the folder, or it's on a drive that isn't connected), it shows the **Invalid Local Store** dialog, at launch or while it's running. Romper keeps the store's location, so nothing is lost:
 
-- **Use the same store** -- Put the folder back or connect the drive, then click **Choose Existing Store** and choose the folder that contains `.romperdb`. The setup steps themselves won't use a folder that already holds a local store.
-- **Choose a new directory** -- If the store is lost, set up a fresh local store and reimport your kits from your SD card.
-- **Invalid Local Store dialog** -- If this dialog appears while Romper is running, click **Choose New Local Store Directory**, pick a folder that holds a local store, and click **Use This Directory**. Otherwise click **Exit App**.
+- **Try Again** -- If the store is on a drive that isn't connected, connect it (or put the folder back where it was) and click **Try Again**. Romper opens the store as usual.
+- **Choose another directory** -- Click **Choose Another Local Store Directory**, pick a folder that holds a local store, and click **Use This Directory**.
+- **Set up a new store** -- Click **Set Up a New Local Store** to forget the old location and open the setup wizard, for example to reimport your kits from your SD card if the store is lost. The setup steps won't use a folder that already holds a local store; use **Choose Existing Store** for that.
+- **Exit App** -- Quit without changing anything.
 - **Check disk health** -- Corrupted stores can indicate disk issues. Run your operating system's disk checking utility.
 - **Backup consideration** -- The local store is the master copy of your library; the SD card is a copy Romper writes from it. Include the local store folder in your own backups. Without it, importing your SD card brings the kits and audio back, but not Romper's own data: kit and voice names, sequencer patterns, and where each sample came from.
 

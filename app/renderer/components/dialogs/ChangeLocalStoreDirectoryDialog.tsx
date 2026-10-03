@@ -112,7 +112,13 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
     setIsUpdating(true);
     try {
       // Use the settings context which will automatically refresh the app state
-      await setLocalStorePath(selectedPath);
+      if (!(await setLocalStorePath(selectedPath))) {
+        onMessage?.(
+          "Couldn't save the new local store directory. The current one is still in use.",
+          "error",
+        );
+        return;
+      }
 
       onMessage?.(
         "Local store directory updated successfully! The application has been refreshed with the new directory.",

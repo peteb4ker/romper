@@ -92,9 +92,13 @@ export function saveWindowState(
   }
 }
 
-export function validateAndFixLocalStore(
+/**
+ * Check the saved local store at startup. An invalid store is reported
+ * (the renderer shows the Invalid Local Store dialog) but never forgotten:
+ * it may be on a drive that isn't connected yet (RE-80).
+ */
+export function validateSavedLocalStore(
   settings: InMemorySettings,
-  settingsPath: string,
   envOverridePath?: string,
 ): InMemorySettings {
   logger.log("[Validation] Starting local store validation");
@@ -138,24 +142,13 @@ export function validateAndFixLocalStore(
     if (validation.isValid) {
       logger.log("[Validation] ✓ Local store path is valid");
     } else {
-      console.warn("[Startup] ✗ Saved local store path is invalid");
+      // Keep the saved path (RE-80). The store may be on a drive that isn't
+      // connected yet; forgetting it would send the user to the first-run
+      // wizard. The renderer shows the Invalid Local Store dialog instead,
+      // where they can try again, choose another folder or set up a new one.
+      console.warn("[Startup] ✗ Saved local store can't be opened");
       console.warn("  - Path:", settings.localStorePath);
       console.warn("  - Error:", validation.error);
-      console.warn("[Startup] Removing invalid path from settings...");
-
-      settings.localStorePath = null;
-      try {
-        fs.writeFileSync(
-          settingsPath,
-          JSON.stringify(settings, null, 2),
-          "utf-8",
-        );
-        logger.log(
-          "[Startup] Invalid local store path removed from settings file",
-        );
-      } catch (writeError) {
-        console.error("[Startup] Failed to update settings file:", writeError);
-      }
     }
   } else {
     logger.log("[Validation] No local store path to validate");

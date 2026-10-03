@@ -112,7 +112,16 @@ describe("SampleValidator", () => {
 
       const result = validator.validateSampleFile("/path/to/file.wav");
 
-      expect(result).toEqual({ isValid: true });
+      // The header's columns come back, so add and replace can store them
+      expect(result).toEqual({
+        isValid: true,
+        metadata: {
+          wav_bit_depth: 24,
+          wav_bitrate: 48000 * 2 * 24,
+          wav_channels: 2,
+          wav_sample_rate: 48000,
+        },
+      });
     });
   });
 

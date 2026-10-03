@@ -4,9 +4,11 @@ import { groupSamplesByVoice } from "@romper/shared/kitUtilsShared.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import type { WavMetadataFields } from "../db/operations/kitScanOperations.js";
-
 import { getAudioMetadata } from "../audioUtils.js";
+import {
+  toWavMetadataFields,
+  type WavMetadataFields,
+} from "../db/operations/wavMetadataFields.js";
 import {
   getAllSamples,
   mergeKitScan,
@@ -271,17 +273,7 @@ export class ScanService {
 export function readWavMetadata(filePath: string): null | WavMetadataFields {
   const metadataResult = getAudioMetadata(filePath);
   if (!metadataResult.success || !metadataResult.data) return null;
-
-  const { bitDepth, channels, sampleRate } = metadataResult.data;
-  return {
-    wav_bit_depth: bitDepth ?? null,
-    wav_bitrate:
-      sampleRate && channels && bitDepth
-        ? sampleRate * channels * bitDepth
-        : null,
-    wav_channels: channels ?? null,
-    wav_sample_rate: sampleRate ?? null,
-  };
+  return toWavMetadataFields(metadataResult.data);
 }
 
 // Export singleton instance

@@ -32,6 +32,7 @@ export {
   markKitsAsSyncedTx,
   mergeKitScan,
   mergeKitScanTx,
+  replaceSampleTx,
   toggleKitFavorite,
   updateBank,
   updateKit,
@@ -46,7 +47,10 @@ export {
 
 // Import and re-export sample management operations
 export { moveSample } from "./operations/sampleManagementOps.js";
-export { moveSampleTx } from "./operations/sampleMovement.js";
+export {
+  moveSampleBetweenKitsTx,
+  moveSampleTx,
+} from "./operations/sampleMovement.js";
 // Import and re-export database utilities
 export { DB_FILENAME } from "./utils/dbUtilities.js";
 

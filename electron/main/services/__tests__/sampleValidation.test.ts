@@ -1,8 +1,5 @@
-import type { Sample } from "@romper/shared/db/schema.js";
-
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import * as romperDbCoreORM from "../../db/romperDbCoreORM.js";
 import { SampleValidationService } from "../sampleValidation.js";
 import * as sampleValidator from "../validation/sampleValidator.js";
 
@@ -10,7 +7,6 @@ import * as sampleValidator from "../validation/sampleValidator.js";
 vi.mock("../../db/romperDbCoreORM.js");
 vi.mock("../validation/sampleValidator.js");
 
-const mockORM = vi.mocked(romperDbCoreORM);
 const mockValidator = vi.mocked(sampleValidator);
 
 describe("SampleValidationService", () => {
@@ -145,70 +141,6 @@ describe("SampleValidationService", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Destination Invalid destination");
-    });
-  });
-
-  describe("validateAndGetSampleToMove", () => {
-    const mockSample: Sample = {
-      filename: "test.wav",
-      id: 1,
-      kit_name: "TestKit",
-      slot_number: 2,
-      source_path: "/path/test.wav",
-      voice_number: 1,
-    };
-
-    it("should successfully find and return sample", () => {
-      mockORM.getKitSamples.mockReturnValue({
-        data: [mockSample],
-        success: true,
-      });
-
-      const result = service.validateAndGetSampleToMove(
-        "/db/path",
-        "TestKit",
-        1,
-        2,
-      );
-
-      expect(result.success).toBe(true);
-      expect(result.data).toEqual(mockSample);
-    });
-
-    it("should return error when sample not found", () => {
-      mockORM.getKitSamples.mockReturnValue({
-        data: [mockSample],
-        success: true,
-      });
-
-      const result = service.validateAndGetSampleToMove(
-        "/db/path",
-        "TestKit",
-        1,
-        5,
-      );
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe(
-        "No sample found in kit TestKit at voice 1, slot 6",
-      );
-    });
-
-    it("should handle database error", () => {
-      mockORM.getKitSamples.mockReturnValue({
-        error: "Database error",
-        success: false,
-      });
-
-      const result = service.validateAndGetSampleToMove(
-        "/db/path",
-        "TestKit",
-        1,
-        2,
-      );
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("Database error");
     });
   });
 });

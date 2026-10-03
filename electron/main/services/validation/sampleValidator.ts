@@ -4,6 +4,10 @@ import { getErrorMessage } from "@romper/shared/errorUtils.js";
 import * as fs from "node:fs";
 
 import { getAudioMetadata } from "../../audioUtils.js";
+import {
+  toWavMetadataFields,
+  type WavMetadataFields,
+} from "../../db/operations/wavMetadataFields.js";
 import { getKit, getKitSamples } from "../../db/romperDbCoreORM.js";
 
 /**
@@ -17,6 +21,8 @@ export class SampleValidator {
   validateSampleFile(filePath: string): {
     error?: string;
     isValid: boolean;
+    /** The header's `wav_*` column values, when the file is valid */
+    metadata?: WavMetadataFields;
   } {
     // Check file existence
     if (!fs.existsSync(filePath)) {
@@ -38,7 +44,10 @@ export class SampleValidator {
         isValid: false,
       };
     }
-    return { isValid: true };
+    return {
+      isValid: true,
+      metadata: toWavMetadataFields(metadata.data ?? {}),
+    };
   }
 
   /**

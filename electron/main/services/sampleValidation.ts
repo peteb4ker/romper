@@ -1,6 +1,5 @@
-import type { DbResult, Sample } from "@romper/shared/db/schema.js";
+import type { DbResult } from "@romper/shared/db/schema.js";
 
-import { getKitSamples } from "../db/romperDbCoreORM.js";
 import { sampleValidator } from "./validation/sampleValidator.js";
 
 /**
@@ -9,37 +8,11 @@ import { sampleValidator } from "./validation/sampleValidator.js";
  */
 export class SampleValidationService {
   /**
-   * Validate and get sample to move for cross-kit operations
-   */
-  validateAndGetSampleToMove(
-    dbPath: string,
-    fromKit: string,
-    fromVoice: number,
-    fromSlot: number,
-  ): DbResult<Sample> {
-    const sourceSamplesResult = getKitSamples(dbPath, fromKit);
-    if (!sourceSamplesResult.success || !sourceSamplesResult.data) {
-      return { error: sourceSamplesResult.error, success: false };
-    }
-
-    const sampleToMove = sourceSamplesResult.data.find(
-      (s) => s.voice_number === fromVoice && s.slot_number === fromSlot,
-    );
-
-    if (!sampleToMove) {
-      return {
-        error: `No sample found in kit ${fromKit} at voice ${fromVoice}, slot ${fromSlot + 1}`,
-        success: false,
-      };
-    }
-
-    return { data: sampleToMove, success: true };
-  }
-
-  /**
    * Validate sample file for adding to kit
    */
-  validateSampleFile(filePath: string): { error?: string; isValid: boolean } {
+  validateSampleFile(
+    filePath: string,
+  ): ReturnType<typeof sampleValidator.validateSampleFile> {
     return sampleValidator.validateSampleFile(filePath);
   }
 

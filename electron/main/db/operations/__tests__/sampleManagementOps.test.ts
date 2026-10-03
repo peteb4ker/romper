@@ -22,6 +22,7 @@ vi.mock("drizzle-orm", () => ({
 }));
 
 vi.mock("@romper/shared/db/schema.js", () => ({
+  kits: { modified_since_sync: "modified_since_sync", name: "name" },
   samples: {
     id: "id",
     kit_name: "kit_name",

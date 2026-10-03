@@ -433,7 +433,9 @@ appends instead (UC-19). No manual page describes replacing; the
   reachable only through `useSampleProcessing.executeAssignment` with
   `replaceExisting: true`, which nothing passes.
 - **IPC:** `replace-sample-in-slot`.
-- **Main:** `electron/main/services/sampleService.ts` (`replaceSampleInSlot`).
+- **Main:** `electron/main/services/crud/sampleCrudService.ts` (`replaceSampleInSlot`) →
+  `electron/main/db/operations/sampleCrudOperations.ts` (`replaceSampleTx`,
+  one in-place update that keeps the slot and gain).
 - **Decision needed:** build a replace gesture, or delete the dead path. A
   replace gesture must ask first while "Confirm destructive actions" is on,
   as sample delete does (`app/renderer/components/SampleDeleteButton.tsx`).
@@ -469,7 +471,8 @@ drop targets. No user doc promises it.
   unreachable from `app/renderer/components/hooks/shared/useInternalDragHandlers.ts`.
 - **IPC:** `move-sample-between-kits`.
 - **Main:** `electron/main/services/sampleService.ts` → `electron/main/services/crud/sampleCrudService.ts` →
-  `electron/main/services/sampleBatchOperations.ts` (`executeCrossKitMove`).
+  `electron/main/db/operations/sampleMovement.ts` (`moveSampleBetweenKitsTx`,
+  one transaction that carries the row).
 - **Decision needed:** build it, or delete the backend.
 
 ### UC-23 Delete a sample

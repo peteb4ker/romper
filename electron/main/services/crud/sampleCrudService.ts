@@ -6,6 +6,8 @@ import * as path from "node:path";
 import {
   addSampleTx,
   flagKitModified,
+  moveSampleBetweenKitsTx,
+  replaceSampleTx,
   withDbTransaction,
 } from "../../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../../utils/fileSystemUtils.js";
@@ -167,50 +169,38 @@ export class SampleCrudService {
       return { error: `Destination ${toValidation.error}`, success: false };
     }
 
-    try {
-      // Get the sample to move from source kit using validation service
-      const sampleResult = sampleValidationService.validateAndGetSampleToMove(
+    const linkValidation =
+      sampleValidationService.validateVoiceNotLinkedPartner(
         dbPath,
-        fromKit,
-        fromVoice,
-        fromSlot,
+        toKit,
+        toVoice,
       );
-      if (!sampleResult.success) {
-        return {
-          error: sampleResult.error || "Failed to validate sample to move",
-          success: false,
-        };
-      }
-      const sampleToMove = sampleResult.data!; // TypeScript assertion: data is guaranteed to exist when success is true
+    if (!linkValidation.isValid) {
+      return { error: linkValidation.error, success: false };
+    }
 
-      const linkValidation =
-        sampleValidationService.validateVoiceNotLinkedPartner(
-          dbPath,
-          toKit,
-          toVoice,
-        );
-      if (!linkValidation.isValid) {
-        return { error: linkValidation.error, success: false };
-      }
-
-      // Execute the cross-kit move using batch operations service
-      return sampleBatchOperationsService.executeCrossKitMove({
-        addSampleToSlot: this.addSampleToSlot.bind(this),
+    // The row moves with its gain and WAV metadata, and both voices are
+    // renumbered, in one transaction (RE-27)
+    const moved = withDbTransaction(dbPath, (db) =>
+      moveSampleBetweenKitsTx(db, {
         fromKit,
         fromSlot,
         fromVoice,
-        inMemorySettings,
-        sampleToMove,
         toKit,
         toSlot,
         toVoice,
-      });
-    } catch (error) {
+      }),
+    );
+    if (!moved.success || !moved.data) {
       return {
-        error: `Failed to move sample between kits: ${getErrorMessage(error)}`,
+        error: `Failed to move sample between kits: ${moved.error}`,
         success: false,
       };
     }
+    return {
+      data: { ...moved.data, replacedSample: undefined },
+      success: true,
+    };
   }
 
   /**
@@ -238,6 +228,47 @@ export class SampleCrudService {
       toVoice,
       toSlot,
       mode,
+    );
+  }
+
+  /**
+   * Replace the file in an occupied slot (RE-26). The new file is checked
+   * before anything is written; then one update swaps the file on the
+   * existing row, so its slot and gain stay, and stores the new file's WAV
+   * header. A file that can't be used leaves the slot as it was.
+   */
+  replaceSampleInSlot(
+    inMemorySettings: Record<string, unknown>,
+    kitName: string,
+    voiceNumber: number,
+    slotNumber: number,
+    filePath: string,
+  ): DbResult<{ replacedSample: Sample; sampleId: number }> {
+    const localStorePath = this.getLocalStorePath(inMemorySettings);
+    if (!localStorePath) {
+      return { error: "No local store path configured", success: false };
+    }
+    const dbPath = this.getDbPath(localStorePath);
+
+    const voiceSlotValidation = sampleValidationService.validateVoiceAndSlot(
+      voiceNumber,
+      slotNumber,
+    );
+    if (!voiceSlotValidation.isValid) {
+      return { error: voiceSlotValidation.error, success: false };
+    }
+
+    const fileValidation = sampleValidationService.validateSampleFile(filePath);
+    if (!fileValidation.isValid) {
+      return { error: fileValidation.error, success: false };
+    }
+
+    return withDbTransaction(dbPath, (db) =>
+      replaceSampleTx(db, kitName, voiceNumber, slotNumber, {
+        filename: path.basename(filePath),
+        source_path: filePath,
+        ...fileValidation.metadata,
+      }),
     );
   }
 

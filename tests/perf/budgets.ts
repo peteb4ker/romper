@@ -153,7 +153,7 @@ export const BUDGETS = {
     },
     "replace sample": {
       connections: NO_NEW_CONNECTION,
-      statements: { max: 6 },
+      statements: { max: 4 },
     },
   },
 

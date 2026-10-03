@@ -12,7 +12,11 @@ import { inferVoiceTypeFromFilename } from "@romper/shared/kitUtilsShared.js";
 import { and, eq } from "drizzle-orm";
 import * as path from "node:path";
 
+import type { WavMetadataFields } from "./wavMetadataFields.js";
+
 import { type RomperDb, withDbTransaction } from "../utils/dbUtilities.js";
+
+export type { WavMetadataFields } from "./wavMetadataFields.js";
 
 const { kits, samples, voices } = schema;
 
@@ -42,11 +46,6 @@ export interface KitScanPlan {
   metadataUpdates: Array<{ id: number; metadata: WavMetadataFields }>;
   result: KitScanResult;
 }
-
-export type WavMetadataFields = Pick<
-  Sample,
-  "wav_bit_depth" | "wav_bitrate" | "wav_channels" | "wav_sample_rate"
->;
 
 /**
  * Merge a kit folder scan into the database in one transaction (RE-04).

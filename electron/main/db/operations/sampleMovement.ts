@@ -1,11 +1,11 @@
 import type { DbResult, Sample } from "@romper/shared/db/schema.js";
 
 import * as schema from "@romper/shared/db/schema.js";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 
 import { type RomperDb, withDbTransaction } from "../utils/dbUtilities.js";
 
-const { samples } = schema;
+const { kits, samples } = schema;
 
 // Type for tracking original positions during moves
 type SampleWithOriginalPosition = {
@@ -35,6 +35,113 @@ export function canVoiceAcceptSample(
 
     return sampleCount < 12;
   });
+}
+
+/**
+ * Move a sample to another kit as one unit of work, on the caller's
+ * transaction (RE-27). The row itself moves, so it keeps its id, gain and
+ * WAV metadata. The source voice closes its gap; the destination voice
+ * makes room at the target slot (insert, never overwrite), and the sample
+ * lands no further than the end of that voice. Both kits are flagged
+ * modified. Throws, rolling everything back, when there's no sample to
+ * move, the destination voice is full or already holds the same file.
+ */
+export function moveSampleBetweenKitsTx(
+  db: RomperDb,
+  move: {
+    fromKit: string;
+    fromSlot: number;
+    fromVoice: number;
+    toKit: string;
+    toSlot: number;
+    toVoice: number;
+  },
+): {
+  affectedSamples: SampleWithOriginalPosition[];
+  movedSample: Sample;
+} {
+  const { fromKit, fromSlot, fromVoice, toKit, toSlot, toVoice } = move;
+  if (fromKit === toKit) {
+    const moved = moveSampleTx(
+      db,
+      fromKit,
+      fromVoice,
+      fromSlot,
+      toVoice,
+      toSlot,
+    );
+    flagKitsModified(db, [fromKit]);
+    return moved;
+  }
+
+  const sampleToMove = db
+    .select()
+    .from(samples)
+    .where(
+      and(
+        eq(samples.kit_name, fromKit),
+        eq(samples.voice_number, fromVoice),
+        eq(samples.slot_number, fromSlot),
+      ),
+    )
+    .get();
+  if (!sampleToMove) {
+    throw new Error(
+      `No sample found in kit ${fromKit} at voice ${fromVoice}, slot ${fromSlot + 1}`,
+    );
+  }
+
+  const destination = db
+    .select()
+    .from(samples)
+    .where(and(eq(samples.kit_name, toKit), eq(samples.voice_number, toVoice)))
+    .all();
+  if (destination.length >= 12) {
+    throw new Error(
+      `Voice ${toVoice} of kit ${toKit} is full (12 samples maximum)`,
+    );
+  }
+  if (destination.some((s) => s.source_path === sampleToMove.source_path)) {
+    throw new Error(
+      `Voice ${toVoice} of kit ${toKit} already has ${sampleToMove.filename}`,
+    );
+  }
+
+  // Park the row in the destination kit, off any voice, so the source
+  // voice can close its gap
+  db.update(samples)
+    .set({ kit_name: toKit, slot_number: -1, voice_number: -1 })
+    .where(eq(samples.id, sampleToMove.id))
+    .run();
+  const sourceVoice = db
+    .select()
+    .from(samples)
+    .where(
+      and(eq(samples.kit_name, fromKit), eq(samples.voice_number, fromVoice)),
+    )
+    .orderBy(samples.slot_number)
+    .all();
+  const insertSlot = Math.min(toSlot, destination.length);
+  const affectedSamples = [
+    ...compactToContiguousSlots(db, sourceVoice),
+    ...insertAtPositionWithShift(
+      db,
+      toKit,
+      toVoice,
+      insertSlot,
+      sampleToMove.id,
+    ),
+  ];
+
+  flagKitsModified(db, [fromKit, toKit]);
+
+  const movedSample: Sample = {
+    ...sampleToMove,
+    kit_name: toKit,
+    slot_number: insertSlot,
+    voice_number: toVoice,
+  };
+  return { affectedSamples, movedSample };
 }
 
 /**
@@ -189,6 +296,13 @@ function compactToContiguousSlots(
   }
 
   return affectedSamples;
+}
+
+function flagKitsModified(db: RomperDb, kitNames: string[]): void {
+  db.update(kits)
+    .set({ modified_since_sync: true })
+    .where(inArray(kits.name, kitNames))
+    .run();
 }
 
 /**

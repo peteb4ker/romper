@@ -52,7 +52,7 @@ level (unless the register declares the gap), and when this file is stale.
 | [UC-34](use-cases.md#uc-34-write-kits-to-the-sd-card) Write kits to the SD card | supported | [122](#uc-34) | [74](#uc-34) | [3](#uc-34) | [1](#uc-34) |
 | [UC-35](use-cases.md#uc-35-preferences) Preferences | partial | [37](#uc-35) | [23](#uc-35) | - | - |
 | [UC-36](use-cases.md#uc-36-messages-and-error-containment) Messages and error containment | partial | [20](#uc-36) | - | [1](#uc-36) | - |
-| [UC-37](use-cases.md#uc-37-about-help-updates-and-diagnostics) About, help, updates and diagnostics | partial | [34](#uc-37) | [4](#uc-37) | [2](#uc-37) | - |
+| [UC-37](use-cases.md#uc-37-about-help-updates-and-diagnostics) About, help, updates and diagnostics | partial | [34](#uc-37) | [4](#uc-37) | [3](#uc-37) | - |
 
 ## Gaps
 
@@ -469,4 +469,5 @@ Partial or not-built use cases with no test above unit level:
 - Unit: [`app/renderer/components/dialogs/__tests__/AboutDialog.test.tsx`](../../app/renderer/components/dialogs/__tests__/AboutDialog.test.tsx#L35) (27 tests)
 - Unit: [`electron/main/__tests__/autoUpdater.test.ts`](../../electron/main/__tests__/autoUpdater.test.ts#L30) (4 tests)
 - Integration: [`electron/main/__tests__/applicationMenu.integration.test.ts`](../../electron/main/__tests__/applicationMenu.integration.test.ts#L247) (4 tests)
+- E2E: [`tests/e2e/about.e2e.test.ts`](../../tests/e2e/about.e2e.test.ts#L17) (1 test)
 - E2E: [`tests/e2e/main-bundle.e2e.test.ts`](../../tests/e2e/main-bundle.e2e.test.ts#L31) (2 tests)

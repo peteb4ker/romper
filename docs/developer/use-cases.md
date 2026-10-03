@@ -37,12 +37,21 @@ The IDs are fixed in
 [`validation-and-traceability.md`](validation-and-traceability.md). Add new
 use cases at the end of their group with the next free ID; never reuse one.
 
+Everything traces from a user-oriented statement: a use case (what you can
+do) or a quality (how Romper behaves while you do it, under
+[Qualities](#qualities)). Every open item in [`BACKLOG.md`](../../BACKLOG.md)
+is listed under the **Known issues:** of at least one of them, and its
+one-liner says what a user would notice, in plain words. `npm run
+trace:check` fails when an open item isn't listed, when an entry still lists
+an item that's done, or when a one-liner has code in it. When you fix an
+item, remove it from every entry that lists it in the same PR.
+
 ## Summary
 
 | Status | Use cases |
 |---|---|
-| supported | UC-09, UC-14, UC-16, UC-18, UC-21, UC-23, UC-24, UC-25, UC-27, UC-28, UC-30, UC-31, UC-32, UC-33, UC-34 |
-| partial | UC-01, UC-02, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-10, UC-11, UC-12, UC-13, UC-15, UC-17, UC-19, UC-26, UC-29, UC-35, UC-36, UC-37 |
+| supported | Q-04, UC-09, UC-14, UC-16, UC-18, UC-21, UC-23, UC-24, UC-25, UC-27, UC-28, UC-30, UC-31, UC-32, UC-33, UC-34 |
+| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, UC-01, UC-02, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-10, UC-11, UC-12, UC-13, UC-15, UC-17, UC-19, UC-26, UC-29, UC-35, UC-36, UC-37 |
 | not built | UC-20, UC-22 |
 
 The doc gaps below feed [`validation-fix-plan.md`](validation-fix-plan.md)
@@ -841,6 +850,85 @@ and [Installation](../manual/getting-started.md#installation).
 - **Doc gaps:** none since the docs pass (#417).
 - **Known issues:** RE-79 (Windows signing would leave the installed app unsigned), RE-18, RE-55 (no Intel Mac build), RE-56 (dead
   `AboutView`).
+
+## Qualities
+
+What Romper promises about how it behaves, whatever you're doing: the
+user-oriented statements behind its non-functional work. Each has a status
+like a use case, its tests are tagged the same way (`[Q-01]`), and every
+open backlog item that isn't a use case's known issue is one of these.
+
+### Q-01 Romper stays responsive as your library grows
+
+**Status:** partial
+
+Opening the app, opening and moving between kits, editing, and preparing a
+write stay quick with hundreds of kits and thousands of samples. Each
+everyday action has a work budget (`tests/perf/budgets.ts`) that a change
+can't exceed; the plan to bring the budgets down is in
+[`architecture-review.md`](architecture-review.md).
+
+- **Known issues:** RE-36, RE-46, RE-47, RE-81, RE-82, RE-83, RE-85, RE-87,
+  RE-88.
+
+### Q-02 Your changes are saved completely, or not at all
+
+**Status:** partial
+
+An edit, a scan, an undo or an upgrade either finishes or leaves your
+library as it was; it never leaves a kit half-changed or a sample without
+its settings.
+
+- **Known issues:** RE-22, RE-25, RE-26, RE-27, RE-28, RE-33, RE-81,
+  RE-86, RE-89.
+
+### Q-03 Romper only touches what you point it at
+
+**Status:** partial
+
+Romper reads your samples and writes only to your local store and the card
+you choose. Its interface can't reach any other files or folders.
+
+- **Known issues:** RE-84, RE-85.
+
+### Q-04 The card ends up exactly matching your library
+
+**Status:** supported
+
+After a write, every file on the card is exactly what your library says it
+should be, converted where the Rample needs it, and the Rample's own
+settings folder is untouched. The full-pipeline validation checks this
+byte for byte before every release.
+
+- **Known issues:** none.
+
+### Q-05 Releases are signed and install cleanly everywhere Romper runs
+
+**Status:** partial
+
+Every release is signed, so your operating system trusts it, is built for
+each supported platform, and is made from up-to-date, secure parts.
+
+- **Known issues:** RE-18, RE-49, RE-54, RE-55, RE-79, OPS-2, OPS-3.
+
+### Q-06 Romper works with a keyboard and assistive technology
+
+**Status:** partial
+
+Everything you can do with a mouse you can do with a keyboard, and screen
+readers can name every control.
+
+- **Known issues:** RE-48.
+
+### Q-07 Every change is tested before it reaches you
+
+**Status:** partial
+
+A change is merged only after its tests pass on every platform, and those
+tests check what you'd notice, not just the code's internals.
+
+- **Known issues:** RE-50, RE-51, RE-52, RE-53, RE-56, RE-57, RE-67,
+  OPS-1.
 
 ## Promised, not built
 

@@ -14,10 +14,17 @@ This file tracks what's being done about each item.
   opening a draft PR whose title ends with `(RE-NN)`. The open PR is the
   claim, and it's visible to local and cloud sessions alike.
 - **Update the Status here in the same PR** that changes it. When the fix
-  merges, move the row to Done with the PR number. Keep one row per item so
+  merges, move the row to Done with the PR number, and remove the item from
+  every use case or quality that lists it in
+  [`use-cases.md`](docs/developer/use-cases.md). Keep one row per item so
   concurrent PRs only conflict on the lines they touch.
 - **New findings:** add them to the register with the next free `RE-` ID,
-  then add a row here.
+  then add a row here, and list it under the **Known issues:** of the use
+  case or quality it affects.
+- **One-liners say what a user would notice**, in plain words with no code;
+  the technical detail lives in the register. They appear on the website's
+  testing page. `npm run trace:check` fails on an open item no use case or
+  quality lists, and on code in a one-liner.
 
 ## Now
 
@@ -28,111 +35,111 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
-| RE-67 | Medium | Tests | The suites never run the core promise for real: no stereo or real audio through a sync, almost no byte checks on the card, and no test fails on an unexpected error. | partly done (#402: `npm run validate:full` and its workflow; #411: the e2e error guard; #415: the use case register, `[UC-NN]` tags and `npm run trace:check`; next: the focused tests and the gaps in the traceability matrix (`npm run trace`); plan: [`validation-and-traceability.md`](docs/developer/validation-and-traceability.md)) |
-| RE-18 | High | Release | Signing is silently optional. Windows v1.3.1 shipped **unsigned** (the Azure step was skipped because `AZURE_CLIENT_ID` is empty). | partly done (#387: signing required, Apple credentials checked first; Windows needs ALLOW_UNSIGNED_WINDOWS until OPS-2) |
+| RE-67 | Medium | Tests | The tests didn't check Romper's main promise for real: that real and stereo audio reach the card intact, byte for byte, with no unexpected error along the way. | partly done (#402: `npm run validate:full` and its workflow; #411: the e2e error guard; #415: the use case register, `[UC-NN]` tags and `npm run trace:check`; next: the focused tests and the gaps in the traceability matrix (`npm run trace`); plan: [`validation-and-traceability.md`](docs/developer/validation-and-traceability.md)) |
+| RE-18 | High | Release | Windows releases can ship without a code signature, so Windows warns you when you install them. | partly done (#387: signing required, Apple credentials checked first; Windows needs ALLOW_UNSIGNED_WINDOWS until OPS-2) |
 
 ## Owner (needs Pete)
 
 | ID | Item | Status |
 |---|---|---|
-| OPS-1 | Branch protection on `main`: require `e2e-tests-check`, enforce for admins, require linear history. The repo is public, so the Free plan supports all three. | open |
-| OPS-2 | Azure Trusted Signing for Windows releases (#276, RE-18) | open |
-| OPS-3 | Delete the unused `APPLE_ID`, `APPLE_ID_PASSWORD`, and `APPLE_TEAM_ID` secrets | open |
+| OPS-1 | Require the end-to-end tests to pass before any change is merged, for everyone including admins, and keep the history linear. | open |
+| OPS-2 | Set up code signing for Windows releases, so Windows trusts the installer. | open |
+| OPS-3 | Delete three old Apple signing secrets that nothing uses any more. | open |
 
 ## Later
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
-| RE-21 | Medium | Settings | Only `localStorePath` and `sdCardPath` are loaded at startup. | open |
-| RE-22 | Medium | IPC | `update-kit-metadata` spreads the renderer's object straight into the update. | open |
-| RE-23 | Medium | Banks | Clearing a bank name deletes the RTF file but keeps the name in the database, so it returns on reload and is written to the card at the next sync. | open |
-| RE-25 | Medium | Validation | No range or enum checks in main for volume (0 to 100), gain (-24 to +12), BPM (30 to 180) or sample mode. | open |
-| RE-26 | Medium | Samples | Replace deletes the old sample, then adds the new one, with no transaction. | open |
-| RE-27 | Medium | Samples | Moving a sample to another kit is not atomic and rebuilds the row from `source_path` only, dropping gain, WAV metadata and the stereo flag. | open |
-| RE-28 | Medium | DB | Multi-step writes run without a transaction: kit plus its four voices; delete plus reindex (the reindex opens a second connection while the first is open); write plus the modified flag; scan insert plus metadata. | open |
-| RE-33 | Medium | DB | Migration upkeep: 0008 is missing and there are two 0009 migrations, handled by a custom repair that runs `ALTER` statements outside a transaction. | open (#407 fixed the `kits.artist` snapshot drift) |
-| RE-35 | Medium | Sync | "Modified since sync" is set by sample add, delete and move and by stereo link changes, but not by gain, voice name or bank edits. | partly done (#360: scan sets it when it adds samples; #407: stereo link changes set it) |
-| RE-36 | Medium | Performance | Almost every edit reloads the whole library (`getKits()` with all samples); sample operations cost three or more IPC calls. | open |
-| RE-37 | Medium | Renderer | Favourites have two sources of truth. The browser keeps a shadow map that overrides the database value; the editor toggles through `useKitDataManager`. | open |
-| RE-38 | Medium | Renderer | Keyboard shortcuts clash. "F" jumps to bank F and toggles the favourite on the focused kit. | open |
-| RE-39 | Medium | Renderer | Kit-grid keyboard navigation is broken: index 0 is treated as "nothing focused", so arrow keys and Enter do nothing from the first kit (the default). | open |
-| RE-40 | Medium | Renderer | More silent failures: stereo link errors are ignored; rejected drops (duplicate, bad format, full voice) go only to the console; undo errors never reach the UI; the sync-failure toast reads a stale value. | open |
-| RE-41 | Medium | Renderer | Toggling "editable" and editing the kit alias rethrow IPC errors into click and blur handlers with no catch, giving unhandled rejections. | open |
-| RE-43 | Medium | Scan | "Scan All" from the menu scans only the kits that pass the current filters, and with the editor open it scans banks only. | open |
-| RE-44 | Medium | Settings | The "Confirm destructive actions" preference is shown but never read; sample delete and replace run immediately. | open |
-| RE-45 | Medium | Playback | Playback triggers and sample metadata are keyed by file name, so two samples with the same name in one voice play together (bypassing the choke), and same-named files in different voices share gain and metadata in the UI. | partly done: sounds now choke at the audio layer (`voiceChoke.ts`), so the audible choke no longer depends on this state; the state itself is unchanged |
-| RE-46 | Medium | Performance | While a sample plays, the waveform redraws its full envelope and calls `getComputedStyle` on every animation frame. | open |
-| RE-47 | Medium | Performance | Memoisation is defeated: inline props break `React.memo` on the containers and grid, the grid's `itemData` is rebuilt every render, and the menu and editor key listeners re-subscribe on every render. | open |
-| RE-48 | Medium | Accessibility | A `grid` contains `option` children; the gain knob (`role="slider"`) has no keyboard support; 5 inputs have no label; trigger conditions can only be set by right-click; 6 modals have no dialog role, focus trap or Escape handling. | open |
-| RE-49 | Medium | Dependencies | Build tools (`drizzle-kit`, `@tailwindcss/vite`, `@vitejs/plugin-react`, `@typescript-eslint/eslint-plugin`) and unused packages sit in `dependencies`. | open |
-| RE-50 | Medium | CI | Coverage thresholds are not checked on pull requests, and the margin is 0.28 points on functions and 0.40 on lines. | partly done (#352 runs coverage on PRs; the margin is still thin) |
-| RE-51 | Medium | Tests | Test code is excluded from type-checking; 3,048 errors in 195 test files. | open |
-| RE-52 | Medium | CI | E2E is not a required check; PRs run it on Ubuntu only, with no retries. | blocked on OPS-1 (make e2e a required check) |
-| RE-53 | Medium | CI | SonarCloud never gates PRs (it runs on `main` only and is `continue-on-error`). | partly done (#352 analyzes PRs; not a required check) |
-| RE-54 | Medium | Dependencies | 30 packages are at least a major version behind. Forge 8 would clear 19 High advisories in the Forge chain. | open |
-| RE-55 | Medium | Release | macOS builds are arm64 only; Linux and Windows are x64 only. | open |
-| RE-56 | Medium | Dead code | About 942 LOC of unused main-process files (`stereoSyncProcessor`, `rampleNamingService`, `db/fileOperations`, `stepPatternUtils`, `sampleSlotService`, two utils) and about 1,100 LOC in the renderer (9 test-only modules, the unreachable `AboutView` route and `ValidationResultsDialog`). | partly done (#372 deletes `rampleNamingService` and `stereoSyncProcessor`) |
-| RE-57 | Medium | Contract | The bridge contract does not bind main. `SyncChangeSummary` does not match what main returns (the renderer casts it); `SyncProgress` is defined four times with different fields and status values; several return types differ from the contract (null versus undefined, `unknown`, an `"overwrite"` mode main rejects). | open |
-| RE-77 | Medium | Setup | A factory archive with the wrong checksum is downloaded three times, and the reason is replaced by a generic network error. | open |
-| RE-78 | Medium | Settings | Changing the local store reports success whether or not it worked; the Invalid Local Store dialog's **Re-run Setup Wizard** button never renders. | partly done (#419: the Invalid Local Store and Change Local Store dialogs report a failed save; Set Up a New Local Store renders; Preferences still ignores an invalid folder) |
-| RE-79 | Medium | Release | Windows signing signs only the Setup `.exe`, leaving the installed app unsigned once OPS-2 is done (unconfirmed). | open (before OPS-2) |
-| RE-81 | Medium | DB | Every database call opens its own connection, so operations can't share a transaction and each write pays a WAL checkpoint. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
-| RE-82 | Medium | Sync | Opening the write summary blocks the main process (per-kit queries, synchronous header reads, no yield). | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
-| RE-83 | Medium | Audio | Waveform audio has no cache: kit navigation fetches some buffers twice and refetches on every visit, each a synchronous whole-file read on main. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
-| RE-84 | Medium | IPC | Unused preload methods remain; `readFile` and `getAudioMetadata` are still reachable from the renderer. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
-| RE-85 | Medium | Security | Path checks get slower as a session grants paths, and a denied check loads every sample row. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
-| RE-86 | Medium | Undo | Undo replays many non-atomic IPC calls and resets gain. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
-| RE-87 | Medium | Playback | Playback state lives in `KitEditor`, so each trigger re-renders the whole editor. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
-| RE-88 | Medium | Samples | The gain knob writes to the database on every wheel step or mousemove. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
-| RE-89 | Medium | Samples | Samples added by drop are stored with no WAV metadata. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
+| RE-21 | Medium | Settings | Your theme and the "Confirm destructive actions" setting reset every time Romper starts. | open |
+| RE-22 | Medium | IPC | Editing a kit's details could change other parts of the kit's record by mistake. | open |
+| RE-23 | Medium | Banks | Clearing a bank's name doesn't stick: the name comes back after a reload and is written to the card. | open |
+| RE-25 | Medium | Validation | Out-of-range volume, gain, tempo or sample mode values aren't rejected, so a glitch could save a value the Rample can't use. | open |
+| RE-26 | Medium | Samples | Replacing a sample can lose the original if something fails partway, and the new sample loses the old one's gain. | open |
+| RE-27 | Medium | Samples | Moving a sample to another kit can fail partway, and the moved sample loses its gain and audio details. | open |
+| RE-28 | Medium | DB | Some changes are saved in several steps (creating a kit, deleting a sample, scanning), so a failure partway can leave a kit half-updated. | open |
+| RE-33 | Medium | DB | Upgrading an older library relies on a repair step that could leave it half-upgraded if interrupted. | open (#407 fixed the `kits.artist` snapshot drift) |
+| RE-35 | Medium | Sync | Changing a sample's gain, a voice name or a bank name doesn't mark the kit as changed, so the "modified since last write" filter misses it. | partly done (#360: scan sets it when it adds samples; #407: stereo link changes set it) |
+| RE-36 | Medium | Performance | Almost every edit reloads your whole library behind the scenes, which gets slower as the library grows. | open |
+| RE-37 | Medium | Renderer | A kit's favourite star can disagree between the browser and the editor, so a kit can show as a favourite when it isn't. | open |
+| RE-38 | Medium | Renderer | Pressing F both jumps to bank F and stars the selected kit. | open |
+| RE-39 | Medium | Renderer | Arrow keys and Enter don't work in the kit grid until you click a kit. | open |
+| RE-40 | Medium | Renderer | Some failures happen silently: a rejected drop, a failed stereo link or undo, and the reason a write failed aren't shown to you. | open |
+| RE-41 | Medium | Renderer | If turning on editing or renaming a kit fails, nothing tells you. | open |
+| RE-43 | Medium | Scan | Scan All only scans the kits you're currently viewing after a search or filter, not your whole library. | open |
+| RE-44 | Medium | Settings | The "Confirm destructive actions" setting does nothing: samples are deleted and replaced without asking. | open |
+| RE-45 | Medium | Playback | Two samples with the same file name in one voice play together, and same-named samples in different voices share a gain setting on screen. | partly done: sounds now choke at the audio layer (`voiceChoke.ts`), so the audible choke no longer depends on this state; the state itself is unchanged |
+| RE-46 | Medium | Performance | While a sample plays, its waveform does far more drawing work than it needs, which can make playback stutter on slower machines. | open |
+| RE-47 | Medium | Performance | The kit browser redraws far more than it needs to when you type, scroll or get a message. | open |
+| RE-48 | Medium | Accessibility | Parts of Romper can't be used with only a keyboard or a screen reader: the gain knob, trigger conditions (right-click only), several unlabelled fields, and dialogs. | open |
+| RE-49 | Medium | Dependencies | The installed app carries build tools and unused packages it doesn't need, making it bigger than necessary. | open |
+| RE-50 | Medium | CI | A change that lowers test coverage isn't caught before it's merged, and coverage is only just above its minimum. | partly done (#352 runs coverage on PRs; the margin is still thin) |
+| RE-51 | Medium | Tests | Mistakes in test code aren't caught by type checking, so a broken test can pass without testing anything. | open |
+| RE-52 | Medium | CI | End-to-end tests don't have to pass before a change is merged, and pull requests run them on Linux only. | blocked on OPS-1 (make e2e a required check) |
+| RE-53 | Medium | CI | Code-quality findings don't stop a change from being merged. | partly done (#352 analyzes PRs; not a required check) |
+| RE-54 | Medium | Dependencies | Many of the libraries Romper is built on are a major version behind, including packaging tools with known security advisories. | open |
+| RE-55 | Medium | Release | There's no build for Intel Macs, ARM Windows or ARM Linux. | open |
+| RE-56 | Medium | Dead code | Unused code remains in Romper, which makes it harder to change safely. | partly done (#372 deletes `rampleNamingService` and `stereoSyncProcessor`) |
+| RE-57 | Medium | Contract | The app's two halves can disagree about the data they exchange without any check catching it, which can hide bugs. | open |
+| RE-77 | Medium | Setup | If the factory download is corrupted, Romper downloads it three times and then reports a generic network error instead of the real reason. | open |
+| RE-78 | Medium | Settings | Choosing an invalid folder for your local store in Preferences fails without telling you. | partly done (#419: the Invalid Local Store and Change Local Store dialogs report a failed save; Set Up a New Local Store renders; Preferences still ignores an invalid folder) |
+| RE-79 | Medium | Release | Once Windows signing is turned on, the installed app itself may still be unsigned (unconfirmed). | open (before OPS-2) |
+| RE-81 | Medium | DB | Every save opens and closes the library's database, which is slower than needed and stops related changes from being saved together. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
+| RE-82 | Medium | Sync | Romper freezes briefly while it prepares a write to the card, longer for big libraries. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
+| RE-83 | Medium | Audio | Moving between kits reloads every sample's audio from disk, some of it twice, on every visit. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
+| RE-84 | Medium | IPC | The app's interface can still reach file-access features it no longer uses. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
+| RE-85 | Medium | Security | Checking whether Romper may open a file gets slower the longer you use it. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
+| RE-86 | Medium | Undo | Undoing a delete, replace or move resets the sample's gain, and can stop partway if something fails. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
+| RE-87 | Medium | Playback | Every sample trigger redraws the whole kit editor, which wastes work while the sequencer plays. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
+| RE-88 | Medium | Samples | Turning the gain knob saves to your library on every tiny movement instead of once when you let go. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
+| RE-89 | Medium | Samples | Samples you drop in are stored without their audio format details, unlike samples found by a scan. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
 
 ## Done
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
-| RE-58 | Medium | Tooling | The pre-commit tests failed with Vitest worker-start timeouts on a busy machine: the fast config always started 10 workers. | done (#423: workers follow the free cores; under load the suite runs on fewer workers instead of timing out) |
-| RE-74 | Medium | Samples | Dropping onto a filled slot said "Insert sample here (other samples will shift down)", but the file was appended. | done (#421: dragging files over a voice highlights the slot after the last sample, where they land) |
-| RE-75 | Medium | Voices | In an editable kit, Scan Kit and `/` overwrote voice names typed by hand. | done (#422: only voices without a name are named, as main's scan does) |
-| RE-80 | Medium | Settings | A local store on a drive that wasn't connected at launch was forgotten, and the first-run wizard opened. | done (#419: the saved path is kept; the Invalid Local Store dialog offers Try Again, another folder, or a new store) |
-| RE-76 | Medium | Sync | A card that only needed removals couldn't be written: **Start Write** was disabled when the library had no samples. | done (#418: the write is enabled whenever there is something to copy or remove) |
-| RE-72 | Medium | About | The About dialog showed "Version: dev" in every build: nothing defined `VITE_APP_VERSION`. | done (#420: the renderer build defines it from package.json) |
-| RE-71 | Medium | Stereo | Stereo link and unlink worked on kits that aren't editable, changing what the next write puts on the card. | done (#416: linking is an edit; read-only kits show the pair but offer no link or unlink, and main refuses the change) |
-| RE-73 | Medium | Setup | SD-card setup ignored a failed kit copy and imported whatever was copied, with no message. | done (#414: a failed copy stops setup with the reason) |
-| RE-66 | Medium | Setup | Cancel during setup quit mid-import on first run and left a half-built store that blocked a retry in the same folder. | done (#408 cleans up on quit; #414: Cancel stops the download, extraction or import, removes what setup wrote, and closes once it has stopped) |
-| RE-31 | Medium | Setup | A failed SD-card setup couldn't be retried: the kit folders it had copied were left behind, and the next copy refused them. | done (#414: cleanup removes the kit folders setup created, and only those, so nothing is overwritten) |
-| RE-34 | Medium | Setup | Voice naming in the setup wizard did nothing (its writes went to a store not yet configured), and setup read every WAV over IPC. | done (#413: setup imports kits in main with the rescan merge: samples, WAV metadata and voice names in one transaction per kit) |
-| RE-32 | Medium | Kits | Kit names were checked inconsistently: setup imported folders such as `Drum01` that the kit service then refused to delete or duplicate. | done (#413: setup imports only folders named like kits, A0-Z99, the same rule `kitService` uses; `insert-kit` is gone) |
-| RE-69 | High | Stereo | Unlinking a stereo pair silently did nothing when the voice held a 2-channel file; the `is_stereo` rules contradicted "stereo is a voice setting". | done (#407: unlink only clears `voices.stereo_mode`; `samples.is_stereo` dropped; main refuses samples on the right-hand voice of a linked pair; proven by `npm run validate:full`) |
-| RE-42 | Medium | Setup | The notice naming samples left out by the 12-per-voice limit never showed after SD or factory setup: the UI read the warnings from before `initialize()` ran. | done (#410) |
-| Low | Low | Tests | Test and tooling hygiene from the validation audit: an empty `ROMPER_LOCAL_PATH` counted as an override (Test Mode banner); dead `VITE_ROMPER_TEST_MODE` branch; screenshots used the installed app's settings; an integration test wrote into the source tree; `coverage:total` read the wrong folder; `worktree:create` hid the failing command. | done (#409, plan item 7) |
-| RE-24 | Medium | Archive | The factory download had no status check, redirect handling, timeout or checksum; the ~313 MiB zip was never deleted; extraction ignored write and mkdir errors. | done (#405: fetch with an idle timeout, pinned SHA-256, zip deleted in `finally`, extraction fails on any write error) |
-| RE-64 | High | Kits | A kit can only be created in a bank that already has one, so an empty local store can't create its first kit. | done (#401) |
-| RE-65 | Medium | Undo | Edit > Undo and Edit > Redo use Electron's native roles and never reach Romper's undo; only Cmd/Ctrl+Z works. | done (#406) |
-| RE-70 | Medium | Archive | `file://` archive URLs weren't decoded: `/C:/...` on Windows, `%20` everywhere. | done (#403) |
-| RE-29 | High | Sync | A stereo sample on a mono voice was written to the card as stereo: mono conversion keyed on `samples.is_stereo`, which every add and import path writes as `false`. | done (#404: planned from the file's channel count and the voice's stereo setting; proven by `npm run validate:full`) |
-| RE-68 | High | Tests | The e2e suite overwrote the installed app's settings (same userData folder), resetting its local store. | done (#400) |
-| RE-15 | High | Platform | Electron 39.8.10 is out of support (its last patch was 2026-05-05; supported majors are 42 to 44). | done (#392: Electron 44, better-sqlite3 13) |
-| RE-63 | Medium | Sync | Sample conversion truncates instead of rounding: re-encoding an unchanged 16-bit sample alters about a third of its samples, and 24- to 16-bit conversion has twice the quantization error. | done (#396) |
-| RE-14 | High | Playback | Each play connects a new analyser (and a splitter for stereo) to the slot's gain node, and nothing disconnects them. | done (#366 node leak; #397 one shared AudioContext) |
-| RE-13 | High | Playback | The voice choke can fail after any kit refresh. Step, condition, mode, volume and alias edits reload all kits, which resets the "playing" map while samples are still playing, so the next trigger on that voice does not stop them. | done (#394) |
-| RE-62 | Medium | Dependencies | `node-wav` is abandoned (2016) with an open upstream security report; it needs workarounds (`toPlainWav`) and calls the deprecated `Buffer()`. | done (#395) |
-| RE-20 | High | Docs | User-facing docs promise behaviour that does not exist. README, the manual and the website promise an automatic backup and rollback before sync; there is no backup code. | done (#393; no pre-sync backup: the local store is the master copy) |
-| RE-61 | Medium | Sync | The write panel falls behind the real count on large stores: two progress events per file, and each re-rendered the kit grid. | done (#391) |
-| RE-19 | High | Release | Release secrets are more exposed than needed: the base64 p12 is a job-level environment variable during `npm ci` (the lifecycle scripts of about 1,500 packages) on all three runners; checkout keeps the token while the workflow has `contents: write`; `id-token: write` is unused; third-party actions that receive secrets are pinned by tag, not by SHA. | done (#389) |
-| RE-17 | High | Release | The release workflow runs no unit, integration or e2e tests and does not check that the tag is on `main` or that CI passed. | done (#386) |
-| RE-16 | High | Platform | macOS auto-update does not work in packaged builds. The main process is built as a browser-style library, so the bundled `update-electron-app` gets an empty `node:assert` and a `require` shim that throws under ESM. | done (#384) |
-| RE-12 | High | Renderer | There is no React error boundary. Any exception during render unmounts the whole tree and leaves a blank window with no way to recover. | done (#383) |
-| RE-11 | High | Renderer | Toast messages never appear. `useMessageDisplay()` creates local state. | done (#382) |
-| RE-08 | High | Sync | The WAV header parser requires the `fmt ` chunk at byte 12 with size 16. | done (#381) |
-| RE-07 | High | Sync | Sync blocks the main process for the whole run: every file is copied or converted with synchronous calls, so no IPC (including Cancel) runs until it finishes. | done (#379) |
-| RE-05 | High | Sync | Sync only adds or overwrites. Removed, moved or renamed samples and deleted kits stay on the card. | done (#376; the card mirrors the store) |
-| RE-06 | High | Sync | Sync writes `<card>/<kit>/<voice>/<file>`, but SD import and rescan read only WAVs at the kit root and take the voice from the first character of the file name. | done (#372; spec: [`sd-card-layout.md`](docs/developer/sd-card-layout.md)) |
-| RE-59 | High | Renderer | Escape on the sequencer's step-options popover also leaves the kit. | done (#371) |
-| RE-60 | High | Undo | Sequencer edits are not undoable, and Cmd/Ctrl+Z after a pattern edit undoes the last sample edit instead; the slicer's roll undo never runs in editable kits. | done (#371) |
-| RE-03 | High | Security | The renderer can read any file (up to 256 MiB), list any folder, create and copy folders, extract a downloaded archive into any folder, write a probe file anywhere, and create or insert into a database in any folder. | done (#367) |
-| RE-04 | High | Scan | "Scan Kit" on a non-editable kit, and "File > Scan All" on every kit, delete all of the kit's sample rows and rebuild them from `<store>/<kit>/*.wav`. | done (#360) |
-| RE-09 | High | Sync | Validation errors (such as missing source files) and warnings are built and then dropped. | done (#364) |
-| RE-30 | Medium | Config | `ROMPER_LOCAL_PATH` is honoured by kit and DB handlers but ignored by sample, scan, sync and audio-buffer code. | done (#355) |
-| RE-02 | High | Security | The `will-navigate` guard compares `URL.origin`, which is `"null"` for every `file://` URL. | done (#358; the IPC sender check in #367) |
-| RE-10 | High | Setup | If setup fails, the cleanup deletes `<target>/.romperdb` without checking that this run created it. | done (#359) |
-| RE-01 | Critical | Sync | "Clear SD card before writing" deletes every file and folder at the chosen path. | done (#351) |
+| RE-58 | Medium | Tooling | Romper's own pre-commit checks failed on a busy computer because they always started the same large number of test workers. | done (#423: workers follow the free cores; under load the suite runs on fewer workers instead of timing out) |
+| RE-74 | Medium | Samples | Dropping a sample onto a filled slot said it would insert it there and shift the rest down, but added it at the end. | done (#421: dragging files over a voice highlights the slot after the last sample, where they land) |
+| RE-75 | Medium | Voices | In an editable kit, scanning the kit overwrote voice names you'd typed. | done (#422: only voices without a name are named, as main's scan does) |
+| RE-80 | Medium | Settings | A local store on a drive that wasn't connected when Romper started was forgotten, and the first-run setup opened. | done (#419: the saved path is kept; the Invalid Local Store dialog offers Try Again, another folder, or a new store) |
+| RE-76 | Medium | Sync | A card that only needed files removed couldn't be written: Start Write was disabled when the library had no samples. | done (#418: the write is enabled whenever there is something to copy or remove) |
+| RE-72 | Medium | About | The About dialog showed "Version: dev" instead of the real version. | done (#420: the renderer build defines it from package.json) |
+| RE-71 | Medium | Stereo | You could link or unlink stereo voices in a kit that isn't editable, changing what the next write puts on the card. | done (#416: linking is an edit; read-only kits show the pair but offer no link or unlink, and main refuses the change) |
+| RE-73 | Medium | Setup | Setting up from an SD card carried on silently after a kit failed to copy, importing whatever had been copied. | done (#414: a failed copy stops setup with the reason) |
+| RE-66 | Medium | Setup | Cancelling setup on first launch quit partway through and left a half-built library that blocked trying again in the same folder. | done (#408 cleans up on quit; #414: Cancel stops the download, extraction or import, removes what setup wrote, and closes once it has stopped) |
+| RE-31 | Medium | Setup | A failed SD-card setup couldn't be retried: the folders it had copied were left behind and blocked the next attempt. | done (#414: cleanup removes the kit folders setup created, and only those, so nothing is overwritten) |
+| RE-34 | Medium | Setup | Naming voices during setup did nothing, and setup was slower than it needed to be. | done (#413: setup imports kits in main with the rescan merge: samples, WAV metadata and voice names in one transaction per kit) |
+| RE-32 | Medium | Kits | Setup could import folders that aren't valid kit names (such as Drum01), which Romper then refused to delete or duplicate. | done (#413: setup imports only folders named like kits, A0-Z99, the same rule `kitService` uses; `insert-kit` is gone) |
+| RE-69 | High | Stereo | Unlinking a stereo pair did nothing when the voice held a stereo file. | done (#407: unlink only clears `voices.stereo_mode`; `samples.is_stereo` dropped; main refuses samples on the right-hand voice of a linked pair; proven by `npm run validate:full`) |
+| RE-42 | Medium | Setup | After setup, the notice listing samples left out by the 12-per-voice limit never appeared. | done (#410) |
+| Low | Low | Tests | Test and tooling hygiene: a test-mode banner could appear by mistake, screenshots could use the installed app's settings, and a test wrote into the source folder. | done (#409, plan item 7) |
+| RE-24 | Medium | Archive | The factory download didn't check it had succeeded or was complete, never deleted its large zip file, and ignored errors while unpacking. | done (#405: fetch with an idle timeout, pinned SHA-256, zip deleted in `finally`, extraction fails on any write error) |
+| RE-64 | High | Kits | A new, empty library couldn't create its first kit. | done (#401) |
+| RE-65 | Medium | Undo | Edit > Undo and Edit > Redo in the menu did nothing; only the keyboard shortcuts worked. | done (#406) |
+| RE-70 | Medium | Archive | Using the downloaded factory archive failed on Windows, and anywhere its path had a space in it. | done (#403) |
+| RE-29 | High | Sync | A stereo sample on a mono voice was written to the card as stereo instead of being converted to mono. | done (#404: planned from the file's channel count and the voice's stereo setting; proven by `npm run validate:full`) |
+| RE-68 | High | Tests | Running Romper's end-to-end tests reset the settings of the Romper installed on the same computer. | done (#400) |
+| RE-15 | High | Platform | Romper ran on a version of Electron that no longer got security fixes. | done (#392: Electron 44, better-sqlite3 13) |
+| RE-63 | Medium | Sync | Converting samples for the card truncated instead of rounding, adding avoidable noise and changing samples that didn't need changing. | done (#396) |
+| RE-14 | High | Playback | Each play left audio connections behind, slowly using more memory and CPU. | done (#366 node leak; #397 one shared AudioContext) |
+| RE-13 | High | Playback | After an edit, a voice could play two samples at once instead of cutting off the first. | done (#394) |
+| RE-62 | Medium | Dependencies | Romper read WAV files with an abandoned library that has an open security report. | done (#395) |
+| RE-20 | High | Docs | The docs promised an automatic backup before writing the card, which doesn't exist. | done (#393; no pre-sync backup: the local store is the master copy) |
+| RE-61 | Medium | Sync | The write progress fell behind on large libraries and slowed the app down. | done (#391) |
+| RE-19 | High | Release | Release signing secrets were exposed to more of the build than necessary. | done (#389) |
+| RE-17 | High | Release | A release could be built without running the tests or checking that it came from the main branch. | done (#386) |
+| RE-16 | High | Platform | Mac auto-update didn't work in installed builds. | done (#384) |
+| RE-12 | High | Renderer | Any unexpected error left a blank window with no way to recover. | done (#383) |
+| RE-11 | High | Renderer | Messages never appeared on screen. | done (#382) |
+| RE-08 | High | Sync | Some valid WAV files were rejected or misread because Romper expected their header in one fixed layout. | done (#381) |
+| RE-07 | High | Sync | Writing the card froze the app until it finished, so Cancel didn't work. | done (#379) |
+| RE-05 | High | Sync | Writing the card never removed anything: deleted, moved or renamed samples and deleted kits stayed on the card. | done (#376; the card mirrors the store) |
+| RE-06 | High | Sync | Kits written to the card used a folder layout that importing and scanning couldn't read back. | done (#372; spec: [`sd-card-layout.md`](docs/developer/sd-card-layout.md)) |
+| RE-59 | High | Renderer | Pressing Escape on a sequencer step's options also closed the kit. | done (#371) |
+| RE-60 | High | Undo | Sequencer edits couldn't be undone, and undo after a pattern edit undid a sample edit instead. | done (#371) |
+| RE-03 | High | Security | Romper's interface could read, list and write files anywhere on your computer: far more access than it needs. | done (#367) |
+| RE-04 | High | Scan | Scanning a kit that isn't editable, or Scan All, threw away the kit's sample settings and rebuilt them from its folder. | done (#360) |
+| RE-09 | High | Sync | Problems found before writing the card, such as missing source files, were never shown. | done (#364) |
+| RE-30 | Medium | Config | A setting meant for testing was honoured by some parts of the app and ignored by others. | done (#355) |
+| RE-02 | High | Security | A safety check meant to stop the app's window navigating away never worked. | done (#358; the IPC sender check in #367) |
+| RE-10 | High | Setup | If setup failed, its clean-up could delete a library database it hadn't created. | done (#359) |
+| RE-01 | Critical | Sync | "Clear SD card before writing" deleted every file and folder at the chosen location. | done (#351) |

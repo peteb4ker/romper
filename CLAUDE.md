@@ -86,6 +86,9 @@ the repo or on GitHub.
 - **Backlog:** [`BACKLOG.md`](BACKLOG.md) is the shared status board. Pick
   work from it, claim items with a draft PR titled `... (RE-NN)`, and update
   an item's status in the PR that changes it. Its header has the protocol.
+  Everything traces from a user-oriented statement: every open item is a
+  known issue of a use case or quality in `docs/developer/use-cases.md`, and
+  `npm run trace:check` enforces it.
 - **Plans:** for work bigger than one PR, commit a spec to
   `docs/developer/<feature>.md` before implementing (like
   `step-sequencer-slicer.md`), and link it from an issue or the PR.

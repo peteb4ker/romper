@@ -5,10 +5,12 @@ import {
   buildIndex,
   findProblems,
   layerOf,
+  parseBacklog,
   parseRegister,
   render,
   scanTests,
   slug,
+  summarise,
 } from "../traceability.mjs";
 
 const REGISTER = `# Use cases
@@ -47,7 +49,9 @@ describe("parseRegister", () => {
   it("reads IDs, names, statuses and declared gaps", () => {
     const { errors, useCases } = parseRegister(REGISTER);
     expect(errors).toEqual([]);
-    expect(useCases).toEqual([
+    expect(
+      useCases.map(({ gap, id, name, status }) => ({ gap, id, name, status })),
+    ).toEqual([
       {
         gap: null,
         id: "UC-01",
@@ -178,5 +182,106 @@ describe("slug", () => {
     expect(slug("UC-13 Scan a kit, or scan all")).toBe(
       "uc-13-scan-a-kit-or-scan-all",
     );
+  });
+});
+
+describe("tracing the backlog to user-oriented statements", () => {
+  const register = `# Use cases
+
+## Samples
+
+### UC-19 Drop WAVs onto a voice
+
+**Status:** partial
+
+- **Known issues:** RE-40 (silent failures), RE-28,
+  RE-89.
+
+## Qualities
+
+### Q-01 Romper stays responsive as your library grows
+
+**Status:** partial
+
+- **Known issues:** RE-36, OPS-1.
+`;
+  const backlog = `# Backlog
+
+## Later
+
+| ID | Severity | Area | Item | Status |
+|---|---|---|---|---|
+| RE-28 | Medium | DB | Some changes are saved in several steps. | open |
+| RE-36 | Medium | Performance | Every edit reloads your library. | open |
+| RE-40 | Medium | Renderer | Some failures happen silently. | open |
+| RE-89 | Medium | Samples | Dropped samples miss their \`wav_*\` details. | open |
+| RE-90 | Medium | Samples | Nobody lists this one. | open |
+
+## Owner (needs Pete)
+
+| ID | Item | Status |
+|---|---|---|
+| OPS-1 | Require e2e before merging. | open |
+
+## Done
+
+| ID | Severity | Area | Item | Status |
+|---|---|---|---|---|
+| RE-11 | High | Renderer | Messages never appeared. | done (#300) |
+`;
+
+  it("reads groups, qualities and known issues across wrapped lines", () => {
+    const { useCases } = parseRegister(register);
+    expect(useCases.map((u) => [u.id, u.kind, u.group, u.issues])).toEqual([
+      ["UC-19", "use case", "Samples", ["RE-40", "RE-28", "RE-89"]],
+      ["Q-01", "quality", "Qualities", ["RE-36", "OPS-1"]],
+    ]);
+  });
+
+  it("reads both backlog tables and knows what's done", () => {
+    const items = parseBacklog(backlog);
+    expect(items.get("OPS-1")).toMatchObject({
+      done: false,
+      item: "Require e2e before merging.",
+    });
+    expect(items.get("RE-11")?.done).toBe(true);
+    expect(items.get("RE-36")?.done).toBe(false);
+  });
+
+  it("fails an open item no entry lists, a listed item that's done or unknown, and code in a one-liner", () => {
+    const { useCases } = parseRegister(
+      register.replace("RE-36, OPS-1", "RE-36, OPS-1, RE-11, RE-99"),
+    );
+    const scan = buildIndex([], () => "");
+    expect(findProblems(useCases, scan, parseBacklog(backlog))).toEqual([
+      expect.stringContaining("Q-01 lists RE-11, which BACKLOG.md marks done"),
+      expect.stringContaining("Q-01 lists RE-99, which isn't in BACKLOG.md"),
+      expect.stringContaining(
+        "RE-89: write its BACKLOG.md one-liner in plain language",
+      ),
+      expect.stringContaining(
+        "RE-90 is open in BACKLOG.md but no use case or quality lists it",
+      ),
+    ]);
+  });
+
+  it("summarises each entry for the testing page", () => {
+    const { useCases } = parseRegister(register);
+    const scan = buildIndex(
+      ["tests/e2e/d.e2e.test.ts"],
+      () => `test("[UC-19] [Q-01] drop", async () => {});`,
+    );
+    const [drop] = summarise(useCases, scan, parseBacklog(backlog));
+    expect(drop).toMatchObject({
+      group: "Samples",
+      id: "UC-19",
+      issues: [
+        { id: "RE-40", text: "Some failures happen silently." },
+        { id: "RE-28", text: "Some changes are saved in several steps." },
+        { id: "RE-89", text: "Dropped samples miss their `wav_*` details." },
+      ],
+      status: "partial",
+      tests: { e2e: 1, integration: 0, unit: 0, validation: 0 },
+    });
   });
 });

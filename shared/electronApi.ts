@@ -214,13 +214,7 @@ export interface ElectronAPI {
   ) => Promise<DbResult<void>>;
   updateKit: (
     kitName: string,
-    updates: {
-      alias?: string;
-      artist?: string;
-      description?: string;
-      editable?: boolean;
-      tags?: string[];
-    },
+    updates: KitMetadataUpdates,
   ) => Promise<DbResult>;
   updateKitBpm: (kitName: string, bpm: number) => Promise<DbResult>;
   updateKitSlicerDivision: (
@@ -294,6 +288,15 @@ export interface ElectronAPI {
 }
 
 // createRomperDb returns a DbResult extended with the created file path
+/**
+ * The kit details `updateKit` may change. Main refuses any other field
+ * (RE-22): the rest of a kit has its own channel or belongs to main.
+ */
+export interface KitMetadataUpdates {
+  alias?: null | string;
+  editable?: boolean;
+}
+
 export interface RomperDbResult extends DbResult<void> {
   dbPath?: string;
 }

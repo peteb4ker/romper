@@ -39,6 +39,7 @@ import {
   voiceNumberError,
   volumeError,
 } from "./ipcValidation.js";
+import { parseKitMetadataUpdates } from "./kitMetadataUpdates.js";
 import {
   checkDatabaseDirAccess,
   checkPathAccess,
@@ -91,20 +92,17 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     }),
   );
 
+  // Kit details: only the alias and the editable flag (RE-22). Spreading
+  // the renderer's object into the update let it rename the kit, change its
+  // bank or clear its lock.
   ipcMain.handle(
     "update-kit-metadata",
     createDbHandler(
       inMemorySettings,
-      (
-        dbDir: string,
-        kitName: string,
-        updates: {
-          alias?: string;
-          description?: string;
-          tags?: string[];
-        },
-      ) => {
-        return updateKit(dbDir, kitName, updates);
+      (dbDir: string, kitName: string, updates: unknown) => {
+        const parsed = parseKitMetadataUpdates(updates);
+        if (!parsed.ok) return { error: parsed.error, success: false };
+        return updateKit(dbDir, kitName, parsed.updates);
       },
     ),
   );

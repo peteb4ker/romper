@@ -81,19 +81,21 @@ export function useKitGridKeyboard({
     [rowIndexByKitIndex],
   );
 
-  // Give the kit's card keyboard focus, so its focus ring shows and Enter
-  // opens it. The virtualized list may mount the card on the next frame.
+  // Give the kit's card keyboard focus, so its focus ring shows and the
+  // next Enter reaches it. Focus it now if it's mounted, so a quick Enter
+  // can't land on the card focus is leaving; otherwise the virtualized list
+  // mounts it on the next frame.
   const focusKitCard = useCallback(
     (kitName: string) => {
-      if (isEditing(document.activeElement)) return;
-      requestAnimationFrame(() => {
+      const tryFocus = () => {
+        if (isEditing(document.activeElement)) return true;
         const card = containerRef.current?.querySelector<HTMLElement>(
           `[data-kit="${kitName}"]`,
         );
-        if (card && !isEditing(document.activeElement)) {
-          card.focus({ preventScroll: true });
-        }
-      });
+        card?.focus({ preventScroll: true });
+        return !!card;
+      };
+      if (!tryFocus()) requestAnimationFrame(tryFocus);
     },
     [containerRef],
   );

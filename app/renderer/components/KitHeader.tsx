@@ -220,7 +220,10 @@ const KitHeader: React.FC<KitHeaderProps> = ({
 
       {/* Center: Kit name */}
       <div className="flex items-center justify-center gap-2 min-w-0 flex-1">
-        <span className="font-mono text-lg font-bold text-text-primary">
+        <span
+          className="font-mono text-lg font-bold text-text-primary"
+          data-testid="kit-header-name"
+        >
           {kitName}
         </span>
         <span className="text-lg font-bold text-text-primary">:</span>

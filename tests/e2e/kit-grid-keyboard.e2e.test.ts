@@ -23,7 +23,8 @@ test.describe("[UC-07] Kit grid keyboard navigation", () => {
 
   const card = (kit: string) =>
     window.locator(`[data-testid="kit-item-${kit}"]`);
-  const header = () => window.locator('[data-testid="kit-header"]');
+  // The open kit's name (the header also names the previous and next kits)
+  const openKit = () => window.locator('[data-testid="kit-header-name"]');
 
   const expectFocused = async (kit: string) => {
     await expect(card(kit)).toHaveAttribute("aria-selected", "true");
@@ -57,7 +58,7 @@ test.describe("[UC-07] Kit grid keyboard navigation", () => {
     await window.keyboard.press("Enter");
 
     await expect(window.locator('[data-testid="kit-editor"]')).toBeVisible();
-    await expect(header()).toContainText("A0");
+    await expect(openKit()).toHaveText("A0");
   });
 
   test("arrow keys move from the first kit across bank rows", async () => {
@@ -80,7 +81,7 @@ test.describe("[UC-07] Kit grid keyboard navigation", () => {
     await window.keyboard.press("ArrowDown");
     await window.keyboard.press("Enter");
     await expect(window.locator('[data-testid="kit-editor"]')).toBeVisible();
-    await expect(header()).toContainText("B1");
+    await expect(openKit()).toHaveText("B1");
   });
 
   test("a bank letter focuses the bank's first kit, ready for the arrows", async () => {
@@ -92,6 +93,6 @@ test.describe("[UC-07] Kit grid keyboard navigation", () => {
 
     await window.keyboard.press("Enter");
     await expect(window.locator('[data-testid="kit-editor"]')).toBeVisible();
-    await expect(header()).toContainText("A0");
+    await expect(openKit()).toHaveText("A0");
   });
 });

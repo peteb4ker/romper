@@ -109,6 +109,25 @@ describe("useKitEditorKeyboardNav", () => {
     });
   });
 
+  // #500: keys pressed in a dialog are the dialog's
+  it("[UC-07] ignores its keys while a modal dialog is open", () => {
+    const { fire, props } = setup();
+    const modal = document.createElement("div");
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    document.body.appendChild(modal);
+
+    for (const key of [",", ".", "/", "s", "ArrowDown", " "]) fire(key);
+
+    expect(props.onPrevKit).not.toHaveBeenCalled();
+    expect(props.onNextKit).not.toHaveBeenCalled();
+    expect(props.onScanKit).not.toHaveBeenCalled();
+    expect(props.setSequencerOpen).not.toHaveBeenCalled();
+    expect(props.onSampleKeyNav).not.toHaveBeenCalled();
+    expect(props.onPlaySample).not.toHaveBeenCalled();
+    modal.remove();
+  });
+
   describe("[UC-18] kit navigation", () => {
     it("comma triggers onPrevKit", () => {
       const { fire, props } = setup();

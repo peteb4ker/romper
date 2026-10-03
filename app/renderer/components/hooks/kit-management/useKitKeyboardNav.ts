@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from "react";
 
 import { isBrowserFavoriteKey } from "../../../utils/keyboardShortcuts";
+import { isModalDialogOpen } from "../../../utils/modalDialog";
 
 export interface UseKitKeyboardNavOptions {
   focusedKit: null | string;
@@ -25,6 +26,8 @@ export function useKitKeyboardNav({
       if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") {
         return;
       }
+      // Keys pressed in a dialog are the dialog's (#500)
+      if (isModalDialogOpen()) return;
 
       // Shift+F stars the focused kit; plain "F" jumps to bank F (#504)
       if (isBrowserFavoriteKey(e) && focusedKit && onToggleFavorite) {

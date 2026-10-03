@@ -6,6 +6,7 @@ import {
   hasCommandModifier,
   isBrowserFavoriteKey,
 } from "../../../utils/keyboardShortcuts";
+import { isModalDialogOpen } from "../../../utils/modalDialog";
 import {
   bankHasKits,
   type BankNames,
@@ -202,6 +203,8 @@ export function useKitBankNavigation({
       if (hasCommandModifier(e)) return;
       // Shift+F stars the focused kit (useKitKeyboardNav); it isn't a jump
       if (isBrowserFavoriteKey(e)) return;
+      // Keys pressed in a dialog are the dialog's (#500)
+      if (isModalDialogOpen()) return;
 
       if (e.key.length === 1 && /^\p{Lu}$/u.test(e.key.toUpperCase())) {
         const bank = e.key.toUpperCase();

@@ -88,5 +88,5 @@ These work on a step in a row with slice mode (✂) turned on. Everything they d
 - **Focus indicators** are visible throughout the app, so you always know which element is selected
 - **Bank hotkeys** work from anywhere in the Kit Browser -- you don't need to focus the bank nav bar first
 - Most keyboard navigation follows standard conventions: `Tab` to move between UI regions, `Enter` to activate, `Escape` to dismiss dialogs
-- While a dialog is open, `Tab` and `Shift+Tab` stay inside it. Dialogs that need an answer, such as the setup wizard or an invalid local store, don't close on `Escape`
+- While a dialog is open, the Kit Browser and Kit Editor shortcuts wait until it closes, and `Tab` and `Shift+Tab` stay inside it. Dialogs that need an answer, such as the setup wizard or an invalid local store, don't close on `Escape`
 - A sample's **gain knob** takes the arrow keys, `Page Up` / `Page Down`, `Home` / `End` and `0` (see [Gain Control](kit-editor#gain-control))

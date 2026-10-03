@@ -179,6 +179,7 @@ a local store is refused with the reason. See
 
 The kit browser shows every kit in a grid grouped by bank, A to Z. The bank
 bar on the left and the letter keys jump to a bank; clicking a kit opens it.
+The keys wait while a dialog is open.
 See [Navigating Banks](../manual/kit-browser.md#navigating-banks) and
 [Keyboard Navigation](../manual/kit-browser.md#keyboard-navigation).
 
@@ -186,7 +187,7 @@ See [Navigating Banks](../manual/kit-browser.md#navigating-banks) and
   `app/renderer/components/KitBankNav.tsx`, `app/renderer/components/KitGrid.tsx` (rows from `app/renderer/components/utils/kitGridRows.ts`),
   `app/renderer/components/BankHeader.tsx`; `app/renderer/components/hooks/kit-management/useKitBrowser.ts`,
   `app/renderer/components/hooks/kit-management/useKitBankNavigation.ts`, `app/renderer/components/hooks/kit-management/useKitKeyboardNav.ts`;
-  `app/renderer/components/hooks/useKitGridKeyboard.ts`.
+  `app/renderer/components/hooks/useKitGridKeyboard.ts`; `app/renderer/utils/modalDialog.ts` (`isModalDialogOpen`).
 - **IPC:** `get-all-kits`.
 - **Main:** `electron/main/db/operations/kitCrudOperations.ts` (`getKits`).
 

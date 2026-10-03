@@ -325,6 +325,20 @@ describe("[UC-07] useKitGridKeyboard", () => {
       expect(mockSetFocus).toHaveBeenCalledWith(1);
     });
 
+    // #500: keys pressed in a dialog are the dialog's
+    it("ignores a letter while a modal dialog is open", () => {
+      const modal = document.createElement("div");
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "true");
+      document.body.appendChild(modal);
+
+      const event = press("b");
+
+      expect(mockSetFocus).not.toHaveBeenCalled();
+      expect(event.preventDefault).not.toHaveBeenCalled();
+      modal.remove();
+    });
+
     it("does nothing for a bank with no kits", () => {
       press("z");
 

@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect } from "react";
 
+import { isModalDialogOpen } from "../../../utils/modalDialog";
 import { useUndoRedo } from "./useUndoRedo";
 
 interface UseGlobalKeyboardShortcutsProps {
@@ -100,6 +101,11 @@ export function useGlobalKeyboardShortcuts({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Keys pressed in a dialog are the dialog's: Escape closes it, not
+      // the kit behind it, and Cmd+Z doesn't undo a kit edit (#500)
+      if (isModalDialogOpen()) {
+        return;
+      }
       // Handle Escape key for back navigation (global, not just in edit mode)
       if (handleEscapeKey(event)) {
         return;

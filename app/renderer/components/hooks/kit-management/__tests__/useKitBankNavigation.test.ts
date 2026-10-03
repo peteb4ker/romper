@@ -80,8 +80,11 @@ describe("useKitBankNavigation", () => {
       writable: true,
     });
 
+    // The sticky header the scroll offsets against; nothing else (no dialog)
     Object.defineProperty(global.document, "querySelector", {
-      value: vi.fn(() => ({ offsetHeight: 60 })),
+      value: vi.fn((selector: string) =>
+        selector === ".sticky.top-0" ? { offsetHeight: 60 } : null,
+      ),
       writable: true,
     });
   });
@@ -364,6 +367,30 @@ describe("useKitBankNavigation", () => {
 
       press("f", false);
       expect(result.current.focusedKit).toBe("F0");
+    });
+
+    // #500: a bank letter pressed in a dialog jumped banks behind it
+    it("[UC-07] ignores bank letters while a modal dialog is open", () => {
+      vi.mocked(document.querySelector).mockImplementation(((
+        selector: string,
+      ) =>
+        selector.includes('aria-modal="true"')
+          ? ({} as Element)
+          : null) as typeof document.querySelector);
+      const { result } = renderHook(() => useKitBankNavigation(defaultProps));
+      const before = result.current.focusedKit;
+      const mockEvent = {
+        key: "b",
+        preventDefault: vi.fn(),
+        target: { tagName: "BODY" },
+      } as unknown as KeyboardEvent;
+
+      act(() => {
+        result.current.globalBankHotkeyHandler(mockEvent);
+      });
+
+      expect(result.current.focusedKit).toBe(before);
+      expect(mockEvent.preventDefault).not.toHaveBeenCalled();
     });
 
     it("should scroll grid via scrollAndFocusKitByIndex on hotkey press", () => {

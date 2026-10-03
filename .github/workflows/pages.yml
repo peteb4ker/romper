@@ -6,6 +6,10 @@ on:
     paths:
       - 'docs/**'
 
+  # The testing page shows the latest release's results
+  release:
+    types: [published]
+
   workflow_dispatch:
 
 permissions:
@@ -28,6 +32,17 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
+      - name: Get the latest release's testing summary
+        # Published by the release workflow; the page says so when it's
+        # missing (releases before it existed)
+        run: |
+          mkdir -p docs/_data
+          gh release download --repo "$GITHUB_REPOSITORY" \
+            --pattern testing-summary.json --output docs/_data/testing.json \
+            || echo "The latest release has no testing summary"
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1

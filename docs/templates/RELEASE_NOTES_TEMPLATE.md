@@ -8,6 +8,20 @@
 {{highlights}}
 {{/if}}
 
+{{#if fixed_issues}}
+## ✅ Fixed in this release
+
+Each item below is a problem you may have run into in an earlier version, described the way you'd have noticed it. This release fixes all of them.
+{{#each fixed_issues}}
+
+### {{{heading}}}
+
+{{#each issues}}
+- {{{line}}}
+{{/each}}
+{{/each}}
+{{/if}}
+
 {{#if breaking}}
 ## 🚨 Breaking Changes
 

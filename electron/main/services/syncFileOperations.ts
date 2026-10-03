@@ -48,28 +48,19 @@ export interface SyncResults {
  */
 export class SyncFileOperationsService {
   /**
-   * Categorize file operation (copy vs convert) based on format validation
+   * Categorize file operation (copy vs convert) based on format validation.
+   * The caller has already checked that the source exists.
    */
-  categorizeSyncFileOperation(
+  async categorizeSyncFileOperation(
     sample: Sample,
     filename: string,
     sourcePath: string,
     destinationPath: string,
     results: SyncResults,
-  ): void {
+  ): Promise<void> {
     const validationErrors = results.validationErrors;
-    const validation = syncValidationService.validateSyncSourceFile(
-      filename,
-      sourcePath,
-      validationErrors,
-    );
-
-    if (!validation.isValid) {
-      return;
-    }
-
     const formatValidation =
-      syncValidationService.validateSampleFormat(sourcePath);
+      await syncValidationService.validateSampleFormat(sourcePath);
 
     if (!formatValidation.success || !formatValidation.data) {
       syncValidationService.addValidationError(

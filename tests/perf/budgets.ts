@@ -148,8 +148,9 @@ export const BUDGETS = {
     },
     "plan a sync (write summary)": {
       connections: NO_NEW_CONNECTION,
-      statements: { max: 39 },
-      syncFsCalls: { max: 498, target: 0, until: "RE-82" },
+      statements: { max: 7 },
+      /** Planning's own file reads are asynchronous (RE-82). */
+      syncFsCalls: { max: 0 },
     },
     "replace sample": {
       connections: NO_NEW_CONNECTION,
@@ -180,11 +181,8 @@ export const BUDGETS = {
     "next kit (A1)": { bytes: { max: mb(22) }, mainBlockedMs: STALL },
     "open kit A0": { bytes: { max: mb(6) }, mainBlockedMs: STALL },
     "open the sequencer": { bytes: SMALL, mainBlockedMs: STALL },
-    /** RE-82: planning yields instead of holding main for the whole plan */
-    "open the write summary": {
-      bytes: { max: kb(8) },
-      mainBlockedMs: { max: 2000, target: 50, until: "RE-82" },
-    },
+    /** Planning yields instead of holding main for the whole plan (RE-82) */
+    "open the write summary": { bytes: { max: kb(8) }, mainBlockedMs: STALL },
     /** RE-83: a revisited kit's buffers come from the renderer's cache */
     "previous kit (A0)": {
       bytes: { max: mb(12), target: kb(64), until: "RE-83" },

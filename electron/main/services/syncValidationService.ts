@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 
 import {
   type FormatValidationResult,
-  validateSampleFormat,
+  validateSampleFormatAsync,
 } from "../audioUtils.js";
 
 export interface ErrorCategorizationResult {
@@ -167,21 +167,29 @@ export class SyncValidationService {
   }
 
   /**
-   * Validate sample format for sync compatibility
+   * Validate sample format for sync compatibility. The header is read
+   * asynchronously, so planning a write doesn't block the main thread
+   * (RE-82).
    */
-  validateSampleFormat(sourcePath: string): DbResult<FormatValidationResult> {
-    return validateSampleFormat(sourcePath);
+  validateSampleFormat(
+    sourcePath: string,
+  ): Promise<DbResult<FormatValidationResult>> {
+    return validateSampleFormatAsync(sourcePath);
   }
 
   /**
-   * Validates source file existence and gets size for sync
+   * Check that a sample's source file exists, and get its size. Planning
+   * runs it once per sample (RE-82).
    */
-  validateSyncSourceFile(
+  async validateSyncSourceFile(
     filename: string,
     sourcePath: string,
     validationErrors: SyncValidationError[],
-  ): FileValidationResult {
-    if (!fs.existsSync(sourcePath)) {
+  ): Promise<FileValidationResult> {
+    try {
+      const stats = await fs.promises.stat(sourcePath);
+      return { fileSize: stats.size, isValid: true };
+    } catch {
       validationErrors.push({
         error: `Source file not found: ${sourcePath}`,
         filename,
@@ -190,9 +198,6 @@ export class SyncValidationService {
       });
       return { fileSize: 0, isValid: false };
     }
-
-    const stats = fs.statSync(sourcePath);
-    return { fileSize: stats.size, isValid: true };
   }
 }
 

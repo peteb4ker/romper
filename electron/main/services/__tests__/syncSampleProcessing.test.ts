@@ -1,13 +1,9 @@
 import * as path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../../db/romperDbCoreORM.js", () => ({
-  getKitSamples: vi.fn(),
-}));
-
 vi.mock("../syncValidationService.js", () => ({
   syncValidationService: {
-    validateSyncSourceFile: vi.fn().mockReturnValue({
+    validateSyncSourceFile: vi.fn().mockResolvedValue({
       fileSize: 1024,
       isValid: true,
     }),
@@ -20,12 +16,10 @@ vi.mock("../syncFileOperations.js", () => ({
   },
 }));
 
-import { getKitSamples } from "../../db/romperDbCoreORM.js";
 import { syncFileOperationsService } from "../syncFileOperations.js";
 import { syncSampleProcessingService } from "../syncSampleProcessing.js";
 import { syncValidationService } from "../syncValidationService.js";
 
-const mockGetKitSamples = vi.mocked(getKitSamples);
 const mockValidateSyncSourceFile = vi.mocked(
   syncValidationService.validateSyncSourceFile,
 );
@@ -36,108 +30,6 @@ const mockCategorizeSyncFileOperation = vi.mocked(
 describe("SyncSampleProcessingService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  describe("gatherAllSamples", () => {
-    it("should successfully gather samples from all kits", async () => {
-      // Mock dynamic import
-      const mockGetKits = vi.fn().mockReturnValue({
-        data: [{ name: "Kit1" }, { name: "Kit2" }],
-        success: true,
-      });
-
-      vi.doMock("../../db/romperDbCoreORM.js", async () => ({
-        getKits: mockGetKits,
-        getKitSamples: mockGetKitSamples,
-      }));
-
-      mockGetKitSamples
-        .mockReturnValueOnce({
-          data: [
-            { filename: "sample1.wav", kit_name: "Kit1" },
-            { filename: "sample2.wav", kit_name: "Kit1" },
-          ],
-          success: true,
-        })
-        .mockReturnValueOnce({
-          data: [{ filename: "sample3.wav", kit_name: "Kit2" }],
-          success: true,
-        });
-
-      const result =
-        await syncSampleProcessingService.gatherAllSamples("/test/db");
-
-      expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(3);
-      expect(result.data?.[0]).toEqual({
-        filename: "sample1.wav",
-        kit_name: "Kit1",
-        kitName: "Kit1",
-      });
-    });
-
-    it("should handle failure to load kits", async () => {
-      const mockGetKits = vi.fn().mockReturnValue({
-        error: "Failed to connect to database",
-        success: false,
-      });
-
-      vi.doMock("../../db/romperDbCoreORM.js", async () => ({
-        getKits: mockGetKits,
-      }));
-
-      const result =
-        await syncSampleProcessingService.gatherAllSamples("/test/db");
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("Failed to connect to database");
-    });
-
-    it("should handle errors during sample gathering", async () => {
-      const mockGetKits = vi.fn().mockImplementation(() => {
-        throw new Error("Database connection failed");
-      });
-
-      vi.doMock("../../db/romperDbCoreORM.js", async () => ({
-        getKits: mockGetKits,
-      }));
-
-      const result =
-        await syncSampleProcessingService.gatherAllSamples("/test/db");
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("Failed to gather samples");
-      expect(result.error).toContain("Database connection failed");
-    });
-
-    it("should skip kits with failed sample loading", async () => {
-      const mockGetKits = vi.fn().mockReturnValue({
-        data: [{ name: "Kit1" }, { name: "Kit2" }],
-        success: true,
-      });
-
-      vi.doMock("../../db/romperDbCoreORM.js", async () => ({
-        getKits: mockGetKits,
-        getKitSamples: mockGetKitSamples,
-      }));
-
-      mockGetKitSamples
-        .mockReturnValueOnce({
-          data: [{ filename: "sample1.wav", kit_name: "Kit1" }],
-          success: true,
-        })
-        .mockReturnValueOnce({
-          error: "Kit2 not found",
-          success: false,
-        });
-
-      const result =
-        await syncSampleProcessingService.gatherAllSamples("/test/db");
-
-      expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(1);
-      expect(result.data?.[0].kitName).toBe("Kit1");
-    });
   });
 
   describe("getDestinationPath", () => {
@@ -233,7 +125,7 @@ describe("SyncSampleProcessingService", () => {
 
     beforeEach(() => {
       vi.clearAllMocks();
-      mockValidateSyncSourceFile.mockReturnValue({
+      mockValidateSyncSourceFile.mockResolvedValue({
         fileSize: 1024,
         isValid: true,
       });
@@ -244,10 +136,10 @@ describe("SyncSampleProcessingService", () => {
       results.filesToConvert = [];
     });
 
-    it("reports a sample without a source path instead of skipping it silently", () => {
+    it("reports a sample without a source path instead of skipping it silently", async () => {
       const sampleNoSource = { ...monoSample, source_path: undefined };
 
-      syncSampleProcessingService.processSampleForSync(
+      await syncSampleProcessingService.processSampleForSync(
         sampleNoSource,
         "/local/store",
         results,
@@ -266,9 +158,9 @@ describe("SyncSampleProcessingService", () => {
       ]);
     });
 
-    it("tags validation errors with the sample's kit", () => {
+    it("tags validation errors with the sample's kit", async () => {
       mockValidateSyncSourceFile.mockImplementation(
-        (filename, sourcePath, validationErrors) => {
+        async (filename, sourcePath, validationErrors) => {
           validationErrors.push({
             error: `Source file not found: ${sourcePath}`,
             filename,
@@ -279,7 +171,7 @@ describe("SyncSampleProcessingService", () => {
         },
       );
 
-      syncSampleProcessingService.processSampleForSync(
+      await syncSampleProcessingService.processSampleForSync(
         monoSample,
         "/local/store",
         results,
@@ -290,13 +182,13 @@ describe("SyncSampleProcessingService", () => {
       ]);
     });
 
-    it("doesn't warn about stereo playback for a sample that can't be written", () => {
-      mockValidateSyncSourceFile.mockReturnValue({
+    it("doesn't warn about stereo playback for a sample that can't be written", async () => {
+      mockValidateSyncSourceFile.mockResolvedValue({
         fileSize: 0,
         isValid: false,
       });
 
-      syncSampleProcessingService.processSampleForSync(
+      await syncSampleProcessingService.processSampleForSync(
         stereoSample,
         "/local/store",
         results,
@@ -305,8 +197,8 @@ describe("SyncSampleProcessingService", () => {
       expect(results.warnings).toEqual([]);
     });
 
-    it("should process mono sample correctly", () => {
-      syncSampleProcessingService.processSampleForSync(
+    it("should process mono sample correctly", async () => {
+      await syncSampleProcessingService.processSampleForSync(
         monoSample,
         "/local/store",
         results,
@@ -326,8 +218,8 @@ describe("SyncSampleProcessingService", () => {
       );
     });
 
-    it("should process stereo sample from voice 1", () => {
-      syncSampleProcessingService.processSampleForSync(
+    it("should process stereo sample from voice 1", async () => {
+      await syncSampleProcessingService.processSampleForSync(
         stereoSample,
         "/local/store",
         results,
@@ -338,10 +230,10 @@ describe("SyncSampleProcessingService", () => {
       expect(results.warnings).toEqual([]);
     });
 
-    it("should process stereo sample from voice 4 without warning", () => {
+    it("should process stereo sample from voice 4 without warning", async () => {
       const voice4Stereo = { ...stereoSample, voice_number: 4 };
 
-      syncSampleProcessingService.processSampleForSync(
+      await syncSampleProcessingService.processSampleForSync(
         voice4Stereo,
         "/local/store",
         results,
@@ -354,13 +246,13 @@ describe("SyncSampleProcessingService", () => {
       ).toHaveLength(0);
     });
 
-    it("should handle invalid source file", () => {
-      mockValidateSyncSourceFile.mockReturnValue({
+    it("should handle invalid source file", async () => {
+      mockValidateSyncSourceFile.mockResolvedValue({
         fileSize: 0,
         isValid: false,
       });
 
-      syncSampleProcessingService.processSampleForSync(
+      await syncSampleProcessingService.processSampleForSync(
         monoSample,
         "/local/store",
         results,
@@ -369,8 +261,8 @@ describe("SyncSampleProcessingService", () => {
       expect(mockCategorizeSyncFileOperation).not.toHaveBeenCalled();
     });
 
-    it("should use SD card path when provided", () => {
-      syncSampleProcessingService.processSampleForSync(
+    it("should use SD card path when provided", async () => {
+      await syncSampleProcessingService.processSampleForSync(
         monoSample,
         "/local/store",
         results,
@@ -413,17 +305,17 @@ describe("SyncSampleProcessingService", () => {
     } as unknown;
 
     beforeEach(() => {
-      mockValidateSyncSourceFile.mockReturnValue({
+      mockValidateSyncSourceFile.mockResolvedValue({
         fileSize: 1024,
         isValid: true,
       });
       testResults.warnings = [];
     });
 
-    it("doesn't warn about a sample on voice 2 (RE-29)", () => {
+    it("doesn't warn about a sample on voice 2 (RE-29)", async () => {
       const voice2Stereo = { ...testStereoSample, voice_number: 2 };
 
-      syncSampleProcessingService.processSampleForSync(
+      await syncSampleProcessingService.processSampleForSync(
         voice2Stereo,
         "/local/store",
         testResults,
@@ -432,10 +324,10 @@ describe("SyncSampleProcessingService", () => {
       expect(testResults.warnings).toEqual([]);
     });
 
-    it("should not add cross-voice warning for stereo sample on voice 4", () => {
+    it("should not add cross-voice warning for stereo sample on voice 4", async () => {
       const voice4Stereo = { ...testStereoSample, voice_number: 4 };
 
-      syncSampleProcessingService.processSampleForSync(
+      await syncSampleProcessingService.processSampleForSync(
         voice4Stereo,
         "/local/store",
         testResults,
@@ -446,8 +338,8 @@ describe("SyncSampleProcessingService", () => {
       ).toHaveLength(0);
     });
 
-    it("should not add warning for mono samples", () => {
-      syncSampleProcessingService.processSampleForSync(
+    it("should not add warning for mono samples", async () => {
+      await syncSampleProcessingService.processSampleForSync(
         testMonoSample,
         "/local/store",
         testResults,

@@ -1,9 +1,8 @@
-import type { DbResult, Sample } from "@romper/shared/db/schema.js";
+import type { Sample } from "@romper/shared/db/schema.js";
 
 import { cardSampleFileName } from "@romper/shared/rampleCardLayout.js";
 import * as path from "node:path";
 
-import { getKitSamples } from "../db/romperDbCoreORM.js";
 import {
   syncFileOperationsService,
   type SyncResults,
@@ -14,43 +13,6 @@ import { syncValidationService } from "./syncValidationService.js";
  * Service responsible for processing samples during sync operations
  */
 export class SyncSampleProcessingService {
-  /**
-   * Gather all samples from all kits
-   */
-  async gatherAllSamples(dbDir: string): Promise<DbResult<Sample[]>> {
-    try {
-      const { getKits } = await import("../db/romperDbCoreORM.js");
-      const kitsResult = getKits(dbDir);
-      if (!kitsResult.success || !kitsResult.data) {
-        return {
-          error: kitsResult.error ?? "Failed to load kits",
-          success: false,
-        };
-      }
-
-      const kits = kitsResult.data;
-      let allSamples: Sample[] = [];
-
-      for (const kit of kits) {
-        const samplesResult = getKitSamples(dbDir, kit.name);
-        if (samplesResult.success && samplesResult.data) {
-          const samplesWithKit = samplesResult.data.map((sample) => ({
-            ...sample,
-            kitName: kit.name,
-          }));
-          allSamples = allSamples.concat(samplesWithKit);
-        }
-      }
-
-      return { data: allSamples, success: true };
-    } catch (error) {
-      return {
-        error: `Failed to gather samples: ${error instanceof Error ? error.message : String(error)}`,
-        success: false,
-      };
-    }
-  }
-
   /**
    * Where a sample goes on the card: directly in its kit folder, named so
    * the Rample assigns its voice and layer order (`A0/1-01 KICK.wav`; see
@@ -96,17 +58,17 @@ export class SyncSampleProcessingService {
    * Stereo files are written as complete stereo files to voice N,
    * hardware automatically plays them on voices N and N+1
    */
-  processSampleForSync(
+  async processSampleForSync(
     sample: Sample,
     localStorePath: string,
     results: SyncResults,
     sdCardPath?: string,
-  ): void {
+  ): Promise<void> {
     const { filename, kit_name: kitName, source_path: sourcePath } = sample;
     const firstNewError = results.validationErrors.length;
 
     if (sourcePath) {
-      this.planSampleFile(sample, localStorePath, results, sdCardPath);
+      await this.planSampleFile(sample, localStorePath, results, sdCardPath);
     } else {
       results.validationErrors.push({
         error: "No source file is recorded for this sample",
@@ -127,15 +89,15 @@ export class SyncSampleProcessingService {
    * Validate a sample's source file and queue the copy or conversion.
    * Failures are recorded in results.validationErrors.
    */
-  private planSampleFile(
+  private async planSampleFile(
     sample: Sample,
     localStorePath: string,
     results: SyncResults,
     sdCardPath?: string,
-  ): void {
+  ): Promise<void> {
     const { filename, kit_name: kitName, source_path: sourcePath } = sample;
 
-    const fileValidation = syncValidationService.validateSyncSourceFile(
+    const fileValidation = await syncValidationService.validateSyncSourceFile(
       filename,
       sourcePath,
       results.validationErrors,
@@ -151,7 +113,7 @@ export class SyncSampleProcessingService {
       sdCardPath,
     );
 
-    syncFileOperationsService.categorizeSyncFileOperation(
+    await syncFileOperationsService.categorizeSyncFileOperation(
       sample,
       filename,
       sourcePath,

@@ -8,7 +8,11 @@ import type { DbResult } from "@romper/shared/db/schema.js";
 import fs from "node:fs";
 import path from "node:path";
 
-import { parseWavHeader } from "./wavHeader.js";
+import {
+  parseWavHeader,
+  parseWavHeaderAsync,
+  type WavHeader,
+} from "./wavHeader.js";
 
 // Re-export shared audio types for callers that still import them from here.
 // The canonical definitions live in shared/audioTypes.ts so the renderer
@@ -53,33 +57,47 @@ export function getAudioMetadata(filePath: string): DbResult<AudioMetadata> {
         const bytesRead = fs.readSync(fd, buffer, 0, length, offset);
         return buffer.subarray(0, bytesRead);
       };
-      const header = parseWavHeader(read, fileSize);
-      if (!header.success || !header.data) {
-        return { error: header.error, success: false };
-      }
-      const { bitDepth, blockAlign, channels, dataSize, encoding, extensible } =
-        header.data;
-      const { sampleRate } = header.data;
-      return {
-        data: {
-          bitDepth,
-          channels,
-          duration: dataSize / (sampleRate * blockAlign),
-          encoding,
-          extensible,
-          fileSize,
-          sampleRate,
-        },
-        success: true,
-      };
+      return toAudioMetadata(parseWavHeader(read, fileSize), fileSize);
     } finally {
       fs.closeSync(fd);
     }
   } catch (error) {
-    return {
-      error: `Failed to read audio metadata: ${error instanceof Error ? error.message : String(error)}`,
-      success: false,
+    return metadataReadError(error);
+  }
+}
+
+/**
+ * {@link getAudioMetadata} without blocking the main thread: the file is
+ * opened, sized and read with fs.promises. Sync planning reads every
+ * sample's header with it (RE-82).
+ */
+export async function getAudioMetadataAsync(
+  filePath: string,
+): Promise<DbResult<AudioMetadata>> {
+  if (path.extname(filePath).toLowerCase() !== ".wav") {
+    return { error: "Only WAV files are supported", success: false };
+  }
+  let file: fs.promises.FileHandle;
+  try {
+    file = await fs.promises.open(filePath, "r");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return { error: "File does not exist", success: false };
+    }
+    return metadataReadError(error);
+  }
+  try {
+    const { size: fileSize } = await file.stat();
+    const read = async (offset: number, length: number) => {
+      const buffer = Buffer.alloc(length);
+      const { bytesRead } = await file.read(buffer, 0, length, offset);
+      return buffer.subarray(0, bytesRead);
     };
+    return toAudioMetadata(await parseWavHeaderAsync(read, fileSize), fileSize);
+  } catch (error) {
+    return metadataReadError(error);
+  } finally {
+    await file.close();
   }
 }
 
@@ -198,9 +216,62 @@ export function validateSampleFormat(
     return { data: { issues, isValid: false }, success: true };
   }
 
-  // Get audio metadata and validate format
-  const metadataResult = getAudioMetadata(filePath);
+  return toFormatValidation(getAudioMetadata(filePath));
+}
 
+/**
+ * {@link validateSampleFormat}, reading the header without blocking the
+ * main thread (RE-82)
+ */
+export async function validateSampleFormatAsync(
+  filePath: string,
+): Promise<DbResult<FormatValidationResult>> {
+  const extensionIssue = validateFileExtension(filePath);
+  if (extensionIssue) {
+    return {
+      data: { issues: [extensionIssue], isValid: false },
+      success: true,
+    };
+  }
+  return toFormatValidation(await getAudioMetadataAsync(filePath));
+}
+
+function metadataReadError(error: unknown): DbResult<AudioMetadata> {
+  return {
+    error: `Failed to read audio metadata: ${error instanceof Error ? error.message : String(error)}`,
+    success: false,
+  };
+}
+
+function toAudioMetadata(
+  header: DbResult<WavHeader>,
+  fileSize: number,
+): DbResult<AudioMetadata> {
+  if (!header.success || !header.data) {
+    return { error: header.error, success: false };
+  }
+  const { bitDepth, blockAlign, channels, dataSize, encoding, extensible } =
+    header.data;
+  const { sampleRate } = header.data;
+  return {
+    data: {
+      bitDepth,
+      channels,
+      duration: dataSize / (sampleRate * blockAlign),
+      encoding,
+      extensible,
+      fileSize,
+      sampleRate,
+    },
+    success: true,
+  };
+}
+
+/** Check a file's metadata against the Rample's requirements */
+function toFormatValidation(
+  metadataResult: DbResult<AudioMetadata>,
+): DbResult<FormatValidationResult> {
+  const issues: FormatIssue[] = [];
   if (!metadataResult.success || !metadataResult.data) {
     issues.push({
       message: `Unable to read audio file: ${metadataResult.error || "Unknown error"}`,

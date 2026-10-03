@@ -30,13 +30,13 @@ describe("[UC-34] SyncValidationService Integration Tests", () => {
   });
 
   describe("validateSyncSourceFile with real filesystem", () => {
-    it("should validate an existing file and return its actual size", () => {
+    it("should validate an existing file and return its actual size", async () => {
       const testContent = "test audio content for size check";
       const filePath = path.join(testFilesDir, "existing.wav");
       fs.writeFileSync(filePath, testContent);
 
       const validationErrors: SyncValidationError[] = [];
-      const result = service.validateSyncSourceFile(
+      const result = await service.validateSyncSourceFile(
         "existing.wav",
         filePath,
         validationErrors,
@@ -47,11 +47,11 @@ describe("[UC-34] SyncValidationService Integration Tests", () => {
       expect(validationErrors).toHaveLength(0);
     });
 
-    it("should return invalid for a non-existent file", () => {
+    it("should return invalid for a non-existent file", async () => {
       const filePath = path.join(testFilesDir, "does-not-exist.wav");
 
       const validationErrors: SyncValidationError[] = [];
-      const result = service.validateSyncSourceFile(
+      const result = await service.validateSyncSourceFile(
         "does-not-exist.wav",
         filePath,
         validationErrors,
@@ -66,12 +66,12 @@ describe("[UC-34] SyncValidationService Integration Tests", () => {
       expect(validationErrors[0].error).toContain("Source file not found");
     });
 
-    it("should validate a zero-byte file as valid (file exists)", () => {
+    it("should validate a zero-byte file as valid (file exists)", async () => {
       const filePath = path.join(testFilesDir, "empty.wav");
       fs.writeFileSync(filePath, "");
 
       const validationErrors: SyncValidationError[] = [];
-      const result = service.validateSyncSourceFile(
+      const result = await service.validateSyncSourceFile(
         "empty.wav",
         filePath,
         validationErrors,
@@ -82,7 +82,7 @@ describe("[UC-34] SyncValidationService Integration Tests", () => {
       expect(validationErrors).toHaveLength(0);
     });
 
-    it("should validate multiple files accumulating errors for missing ones", () => {
+    it("should validate multiple files accumulating errors for missing ones", async () => {
       const existingPath = path.join(testFilesDir, "good.wav");
       fs.writeFileSync(existingPath, "audio data");
 
@@ -91,17 +91,17 @@ describe("[UC-34] SyncValidationService Integration Tests", () => {
 
       const validationErrors: SyncValidationError[] = [];
 
-      const result1 = service.validateSyncSourceFile(
+      const result1 = await service.validateSyncSourceFile(
         "good.wav",
         existingPath,
         validationErrors,
       );
-      const result2 = service.validateSyncSourceFile(
+      const result2 = await service.validateSyncSourceFile(
         "missing1.wav",
         missingPath1,
         validationErrors,
       );
-      const result3 = service.validateSyncSourceFile(
+      const result3 = await service.validateSyncSourceFile(
         "missing2.wav",
         missingPath2,
         validationErrors,
@@ -115,13 +115,13 @@ describe("[UC-34] SyncValidationService Integration Tests", () => {
       expect(validationErrors[1].filename).toBe("missing2.wav");
     });
 
-    it("should correctly report file size for a known-size file", () => {
+    it("should correctly report file size for a known-size file", async () => {
       const filePath = path.join(testFilesDir, "sized.wav");
       const buffer = Buffer.alloc(1024); // Exactly 1024 bytes
       fs.writeFileSync(filePath, buffer);
 
       const validationErrors: SyncValidationError[] = [];
-      const result = service.validateSyncSourceFile(
+      const result = await service.validateSyncSourceFile(
         "sized.wav",
         filePath,
         validationErrors,
@@ -300,7 +300,7 @@ describe("[UC-34] SyncValidationService Integration Tests", () => {
   });
 
   describe("end-to-end: validate then add errors", () => {
-    it("should validate files and accumulate errors for a batch of samples", () => {
+    it("should validate files and accumulate errors for a batch of samples", async () => {
       // Create some real files
       const existingPath1 = path.join(testFilesDir, "kick.wav");
       const existingPath2 = path.join(testFilesDir, "snare.wav");
@@ -310,19 +310,19 @@ describe("[UC-34] SyncValidationService Integration Tests", () => {
       const validationErrors: SyncValidationError[] = [];
 
       // Validate existing files
-      const result1 = service.validateSyncSourceFile(
+      const result1 = await service.validateSyncSourceFile(
         "kick.wav",
         existingPath1,
         validationErrors,
       );
-      const result2 = service.validateSyncSourceFile(
+      const result2 = await service.validateSyncSourceFile(
         "snare.wav",
         existingPath2,
         validationErrors,
       );
 
       // Validate missing files
-      const result3 = service.validateSyncSourceFile(
+      const result3 = await service.validateSyncSourceFile(
         "hat.wav",
         "/nonexistent/hat.wav",
         validationErrors,
@@ -351,13 +351,13 @@ describe("[UC-34] SyncValidationService Integration Tests", () => {
       expect(validationErrors[1].filename).toBe("bad.wav");
     });
 
-    it("should handle validating a file that is deleted between checks", () => {
+    it("should handle validating a file that is deleted between checks", async () => {
       const filePath = path.join(testFilesDir, "temporary.wav");
       fs.writeFileSync(filePath, "temp data");
 
       // First validation should pass
       const errors1: SyncValidationError[] = [];
-      const result1 = service.validateSyncSourceFile(
+      const result1 = await service.validateSyncSourceFile(
         "temporary.wav",
         filePath,
         errors1,
@@ -370,7 +370,7 @@ describe("[UC-34] SyncValidationService Integration Tests", () => {
 
       // Second validation should fail
       const errors2: SyncValidationError[] = [];
-      const result2 = service.validateSyncSourceFile(
+      const result2 = await service.validateSyncSourceFile(
         "temporary.wav",
         filePath,
         errors2,

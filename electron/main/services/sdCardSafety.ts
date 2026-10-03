@@ -35,11 +35,16 @@ export interface SdCardTargetCheck {
  * Names are compared ignoring case: FAT32 cards and macOS volumes are case
  * insensitive, so a file sync just overwrote may keep its old case.
  */
-export function findStaleCardEntries(
+export async function findStaleCardEntries(
   sdCardPath: string,
   contents: CardContents,
-): string[] {
-  const stats = fs.statSync(sdCardPath, { throwIfNoEntry: false });
+): Promise<string[]> {
+  // Read asynchronously: a card can be slow, and the write summary runs
+  // this on the main process (RE-82)
+  const stats = await fs.promises.stat(sdCardPath).catch((error) => {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  });
   if (!stats?.isDirectory()) return [];
 
   const kits = new Map<string, Set<string>>();
@@ -49,7 +54,10 @@ export function findStaleCardEntries(
   const bankFiles = lowerCaseSet(contents.bankFiles);
 
   const stale: string[] = [];
-  for (const entry of fs.readdirSync(sdCardPath, { withFileTypes: true })) {
+  const entries = await fs.promises.readdir(sdCardPath, {
+    withFileTypes: true,
+  });
+  for (const entry of entries) {
     if (entry.isDirectory() && KIT_FOLDER_PATTERN.test(entry.name)) {
       const keep = kits.get(entry.name.toUpperCase());
       if (!keep) {
@@ -57,7 +65,7 @@ export function findStaleCardEntries(
         continue;
       }
       const kitPath = path.join(sdCardPath, entry.name);
-      for (const name of fs.readdirSync(kitPath)) {
+      for (const name of await fs.promises.readdir(kitPath)) {
         if (!keep.has(name.toLowerCase())) {
           stale.push(path.join(entry.name, name));
         }

@@ -62,7 +62,6 @@ This file tracks what's being done about each item.
 | RE-37 | Medium | Renderer | A kit's favourite star can disagree between the browser and the editor, so a kit can show as a favourite when it isn't. | open |
 | RE-38 | Medium | Renderer | Pressing F both jumps to bank F and stars the selected kit. | open |
 | RE-39 | Medium | Renderer | Arrow keys and Enter don't work in the kit grid until you click a kit. | open |
-| RE-43 | Medium | Scan | Scan All only scans the kits you're currently viewing after a search or filter, not your whole library. | open |
 | RE-45 | Medium | Playback | Two samples with the same file name in one voice play together, and same-named samples in different voices share a gain setting on screen. | partly done: sounds now choke at the audio layer (`voiceChoke.ts`), so the audible choke no longer depends on this state; the state itself is unchanged |
 | RE-46 | Medium | Performance | While a sample plays, its waveform does far more drawing work than it needs, which can make playback stutter on slower machines. | open |
 | RE-47 | Medium | Performance | The kit browser redraws far more than it needs to when you type, scroll or get a message. | open |
@@ -93,6 +92,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-43 | Medium | Scan | Scan All only scans the kits you're currently viewing after a search or filter, not your whole library. | done (#438: Scan All scans every kit in the store, from the browser or the editor) |
 | RE-21 | Medium | Settings | Your theme and the "Confirm destructive actions" setting reset every time Romper started. | done (#433: every saved setting is loaded and kept; saves go through a temporary file) |
 | RE-41 | Medium | Renderer | If turning on editing or renaming a kit fails, nothing tells you. | done (#436: a failed toggle or rename shows a message instead of an unhandled rejection) |
 | RE-40 | Medium | Renderer | Some failures happen silently: a rejected drop, a failed stereo link or undo, and the reason a write failed aren't shown to you. | done (#436: one message names the files a drop didn't add and why; a refused link or unlink, a failed undo or redo, and a failed write each show a message) |

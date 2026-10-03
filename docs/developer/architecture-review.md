@@ -162,7 +162,8 @@ What the numbers say:
 
 ### Main-thread blocking
 
-- Sync planning: see above (RE-82).
+- Sync planning: see above (RE-82). Planned from one load, with
+  asynchronous reads that yield, in #519.
 - `get-sample-audio-buffer` does a whole-kit query and `readFileSync` per
   slot (RE-83).
 - `validate-local-store` calls `getKitSamples` once per kit (184 calls) on
@@ -275,7 +276,7 @@ guide's [performance budgets](coding-guide.md#performance-budgets) section.
 | 1 | **Done in #513.** Persistent connection per store; reentrant unit of work; handles passed down; reindex in the same transaction | RE-81, RE-28 | M | the test asserts one connection per store; delete is 1 connection, not 5 |
 | 2 | **Done in #527.** Replace as one in-place update (keeps gain and metadata) | RE-26 | S | fault injection leaves no partial state |
 | 3 | **Done in #527.** Move between kits in one transaction, carrying the row | RE-27 | M | gain and metadata survive; move is 1 connection, not ~12 |
-| 4 | Sync planning from one query, with async header reads that yield | RE-82 | S–M | write summary blocks main < 50 ms |
+| 4 | Sync planning from one query, with async header reads that yield (done in #519) | RE-82 | S–M | write summary blocks main < 50 ms |
 | 5 | Edits return the changed kit; the renderer patches instead of reloading | RE-36 | M | step toggle 4 calls / 1.5 MB → 1 call / < 1 KB; drop 13 → ~5 calls |
 | 6 | Audio: async read by id, renderer cache, no double fetch | RE-83 | S–M | fetches = filled slots; a revisit makes 0 fetches |
 | 7 | Typed channel map, unused channels pruned (pruning done in #514), one result shape | RE-57, RE-84 (done), RE-41 | M | `tsc` fails on drift |

@@ -68,13 +68,13 @@ export function useExternalDragHandlers({
           return;
         }
 
-        // Determine if this is insert-before or append
-        const currentSampleCount = samples.filter(Boolean).length;
-        const isAppend = slotNumber === currentSampleCount;
-        const mode = isAppend ? "append" : "insert";
+        // Dropped files always go after the last sample (RE-74), wherever
+        // the pointer is, so highlight that slot rather than promise an
+        // insert. Reordering is a drag within the kit.
+        const appendSlot = samples.filter(Boolean).length;
 
-        setDragOverSlot(slotNumber);
-        setDropZone({ mode, slot: slotNumber });
+        setDragOverSlot(appendSlot);
+        setDropZone({ mode: "append", slot: appendSlot });
       }
     },
     [isEditable, samples],

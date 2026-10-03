@@ -168,6 +168,8 @@ jobs:
         run: npm run test:play
         env:
           ROMPER_SDCARD_PATH: /tmp/e2e-sdcard
+          # Performance budget results, for the testing summary
+          ROMPER_BUDGET_REPORT: reports/budgets-e2e.jsonl
           CI: true
           DISPLAY: ":99"
 
@@ -176,7 +178,16 @@ jobs:
         run: npm run test:play
         env:
           ROMPER_SDCARD_PATH: C:\temp\e2e-sdcard
+          ROMPER_BUDGET_REPORT: reports/budgets-e2e.jsonl
           CI: true
+
+      - name: Upload results for the testing summary
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-results-e2e-${{ matrix.os }}
+          path: reports/
+          retention-days: 7
 
       - name: Upload test results
         uses: actions/upload-artifact@v5

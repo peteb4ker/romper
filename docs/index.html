@@ -388,6 +388,35 @@ title: Home
     </div>
 </section>
 
+<!-- How Romper is tested: figures from docs/_data/testing.json (the latest release) -->
+{%- assign t = site.data.testing %}
+<section class="tested">
+    <div class="container">
+        <h2 class="section-title">Tested before every release</h2>
+        {%- if t %}
+        {%- assign L = t.layers %}
+        {%- assign tests = L.unit.tests | plus: L.integration.tests | plus: L.e2e.tests %}
+        <div class="tested-grid">
+            <div class="tested-stat">
+                <div class="tested-figure">{% include number.html value=tests %}</div>
+                <div class="tested-label">automated tests on every change</div>
+            </div>
+            <div class="tested-stat">
+                <div class="tested-figure">{{ t.useCases.supported }} of {{ t.useCases.total }}</div>
+                <div class="tested-label">features fully working, each tied to its tests</div>
+            </div>
+            <div class="tested-stat">
+                <div class="tested-figure">Byte for byte</div>
+                <div class="tested-label">every card file checked in full-pipeline validation before {{ t.version }} shipped</div>
+            </div>
+        </div>
+        {%- else %}
+        <p class="tested-lede">Every change is checked automatically, and every release is validated from download to SD card before it ships.</p>
+        {%- endif %}
+        <p class="tested-more"><a href="{{ site.baseurl }}/testing/" class="context-link">How Romper is tested &rarr;</a></p>
+    </div>
+</section>
+
 <!-- Download Section -->
 <section class="download">
     <div class="container">
@@ -416,6 +445,7 @@ title: Home
                     <a href="{{ site.baseurl }}/manual/" class="doc-link">User Manual</a>
                     <a href="{{ site.baseurl }}/faq" class="doc-link">FAQ</a>
                     <a href="{{ site.baseurl }}/troubleshooting" class="doc-link">Troubleshooting</a>
+                    <a href="{{ site.baseurl }}/testing/" class="doc-link">How It's Tested</a>
                 </div>
             </div>
 

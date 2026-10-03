@@ -66,7 +66,14 @@ export default defineConfig({
     },
   ],
   // Optimize for CI performance
-  reporter: process.env.CI ? [["dot"], ["html", { open: "never" }]] : "list",
+  // The JSON results feed the testing summary a release publishes
+  reporter: process.env.CI
+    ? [
+        ["dot"],
+        ["html", { open: "never" }],
+        ["json", { outputFile: "reports/results-e2e.json" }],
+      ]
+    : "list",
   testDir: ".",
   // Nested worktrees (worktrees/, and Claude Code's .claude/worktrees/) carry
   // their own copies of the e2e suite. Match relative to this checkout, since

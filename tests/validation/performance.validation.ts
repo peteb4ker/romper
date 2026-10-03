@@ -9,10 +9,15 @@
  *
  * Run with `npx playwright test --config playwright.validation.config.ts
  * performance` after `npm run build`. Report: validation-report/performance/.
+ *
+ * Each action is also checked against its headroom budgets for returned
+ * bytes and main-thread stalls (`validation` in tests/perf/budgets.ts). The
+ * report lists any failures, and the run fails after writing it.
  */
 import {
   _electron as electron,
   type ElectronApplication,
+  expect,
   type Page,
   test,
 } from "@playwright/test";
@@ -20,17 +25,20 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
+import { type BUDGETS, enforceBudgets } from "../perf/budgets";
 import { approveLocalStorePrompts } from "../utils/e2e-dialogs";
 import { dropFiles } from "../utils/e2e-drop";
 import { ensureFactoryArchive } from "./support/archive";
 import { readStore } from "./support/card";
 import { encodeTestWav, sine } from "./support/wav";
 
+type Action = Exclude<keyof typeof BUDGETS.validation, "cold start">;
+
 const REPORT_DIR = path.resolve(
   process.env.ROMPER_VALIDATE_REPORT_DIR ?? "validation-report",
   "performance",
 );
-const PROBE = path.resolve("tests/validation/support/ipc-probe.cjs");
+const PROBE = path.resolve("tests/perf/ipc-probe.cjs");
 const COLD_STARTS = 3;
 
 interface Call {
@@ -47,7 +55,7 @@ interface Frames {
   totalBlockingMs: number;
 }
 interface Measurement {
-  action: string;
+  action: Action;
   frames: Frames;
   main: Snapshot;
   wallMs: number;
@@ -82,6 +90,7 @@ test("performance profile", async () => {
   };
   let app: ElectronApplication | undefined;
   let page: Page | undefined;
+  let budgetFailures: string[] = [];
 
   const launch = async () => {
     const started = Date.now();
@@ -165,7 +174,7 @@ test("performance profile", async () => {
       await new Promise((r) => setTimeout(r, 100));
     }
   };
-  const measure = async (action: string, run: () => Promise<void>) => {
+  const measure = async (action: Action, run: () => Promise<void>) => {
     await settle();
     await probe();
     await takeFrames();
@@ -321,11 +330,12 @@ test("performance profile", async () => {
     facts.loadAtEnd = os.loadavg()[0].toFixed(1);
   } finally {
     await app?.close().catch(() => {});
-    await writeReport(facts, coldStarts, measurements);
+    budgetFailures = await writeReport(facts, coldStarts, measurements);
     if (process.env.ROMPER_VALIDATE_KEEP !== "true") {
       await fs.rm(work, { force: true, recursive: true }).catch(() => {});
     }
   }
+  expect(budgetFailures).toEqual([]);
 });
 
 /** CPU use by process type, as a percentage of one core since last call */
@@ -365,13 +375,46 @@ function summarise(calls: Call[]) {
 const kb = (bytes: number) =>
   bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(0)} KB`;
 
+/** Check each action's headroom budgets; returns the failures */
+function checkActionBudgets(
+  coldStarts: { calls: Call[]; ms: number }[],
+  measurements: Measurement[],
+): string[] {
+  const bytesOf = (calls: Call[]) => calls.reduce((s, c) => s + c.bytes, 0);
+  const failures: string[] = [];
+  const lastStart = coldStarts.at(-1);
+  if (lastStart) {
+    failures.push(
+      ...enforceBudgets("validation/cold start", {
+        bytes: bytesOf(lastStart.calls),
+      }),
+    );
+  }
+  for (const m of measurements) {
+    failures.push(
+      ...enforceBudgets(`validation/${m.action}`, {
+        bytes: bytesOf(m.main.calls),
+        mainBlockedMs: Math.round(m.main.blocking.maxMs),
+      }),
+    );
+  }
+  return failures;
+}
+
 async function writeReport(
   facts: Record<string, number | string>,
   coldStarts: { calls: Call[]; ms: number }[],
   measurements: Measurement[],
-) {
+): Promise<string[]> {
+  const budgetFailures = checkActionBudgets(coldStarts, measurements);
   const lines = ["# Performance profile", ""];
   for (const [k, v] of Object.entries(facts)) lines.push(`- ${k}: ${v}`);
+  lines.push("", "## Budgets (tests/perf/budgets.ts)", "");
+  if (budgetFailures.length === 0) {
+    lines.push("Every action is within its budgets.");
+  } else {
+    for (const failure of budgetFailures) lines.push(`- ${failure}`);
+  }
   lines.push("", "## Cold start (launch to first kit card)", "");
   lines.push(
     `Runs: ${coldStarts.map((c) => `${c.ms} ms`).join(", ")}`,
@@ -433,7 +476,12 @@ async function writeReport(
   await fs.writeFile(path.join(REPORT_DIR, "report.md"), lines.join("\n"));
   await fs.writeFile(
     path.join(REPORT_DIR, "report.json"),
-    JSON.stringify({ coldStarts, facts, measurements }, null, 2),
+    JSON.stringify(
+      { budgetFailures, coldStarts, facts, measurements },
+      null,
+      2,
+    ),
   );
   console.log(`Performance report: ${path.join(REPORT_DIR, "report.md")}`);
+  return budgetFailures;
 }

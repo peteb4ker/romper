@@ -447,7 +447,7 @@ but not paused or resumed._
 - No cloud sync or account system
 - No need to track sample versions or support collaboration features
 - Migration of existing kits/metadata is not supported at this time
-- No customization options are provided _Built differently (2026-10-01): Settings has a theme choice and a "Confirm destructive actions" preference, which nothing reads yet (RE-44)._
+- No customization options are provided _Built differently (2026-10-01): Settings has a theme choice and a "Confirm destructive actions" preference._
 
 ### Kit Non-Goals
 
@@ -520,7 +520,7 @@ with backoff, and database backup or restore._
 - **Forgiving workflow**: Easy undo/redo, non-destructive by default
 - **Efficient for power users**: Keyboard shortcuts, batch operations
 - **Accessible to newcomers**: Clear visual hierarchy, guided workflows
-- **Respectful of user data**: Always confirm destructive actions _Status (2026-10-01): kit delete confirms; sample delete doesn't (RE-44)._
+- **Respectful of user data**: Always confirm destructive actions _Status (2026-10-03): kit delete confirms; sample delete confirms while "Confirm destructive actions" is on (the default)._
 - **Hardware-accurate**: Preview experience matches Rample hardware behavior
 
 ## 6.1 Kit List and Navigation Design (Post-UX Improvements)
@@ -712,7 +712,7 @@ Optimized layout addresses whitespace and scanning efficiency:
 - Should there be a way to batch update multiple kits to SD card at once?
 - Yes
 - Are there additional user prompts or confirmations needed for destructive actions (e.g., deleting a sample, overwriting a slot)?
-- Yes - destructive actions require a prompt. _Status (2026-10-01): kit delete prompts; sample delete doesn't (RE-44)._
+- Yes - destructive actions require a prompt. _Status (2026-10-03): kit delete prompts; sample delete prompts while "Confirm destructive actions" is on (the default). There is no gesture to overwrite a slot (UC-20)._
 - Should the SD card update process be cancellable or undoable after starting?
 - No _Built differently (2026-10-01): a write can be cancelled between files (RE-07); it can't be undone._
 

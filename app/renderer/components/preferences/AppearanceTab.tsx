@@ -44,6 +44,8 @@ const AppearanceTab: React.FC<AppearanceTabProps> = ({
                     key={option.value}
                   >
                     <button
+                      aria-label={`${option.label} theme`}
+                      aria-pressed={isSelected}
                       className={`relative w-16 h-16 rounded-xl border-2 transition-all duration-200 overflow-hidden ${
                         isSelected
                           ? "border-accent-primary ring-2 ring-accent-primary/30"

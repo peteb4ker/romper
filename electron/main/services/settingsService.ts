@@ -1,9 +1,9 @@
 import { app } from "electron";
-import * as fs from "node:fs";
 import * as path from "node:path";
 
 import type { InMemorySettings } from "../types/settings.js";
 
+import { isValidSettingValue, writeSettingsFile } from "../settingsFile.js";
 import { logger } from "../utils/logger.js";
 
 /**
@@ -60,7 +60,9 @@ export class SettingsService {
   }
 
   /**
-   * Write a setting value to both memory and persistent storage
+   * Write a setting value to both memory and persistent storage. The whole
+   * file is rewritten, keeping every other setting, through a temporary file
+   * and a rename (RE-21). Memory changes only once the file is saved.
    */
   writeSetting(
     inMemorySettings: InMemorySettings,
@@ -74,19 +76,15 @@ export class SettingsService {
       value,
     );
 
+    if (!isValidSettingValue(key, value)) {
+      throw new Error(`Invalid value for setting ${key}`);
+    }
+
     const settingsPath = this.getSettingsPath();
     logger.log("[SettingsService] Settings path:", settingsPath);
 
-    // Update in-memory settings
+    writeSettingsFile(settingsPath, { ...inMemorySettings, [key]: value });
     inMemorySettings[key] = value;
-    logger.log("[SettingsService] Updated inMemorySettings:", inMemorySettings);
-
-    // Write to persistent storage
-    fs.writeFileSync(
-      settingsPath,
-      JSON.stringify(inMemorySettings, null, 2),
-      "utf-8",
-    );
     logger.log("[SettingsService] Settings written to file");
   }
 

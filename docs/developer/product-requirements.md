@@ -419,7 +419,7 @@ but not paused or resumed._
 - A-Z hotkeys for bank navigation with focus management
 - Arrow key navigation within kit browser and detail views _Known issue: arrow keys do nothing from the first kit (RE-39)._
 - Spacebar sample preview and Enter kit selection
-- Light/dark mode toggle with persistent preference _Status (2026-10-01): the theme isn't kept across launches (UC-35, RE-21)._
+- Light/dark mode toggle with persistent preference
 - Visible focus indicators and accessible UI elements
 
 **Messaging & Progress System**

@@ -178,7 +178,8 @@ What the numbers say:
 - 68 channels, all `invoke`, mostly named for user intents. But writes return
   nothing the renderer uses, so it reloads instead of patching.
 - **Nine preload methods have no caller (RE-84).** Two of them (`readFile`,
-  `getAudioMetadata`) are still reachable from the renderer.
+  `getAudioMetadata`) are still reachable from the renderer. Removed in
+  #514.
 - **Main isn't bound to the contract (RE-57).** Handlers are untyped.
   Confirmed drift:
   - `getKit` returns `null`, not a `DbResult`;
@@ -277,7 +278,7 @@ guide's [performance budgets](coding-guide.md#performance-budgets) section.
 | 4 | Sync planning from one query, with async header reads that yield | RE-82 | S–M | write summary blocks main < 50 ms |
 | 5 | Edits return the changed kit; the renderer patches instead of reloading | RE-36 | M | step toggle 4 calls / 1.5 MB → 1 call / < 1 KB; drop 13 → ~5 calls |
 | 6 | Audio: async read by id, renderer cache, no double fetch | RE-83 | S–M | fetches = filled slots; a revisit makes 0 fetches |
-| 7 | Typed channel map, unused channels pruned, one result shape | RE-57, RE-84, RE-41 | M | `tsc` fails on drift |
+| 7 | Typed channel map, unused channels pruned (pruning done in #514), one result shape | RE-57, RE-84 (done), RE-41 | M | `tsc` fails on drift |
 | 8 | Kits store with selectors; one favourites path | RE-37, RE-45 | L | favourites repro test; no copies of sample state |
 | 9 | **Restore done in #534** (one transactional call, keeps gain); the stack still lives in the keyboard-shortcut hook. Undo as transactional intent-level operations | RE-86 | M | undo of a delete is 1–2 calls and keeps gain |
 | 10 | Playback store; waveform draw path; memoisation; throttled gain | RE-87, RE-46, RE-47, RE-88 | M | gain drag ≤ 10 writes/s; grid cards don't re-render on a toast |

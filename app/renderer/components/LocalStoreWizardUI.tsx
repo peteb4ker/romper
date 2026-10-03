@@ -9,6 +9,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import type { TruncationWarning } from "./hooks/wizard/useLocalStoreWizardState";
 
 import { config } from "../config";
+import { useChooseExistingLocalStore } from "./hooks/shared/useChooseExistingLocalStore";
 import { useLocalStoreWizard } from "./hooks/wizard/useLocalStoreWizard";
 import FilePickerButton from "./utils/FilePickerButton";
 import Spinner from "./utils/Spinner";
@@ -30,7 +31,8 @@ interface LocalStoreWizardUIProps {
   onClose: () => void;
   onInitializationChange?: (isInitializing: boolean) => void;
   onSuccess?: () => void;
-  setLocalStorePath: (path: string) => void;
+  /** Saves the store path; resolves false if it couldn't */
+  setLocalStorePath: (path: string) => Promise<boolean>;
 }
 
 const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
@@ -45,10 +47,14 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
 
     const [showExistingStoreSelector, setShowExistingStoreSelector] =
       useState(false);
-    const [existingStoreError, setExistingStoreError] = useState<null | string>(
-      null,
-    );
-    const [isSelectingExisting, setIsSelectingExisting] = useState(false);
+    // Choose Existing Store, shared with Preferences: a folder that isn't a
+    // store, or a save that fails, keeps the wizard open and says why
+    const {
+      chooseExistingStore,
+      clearError: clearExistingStoreError,
+      error: existingStoreError,
+      isChoosing: isSelectingExisting,
+    } = useChooseExistingLocalStore(setLocalStorePath);
     const [showPostInitGuidance, setShowPostInitGuidance] = useState(false);
     const [truncationWarnings, setTruncationWarnings] = useState<
       TruncationWarning[]
@@ -138,74 +144,9 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
       }
     }, [initialize, onSuccess, state.source]);
 
-    // Helper function to validate electronAPI availability
-    const validateElectronAPI = useCallback(() => {
-      if (!globalThis.electronAPI?.selectExistingLocalStore) {
-        const errorMsg = globalThis.electronAPI
-          ? "selectExistingLocalStore method not found (preload issue)"
-          : "electronAPI not available (app may need restart)";
-
-        console.error("Debug info:", {
-          availableMethods: globalThis.electronAPI
-            ? Object.keys(globalThis.electronAPI)
-            : "none",
-          electronAPI: !!globalThis.electronAPI,
-          selectExistingLocalStore:
-            !!globalThis.electronAPI?.selectExistingLocalStore,
-        });
-
-        return { error: errorMsg, isValid: false };
-      }
-      return { error: null, isValid: true };
-    }, []);
-
-    // Helper function to handle successful store selection
-    const handleStoreSelectionSuccess = useCallback(
-      (path: string) => {
-        setLocalStorePath(path);
-        if (onSuccess) {
-          onSuccess();
-        }
-      },
-      [setLocalStorePath, onSuccess],
-    );
-
     const handleChooseExistingStore = useCallback(async () => {
-      isDev &&
-        console.debug("electronAPI available:", !!globalThis.electronAPI);
-      isDev &&
-        console.debug(
-          "selectExistingLocalStore method available:",
-          !!globalThis.electronAPI?.selectExistingLocalStore,
-        );
-
-      const validation = validateElectronAPI();
-      if (!validation.isValid) {
-        setExistingStoreError(validation.error);
-        return;
-      }
-
-      setIsSelectingExisting(true);
-      setExistingStoreError(null);
-
-      try {
-        isDev && console.debug("Calling selectExistingLocalStore...");
-        const result =
-          await globalThis.electronAPI.selectExistingLocalStore?.();
-        isDev && console.debug("selectExistingLocalStore result:", result);
-
-        if (result?.success && result.path) {
-          handleStoreSelectionSuccess(result.path);
-        } else if (result?.error && result.error !== "Selection cancelled") {
-          setExistingStoreError(result.error);
-        }
-      } catch (error) {
-        console.error("Error selecting existing local store:", error);
-        setExistingStoreError("Failed to select existing local store");
-      } finally {
-        setIsSelectingExisting(false);
-      }
-    }, [isDev, validateElectronAPI, handleStoreSelectionSuccess]);
+      if ((await chooseExistingStore()) && onSuccess) onSuccess();
+    }, [chooseExistingStore, onSuccess]);
 
     return (
       <div className="p-0 bg-surface-1" data-testid="local-store-wizard">
@@ -259,7 +200,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
                 className="bg-surface-4 text-text-primary px-4 py-2 rounded"
                 onClick={() => {
                   setShowExistingStoreSelector(false);
-                  setExistingStoreError(null);
+                  clearExistingStoreError();
                 }}
               >
                 ← Back to Setup Wizard

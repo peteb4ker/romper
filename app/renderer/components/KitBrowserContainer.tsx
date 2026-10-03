@@ -30,7 +30,7 @@ type KitBrowserContainerProps = Readonly<{
   // Search functionality
   searchQuery?: string;
   searchResultCount?: number;
-  setLocalStorePath: (path: string) => void;
+  setLocalStorePath: (path: string) => Promise<boolean>;
   showFavoritesOnly?: boolean;
   showModifiedOnly?: boolean;
 }>;
@@ -88,9 +88,7 @@ const KitBrowserContainer: React.FC<KitBrowserContainerProps> = (props) => {
   );
 
   const handleSetLocalStorePath = React.useCallback(
-    (path: string) => {
-      setLocalStorePath(path);
-    },
+    (path: string) => setLocalStorePath(path),
     [setLocalStorePath],
   );
 

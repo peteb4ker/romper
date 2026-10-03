@@ -288,4 +288,70 @@ describe("LocalStoreWizardUI", () => {
       expect(onClose).not.toHaveBeenCalled();
     });
   });
+
+  describe("[UC-04] Choose Existing Store", () => {
+    const renderWizard = async (setLocalStorePath = vi.fn()) => {
+      vi.resetModules();
+      vi.doMock("../hooks/wizard/useLocalStoreWizard", () => ({
+        useLocalStoreWizard: () => getMockUseLocalStoreWizard(),
+      }));
+      const { default: LocalStoreWizardUI } =
+        await import("../LocalStoreWizardUI");
+      const onSuccess = vi.fn();
+      render(
+        <LocalStoreWizardUI
+          onClose={() => {}}
+          onSuccess={onSuccess}
+          setLocalStorePath={setLocalStorePath}
+        />,
+      );
+      fireEvent.click(screen.getByTestId("choose-existing-store-btn"));
+      fireEvent.click(screen.getByTestId("browse-existing-store-btn"));
+      return onSuccess;
+    };
+
+    it("opens the store once its path is saved", async () => {
+      vi.mocked(
+        globalThis.electronAPI.selectExistingLocalStore,
+      ).mockResolvedValue({ error: null, path: "/store", success: true });
+      const setLocalStorePath = vi.fn().mockResolvedValue(true);
+
+      const onSuccess = await renderWizard(setLocalStorePath);
+
+      await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+      expect(setLocalStorePath).toHaveBeenCalledWith("/store");
+    });
+
+    it("stays open and says why when the path can't be saved (RE-78)", async () => {
+      vi.mocked(
+        globalThis.electronAPI.selectExistingLocalStore,
+      ).mockResolvedValue({ error: null, path: "/store", success: true });
+
+      const onSuccess = await renderWizard(vi.fn().mockResolvedValue(false));
+
+      expect(
+        await screen.findByText(/Couldn't save the local store setting/),
+      ).toBeInTheDocument();
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+
+    it("shows why main refused the folder", async () => {
+      vi.mocked(
+        globalThis.electronAPI.selectExistingLocalStore,
+      ).mockResolvedValue({
+        error: "Romper DB file not found",
+        path: null,
+        success: false,
+      });
+      const setLocalStorePath = vi.fn();
+
+      const onSuccess = await renderWizard(setLocalStorePath);
+
+      expect(
+        await screen.findByText("Romper DB file not found"),
+      ).toBeInTheDocument();
+      expect(setLocalStorePath).not.toHaveBeenCalled();
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+  });
 });

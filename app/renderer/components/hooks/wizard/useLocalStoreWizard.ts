@@ -36,7 +36,7 @@ const log = createLogger("LocalStoreWizard");
 // --- Main Hook ---
 export function useLocalStoreWizard(
   onProgress?: (p: ProgressEvent) => void,
-  setLocalStorePath?: (path: string) => void,
+  setLocalStorePath?: (path: string) => Promise<boolean> | void,
 ) {
   const api = useElectronAPI();
 
@@ -89,7 +89,7 @@ export function useLocalStoreWizard(
     );
 
     if (setLocalStorePath) {
-      setLocalStorePath(state.targetPath);
+      await setLocalStorePath(state.targetPath);
     } else if (api.setSetting) {
       log.debug("Falling back to api.setSetting");
       await api.setSetting("localStorePath", state.targetPath);

@@ -4,12 +4,17 @@ import React from "react";
 import { type LocalStoreValidationDetailedResult } from "../../utils/SettingsContext";
 
 interface AdvancedTabProps {
+  /** Why the last Change... didn't change the store */
+  changeError?: null | string;
+  isChanging?: boolean;
   localStorePath: null | string;
   localStoreStatus: LocalStoreValidationDetailedResult | null;
   onChangeLocalStore: () => void;
 }
 
 const AdvancedTab: React.FC<AdvancedTabProps> = ({
+  changeError = null,
+  isChanging = false,
   localStorePath,
   localStoreStatus,
   onChangeLocalStore,
@@ -41,13 +46,23 @@ const AdvancedTab: React.FC<AdvancedTabProps> = ({
                 {localStorePath || "No local store configured"}
               </div>
               <button
-                className="px-3 py-2 bg-accent-primary text-white rounded hover:bg-accent-primary/80 transition-colors flex items-center gap-2"
+                className="px-3 py-2 bg-accent-primary text-white rounded hover:bg-accent-primary/80 transition-colors flex items-center gap-2 disabled:opacity-50"
+                disabled={isChanging}
                 onClick={onChangeLocalStore}
               >
                 <FolderIcon size={14} />
                 Change...
               </button>
             </div>
+            {changeError && (
+              <p
+                className="text-sm text-accent-danger mt-2"
+                data-testid="change-local-store-error"
+                role="alert"
+              >
+                {changeError}
+              </p>
+            )}
             <p className="text-sm text-text-tertiary mt-1">
               Location of your sample database and kit storage
             </p>

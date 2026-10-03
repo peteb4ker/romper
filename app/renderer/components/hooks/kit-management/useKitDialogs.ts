@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 
 export interface UseKitDialogsOptions {
   onMessage?: (text: string, type?: string, duration?: number) => void;
-  setLocalStorePath?: (path: string) => void;
+  setLocalStorePath?: (path: string) => Promise<boolean>;
 }
 
 /**
@@ -56,7 +56,7 @@ export function useKitDialogs({
     localStoreWizardProps: {
       onClose: handleCloseLocalStoreWizard,
       onSuccess: handleLocalStoreSuccess,
-      setLocalStorePath: setLocalStorePath || (() => {}),
+      setLocalStorePath: setLocalStorePath || (async () => false),
     },
     // State
     showLocalStoreWizard,

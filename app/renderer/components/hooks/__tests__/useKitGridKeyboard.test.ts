@@ -212,6 +212,16 @@ describe("[UC-07] useKitGridKeyboard", () => {
       expect(focus).toHaveBeenCalledWith({ preventScroll: true });
     });
 
+    it("focuses a card the list hasn't mounted yet on the next frame", () => {
+      const focus = vi.spyOn(card, "focus");
+      vi.mocked(containerRef.current.querySelector).mockReturnValueOnce(null);
+
+      press("ArrowRight", 0);
+
+      expect(globalThis.requestAnimationFrame).toHaveBeenCalledTimes(1);
+      expect(focus).toHaveBeenCalledTimes(1);
+    });
+
     it("stays put at the edge of the grid", () => {
       const event = press("ArrowUp", idx("A1"));
 

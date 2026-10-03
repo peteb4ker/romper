@@ -3,6 +3,7 @@ import type { DbResult, KitWithRelations } from "@romper/shared/db/schema";
 
 import React from "react";
 
+import { createLogger } from "../../../utils/logger";
 import { useSampleManagement } from "../sample-management/useSampleManagement";
 import { useBpm } from "../shared/useBpm";
 import { useStepPattern } from "../shared/useStepPattern";
@@ -15,6 +16,8 @@ import { useKitScanning } from "./useKitScanning";
 import { useKitVoicePanels } from "./useKitVoicePanels";
 
 export type { ScanStatus } from "./useKitScanning";
+
+const log = createLogger("KitEditor");
 
 interface UseKitEditorLogicParams extends KitEditorProps {
   kit?: KitWithRelations; // Kit data passed from parent
@@ -62,21 +65,38 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     }
   }, [onKitUpdated]);
 
-  // Toggle editable mode via parent callback
+  // Toggle editable mode via parent callback. Called from a click, so a
+  // failure is reported here rather than rejected into it (RE-41)
+  const isEditable = Boolean(kit?.editable);
   const toggleEditableMode = React.useCallback(async () => {
-    if (onToggleEditableMode && kitName) {
+    if (!onToggleEditableMode || !kitName) return;
+    try {
       await onToggleEditableMode(kitName);
+    } catch (error) {
+      log.warn("Toggling editable mode failed:", error);
+      onMessage?.(
+        `Couldn't turn editing ${isEditable ? "off" : "on"} for kit ${kitName}. Try again.`,
+        "error",
+      );
     }
-  }, [onToggleEditableMode, kitName]);
+  }, [onToggleEditableMode, kitName, isEditable, onMessage]);
 
-  // Update kit alias via parent callback
+  // Update kit alias via parent callback. Called on blur and Enter, so a
+  // failure is reported here rather than rejected into them (RE-41)
   const updateKitAlias = React.useCallback(
     async (alias: string) => {
-      if (onUpdateKitAlias && kitName) {
+      if (!onUpdateKitAlias || !kitName) return;
+      try {
         await onUpdateKitAlias(kitName, alias);
+      } catch (error) {
+        log.warn("Saving the kit name failed:", error);
+        onMessage?.(
+          `Couldn't save the name for kit ${kitName}. Try again.`,
+          "error",
+        );
       }
     },
-    [onUpdateKitAlias, kitName],
+    [onUpdateKitAlias, kitName, onMessage],
   );
 
   // Voice alias management

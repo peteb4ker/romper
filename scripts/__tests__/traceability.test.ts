@@ -352,6 +352,28 @@ describe("tracing GitHub issues to user-oriented statements", () => {
     expect(calls[2].slice(0, 3)).toEqual(["pr", "view", "42"]);
   });
 
+  it("finds no fixes locally when the branch has no pull request", () => {
+    const exec = (_cmd: string, args: string[]) => {
+      if (args[0] === "pr") throw new Error("no pull requests found");
+      return "";
+    };
+    expect(readGitHub({ env: {}, exec, root: "." }).fixing).toEqual([]);
+  });
+
+  it("fails when the pull request being checked in GitHub Actions can't be read", () => {
+    const exec = (_cmd: string, args: string[]) => {
+      if (args[0] === "pr") throw new Error("Resource not accessible");
+      return "";
+    };
+    expect(() =>
+      readGitHub({
+        env: { GITHUB_ACTIONS: "true", GITHUB_REF: "refs/pull/42/merge" },
+        exec,
+        root: ".",
+      }),
+    ).toThrow("Resource not accessible");
+  });
+
   it("doesn't look for a pull request on a push in GitHub Actions", () => {
     const exec = (_cmd: string, args: string[]) => {
       if (args[0] === "pr") throw new Error("not expected");

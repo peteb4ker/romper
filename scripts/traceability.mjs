@@ -325,7 +325,8 @@ function closingIssues(exec, root, env) {
       ".closingIssuesReferences[].number",
     ]);
     return lines(out).map(Number);
-  } catch {
+  } catch (error) {
+    if (pr) throw error; // the pull request being checked must be readable
     return []; // no pull request for this branch
   }
 }
@@ -628,7 +629,7 @@ export function run({
   }
   if (github?.fixing?.length > 0) {
     log.log(
-      `Counting ${github.fixing.map((n) => `#${n}`).join(", ")} as closed: this pull request fixes them.`,
+      `Counting ${github.fixing.map((n) => `#${n}`).join(", ")} as closed: this pull request fixes ${github.fixing.length === 1 ? "it" : "them"}.`,
     );
   }
 

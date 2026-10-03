@@ -23,7 +23,6 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   buildIndex,
   findTestFiles,
-  parseBacklog,
   parseRegister,
   summarise as summariseEntries,
 } from "./traceability.mjs";
@@ -241,13 +240,11 @@ if (
   const scan = buildIndex(findTestFiles(ROOT), (f) =>
     fs.readFileSync(path.join(ROOT, f), "utf8"),
   );
-  const backlog = parseBacklog(
-    fs.readFileSync(path.join(ROOT, "BACKLOG.md"), "utf8"),
-  );
   const summary = summarise({
     commit: option("commit") ?? "",
     date: new Date().toISOString().slice(0, 10),
-    entries: summariseEntries(entries, scan, backlog),
+    // Open issues are counted live by the page, so GitHub isn't read here
+    entries: summariseEntries(entries, scan),
     files: findReports(dir),
     useCases,
     version: option("version") ?? "",

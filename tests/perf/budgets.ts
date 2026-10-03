@@ -23,6 +23,7 @@
  * The numbers live here and nowhere else. Don't copy them into Markdown.
  */
 import fs from "node:fs";
+import path from "node:path";
 
 export interface Budget {
   max: number;
@@ -200,6 +201,24 @@ export const BUDGETS = {
   },
 } satisfies Record<string, Record<string, Budgets>>;
 
+/**
+ * Plain-language names for the e2e actions, for readers who aren't
+ * engineers (the public "How Romper is tested" page reads them from the
+ * report). Every e2e action needs one.
+ */
+export const E2E_LABELS: Record<keyof typeof BUDGETS.e2e, string> = {
+  "cold start to the kit grid": "Opening the app",
+  "delete a sample": "Deleting a sample",
+  "drop a sample": "Adding a sample",
+  "enable editing": "Turning on editing",
+  "gain: 5 wheel steps": "Changing a sample's volume",
+  "next kit": "Moving to the next kit",
+  "open a kit": "Opening a kit",
+  "open the write summary": "Preparing a card write",
+  "rename a voice": "Renaming a voice",
+  "toggle a sequencer step": "Editing a pattern step",
+};
+
 /** "<suite>/<action>": a typo is a compile error */
 export type BudgetName = {
   [S in Suite]: `${S}/${Extract<keyof (typeof BUDGETS)[S], string>}`;
@@ -207,6 +226,8 @@ export type BudgetName = {
 
 /** One row of the machine-readable budget report (JSON lines) */
 export interface BudgetReportRow {
+  /** Plain-language action name (e2e only; null elsewhere) */
+  label: null | string;
   max: null | number;
   measured: number;
   metric: string;
@@ -225,7 +246,12 @@ export function budgetReportRows(
 ): BudgetReportRow[] {
   const { action, suite } = split(name);
   const budgets = (BUDGETS[suite] as Record<string, Budgets>)[action] ?? {};
+  const label =
+    suite === "e2e"
+      ? (E2E_LABELS[action as keyof typeof E2E_LABELS] ?? null)
+      : null;
   return metricsOf(budgets, measured).map((metric) => ({
+    label,
     max: budgets[metric]?.max ?? null,
     measured: measured[metric] ?? 0,
     metric,
@@ -294,7 +320,7 @@ export function enforceBudgets(
 
 /**
  * Append the action's rows to the file named by ROMPER_BUDGET_REPORT, as
- * JSON lines. Does nothing when it isn't set.
+ * JSON lines, creating its folder if needed. Does nothing when it isn't set.
  */
 export function reportBudgets(
   name: BudgetName,
@@ -305,6 +331,7 @@ export function reportBudgets(
   const lines = budgetReportRows(name, measured).map((row) =>
     JSON.stringify(row),
   );
+  fs.mkdirSync(path.dirname(path.resolve(file)), { recursive: true });
   fs.appendFileSync(file, lines.map((line) => `${line}\n`).join(""));
 }
 

@@ -55,12 +55,13 @@ const SMALL = { max: kb(4) } as const;
 export const BUDGETS = {
   /**
    * IPC calls per user action, by channel, on the standard e2e fixture
-   * (tests/e2e/performance-budgets.e2e.test.ts).
+   * (tests/e2e/performance-budgets.e2e.test.ts). Channels whose call count
+   * depends on timing are left out (UNCOUNTED_CHANNELS in
+   * tests/utils/e2e-ipc-budget.ts).
    */
   e2e: {
     "cold start to the kit grid": {
       "get-all-kits": { max: 1 },
-      "get-favorite-kits-count": { max: 1 },
       "get-local-store-status": { max: 1 },
       "read-settings": { max: 2 },
       "scan-banks": { max: 1 },
@@ -69,21 +70,18 @@ export const BUDGETS = {
       "delete-sample-from-slot": { max: 1 },
       "get-all-kits": { max: 1, ...NO_RELOAD },
       "get-all-samples-for-kit": { max: 3 },
-      "get-favorite-kits-count": { max: 1 },
     },
     "drop a sample": {
       "add-sample-to-slot": { max: 1 },
       "get-all-kits": { max: 2, ...NO_RELOAD },
       "get-all-samples-for-kit": { max: 4 },
-      "get-favorite-kits-count": { max: 3 },
       "get-sample-audio-buffer": { max: 1 },
       "register-dropped-file": { max: 1 },
-      total: { max: 13, target: 5, until: "RE-36" },
+      total: { max: 10, target: 5, until: "RE-36" },
       "validate-sample-format": { max: 1 },
     },
     "enable editing": {
       "get-all-samples-for-kit": { max: 1 },
-      "get-favorite-kits-count": { max: 1 },
       "update-kit-metadata": { max: 1 },
     },
     "gain: 5 wheel steps": {
@@ -104,14 +102,12 @@ export const BUDGETS = {
     "rename a voice": {
       "get-all-kits": { max: 1, ...NO_RELOAD },
       "get-all-samples-for-kit": { max: 1 },
-      "get-favorite-kits-count": { max: 1 },
       "update-voice-alias": { max: 1 },
     },
     "toggle a sequencer step": {
       "get-all-kits": { max: 1, ...NO_RELOAD },
       "get-all-samples-for-kit": { max: 1 },
-      "get-favorite-kits-count": { max: 1 },
-      total: { max: 4, target: 1, until: "RE-36" },
+      total: { max: 3, target: 1, until: "RE-36" },
       "update-step-pattern": { max: 1 },
     },
   },

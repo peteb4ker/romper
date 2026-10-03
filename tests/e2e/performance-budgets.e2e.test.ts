@@ -117,8 +117,13 @@ test.describe("[Q-01] Performance budgets: IPC calls per action", () => {
       await dropFiles(page, 4, [wav]);
     });
 
+    // "Confirm destructive actions" is on by default, so the trash button
+    // asks first (RE-44)
     await action("e2e/delete a sample", async () => {
       await page.getByTitle("Delete sample").first().click();
+      await page
+        .locator('[data-testid="confirm-delete-sample-button"]')
+        .click();
     });
 
     await action("e2e/gain: 5 wheel steps", async () => {

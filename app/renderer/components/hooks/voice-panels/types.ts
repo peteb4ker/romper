@@ -29,7 +29,10 @@ export interface BaseVoicePanelOptions {
   playOptions?: { [key: string]: PlayOptions | undefined };
   playTriggers: { [key: string]: number };
   playVolumes?: { [key: string]: number };
-  renderDeleteButton: (slotNumber: number) => React.ReactElement;
+  renderDeleteButton: (
+    slotNumber: number,
+    sampleName?: string,
+  ) => React.ReactElement;
   renderPlayButton: (
     isPlaying: boolean,
     sampleName: string,

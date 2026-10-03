@@ -370,6 +370,13 @@ export const useSettings = (): SettingsContextProps => {
   return context;
 };
 
+/**
+ * Whether to ask before deleting or replacing a sample (RE-44). On by
+ * default, including where no SettingsProvider is mounted.
+ */
+export const useConfirmDestructiveActions = (): boolean =>
+  useContext(SettingsContext)?.confirmDestructiveActions ?? true;
+
 // Export types for external use
 export type { Settings, SettingsContextProps, ThemeMode };
 export type { LocalStoreValidationDetailedResult } from "@romper/shared/db/schema.js";

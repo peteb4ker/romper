@@ -10,7 +10,7 @@ Regenerate with `npm run trace`; CI runs `npm run trace:check`, which
 fails on an unknown ID, on a supported use case with no test above unit
 level (unless the register declares the gap), and when this file is stale.
 
-37 use cases: 15 supported, 20 partial, 2 not built. 1347 of 4370 tests carry a use case tag.
+37 use cases: 15 supported, 20 partial, 2 not built. 1347 of 4371 tests carry a use case tag.
 
 ## Matrix
 

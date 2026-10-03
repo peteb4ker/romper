@@ -210,6 +210,23 @@ describe("useKitScan", () => {
       status: "error",
     });
   });
+
+  it("reports the final result to onFinished", async () => {
+    const onFinished = vi.fn();
+    const { result } = renderHook(() =>
+      useKitScan({ kits: [kit("A1"), kit("B2")], onFinished }),
+    );
+
+    await act(async () => {
+      await result.current.handleScanAllKits();
+    });
+
+    expect(window.electronAPI.rescanKit).toHaveBeenCalledTimes(2);
+    expect(onFinished).toHaveBeenCalledTimes(1);
+    expect(onFinished).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "complete", successCount: 2 }),
+    );
+  });
 });
 
 describe("describeScanTotals", () => {

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 
 import CriticalErrorDialog from "../components/dialogs/CriticalErrorDialog";
 import InvalidLocalStoreDialog from "../components/dialogs/InvalidLocalStoreDialog";
@@ -7,6 +7,10 @@ import { ErrorBoundary } from "../components/ErrorBoundary";
 import { useKitDataManager } from "../components/hooks/kit-management/useKitDataManager";
 import { useKitFilters } from "../components/hooks/kit-management/useKitFilters";
 import { useKitNavigation } from "../components/hooks/kit-management/useKitNavigation";
+import {
+  type BulkScanProgress,
+  useKitScan,
+} from "../components/hooks/kit-management/useKitScan";
 import { useKitSearch } from "../components/hooks/kit-management/useKitSearch";
 import { useKitViewMenuHandlers } from "../components/hooks/kit-management/useKitViewMenuHandlers";
 import { useLocalStoreSetupFlow } from "../components/hooks/kit-management/useLocalStoreSetupFlow";
@@ -107,10 +111,35 @@ const KitsView: React.FC = () => {
       : undefined,
   });
 
+  // Scan All covers every kit in the store, not the kits the current search
+  // or filters show, and runs from the kit editor too (RE-43). The browser
+  // header shows its progress; with the editor open, the result is a toast.
+  const selectedKitRef = useRef(navigation.selectedKit);
+  useEffect(() => {
+    selectedKitRef.current = navigation.selectedKit;
+  }, [navigation.selectedKit]);
+  const handleScanAllFinished = useCallback(
+    (progress: BulkScanProgress) => {
+      if (!selectedKitRef.current) return;
+      if (progress.status === "complete") {
+        showMessage(progress.message, "success");
+      } else if (progress.status === "error") {
+        showMessage(progress.message, "error");
+      }
+    },
+    [showMessage],
+  );
+  const { bulkScanProgress, handleScanAllKits } = useKitScan({
+    kits,
+    onFinished: handleScanAllFinished,
+    onRefreshKits: refreshAllKitsAndSamples,
+  });
+
   // Menu handlers
-  const { kitBrowserRef } = useKitViewMenuHandlers({
+  useKitViewMenuHandlers({
     onMessage: showMessage,
     onRedo: keyboardShortcuts.redoIfAllowed,
+    onScanAllKits: handleScanAllKits,
     onUndo: keyboardShortcuts.undoIfAllowed,
     openChangeDirectory: dialogState.openChangeDirectory,
     openPreferences: dialogState.openPreferences,
@@ -206,6 +235,7 @@ const KitsView: React.FC = () => {
       ) : (
         <ErrorBoundary area="Kit list">
           <KitBrowserContainer
+            bulkScanProgress={bulkScanProgress}
             // Favorites filter props
             favoritesCount={kitFilters.favoritesCount}
             getKitFavoriteState={kitFilters.getKitFavoriteState}
@@ -226,7 +256,6 @@ const KitsView: React.FC = () => {
             onSearchClear={search.clearSearch}
             onSelectKit={navigation.handleSelectKit}
             onShowSettings={dialogState.openPreferences}
-            ref={kitBrowserRef}
             sampleCounts={sampleCounts}
             // Search props
             searchQuery={search.searchQuery}

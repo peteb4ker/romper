@@ -2,11 +2,13 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import React from "react";
 
-import type { KitBrowserHandle } from "./KitBrowser";
+import type { BulkScanProgress } from "./hooks/kit-management/useKitScan";
 
 import KitBrowser from "./KitBrowser";
 
 type KitBrowserContainerProps = Readonly<{
+  /** Scan All's progress; the scan itself runs in KitsView (RE-43) */
+  bulkScanProgress?: BulkScanProgress;
   // Favorites filter functionality
   favoritesCount?: number;
   getKitFavoriteState?: (kitName: string) => boolean;
@@ -38,11 +40,9 @@ type KitBrowserContainerProps = Readonly<{
  * Container component for KitBrowser
  * Provides memoization and prop optimization
  */
-const KitBrowserContainer = React.forwardRef<
-  KitBrowserHandle,
-  KitBrowserContainerProps
->((props, ref) => {
+const KitBrowserContainer: React.FC<KitBrowserContainerProps> = (props) => {
   const {
+    bulkScanProgress,
     // Favorites filter props
     favoritesCount,
     getKitFavoriteState,
@@ -98,6 +98,7 @@ const KitBrowserContainer = React.forwardRef<
 
   return (
     <KitBrowser
+      bulkScanProgress={bulkScanProgress}
       // Favorites filter props
       favoritesCount={favoritesCount}
       getKitFavoriteState={getKitFavoriteState}
@@ -116,7 +117,6 @@ const KitBrowserContainer = React.forwardRef<
       onSearchClear={onSearchClear}
       onSelectKit={handleSelectKit}
       onShowSettings={onShowSettings}
-      ref={ref}
       sampleCounts={sampleCounts}
       // Search props
       searchQuery={searchQuery}
@@ -126,7 +126,7 @@ const KitBrowserContainer = React.forwardRef<
       showModifiedOnly={showModifiedOnly}
     />
   );
-});
+};
 
 KitBrowserContainer.displayName = "KitBrowserContainer";
 

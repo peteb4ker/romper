@@ -88,7 +88,7 @@ export async function scanAllKits({
 }: {
   kits: KitWithRelations[];
   onProgress?: (progress: BulkScanProgress) => void;
-  onRefreshKits?: () => void;
+  onRefreshKits?: () => Promise<void> | void;
   operations?: string[];
 }) {
   if (!kits || kits.length === 0) {
@@ -145,9 +145,7 @@ export async function scanAllKits({
       successCount,
     });
 
-    if (onRefreshKits) {
-      onRefreshKits();
-    }
+    await onRefreshKits?.();
   } catch (error) {
     onProgress?.({
       message: `Scan error: ${error instanceof Error ? error.message : String(error)}`,
@@ -167,12 +165,19 @@ export async function scanSingleKit({ kitName }: { kitName: string }) {
 }
 
 // --- useKitScan Hook ---
+/**
+ * Scan All for the whole library. `kits` must be every kit in the store,
+ * not the kits a search or filter shows (RE-43). `onFinished` hears the
+ * final result, for views that don't show the progress.
+ */
 export function useKitScan({
   kits,
+  onFinished,
   onRefreshKits,
 }: {
   kits: KitWithRelations[];
-  onRefreshKits?: () => void;
+  onFinished?: (progress: BulkScanProgress) => void;
+  onRefreshKits?: () => Promise<void> | void;
 }) {
   const [bulkScanProgress, setBulkScanProgress] =
     React.useState<BulkScanProgress>({ status: "idle" });
@@ -199,6 +204,7 @@ export function useKitScan({
 
           // Auto-clear completion/error status after delay
           if (progress.status === "complete" || progress.status === "error") {
+            onFinished?.(progress);
             clearTimerRef.current = setTimeout(
               () => setBulkScanProgress({ status: "idle" }),
               BULK_SCAN_COMPLETE_CLEAR_MS,
@@ -209,7 +215,7 @@ export function useKitScan({
         operations,
       });
     },
-    [kits, onRefreshKits],
+    [kits, onFinished, onRefreshKits],
   );
 
   return { bulkScanProgress, handleScanAllKits };

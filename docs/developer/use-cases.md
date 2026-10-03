@@ -50,8 +50,8 @@ item, remove it from every entry that lists it in the same PR.
 
 | Status | Use cases |
 |---|---|
-| supported | Q-04, UC-09, UC-14, UC-16, UC-18, UC-21, UC-23, UC-24, UC-25, UC-27, UC-28, UC-30, UC-31, UC-32, UC-33, UC-34 |
-| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, UC-01, UC-02, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-10, UC-11, UC-12, UC-13, UC-15, UC-17, UC-19, UC-26, UC-29, UC-35, UC-36, UC-37 |
+| supported | Q-04, UC-09, UC-13, UC-14, UC-16, UC-18, UC-21, UC-23, UC-24, UC-25, UC-27, UC-28, UC-30, UC-31, UC-32, UC-33, UC-34 |
+| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, UC-01, UC-02, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-10, UC-11, UC-12, UC-15, UC-17, UC-19, UC-26, UC-29, UC-35, UC-36, UC-37 |
 | not built | UC-20, UC-22 |
 
 The doc gaps below feed [`validation-fix-plan.md`](validation-fix-plan.md)
@@ -319,7 +319,7 @@ store and written to the card as `<letter> - <name>.rtf` files. See
 
 ### UC-13 Scan a kit, or scan all
 
-**Status:** partial
+**Status:** supported
 
 **Scan Kit** in the kit editor (or "/") rebuilds a read-only kit's samples
 from its folder, keeping edits, and names unnamed voices; in an editable
@@ -329,15 +329,13 @@ kit. See [Scanning Your Library](../manual/kit-browser.md#scanning-your-library)
 - **Renderer:** `app/renderer/components/KitHeader.tsx` and `app/renderer/components/hooks/kit-management/useKitEditorKeyboardNav.ts` →
   `app/renderer/components/hooks/kit-management/useKitScanning.ts` (`handleScanKit`);
   `app/renderer/components/hooks/kit-management/useKitViewMenuHandlers.ts` (`menu-scan-all-kits`) →
+  `app/renderer/views/KitsView.tsx` (every kit in the store) →
   `app/renderer/components/hooks/kit-management/useKitScan.ts` (`scanAllKits`), `app/renderer/components/hooks/shared/useBankScanning.ts`.
 - **IPC:** `rescan-kit`, `scan-banks`; push `menu-scan-all-kits`.
 - **Main:** `electron/main/services/scanService.ts` (`rescanKit`, `scanBanks`);
   `electron/main/db/operations/kitScanOperations.ts` (`mergeKitScan`,
   `planKitScanMerge`).
-- **Doc gaps:** Scan All "rescans your entire library"
-  (`kit-browser.md:118`): it scans only the kits the current filters show,
-  and only the banks while the editor is open (RE-43).
-- **Known issues:** RE-43.
+- **Known issues:** none registered.
 
 ## Kit lifecycle
 

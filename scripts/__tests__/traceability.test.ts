@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   buildIndex,
+  deriveStatuses,
   findProblems,
   issueProblems,
   layerOf,
@@ -16,6 +17,7 @@ import {
   run,
   scanTests,
   slug,
+  statusLines,
   summarise,
 } from "../traceability.mjs";
 
@@ -25,20 +27,25 @@ const REGISTER = `# Use cases
 
 ### UC-01 Set up from an SD card
 
-**Status:** supported
+Copies the card's kits.
 
 ### UC-02 Set up from the factory archive
 
-**Status:** partial
+**Status:** not built
 
 ### UC-03 Set up an empty library
 
-**Status:** supported
 **Test gap:** no e2e for the empty
 option yet.
 
 - **Renderer:** not part of the gap.
 `;
+
+const issue = (number: number, ...issueLabels: string[]) => ({
+  labels: issueLabels,
+  number,
+  title: `Issue ${number}`,
+});
 
 describe("layerOf", () => {
   it("takes the layer from the file name", () => {
@@ -52,43 +59,137 @@ describe("layerOf", () => {
 });
 
 describe("parseRegister", () => {
-  it("reads IDs, names, statuses and declared gaps", () => {
+  it("reads IDs, names, not-built markers and declared gaps", () => {
     const { errors, useCases } = parseRegister(REGISTER);
     expect(errors).toEqual([]);
     expect(
-      useCases.map(({ gap, id, name, status }) => ({ gap, id, name, status })),
+      useCases.map(({ gap, id, name, notBuilt }) => ({
+        gap,
+        id,
+        name,
+        notBuilt,
+      })),
     ).toEqual([
       {
         gap: null,
         id: "UC-01",
         name: "Set up from an SD card",
-        status: "supported",
+        notBuilt: false,
       },
       {
         gap: null,
         id: "UC-02",
         name: "Set up from the factory archive",
-        status: "partial",
+        notBuilt: true,
       },
       {
         gap: "no e2e for the empty option yet.",
         id: "UC-03",
         name: "Set up an empty library",
-        status: "supported",
+        notBuilt: false,
       },
     ]);
   });
 
-  it("reports a missing or unknown status and duplicate IDs", () => {
+  it("refuses a hand-set supported or partial status, and duplicate IDs", () => {
     const { errors } = parseRegister(
-      "### UC-01 A\n\n### UC-02 B\n**Status:** maybe\n### UC-02 C\n**Status:** partial\n",
+      "### UC-01 A\n**Status:** supported\n### UC-02 B\n**Status:** partial\n### UC-02 C\n**Status:** not built\n",
     );
     expect(errors).toEqual([
-      'UC-02: unknown status "maybe"',
-      "UC-01 has no **Status:** line",
-      "UC-02 has no **Status:** line",
+      expect.stringContaining(
+        'UC-01: remove its "**Status:** supported" line from docs/developer/use-cases.md',
+      ),
+      expect.stringContaining('UC-02: remove its "**Status:** partial" line'),
       "UC-02 appears twice in docs/developer/use-cases.md",
     ]);
+    expect(errors[0]).toContain(
+      'Supported and partial are generated from the open issues; only "not built" is set by hand.',
+    );
+  });
+});
+
+describe("deriveStatuses", () => {
+  const { useCases } = parseRegister(REGISTER);
+  const github = (
+    issues: ReturnType<typeof issue>[],
+    fixing: number[] = [],
+  ) => ({
+    fixing,
+    issues,
+    labels: [],
+  });
+  const statuses = (entries: { id: string; status: null | string }[]) =>
+    entries.map(({ id, status }) => [id, status]);
+
+  it("makes an entry partial while an issue with its label is open, and supported when none is", () => {
+    const entries = deriveStatuses(
+      useCases,
+      github([issue(9, "UC-03", "bug"), issue(4, "UC-03", "test")]),
+    );
+    expect(statuses(entries)).toEqual([
+      ["UC-01", "supported"],
+      ["UC-02", "not built"],
+      ["UC-03", "partial"],
+    ]);
+    expect(entries[2].openIssues).toEqual([4, 9]);
+    expect(entries[0].openIssues).toEqual([]);
+  });
+
+  it("keeps not built whatever is open, such as an issue to build it", () => {
+    const entries = deriveStatuses(
+      useCases,
+      github([issue(5, "UC-02", "enhancement"), issue(6, "UC-02", "bug")]),
+    );
+    expect(entries[1]).toMatchObject({
+      openIssues: [5, 6],
+      status: "not built",
+    });
+  });
+
+  it("ignores issues that need triage or don't count as work", () => {
+    const entries = deriveStatuses(
+      useCases,
+      github([
+        issue(1, "UC-01", "triage"),
+        issue(2, "UC-01", "question"),
+        issue(3, "UC-01", "duplicate"),
+      ]),
+    );
+    expect(entries[0].status).toBe("supported");
+  });
+
+  it("counts the issues the current pull request fixes as closed", () => {
+    const entries = deriveStatuses(
+      useCases,
+      github([issue(1, "UC-01", "bug"), issue(2, "UC-03", "bug")], [1]),
+    );
+    expect(statuses(entries)).toEqual([
+      ["UC-01", "supported"],
+      ["UC-02", "not built"],
+      ["UC-03", "partial"],
+    ]);
+  });
+
+  it("leaves a built entry's status unknown without GitHub", () => {
+    expect(statuses(deriveStatuses(useCases, null))).toEqual([
+      ["UC-01", null],
+      ["UC-02", "not built"],
+      ["UC-03", null],
+    ]);
+  });
+
+  it("lists the statuses for the console, partial entries with their issues", () => {
+    expect(
+      statusLines(deriveStatuses(useCases, github([issue(7, "UC-03", "bug")]))),
+    ).toEqual([
+      expect.stringContaining("Status, generated from the open issues"),
+      "  supported (1): UC-01",
+      "  partial (1): UC-03 (#7)",
+      "  not built (1): UC-02",
+    ]);
+    expect(statusLines(deriveStatuses(useCases, null))).toContain(
+      "  unknown (2) (can't read GitHub): UC-01, UC-03",
+    );
   });
 });
 
@@ -132,19 +233,21 @@ describe("findProblems and render", () => {
     "tests/e2e/b.e2e.test.ts": `test("[UC-01] [UC-42] b", async () => {});`,
   };
   const scan = buildIndex(Object.keys(files), (f: string) => files[f]);
+  const entries = deriveStatuses(useCases, {
+    fixing: [],
+    issues: [issue(3, "UC-01", "bug"), issue(8, "UC-01", "test")],
+    labels: [],
+  });
 
-  it("flags unknown IDs and untested supported use cases, and accepts declared gaps", () => {
+  it("flags unknown IDs, whatever GitHub says", () => {
     const problems = findProblems(useCases, scan);
     expect(problems).toHaveLength(1);
     expect(problems[0]).toMatch(/tests\/e2e\/b\.e2e\.test\.ts:1: \[UC-42\]/);
   });
 
-  it("fails a supported use case with only unit tests and no declared gap", () => {
+  it("leaves an untested use case to the issue checks, since its status comes from GitHub", () => {
     const unitOnly = buildIndex(["a/A.test.ts"], (f: string) => files[f]);
-    const problems = findProblems(useCases, unitOnly);
-    expect(problems).toEqual([
-      expect.stringContaining("UC-01 Set up from an SD card is supported"),
-    ]);
+    expect(findProblems(useCases, unitOnly)).toEqual([]);
   });
 
   it("fails a declared gap once it's closed", () => {
@@ -158,9 +261,9 @@ describe("findProblems and render", () => {
   });
 
   it("counts tests per layer and links each file at its first tag", () => {
-    const md = render(useCases, scan);
+    const md = render(entries, scan);
     expect(md).toContain(
-      "| [UC-01](use-cases.md#uc-01-set-up-from-an-sd-card) Set up from an SD card | supported | [2](#uc-01) | - | [1](#uc-01) | - |",
+      "| [UC-01](use-cases.md#uc-01-set-up-from-an-sd-card) Set up from an SD card | partial ([2 open](https://github.com/peteb4ker/romper/issues?q=is%3Aopen+label%3AUC-01)) | [2](#uc-01) | - | [1](#uc-01) | - |",
     );
     expect(md).toContain(
       "- E2E: [`tests/e2e/b.e2e.test.ts`](../../tests/e2e/b.e2e.test.ts#L1) (1 test)",
@@ -171,9 +274,23 @@ describe("findProblems and render", () => {
     expect(md).toContain("3 of 3 tests carry a use case tag.");
   });
 
+  it("lists the generated statuses, each ID linking to its open issues", () => {
+    const md = render(entries, scan);
+    expect(md).toContain("3 use cases: 1 supported, 1 partial, 1 not built.");
+    expect(md).toContain(
+      "| partial (1) | [UC-01](https://github.com/peteb4ker/romper/issues?q=is%3Aopen+label%3AUC-01) |",
+    );
+    expect(md).toContain(
+      "| not built (1) | [UC-02](https://github.com/peteb4ker/romper/issues?q=is%3Aopen+label%3AUC-02) |",
+    );
+    expect(render(deriveStatuses(useCases, null), scan)).toContain(
+      "3 use cases: 1 not built, 2 unknown.",
+    );
+  });
+
   it("links to a commit on GitHub when given a base URL (the CI summary)", () => {
     const base = "https://github.com/o/r/blob/abc/";
-    const md = render(useCases, scan, { base });
+    const md = render(entries, scan, { base });
     expect(md).toContain(
       `| [UC-01](${base}docs/developer/use-cases.md#uc-01-set-up-from-an-sd-card) Set up from an SD card |`,
     );
@@ -198,29 +315,18 @@ describe("tracing GitHub issues to user-oriented statements", () => {
 
 ### UC-19 Drop WAVs onto a voice
 
-**Status:** partial
-
 ### UC-20 Replace a sample
 
 **Status:** not built
 
 ### UC-23 Delete a sample
 
-**Status:** supported
-
 ## Qualities
 
 ### Q-01 Romper stays responsive as your library grows
-
-**Status:** partial
 `;
   const { useCases } = parseRegister(register);
   const labels = ["UC-19", "UC-20", "UC-23", "Q-01", "bug", "question"];
-  const issue = (number: number, ...issueLabels: string[]) => ({
-    labels: issueLabels,
-    number,
-    title: `Issue ${number}`,
-  });
   const healthy = {
     fixing: [] as number[],
     issues: [issue(1, "UC-19", "bug"), issue(2, "Q-01", "UC-19")],
@@ -236,7 +342,7 @@ describe("tracing GitHub issues to user-oriented statements", () => {
     ]);
   });
 
-  it("passes when every issue is labelled and statuses follow the issues", () => {
+  it("passes when every issue and entry is labelled", () => {
     expect(issueProblems(useCases, healthy)).toEqual({
       problems: [],
       triage: [],
@@ -280,33 +386,42 @@ describe("tracing GitHub issues to user-oriented statements", () => {
     ]);
   });
 
-  it("reports a supported entry with an open issue", () => {
-    const github = {
-      ...healthy,
-      issues: [...healthy.issues, issue(7, "UC-23", "bug")],
-    };
-    expect(issueProblems(useCases, github).problems).toEqual([
-      expect.stringContaining(
-        "UC-23 Delete a sample is supported but has open issues (#7)",
-      ),
+  it("reports a supported entry with no test above unit level, not a partial or not-built one", () => {
+    // UC-19 and Q-01 have open issues; UC-20 isn't built; UC-23 has none
+    const unitOnly = buildIndex(
+      ["a/A.test.ts"],
+      () => `test("[UC-19] [UC-23] [Q-01] unit", () => {});`,
+    );
+    expect(issueProblems(useCases, healthy, unitOnly).problems).toEqual([
+      "UC-23 Delete a sample is supported (no open issues) but has no integration, e2e or validation test. " +
+        "Tag one with [UC-23], declare the gap with a **Test gap:** line in docs/developer/use-cases.md, " +
+        "or open a test issue labelled UC-23.",
     ]);
   });
 
-  it("reports a partial entry with no open issue, but not a not-built one", () => {
-    const github = { ...healthy, issues: [issue(2, "Q-01")] };
-    expect(issueProblems(useCases, github).problems).toEqual([
-      expect.stringContaining(
-        "UC-19 Drop WAVs onto a voice is partial but no open issue is labelled UC-19",
-      ),
-    ]);
-  });
-
-  it("counts the issues the current pull request fixes as closed", () => {
-    const github = { ...healthy, fixing: [1, 2] };
-    expect(issueProblems(useCases, github).problems).toEqual([
-      expect.stringContaining("UC-19 Drop WAVs onto a voice is partial"),
+  it("checks the status the current pull request's fixes bring", () => {
+    // Fixing #1 and #2 leaves UC-19 and Q-01 with no open issues
+    const none = buildIndex([], () => "");
+    expect(
+      issueProblems(useCases, { ...healthy, fixing: [1, 2] }, none).problems,
+    ).toEqual([
+      expect.stringContaining("UC-19 Drop WAVs onto a voice is supported"),
+      expect.stringContaining("UC-23 Delete a sample is supported"),
       expect.stringContaining("Q-01 Romper stays responsive"),
     ]);
+  });
+
+  it("accepts a supported entry that declares its gap", () => {
+    const { useCases: gapped } = parseRegister(
+      "### UC-23 Delete a sample\n\n**Test gap:** needs a real desktop.\n",
+    );
+    expect(
+      issueProblems(
+        gapped,
+        { fixing: [], issues: [], labels: ["UC-23"] },
+        buildIndex([], () => ""),
+      ).problems,
+    ).toEqual([]);
   });
 
   it("keeps the issue checks out of findProblems", () => {
@@ -319,10 +434,10 @@ describe("tracing GitHub issues to user-oriented statements", () => {
 
   it("renders the issue checks for the job summary", () => {
     const md = renderIssueChecks(
-      { problems: ["UC-23 is off"], triage: ["#3 needs triage"] },
+      { problems: ["UC-23 has no label"], triage: ["#3 needs triage"] },
       { strict: false },
     );
-    expect(md).toContain("### Warnings (1)\n\n- UC-23 is off");
+    expect(md).toContain("### Warnings (1)\n\n- UC-23 has no label");
     expect(md).toContain("### Needs triage (1)\n\n- #3 needs triage");
     expect(
       renderIssueChecks({ problems: ["x"], triage: [] }, { strict: true }),
@@ -334,7 +449,7 @@ describe("tracing GitHub issues to user-oriented statements", () => {
       ["tests/e2e/d.e2e.test.ts"],
       () => `test("[UC-19] [Q-01] drop", async () => {});`,
     );
-    const [drop, , remove] = summarise(useCases, scan, healthy);
+    const [drop, replace, remove] = summarise(useCases, scan, healthy);
     expect(drop).toEqual({
       gap: null,
       group: "Samples",
@@ -345,8 +460,12 @@ describe("tracing GitHub issues to user-oriented statements", () => {
       status: "partial",
       tests: { e2e: 1, integration: 0, unit: 0, validation: 0 },
     });
-    expect(remove.openIssues).toBe(0);
-    expect(summarise(useCases, scan)[0].openIssues).toBeNull();
+    expect(remove).toMatchObject({ openIssues: 0, status: "supported" });
+    expect(replace).toMatchObject({ openIssues: 0, status: "not built" });
+    expect(summarise(useCases, scan)[0]).toMatchObject({
+      openIssues: null,
+      status: null,
+    });
   });
 
   it("reads open issues, labels and the pull request's fixes with gh", () => {
@@ -416,11 +535,11 @@ describe("run: pull requests warn, the release fails", () => {
 
 ### UC-19 Drop WAVs onto a voice
 
-**Status:** supported
+### UC-20 Replace a sample
+
+**Status:** not built
 
 ### UC-23 Delete a sample
-
-**Status:** supported
 `;
   let root: string;
   let summary: string;
@@ -431,20 +550,28 @@ describe("run: pull requests warn, the release fails", () => {
     fs.writeFileSync(path.join(root, "docs/developer/use-cases.md"), register);
     fs.writeFileSync(
       path.join(root, "tests/e2e/a.e2e.test.ts"),
-      `test("[UC-19] [UC-23] a", async () => {});`,
+      `test("[UC-19] a", async () => {});`,
     );
     summary = path.join(root, "summary.md");
   });
   afterEach(() => fs.rmSync(root, { force: true, recursive: true }));
 
-  // UC-23 is supported but has an open issue; #2 hasn't been triaged.
+  // UC-23 is partial (#1), so it needs no test yet; #2 hasn't been triaged;
+  // #3 names an entry the register lacks; UC-20 has no label on GitHub.
   const github = () => ({
-    fixing: [],
+    fixing: [] as number[],
     issues: [
       { labels: ["UC-23", "bug"], number: 1, title: "A" },
       { labels: ["triage"], number: 2, title: "B" },
+      { labels: ["UC-99", "bug"], number: 3, title: "C" },
     ],
     labels: ["UC-19", "UC-23"],
+  });
+  // Everything a release needs, except that UC-23 is supported untested
+  const untested = () => ({
+    fixing: [] as number[],
+    issues: [],
+    labels: ["UC-19", "UC-20", "UC-23"],
   });
   const capture = () => {
     const out: string[] = [];
@@ -467,15 +594,21 @@ describe("run: pull requests warn, the release fails", () => {
     });
     expect(code).toBe(0);
     expect(out).toContainEqual(
+      "::warning title=Release blocker::#3 is labelled UC-99, which isn't in docs/developer/use-cases.md.",
+    );
+    expect(out).toContainEqual(
       expect.stringMatching(
-        /^::warning title=Register and issues disagree::UC-23 Delete a sample is supported but has open issues \(#1\)/,
+        /^::warning title=Release blocker::UC-20 has no label on GitHub/,
       ),
     );
     expect(out).toContainEqual(
       expect.stringMatching(/^::notice title=Needs triage::#2 \("B"\)/),
     );
+    expect(out).toContain("  partial (1): UC-23 (#1)");
     const md = fs.readFileSync(summary, "utf8");
-    expect(md).toContain("### Warnings (1)");
+    expect(md).toContain("## Status");
+    expect(md).toContain("| supported (1) | [UC-19](");
+    expect(md).toContain("### Warnings (2)");
     expect(md).toContain("### Needs triage (1)");
   });
 
@@ -484,12 +617,19 @@ describe("run: pull requests warn, the release fails", () => {
     expect(
       run({ check: true, env: {}, github, log, root, strictIssues: true }),
     ).toBe(1);
-    expect(out).toContain("Traceability check failed (1):");
+    expect(out).toContain("Traceability check failed (2):");
     expect(out).toContainEqual(
-      expect.stringContaining("- UC-23 Delete a sample is supported"),
+      expect.stringContaining("- #3 is labelled UC-99"),
+    );
+    expect(out).toContainEqual(
+      expect.stringContaining("- UC-20 has no label on GitHub"),
     );
 
-    const triageOnly = () => ({ ...github(), issues: [github().issues[1]] });
+    const triageOnly = () => ({
+      ...github(),
+      issues: github().issues.slice(0, 2),
+      labels: ["UC-19", "UC-20", "UC-23"],
+    });
     expect(
       run({
         check: true,
@@ -500,6 +640,33 @@ describe("run: pull requests warn, the release fails", () => {
         strictIssues: true,
       }),
     ).toBe(0);
+  });
+
+  it("fails a release, and warns a pull request, on a supported use case with no test above unit level", () => {
+    const release = capture();
+    expect(
+      run({
+        check: true,
+        env: {},
+        github: untested,
+        log: release.log,
+        root,
+        strictIssues: true,
+      }),
+    ).toBe(1);
+    expect(release.out).toContainEqual(
+      expect.stringContaining(
+        "- UC-23 Delete a sample is supported (no open issues) but has no integration, e2e or validation test.",
+      ),
+    );
+
+    const pr = capture();
+    expect(
+      run({ check: true, env: {}, github: untested, log: pr.log, root }),
+    ).toBe(0);
+    expect(pr.out).toContainEqual(
+      expect.stringMatching(/^warning: UC-23 Delete a sample is supported/),
+    );
   });
 
   it("still fails a pull request on the test rules", () => {
@@ -517,6 +684,40 @@ describe("run: pull requests warn, the release fails", () => {
         root,
       }),
     ).toBe(1);
+  });
+
+  it("fails on a hand-set supported or partial status, in every mode", () => {
+    fs.writeFileSync(
+      path.join(root, "docs/developer/use-cases.md"),
+      register.replace(
+        "### UC-23 Delete a sample\n",
+        "### UC-23 Delete a sample\n\n**Status:** supported\n",
+      ),
+    );
+    for (const check of [false, true]) {
+      const { log, out } = capture();
+      expect(run({ check, env: {}, github, log, root })).toBe(1);
+      expect(out[0]).toContain(
+        'UC-23: remove its "**Status:** supported" line',
+      );
+    }
+  });
+
+  it("prints the statuses and writes the matrix with them (npm run trace)", () => {
+    const { log, out } = capture();
+    expect(run({ env: {}, github, log, root })).toBe(0);
+    expect(out).toEqual([
+      expect.stringContaining("Status, generated from the open issues"),
+      "  supported (1): UC-19",
+      "  partial (1): UC-23 (#1)",
+      "  not built (1): UC-20",
+      expect.stringContaining("Wrote docs/developer/traceability.md"),
+    ]);
+    const md = fs.readFileSync(
+      path.join(root, "docs/developer/traceability.md"),
+      "utf8",
+    );
+    expect(md).toContain("3 use cases: 1 supported, 1 partial, 1 not built.");
   });
 });
 
@@ -541,7 +742,7 @@ describe("run without GitHub", () => {
     const { log, out } = quiet();
     run({ check: true, env: {}, github: unavailable, log });
     expect(out[0]).toBe(
-      "Skipping the issue checks: can't read GitHub issues with gh (gh: To get started with GitHub CLI, please run: gh auth login).",
+      "Skipping the issue checks and showing statuses as unknown: can't read GitHub issues with gh (gh: To get started with GitHub CLI, please run: gh auth login).",
     );
   });
 

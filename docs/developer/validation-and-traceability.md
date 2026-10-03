@@ -310,14 +310,18 @@ from the first harness PR:
   - UC-37 About, help, updates and diagnostics
 
 Each entry in `use-cases.md` has:
-- **Status**: supported, partial, or not built;
 - the feature description (link to the manual page);
 - implementation entry points (renderer component or hook, IPC channels, main
   service);
+- `**Status:** not built`, only when no user can do it yet;
 - tests by layer (generated, see below).
 
 Its open issues are the GitHub issues labelled with its ID (`UC-14`), and
-its status follows them: supported means none are open.
+they set its status, which is generated, never written in the register:
+supported when none are open, partial when at least one is. Only "not
+built" is set by hand; open issues on a not-built entry (such as one to
+build it) don't change it. A fix PR never edits a status: closing the issue
+is enough.
 
 Promises the code doesn't keep are either built, removed from the docs, or
 listed as "not built" with a decision.
@@ -331,23 +335,31 @@ listed as "not built" with a decision.
   validation tests and writes `docs/developer/traceability.md` (gitignored): a
   matrix of use cases × test layers, with links to each test. It runs in CI (`npm run
   trace:check`) and fails if:
-  - a supported use case has no test above unit level, unless its register
-    entry declares the gap with a `**Test gap:**` line (and the check also
-    fails once a declared gap is closed, so the line goes);
-  - a test names an unknown use case ID.
+  - a test names an unknown use case ID;
+  - a declared test gap (a `**Test gap:**` line) is closed, so the line
+    goes;
+  - the register sets a status other than "not built".
 
-  It also compares the register with the open GitHub issues: an issue with
-  a `UC-NN` or `Q-NN` label the register doesn't have, an entry with no
-  label, and a supported entry with an open issue or a partial one with
-  none. On a pull request these are warnings (annotations and the job
-  summary), since anyone can open an issue; the release preflight runs
-  `npm run trace:check -- --strict-issues`, which fails on them. Issues
-  that need triage (labelled `triage`, or with no UC/Q label) are listed
-  and never fail.
-- The matrix is generated and never committed, so it can't go stale. (It was
-  committed at first, and its counts changed with almost every PR.) The
-  register (descriptions, status, entry points) is edited by hand and reviewed
-  in PRs.
+  It reads the open GitHub issues to generate each entry's status, which it
+  prints (`npm run trace`) and writes, with the matrix, to the Lint job
+  summary. Then it checks what a release can't ship with: an issue with a
+  `UC-NN` or `Q-NN` label the register doesn't have, an entry with no
+  label, and a supported use case with no test above unit level whose
+  entry doesn't declare the gap. On a pull request these are warnings
+  (annotations and the job summary), since anyone can open or close an
+  issue; the release preflight runs
+  `npm run trace:check -- --strict-issues`, which fails on them, and when
+  it can't read the issues. Issues that need triage (labelled `triage`, or
+  with no UC/Q label) are listed, don't count towards a status, and never
+  fail. The release's testing summary (`scripts/testing-summary.mjs`) reads
+  the issues as well, so the website shows the statuses the release
+  shipped with.
+- The matrix and the statuses are generated and never committed, so they
+  can't go stale. (The matrix was committed at first, and its counts
+  changed with almost every PR; hand-edited statuses caused most rebase
+  conflicts between fix PRs and kept disagreeing with the issues.) The
+  register (descriptions, entry points, test gaps, not built) is edited by
+  hand and reviewed in PRs.
 
 ### Doc corrections
 

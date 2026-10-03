@@ -11,7 +11,10 @@
  * - `validation-report/report.json`: the full-pipeline rehearsal;
  * - `*.jsonl` performance budget rows (`tests/perf/budgets.ts`).
  * An artifact folder named `...-<os>-latest` says which platform ran it.
- * Use case status comes from the register, docs/developer/use-cases.md.
+ * Use case status is generated from the open GitHub issues
+ * (`deriveStatuses` in traceability.mjs), read with `gh` as the release
+ * runs, so it needs GH_TOKEN with issues: read; "not built" comes from the
+ * register, docs/developer/use-cases.md.
  *
  * The output is small and stable; the site copies it from the latest release
  * at build time, so no count is ever committed.
@@ -24,6 +27,7 @@ import {
   buildIndex,
   findTestFiles,
   parseRegister,
+  readGitHub,
   summarise as summariseEntries,
 } from "./traceability.mjs";
 
@@ -71,15 +75,10 @@ export function groupEntries(entries) {
 /**
  * Summarise a release run.
  * @param {{ path: string, content: string }[]} files report files found
+ * @param entries every use case and quality, with its generated status
+ *   (traceability.mjs `summarise`, given the open issues)
  */
-export function summarise({
-  commit,
-  date,
-  entries = [],
-  files,
-  useCases,
-  version,
-}) {
+export function summarise({ commit, date, entries = [], files, version }) {
   const layer = () => ({ passed: 0, platforms: new Set(), tests: 0 });
   const layers = {
     e2e: layer(),
@@ -157,13 +156,29 @@ export function summarise({
     },
     groups: groupEntries(entries),
     performance: summariseBudgets(budgets),
-    useCases: {
-      notBuilt: useCases.filter((u) => u.status === "not built").length,
-      partial: useCases.filter((u) => u.status === "partial").length,
-      supported: useCases.filter((u) => u.status === "supported").length,
-      total: useCases.length,
-    },
+    useCases: countStatuses(entries.filter((e) => e.kind === "use case")),
     version,
+  };
+}
+
+/**
+ * Use cases per status, for the page's bar. Qualities are listed with them
+ * on the page but not counted. Every entry needs a status: the release reads
+ * the issues, so none is unknown.
+ */
+export function countStatuses(useCases) {
+  const unknown = useCases.filter((u) => !u.status).map((u) => u.id);
+  if (unknown.length > 0) {
+    throw new Error(
+      `No status for ${unknown.join(", ")}: summarise the entries with the open issues.`,
+    );
+  }
+  const count = (status) => useCases.filter((u) => u.status === status).length;
+  return {
+    notBuilt: count("not built"),
+    partial: count("partial"),
+    supported: count("supported"),
+    total: useCases.length,
   };
 }
 
@@ -231,22 +246,35 @@ if (
     );
     process.exit(2);
   }
-  const { useCases: entries } = parseRegister(
+  const { errors, useCases: register } = parseRegister(
     fs.readFileSync(path.join(ROOT, "docs/developer/use-cases.md"), "utf8"),
   );
-  // Use case status and counts are for use cases only; qualities are listed
-  // with them on the page
-  const useCases = entries.filter((e) => e.kind === "use case");
+  if (errors.length > 0) {
+    for (const e of errors) console.error(e);
+    process.exit(1);
+  }
+  // Statuses come from the open issues as the release ships. The page
+  // still counts each entry's open issues live.
+  let github;
+  try {
+    github = readGitHub({ root: ROOT });
+  } catch (error) {
+    const reason = String(error.stderr || error.message)
+      .trim()
+      .split("\n")[0];
+    console.error(
+      `Can't read the GitHub issues the use case statuses come from (${reason}). The step needs GH_TOKEN with issues: read.`,
+    );
+    process.exit(1);
+  }
   const scan = buildIndex(findTestFiles(ROOT), (f) =>
     fs.readFileSync(path.join(ROOT, f), "utf8"),
   );
   const summary = summarise({
     commit: option("commit") ?? "",
     date: new Date().toISOString().slice(0, 10),
-    // Open issues are counted live by the page, so GitHub isn't read here
-    entries: summariseEntries(entries, scan),
+    entries: summariseEntries(register, scan, github),
     files: findReports(dir),
-    useCases,
     version: option("version") ?? "",
   });
   const json = `${JSON.stringify(summary, null, 2)}\n`;

@@ -36,8 +36,10 @@ condensed checklist for these steps.
    Nothing is built until the first two steps pass (RE-17):
    1. Preflight. The tag must be on `main` and match `package.json`'s
       version. Signing must be configured, and Apple must accept the App
-      Store Connect key (see [code-signing.md](code-signing.md)). The use
-      case register's statuses must match the open GitHub issues
+      Store Connect key (see [code-signing.md](code-signing.md)). The open
+      GitHub issues, which set each use case's status, must be readable,
+      and every issue and use case must have its label, and every supported
+      use case a test above unit level or a declared gap
       (`npm run trace:check -- --strict-issues`; pull requests only warn on
       this). SonarCloud's
       quality gate must be `OK` with no open
@@ -70,7 +72,9 @@ condensed checklist for these steps.
       the script uses your `gh` login, or leaves the section out and says
       so on stderr. `scripts/testing-summary.mjs` turns the run's test
       results, rehearsal reports and performance budget results into
-      `testing-summary.json`, attached to the release. Publishing the
+      `testing-summary.json`, attached to the release. It reads the open
+      issues with `GH_TOKEN` too, to generate each use case's status as
+      the release ships. Publishing the
       release rebuilds the website, whose
       [testing page](https://peteb4ker.github.io/romper/testing/) shows the
       latest release's summary.
@@ -109,9 +113,10 @@ and Linux users download each release.
 
 - **Preflight failed:** the run says which check. Tag a commit that's on
   `main`, bump `package.json` to match the tag, add the missing signing
-  secrets, accept Apple's agreement, fix what SonarCloud reports, or bring
-  the register's statuses in line with the open issues (in a PR, as the
-  strict check's messages say); then delete and re-push the tag.
+  secrets, accept Apple's agreement, fix what SonarCloud reports, or fix
+  what the strict traceability check reports (a missing label, or a test
+  or declared gap; the messages say which); then delete and re-push the
+  tag.
 - **Platform build failed:** re-run only the failed job
   (`gh run rerun <run-id> --failed`). A macOS notarization 403 mentioning
   agreements means the Apple Developer account holder must re-accept the

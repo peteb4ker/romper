@@ -103,9 +103,11 @@ jobs:
             exit 1
           fi
 
-      # The register's statuses must match the open issues: the testing page
-      # shows the statuses this release ships with. Pull requests only warn
-      # on this (anyone can open an issue); a release fails on it.
+      # Use case statuses are generated from the open issues, so the release
+      # must be able to read them. It also can't ship an issue or use case
+      # without its label, or a supported use case with no test above unit
+      # level that doesn't declare the gap. Pull requests only warn on these
+      # (anyone can open or close an issue); a release fails on them.
       - name: Set up Node.js
         if: startsWith(github.ref, 'refs/tags/')
         uses: actions/setup-node@v5
@@ -117,7 +119,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         run: npm ci
 
-      - name: Check the register matches the open issues
+      - name: Check the use cases against the open issues
         if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
@@ -508,7 +510,10 @@ jobs:
         run: find release-artifacts -type f -name "*" | head -20
 
       - name: Summarise the release's checks
-        # Read by the website's testing page (docs/testing.html)
+        # Read by the website's testing page (docs/testing.html). Each use
+        # case's status is generated from the open issues, read with gh.
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: >
           node scripts/testing-summary.mjs release-artifacts
           --version ${{ github.ref_name }} --commit ${{ github.sha }}

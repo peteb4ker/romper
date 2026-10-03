@@ -52,12 +52,14 @@ jobs:
         run: npm run lint:check
 
       - name: Check use case traceability
-        # Fails on unknown [UC-NN] tags and supported use cases with no test
-        # above unit level (RE-67). Warns (annotations and the job summary)
-        # when the register's statuses disagree with the open issues, and
-        # lists issues that need triage; the release fails on those
-        # (--strict-issues in release.yml). Writes the use case x test layer
-        # matrix to the job summary.
+        # Fails on unknown [UC-NN] tags, closed test gaps and hand-set
+        # supported or partial statuses (RE-67). Generates each use case's
+        # status from the open issues and writes it, with the use case x
+        # test layer matrix, to the job summary. Warns (annotations and the
+        # job summary) on what a release can't ship with: an issue or use
+        # case without its label, or a supported use case with no test above
+        # unit level and no declared gap; the release fails on those
+        # (--strict-issues in release.yml). Lists issues that need triage.
         env:
           GH_TOKEN: ${{ github.token }}
         run: npm run trace:check

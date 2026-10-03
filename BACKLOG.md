@@ -14,13 +14,22 @@ issue carries:
   disagree) or `test` (a missing or weak test);
 - a severity: `severity:high`, `severity:medium` or `severity:low`.
 
-`npm run trace:check` compares the register with the open issues: a
-supported entry has no open issues, a partial one has at least one, and
-every UC/Q label is in the register. On a pull request (CI's Lint job) a
-disagreement is a warning, an annotation plus a line in the job summary,
-because anyone can open an issue and that mustn't turn every PR red. The
-release fails on it (`npm run trace:check -- --strict-issues` in the
-preflight), so a release always ships statuses that match its issues.
+Status is generated from the issues, never edited by hand: an entry is
+supported when no open issue carries its label, and partial when at least
+one does. Only "not built" is written in the register
+(`**Status:** not built`). So nobody edits a status: opening an issue makes
+its entry partial, and closing the last one makes it supported. See the
+statuses with `npm run trace`, in CI's Lint job summary, or on the
+website's testing page (as of the latest release).
+
+`npm run trace:check` also checks what a release can't ship with: every
+UC/Q label on an issue is in the register, every entry has its label, and
+every supported entry has a test above unit level or declares the gap. On a
+pull request (CI's Lint job) these are warnings, an annotation plus a line
+in the job summary, because anyone can open or close an issue and that
+mustn't turn every PR red. The release fails on them
+(`npm run trace:check -- --strict-issues` in the preflight), and on not
+being able to read the issues at all.
 
 ## Triage first
 
@@ -34,8 +43,8 @@ gh issue list --label triage
 ```
 
 Give each one a UC/Q label, a kind and a severity, and remove `triage` (or
-close it, or label it `question`, `duplicate` or `invalid`). If it lands on
-a supported entry, mark the entry **partial** in a pull request.
+close it, or label it `question`, `duplicate` or `invalid`). Its entry turns
+partial by itself.
 
 ## Pick
 
@@ -63,10 +72,11 @@ cloud sessions alike.
 - The pull request's description says `Fixes #N`, once per issue it fixes.
   Merging closes the issue; the release notes list the issues a release
   closed (see the `release` skill).
-- If it fixes the entry's last open issue, mark the entry **supported** in
-  `use-cases.md` in the same pull request. The check counts the issues a
-  pull request fixes as closed, so it warns until you do, and the next
-  release would fail.
+- Don't edit the entry's status: when the pull request closes the entry's
+  last open issue, it becomes supported by itself. The check counts the
+  issues a pull request fixes as closed, so its job summary shows the
+  status the merge brings, and warns if the entry would then be supported
+  with no test above unit level (add one, or declare the gap).
 - Partly fixed: say `Part of #N` instead, and comment on the issue with what
   is done and what is left.
 
@@ -84,9 +94,7 @@ Open an issue:
   [findings register](aidlc-docs/inception/reverse-engineering/code-quality-assessment.md)
   with the next free `RE-` ID, end its Fix column with "Tracked in #N.", and
   add a **Finding:** line to the issue.
-- If the entry was supported, mark it **partial** in a pull request straight
-  away: until the register agrees, every pull request shows the warning and
-  a release can't ship.
+- Nothing else to update: the issue makes its entry partial by itself.
 
 ## Fixed before the issue tracker
 

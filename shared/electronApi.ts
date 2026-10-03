@@ -1,8 +1,6 @@
-import type { AudioMetadata, FormatValidationResult } from "./audioTypes.js";
+import type { FormatValidationResult } from "./audioTypes.js";
 import type {
-  Bank,
   DbResult,
-  Kit,
   KitScanResult,
   KitWithRelations,
   LocalStoreValidationDetailedResult,
@@ -95,12 +93,7 @@ export interface ElectronAPI {
   generateSyncChangeSummary: (
     sdCardPath?: string,
   ) => Promise<DbResult<SyncChangeSummary>>;
-  getAllBanks: () => Promise<DbResult<Bank[]>>;
-  getAllSamples: () => Promise<DbResult<Sample[]>>;
   getAllSamplesForKit: (kitName: string) => Promise<DbResult<Sample[]>>;
-  getAudioMetadata: (filePath: string) => Promise<DbResult<AudioMetadata>>;
-  getFavoriteKits: () => Promise<DbResult<KitWithRelations[]>>;
-  getFavoriteKitsCount: () => Promise<DbResult<number>>;
   getKit: (kitName: string) => Promise<DbResult<KitWithRelations>>;
   getKitDeleteSummary: (kitName: string) => Promise<
     DbResult<{
@@ -111,14 +104,12 @@ export interface ElectronAPI {
     }>
   >;
   getKits: () => Promise<DbResult<KitWithRelations[]>>;
-  getKitsMetadata: () => Promise<DbResult<Kit[]>>;
   getLocalStoreStatus: () => Promise<LocalStoreValidationDetailedResult>;
   getSampleAudioBuffer: (
     kitName: string,
     voiceNumber: number,
     slotNumber: number,
   ) => Promise<DbResult<ArrayBuffer | null>>;
-  getSetting: (key: SettingsKey) => Promise<unknown>;
   getUserHomeDir: () => Promise<string>;
   listFilesInRoot: (localStorePath: string) => Promise<string[]>;
   moveSampleBetweenKits: (
@@ -151,7 +142,6 @@ export interface ElectronAPI {
   >;
   onSyncProgress: (callback: (progress: SyncProgress) => void) => void;
   openExternal: (url: string) => Promise<{ error?: string; success: boolean }>;
-  readFile: (filePath: string) => Promise<DbResult<ArrayBuffer>>;
   readSettings: () => Promise<SettingsData>;
   replaceSampleInSlot: (
     kitName: string,
@@ -168,13 +158,6 @@ export interface ElectronAPI {
     targetPath: string,
   ) => Promise<{ error?: string; granted: boolean }>;
   rescanKit: (kitName: string) => Promise<DbResult<KitScanResult>>;
-  rescanKitsMissingMetadata: () => Promise<
-    DbResult<{
-      kitsNeedingRescan: string[];
-      kitsRescanned: string[];
-      totalSamplesUpdated: number;
-    }>
-  >;
   /**
    * Put a kit's voices back as an undo snapshot had them: rows, slots,
    * gain and WAV details, in one transaction (RE-86).
@@ -273,18 +256,6 @@ export interface ElectronAPI {
   validateSampleFormat: (
     filePath: string,
   ) => Promise<DbResult<FormatValidationResult>>;
-  validateSampleSources: (kitName: string) => Promise<
-    DbResult<{
-      invalidSamples: Array<{
-        error: string;
-        filename: string;
-        source_path: string;
-      }>;
-      totalSamples: number;
-      validSamples: number;
-    }>
-  >;
-  writeSettings: (key: string, value: unknown) => Promise<void>;
 }
 
 // createRomperDb returns a DbResult extended with the created file path

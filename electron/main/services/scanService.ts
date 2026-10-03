@@ -10,7 +10,6 @@ import {
   type WavMetadataFields,
 } from "../db/operations/wavMetadataFields.js";
 import {
-  getAllSamples,
   mergeKitScan,
   updateBank,
   withDbTransaction,
@@ -72,69 +71,6 @@ export class ScanService {
         error instanceof Error ? error.message : String(error);
       return {
         error: `Failed to scan kit directory: ${errorMessage}`,
-        success: false,
-      };
-    }
-  }
-
-  /**
-   * Rescan all kits that have samples with missing WAV metadata
-   * This is useful for migrating existing kits after the metadata feature was added
-   */
-  rescanKitsWithMissingMetadata(
-    inMemorySettings: Record<string, unknown>,
-  ): DbResult<{
-    kitsNeedingRescan: string[];
-    kitsRescanned: string[];
-    totalSamplesUpdated: number;
-  }> {
-    const localStorePath = this.getLocalStorePath(inMemorySettings);
-    if (!localStorePath) {
-      return { error: "No local store path configured", success: false };
-    }
-
-    const dbDir = this.getDbPath(localStorePath);
-
-    try {
-      const samplesResult = getAllSamples(dbDir);
-      if (!samplesResult.success || !samplesResult.data) {
-        return { error: "Failed to query samples", success: false };
-      }
-
-      const kitsNeedingRescan = this.identifyKitsNeedingRescan(
-        samplesResult.data,
-      );
-
-      // Rescan each kit that needs metadata
-      const kitsRescanned: string[] = [];
-      let totalSamplesUpdated = 0;
-
-      for (const kitName of kitsNeedingRescan) {
-        const rescanResult = this.rescanKit(inMemorySettings, kitName);
-        if (rescanResult.success && rescanResult.data) {
-          kitsRescanned.push(kitName);
-          totalSamplesUpdated +=
-            rescanResult.data.metadataUpdated + rescanResult.data.addedSamples;
-        } else {
-          console.error(
-            `Failed to rescan kit ${kitName}: ${rescanResult.error}`,
-          );
-        }
-      }
-
-      return {
-        data: {
-          kitsNeedingRescan,
-          kitsRescanned,
-          totalSamplesUpdated,
-        },
-        success: true,
-      };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      return {
-        error: `Failed to rescan kits with missing metadata: ${errorMessage}`,
         success: false,
       };
     }
@@ -229,43 +165,6 @@ export class ScanService {
     inMemorySettings: Record<string, unknown>,
   ): null | string {
     return ServicePathManager.getLocalStorePath(inMemorySettings);
-  }
-
-  private hasMissingMetadata(sample: {
-    wav_bit_depth: null | number;
-    wav_channels: null | number;
-    wav_sample_rate: null | number;
-  }): boolean {
-    return (
-      sample.wav_sample_rate === null ||
-      sample.wav_bit_depth === null ||
-      sample.wav_channels === null
-    );
-  }
-
-  private identifyKitsNeedingRescan(
-    samples: Array<{
-      kit_name: string;
-      wav_bit_depth: null | number;
-      wav_channels: null | number;
-      wav_sample_rate: null | number;
-    }>,
-  ): string[] {
-    const kitMetadataStatus = new Map<string, boolean>();
-    for (const sample of samples) {
-      if (!kitMetadataStatus.has(sample.kit_name)) {
-        kitMetadataStatus.set(sample.kit_name, false);
-      }
-      if (this.hasMissingMetadata(sample)) {
-        kitMetadataStatus.set(sample.kit_name, true);
-      }
-    }
-
-    const result: string[] = [];
-    for (const [kitName, needsRescan] of kitMetadataStatus) {
-      if (needsRescan) result.push(kitName);
-    }
-    return result;
   }
 }
 

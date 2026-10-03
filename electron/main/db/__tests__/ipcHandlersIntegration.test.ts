@@ -16,14 +16,9 @@ vi.mock("../romperDbCoreORM.js", () => ({
   addSample: vi.fn(),
   createRomperDbFile: vi.fn(),
   deleteSamples: vi.fn(),
-  getAllBanks: vi.fn(),
-  getAllSamples: vi.fn(),
-  getFavoriteKits: vi.fn(),
-  getFavoriteKitsCount: vi.fn(),
   getKit: vi.fn(),
   getKits: vi.fn(),
   getKitSamples: vi.fn(),
-  getKitsMetadata: vi.fn(),
   toggleKitFavorite: vi.fn(),
   updateKit: vi.fn(),
   updateVoiceAlias: vi.fn(),
@@ -43,79 +38,6 @@ describe("IPC Handlers Integration Tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockIpcHandlers.clear();
-  });
-
-  describe("getKitsMetadata IPC Handler", () => {
-    test("should handle get-kits-metadata successfully with serializable data", async () => {
-      // Setup realistic kit metadata that avoids circular references
-      const mockKitsMetadata = [
-        {
-          alias: null,
-          bank_letter: "A",
-          bpm: 120,
-          created_at: "2023-01-01T00:00:00.000Z",
-          editable: true,
-          is_favorite: false,
-          name: "A0",
-          step_pattern: null,
-          updated_at: "2023-01-01T00:00:00.000Z",
-        },
-        {
-          alias: "My Kit",
-          bank_letter: "A",
-          bpm: 140,
-          created_at: "2023-01-02T00:00:00.000Z",
-          editable: false,
-          is_favorite: true,
-          name: "A1",
-          step_pattern: [[1, 0, 1, 0]],
-          updated_at: "2023-01-02T00:00:00.000Z",
-        },
-      ];
-
-      vi.mocked(romperDbCoreORM.getKitsMetadata).mockReturnValue(
-        mockKitsMetadata,
-      );
-
-      // Register handlers
-      registerDbIpcHandlers(mockInMemorySettings);
-
-      // Get and invoke the handler
-      const handler = mockIpcHandlers.get("get-kits-metadata");
-      expect(handler).toBeDefined();
-
-      const mockEvent = {};
-      const result = await handler(mockEvent);
-
-      expect(romperDbCoreORM.getKitsMetadata).toHaveBeenCalledWith(mockDbDir);
-      expect(result).toEqual(mockKitsMetadata);
-
-      // Verify data is serializable (no circular references)
-      expect(() => JSON.stringify(result)).not.toThrow();
-
-      // Verify no bank relation objects that cause IPC serialization issues
-      result.forEach((kit: unknown) => {
-        expect(kit).not.toHaveProperty("bank");
-        expect(kit.bank_letter).toBeDefined(); // Only the bank letter, not the relation
-      });
-    });
-
-    test("should handle database errors gracefully", async () => {
-      vi.mocked(romperDbCoreORM.getKitsMetadata).mockReturnValue({
-        error: "Database connection failed",
-        success: false,
-      });
-
-      registerDbIpcHandlers(mockInMemorySettings);
-      const handler = mockIpcHandlers.get("get-kits-metadata");
-
-      const result = await handler({});
-
-      expect(result).toEqual({
-        error: "Database connection failed",
-        success: false,
-      });
-    });
   });
 
   describe("Favorites IPC Handlers", () => {
@@ -152,43 +74,12 @@ describe("IPC Handlers Integration Tests", () => {
       );
     });
 
-    test("should handle get-favorite-kits successfully", async () => {
-      const mockFavoriteKits = [
-        {
-          bank: null,
-          bank_letter: "A",
-          is_favorite: true,
-          name: "A0",
-          samples: [],
-          voices: [],
-        },
-      ];
-      vi.mocked(romperDbCoreORM.getFavoriteKits).mockReturnValue(
-        mockFavoriteKits,
-      );
+    test("[Q-03] no longer registers the favorites read channels", () => {
+      registerDbIpcHandlers(mockInMemorySettings);
 
-      const handler = mockIpcHandlers.get("get-favorite-kits");
-
-      const result = await handler({});
-
-      expect(romperDbCoreORM.getFavoriteKits).toHaveBeenCalledWith(mockDbDir);
-      expect(result).toEqual(mockFavoriteKits);
-
-      // Verify serializable structure
-      expect(() => JSON.stringify(result)).not.toThrow();
-    });
-
-    test("should handle get-favorite-kits-count successfully", async () => {
-      vi.mocked(romperDbCoreORM.getFavoriteKitsCount).mockReturnValue(3);
-
-      const handler = mockIpcHandlers.get("get-favorite-kits-count");
-
-      const result = await handler({});
-
-      expect(romperDbCoreORM.getFavoriteKitsCount).toHaveBeenCalledWith(
-        mockDbDir,
-      );
-      expect(result).toEqual(3);
+      expect(mockIpcHandlers.has("get-favorite-kits")).toBe(false);
+      expect(mockIpcHandlers.has("get-favorite-kits-count")).toBe(false);
+      expect(mockIpcHandlers.has("get-kits-metadata")).toBe(false);
     });
   });
 
@@ -242,29 +133,31 @@ describe("IPC Handlers Integration Tests", () => {
     });
   });
 
-  describe("Handler Error Handling", () => {
+  describe("Handler Error Handling [Q-03]", () => {
     test("should handle synchronous database errors in handlers", async () => {
-      vi.mocked(romperDbCoreORM.getKitsMetadata).mockImplementation(() => {
+      vi.mocked(romperDbCoreORM.getKits).mockImplementation(() => {
         throw new Error("Synchronous database error");
       });
 
       registerDbIpcHandlers(mockInMemorySettings);
-      const handler = mockIpcHandlers.get("get-kits-metadata");
+      const handler = mockIpcHandlers.get("get-all-kits");
 
       // The handler doesn't catch errors, so they propagate up
       await expect(handler({})).rejects.toThrow("Synchronous database error");
     });
 
     test("should handle database result errors in handlers", async () => {
-      vi.mocked(romperDbCoreORM.getFavoriteKitsCount).mockReturnValue({
+      vi.mocked(romperDbCoreORM.getKit).mockReturnValue({
         error: "Database query failed",
         success: false,
       });
 
-      registerFavoritesIpcHandlers(mockInMemorySettings);
-      const handler = mockIpcHandlers.get("get-favorite-kits-count");
+      registerDbIpcHandlers(mockInMemorySettings);
+      const handler = mockIpcHandlers.get("get-kit");
 
-      const result = await handler({});
+      const result = await handler({}, "A0");
+
+      expect(romperDbCoreORM.getKit).toHaveBeenCalledWith(mockDbDir, "A0");
 
       expect(result).toEqual({
         error: "Database query failed",
@@ -273,7 +166,7 @@ describe("IPC Handlers Integration Tests", () => {
     });
   });
 
-  describe("IPC Serialization", () => {
+  describe("IPC Serialization [Q-03]", () => {
     test("should ensure all handler responses are JSON serializable", async () => {
       // Test data that includes various types
       const mockKitsData = [
@@ -291,10 +184,10 @@ describe("IPC Handlers Integration Tests", () => {
         },
       ];
 
-      vi.mocked(romperDbCoreORM.getKitsMetadata).mockReturnValue(mockKitsData);
+      vi.mocked(romperDbCoreORM.getKits).mockReturnValue(mockKitsData);
 
       registerDbIpcHandlers(mockInMemorySettings);
-      const handler = mockIpcHandlers.get("get-kits-metadata");
+      const handler = mockIpcHandlers.get("get-all-kits");
 
       const result = await handler({});
 
@@ -308,7 +201,7 @@ describe("IPC Handlers Integration Tests", () => {
     });
 
     test("should handle complex data structures without circular references", async () => {
-      const mockFavoriteKits = [
+      const mockKits = [
         {
           bank: null, // Explicit null instead of relation object
           bank_letter: "A",
@@ -323,12 +216,10 @@ describe("IPC Handlers Integration Tests", () => {
         },
       ];
 
-      vi.mocked(romperDbCoreORM.getFavoriteKits).mockReturnValue(
-        mockFavoriteKits,
-      );
+      vi.mocked(romperDbCoreORM.getKits).mockReturnValue(mockKits);
 
-      registerFavoritesIpcHandlers(mockInMemorySettings);
-      const handler = mockIpcHandlers.get("get-favorite-kits");
+      registerDbIpcHandlers(mockInMemorySettings);
+      const handler = mockIpcHandlers.get("get-all-kits");
 
       const result = await handler({});
 

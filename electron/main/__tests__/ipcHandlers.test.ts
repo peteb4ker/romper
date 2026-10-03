@@ -61,7 +61,6 @@ vi.mock("../services/localStoreService.js", () => ({
   localStoreService: {
     getLocalStoreStatus: vi.fn(() => ({ isValid: true })),
     listFilesInRoot: vi.fn(() => ["A0", "A1", "B0"]),
-    readFile: vi.fn(() => ({ data: Buffer.from("test"), success: true })),
     validateExistingLocalStore: vi.fn(() => ({
       path: "/mock/store",
       success: true,
@@ -122,10 +121,6 @@ vi.mock("../security/pathAccess.js", () => ({
     grantRoot: vi.fn(),
     useSettings: vi.fn(),
   },
-}));
-
-vi.mock("../security/sampleSourceAccess.js", () => ({
-  checkSampleSourceAccess: vi.fn(() => ({ ok: true })),
 }));
 
 vi.mock("../security/localStoreAccessPrompt.js", () => ({
@@ -428,14 +423,6 @@ describe("registerIpcHandlers", () => {
     });
   });
 
-  it("registers read-file and returns file content", async () => {
-    const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
-
-    const result = await ipcMainHandlers["read-file"]({}, "/mock/file.txt");
-    expect(result).toBeDefined();
-  });
-
   it("registers get-user-home-dir and returns home directory", async () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
     registerIpcHandlers({});
@@ -633,11 +620,9 @@ describe("registerIpcHandlers - path authorization (RE-03)", () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
     registerIpcHandlers(settings as never);
     const access = await import("../security/pathAccess.js");
-    const samples = await import("../security/sampleSourceAccess.js");
     return {
       assertAllowed: vi.mocked(access.pathAccess.assertAllowed),
       checkPathAccess: vi.mocked(access.checkPathAccess),
-      checkSampleSourceAccess: vi.mocked(samples.checkSampleSourceAccess),
       grantRead: vi.mocked(access.pathAccess.grantRead),
       grantRoot: vi.mocked(access.pathAccess.grantRoot),
       useSettings: vi.mocked(access.pathAccess.useSettings),
@@ -764,19 +749,11 @@ describe("registerIpcHandlers - path authorization (RE-03)", () => {
     expect(localStoreService.listFilesInRoot).not.toHaveBeenCalled();
   });
 
-  it("read-file only reads sample sources the user gave Romper", async () => {
-    const { localStoreService } =
-      await import("../services/localStoreService.js");
-    const settings = { localStorePath: "/store" };
-    const { checkSampleSourceAccess } = await setup(settings);
-    checkSampleSourceAccess.mockReturnValueOnce(DENIED);
-    const result = await ipcMainHandlers["read-file"]({}, "/Users/me/.ssh/id");
-    expect(checkSampleSourceAccess).toHaveBeenCalledWith(
-      settings,
-      "/Users/me/.ssh/id",
-    );
-    expect(result).toEqual({ error: DENIED.error, success: false });
-    expect(localStoreService.readFile).not.toHaveBeenCalled();
+  // [Q-03] read-file was guarded by checkSampleSourceAccess; the renderer
+  // stopped using it, so the channel is gone rather than guarded.
+  it("[Q-03] read-file is no longer registered", async () => {
+    await setup({ localStorePath: "/store" });
+    expect(ipcMainHandlers).not.toHaveProperty("read-file");
   });
 
   it("download-and-extract-archive refuses a denied destination without downloading", async () => {

@@ -9,16 +9,13 @@ import { ipcMain } from "electron";
 
 import type { InMemorySettings } from "./types/settings.js";
 
-import { getAudioMetadata, validateSampleFormat } from "./audioUtils.js";
+import { validateSampleFormat } from "./audioUtils.js";
 import { registerFavoritesIpcHandlers } from "./db/favoritesIpcHandlers.js";
 import { createDbHandler } from "./db/ipcHandlerUtils.js";
 import {
-  getAllBanks,
-  getAllSamples,
   getKit,
   getKits,
   getKitSamples,
-  getKitsMetadata,
   updateBank,
   updateKit,
   updateSampleGain,
@@ -111,13 +108,6 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     "get-all-kits",
     createDbHandler(inMemorySettings, (dbDir: string) => {
       return getKits(dbDir);
-    }),
-  );
-
-  ipcMain.handle(
-    "get-kits-metadata",
-    createDbHandler(inMemorySettings, (dbDir: string) => {
-      return getKitsMetadata(dbDir);
     }),
   );
 
@@ -358,11 +348,6 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   );
 
   ipcMain.handle(
-    "get-all-samples",
-    createDbHandler(inMemorySettings, (dbDir: string) => getAllSamples(dbDir)),
-  );
-
-  ipcMain.handle(
     "get-all-samples-for-kit",
     createDbHandler(inMemorySettings, (dbDir: string, kitName: string) => {
       return getKitSamples(dbDir, kitName);
@@ -372,18 +357,6 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   ipcMain.handle("rescan-kit", (_event, kitName: string) => {
     return scanService.rescanKit(inMemorySettings, kitName);
   });
-
-  ipcMain.handle("rescan-kits-missing-metadata", () => {
-    return scanService.rescanKitsWithMissingMetadata(inMemorySettings);
-  });
-
-  // Bank operations
-  ipcMain.handle(
-    "get-all-banks",
-    createDbHandler(inMemorySettings, (dbDir: string) => {
-      return getAllBanks(dbDir);
-    }),
-  );
 
   // Rename or clear a bank (RE-23). An empty or null artist clears the name
   // in the database as well as its RTF file, so it stays gone after a
@@ -441,12 +414,6 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   });
 
   // Audio format validation
-  ipcMain.handle("get-audio-metadata", (_event, filePath: string) => {
-    const access = checkSampleSourceAccess(inMemorySettings, filePath);
-    if (!access.ok) return { error: access.error, success: false };
-    return getAudioMetadata(filePath);
-  });
-
   ipcMain.handle("validate-sample-format", (_event, filePath: string) => {
     const access = checkSampleSourceAccess(inMemorySettings, filePath);
     if (!access.ok) return { error: access.error, success: false };

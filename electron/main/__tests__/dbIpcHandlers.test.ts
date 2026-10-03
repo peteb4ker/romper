@@ -12,10 +12,6 @@ vi.mock("../db/romperDbCoreORM", () => ({
   addKit: vi.fn(),
   addSample: vi.fn(),
   createRomperDbFile: vi.fn(),
-  getAllBanks: vi.fn(),
-  getAllSamples: vi.fn(),
-  getFavoriteKits: vi.fn(),
-  getFavoriteKitsCount: vi.fn(),
   getKit: vi.fn(),
   getKits: vi.fn(),
   getKitSamples: vi.fn(),
@@ -31,14 +27,12 @@ vi.mock("../services/sampleService.js", () => ({
     addSampleToSlot: vi.fn(),
     deleteSampleFromSlot: vi.fn(),
     replaceSampleInSlot: vi.fn(),
-    validateSampleSources: vi.fn(),
   },
 }));
 
 vi.mock("../services/scanService.js", () => ({
   scanService: {
     rescanKit: vi.fn(),
-    rescanKitsWithMissingMetadata: vi.fn(),
     scanBanks: vi.fn(),
   },
 }));
@@ -89,7 +83,6 @@ import { scanService } from "../services/scanService.js";
 const mockIpcMain = vi.mocked(ipcMain);
 const mockSampleService = vi.mocked(sampleService);
 const mockScanService = vi.mocked(scanService);
-const mockGetAudioMetadata = vi.mocked(getAudioMetadata);
 const DENIED = { error: "Access denied: outside granted folders", ok: false };
 
 describe("dbIpcHandlers - Routing Tests", () => {
@@ -120,10 +113,6 @@ describe("dbIpcHandlers - Routing Tests", () => {
       success: true,
     });
     mockSampleService.deleteSampleFromSlot.mockReturnValue({ success: true });
-    mockSampleService.validateSampleSources.mockReturnValue({
-      data: { invalidSamples: [], totalSamples: 0, validSamples: 0 },
-      success: true,
-    });
     mockScanService.rescanKit.mockResolvedValue({
       data: { scannedSamples: 5, updatedVoices: 2 },
       success: true,
@@ -139,10 +128,6 @@ describe("dbIpcHandlers - Routing Tests", () => {
     });
     vi.mocked(romperDbCore.addKit).mockReturnValue({ success: true });
     vi.mocked(romperDbCore.addSample).mockReturnValue({ success: true });
-    vi.mocked(romperDbCore.getAllBanks).mockReturnValue({
-      data: [],
-      success: true,
-    });
     vi.mocked(romperDbCore.getKits).mockReturnValue({
       data: [],
       success: true,
@@ -163,22 +148,32 @@ describe("dbIpcHandlers - Routing Tests", () => {
         "update-step-pattern",
         "validate-local-store",
         "validate-local-store-basic",
-        "get-all-samples",
         "get-all-samples-for-kit",
         "rescan-kit",
-        "rescan-kits-missing-metadata",
-        "get-all-banks",
         "scan-banks",
         "add-sample-to-slot",
         "replace-sample-in-slot",
         "delete-sample-from-slot",
-        "validate-sample-sources",
+        "validate-sample-format",
       ];
 
       expectedHandlers.forEach((handler) => {
         expect(handlerRegistry[handler]).toBeDefined();
         expect(typeof handlerRegistry[handler]).toBe("function");
       });
+    });
+
+    it("[Q-03] no longer registers channels the renderer stopped using", () => {
+      for (const channel of [
+        "get-all-banks",
+        "get-all-samples",
+        "get-audio-metadata",
+        "get-kits-metadata",
+        "rescan-kits-missing-metadata",
+        "validate-sample-sources",
+      ]) {
+        expect(handlerRegistry).not.toHaveProperty(channel);
+      }
     });
   });
 
@@ -291,17 +286,6 @@ describe("dbIpcHandlers - Routing Tests", () => {
         7,
       );
     });
-
-    it("validate-sample-sources routes to sampleService.validateSampleSources", async () => {
-      const handler = handlerRegistry["validate-sample-sources"];
-      const result = await handler({}, "TestKit");
-
-      expect(result.success).toBe(true);
-      expect(mockSampleService.validateSampleSources).toHaveBeenCalledWith(
-        mockInMemorySettings,
-        "TestKit",
-      );
-    });
   });
 
   describe("Scan Service Handlers", () => {
@@ -314,26 +298,6 @@ describe("dbIpcHandlers - Routing Tests", () => {
         mockInMemorySettings,
         "TestKit",
       );
-    });
-
-    it("rescan-kits-missing-metadata routes to scanService.rescanKitsWithMissingMetadata", async () => {
-      mockScanService.rescanKitsWithMissingMetadata.mockResolvedValue({
-        data: {
-          kitsNeedingRescan: ["A1", "A2"],
-          kitsRescanned: ["A1", "A2"],
-          totalSamplesUpdated: 50,
-        },
-        success: true,
-      });
-
-      const handler = handlerRegistry["rescan-kits-missing-metadata"];
-      const result = await handler({});
-
-      expect(result.success).toBe(true);
-      expect(result.data?.totalSamplesUpdated).toBe(50);
-      expect(
-        mockScanService.rescanKitsWithMissingMetadata,
-      ).toHaveBeenCalledWith(mockInMemorySettings);
     });
 
     it("scan-banks routes to scanService.scanBanks", async () => {
@@ -406,77 +370,6 @@ describe("dbIpcHandlers - Routing Tests", () => {
     });
   });
 
-  describe("Audio Metadata Handler", () => {
-    beforeEach(() => {
-      vi.clearAllMocks();
-      registerDbIpcHandlers(mockInMemorySettings);
-
-      // Set up handler registry
-      mockIpcMain.handle.mockClear();
-      registerDbIpcHandlers(mockInMemorySettings);
-
-      // Capture all handler registrations
-      mockIpcMain.handle.mock.calls.forEach(([channel, handler]) => {
-        handlerRegistry[channel] = handler;
-      });
-    });
-
-    it("get-audio-metadata routes to getAudioMetadata", async () => {
-      mockGetAudioMetadata.mockReturnValue({
-        data: {
-          bitDepth: 16,
-          channels: 2,
-          sampleRate: 44100,
-        },
-        success: true,
-      });
-
-      const handler = handlerRegistry["get-audio-metadata"];
-      const result = await handler({}, "/path/to/test.wav");
-
-      expect(result.success).toBe(true);
-      expect(result.data).toEqual({
-        bitDepth: 16,
-        channels: 2,
-        sampleRate: 44100,
-      });
-      expect(mockGetAudioMetadata).toHaveBeenCalledWith("/path/to/test.wav");
-    });
-
-    it("get-audio-metadata handles errors gracefully", async () => {
-      mockGetAudioMetadata.mockReturnValue({
-        error: "Invalid audio file format",
-        success: false,
-      });
-
-      const handler = handlerRegistry["get-audio-metadata"];
-      const result = await handler({}, "/path/to/invalid.wav");
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("Invalid audio file format");
-      expect(mockGetAudioMetadata).toHaveBeenCalledWith("/path/to/invalid.wav");
-    });
-
-    it("get-audio-metadata handles partial metadata", async () => {
-      mockGetAudioMetadata.mockReturnValue({
-        data: {
-          bitDepth: 24,
-          // Missing channels and sampleRate
-        },
-        success: true,
-      });
-
-      const handler = handlerRegistry["get-audio-metadata"];
-      const result = await handler({}, "/path/to/partial.wav");
-
-      expect(result.success).toBe(true);
-      expect(result.data).toEqual({
-        bitDepth: 24,
-      });
-      expect(mockGetAudioMetadata).toHaveBeenCalledWith("/path/to/partial.wav");
-    });
-  });
-
   describe("Path authorization (RE-03)", () => {
     it("create-romper-db refuses a database folder outside the roots", async () => {
       const { localStoreSetupService } =
@@ -517,15 +410,9 @@ describe("dbIpcHandlers - Routing Tests", () => {
       importSetupKit.mockRestore();
     });
 
-    it("get-all-samples reads the configured store, not a renderer path", async () => {
-      vi.mocked(romperDbCore.getAllSamples).mockReturnValue({
-        data: [],
-        success: true,
-      });
-      await handlerRegistry["get-all-samples"]({}, "/attacker/.romperdb");
-      expect(romperDbCore.getAllSamples).toHaveBeenCalledWith(
-        "/test/path/.romperdb",
-      );
+    it("[Q-03] get-all-kits reads the configured store, not a renderer path", async () => {
+      await handlerRegistry["get-all-kits"]({}, "/attacker/.romperdb");
+      expect(romperDbCore.getKits).toHaveBeenCalledWith("/test/path/.romperdb");
     });
 
     it.each(["validate-local-store", "validate-local-store-basic"])(
@@ -553,20 +440,35 @@ describe("dbIpcHandlers - Routing Tests", () => {
       );
     });
 
-    it.each(["get-audio-metadata", "validate-sample-format"])(
-      "%s only reads sample sources the user gave Romper",
-      async (channel) => {
-        vi.mocked(checkSampleSourceAccess).mockReturnValueOnce(DENIED);
-        const result = await handlerRegistry[channel]({}, "/etc/passwd");
-        expect(checkSampleSourceAccess).toHaveBeenCalledWith(
-          mockInMemorySettings,
-          "/etc/passwd",
-        );
-        expect(result).toEqual({ error: DENIED.error, success: false });
-        expect(getAudioMetadata).not.toHaveBeenCalled();
-        expect(validateSampleFormat).not.toHaveBeenCalled();
-      },
-    );
+    it("validate-sample-format only reads sample sources the user gave Romper", async () => {
+      vi.mocked(checkSampleSourceAccess).mockReturnValueOnce(DENIED);
+      const result = await handlerRegistry["validate-sample-format"](
+        {},
+        "/etc/passwd",
+      );
+      expect(checkSampleSourceAccess).toHaveBeenCalledWith(
+        mockInMemorySettings,
+        "/etc/passwd",
+      );
+      expect(result).toEqual({ error: DENIED.error, success: false });
+      expect(validateSampleFormat).not.toHaveBeenCalled();
+    });
+
+    it("validate-sample-format reads a sample source the user gave Romper", async () => {
+      const result = await handlerRegistry["validate-sample-format"](
+        {},
+        "/picked/kick.wav",
+      );
+      expect(result).toEqual({ success: true });
+      expect(validateSampleFormat).toHaveBeenCalledWith("/picked/kick.wav");
+    });
+
+    // [Q-03] get-audio-metadata had the same guard; the channel is gone, so
+    // the renderer has no way to ask main for an arbitrary file's header.
+    it("[Q-03] get-audio-metadata is no longer registered", () => {
+      expect(handlerRegistry).not.toHaveProperty("get-audio-metadata");
+      expect(getAudioMetadata).not.toHaveBeenCalled();
+    });
 
     it.each(["add-sample-to-slot", "replace-sample-in-slot"])(
       "%s refuses a source file the user never gave Romper",

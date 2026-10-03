@@ -71,8 +71,8 @@ in `electron/main/security/`.
   (and anything above it) are refused. E2E tests answer the prompt with
   `tests/utils/e2e-dialogs.ts`.
 - **Sample sources** (`sampleSourceAccess.ts`). Samples are referenced from
-  wherever the user dragged them, so reading one file (`readFile`,
-  `getAudioMetadata`, `validateSampleFormat`, the path given to
+  wherever the user dragged them, so reading one file
+  (`validateSampleFormat`, the path given to
   `addSampleToSlot`/`replaceSampleInSlot`) is also allowed when the store's
   database already references it, or referenced it before an edit this
   session (so undo can put a sample back).
@@ -196,8 +196,10 @@ to skip them (RE-09).
   a `GainNode`. All slots share one `AudioContext`
   (`utils/sharedAudioContext.ts`, RE-14) and never close it; each slot
   disconnects its own gain and meter nodes when its sample changes or it
-  unmounts. Channels that take a file path (`readFile`,
-  `getAudioMetadata`) are scoped by main; see "The renderer is untrusted".
+  unmounts. The renderer can't read a sample file by path: buffers come
+  from main by kit / voice / slot. Channels that take a sample's path
+  (`validateSampleFormat`, add and replace) are scoped by main; see "The
+  renderer is untrusted".
 - Each voice picks a sample by `sample_mode`: `first`, `random`, or
   `round-robin`. A voice in slice mode then plays only a region of that
   sample (`PlayOptions.region`, offset + duration with ~2 ms anti-click

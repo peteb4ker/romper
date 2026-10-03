@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   assertAllowed,
@@ -212,6 +212,40 @@ describe("pathAccess (RE-03)", () => {
       fs.symlinkSync(loop, loop);
       expect(allowed(path.join(loop, "x"))).toBe(false);
     });
+
+    // RE-85: roots are canonicalised once per change, so these pin that a
+    // cached root never widens access, and that the target is still
+    // resolved on every check
+    it("[Q-03] denies a path through a store symlink re-pointed outside after a check", () => {
+      const linkedStore = path.join(tmp, "linked-store");
+      fs.symlinkSync(store, linkedStore);
+      policy.useSettings({ localStorePath: linkedStore });
+      expect(allowed(path.join(linkedStore, "A0"))).toBe(true);
+
+      fs.unlinkSync(linkedStore);
+      fs.symlinkSync(outside, linkedStore);
+
+      expect(allowed(path.join(linkedStore, "secret.txt"), "read")).toBe(false);
+      expect(allowed(path.join(linkedStore, "new-dir"))).toBe(false);
+    });
+
+    it("[Q-03] denies a symlink planted in a root after the roots were resolved", () => {
+      expect(allowed(path.join(store, "A0"))).toBe(true);
+      const link = path.join(store, "late-escape");
+      fs.symlinkSync(outside, link);
+      expect(allowed(path.join(link, "secret.txt"), "read")).toBe(false);
+    });
+
+    it("[Q-03] re-resolves the roots when a setting changes in place", () => {
+      const other = path.join(tmp, "other-store");
+      const otherLink = path.join(tmp, "other-link");
+      fs.mkdirSync(other);
+      fs.symlinkSync(other, otherLink);
+      expect(allowed(path.join(other, "A0"))).toBe(false);
+      settings.localStorePath = otherLink;
+      expect(allowed(path.join(other, "A0"))).toBe(true);
+      expect(allowed(path.join(store, "A0"))).toBe(false);
+    });
   });
 
   describe("read-only grants", () => {
@@ -223,6 +257,113 @@ describe("pathAccess (RE-03)", () => {
       expect(allowed(dropped, "write")).toBe(false);
       expect(allowed(path.join(outside, "secret.txt"), "read")).toBe(false);
       expect(allowed(outside, "read")).toBe(false);
+    });
+
+    it("[Q-03] allows what's under a granted folder, but not a symlink out of it", () => {
+      const library = path.join(tmp, "library");
+      fs.mkdirSync(path.join(library, "drums"), { recursive: true });
+      fs.symlinkSync(outside, path.join(library, "escape"));
+      policy.grantRead(library);
+      expect(allowed(path.join(library, "drums", "kick.wav"), "read")).toBe(
+        true,
+      );
+      expect(allowed(path.join(library, "escape", "secret.txt"), "read")).toBe(
+        false,
+      );
+    });
+
+    it("[Q-03] grants the file a symlink pointed to when it was granted, not its later target", () => {
+      const sample = path.join(tmp, "sample.wav");
+      const link = path.join(tmp, "dropped.wav");
+      fs.writeFileSync(sample, "RIFF");
+      fs.symlinkSync(sample, link);
+      policy.grantRead(link);
+      expect(allowed(sample, "read")).toBe(true);
+
+      fs.unlinkSync(link);
+      fs.symlinkSync(path.join(outside, "secret.txt"), link);
+
+      expect(allowed(link, "read")).toBe(false);
+      expect(allowed(path.join(outside, "secret.txt"), "read")).toBe(false);
+    });
+
+    it("[Q-03] grants nothing for a dangling symlink, even once its target appears", () => {
+      const dangling = path.join(tmp, "dangling.wav");
+      const target = path.join(outside, "later.wav");
+      fs.symlinkSync(target, dangling);
+      policy.grantRead(dangling);
+      fs.writeFileSync(target, "RIFF");
+      expect(allowed(dangling, "read")).toBe(false);
+      expect(allowed(target, "read")).toBe(false);
+    });
+
+    it("[Q-03] matches grants by case where the filesystem ignores it", () => {
+      const dropped = path.join(outside, "Kick.wav");
+      fs.writeFileSync(dropped, "RIFF");
+      policy.grantRead(dropped);
+      const otherCase = path.join(outside, "KICK.WAV");
+      expect(allowed(otherCase, "read")).toBe(
+        process.platform === "darwin" || process.platform === "win32",
+      );
+    });
+  });
+
+  // RE-85: a check used to resolve every root and every granted file, and
+  // grants pile up as kits are edited. Now a check resolves the target only.
+  describe("[Q-01] cost of a check", () => {
+    const GRANTS = 500;
+    let library: string;
+    let realpath: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      library = path.join(tmp, "library");
+      fs.mkdirSync(library);
+      for (let i = 0; i < GRANTS; i++) {
+        const file = path.join(library, `${i}.wav`);
+        fs.writeFileSync(file, "RIFF");
+        policy.grantRead(file);
+      }
+      realpath = vi.spyOn(fs.realpathSync, "native");
+    });
+
+    afterEach(() => {
+      realpath.mockRestore();
+    });
+
+    it("resolves only the target, however many files are granted", () => {
+      // The first check resolves the roots, once
+      expect(allowed(path.join(store, "A0"))).toBe(true);
+      realpath.mockClear();
+
+      expect(allowed(path.join(library, "250.wav"), "read")).toBe(true);
+      expect(allowed(path.join(outside, "secret.txt"), "read")).toBe(false);
+      expect(allowed(path.join(store, "kick.wav"), "read")).toBe(true);
+
+      // One call per existing target; a path that doesn't exist yet walks
+      // up to its nearest existing folder
+      expect(realpath.mock.calls.length).toBeLessThanOrEqual(6);
+    });
+
+    it("doesn't resolve a file again when it's granted again", () => {
+      realpath.mockClear();
+      for (let i = 0; i < GRANTS; i++) {
+        policy.grantRead(path.join(library, `${i}.wav`));
+      }
+      expect(realpath).not.toHaveBeenCalled();
+    });
+
+    it("resolves the roots again only when they change", () => {
+      allowed(store);
+      realpath.mockClear();
+      for (let i = 0; i < 20; i++) allowed(path.join(store, "A0"));
+      const perCheck = realpath.mock.calls.length / 20;
+      expect(perCheck).toBeLessThanOrEqual(2);
+
+      realpath.mockClear();
+      settings.sdCardPath = sdCard;
+      expect(allowed(path.join(sdCard, "A0"))).toBe(true);
+      // The new set of roots is resolved once, then checks are cheap again
+      expect(realpath.mock.calls.length).toBeGreaterThan(perCheck * 2);
     });
   });
 

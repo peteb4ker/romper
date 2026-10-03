@@ -4,11 +4,14 @@ import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../db/romperDbCoreORM.js", () => ({
-  getAllSamples: vi.fn(),
   getKitSamples: vi.fn(),
 }));
+vi.mock("../../db/operations/sampleSourceQueries.js", () => ({
+  isSourcePathReferenced: vi.fn(),
+}));
 
-import { getAllSamples, getKitSamples } from "../../db/romperDbCoreORM.js";
+import { isSourcePathReferenced } from "../../db/operations/sampleSourceQueries.js";
+import { getKitSamples } from "../../db/romperDbCoreORM.js";
 import { pathAccess } from "../pathAccess";
 import {
   checkSampleSourceAccess,
@@ -37,7 +40,10 @@ describe("sampleSourceAccess (RE-03)", () => {
     settings = { localStorePath: store };
     pathAccess.reset();
     pathAccess.useSettings(settings);
-    vi.mocked(getAllSamples).mockReturnValue({ data: [], success: true });
+    vi.mocked(isSourcePathReferenced).mockReturnValue({
+      data: false,
+      success: true,
+    });
     vi.mocked(getKitSamples).mockReturnValue({ data: [], success: true });
   });
 
@@ -55,7 +61,7 @@ describe("sampleSourceAccess (RE-03)", () => {
       path.join(store, "A0", "1 kick.wav"),
     );
     expect(result.ok).toBe(true);
-    expect(getAllSamples).not.toHaveBeenCalled();
+    expect(isSourcePathReferenced).not.toHaveBeenCalled();
   });
 
   it("allows a file the user dropped this session", () => {
@@ -67,19 +73,28 @@ describe("sampleSourceAccess (RE-03)", () => {
 
   it("allows a file the store already references (added in an earlier session)", () => {
     const referenced = path.join(library, "hat.wav");
-    vi.mocked(getAllSamples).mockReturnValue({
-      data: [sample(referenced)],
+    vi.mocked(isSourcePathReferenced).mockReturnValue({
+      data: true,
       success: true,
     });
     expect(checkSampleSourceAccess(settings, referenced).ok).toBe(true);
-    expect(getAllSamples).toHaveBeenCalledWith(path.join(store, ".romperdb"));
+    // [Q-01] One LIMIT 1 lookup for this path, not a load of every sample
+    expect(isSourcePathReferenced).toHaveBeenCalledWith(
+      path.join(store, ".romperdb"),
+      [referenced],
+    );
+  });
+
+  it("looks up both the path as given and its resolved form", () => {
+    const given = `${library}${path.sep}x${path.sep}..${path.sep}hat.wav`;
+    checkSampleSourceAccess(settings, given);
+    expect(isSourcePathReferenced).toHaveBeenCalledWith(
+      path.join(store, ".romperdb"),
+      [given, path.join(library, "hat.wav")],
+    );
   });
 
   it("denies anything else", () => {
-    vi.mocked(getAllSamples).mockReturnValue({
-      data: [sample(path.join(library, "hat.wav"))],
-      success: true,
-    });
     const result = checkSampleSourceAccess(settings, "/etc/passwd");
     expect(result.ok).toBe(false);
     expect(checkSampleSourceAccess(settings, "relative.wav").ok).toBe(false);
@@ -89,13 +104,18 @@ describe("sampleSourceAccess (RE-03)", () => {
   it("doesn't consult (or create) a database that doesn't exist", () => {
     fs.rmSync(path.join(store, ".romperdb"), { force: true, recursive: true });
     expect(checkSampleSourceAccess(settings, "/etc/passwd").ok).toBe(false);
-    expect(getAllSamples).not.toHaveBeenCalled();
+    expect(isSourcePathReferenced).not.toHaveBeenCalled();
     expect(fs.existsSync(path.join(store, ".romperdb"))).toBe(false);
   });
 
   it("denies when the database lookup fails", () => {
-    vi.mocked(getAllSamples).mockImplementation(() => {
+    vi.mocked(isSourcePathReferenced).mockImplementation(() => {
       throw new Error("locked");
+    });
+    expect(checkSampleSourceAccess(settings, "/etc/passwd").ok).toBe(false);
+    vi.mocked(isSourcePathReferenced).mockReturnValue({
+      error: "locked",
+      success: false,
     });
     expect(checkSampleSourceAccess(settings, "/etc/passwd").ok).toBe(false);
   });
@@ -106,8 +126,9 @@ describe("sampleSourceAccess (RE-03)", () => {
     fs.writeFileSync(path.join(envStore, ".romperdb", "romper.sqlite"), "");
     process.env.ROMPER_LOCAL_PATH = envStore;
     checkSampleSourceAccess({}, "/etc/passwd");
-    expect(getAllSamples).toHaveBeenCalledWith(
+    expect(isSourcePathReferenced).toHaveBeenCalledWith(
       path.join(envStore, ".romperdb"),
+      ["/etc/passwd"],
     );
   });
 
@@ -127,7 +148,6 @@ describe("sampleSourceAccess (RE-03)", () => {
         "A0",
       );
       // The sample has since been deleted: the database no longer has it.
-      vi.mocked(getAllSamples).mockReturnValue({ data: [], success: true });
       expect(checkSampleSourceAccess(settings, external).ok).toBe(true);
       // Remembering grants read only.
       expect(pathAccess.check(external, "write").ok).toBe(false);

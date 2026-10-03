@@ -77,6 +77,7 @@ describe("scanAllKits", () => {
     expect(window.electronAPI.rescanKit).toHaveBeenCalledWith("A1");
     expect(window.electronAPI.rescanKit).toHaveBeenCalledWith("A2");
     expect(onProgress).toHaveBeenLastCalledWith({
+      failedCount: 0,
       message: "All 2 kits scanned successfully (comprehensive).",
       status: "complete",
       successCount: 2,
@@ -132,6 +133,7 @@ describe("scanAllKits", () => {
     });
 
     expect(onProgress).toHaveBeenLastCalledWith({
+      failedCount: 0,
       message:
         "All 3 kits scanned successfully (comprehensive). 3 samples added, " +
         "1 sample missing on disk, 1 new file not added to editable kits, " +
@@ -150,6 +152,7 @@ describe("scanAllKits", () => {
     await scanAllKits({ kits: [kit("A1"), kit("A2")], onProgress });
 
     expect(onProgress).toHaveBeenLastCalledWith({
+      failedCount: 1,
       message: expect.stringContaining("1 successful, 1 failed. A2: boom"),
       status: "complete",
       successCount: 1,
@@ -189,6 +192,7 @@ describe("useKitScan", () => {
     });
 
     expect(result.current.bulkScanProgress).toEqual({
+      failedCount: 0,
       message: "All 1 kits scanned successfully (comprehensive).",
       status: "complete",
       successCount: 1,

@@ -9,7 +9,12 @@ const scanTypeDisplayMap: Record<string, string> = {
 
 export type BulkScanProgress =
   | { current: number; currentKit: string; status: "scanning"; total: number }
-  | { message: string; status: "complete"; successCount: number }
+  | {
+      failedCount: number;
+      message: string;
+      status: "complete";
+      successCount: number;
+    }
   | { message: string; status: "error" }
   | { status: "idle" };
 
@@ -140,6 +145,7 @@ export async function scanAllKits({
     const detail = describeScanTotals(totals);
 
     onProgress?.({
+      failedCount: errorCount,
       message: detail ? `${completion.message} ${detail}.` : completion.message,
       status: "complete",
       successCount,

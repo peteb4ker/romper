@@ -4,7 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { createRomperDbFile, withDb } from "../../utils/dbUtilities.js";
+import {
+  createRomperDbFile,
+  withDbTransaction,
+} from "../../utils/dbUtilities.js";
 import { addKit } from "../kitCrudOperations.js";
 import { isSourcePathReferenced } from "../sampleSourceQueries.js";
 
@@ -17,7 +20,7 @@ describe("[Q-01] [Q-03] isSourcePathReferenced (RE-85)", () => {
     dbDir = join(tempDir, ".romperdb");
     createRomperDbFile(dbDir);
     addKit(dbDir, { bank_letter: "A", name: "A0" });
-    withDb(dbDir, (db) =>
+    withDbTransaction(dbDir, (db) =>
       db
         .insert(samples)
         .values(
@@ -34,7 +37,8 @@ describe("[Q-01] [Q-03] isSourcePathReferenced (RE-85)", () => {
   });
 
   afterEach(() => {
-    rmSync(tempDir, { force: true, recursive: true });
+    // Windows can hold a just-closed database file for a moment
+    rmSync(tempDir, { force: true, maxRetries: 5, recursive: true });
   });
 
   it("finds a path a sample references", () => {

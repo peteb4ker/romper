@@ -6,9 +6,8 @@ import type {
   MoveSampleBetweenKitsAction,
   ReindexSamplesAction,
   ReplaceSampleAction,
+  VoiceSnapshot,
 } from "@romper/shared/undoTypes";
-
-import { dbSlotToUiSlot } from "@romper/shared/slotUtils";
 
 import { createLogger } from "../../../utils/logger";
 import { writeSequenceSnapshot } from "./sequenceUndo";
@@ -19,25 +18,6 @@ export interface UseUndoActionHandlersOptions {
   kitName: string;
 }
 
-interface SampleToRestore {
-  sample: {
-    filename: string;
-    source_path: string;
-  };
-  slot: number;
-  voice: number;
-}
-
-// Type interfaces for undo action data structures
-interface StateSnapshotItem {
-  sample: {
-    filename: string;
-    source_path: string;
-  };
-  slot: number;
-  voice: number;
-}
-
 /**
  * Hook for handling undo operations for different action types
  * Extracted from useUndoRedo to reduce complexity
@@ -45,81 +25,16 @@ interface StateSnapshotItem {
 export function useUndoActionHandlers({
   kitName,
 }: UseUndoActionHandlersOptions) {
-  // Helper functions for clearing and restoring samples
-  const clearAffectedVoices = async (fromVoice: number, toVoice: number) => {
-    const affectedVoices = new Set([fromVoice, toVoice]);
-    const currentSamplesResult =
-      await globalThis.electronAPI?.getAllSamplesForKit?.(kitName);
-
-    if (currentSamplesResult?.success && currentSamplesResult.data) {
-      const currentSamples = currentSamplesResult.data.filter((s) =>
-        affectedVoices.has(s.voice_number),
-      );
-
-      for (const sample of currentSamples) {
-        await globalThis.electronAPI?.deleteSampleFromSlotWithoutReindexing?.(
-          kitName,
-          sample.voice_number,
-          dbSlotToUiSlot(sample.slot_number) - 1,
-        );
-      }
+  /**
+   * Put the voices an edit touched back as they were before it: one
+   * transactional call that restores full rows, gain included (RE-86)
+   */
+  const restoreVoices = async (voicesBefore: VoiceSnapshot[]) => {
+    const restore = globalThis.electronAPI?.restoreKitVoices;
+    if (!restore) {
+      return { error: "Undo isn't available", success: false };
     }
-  };
-
-  const restoreFromSnapshot = async (stateSnapshot: StateSnapshotItem[]) => {
-    for (const { sample, slot, voice } of stateSnapshot) {
-      // Convert database slot to 0-based slot number for API call
-      const apiSlotNumber = dbSlotToUiSlot(slot) - 1;
-      await globalThis.electronAPI?.addSampleToSlot?.(
-        kitName,
-        voice,
-        apiSlotNumber,
-        sample.source_path,
-      );
-    }
-  };
-
-  const clearCurrentVoiceSamples = async (voice: number) => {
-    const currentSamplesResult =
-      await globalThis.electronAPI?.getAllSamplesForKit?.(kitName);
-
-    if (currentSamplesResult?.success && currentSamplesResult.data) {
-      const currentSamples = currentSamplesResult.data.filter(
-        (s) => s.voice_number === voice,
-      );
-
-      for (const sample of currentSamples) {
-        await globalThis.electronAPI?.deleteSampleFromSlotWithoutReindexing?.(
-          kitName,
-          sample.voice_number,
-          dbSlotToUiSlot(sample.slot_number) - 1,
-        );
-      }
-    }
-  };
-
-  const cleanSlots = async (slotsToClean: Set<string>) => {
-    for (const slotKey of slotsToClean) {
-      const [voice, slot] = slotKey.split("-").map(Number);
-      await globalThis.electronAPI?.deleteSampleFromSlotWithoutReindexing?.(
-        kitName,
-        voice,
-        slot,
-      );
-    }
-  };
-
-  const restoreSamples = async (samplesToRestore: SampleToRestore[]) => {
-    const sortedSamples = [...samplesToRestore].sort((a, b) => a.slot - b.slot);
-
-    for (const { sample, slot, voice } of sortedSamples) {
-      await globalThis.electronAPI?.addSampleToSlot?.(
-        kitName,
-        voice,
-        slot,
-        sample.source_path,
-      );
-    }
+    return restore(kitName, voicesBefore);
   };
 
   // Individual undo action handlers
@@ -147,97 +62,13 @@ export function useUndoActionHandlers({
   };
 
   const undoReplaceSample = async (action: ReplaceSampleAction) => {
-    log.debug(" Undoing REPLACE_SAMPLE - restoring old sample");
-    const result = await globalThis.electronAPI?.replaceSampleInSlot?.(
-      kitName,
-      action.data.voice,
-      action.data.slot,
-      action.data.oldSample.source_path,
-    );
-    log.debug(" REPLACE_SAMPLE undo result:", result);
-    return result;
-  };
-
-  const undoMoveSampleWithSnapshot = async (action: MoveSampleAction) => {
-    log.debug(
-      "Using snapshot-based restoration, snapshot length:",
-      action.data.stateSnapshot?.length || 0,
-    );
-
-    await clearAffectedVoices(action.data.fromVoice, action.data.toVoice);
-    if (action.data.stateSnapshot) {
-      await restoreFromSnapshot(action.data.stateSnapshot);
-    }
-
-    return { success: true };
-  };
-
-  const buildSamplesToRestore = (action: MoveSampleAction) => {
-    const samples = [];
-
-    // Restore moved sample to original position
-    samples.push({
-      sample: action.data.movedSample,
-      slot: action.data.fromSlot,
-      voice: action.data.fromVoice,
-    });
-
-    // Restore affected samples
-    for (const affected of action.data.affectedSamples) {
-      samples.push({
-        sample: affected.sample,
-        slot: affected.oldSlot,
-        voice: affected.voice,
-      });
-    }
-
-    // Restore replaced sample if any
-    if (action.data.replacedSample) {
-      samples.push({
-        sample: action.data.replacedSample,
-        slot: action.data.toSlot,
-        voice: action.data.toVoice,
-      });
-    }
-
-    return samples;
-  };
-
-  const buildSlotsToClean = (action: MoveSampleAction) => {
-    const slotsToClean = new Set<string>();
-    slotsToClean.add(`${action.data.toVoice}-${action.data.toSlot}`);
-
-    for (const affected of action.data.affectedSamples) {
-      slotsToClean.add(`${affected.voice}-${affected.newSlot}`);
-    }
-
-    return slotsToClean;
-  };
-
-  const undoMoveSampleLegacy = async (action: MoveSampleAction) => {
-    const samplesToRestore = buildSamplesToRestore(action);
-    const slotsToClean = buildSlotsToClean(action);
-
-    await cleanSlots(slotsToClean);
-    await restoreSamples(samplesToRestore);
-
-    return { success: true };
+    log.debug(" Undoing REPLACE_SAMPLE - restoring the voice");
+    return restoreVoices(action.data.voicesBefore);
   };
 
   const undoMoveSample = async (action: MoveSampleAction) => {
-    log.debug(" Undoing MOVE_SAMPLE");
-    try {
-      if (action.data.stateSnapshot && action.data.stateSnapshot.length > 0) {
-        return await undoMoveSampleWithSnapshot(action);
-      } else {
-        return await undoMoveSampleLegacy(action);
-      }
-    } catch (error) {
-      return {
-        error: error instanceof Error ? error.message : String(error),
-        success: false,
-      };
-    }
+    log.debug(" Undoing MOVE_SAMPLE - restoring both voices");
+    return restoreVoices(action.data.voicesBefore);
   };
 
   const undoMoveSampleBetweenKits = async (
@@ -273,45 +104,9 @@ export function useUndoActionHandlers({
     }
   };
 
-  const restoreDeletedSample = async (
-    actionData: ReindexSamplesAction["data"],
-  ) => {
-    await globalThis.electronAPI?.addSampleToSlot?.(
-      kitName,
-      actionData.voice,
-      actionData.deletedSlot,
-      actionData.deletedSample.source_path,
-    );
-  };
-
-  const restoreAffectedSamples = async (
-    affectedSamples: ReindexSamplesAction["data"]["affectedSamples"],
-  ) => {
-    for (const affectedSample of affectedSamples) {
-      await globalThis.electronAPI?.addSampleToSlot?.(
-        kitName,
-        affectedSample.voice,
-        affectedSample.newSlot,
-        affectedSample.sample.source_path,
-      );
-    }
-  };
-
   const undoReindexSamples = async (action: ReindexSamplesAction) => {
-    log.debug("Undoing REINDEX_SAMPLES - restoring pre-reindexing state");
-
-    try {
-      await clearCurrentVoiceSamples(action.data.voice);
-      await restoreDeletedSample(action.data);
-      await restoreAffectedSamples(action.data.affectedSamples);
-
-      return { success: true };
-    } catch (error) {
-      return {
-        error: error instanceof Error ? error.message : String(error),
-        success: false,
-      };
-    }
+    log.debug("Undoing REINDEX_SAMPLES - restoring the voice");
+    return restoreVoices(action.data.voicesBefore);
   };
 
   // Main undo action executor

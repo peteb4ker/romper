@@ -9,6 +9,7 @@ import type {
   Sample,
 } from "./db/schema.js";
 import type { SliceStep, VoiceSliceSettings } from "./sliceTypes.js";
+import type { VoiceSnapshot } from "./undoTypes.js";
 
 /**
  * THE canonical contract for the preload bridge (window.electronAPI).
@@ -174,6 +175,14 @@ export interface ElectronAPI {
       totalSamplesUpdated: number;
     }>
   >;
+  /**
+   * Put a kit's voices back as an undo snapshot had them: rows, slots,
+   * gain and WAV details, in one transaction (RE-86).
+   */
+  restoreKitVoices: (
+    kitName: string,
+    voices: VoiceSnapshot[],
+  ) => Promise<DbResult<void>>;
   scanBanks: () => Promise<
     DbResult<{ scannedAt: Date; scannedFiles: number; updatedBanks: number }>
   >;

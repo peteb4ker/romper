@@ -1,5 +1,6 @@
 import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
+import { snapshotVoices } from "@romper/shared/undoTypes";
 import { useCallback } from "react";
 
 import type { MoveOperationResult } from "./types";
@@ -50,23 +51,16 @@ export function useSampleManagementMoveOps({
 
   const captureStateSnapshot = useCallback(
     async (fromVoice: number, toVoice: number) => {
-      if (skipUndoRecording || !onAddUndoAction) return [];
+      // Null, not an empty list: restoring "no samples" would empty the
+      // voices, so a move whose voices couldn't be read records no undo
+      if (skipUndoRecording || !onAddUndoAction) return null;
 
       const samplesResult =
         await globalThis.electronAPI?.getAllSamplesForKit?.(kitName);
-      if (!samplesResult?.success || !samplesResult.data) return [];
+      if (!samplesResult?.success || !samplesResult.data) return null;
 
-      const affectedVoices = new Set([fromVoice, toVoice]);
-      return samplesResult.data
-        .filter((s) => affectedVoices.has(s.voice_number))
-        .map((s) => ({
-          sample: {
-            filename: s.filename,
-            source_path: s.source_path,
-          },
-          slot: s.slot_number,
-          voice: s.voice_number,
-        }));
+      // Full rows, so undo brings back gain and WAV details too (RE-86)
+      return snapshotVoices(samplesResult.data, [fromVoice, toVoice]);
     },
     [kitName, skipUndoRecording, onAddUndoAction],
   );
@@ -117,7 +111,7 @@ export function useSampleManagementMoveOps({
             "insert",
           );
         } else {
-          const stateSnapshot = await captureStateSnapshot(fromVoice, toVoice);
+          const voicesBefore = await captureStateSnapshot(fromVoice, toVoice);
           result = await globalThis.electronAPI.moveSampleInKit?.(
             kitName,
             fromVoice,
@@ -130,15 +124,16 @@ export function useSampleManagementMoveOps({
             result?.success &&
             !skipUndoRecording &&
             onAddUndoAction &&
-            result?.data
+            result?.data &&
+            voicesBefore
           ) {
             const moveAction = undoActions.createSameKitMoveAction({
               fromSlot,
               fromVoice,
               result,
-              stateSnapshot,
               toSlot,
               toVoice,
+              voicesBefore,
             });
             onAddUndoAction(moveAction);
           }

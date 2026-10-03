@@ -106,10 +106,7 @@ export function useSampleManagementOperations({
       }
 
       try {
-        const oldSample = await undoActions.getOldSampleForUndo(
-          voice,
-          slotNumber,
-        );
+        const before = await undoActions.snapshotForUndo(voice, slotNumber);
 
         const result = await globalThis.electronAPI.replaceSampleInSlot(
           kitName,
@@ -125,13 +122,14 @@ export function useSampleManagementOperations({
           );
 
           // Record undo action unless explicitly skipped
-          if (oldSample && result.data && onAddUndoAction) {
+          if (before?.sample && result.data && onAddUndoAction) {
             log.debug("Recording REPLACE_SAMPLE undo action");
             const replaceAction = undoActions.createReplaceSampleAction(
               voice,
               slotNumber,
-              oldSample,
+              before.sample,
               filePath,
+              before.voicesBefore,
             );
             onAddUndoAction(replaceAction);
           }
@@ -161,10 +159,7 @@ export function useSampleManagementOperations({
       }
 
       try {
-        const sampleToDelete = await undoActions.getSampleToDeleteForUndo(
-          voice,
-          slotNumber,
-        );
+        const before = await undoActions.snapshotForUndo(voice, slotNumber);
 
         const result = await globalThis.electronAPI.deleteSampleFromSlot(
           kitName,
@@ -179,12 +174,13 @@ export function useSampleManagementOperations({
           );
 
           // Record REINDEX_SAMPLES action since deletion now triggers automatic reindexing
-          if (sampleToDelete && onAddUndoAction && result.data) {
+          if (before?.sample && onAddUndoAction && result.data) {
             const reindexAction = undoActions.createReindexSamplesAction(
               voice,
               slotNumber,
-              sampleToDelete,
+              before.sample,
               result,
+              before.voicesBefore,
             );
             onAddUndoAction(reindexAction);
           }

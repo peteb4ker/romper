@@ -1,6 +1,11 @@
+import type { VoiceSnapshot } from "@romper/shared/undoTypes.js";
+
 import { ipcMain } from "electron";
 
-import { rememberKitSampleSources } from "../security/sampleSourceAccess.js";
+import {
+  checkSampleSourceAccess,
+  rememberKitSampleSources,
+} from "../security/sampleSourceAccess.js";
 import { sampleService } from "../services/sampleService.js";
 import { createSampleOperationHandler } from "./ipcHandlerUtils.js";
 
@@ -109,6 +114,30 @@ export function registerSampleIpcHandlers(
           success: false,
         };
       }
+    },
+  );
+
+  // Undo puts voices back as they were, in one transaction (RE-86). Every
+  // file it restores must be one Romper may read (RE-03): the edit being
+  // undone remembered the kit's files before it removed them.
+  ipcMain.handle(
+    "restore-kit-voices",
+    async (_event, kitName: string, voices: VoiceSnapshot[]) => {
+      if (!Array.isArray(voices)) {
+        return { error: "No voices to restore", success: false };
+      }
+      for (const voice of voices) {
+        for (const sample of voice?.samples ?? []) {
+          const access = checkSampleSourceAccess(
+            inMemorySettings,
+            sample?.source_path,
+          );
+          if (!access.ok) return { error: access.error, success: false };
+        }
+      }
+      // Redo removes what this restores; let it read those files again
+      rememberKitSampleSources(inMemorySettings, kitName);
+      return sampleService.restoreVoices(inMemorySettings, kitName, voices);
     },
   );
 

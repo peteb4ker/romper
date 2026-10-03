@@ -1,4 +1,5 @@
 import type { DbResult, NewSample, Sample } from "@romper/shared/db/schema.js";
+import type { VoiceSnapshot } from "@romper/shared/undoTypes.js";
 
 import * as schema from "@romper/shared/db/schema.js";
 import { and, eq, type SQL } from "drizzle-orm";
@@ -11,7 +12,7 @@ import {
 import { flagKitModified } from "./kitSyncOperations.js";
 import { performVoiceReindexing } from "./sampleManagementOps.js";
 
-const { samples } = schema;
+const { kits, samples } = schema;
 
 /**
  * Add a sample to the database
@@ -195,6 +196,62 @@ export function replaceSampleTx(
 }
 
 /**
+ * Put voices back exactly as a snapshot had them, on the caller's
+ * transaction (RE-86): each voice's current rows are deleted and the
+ * snapshot's rows inserted with their slots, gain and WAV details, and the
+ * kit is flagged modified. Undo uses it, so a restore is one unit of work
+ * instead of a delete and an add per sample. Throws on a missing kit, a
+ * voice outside 1-4, a slot outside 0-11 or a slot used twice.
+ */
+export function restoreVoicesTx(
+  db: RomperDb,
+  kitName: string,
+  voices: VoiceSnapshot[],
+): void {
+  const kit = db
+    .select({ name: kits.name })
+    .from(kits)
+    .where(eq(kits.name, kitName))
+    .get();
+  if (!kit) throw new Error(`Kit '${kitName}' not found`);
+
+  for (const { samples: rows, voice } of voices) {
+    if (!Number.isInteger(voice) || voice < 1 || voice > 4) {
+      throw new Error(`Invalid voice ${voice}`);
+    }
+    const slots = new Set(rows.map((row) => row.slot_number));
+    if (slots.size !== rows.length || !rows.every(isRestorableRow)) {
+      throw new Error(`Invalid samples for voice ${voice}`);
+    }
+
+    db.delete(samples)
+      .where(
+        and(eq(samples.kit_name, kitName), eq(samples.voice_number, voice)),
+      )
+      .run();
+    if (rows.length > 0) {
+      db.insert(samples)
+        .values(
+          rows.map((row) => ({
+            filename: row.filename,
+            gain_db: row.gain_db,
+            kit_name: kitName,
+            slot_number: row.slot_number,
+            source_path: row.source_path,
+            voice_number: voice,
+            wav_bit_depth: row.wav_bit_depth,
+            wav_bitrate: row.wav_bitrate,
+            wav_channels: row.wav_channels,
+            wav_sample_rate: row.wav_sample_rate,
+          })),
+        )
+        .run();
+    }
+  }
+  flagKitModified(db, kitName);
+}
+
+/**
  * Update per-sample gain (dB trim). Gain is applied when the sample is
  * written, so the kit is marked modified in the same transaction (RE-35).
  */
@@ -268,4 +325,20 @@ export function updateSampleMetadata(
       throw new Error(`Sample with ID ${sampleId} not found`);
     }
   });
+}
+
+function isRestorableRow(row: VoiceSnapshot["samples"][number]): boolean {
+  const optionalInt = (v: unknown) => v === null || Number.isInteger(v);
+  return (
+    typeof row?.filename === "string" &&
+    typeof row.source_path === "string" &&
+    Number.isInteger(row.slot_number) &&
+    row.slot_number >= 0 &&
+    row.slot_number <= 11 &&
+    Number.isFinite(row.gain_db) &&
+    optionalInt(row.wav_bit_depth) &&
+    optionalInt(row.wav_bitrate) &&
+    optionalInt(row.wav_channels) &&
+    optionalInt(row.wav_sample_rate)
+  );
 }

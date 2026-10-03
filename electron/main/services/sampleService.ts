@@ -1,4 +1,5 @@
 import type { DbResult, Sample } from "@romper/shared/db/schema.js";
+import type { VoiceSnapshot } from "@romper/shared/undoTypes.js";
 
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
 import { sampleCrudService } from "./crud/sampleCrudService.js";
@@ -164,6 +165,17 @@ export class SampleService {
       slotNumber,
       filePath,
     );
+  }
+
+  /**
+   * Put a kit's voices back as an undo snapshot had them (RE-86)
+   */
+  restoreVoices(
+    inMemorySettings: Record<string, unknown>,
+    kitName: string,
+    voices: VoiceSnapshot[],
+  ): DbResult<void> {
+    return sampleCrudService.restoreVoices(inMemorySettings, kitName, voices);
   }
 
   /**

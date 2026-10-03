@@ -61,8 +61,8 @@ do) or a quality (how Romper behaves while you do it, under
 
 | Status | Use cases |
 |---|---|
-| supported | Q-04, UC-02, UC-03, UC-04, UC-05, UC-06, UC-09, UC-10, UC-11, UC-12, UC-13, UC-14, UC-15, UC-16, UC-17, UC-18, UC-19, UC-21, UC-23, UC-24, UC-25, UC-27, UC-28, UC-32, UC-35, UC-37 |
-| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, UC-01, UC-07, UC-08, UC-26, UC-29, UC-30, UC-31, UC-33, UC-34, UC-36 |
+| supported | Q-04, UC-02, UC-03, UC-04, UC-05, UC-06, UC-09, UC-10, UC-11, UC-12, UC-13, UC-14, UC-15, UC-16, UC-17, UC-18, UC-19, UC-21, UC-23, UC-24, UC-25, UC-26, UC-27, UC-28, UC-32, UC-35, UC-37 |
+| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, UC-01, UC-07, UC-08, UC-29, UC-30, UC-31, UC-33, UC-34, UC-36 |
 | not built | UC-20, UC-22 |
 
 ## Setup and local store
@@ -532,7 +532,7 @@ in the UI or the manual mentions it.
 
 ### UC-26 Undo and redo
 
-**Status:** partial
+**Status:** supported
 
 Cmd/Ctrl+Z and Shift+Cmd/Ctrl+Z (or Ctrl+Y), and Edit > Undo and Redo,
 undo sample adds, deletes and moves and sequencer edits in the open kit. A
@@ -546,9 +546,13 @@ focused text field keeps its own undo. See
   `app/renderer/components/hooks/sample-management/useSampleManagementUndoActions.ts`;
   `app/renderer/components/hooks/kit-management/useKitViewMenuHandlers.ts` with
   `app/renderer/components/hooks/shared/useMenuEvents.ts`; action types in `shared/undoTypes.ts`.
-- **IPC:** `menu-undo`, `menu-redo` (pushed from main); undo replays the
-  sample channels above.
-- **Main:** `electron/main/applicationMenu.ts` (Edit > Undo and Redo).
+- **IPC:** `menu-undo`, `menu-redo` (pushed from main). Undoing a delete,
+  replace or move restores the voices it touched with one
+  `restore-kit-voices` call: full rows, gain and WAV details included, in
+  one transaction (RE-86). Redo and undoing an add replay the sample
+  channels above.
+- **Main:** `electron/main/applicationMenu.ts` (Edit > Undo and Redo);
+  `electron/main/db/operations/sampleCrudOperations.ts` (`restoreVoicesTx`).
 
 ## Voices and stereo
 

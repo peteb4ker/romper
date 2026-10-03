@@ -127,7 +127,10 @@ in `electron/main/security/`.
   import with its scan merge. Replace is one in-place update of the row
   (slot and gain stay; the new file's header is stored), and a move
   between kits moves the row itself, so gain and WAV metadata go with it
-  (RE-26, RE-27).
+  (RE-26, RE-27). Undo keeps the full rows of the voices an edit touches
+  (`VoiceSnapshot` in `shared/undoTypes.ts`) and puts them back with one
+  `restoreVoicesTx` call (RE-86). An add stores the WAV header its
+  validation read (RE-89).
 - better-sqlite3 ships N-API prebuilds (`prebuilds/<platform>-<arch>.node`)
   that load in both Node and Electron, so nothing is rebuilt at install
   (Forge's `rebuildConfig` rebuilds no modules). Integration tests run

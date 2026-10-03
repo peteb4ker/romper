@@ -5,6 +5,7 @@ import type {
   MoveSampleBetweenKitsAction,
   ReindexSamplesAction,
   ReplaceSampleAction,
+  VoiceSnapshot,
 } from "@romper/shared/undoTypes";
 
 import { renderHook } from "@testing-library/react";
@@ -18,6 +19,22 @@ import { useUndoActionHandlers } from "../useUndoActionHandlers";
 describe("useUndoActionHandlers", () => {
   const mockOptions = {
     kitName: "TestKit",
+  };
+  /** Voice 1 as it was before an edit: full rows, gain included */
+  const voiceOne: VoiceSnapshot = {
+    samples: [
+      {
+        filename: "kick.wav",
+        gain_db: -6,
+        slot_number: 0,
+        source_path: "/kick.wav",
+        wav_bit_depth: 24,
+        wav_bitrate: 2304000,
+        wav_channels: 2,
+        wav_sample_rate: 48000,
+      },
+    ],
+    voice: 1,
   };
 
   beforeEach(() => {
@@ -50,6 +67,9 @@ describe("useUndoActionHandlers", () => {
           success: true,
         });
       }
+      vi.mocked(window.electronAPI.restoreKitVoices).mockResolvedValue({
+        success: true,
+      });
       if (window.electronAPI.moveSampleBetweenKits) {
         vi.mocked(window.electronAPI.moveSampleBetweenKits).mockResolvedValue({
           success: true,
@@ -139,22 +159,16 @@ describe("useUndoActionHandlers", () => {
       });
     });
 
-    describe("REPLACE_SAMPLE undo", () => {
-      it("should restore old sample when undoing REPLACE_SAMPLE", async () => {
+    describe("[Q-02] REPLACE_SAMPLE undo", () => {
+      it("restores the voice's full rows, gain included, in one call", async () => {
         const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
-
         const action: ReplaceSampleAction = {
           data: {
-            newSample: {
-              filename: "new.wav",
-              source_path: "/path/to/new.wav",
-            },
-            oldSample: {
-              filename: "old.wav",
-              source_path: "/path/to/old.wav",
-            },
+            newSample: { filename: "new.wav", source_path: "/path/to/new.wav" },
+            oldSample: { filename: "old.wav", source_path: "/path/to/old.wav" },
             slot: 0,
             voice: 1,
+            voicesBefore: [voiceOne],
           },
           description: "Replace sample",
           id: "test-id",
@@ -162,141 +176,59 @@ describe("useUndoActionHandlers", () => {
           type: "REPLACE_SAMPLE",
         };
 
-        const consoleSpy = vi.spyOn(console, "log").mockImplementation();
+        const outcome = await result.current.executeUndoAction(action);
 
-        await result.current.executeUndoAction(action);
-
-        expect(window.electronAPI?.replaceSampleInSlot).toHaveBeenCalledWith(
+        expect(outcome).toEqual({ success: true });
+        expect(window.electronAPI?.restoreKitVoices).toHaveBeenCalledTimes(1);
+        expect(window.electronAPI?.restoreKitVoices).toHaveBeenCalledWith(
           "TestKit",
-          1,
-          0,
-          "/path/to/old.wav",
+          [voiceOne],
         );
-
-        consoleSpy.mockRestore();
+        expect(window.electronAPI?.replaceSampleInSlot).not.toHaveBeenCalled();
       });
     });
 
-    describe("MOVE_SAMPLE undo", () => {
-      it("should restore state using snapshot when available", async () => {
+    describe("[Q-02] MOVE_SAMPLE undo", () => {
+      const action: MoveSampleAction = {
+        data: {
+          affectedSamples: [],
+          fromSlot: 0,
+          fromVoice: 1,
+          movedSample: { filename: "kick.wav", source_path: "/kick.wav" },
+          toSlot: 0,
+          toVoice: 2,
+          voicesBefore: [voiceOne, { samples: [], voice: 2 }],
+        },
+        description: "Move sample",
+        id: "test-id",
+        timestamp: new Date(),
+        type: "MOVE_SAMPLE",
+      };
+
+      it("restores both voices in one call", async () => {
         const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
 
-        const action: MoveSampleAction = {
-          data: {
-            affectedSamples: [],
-            fromSlot: 0,
-            fromVoice: 1,
-            movedSample: {
-              filename: "moved.wav",
-              source_path: "/path/to/moved.wav",
-            },
-            replacedSample: undefined,
-            stateSnapshot: [
-              {
-                sample: {
-                  filename: "original.wav",
-                  source_path: "/path/to/original.wav",
-                },
-                slot: 0,
-                voice: 1,
-              },
-            ],
-            toSlot: 1,
-            toVoice: 2,
-          },
-          description: "Move sample",
-          id: "test-id",
-          timestamp: new Date(),
-          type: "MOVE_SAMPLE",
-        };
+        await result.current.executeUndoAction(action);
 
-        const result2 = await result.current.executeUndoAction(action);
-
-        // Snapshot-based restoration should succeed
-        expect(result2).toEqual({ success: true });
+        expect(window.electronAPI?.restoreKitVoices).toHaveBeenCalledTimes(1);
+        expect(window.electronAPI?.restoreKitVoices).toHaveBeenCalledWith(
+          "TestKit",
+          action.data.voicesBefore,
+        );
+        expect(window.electronAPI?.addSampleToSlot).not.toHaveBeenCalled();
       });
 
-      it("should use legacy restoration when no snapshot available", async () => {
-        const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
-
-        const action: MoveSampleAction = {
-          data: {
-            affectedSamples: [],
-            fromSlot: 0,
-            fromVoice: 1,
-            movedSample: {
-              filename: "moved.wav",
-              source_path: "/path/to/moved.wav",
-            },
-            replacedSample: undefined,
-            stateSnapshot: [],
-            toSlot: 1,
-            toVoice: 2,
-          },
-          description: "Move sample",
-          id: "test-id",
-          timestamp: new Date(),
-          type: "MOVE_SAMPLE",
-        };
-
-        const consoleSpy = vi.spyOn(console, "log").mockImplementation();
-
-        const result_data = await result.current.executeUndoAction(action);
-
-        expect(result_data).toEqual({ success: true });
-
-        consoleSpy.mockRestore();
-      });
-
-      it("should handle errors during move undo", async () => {
-        const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
-
-        // Mock an error scenario
-        if (window.electronAPI?.getAllSamplesForKit) {
-          vi.mocked(window.electronAPI.getAllSamplesForKit).mockRejectedValue(
-            new Error("API Error"),
-          );
-        }
-
-        const action: MoveSampleAction = {
-          data: {
-            affectedSamples: [],
-            fromSlot: 0,
-            fromVoice: 1,
-            movedSample: {
-              filename: "moved.wav",
-              source_path: "/path/to/moved.wav",
-            },
-            replacedSample: undefined,
-            stateSnapshot: [
-              {
-                sample: {
-                  filename: "original.wav",
-                  source_path: "/path/to/original.wav",
-                },
-                slot: 0,
-                voice: 1,
-              },
-            ],
-            toSlot: 1,
-            toVoice: 2,
-          },
-          description: "Move sample",
-          id: "test-id",
-          timestamp: new Date(),
-          type: "MOVE_SAMPLE",
-        };
-
-        const consoleSpy = vi.spyOn(console, "log").mockImplementation();
-
-        const result_data = await result.current.executeUndoAction(action);
-
-        expect(result_data).toEqual({
-          error: "API Error",
+      it("passes a failed restore back", async () => {
+        vi.mocked(window.electronAPI!.restoreKitVoices).mockResolvedValueOnce({
+          error: "Database error",
           success: false,
         });
+        const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
 
-        consoleSpy.mockRestore();
+        expect(await result.current.executeUndoAction(action)).toEqual({
+          error: "Database error",
+          success: false,
+        });
       });
     });
 
@@ -417,94 +349,31 @@ describe("useUndoActionHandlers", () => {
       });
     });
 
-    describe("REINDEX_SAMPLES undo", () => {
-      it("should restore pre-reindexing state", async () => {
+    describe("[Q-02] REINDEX_SAMPLES undo", () => {
+      it("restores the voice as it was before the delete, in one call", async () => {
         const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
-
-        const action: ReindexSamplesAction = {
-          data: {
-            affectedSamples: [
-              {
-                newSlot: 0,
-                oldSlot: 1,
-                sample: {
-                  filename: "affected.wav",
-                  source_path: "/path/to/affected.wav",
-                },
-                voice: 1,
-              },
-            ],
-            deletedSample: {
-              filename: "deleted.wav",
-              source_path: "/path/to/deleted.wav",
-            },
-            deletedSlot: 0,
-            voice: 1,
-          },
-          description: "Reindex samples",
-          id: "test-id",
-          timestamp: new Date(),
-          type: "REINDEX_SAMPLES",
-        };
-
-        const consoleSpy = vi.spyOn(console, "log").mockImplementation();
-
-        await result.current.executeUndoAction(action);
-
-        // Should restore deleted sample
-        expect(window.electronAPI?.addSampleToSlot).toHaveBeenCalledWith(
-          "TestKit",
-          1,
-          0,
-          "/path/to/deleted.wav",
-        );
-
-        // Should restore affected samples
-        expect(window.electronAPI?.addSampleToSlot).toHaveBeenCalledWith(
-          "TestKit",
-          1,
-          0, // newSlot from action data
-          "/path/to/affected.wav",
-        );
-
-        consoleSpy.mockRestore();
-      });
-
-      it("should handle errors during reindex undo", async () => {
-        const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
-
-        if (window.electronAPI?.addSampleToSlot) {
-          vi.mocked(window.electronAPI.addSampleToSlot).mockRejectedValue(
-            new Error("Reindex error"),
-          );
-        }
-
         const action: ReindexSamplesAction = {
           data: {
             affectedSamples: [],
-            deletedSample: {
-              filename: "deleted.wav",
-              source_path: "/path/to/deleted.wav",
-            },
+            deletedSample: { filename: "kick.wav", source_path: "/kick.wav" },
             deletedSlot: 0,
             voice: 1,
+            voicesBefore: [voiceOne],
           },
-          description: "Reindex samples",
+          description: "Delete sample",
           id: "test-id",
           timestamp: new Date(),
           type: "REINDEX_SAMPLES",
         };
 
-        const consoleSpy = vi.spyOn(console, "log").mockImplementation();
+        await result.current.executeUndoAction(action);
 
-        const result_data = await result.current.executeUndoAction(action);
-
-        expect(result_data).toEqual({
-          error: "Reindex error",
-          success: false,
-        });
-
-        consoleSpy.mockRestore();
+        expect(window.electronAPI?.restoreKitVoices).toHaveBeenCalledTimes(1);
+        expect(window.electronAPI?.restoreKitVoices).toHaveBeenCalledWith(
+          "TestKit",
+          [voiceOne],
+        );
+        expect(window.electronAPI?.addSampleToSlot).not.toHaveBeenCalled();
       });
     });
 

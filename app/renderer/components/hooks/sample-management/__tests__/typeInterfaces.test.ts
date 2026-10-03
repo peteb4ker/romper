@@ -207,50 +207,6 @@ describe("Type Interfaces for Sample Management", () => {
     });
   });
 
-  describe("StateSnapshotItem and SampleToRestore interfaces", () => {
-    test("should handle state snapshot structure", () => {
-      const stateSnapshot = [
-        {
-          sample: {
-            filename: "snapshot.wav",
-            source_path: "/path/to/snapshot.wav",
-          },
-          slot: 0,
-          voice: 1,
-        },
-        {
-          sample: {
-            filename: "snapshot2.wav",
-            source_path: "/path/to/snapshot2.wav",
-          },
-          slot: 1,
-          voice: 2,
-        },
-      ];
-
-      expect(stateSnapshot).toHaveLength(2);
-      expect(stateSnapshot[0].sample.filename).toBe("snapshot.wav");
-      expect(stateSnapshot[1].voice).toBe(2);
-    });
-
-    test("should handle samples to restore structure", () => {
-      const samplesToRestore = [
-        {
-          sample: {
-            filename: "restore1.wav",
-            source_path: "/path/to/restore1.wav",
-          },
-          slot: 0,
-          voice: 1,
-        },
-      ];
-
-      expect(samplesToRestore[0].sample.filename).toBe("restore1.wav");
-      expect(samplesToRestore[0].slot).toBe(0);
-      expect(samplesToRestore[0].voice).toBe(1);
-    });
-  });
-
   describe("Action type assertions", () => {
     test("should properly cast action types for exhaustive checking", () => {
       const mockAction = {
@@ -292,8 +248,7 @@ describe("Type Interfaces for Sample Management", () => {
         "createReindexSamplesAction",
         "createSameKitMoveAction",
         "createCrossKitMoveAction",
-        "getOldSampleForUndo",
-        "getSampleToDeleteForUndo",
+        "snapshotForUndo",
       ];
 
       expectedMethods.forEach((method) => {

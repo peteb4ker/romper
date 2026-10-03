@@ -1,4 +1,5 @@
 import type { DbResult, NewSample, Sample } from "@romper/shared/db/schema.js";
+import type { VoiceSnapshot } from "@romper/shared/undoTypes.js";
 
 import { getErrorMessage } from "@romper/shared/errorUtils.js";
 import * as path from "node:path";
@@ -8,6 +9,7 @@ import {
   flagKitModified,
   moveSampleBetweenKitsTx,
   replaceSampleTx,
+  restoreVoicesTx,
   withDbTransaction,
 } from "../../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../../utils/fileSystemUtils.js";
@@ -73,6 +75,8 @@ export class SampleCrudService {
         slot_number: slotNumber, // ZERO-BASED: 0-11 (UI shows 1-12, DB stores 0-11)
         source_path: filePath,
         voice_number: voiceNumber,
+        // The header validation just read, as a scan would store it (RE-89)
+        ...fileValidation.metadata,
       };
 
       // The row and the kit's modified flag commit together (RE-28)
@@ -269,6 +273,24 @@ export class SampleCrudService {
         source_path: filePath,
         ...fileValidation.metadata,
       }),
+    );
+  }
+
+  /**
+   * Put a kit's voices back as an undo snapshot had them, in one
+   * transaction (RE-86)
+   */
+  restoreVoices(
+    inMemorySettings: Record<string, unknown>,
+    kitName: string,
+    voices: VoiceSnapshot[],
+  ): DbResult<void> {
+    const localStorePath = this.getLocalStorePath(inMemorySettings);
+    if (!localStorePath) {
+      return { error: "No local store path configured", success: false };
+    }
+    return withDbTransaction(this.getDbPath(localStorePath), (db) =>
+      restoreVoicesTx(db, kitName, voices),
     );
   }
 

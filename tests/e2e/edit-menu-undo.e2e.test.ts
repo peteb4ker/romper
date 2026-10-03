@@ -133,6 +133,53 @@ test.describe("Edit menu undo", () => {
     expect(await sampleCount(voice)).toBe(before + 1);
   });
 
+  test("[UC-26] [Q-02] undoing a delete brings the sample back with its gain (RE-86)", async () => {
+    const voice = await voiceWithRoom(2);
+    await addSample(voice, "keep one.wav");
+    await addSample(voice, "keep two.wav");
+    await expect.poll(() => sampleCount(voice)).toBeGreaterThanOrEqual(2);
+    // A gain on the sample that will be deleted
+    await window.evaluate(
+      ([kit, v]) => window.electronAPI.updateSampleGain(kit, v, 0, -7.5),
+      [KIT, voice] as const,
+    );
+    const before = await voiceRows(voice);
+    expect(before[0].gain_db).toBe(-7.5);
+
+    const first = window
+      .locator(`[data-testid="sample-list-voice-${voice}"] [role="option"]`)
+      .first();
+    await first.getByRole("button", { name: "Delete sample" }).click();
+    await window
+      .locator('[data-testid="confirm-delete-sample-button"]')
+      .click();
+    await expect.poll(() => sampleCount(voice)).toBe(before.length - 1);
+
+    await clickEditMenu("undo");
+
+    // Same files in the same slots, and the gain is back
+    await expect.poll(() => voiceRows(voice)).toEqual(before);
+  });
+
+  /** A voice's rows as undo should restore them, by slot */
+  async function voiceRows(voice: number) {
+    return window.evaluate(
+      async ([kit, v]) => {
+        const res = await window.electronAPI.getAllSamplesForKit(kit);
+        return (res.data ?? [])
+          .filter((s) => s.voice_number === v)
+          .sort((a, b) => a.slot_number - b.slot_number)
+          .map((s) => ({
+            filename: s.filename,
+            gain_db: s.gain_db,
+            slot_number: s.slot_number,
+            source_path: s.source_path,
+          }));
+      },
+      [KIT, voice] as const,
+    );
+  }
+
   async function addSample(voice: number, name: string) {
     const file = path.join(sources, name);
     await fs.writeFile(

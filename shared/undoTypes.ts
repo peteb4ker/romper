@@ -1,6 +1,7 @@
 // Memory-only undo/redo action types
 // Simplified for immediate renderer state management
 
+import type { Sample } from "./db/schema";
 import type { SliceStep } from "./sliceTypes";
 
 export interface AddSampleAction extends UndoAction {
@@ -61,17 +62,10 @@ export interface MoveSampleAction extends UndoAction {
       filename: string;
       source_path: string;
     };
-    // NEW: Complete snapshot of affected voices before the move
-    stateSnapshot?: Array<{
-      sample: {
-        filename: string;
-        source_path: string;
-      };
-      slot: number;
-      voice: number;
-    }>;
     toSlot: number;
     toVoice: number;
+    /** Both voices' full rows before the move; undo restores them */
+    voicesBefore: VoiceSnapshot[];
   };
   type: "MOVE_SAMPLE";
 }
@@ -125,6 +119,8 @@ export interface ReindexSamplesAction extends UndoAction {
     };
     deletedSlot: number;
     voice: number;
+    /** The voice's full rows before the delete; undo restores them */
+    voicesBefore: VoiceSnapshot[];
   };
   type: "REINDEX_SAMPLES";
 }
@@ -141,10 +137,28 @@ export interface ReplaceSampleAction extends UndoAction {
     };
     slot: number;
     voice: number;
-    // Store old sample data to restore it
+    /** The voice's full rows before the replace; undo restores them */
+    voicesBefore: VoiceSnapshot[];
   };
   type: "REPLACE_SAMPLE";
 }
+
+/**
+ * A sample row as undo keeps it: everything the user can see or set, so
+ * restoring it brings back its gain and WAV details too (RE-86). The id,
+ * kit and voice come from where it's restored.
+ */
+export type SampleSnapshot = Pick<
+  Sample,
+  | "filename"
+  | "gain_db"
+  | "slot_number"
+  | "source_path"
+  | "wav_bit_depth"
+  | "wav_bitrate"
+  | "wav_channels"
+  | "wav_sample_rate"
+>;
 
 /**
  * A sequencer edit: steps, trigger conditions and slices, before and after.
@@ -182,6 +196,12 @@ export interface UndoAction {
     | "SEQUENCE_EDIT";
 }
 
+/** A voice's samples, by slot, as they were before an edit */
+export interface VoiceSnapshot {
+  samples: SampleSnapshot[];
+  voice: number;
+}
+
 // Helper to create action IDs
 export function createActionId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
@@ -207,4 +227,29 @@ export function getActionDescription(action: AnyUndoAction): string {
     default:
       return "Undo last action";
   }
+}
+
+/** Snapshot the given voices from a kit's sample rows, for undo */
+export function snapshotVoices(
+  kitSamples: Sample[],
+  voices: Iterable<number>,
+): VoiceSnapshot[] {
+  return [...new Set(voices)]
+    .sort((a, b) => a - b)
+    .map((voice) => ({
+      samples: kitSamples
+        .filter((s) => s.voice_number === voice)
+        .sort((a, b) => a.slot_number - b.slot_number)
+        .map((s) => ({
+          filename: s.filename,
+          gain_db: s.gain_db,
+          slot_number: s.slot_number,
+          source_path: s.source_path,
+          wav_bit_depth: s.wav_bit_depth,
+          wav_bitrate: s.wav_bitrate,
+          wav_channels: s.wav_channels,
+          wav_sample_rate: s.wav_sample_rate,
+        })),
+      voice,
+    }));
 }

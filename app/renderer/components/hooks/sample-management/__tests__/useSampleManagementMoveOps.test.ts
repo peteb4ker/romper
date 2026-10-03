@@ -104,26 +104,30 @@ describe("useSampleManagementMoveOps", () => {
         fromSlot: 0,
         fromVoice: 1,
         result: mockMoveResult,
-        stateSnapshot: expect.arrayContaining([
-          expect.objectContaining({
-            sample: expect.objectContaining({
-              filename: "sample1.wav",
-              source_path: "/path/sample1.wav",
-            }),
-            slot: 100,
-            voice: 1,
-          }),
-          expect.objectContaining({
-            sample: expect.objectContaining({
-              filename: "sample2.wav",
-              source_path: "/path/sample2.wav",
-            }),
-            slot: 100,
-            voice: 2,
-          }),
-        ]),
         toSlot: 1,
         toVoice: 2,
+        voicesBefore: [
+          {
+            samples: [
+              expect.objectContaining({
+                filename: "sample1.wav",
+                slot_number: 100,
+                source_path: "/path/sample1.wav",
+              }),
+            ],
+            voice: 1,
+          },
+          {
+            samples: [
+              expect.objectContaining({
+                filename: "sample2.wav",
+                slot_number: 100,
+                source_path: "/path/sample2.wav",
+              }),
+            ],
+            voice: 2,
+          },
+        ],
       });
       expect(mockOptions.onAddUndoAction).toHaveBeenCalled();
       // Toast notification was removed per user request
@@ -351,31 +355,21 @@ describe("useSampleManagementMoveOps", () => {
     });
   });
 
-  describe("state snapshot capture", () => {
-    it("should capture state snapshot for affected voices", async () => {
-      const mockSamples = [
-        {
-          filename: "sample1.wav",
-          slot_number: 100,
-          source_path: "/path/sample1.wav",
-          voice_number: 1,
-        },
-        {
-          filename: "sample2.wav",
-          slot_number: 100,
-          source_path: "/path/sample2.wav",
-          voice_number: 2,
-        },
-        {
-          filename: "sample3.wav",
-          slot_number: 100,
-          source_path: "/path/sample3.wav",
-          voice_number: 3, // Should not be included
-        },
-      ];
-
+  describe("[Q-02] voice snapshot for undo (RE-86)", () => {
+    it("snapshots only the two voices the move touches", async () => {
+      const row = (voice: number) => ({
+        filename: `sample${voice}.wav`,
+        gain_db: -voice,
+        slot_number: 0,
+        source_path: `/path/sample${voice}.wav`,
+        voice_number: voice,
+        wav_bit_depth: 16,
+        wav_bitrate: null,
+        wav_channels: 1,
+        wav_sample_rate: 44100,
+      });
       mockElectronAPI.getAllSamplesForKit.mockResolvedValue({
-        data: mockSamples,
+        data: [row(1), row(2), row(3)],
         success: true,
       });
       mockElectronAPI.moveSampleInKit.mockResolvedValue({
@@ -389,23 +383,16 @@ describe("useSampleManagementMoveOps", () => {
 
       await result.current.handleSampleMove(1, 0, 2, 1);
 
-      expect(mockUndoActions.createSameKitMoveAction).toHaveBeenCalledWith(
-        expect.objectContaining({
-          stateSnapshot: expect.arrayContaining([
-            expect.objectContaining({ voice: 1 }),
-            expect.objectContaining({ voice: 2 }),
-          ]),
-        }),
-      );
-
-      // Verify that voice 3 sample is not included in snapshot
-      const stateSnapshot =
-        mockUndoActions.createSameKitMoveAction.mock.calls[0][0].stateSnapshot;
-      expect(stateSnapshot).toHaveLength(2);
-      expect(stateSnapshot.every((s: unknown) => s.voice !== 3)).toBe(true);
+      const { voicesBefore } =
+        mockUndoActions.createSameKitMoveAction.mock.calls[0][0];
+      expect(voicesBefore.map((v: { voice: number }) => v.voice)).toEqual([
+        1, 2,
+      ]);
+      // Full rows: gain survives an undo
+      expect(voicesBefore[0].samples[0].gain_db).toBe(-1);
     });
 
-    it("should handle empty state snapshot when getAllSamplesForKit fails", async () => {
+    it("records no undo when the voices can't be read", async () => {
       mockElectronAPI.getAllSamplesForKit.mockResolvedValue({
         error: "Failed to get samples",
         success: false,
@@ -421,14 +408,13 @@ describe("useSampleManagementMoveOps", () => {
 
       await result.current.handleSampleMove(1, 0, 2, 1);
 
-      expect(mockUndoActions.createSameKitMoveAction).toHaveBeenCalledWith(
-        expect.objectContaining({
-          stateSnapshot: [],
-        }),
-      );
+      // Restoring an empty snapshot would empty both voices
+      expect(mockElectronAPI.moveSampleInKit).toHaveBeenCalled();
+      expect(mockUndoActions.createSameKitMoveAction).not.toHaveBeenCalled();
+      expect(mockOptions.onAddUndoAction).not.toHaveBeenCalled();
     });
 
-    it("should handle null data from getAllSamplesForKit", async () => {
+    it("records no undo when the kit read returns no data", async () => {
       mockElectronAPI.getAllSamplesForKit.mockResolvedValue({
         data: null,
         success: true,
@@ -444,11 +430,7 @@ describe("useSampleManagementMoveOps", () => {
 
       await result.current.handleSampleMove(1, 0, 2, 1);
 
-      expect(mockUndoActions.createSameKitMoveAction).toHaveBeenCalledWith(
-        expect.objectContaining({
-          stateSnapshot: [],
-        }),
-      );
+      expect(mockUndoActions.createSameKitMoveAction).not.toHaveBeenCalled();
     });
   });
 

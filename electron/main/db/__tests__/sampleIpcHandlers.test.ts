@@ -12,6 +12,7 @@ vi.mock("../../services/sampleService.js", () => ({
     deleteSampleFromSlotWithoutReindexing: vi.fn(),
     moveSampleBetweenKits: vi.fn(),
     moveSampleInKit: vi.fn(),
+    restoreVoices: vi.fn(() => ({ success: true })),
   },
 }));
 
@@ -20,12 +21,17 @@ vi.mock("../ipcHandlerUtils.js", () => ({
 }));
 
 vi.mock("../../security/sampleSourceAccess.js", () => ({
+  checkSampleSourceAccess: vi.fn(() => ({ ok: true })),
   rememberKitSampleSources: vi.fn(),
 }));
 
 import { ipcMain } from "electron";
 
-import { rememberKitSampleSources } from "../../security/sampleSourceAccess.js";
+import {
+  checkSampleSourceAccess,
+  rememberKitSampleSources,
+} from "../../security/sampleSourceAccess.js";
+import { sampleService } from "../../services/sampleService.js";
 import * as ipcHandlerUtils from "../ipcHandlerUtils.js";
 import { registerSampleIpcHandlers } from "../sampleIpcHandlers";
 
@@ -44,10 +50,10 @@ describe("registerSampleIpcHandlers - Unit Tests", () => {
   });
 
   describe("Handler Registration", () => {
-    it("should register all 7 sample IPC handlers", () => {
+    it("should register all 8 sample IPC handlers", () => {
       registerSampleIpcHandlers(mockInMemorySettings);
 
-      expect(mockIpcMain.handle).toHaveBeenCalledTimes(7);
+      expect(mockIpcMain.handle).toHaveBeenCalledTimes(8);
     });
 
     it("should register handlers with correct IPC channel names", () => {
@@ -64,6 +70,7 @@ describe("registerSampleIpcHandlers - Unit Tests", () => {
         "delete-sample-from-slot-without-reindexing",
         "move-sample-in-kit",
         "move-sample-between-kits",
+        "restore-kit-voices",
         "validate-sample-sources",
       ]);
     });
@@ -154,5 +161,66 @@ describe("registerSampleIpcHandlers - undo source grants (RE-03)", () => {
       },
     );
     expect(rememberKitSampleSources).toHaveBeenCalledWith(settings, "A0", "B1");
+  });
+
+  describe("[UC-26] [Q-02] restore-kit-voices (RE-86)", () => {
+    const voices = [
+      {
+        samples: [
+          {
+            filename: "kick.wav",
+            gain_db: -6,
+            slot_number: 0,
+            source_path: "/samples/kick.wav",
+            wav_bit_depth: 16,
+            wav_bitrate: 705600,
+            wav_channels: 1,
+            wav_sample_rate: 44100,
+          },
+        ],
+        voice: 1,
+      },
+    ];
+    const restoreHandler = () => {
+      registerSampleIpcHandlers(settings);
+      const call = mockIpcMain.handle.mock.calls.find(
+        ([channel]) => channel === "restore-kit-voices",
+      );
+      return call![1] as (...args: unknown[]) => Promise<unknown>;
+    };
+
+    it("restores through one service call once every file is allowed", async () => {
+      const result = await restoreHandler()({}, "A0", voices);
+
+      expect(result).toEqual({ success: true });
+      expect(checkSampleSourceAccess).toHaveBeenCalledWith(
+        settings,
+        "/samples/kick.wav",
+      );
+      expect(sampleService.restoreVoices).toHaveBeenCalledWith(
+        settings,
+        "A0",
+        voices,
+      );
+    });
+
+    it("refuses a file Romper may not read, and restores nothing (RE-03)", async () => {
+      vi.mocked(checkSampleSourceAccess).mockReturnValueOnce({
+        error: "Access denied",
+        ok: false,
+      });
+
+      const result = await restoreHandler()({}, "A0", voices);
+
+      expect(result).toEqual({ error: "Access denied", success: false });
+      expect(sampleService.restoreVoices).not.toHaveBeenCalled();
+    });
+
+    it("refuses something that isn't a list of voices", async () => {
+      const result = await restoreHandler()({}, "A0", "nope");
+
+      expect(result).toMatchObject({ success: false });
+      expect(sampleService.restoreVoices).not.toHaveBeenCalled();
+    });
   });
 });

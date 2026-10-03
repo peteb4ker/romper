@@ -43,6 +43,7 @@ export {
   getKitSamples,
   getSamplesToDelete,
   replaceSampleTx,
+  restoreVoicesTx,
   updateSampleGain,
   updateSampleMetadata,
 } from "./sampleCrudOperations.js";

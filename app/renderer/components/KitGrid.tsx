@@ -305,7 +305,6 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
     const { kitsToDisplay } = useKitListLogic(kits);
     const { containerRef, size } = useContainerSize();
     const columnCount = useResponsiveColumns(size.width);
-    const rowCount = Math.ceil(kitsToDisplay.length / columnCount);
     const listRef = useRef<VariableSizeList>(null);
 
     // Navigation logic adapted for grid
@@ -386,14 +385,13 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
     // Use keyboard navigation hook
     const { handleKeyDown, scrollAndFocusKitByIndex, scrollToKit } =
       useKitGridKeyboard({
-        columnCount,
         containerRef,
         focusedIdx,
         kitsToDisplay,
         onBankFocus,
         onFocusKit,
         onSelectKit,
-        rowCount,
+        rowIndexByKitIndex,
         scrollItemIntoView: scrollKitIntoView,
         setFocus,
       });

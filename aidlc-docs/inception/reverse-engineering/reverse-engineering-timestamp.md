@@ -1,5 +1,10 @@
 # Reverse Engineering Metadata
 
+> **Dated snapshot, not maintained.** This file describes `main` at commit
+> `87bea51` (2026-09-29) and hasn't been kept up to date since. For current
+> behaviour read the code on `main`; for what's still open, see
+> [GitHub issues](https://github.com/peteb4ker/romper/issues).
+
 **Analysis Date**: 2026-09-29T00:00:00Z
 **Analyzer**: Claude Code (Claude Opus 5.5), five parallel read-only reviews plus hand verification
 **Workspace**: /Users/pete/workspace/romper

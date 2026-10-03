@@ -1,5 +1,10 @@
 # Dependencies
 
+> **Dated snapshot, not maintained.** This file describes `main` at commit
+> `87bea51` (2026-09-29) and hasn't been kept up to date since. For current
+> behaviour read the code on `main`; for what's still open, see
+> [GitHub issues](https://github.com/peteb4ker/romper/issues).
+
 > Reverse-engineered from `main` @ `87bea51` (app version 1.3.1) on 2026-09-29.
 > `npm audit` and `npm outdated` were run the same day.
 

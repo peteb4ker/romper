@@ -1,6 +1,7 @@
 {%- comment -%}
-One area's use cases or qualities: status, tagged tests per layer, and
-follow-ups (a missing test, open issues). include trace-table.html group=g
+One area's use cases or qualities: status, tagged tests per layer, a
+missing test if there is one, and a link to its open GitHub issues (counted
+live by the page's script). include trace-table.html group=g
 {%- endcomment -%}
 {%- assign g = include.group -%}
 <div class="trace" role="table" aria-label="{{ g.name }}">
@@ -22,10 +23,9 @@ follow-ups (a missing test, open issues). include trace-table.html group=g
             {%- else %}
             <span class="trace-chip trace-chip--none">Not built yet</span>
             {%- endif %}
+            <a class="trace-issues" data-label="{{ e.id }}" href="https://github.com/peteb4ker/romper/issues?q=is%3Aopen+label%3A{{ e.id }}">Open issues</a>
             {%- if e.followUps.size > 0 %}
-            <ul class="trace-follow">
-                {%- for f in e.followUps %}<li>{{ f }}</li>{% endfor %}
-            </ul>
+            <span class="trace-follow">{{ e.followUps | first }}</span>
             {%- endif %}
         </div>
         <span role="cell" data-layer="Unit">{% if e.tests.unit > 0 %}{{ e.tests.unit }}{% else %}&ndash;{% endif %}</span>

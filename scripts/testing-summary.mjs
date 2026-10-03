@@ -43,24 +43,16 @@ const sortPlatforms = (set) =>
 
 /**
  * Use cases and qualities for the testing page, grouped by area in register
- * order, each with its follow-ups: a missing test (none above unit level, or
- * the gap the register declares) and its open backlog items.
+ * order. Everything still to do is a GitHub issue labelled with the entry's ID,
+ * which the page counts live; the only note kept here is a declared test gap,
+ * a test that can't be automated, so readers see why there's none.
  */
 export function groupEntries(entries) {
   const groups = [];
   for (const entry of entries) {
-    const aboveUnit =
-      entry.tests.integration + entry.tests.e2e + entry.tests.validation > 0;
-    const plain = (text) => text.replaceAll("`", "");
-    const followUps = [];
-    if (entry.status !== "not built" && !aboveUnit) {
-      followUps.push(
-        entry.gap
-          ? `Missing test: ${plain(entry.gap)}`
-          : "Missing test: nothing above unit level checks this yet",
-      );
-    }
-    for (const issue of entry.issues) followUps.push(plain(issue.text));
+    const followUps = entry.gap
+      ? [`No automated test: ${entry.gap.replaceAll("`", "")}`]
+      : [];
     let group = groups.at(-1);
     if (group?.name !== entry.group) {
       group = { entries: [], kind: entry.kind, name: entry.group };

@@ -73,7 +73,7 @@ the Pages build copies from the latest release (scripts/testing-summary.mjs).
 </ul>
 
 {%- if t.groups.size > 0 %}
-<p class="testing-sub testing-trace-intro">Each use case below lists how many tests are tagged with it at each layer, and its follow-ups: a test still missing, or an open issue, in the words of what you'd notice.</p>
+<p class="testing-sub testing-trace-intro">Each thing Romper does, with the number of tests tagged with it at each layer. "Open issues" links to the known problems still to fix, on GitHub.</p>
 {%- for g in t.groups %}{% if g.kind == "use case" %}
 {% include trace-table.html group=g %}
 {%- endif %}{% endfor %}
@@ -120,6 +120,36 @@ the Pages build copies from the latest release (scripts/testing-summary.mjs).
 </section>
 
 <script>
+// Open issues per use case and quality, live from GitHub (one request).
+// Without it, each link still opens the label's issue list.
+(function () {
+  var links = document.querySelectorAll(".trace-issues");
+  if (links.length === 0) return;
+  var all = [];
+  function page(n) {
+    return fetch("https://api.github.com/repos/peteb4ker/romper/issues?state=open&per_page=100&page=" + n)
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (batch) {
+        all = all.concat(batch);
+        return batch.length === 100 && n < 5 ? page(n + 1) : all;
+      });
+  }
+  page(1)
+    .then(function (issues) {
+      var counts = {};
+      issues.forEach(function (issue) {
+        if (issue.pull_request) return;
+        issue.labels.forEach(function (l) { counts[l.name] = (counts[l.name] || 0) + 1; });
+      });
+      links.forEach(function (a) {
+        var n = counts[a.dataset.label] || 0;
+        if (n === 0) { a.hidden = true; return; }
+        a.textContent = n === 1 ? "1 open issue" : n + " open issues";
+      });
+    })
+    .catch(function () {});
+})();
+
 // The development version's status, live from GitHub: honest when main is red
 (function () {
   var line = document.getElementById("testing-dev");

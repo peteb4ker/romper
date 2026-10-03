@@ -149,7 +149,7 @@ describe("groupEntries", () => {
     validation,
   });
 
-  it("groups by area and lists missing tests and open issues as follow-ups", () => {
+  it("groups by area and notes a declared test gap", () => {
     const groups = groupEntries([
       {
         gap: null,
@@ -198,12 +198,10 @@ describe("groupEntries", () => {
       ["Qualities", "quality", 1],
     ]);
     expect(groups[0].entries.map((e) => e.followUps)).toEqual([
-      ["Some failures happen silently."],
-      ["Missing test: opening Finder needs a real desktop."],
+      [],
+      ["No automated test: opening Finder needs a real desktop."],
       [],
     ]);
-    expect(groups[1].entries[0].followUps).toEqual([
-      "Missing test: nothing above unit level checks this yet",
-    ]);
+    expect(groups[1].entries[0].followUps).toEqual([]);
   });
 });

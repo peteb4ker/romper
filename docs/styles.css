@@ -1886,13 +1886,19 @@ html.js-ready .fade-in.visible {
 .trace-chip--partial { border-color: var(--voice-2); color: var(--text-primary); }
 .trace-chip--none { border-color: var(--border-strong); color: var(--text-secondary); }
 
+.trace-issues {
+    font-size: 0.8rem;
+    color: var(--accent-primary);
+}
+
+.trace-issues[hidden] {
+    display: none;
+}
+
 .trace-follow {
     flex-basis: 100%;
-    margin: 0.2rem 0 0;
-    padding-left: 1.1rem;
     color: var(--text-secondary);
-    font-size: 0.85rem;
-    line-height: 1.5;
+    font-size: 0.8rem;
 }
 
 @media (max-width: 768px) {

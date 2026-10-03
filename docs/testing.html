@@ -1,0 +1,131 @@
+---
+layout: default
+title: How Romper is tested
+description: How every change to Romper is checked, and how each release is rehearsed end to end before it ships
+permalink: /testing/
+---
+{%- comment -%}
+No counts are written here: they come from docs/_data/testing.json, which
+the Pages build copies from the latest release (scripts/testing-summary.mjs).
+{%- endcomment -%}
+{%- assign t = site.data.testing -%}
+
+<section class="page-content testing">
+<div class="container">
+
+<header class="testing-header">
+    <h1>How Romper is tested</h1>
+    <p class="testing-lede">Every change is checked automatically before it's merged, and every release is rehearsed end to end, on macOS, Windows and Linux, before it ships.</p>
+    {%- if t %}
+    <p class="testing-status testing-status--pass">
+        <span class="testing-dot" aria-hidden="true"></span>
+        Romper {{ t.version }} passed every check before release
+    </p>
+    {%- else %}
+    <p class="testing-status">Results appear here with the next release.</p>
+    {%- endif %}
+    <p class="testing-dev" id="testing-dev" hidden></p>
+</header>
+
+{%- if t %}
+{%- assign L = t.layers %}
+<h2 class="testing-h2">Four layers of checks</h2>
+<p class="testing-sub">From single pieces up to a full rehearsal with real files.</p>
+<div class="testing-layers">
+    <div class="testing-layer">
+        <span class="testing-layer-dot testing-layer-dot--1" aria-hidden="true"></span>
+        <div class="testing-figure">{% include number.html value=L.unit.tests %}</div>
+        <div class="testing-layer-title">Building blocks</div>
+        <p>Tests that check each piece on its own, such as reading a WAV file's format or naming a kit.</p>
+    </div>
+    <div class="testing-layer">
+        <span class="testing-layer-dot testing-layer-dot--2" aria-hidden="true"></span>
+        <div class="testing-figure">{% include number.html value=L.integration.tests %}</div>
+        <div class="testing-layer-title">Pieces together</div>
+        <p>Tests that run the parts together with a real database and real files{% if L.integration.platforms.size > 0 %}, on {% include platforms.html list=L.integration.platforms %}{% endif %}.</p>
+    </div>
+    <div class="testing-layer">
+        <span class="testing-layer-dot testing-layer-dot--3" aria-hidden="true"></span>
+        <div class="testing-figure">{% include number.html value=L.e2e.tests %}</div>
+        <div class="testing-layer-title">The whole app</div>
+        <p>Tests that open the real app and use it the way you would{% if L.e2e.platforms.size > 0 %}, on {% include platforms.html list=L.e2e.platforms %}{% endif %}.</p>
+    </div>
+    <div class="testing-layer">
+        <span class="testing-layer-dot testing-layer-dot--4" aria-hidden="true"></span>
+        <div class="testing-figure">Every release</div>
+        <div class="testing-layer-title">Real-world rehearsal</div>
+        <p>Downloads Squarp's factory library{% if L.rehearsal.kits > 0 %} ({% include number.html value=L.rehearsal.kits %} kits, {% include number.html value=L.rehearsal.samples %} samples){% endif %}, builds a kit, writes a card, and checks that {% if L.rehearsal.cardFiles > 0 %}all {% include number.html value=L.rehearsal.cardFiles %} files{% else %}every file{% endif %} on it are exactly what they should be, byte for byte{% if L.rehearsal.platforms.size > 0 %}, on {% include platforms.html list=L.rehearsal.platforms %}{% endif %}.</p>
+    </div>
+</div>
+
+{%- assign u = t.useCases %}
+<h2 class="testing-h2">Does it do what it promises?</h2>
+<p class="testing-sub">{{ u.total }} things Romper lets you do, each tied to the tests that prove it.</p>
+<div class="testing-bar" role="img" aria-label="{{ u.supported }} fully working, {{ u.partial }} working with known limits, {{ u.notBuilt }} not built yet">
+    <span class="testing-bar-part testing-bar-part--full" style="flex: {{ u.supported }}"></span>
+    <span class="testing-bar-part testing-bar-part--partial" style="flex: {{ u.partial }}"></span>
+    <span class="testing-bar-part testing-bar-part--none" style="flex: {{ u.notBuilt }}"></span>
+</div>
+<ul class="testing-legend">
+    <li><span class="testing-key testing-key--full" aria-hidden="true"></span>{{ u.supported }} fully working</li>
+    <li><span class="testing-key testing-key--partial" aria-hidden="true"></span>{{ u.partial }} working, with known limits</li>
+    <li><span class="testing-key testing-key--none" aria-hidden="true"></span>{{ u.notBuilt }} not built yet</li>
+</ul>
+
+<h2 class="testing-h2">Does it stay fast?</h2>
+<p class="testing-sub">Each everyday action has a work budget. A change that makes Romper do more work than its budget allows fails its checks and can't be merged.</p>
+{%- if t.performance.size > 0 %}
+<ul class="testing-budgets">
+    {%- for row in t.performance %}
+    <li>
+        <span>{{ row.action }}</span>
+        {%- if row.status == "improving" %}
+        <span class="testing-budget testing-budget--improving">Within budget, improvement planned</span>
+        {%- else %}
+        <span class="testing-budget testing-budget--within">Within budget</span>
+        {%- endif %}
+    </li>
+    {%- endfor %}
+</ul>
+{%- else %}
+<p class="testing-sub">Speed budgets appear here with the next release.</p>
+{%- endif %}
+{%- endif %}
+
+<h2 class="testing-h2">Is my card safe?</h2>
+<ul class="testing-safety">
+    <li>Every file written to the card in the rehearsal is compared with what it should be.</li>
+    <li>The Rample's own settings folder on the card is never touched.</li>
+    <li>Any unexpected error or warning in the app fails the checks.</li>
+</ul>
+
+{%- if t %}
+<p class="testing-source">These results come from the checks that ran for <a href="https://github.com/peteb4ker/romper/releases/tag/{{ t.version }}">Romper {{ t.version }}</a> on {{ t.date | date: "%-d %B %Y" }}.</p>
+{%- endif %}
+
+</div>
+</section>
+
+<script>
+// The development version's status, live from GitHub: honest when main is red
+(function () {
+  var line = document.getElementById("testing-dev");
+  var checks = ["Build", "End-to-End Tests", "Lint", "Test", "TypeCheck"];
+  fetch("https://api.github.com/repos/peteb4ker/romper/actions/runs?branch=main&event=push&status=completed&per_page=50")
+    .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+    .then(function (data) {
+      var latest = {};
+      (data.workflow_runs || []).forEach(function (run) {
+        if (checks.indexOf(run.name) !== -1 && !latest[run.name]) latest[run.name] = run;
+      });
+      if (Object.keys(latest).length !== checks.length) return;
+      var failing = checks.filter(function (n) { return latest[n].conclusion !== "success"; });
+      line.textContent = failing.length === 0
+        ? "Development version: all checks passing."
+        : "Development version: some checks are failing on the latest change. They're fixed before the next release.";
+      line.className = "testing-dev " + (failing.length === 0 ? "testing-dev--pass" : "testing-dev--fail");
+      line.hidden = false;
+    })
+    .catch(function () {});
+})();
+</script>

@@ -9,7 +9,9 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import Handlebars from "handlebars";
+import { getFixedIssueGroups, releaseWindow } from "./fixed-issues.js";
 import { parseCommitsSinceLastTag } from "./parse-commits.js";
+import { getCommitDate, getGitHubRepoSlug } from "./utils/git.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.join(__dirname, "../..");
@@ -42,10 +44,40 @@ function getPlatformIdentifier() {
 }
 
 /**
- * Generate release notes data object
+ * Issues closed as completed between the previous tag's commit and HEAD
+ * (the tagged commit in CI), grouped for "Fixed in this release". Null when
+ * GitHub can't be queried.
  */
-function generateReleaseData(version, customData = {}) {
+function getFixedIssuesSinceTag(previousTag) {
+  const repo = getGitHubRepoSlug();
+  if (!repo) {
+    console.error(
+      'Release notes: leaving out "Fixed in this release" because the GitHub repository is unknown.',
+    );
+    return null;
+  }
+
+  return getFixedIssueGroups(
+    repo,
+    releaseWindow(
+      previousTag ? getCommitDate(previousTag) : null,
+      getCommitDate("HEAD"),
+    ),
+  );
+}
+
+/**
+ * Generate release notes data object
+ *
+ * `getFixedIssues(previousTag)` is injectable so tests don't query GitHub.
+ */
+function generateReleaseData(
+  version,
+  customData = {},
+  { getFixedIssues = getFixedIssuesSinceTag } = {},
+) {
   const commitData = parseCommitsSinceLastTag();
+  const fixedIssues = getFixedIssues(commitData.previousTag);
   const date = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
 
   // Prepare template data
@@ -57,6 +89,9 @@ function generateReleaseData(version, customData = {}) {
 
     // Highlights can be customized
     highlights: customData.highlights || null,
+
+    // Issues closed as completed since the previous release, by use case
+    fixed_issues: fixedIssues?.length > 0 ? fixedIssues : null,
 
     // Breaking changes
     breaking:
@@ -106,17 +141,23 @@ function generateReleaseData(version, customData = {}) {
 }
 
 /**
+ * Render the release notes template with a prepared data object
+ */
+function renderReleaseNotes(data) {
+  return loadTemplate("RELEASE_NOTES_TEMPLATE.md")(data);
+}
+
+/**
  * Generate release notes from template
  */
-function generateReleaseNotes(version, customData = {}) {
+function generateReleaseNotes(version, customData = {}, options = {}) {
   try {
-    const template = loadTemplate("RELEASE_NOTES_TEMPLATE.md");
-    const data = generateReleaseData(version, customData);
-
-    return template(data);
+    return renderReleaseNotes(
+      generateReleaseData(version, customData, options),
+    );
   } catch (error) {
     throw new Error(`Failed to generate release notes: ${error.message}`);
   }
 }
 
-export { generateReleaseNotes };
+export { generateReleaseData, generateReleaseNotes, renderReleaseNotes };

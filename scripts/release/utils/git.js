@@ -192,6 +192,23 @@ function getTagCommit(tag) {
 }
 
 /**
+ * The committer date of a ref, as an ISO 8601 string
+ */
+function getCommitDate(ref) {
+  return execGit(`log -1 --format=%cI ${ref}`, { silent: true });
+}
+
+/**
+ * The GitHub "owner/repo" slug: GITHUB_REPOSITORY in Actions, otherwise
+ * derived from the origin remote
+ */
+function getGitHubRepoSlug() {
+  if (process.env.GITHUB_REPOSITORY) return process.env.GITHUB_REPOSITORY;
+  const url = getGitHubRepoUrl();
+  return url ? url.replace("https://github.com/", "") : null;
+}
+
+/**
  * Check if there are unpushed commits
  */
 function hasUnpushedCommits() {
@@ -277,6 +294,8 @@ export {
   isRemoteUpToDate,
   getCurrentCommit,
   getTagCommit,
+  getCommitDate,
+  getGitHubRepoSlug,
   hasUnpushedCommits,
   getRemoteUrl,
   getDefaultBranch,

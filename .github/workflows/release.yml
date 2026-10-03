@@ -449,6 +449,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # create the release
+      issues: read # list the issues the release fixed, for its notes
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
 
     steps:
@@ -475,8 +476,13 @@ jobs:
       - name: Display structure of downloaded files
         run: find release-artifacts -type f -name "*" | head -20
 
+      # The notes list the issues closed as completed since the previous
+      # tag, which the script reads with gh. Without a token it leaves that
+      # section out and warns.
       - name: Generate release notes
         id: release-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           # Generate release notes using the Node.js script
           RELEASE_NOTES=$(node scripts/generate-github-release-notes.js ${{ github.ref_name }})

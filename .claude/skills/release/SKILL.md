@@ -37,6 +37,10 @@ Cut release `$ARGUMENTS` (a bare semver, no `v` prefix; the tag adds it).
    SonarCloud quality gate → 3-platform builds (macOS sign/notarize, Windows
    Azure Trusted Signing) → GitHub release with generated notes
    (`scripts/generate-github-release-notes.js`, which handles prerelease versions).
+   The notes start with the issues closed as completed since the previous
+   tag, grouped by use case, so a fix PR must say `Fixes #N` for its issue to
+   be listed. Preview them with
+   `node scripts/generate-github-release-notes.js v$ARGUMENTS`.
    A failed quality gate auto-files a GitHub issue; fix the issues and re-tag.
 4. **Verify** on the releases page: RCs must show the *Pre-release* badge and
    **Latest** must still point at the previous stable. A stable release must

@@ -1,7 +1,9 @@
 // File operations utilities for database management
 import * as fs from "node:fs";
+import * as path from "node:path";
 
 import { logger } from "../utils/logger.js";
+import { closeDbConnection } from "./utils/dbConnections.js";
 
 // Logging utilities — error is always on, info is gated via logger
 const log = {
@@ -15,6 +17,8 @@ export async function deleteDbFileWithRetry(
   dbPath: string,
   maxRetries = 15,
 ): Promise<void> {
+  // Romper's own connection would hold the file open (RE-81)
+  closeDbConnection(path.dirname(dbPath));
   let lastError: Error | null = null;
   const isWindows = process.platform === "win32";
 

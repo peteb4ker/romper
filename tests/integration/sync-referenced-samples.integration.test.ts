@@ -3,6 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { closeAllDbConnections } from "../../electron/main/db/utils/dbConnections.js";
+
 // Mock Electron's BrowserWindow to prevent getAllWindows error
 vi.mock("electron", () => ({
   BrowserWindow: {
@@ -66,6 +68,8 @@ describe("[UC-34] Sync Referenced Samples Integration Test", () => {
   });
 
   afterEach(() => {
+    // Windows can't delete a database file that's still open
+    closeAllDbConnections();
     // Clean up
     fs.rmSync(tempDir, { force: true, recursive: true });
     vi.clearAllMocks();

@@ -14,6 +14,7 @@ import {
   createRomperDbFile,
   getKitSamples,
 } from "../../db/romperDbCoreORM.js";
+import { closeAllDbConnections } from "../../db/utils/dbConnections.js";
 import { ScanService } from "../scanService.js";
 
 // Test utilities
@@ -113,6 +114,8 @@ describe("ScanService Integration Tests", () => {
   });
 
   afterEach(async () => {
+    // Windows can't delete a database file that's still open
+    closeAllDbConnections();
     await cleanupSqliteFiles(TEST_DB_DIR);
     fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
   });

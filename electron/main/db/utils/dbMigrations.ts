@@ -1,15 +1,15 @@
-import type { DbResult } from "@romper/shared/db/schema.js";
-
-import * as schema from "@romper/shared/db/schema.js";
 // Database migration machinery: locating the migrations folder, applying
-// migrations, one-time history repair, and the per-session migration cache.
-import BetterSqlite3 from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+// migrations and one-time history repair. dbUtilities runs them when it
+// opens a store's connection.
+import type BetterSqlite3 from "better-sqlite3";
+
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+
+import type { RomperDb } from "./dbConnections.js";
 
 import { logger } from "../../utils/logger.js";
 
@@ -17,9 +17,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const DB_FILENAME = "romper.sqlite";
-
-// Track which databases have been migration-checked this session
-const migrationCheckedDbs = new Set<string>();
 
 /**
  * Check migration state of database
@@ -49,57 +46,11 @@ export function checkMigrationState(sqlite: BetterSqlite3.Database): void {
   }
 }
 
-// Export function to clear migration cache (for tests)
-export function clearMigrationCache(): void {
-  migrationCheckedDbs.clear();
-}
-
-/**
- * Ensure database migrations are up to date
- */
-export function ensureDatabaseMigrations(dbDir: string): DbResult<boolean> {
-  const dbPath = path.join(dbDir, DB_FILENAME);
-
-  // Skip if already checked this session
-  if (migrationCheckedDbs.has(dbPath)) {
-    return { data: true, success: true };
-  }
-
-  // Check if database file exists
-  if (!fs.existsSync(dbPath)) {
-    return {
-      error: `Database file does not exist: ${dbPath}`,
-      success: false,
-    };
-  }
-
-  try {
-    const sqlite = new BetterSqlite3(dbPath);
-    // Wait for concurrent connections instead of failing with SQLITE_BUSY
-    // (openDatabase lives in dbUtilities, which imports this module)
-    sqlite.pragma("busy_timeout = 5000");
-    const db = drizzle(sqlite, { schema });
-
-    checkMigrationState(sqlite);
-    repairMigrationHistory(sqlite);
-    executeMigrations(db, dbPath, dbDir);
-
-    sqlite.close();
-    migrationCheckedDbs.add(dbPath);
-
-    return { data: true, success: true };
-  } catch (e) {
-    logMigrationError(e, dbPath, dbDir);
-    const error = e instanceof Error ? e.message : String(e);
-    return { error: `Migration failed: ${error}`, success: false };
-  }
-}
-
 /**
  * Execute database migrations
  */
 export function executeMigrations(
-  db: ReturnType<typeof drizzle<typeof schema>>,
+  db: RomperDb,
   dbPath: string,
   dbDir: string,
 ): void {
@@ -176,6 +127,22 @@ export function logMigrationError(
       console.error(`[Main] Could not get database stats:`, statError);
     }
   }
+}
+
+/**
+ * Bring a just-opened connection's schema up to date: repair the history
+ * left by the 0008→0009 consolidation, then apply pending migrations.
+ * Runs once per connection, when the store is opened (RE-81).
+ */
+export function migrateDatabase(
+  sqlite: BetterSqlite3.Database,
+  db: RomperDb,
+  dbPath: string,
+  dbDir: string,
+): void {
+  checkMigrationState(sqlite);
+  repairMigrationHistory(sqlite);
+  executeMigrations(db, dbPath, dbDir);
 }
 
 /**

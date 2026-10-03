@@ -19,6 +19,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { InMemorySettings } from "../../electron/main/types/settings.js";
 
+import { closeAllDbConnections } from "../../electron/main/db/utils/dbConnections.js";
 import { type BudgetName, enforceBudgets } from "../perf/budgets";
 import { encodeTestWav, sine } from "../validation/support/wav";
 
@@ -238,6 +239,8 @@ describe("[Q-01] performance budgets: main-process operations", () => {
   }, SLOW_RUNNER_MS);
 
   afterEach(() => {
+    // Windows can't delete a database file that's still open
+    closeAllDbConnections();
     pathAccess.reset();
     fs.rmSync(work, { force: true, recursive: true });
   });

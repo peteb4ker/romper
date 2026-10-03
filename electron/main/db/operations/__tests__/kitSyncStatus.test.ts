@@ -243,7 +243,7 @@ describe("Kit Sync Status Operations - Unit Tests", () => {
       mockConsoleWarn.mockRestore();
     });
 
-    test("should handle database errors with logging", () => {
+    test("should let database errors reach withDb", () => {
       const mockError = new Error("Database update failed");
       const mockConsoleLog = vi
         .spyOn(console, "log")
@@ -272,13 +272,9 @@ describe("Kit Sync Status Operations - Unit Tests", () => {
         return fn(mockDb);
       });
 
+      // The error reaches withDb, which logs it and returns a failed result
       expect(() => markKitsAsSynced(mockDbDir, ["A0", "A1"])).toThrow(
         "Database update failed",
-      );
-
-      expect(mockConsoleError).toHaveBeenCalledWith(
-        "[markKitsAsSynced] Failed to update kits:",
-        mockError,
       );
 
       mockConsoleLog.mockRestore();

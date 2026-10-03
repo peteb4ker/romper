@@ -26,6 +26,7 @@ import {
   validateDatabaseSchema,
   withDb,
 } from "../romperDbCoreORM.js";
+import { closeAllDbConnections } from "../utils/dbConnections.js";
 
 // Test utilities
 // Each test gets its own directory under the OS temp dir (see beforeEach),
@@ -58,6 +59,8 @@ describe("Drizzle ORM Database Operations", () => {
   });
 
   afterEach(async () => {
+    // Windows can't delete a database file that's still open
+    closeAllDbConnections();
     await cleanupSqliteFiles(TEST_DB_DIR);
     fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
   });

@@ -3,7 +3,10 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createRomperDbFile } from "../../db/romperDbCoreORM.js";
+import {
+  closeDbConnection,
+  createRomperDbFile,
+} from "../../db/romperDbCoreORM.js";
 import {
   EXISTING_LOCAL_STORE_MESSAGE,
   LocalStoreSetupService,
@@ -12,6 +15,7 @@ import {
 // Stand-in for the real database creation: writes a file so the directory
 // looks like a store. The real path is covered by the integration test.
 vi.mock("../../db/romperDbCoreORM.js", () => ({
+  closeDbConnection: vi.fn(),
   createRomperDbFile: vi.fn((dbDir: string) => {
     fs.mkdirSync(dbDir, { recursive: true });
     fs.writeFileSync(path.join(dbDir, "romper.sqlite"), "db");
@@ -108,6 +112,11 @@ describe("[UC-01] [UC-02] [UC-03] LocalStoreSetupService (RE-10)", () => {
       const result = service.cleanupFailedSetup(target);
 
       expect(result.removed).toBe(true);
+      // Closed first: Windows can't rename an open database (RE-81)
+      expect(closeDbConnection).toHaveBeenCalledWith(dbDir);
+      expect(
+        vi.mocked(closeDbConnection).mock.invocationCallOrder[0],
+      ).toBeLessThan(vi.mocked(fs.renameSync).mock.invocationCallOrder[0]);
       expect(result.movedTo).toMatch(/\.romperdb\.failed-\d+$/);
       expect(fs.existsSync(dbDir)).toBe(false);
       expect(fs.existsSync(path.join(result.movedTo!, "romper.sqlite"))).toBe(

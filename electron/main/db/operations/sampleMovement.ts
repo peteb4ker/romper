@@ -2,9 +2,8 @@ import type { DbResult, Sample } from "@romper/shared/db/schema.js";
 
 import * as schema from "@romper/shared/db/schema.js";
 import { and, eq, ne } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/better-sqlite3";
 
-import { withDbTransaction } from "../utils/dbUtilities.js";
+import { type RomperDb, withDbTransaction } from "../utils/dbUtilities.js";
 
 const { samples } = schema;
 
@@ -54,94 +53,110 @@ export function moveSampleInsertOnly(
   affectedSamples: SampleWithOriginalPosition[];
   movedSample: Sample;
 }> {
-  return withDbTransaction(dbDir, (db) => {
-    // Validate inputs - 0-based indexing (0-11 slots)
-    if (fromSlot < 0 || fromSlot >= 12 || toSlot < 0 || toSlot >= 12) {
-      throw new Error(
-        `Invalid slot numbers. Must be 0-11. Got from:${fromSlot}, to:${toSlot}`,
-      );
-    }
+  return withDbTransaction(dbDir, (db) =>
+    moveSampleTx(db, kitName, fromVoice, fromSlot, toVoice, toSlot),
+  );
+}
 
-    if (fromVoice < 1 || fromVoice > 4 || toVoice < 1 || toVoice > 4) {
-      throw new Error(
-        `Invalid voice numbers. Must be 1-4. Got from:${fromVoice}, to:${toVoice}`,
-      );
-    }
+/**
+ * The move itself, on the caller's transaction: throws (and so rolls the
+ * caller's unit of work back) when the move isn't possible.
+ */
+export function moveSampleTx(
+  db: RomperDb,
+  kitName: string,
+  fromVoice: number,
+  fromSlot: number,
+  toVoice: number,
+  toSlot: number,
+): {
+  affectedSamples: SampleWithOriginalPosition[];
+  movedSample: Sample;
+} {
+  // Validate inputs - 0-based indexing (0-11 slots)
+  if (fromSlot < 0 || fromSlot >= 12 || toSlot < 0 || toSlot >= 12) {
+    throw new Error(
+      `Invalid slot numbers. Must be 0-11. Got from:${fromSlot}, to:${toSlot}`,
+    );
+  }
 
-    // Get sample to move
-    const sampleToMove = db
-      .select()
-      .from(samples)
-      .where(
-        and(
-          eq(samples.kit_name, kitName),
-          eq(samples.voice_number, fromVoice),
-          eq(samples.slot_number, fromSlot),
-        ),
-      )
-      .get();
+  if (fromVoice < 1 || fromVoice > 4 || toVoice < 1 || toVoice > 4) {
+    throw new Error(
+      `Invalid voice numbers. Must be 1-4. Got from:${fromVoice}, to:${toVoice}`,
+    );
+  }
 
-    if (!sampleToMove) {
-      throw new Error(
-        `No sample found at voice ${fromVoice}, slot ${fromSlot}`,
-      );
-    }
+  // Get sample to move
+  const sampleToMove = db
+    .select()
+    .from(samples)
+    .where(
+      and(
+        eq(samples.kit_name, kitName),
+        eq(samples.voice_number, fromVoice),
+        eq(samples.slot_number, fromSlot),
+      ),
+    )
+    .get();
 
-    // No-op if moving to same position
-    if (fromVoice === toVoice && fromSlot === toSlot) {
-      return {
-        affectedSamples: [],
-        movedSample: sampleToMove,
-      };
-    }
+  if (!sampleToMove) {
+    throw new Error(`No sample found at voice ${fromVoice}, slot ${fromSlot}`);
+  }
 
-    const affectedSamples: SampleWithOriginalPosition[] = [];
-
-    if (fromVoice === toVoice) {
-      // Same voice move: insert-only reordering
-      affectedSamples.push(
-        ...performSameVoiceMove(
-          db,
-          kitName,
-          sampleToMove,
-          fromSlot,
-          toSlot,
-          fromVoice,
-        ),
-      );
-    } else {
-      // Cross-voice move: insert-only between voices
-      affectedSamples.push(
-        ...performCrossVoiceMove(
-          db,
-          kitName,
-          sampleToMove,
-          fromSlot,
-          toSlot,
-          fromVoice,
-          toVoice,
-        ),
-      );
-    }
-
-    // Get updated sample
-    const movedSample = db
-      .select()
-      .from(samples)
-      .where(eq(samples.id, sampleToMove.id))
-      .get();
-
-    const result = {
-      affectedSamples,
-      movedSample: movedSample || {
-        ...sampleToMove,
-        slot_number: toSlot,
-        voice_number: toVoice,
-      },
+  // No-op if moving to same position
+  if (fromVoice === toVoice && fromSlot === toSlot) {
+    return {
+      affectedSamples: [],
+      movedSample: sampleToMove,
     };
+  }
 
-    return result;
-  });
+  const affectedSamples: SampleWithOriginalPosition[] = [];
+
+  if (fromVoice === toVoice) {
+    // Same voice move: insert-only reordering
+    affectedSamples.push(
+      ...performSameVoiceMove(
+        db,
+        kitName,
+        sampleToMove,
+        fromSlot,
+        toSlot,
+        fromVoice,
+      ),
+    );
+  } else {
+    // Cross-voice move: insert-only between voices
+    affectedSamples.push(
+      ...performCrossVoiceMove(
+        db,
+        kitName,
+        sampleToMove,
+        fromSlot,
+        toSlot,
+        fromVoice,
+        toVoice,
+      ),
+    );
+  }
+
+  // Get updated sample
+  const movedSample = db
+    .select()
+    .from(samples)
+    .where(eq(samples.id, sampleToMove.id))
+    .get();
+
+  const result = {
+    affectedSamples,
+    movedSample: movedSample || {
+      ...sampleToMove,
+      slot_number: toSlot,
+      voice_number: toVoice,
+    },
+  };
+
+  return result;
 }
 
 /**
@@ -149,7 +164,7 @@ export function moveSampleInsertOnly(
  * Core utility for maintaining slot contiguity
  */
 function compactToContiguousSlots(
-  db: ReturnType<typeof drizzle<typeof schema>>,
+  db: RomperDb,
   samplesToCompact: Sample[],
 ): SampleWithOriginalPosition[] {
   const affectedSamples: SampleWithOriginalPosition[] = [];
@@ -181,7 +196,7 @@ function compactToContiguousSlots(
  * Implements pure insert-only behavior
  */
 function insertAtPositionWithShift(
-  db: ReturnType<typeof drizzle<typeof schema>>,
+  db: RomperDb,
   kitName: string,
   voiceNumber: number,
   insertSlot: number,
@@ -241,7 +256,7 @@ function insertAtPositionWithShift(
  * Compacts source voice and inserts into destination voice
  */
 function performCrossVoiceMove(
-  db: ReturnType<typeof drizzle<typeof schema>>,
+  db: RomperDb,
   kitName: string,
   sampleToMove: Sample,
   fromSlot: number,
@@ -316,7 +331,7 @@ function performCrossVoiceMove(
  * Uses 0-based slot indexing throughout
  */
 function performSameVoiceMove(
-  db: ReturnType<typeof drizzle<typeof schema>>,
+  db: RomperDb,
   kitName: string,
   sampleToMove: Sample,
   fromSlot: number,

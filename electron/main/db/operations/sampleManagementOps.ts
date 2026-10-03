@@ -2,10 +2,9 @@ import type { DbResult, Sample } from "@romper/shared/db/schema.js";
 
 import * as schema from "@romper/shared/db/schema.js";
 import { and, eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/better-sqlite3";
 
 import { logger } from "../../utils/logger.js";
-import { withDb } from "../utils/dbUtilities.js";
+import { type RomperDb } from "../utils/dbUtilities.js";
 import { moveSampleInsertOnly } from "./sampleMovement.js";
 
 // Type for samples that track their original position during moves
@@ -17,7 +16,7 @@ const { samples } = schema;
  * Get the sample to move for move operations
  */
 export function getSampleToMove(
-  db: ReturnType<typeof drizzle<typeof schema>>,
+  db: RomperDb,
   kitName: string,
   fromVoice: number,
   fromSlot: number,
@@ -115,75 +114,55 @@ export function moveSample(
 // Atomic helper functions removed - functionality integrated into main moveSample function
 
 /**
- * Perform voice reindexing after sample deletion
- * This redistributes samples to contiguous slots in 0-11 system
+ * Close the gaps a deletion left: each voice that lost samples gets its
+ * remaining samples renumbered to contiguous slots from 0. Runs on the
+ * caller's transaction, so the delete and the reindex commit together
+ * (RE-28).
  */
 export function performVoiceReindexing(
-  dbDir: string,
+  db: RomperDb,
   kitName: string,
   samplesToDelete: Sample[],
 ): Sample[] {
   const allAffectedSamples: Sample[] = [];
-
-  // Group samples by voice to minimize database calls
-  const samplesByVoice = groupSamplesByVoice(samplesToDelete);
-
-  // Process each voice separately using reindexing
-  for (const [voiceNum] of samplesByVoice) {
-    const reindexResult = reindexVoiceAfterDeletion(dbDir, kitName, voiceNum);
-    if (reindexResult.success && reindexResult.data) {
-      allAffectedSamples.push(...reindexResult.data);
-    }
+  for (const [voiceNum] of groupSamplesByVoice(samplesToDelete)) {
+    allAffectedSamples.push(...reindexVoiceTx(db, kitName, voiceNum));
   }
-
   return allAffectedSamples;
 }
 
 /**
- * Reindex a single voice after deletion by redistributing all remaining samples
- * In 0-11 system, this simply assigns contiguous slots starting from 0
+ * Renumber a voice's samples to contiguous slots from 0, keeping their
+ * order. Returns every sample in the voice with its new slot.
  */
-function reindexVoiceAfterDeletion(
-  dbDir: string,
+export function reindexVoiceTx(
+  db: RomperDb,
   kitName: string,
   voiceNumber: number,
-): DbResult<Sample[]> {
-  return withDb(dbDir, (db) => {
-    // Get all remaining samples for this voice
-    const remainingSamples = db
-      .select()
-      .from(samples)
-      .where(
-        and(
-          eq(samples.kit_name, kitName),
-          eq(samples.voice_number, voiceNumber),
-        ),
-      )
-      .all() as Sample[];
+): Sample[] {
+  const remainingSamples = db
+    .select()
+    .from(samples)
+    .where(
+      and(eq(samples.kit_name, kitName), eq(samples.voice_number, voiceNumber)),
+    )
+    .orderBy(samples.slot_number)
+    .all();
 
-    if (remainingSamples.length === 0) {
-      return []; // No samples to reindex
-    }
-
-    // Sort samples by slot number and reassign to contiguous 0-based slots
-    const sortedSamples = [...remainingSamples].sort(
-      (a, b) => a.slot_number - b.slot_number,
-    );
-    const reindexedSamples = sortedSamples.map((sample, index) => ({
-      ...sample,
-      slot_number: index,
-    }));
-
-    // Update all samples with their new positions in a single transaction
-    for (const reindexedSample of reindexedSamples) {
-      db.update(samples)
-        .set({ slot_number: reindexedSample.slot_number })
-        .where(eq(samples.id, reindexedSample.id))
-        .run();
-    }
-
-    return reindexedSamples;
+  // Lowest slots first, so a sample only ever moves down into a slot that
+  // is already free
+  remainingSamples.forEach((sample, index) => {
+    if (sample.slot_number === index) return;
+    db.update(samples)
+      .set({ slot_number: index })
+      .where(eq(samples.id, sample.id))
+      .run();
   });
+
+  return remainingSamples.map((sample, index) => ({
+    ...sample,
+    slot_number: index,
+  }));
 }
 
 /**

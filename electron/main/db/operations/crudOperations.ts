@@ -9,6 +9,7 @@ import { flagBankKitsModified } from "./kitSyncOperations.js";
 // Re-export operations from extracted modules
 export {
   addKit,
+  addKitTx,
   copyKit,
   deleteKit,
   getFavoriteKits,
@@ -21,17 +22,23 @@ export {
   markKitAsModified,
   markKitAsSynced,
   markKitsAsSynced,
+  markKitsAsSyncedTx,
   toggleKitFavorite,
   updateKit,
 } from "./kitCrudOperations.js";
 
-export { mergeKitScan } from "./kitScanOperations.js";
+export { mergeKitScan, mergeKitScanTx } from "./kitScanOperations.js";
+
+export { flagKitModified } from "./kitSyncOperations.js";
 
 export {
   addSample,
+  addSampleTx,
   buildDeleteConditions,
   deleteSamples,
+  deleteSamplesTx,
   deleteSamplesWithoutReindexing,
+  deleteSamplesWithoutReindexingTx,
   getAllSamples,
   getKitSamples,
   getSamplesToDelete,

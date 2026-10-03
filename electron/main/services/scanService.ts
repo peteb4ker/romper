@@ -11,6 +11,7 @@ import {
   getAllSamples,
   mergeKitScan,
   updateBank,
+  withDbTransaction,
 } from "../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
 
@@ -167,35 +168,38 @@ export class ScanService {
         /^\p{Lu} - .+\.rtf$/iu.test(file),
       );
 
-      let updatedBanks = 0;
       const scannedAt = new Date();
-
-      for (const rtfFile of rtfFiles) {
-        // Extract bank letter and artist name from filename
-        const match = /^(\p{Lu}) - (.+)\.rtf$/iu.exec(rtfFile);
-        if (match) {
-          const bankLetter = match[1].toUpperCase();
-          const artistName = match[2];
-
-          // Update bank in database
+      // One commit for the whole scan; each bank is its own savepoint, so
+      // a bank that fails doesn't undo the others
+      const scanned = withDbTransaction(dbDir, () => {
+        let updated = 0;
+        for (const rtfFile of rtfFiles) {
+          // Extract bank letter and artist name from filename
+          const match = /^(\p{Lu}) - (.+)\.rtf$/iu.exec(rtfFile);
+          if (!match) continue;
           // The store's own name files already match the card, so a scan
           // doesn't mark the bank's kits modified (RE-35)
           const updateResult = updateBank(
             dbDir,
-            bankLetter,
+            match[1].toUpperCase(),
             {
-              artist: artistName,
+              artist: match[2],
               rtf_filename: rtfFile,
               scanned_at: scannedAt,
             },
             { source: "scan" },
           );
-
-          if (updateResult.success) {
-            updatedBanks++;
-          }
+          if (updateResult.success) updated++;
         }
+        return updated;
+      });
+      if (!scanned.success) {
+        return {
+          error: `Failed to scan banks: ${scanned.error}`,
+          success: false,
+        };
       }
+      const updatedBanks = scanned.data ?? 0;
 
       return {
         data: {

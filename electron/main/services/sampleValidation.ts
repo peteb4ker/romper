@@ -9,28 +9,6 @@ import { sampleValidator } from "./validation/sampleValidator.js";
  */
 export class SampleValidationService {
   /**
-   * Check if sample exists in specified slot
-   */
-  checkSampleExists(
-    dbPath: string,
-    kitName: string,
-    voiceNumber: number,
-    slotNumber: number,
-  ): { exists: boolean; sample?: Sample } {
-    const existingSamplesResult = getKitSamples(dbPath, kitName);
-
-    if (!existingSamplesResult.success || !existingSamplesResult.data) {
-      return { exists: false };
-    }
-
-    const sample = existingSamplesResult.data.find(
-      (s) => s.voice_number === voiceNumber && s.slot_number === slotNumber,
-    );
-
-    return { exists: !!sample, sample };
-  }
-
-  /**
    * Validate and get sample to move for cross-kit operations
    */
   validateAndGetSampleToMove(

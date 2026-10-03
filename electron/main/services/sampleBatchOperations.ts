@@ -3,11 +3,12 @@ import type { DbResult, Sample } from "@romper/shared/db/schema.js";
 import { getErrorMessage } from "@romper/shared/errorUtils.js";
 
 import {
-  deleteSamples,
-  deleteSamplesWithoutReindexing,
+  deleteSamplesTx,
+  deleteSamplesWithoutReindexingTx,
+  flagKitModified,
   getKitSamples,
-  markKitAsModified,
-  moveSample,
+  moveSampleTx,
+  withDbTransaction,
 } from "../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
 import { sampleValidationService } from "./sampleValidation.js";
@@ -43,33 +44,21 @@ export class SampleBatchOperationsService {
     }
 
     try {
-      // Check if sample exists before deleting
-      const { exists } = sampleValidationService.checkSampleExists(
-        dbPath,
-        kitName,
-        voiceNumber,
-        slotNumber,
-      );
-
-      if (!exists) {
-        return {
-          error: `No sample found in voice ${voiceNumber}, slot ${slotNumber + 1} to delete`,
-          success: false,
-        };
-      }
-
-      // Delete with automatic contiguity maintenance
-      const deleteResult = deleteSamples(dbPath, kitName, {
-        slotNumber: slotNumber, // Database stores 0-11 directly
-        voiceNumber,
+      // The delete, the reindex that closes its gap and the kit's modified
+      // flag commit together (RE-28)
+      return withDbTransaction(dbPath, (db) => {
+        const result = deleteSamplesTx(db, kitName, {
+          slotNumber: slotNumber, // Database stores 0-11 directly
+          voiceNumber,
+        });
+        if (result.deletedSamples.length === 0) {
+          throw new Error(
+            `No sample found in voice ${voiceNumber}, slot ${slotNumber + 1} to delete`,
+          );
+        }
+        flagKitModified(db, kitName);
+        return result;
       });
-
-      // Mark kit as modified if operation succeeded
-      if (deleteResult.success) {
-        markKitAsModified(dbPath, kitName);
-      }
-
-      return deleteResult;
     } catch (error) {
       return {
         error: `Failed to delete sample: ${getErrorMessage(error)}`,
@@ -105,23 +94,24 @@ export class SampleBatchOperationsService {
     }
 
     try {
-      // Delete WITHOUT automatic contiguity maintenance (for undo operations)
-      const deleteResult = deleteSamplesWithoutReindexing(dbPath, kitName, {
-        slotNumber: slotNumber, // Database stores 0-11 directly
-        voiceNumber,
+      // Delete WITHOUT automatic contiguity maintenance (for undo
+      // operations), flagging the kit in the same transaction
+      const deleteResult = withDbTransaction(dbPath, (db) => {
+        const result = deleteSamplesWithoutReindexingTx(db, kitName, {
+          slotNumber: slotNumber, // Database stores 0-11 directly
+          voiceNumber,
+        });
+        flagKitModified(db, kitName);
+        return result;
       });
 
-      // Mark kit as modified if operation succeeded
-      if (deleteResult.success) {
-        markKitAsModified(dbPath, kitName);
+      if (!deleteResult.success) {
+        return { error: deleteResult.error, success: false };
       }
-
+      const deletedSamples = deleteResult.data?.deletedSamples ?? [];
       return {
-        data: {
-          affectedSamples: deleteResult.data?.deletedSamples || [],
-          deletedSamples: deleteResult.data?.deletedSamples || [],
-        },
-        success: deleteResult.success,
+        data: { affectedSamples: deletedSamples, deletedSamples },
+        success: true,
       };
     } catch (error) {
       return {
@@ -288,38 +278,19 @@ export class SampleBatchOperationsService {
         return { error: linkValidation.error, success: false };
       }
 
-      // Use database moveSample operation
-      const moveResult = moveSample(
-        dbPath,
-        kitName,
-        fromVoice,
-        fromSlot,
-        toVoice,
-        toSlot,
-      );
-
-      // Mark kit as modified if operation succeeded
-      if (moveResult.success) {
-        markKitAsModified(dbPath, kitName);
-      }
-
-      if (!moveResult.success) {
-        return moveResult as DbResult<{
-          affectedSamples: ({ original_slot_number: number } & Sample)[];
-          movedSample: Sample;
-          replacedSample?: Sample;
-        }>;
-      }
-
-      // Convert null to undefined for TypeScript compatibility
-      return {
-        data: {
-          affectedSamples: moveResult.data!.affectedSamples,
-          movedSample: moveResult.data!.movedSample,
-          replacedSample: moveResult.data!.replacedSample || undefined,
-        },
-        success: true,
-      };
+      // The move and the kit's modified flag commit together (RE-28)
+      return withDbTransaction(dbPath, (db) => {
+        const moved = moveSampleTx(
+          db,
+          kitName,
+          fromVoice,
+          fromSlot,
+          toVoice,
+          toSlot,
+        );
+        flagKitModified(db, kitName);
+        return { ...moved, replacedSample: undefined };
+      });
     } catch (error) {
       return {
         error: `Failed to move sample in kit: ${getErrorMessage(error)}`,

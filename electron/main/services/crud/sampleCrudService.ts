@@ -3,7 +3,11 @@ import type { DbResult, NewSample, Sample } from "@romper/shared/db/schema.js";
 import { getErrorMessage } from "@romper/shared/errorUtils.js";
 import * as path from "node:path";
 
-import { addSample, markKitAsModified } from "../../db/romperDbCoreORM.js";
+import {
+  addSampleTx,
+  flagKitModified,
+  withDbTransaction,
+} from "../../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../../utils/fileSystemUtils.js";
 import { sampleBatchOperationsService } from "../sampleBatchOperations.js";
 import { sampleValidationService } from "../sampleValidation.js";
@@ -69,22 +73,12 @@ export class SampleCrudService {
         voice_number: voiceNumber,
       };
 
-      // Check if there's an existing sample in this slot for conflict handling
-      sampleValidationService.checkSampleExists(
-        dbPath,
-        kitName,
-        voiceNumber,
-        slotNumber,
-      );
-
-      const result = addSample(dbPath, sampleRecord);
-
-      // Mark kit as modified if operation succeeded
-      if (result.success) {
-        markKitAsModified(dbPath, kitName);
-      }
-
-      return result;
+      // The row and the kit's modified flag commit together (RE-28)
+      return withDbTransaction(dbPath, (db) => {
+        const added = addSampleTx(db, sampleRecord);
+        flagKitModified(db, kitName);
+        return added;
+      });
     } catch (error) {
       return {
         error: `Failed to add sample: ${getErrorMessage(error)}`,

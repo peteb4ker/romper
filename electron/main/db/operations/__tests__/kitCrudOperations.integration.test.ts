@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
+import { closeAllDbConnections } from "../../utils/dbConnections.js";
 import { createRomperDbFile } from "../../utils/dbUtilities.js";
 import {
   addKit,
@@ -26,6 +27,8 @@ describe("Kit CRUD Operations - Integration Tests", () => {
   });
 
   afterEach(() => {
+    // Windows can't delete a database file that's still open
+    closeAllDbConnections();
     rmSync(tempDir, { force: true, recursive: true });
   });
 

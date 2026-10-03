@@ -12,6 +12,7 @@ import {
   registerMenuIpcHandlers,
 } from "./applicationMenu.js";
 import { initAutoUpdater } from "./autoUpdater.js";
+import { closeAllDbConnections } from "./db/utils/dbConnections.js";
 import { registerDbIpcHandlers } from "./dbIpcHandlers.js";
 import { registerIpcHandlers } from "./ipcHandlers.js";
 import {
@@ -310,6 +311,8 @@ app.on("will-quit", () => {
       );
     }
   }
+  // Closing checkpoints the write-ahead log into the database file (RE-81)
+  closeAllDbConnections();
 });
 
 process.on("unhandledRejection", (reason: unknown) => {

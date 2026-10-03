@@ -6,6 +6,8 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { closeAllDbConnections } from "../../electron/main/db/utils/dbConnections.js";
+
 vi.mock("electron", () => ({
   BrowserWindow: {
     getAllWindows: vi.fn(() => []),
@@ -53,6 +55,8 @@ describe("[UC-02] Cancelling setup (RE-66)", () => {
   });
 
   afterEach(() => {
+    // Windows can't delete a database file that's still open
+    closeAllDbConnections();
     fs.rmSync(tempDir, { force: true, recursive: true });
   });
 

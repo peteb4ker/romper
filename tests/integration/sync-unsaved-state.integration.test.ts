@@ -19,6 +19,7 @@ import {
   markKitAsModified,
   markKitsAsSynced,
 } from "../../electron/main/db/romperDbCoreORM";
+import { closeAllDbConnections } from "../../electron/main/db/utils/dbConnections.js";
 
 describe("[UC-11] [UC-34] Sync Unsaved State Integration", () => {
   // A temp folder per test, not one in the source tree
@@ -55,6 +56,8 @@ describe("[UC-11] [UC-34] Sync Unsaved State Integration", () => {
   });
 
   afterEach(async () => {
+    // Windows can't delete a database file that's still open
+    closeAllDbConnections();
     await cleanupSqliteFiles(TEST_DB_DIR);
     fs.rmSync(TEST_DB_DIR, { force: true, maxRetries: 5, recursive: true });
   });

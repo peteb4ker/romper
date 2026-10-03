@@ -12,6 +12,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { closeAllDbConnections } from "../../utils/dbConnections.js";
 import {
   createRomperDbFile,
   ensureDatabaseMigrations,
@@ -125,6 +126,8 @@ describe("[UC-21] Drag and Drop Integration Tests", () => {
   });
 
   afterEach(() => {
+    // Windows can't delete a database file that's still open
+    closeAllDbConnections();
     sqlite?.close();
     rmSync(testDbDir, { force: true, recursive: true });
   });

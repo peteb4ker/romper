@@ -376,6 +376,54 @@ describe("KitsView", () => {
       confirm.mockRestore();
     });
 
+    it("[UC-13] scans every kit from the kit editor and reports the result (RE-43)", async () => {
+      const confirm = vi.spyOn(globalThis, "confirm").mockReturnValue(true);
+      render(
+        <TestSettingsProvider>
+          <KitsView />
+        </TestSettingsProvider>,
+      );
+      await waitFor(() => {
+        expect(screen.getByText("A0")).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByText("A0"));
+      await waitFor(() => {
+        expect(screen.getByText("Back")).toBeInTheDocument();
+      });
+
+      globalMenuCallbacks.onScanAll();
+
+      await waitFor(() => {
+        expect(mockShowMessage).toHaveBeenCalledWith(
+          expect.stringContaining("All 3 kits scanned"),
+          "success",
+        );
+      });
+      expect(window.electronAPI.rescanKit).toHaveBeenCalledTimes(3);
+      confirm.mockRestore();
+    });
+
+    it("[UC-13] leaves the result to the browser header when the browser is open", async () => {
+      const confirm = vi.spyOn(globalThis, "confirm").mockReturnValue(true);
+      render(
+        <TestSettingsProvider>
+          <KitsView />
+        </TestSettingsProvider>,
+      );
+      await screen.findAllByText("A0");
+
+      globalMenuCallbacks.onScanAll();
+
+      expect(await screen.findByTestId("bulk-scan-complete")).toHaveTextContent(
+        "All 3 kits scanned",
+      );
+      expect(mockShowMessage).not.toHaveBeenCalledWith(
+        expect.stringContaining("kits scanned"),
+        expect.anything(),
+      );
+      confirm.mockRestore();
+    });
+
     it("does not scan when Scan All is not confirmed", async () => {
       const confirm = vi.spyOn(globalThis, "confirm").mockReturnValue(false);
       render(

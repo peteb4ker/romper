@@ -4,10 +4,12 @@ import { describe, expect, it } from "vitest";
 import {
   buildIndex,
   findProblems,
+  issueProblems,
   layerOf,
-  parseBacklog,
   parseRegister,
+  readGitHub,
   render,
+  run,
   scanTests,
   slug,
   summarise,
@@ -185,7 +187,7 @@ describe("slug", () => {
   });
 });
 
-describe("tracing the backlog to user-oriented statements", () => {
+describe("tracing GitHub issues to user-oriented statements", () => {
   const register = `# Use cases
 
 ## Samples
@@ -194,94 +196,213 @@ describe("tracing the backlog to user-oriented statements", () => {
 
 **Status:** partial
 
-- **Known issues:** RE-40 (silent failures), RE-28,
-  RE-89.
+### UC-20 Replace a sample
+
+**Status:** not built
+
+### UC-23 Delete a sample
+
+**Status:** supported
 
 ## Qualities
 
 ### Q-01 Romper stays responsive as your library grows
 
 **Status:** partial
-
-- **Known issues:** RE-36, OPS-1.
 `;
-  const backlog = `# Backlog
+  const { useCases } = parseRegister(register);
+  const labels = ["UC-19", "UC-20", "UC-23", "Q-01", "bug", "question"];
+  const issue = (number: number, ...issueLabels: string[]) => ({
+    labels: issueLabels,
+    number,
+    title: `Issue ${number}`,
+  });
+  const healthy = {
+    fixing: [] as number[],
+    issues: [issue(1, "UC-19", "bug"), issue(2, "Q-01", "UC-19")],
+    labels,
+  };
 
-## Later
-
-| ID | Severity | Area | Item | Status |
-|---|---|---|---|---|
-| RE-28 | Medium | DB | Some changes are saved in several steps. | open |
-| RE-36 | Medium | Performance | Every edit reloads your library. | open |
-| RE-40 | Medium | Renderer | Some failures happen silently. | open |
-| RE-89 | Medium | Samples | Dropped samples miss their \`wav_*\` details. | open |
-| RE-90 | Medium | Samples | Nobody lists this one. | open |
-
-## Owner (needs Pete)
-
-| ID | Item | Status |
-|---|---|---|
-| OPS-1 | Require e2e before merging. | open |
-
-## Done
-
-| ID | Severity | Area | Item | Status |
-|---|---|---|---|---|
-| RE-11 | High | Renderer | Messages never appeared. | done (#300) |
-`;
-
-  it("reads groups, qualities and known issues across wrapped lines", () => {
-    const { useCases } = parseRegister(register);
-    expect(useCases.map((u) => [u.id, u.kind, u.group, u.issues])).toEqual([
-      ["UC-19", "use case", "Samples", ["RE-40", "RE-28", "RE-89"]],
-      ["Q-01", "quality", "Qualities", ["RE-36", "OPS-1"]],
+  it("reads groups and kinds", () => {
+    expect(useCases.map((u) => [u.id, u.kind, u.group])).toEqual([
+      ["UC-19", "use case", "Samples"],
+      ["UC-20", "use case", "Samples"],
+      ["UC-23", "use case", "Samples"],
+      ["Q-01", "quality", "Qualities"],
     ]);
   });
 
-  it("reads both backlog tables and knows what's done", () => {
-    const items = parseBacklog(backlog);
-    expect(items.get("OPS-1")).toMatchObject({
-      done: false,
-      item: "Require e2e before merging.",
-    });
-    expect(items.get("RE-11")?.done).toBe(true);
-    expect(items.get("RE-36")?.done).toBe(false);
+  it("passes when every issue is labelled and statuses follow the issues", () => {
+    expect(issueProblems(useCases, healthy)).toEqual([]);
   });
 
-  it("fails an open item no entry lists, a listed item that's done or unknown, and code in a one-liner", () => {
-    const { useCases } = parseRegister(
-      register.replace("RE-36, OPS-1", "RE-36, OPS-1, RE-11, RE-99"),
+  it("fails an issue with no UC or Q label, unless it isn't a work item", () => {
+    const github = {
+      ...healthy,
+      issues: [
+        ...healthy.issues,
+        issue(3, "bug"),
+        issue(4, "question"),
+        issue(5, "dependencies"),
+      ],
+    };
+    expect(issueProblems(useCases, github)).toEqual([
+      expect.stringContaining(
+        '#3 ("Issue 3") has no use case or quality label',
+      ),
+    ]);
+  });
+
+  it("fails an issue labelled with an ID the register doesn't have", () => {
+    const github = {
+      ...healthy,
+      issues: [...healthy.issues, issue(6, "UC-99", "UC-19")],
+    };
+    expect(issueProblems(useCases, github)).toEqual([
+      "#6 is labelled UC-99, which isn't in docs/developer/use-cases.md.",
+    ]);
+  });
+
+  it("fails an entry with no label on GitHub", () => {
+    const github = { ...healthy, labels: labels.filter((l) => l !== "UC-20") };
+    expect(issueProblems(useCases, github)).toEqual([
+      expect.stringContaining("UC-20 has no label on GitHub"),
+    ]);
+  });
+
+  it("fails a supported entry with an open issue", () => {
+    const github = {
+      ...healthy,
+      issues: [...healthy.issues, issue(7, "UC-23", "bug")],
+    };
+    expect(issueProblems(useCases, github)).toEqual([
+      expect.stringContaining(
+        "UC-23 Delete a sample is supported but has open issues (#7)",
+      ),
+    ]);
+  });
+
+  it("fails a partial entry with no open issue, but not a not-built one", () => {
+    const github = { ...healthy, issues: [issue(2, "Q-01")] };
+    expect(issueProblems(useCases, github)).toEqual([
+      expect.stringContaining(
+        "UC-19 Drop WAVs onto a voice is partial but no open issue is labelled UC-19",
+      ),
+    ]);
+  });
+
+  it("counts the issues the current pull request fixes as closed", () => {
+    const github = { ...healthy, fixing: [1, 2] };
+    expect(issueProblems(useCases, github)).toEqual([
+      expect.stringContaining("UC-19 Drop WAVs onto a voice is partial"),
+      expect.stringContaining("Q-01 Romper stays responsive"),
+    ]);
+  });
+
+  it("runs the issue checks from findProblems only when GitHub was read", () => {
+    const scan = buildIndex(
+      ["tests/e2e/x.e2e.test.ts"],
+      () => `test("[UC-23] delete", async () => {});`,
     );
-    const scan = buildIndex([], () => "");
-    expect(findProblems(useCases, scan, parseBacklog(backlog))).toEqual([
-      expect.stringContaining("Q-01 lists RE-11, which BACKLOG.md marks done"),
-      expect.stringContaining("Q-01 lists RE-99, which isn't in BACKLOG.md"),
-      expect.stringContaining(
-        "RE-89: write its BACKLOG.md one-liner in plain language",
-      ),
-      expect.stringContaining(
-        "RE-90 is open in BACKLOG.md but no use case or quality lists it",
-      ),
-    ]);
+    const github = { ...healthy, issues: [] };
+    expect(findProblems(useCases, scan, github)).toHaveLength(2);
+    expect(findProblems(useCases, scan, null)).toEqual([]);
   });
 
   it("summarises each entry for the testing page", () => {
-    const { useCases } = parseRegister(register);
     const scan = buildIndex(
       ["tests/e2e/d.e2e.test.ts"],
       () => `test("[UC-19] [Q-01] drop", async () => {});`,
     );
-    const [drop] = summarise(useCases, scan, parseBacklog(backlog));
-    expect(drop).toMatchObject({
+    const [drop, , remove] = summarise(useCases, scan, healthy);
+    expect(drop).toEqual({
+      gap: null,
       group: "Samples",
       id: "UC-19",
-      issues: [
-        { id: "RE-40", text: "Some failures happen silently." },
-        { id: "RE-28", text: "Some changes are saved in several steps." },
-        { id: "RE-89", text: "Dropped samples miss their `wav_*` details." },
-      ],
+      kind: "use case",
+      name: "Drop WAVs onto a voice",
+      openIssues: 2,
       status: "partial",
       tests: { e2e: 1, integration: 0, unit: 0, validation: 0 },
     });
+    expect(remove.openIssues).toBe(0);
+    expect(summarise(useCases, scan)[0].openIssues).toBeNull();
+  });
+
+  it("reads open issues, labels and the pull request's fixes with gh", () => {
+    const calls: string[][] = [];
+    const exec = (_cmd: string, args: string[]) => {
+      calls.push(args);
+      if (args[0] === "pr") return "459\n";
+      if (args[1] === "--paginate" && args[2].includes("/labels")) {
+        return "UC-19\nbug\n";
+      }
+      return '{"labels":["UC-19"],"number":1,"title":"A"}\n';
+    };
+    const github = readGitHub({
+      env: { GITHUB_ACTIONS: "true", GITHUB_REF: "refs/pull/42/merge" },
+      exec,
+      root: ".",
+    });
+    expect(github).toEqual({
+      fixing: [459],
+      issues: [{ labels: ["UC-19"], number: 1, title: "A" }],
+      labels: ["UC-19", "bug"],
+    });
+    expect(calls[2].slice(0, 3)).toEqual(["pr", "view", "42"]);
+  });
+
+  it("doesn't look for a pull request on a push in GitHub Actions", () => {
+    const exec = (_cmd: string, args: string[]) => {
+      if (args[0] === "pr") throw new Error("not expected");
+      return "";
+    };
+    expect(
+      readGitHub({
+        env: { GITHUB_ACTIONS: "true", GITHUB_REF: "refs/heads/main" },
+        exec,
+        root: ".",
+      }).fixing,
+    ).toEqual([]);
+  });
+});
+
+describe("run without GitHub", () => {
+  const unavailable = () => {
+    throw Object.assign(new Error("gh failed"), {
+      stderr: "gh: To get started with GitHub CLI, please run: gh auth login\n",
+    });
+  };
+  const quiet = () => {
+    const out: string[] = [];
+    return {
+      log: {
+        error: (m: string) => out.push(m),
+        log: (m: string) => out.push(m),
+      },
+      out,
+    };
+  };
+
+  it("skips the issue checks locally, with a notice", () => {
+    const { log, out } = quiet();
+    run({ check: true, env: {}, github: unavailable, log });
+    expect(out[0]).toBe(
+      "Skipping the issue checks: can't read GitHub issues with gh (gh: To get started with GitHub CLI, please run: gh auth login).",
+    );
+  });
+
+  it("fails in GitHub Actions, where the checks must run", () => {
+    const { log, out } = quiet();
+    expect(
+      run({
+        check: true,
+        env: { GITHUB_ACTIONS: "true" },
+        github: unavailable,
+        log,
+        summaryFile: undefined,
+      }),
+    ).toBe(1);
+    expect(out[0]).toContain("can't read GitHub issues");
   });
 });

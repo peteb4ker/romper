@@ -3,28 +3,40 @@
  * Use case traceability (RE-67).
  *
  *   npm run trace         # write docs/developer/traceability.md (not committed)
- *   npm run trace:check   # fail on unknown IDs, untested use cases, or a
- *                         # backlog that doesn't trace (see below)
+ *   npm run trace:check   # fail on unknown IDs, untested use cases, or issues
+ *                         # and statuses that don't trace (see below)
  *   ... --json <file>     # also write the per-entry summary (testing page)
  *
  * Reads the use case register (docs/developer/use-cases.md) and the
  * `[UC-NN]` tags in test titles, and writes a use case x test layer matrix.
  * A tag on a `describe` covers every test inside it.
  *
+ * The backlog is GitHub issues, each labelled with the use case or quality
+ * (`UC-NN`, `Q-NN`) where a user would notice it. The labels are the trace.
+ *
  * The check fails when:
  * - a test names a use case the register doesn't have;
  * - a supported use case has no test above unit level and the register
  *   doesn't declare the gap (a `**Test gap:**` line);
  * - a declared gap is closed (the line must go);
- * - an open BACKLOG.md item isn't a known issue of any use case or quality,
- *   an entry lists an item that's done or unknown, or a one-liner has code
- *   in it: everything traces from a user-oriented statement.
+ * - an open issue has no UC/Q label (unless it's a question, duplicate,
+ *   invalid or dependencies issue), or a UC/Q label the register lacks;
+ * - a register entry has no label on GitHub;
+ * - a supported entry has an open issue, or a partial one has none: status
+ *   follows the issues. Issues the current pull request fixes (`Fixes #N`)
+ *   count as closed, so the PR that closes an entry's last issue also
+ *   updates its status.
+ *
+ * Issues are read with `gh`. Without it (offline, or not signed in), the
+ * issue checks are skipped with a notice, except in GitHub Actions, where
+ * they must run.
  *
  * The matrix is generated, never committed: its counts change with every
  * new test, and a committed copy went stale on almost every PR. In CI the
  * check also writes it to the job summary (GITHUB_STEP_SUMMARY), with links
  * to the commit it ran on.
  */
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -32,7 +44,6 @@ import ts from "typescript";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const REGISTER = "docs/developer/use-cases.md";
-const BACKLOG = "BACKLOG.md";
 const OUTPUT = "docs/developer/traceability.md";
 
 export const LAYERS = ["unit", "integration", "e2e", "validation"];
@@ -90,8 +101,7 @@ export function findTestFiles(root) {
 /**
  * Parse the register: `### UC-NN Name` (use cases) and `### Q-NN Name`
  * (qualities) headings, each with a `**Status:**` line, under `## Group`
- * headings. Collects each entry's declared test gap and the backlog IDs on
- * its `**Known issues:**` line.
+ * headings. Collects each entry's declared test gap.
  */
 export function parseRegister(markdown) {
   const useCases = [];
@@ -99,7 +109,6 @@ export function parseRegister(markdown) {
   let current = null;
   let group = null;
   let inGap = false;
-  let inIssues = false;
   for (const line of markdown.split("\n")) {
     const heading = /^### ((UC|Q)-\d{2}) (.+?)\s*$/.exec(line);
     if (heading) {
@@ -107,14 +116,12 @@ export function parseRegister(markdown) {
         gap: null,
         group,
         id: heading[1],
-        issues: [],
         kind: heading[2] === "Q" ? "quality" : "use case",
         name: heading[3],
         status: null,
       };
       useCases.push(current);
       inGap = false;
-      inIssues = false;
       continue;
     }
     const section = /^## (.+?)\s*$/.exec(line);
@@ -130,18 +137,6 @@ export function parseRegister(markdown) {
       continue;
     }
     inGap = false;
-    // So does the known issues line; it names backlog items by ID.
-    const issues = /^- \*\*Known issues:\*\*(.*)$/.exec(line);
-    if (issues || (inIssues && line.trim() && !/^(\*\*|- |#)/.test(line))) {
-      for (const m of (issues ? issues[1] : line).matchAll(
-        /\b((?:RE|OPS)-\d+)\b/g,
-      )) {
-        if (!current.issues.includes(m[1])) current.issues.push(m[1]);
-      }
-      inIssues = true;
-      continue;
-    }
-    inIssues = false;
     const status = /^\*\*Status:\*\*\s*(.+?)\s*$/.exec(line);
     if (status) {
       const value = STATUSES.find((s) => status[1].toLowerCase().startsWith(s));
@@ -292,35 +287,107 @@ export function slug(text) {
     .replaceAll(/\s/g, "-");
 }
 
+/** Issues that aren't work items, so they need no use case or quality. */
+const EXEMPT_LABELS = new Set([
+  "dependencies",
+  "duplicate",
+  "invalid",
+  "question",
+]);
+const ID_LABEL = /^(?:UC|Q)-\d+$/;
+
+function gh(exec, root, args) {
+  return exec("gh", args, {
+    cwd: root,
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+}
+
+const lines = (out) => out.split("\n").filter(Boolean);
+
 /**
- * Parse BACKLOG.md's tables: `| ID | Severity | Area | Item | Status |`, and
- * the owner table's `| ID | Item | Status |`. An item is done when it sits
- * under `## Done` or its status starts with "done".
+ * The issues the current pull request closes when it merges (`Fixes #N`):
+ * in GitHub Actions the PR being checked, locally the current branch's PR.
  */
-export function parseBacklog(markdown) {
-  const items = new Map();
-  let section = "";
-  for (const line of markdown.split("\n")) {
-    const heading = /^## (.+?)\s*$/.exec(line);
-    if (heading) section = heading[1];
-    const cells = line.split("|").map((c) => c.trim());
-    if (cells.length < 5 || !/^(RE|OPS)-\d+$/.test(cells[1])) continue;
-    const [item, status] =
-      cells.length >= 7 ? [cells[4], cells[5]] : [cells[2], cells[3]];
-    items.set(cells[1], {
-      done: section === "Done" || /^done\b/i.test(status),
-      id: cells[1],
-      item,
-      status,
-    });
+function closingIssues(exec, root, env) {
+  const pr = /^refs\/pull\/(\d+)\//.exec(env.GITHUB_REF ?? "")?.[1];
+  if (env.GITHUB_ACTIONS === "true" && !pr) return [];
+  try {
+    const out = gh(exec, root, [
+      "pr",
+      "view",
+      ...(pr ? [pr] : []),
+      "--json",
+      "closingIssuesReferences",
+      "--jq",
+      ".closingIssuesReferences[].number",
+    ]);
+    return lines(out).map(Number);
+  } catch {
+    return []; // no pull request for this branch
   }
-  return items;
+}
+
+/**
+ * Open issues (not pull requests) with their label names, every label in
+ * the repository, and the issues the current pull request fixes. Throws
+ * when `gh` is missing or can't reach GitHub.
+ */
+export function readGitHub({
+  env = process.env,
+  exec = execFileSync,
+  root = ROOT,
+} = {}) {
+  const issues = lines(
+    gh(exec, root, [
+      "api",
+      "--paginate",
+      "repos/{owner}/{repo}/issues?state=open&per_page=100",
+      "--jq",
+      ".[] | select(.pull_request == null) | {number, title, labels: [.labels[].name]}",
+    ]),
+  ).map((line) => JSON.parse(line));
+  const labels = lines(
+    gh(exec, root, [
+      "api",
+      "--paginate",
+      "repos/{owner}/{repo}/labels?per_page=100",
+      "--jq",
+      ".[].name",
+    ]),
+  );
+  return { fixing: closingIssues(exec, root, env), issues, labels };
+}
+
+/**
+ * The open issues that count: not exempt, and not fixed by the current pull
+ * request (it closes them when it merges).
+ */
+function countedIssues({ fixing = [], issues }) {
+  return issues.filter(
+    (issue) =>
+      !fixing.includes(issue.number) &&
+      !issue.labels.some((label) => EXEMPT_LABELS.has(label)),
+  );
+}
+
+/** Open issue numbers per UC/Q label. */
+export function openIssuesByEntry(github) {
+  const byEntry = new Map();
+  for (const issue of countedIssues(github)) {
+    for (const label of issue.labels.filter((l) => ID_LABEL.test(l))) {
+      if (!byEntry.has(label)) byEntry.set(label, []);
+      byEntry.get(label).push(issue.number);
+    }
+  }
+  return byEntry;
 }
 
 /** Problems the check fails on, as messages. */
-export function findProblems(useCases, scan, backlog) {
+export function findProblems(useCases, scan, github) {
   const problems = [];
-  if (backlog) problems.push(...backlogProblems(useCases, backlog));
   const known = new Set(useCases.map((uc) => uc.id));
   for (const tag of scan.tags) {
     if (!known.has(tag.id)) {
@@ -344,39 +411,51 @@ export function findProblems(useCases, scan, backlog) {
       );
     }
   }
+  if (github) problems.push(...issueProblems(useCases, github));
   return problems;
 }
 
 /**
- * Everything traces from a user-oriented statement: each open backlog item
- * is a known issue of a use case or quality, entries list no finished or
- * unknown items, and one-liners are plain language.
+ * Everything traces from a user-oriented statement: each open issue is
+ * labelled with a use case or quality in the register, each entry has a
+ * label, and an entry's status follows its open issues.
  */
-function backlogProblems(useCases, backlog) {
+export function issueProblems(useCases, github) {
   const problems = [];
-  const listed = new Set();
-  for (const uc of useCases) {
-    for (const id of uc.issues) {
-      listed.add(id);
-      const item = backlog.get(id);
-      if (!item) {
-        problems.push(`${uc.id} lists ${id}, which isn't in BACKLOG.md.`);
-      } else if (item.done) {
-        problems.push(
-          `${uc.id} lists ${id}, which BACKLOG.md marks done: remove it from ${uc.id}'s **Known issues:**.`,
-        );
-      }
-    }
-  }
-  for (const item of backlog.values()) {
-    if (!item.done && !listed.has(item.id)) {
+  const known = new Set(useCases.map((uc) => uc.id));
+  for (const issue of countedIssues(github)) {
+    const ids = issue.labels.filter((label) => ID_LABEL.test(label));
+    if (ids.length === 0) {
       problems.push(
-        `${item.id} is open in BACKLOG.md but no use case or quality lists it: add it to one's **Known issues:** in ${REGISTER}.`,
+        `#${issue.number} ("${issue.title}") has no use case or quality label: ` +
+          `add the UC-NN or Q-NN where a user would notice it.`,
       );
     }
-    if (item.item.includes("`")) {
+    for (const id of ids.filter((i) => !known.has(i))) {
       problems.push(
-        `${item.id}: write its BACKLOG.md one-liner in plain language, without code (details belong in the findings register).`,
+        `#${issue.number} is labelled ${id}, which isn't in ${REGISTER}.`,
+      );
+    }
+  }
+  const labels = new Set(github.labels);
+  const byEntry = openIssuesByEntry(github);
+  for (const uc of useCases) {
+    if (!labels.has(uc.id)) {
+      problems.push(
+        `${uc.id} has no label on GitHub: gh label create ${uc.id} --description "${uc.name}"`,
+      );
+    }
+    const open = byEntry.get(uc.id) ?? [];
+    if (uc.status === "supported" && open.length > 0) {
+      problems.push(
+        `${uc.id} ${uc.name} is supported but has open issues (${open.map((n) => `#${n}`).join(", ")}): ` +
+          `mark it partial in ${REGISTER}, or close them.`,
+      );
+    }
+    if (uc.status === "partial" && open.length === 0) {
+      problems.push(
+        `${uc.id} ${uc.name} is partial but no open issue is labelled ${uc.id}: ` +
+          `open one for what's missing, or mark it supported in ${REGISTER}.`,
       );
     }
   }
@@ -385,20 +464,18 @@ function backlogProblems(useCases, backlog) {
 
 /**
  * Per use case and quality, for the website's testing page: status, tagged
- * tests per layer, the declared test gap, and open backlog items with their
- * one-liners.
+ * tests per layer, the declared test gap, and the number of open issues
+ * labelled with it (null when GitHub couldn't be read).
  */
-export function summarise(useCases, scan, backlog = new Map()) {
+export function summarise(useCases, scan, github = null) {
+  const byEntry = github ? openIssuesByEntry(github) : null;
   return useCases.map((uc) => ({
     gap: uc.gap,
     group: uc.group,
     id: uc.id,
-    issues: uc.issues
-      .map((id) => backlog.get(id))
-      .filter((item) => item && !item.done)
-      .map(({ id, item }) => ({ id, text: item })),
     kind: uc.kind,
     name: uc.name,
+    openIssues: byEntry ? (byEntry.get(uc.id)?.length ?? 0) : null,
     status: uc.status,
     tests: Object.fromEntries(
       LAYERS.map((layer) => [layer, countIn(scan.index, uc.id, layer)]),
@@ -435,8 +512,9 @@ export function render(useCases, scan, { base = "../../" } = {}) {
     "`describe` around it, carries the tag (`[UC-14]`). Counts are tests.",
     "",
     "Generated by `npm run trace` and not committed. CI runs",
-    "`npm run trace:check`, which fails on an unknown ID or on a supported use",
-    "case with no test above unit level (unless the register declares the gap).",
+    "`npm run trace:check`, which fails on an unknown ID, on a supported use",
+    "case with no test above unit level (unless the register declares the gap),",
+    "and when an entry's status doesn't match its open GitHub issues.",
     "",
     `${useCases.length} use cases: ${statusCount("supported")} supported, ` +
       `${statusCount("partial")} partial, ${statusCount("not built")} not built. ` +
@@ -508,10 +586,12 @@ export function render(useCases, scan, { base = "../../" } = {}) {
 
 export function run({
   check = false,
+  env = process.env,
+  github: readIssues = () => readGitHub({ env, root }),
   json,
   root = ROOT,
   log = console,
-  summaryFile = process.env.GITHUB_STEP_SUMMARY,
+  summaryFile = env.GITHUB_STEP_SUMMARY,
 } = {}) {
   const registerPath = path.join(root, REGISTER);
   const { errors, useCases } = parseRegister(
@@ -525,16 +605,37 @@ export function run({
   const scan = buildIndex(files, (f) =>
     fs.readFileSync(path.join(root, f), "utf8"),
   );
-  const backlogPath = path.join(root, BACKLOG);
-  const backlog = fs.existsSync(backlogPath)
-    ? parseBacklog(fs.readFileSync(backlogPath, "utf8"))
-    : undefined;
   const totals = `${useCases.length} use cases and qualities, ${scan.tagged} of ${scan.total} tests tagged.`;
+
+  let github = null;
+  if (check || json) {
+    try {
+      github = readIssues();
+    } catch (error) {
+      const reason = String(error.stderr || error.message)
+        .trim()
+        .split("\n")[0];
+      if (check && env.GITHUB_ACTIONS === "true") {
+        log.error(
+          `Traceability check failed: can't read GitHub issues (${reason}). The job needs GH_TOKEN and issues: read.`,
+        );
+        return 1;
+      }
+      log.log(
+        `Skipping the issue checks: can't read GitHub issues with gh (${reason}).`,
+      );
+    }
+  }
+  if (github?.fixing?.length > 0) {
+    log.log(
+      `Counting ${github.fixing.map((n) => `#${n}`).join(", ")} as closed: this pull request fixes them.`,
+    );
+  }
 
   if (json) {
     fs.writeFileSync(
       json,
-      `${JSON.stringify(summarise(useCases, scan, backlog), null, 2)}\n`,
+      `${JSON.stringify(summarise(useCases, scan, github), null, 2)}\n`,
     );
   }
 
@@ -552,7 +653,7 @@ export function run({
         : "../../";
     fs.appendFileSync(summaryFile, render(useCases, scan, { base }));
   }
-  const problems = findProblems(useCases, scan, backlog);
+  const problems = findProblems(useCases, scan, github);
   if (problems.length > 0) {
     log.error(`Traceability check failed (${problems.length}):`);
     for (const p of problems) log.error(`- ${p}`);

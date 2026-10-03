@@ -208,7 +208,7 @@ Done in #415:
 
 ## 10. Docs that promise what the code doesn't do
 
-Fix the docs, or build the feature if it's wanted. The audit list is in the validation plan ("Doc corrections"); the "Doc gaps" entries in [`use-cases.md`](use-cases.md) check each one against the code, by use case, and add more. Decisions needed: kit locking (UC-17), replace (UC-20) and cross-kit moves (UC-22), which have backend code but no UI. RE-29 already corrected the manual's stereo section; the rest goes in one docs PR after items 1-6 settle, so it describes the code as it ends up.
+Fix the docs, or build the feature if it's wanted. The audit list is in the validation plan ("Doc corrections"); the doc gaps found since are GitHub issues labelled `documentation` and the use case. Decisions needed: kit locking (UC-17), replace (UC-20) and cross-kit moves (UC-22), which have backend code but no UI. RE-29 already corrected the manual's stereo section; the rest goes in one docs PR after items 1-6 settle, so it describes the code as it ends up.
 
 **Size:** M (docs only).
 
@@ -223,7 +223,7 @@ in flight:    RE-64 (#401), validation CI (#403)
 ```
 
 Each PR:
-- updates its `BACKLOG.md` row and the register;
+- updates the register, and closes its issue with `Fixes #N` (the backlog moved to GitHub issues after this plan);
 - removes its harness markers;
 - runs `npm run validate:full` before it's opened, and quotes the result in the description.
 

@@ -259,7 +259,7 @@ jobs:
               # No existing issue — create a new one
               gh issue create \
                 --title "$ISSUE_TITLE" \
-                --label "bug,priority:high,sonarcloud" \
+                --label "bug,priority:high,sonarcloud,severity:high,Q-07" \
                 --body "## SonarCloud Quality Gate Failed
 
           **Commit:** ${{ github.sha }}

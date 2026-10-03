@@ -85,10 +85,13 @@ const KitsView: React.FC = () => {
     kits,
   });
 
-  // Kit filters management for favorites functionality (applied after search)
+  // Favourites and Modified filters (applied after search). Favourites
+  // toggle through the data manager, the same path as the editor (RE-37)
   const kitFilters = useKitFilters({
+    allKits: kits,
     kits: search.filteredKits,
     onMessage: showMessage,
+    onToggleFavorite: toggleKitFavorite,
   });
 
   // Get current kit from shared data for keyboard shortcuts
@@ -208,7 +211,6 @@ const KitsView: React.FC = () => {
           <KitBrowserContainer
             // Favorites filter props
             favoritesCount={kitFilters.favoritesCount}
-            getKitFavoriteState={kitFilters.getKitFavoriteState}
             handleToggleFavorite={kitFilters.handleToggleFavorite}
             handleToggleFavoritesFilter={kitFilters.handleToggleFavoritesFilter}
             handleToggleModifiedFilter={kitFilters.handleToggleModifiedFilter}

@@ -18,16 +18,11 @@ export const IPC_PROBE_ARGS = [
 
 /**
  * Channels left out of the counts, because how often they're called
- * depends on timing, not on the action. `get-favorite-kits-count` runs from
- * an effect on every change to the renderer's `kits` array (useKitFilters).
- * Whether two `setKits` calls after an edit render once or twice depends on
- * whether their IPC replies land in the same task, so a delete made one call
- * locally and two on a loaded CI runner. RE-36 (edits patch instead of
- * reloading) and RE-37 (one favourites path) remove the cause.
+ * depends on timing, not on the action. None are now: the one that was,
+ * `get-favorite-kits-count`, ran from an effect on every change to the
+ * renderer's `kits` array, and the renderer no longer calls it (RE-37).
  */
-export const UNCOUNTED_CHANNELS: readonly string[] = [
-  "get-favorite-kits-count",
-];
+export const UNCOUNTED_CHANNELS: readonly string[] = [];
 
 /** No IPC call for this long means the action has settled */
 export const IPC_QUIET_MS = 750;

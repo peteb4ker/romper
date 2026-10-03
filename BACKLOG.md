@@ -60,7 +60,6 @@ This file tracks what's being done about each item.
 | RE-33 | Medium | DB | Upgrading an older library relies on a repair step that could leave it half-upgraded if interrupted. | open (#407 fixed the `kits.artist` snapshot drift) |
 | RE-35 | Medium | Sync | Changing a sample's gain, a voice name or a bank name doesn't mark the kit as changed, so the "modified since last write" filter misses it. | partly done (#360: scan sets it when it adds samples; #407: stereo link changes set it) |
 | RE-36 | Medium | Performance | Almost every edit reloads your whole library behind the scenes, which gets slower as the library grows. | open |
-| RE-37 | Medium | Renderer | A kit's favourite star can disagree between the browser and the editor, so a kit can show as a favourite when it isn't. | open |
 | RE-38 | Medium | Renderer | Pressing F both jumps to bank F and stars the selected kit. | open |
 | RE-39 | Medium | Renderer | Arrow keys and Enter don't work in the kit grid until you click a kit. | open |
 | RE-40 | Medium | Renderer | Some failures happen silently: a rejected drop, a failed stereo link or undo, and the reason a write failed aren't shown to you. | open |
@@ -97,6 +96,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-37 | Medium | Renderer | A kit's favourite star can disagree between the browser and the editor, so a kit can show as a favourite when it isn't. | done (#431: one toggle path, and the kit list is the only favourite state) |
 | RE-58 | Medium | Tooling | Romper's own pre-commit checks failed on a busy computer because they always started the same large number of test workers. | done (#423: workers follow the free cores; under load the suite runs on fewer workers instead of timing out) |
 | RE-74 | Medium | Samples | Dropping a sample onto a filled slot said it would insert it there and shift the rest down, but added it at the end. | done (#421: dragging files over a voice highlights the slot after the last sample, where they land) |
 | RE-75 | Medium | Voices | In an editable kit, scanning the kit overwrote voice names you'd typed. | done (#422: only voices without a name are named, as main's scan does) |

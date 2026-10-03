@@ -61,8 +61,8 @@ do) or a quality (how Romper behaves while you do it, under
 
 | Status | Use cases |
 |---|---|
-| supported | Q-04, UC-02, UC-03, UC-09, UC-10, UC-11, UC-13, UC-14, UC-15, UC-16, UC-17, UC-18, UC-19, UC-21, UC-23, UC-24, UC-25, UC-27, UC-28, UC-30, UC-31, UC-32, UC-33, UC-35, UC-37 |
-| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, UC-01, UC-04, UC-05, UC-06, UC-07, UC-08, UC-12, UC-26, UC-29, UC-34, UC-36 |
+| supported | Q-04, UC-02, UC-03, UC-09, UC-10, UC-11, UC-13, UC-14, UC-15, UC-16, UC-17, UC-18, UC-19, UC-21, UC-23, UC-24, UC-25, UC-27, UC-28, UC-32, UC-35, UC-37 |
+| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, UC-01, UC-04, UC-05, UC-06, UC-07, UC-08, UC-12, UC-26, UC-29, UC-30, UC-31, UC-33, UC-34, UC-36 |
 | not built | UC-20, UC-22 |
 
 ## Setup and local store
@@ -602,7 +602,7 @@ choke). See
 
 ### UC-30 Step sequencer
 
-**Status:** supported
+**Status:** partial
 
 A 16-step grid per voice previews a kit's pattern at a set BPM. Patterns and
 BPM are saved with the kit. See
@@ -619,7 +619,7 @@ BPM are saved with the kit. See
 
 ### UC-31 Trigger conditions
 
-**Status:** supported
+**Status:** partial
 
 Right-click a step to give it an A:B condition, so it fires only on some
 passes of the loop. See
@@ -652,7 +652,7 @@ and [Voice Volume and Mute](../manual/step-sequencer.md#voice-volume-and-mute).
 
 ### UC-33 Slicer
 
-**Status:** supported
+**Status:** partial
 
 The slicer cuts a voice's sample into equal slices and plays a slice per
 step, with rolls ("happy accidents") to generate patterns. See

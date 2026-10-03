@@ -122,7 +122,7 @@ export function registerSampleIpcHandlers(
   // undone remembered the kit's files before it removed them.
   ipcMain.handle(
     "restore-kit-voices",
-    async (_event, kitName: string, voices: VoiceSnapshot[]) => {
+    (_event, kitName: string, voices: VoiceSnapshot[]) => {
       if (!Array.isArray(voices)) {
         return { error: "No voices to restore", success: false };
       }

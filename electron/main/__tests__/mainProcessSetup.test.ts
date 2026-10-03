@@ -92,6 +92,40 @@ describe("[UC-35] loadSettings", () => {
     const result = loadSettings("/mock/settings.json");
     expect(result.localStorePath).toBeNull();
   });
+
+  it("loads the theme and destructive-action preference too (RE-21)", () => {
+    vi.spyOn(fs, "readFileSync").mockReturnValue(
+      JSON.stringify({
+        confirmDestructiveActions: false,
+        localStorePath: "/store",
+        themeMode: "dark",
+      }),
+    );
+    expect(loadSettings("/mock/settings.json")).toEqual({
+      confirmDestructiveActions: false,
+      localStorePath: "/store",
+      themeMode: "dark",
+    });
+  });
+
+  it("keeps keys it doesn't know, so the next write doesn't drop them", () => {
+    vi.spyOn(fs, "readFileSync").mockReturnValue(
+      '{"localStorePath": "/store", "fromANewerVersion": 3}',
+    );
+    expect(loadSettings("/mock/settings.json")).toEqual({
+      fromANewerVersion: 3,
+      localStorePath: "/store",
+    });
+  });
+
+  it("ignores a saved value of the wrong type", () => {
+    vi.spyOn(fs, "readFileSync").mockReturnValue(
+      '{"localStorePath": "/store", "themeMode": "purple"}',
+    );
+    expect(loadSettings("/mock/settings.json")).toEqual({
+      localStorePath: "/store",
+    });
+  });
 });
 
 describe("[UC-05] validateSavedLocalStore", () => {
@@ -117,7 +151,11 @@ describe("[UC-05] validateSavedLocalStore", () => {
 
   // RE-80: a store on a drive that isn't connected must not be forgotten
   it("keeps an invalid saved path and doesn't rewrite the settings", () => {
-    const settings = { localStorePath: "/Volumes/Samples/romper" };
+    const settings = {
+      confirmDestructiveActions: false,
+      localStorePath: "/Volumes/Samples/romper",
+      themeMode: "dark" as const,
+    };
     vi.mocked(validateLocalStoreAndDb).mockReturnValue({
       error: "Path does not exist",
       errorSummary: "Invalid path",
@@ -127,7 +165,11 @@ describe("[UC-05] validateSavedLocalStore", () => {
 
     const result = validateSavedLocalStore(settings);
 
-    expect(result.localStorePath).toBe("/Volumes/Samples/romper");
+    expect(result).toEqual({
+      confirmDestructiveActions: false,
+      localStorePath: "/Volumes/Samples/romper",
+      themeMode: "dark",
+    });
     expect(writeFileSync).not.toHaveBeenCalled();
     expect(console.warn).toHaveBeenCalledWith(
       "[Startup] ✗ Saved local store can't be opened",

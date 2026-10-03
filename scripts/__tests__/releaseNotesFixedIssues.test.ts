@@ -25,6 +25,10 @@ const LABELS = {
     description: "Romper stays responsive as your library grows",
     name: "Q-01",
   },
+  sonarcloud: {
+    description: "SonarCloud quality gate tracking",
+    name: "sonarcloud",
+  },
   "UC-07": { description: "Browse kits by bank", name: "UC-07" },
   "UC-19": { description: "Drop WAVs onto a voice", name: "UC-19" },
   "UC-34": { description: "Write kits to the SD card", name: "UC-34" },
@@ -116,6 +120,22 @@ describe("groupFixedIssues", () => {
     );
 
     expect(groups.flatMap((g) => g.issues.map((i) => i.number))).toEqual([5]);
+  });
+
+  it("leaves out SonarCloud quality-gate tracking issues", () => {
+    const groups = groupFixedIssues(
+      [
+        issue(374, "SonarCloud: quality gate failure on main", [
+          "bug",
+          "sonarcloud",
+        ]),
+        issue(375, "SonarCloud gate on a use case", ["sonarcloud", "Q-01"]),
+        issue(390, "WAVs with a JUNK chunk are copied unconverted", ["bug"]),
+      ],
+      WINDOW,
+    );
+
+    expect(groups.flatMap((g) => g.issues.map((i) => i.number))).toEqual([390]);
   });
 
   it("keeps issues closed after `from`, up to and including `to`", () => {

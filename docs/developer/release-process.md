@@ -57,9 +57,9 @@ condensed checklist for these steps.
       `docs/templates/RELEASE_NOTES_TEMPLATE.md`. The notes open with
       **Fixed in this release**: the issues closed as completed since the
       previous tag (of any kind, so an RC counts), grouped under their use
-      case or quality label and skipping `ops` and `duplicate`. That's why
-      a fix PR must say `Fixes #N`: merging it closes the issue, and only
-      closed issues reach the notes. The conventional commits since the
+      case or quality label and skipping `ops`, `duplicate` and
+      `sonarcloud`. That's why a fix PR must say `Fixes #N`: merging it
+      closes the issue, and only closed issues reach the notes. The conventional commits since the
       last tag follow. The step reads issues with `GH_TOKEN`; run locally,
       the script uses your `gh` login, or leaves the section out and says
       so on stderr.

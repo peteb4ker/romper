@@ -270,7 +270,7 @@ guide's [performance budgets](coding-guide.md#performance-budgets) section.
 
 | # | Change | IDs | Size | Measured target (budgets in `tests/perf/budgets.ts`) |
 |---|---|---|---|---|
-| 1 | Persistent connection per store; reentrant unit of work; handles passed down; reindex in the same transaction | RE-81, RE-28 | M | the test asserts one connection per store; delete is 1 connection, not 5 |
+| 1 | **Done in #513.** Persistent connection per store; reentrant unit of work; handles passed down; reindex in the same transaction | RE-81, RE-28 | M | the test asserts one connection per store; delete is 1 connection, not 5 |
 | 2 | Replace as one in-place update (keeps gain and metadata) | RE-26 | S | fault injection leaves no partial state |
 | 3 | Move between kits in one transaction, carrying the row | RE-27 | M | gain and metadata survive; move is 1 connection, not ~12 |
 | 4 | Sync planning from one query, with async header reads that yield | RE-82 | S–M | write summary blocks main < 50 ms |

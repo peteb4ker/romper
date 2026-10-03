@@ -124,6 +124,6 @@ You can move around the Kit Browser with the keyboard:
 | Open selected kit | `Enter` |
 | Bookmark the focused kit | `F` |
 
-The arrow keys don't move on from the first kit in the list, and **Up** and **Down** can land on the wrong kit where one bank ends and the next begins. Pressing `F` also jumps to bank F if it has kits.
+Navigation starts from the first kit. Click an empty part of the grid first, or press a bank letter to start from that bank's first kit. **Left** and **Right** step through the kits in order. **Up** and **Down** move to the kit in the same column of the row above or below, crossing from one bank to the next. Pressing `F` also jumps to bank F if it has kits.
 
 For the complete shortcut list, see [Keyboard Shortcuts](keyboard-shortcuts).

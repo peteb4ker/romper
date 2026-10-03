@@ -1,15 +1,21 @@
-import type { Kit } from "@romper/shared/db/schema.js";
+import type { Kit, KitWithRelations } from "@romper/shared/db/schema.js";
 
 import { renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@romper/shared/kitUtilsShared", () => ({
+vi.mock("@romper/shared/kitUtilsShared", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@romper/shared/kitUtilsShared")>()),
   isValidKit: vi.fn(() => true),
 }));
 
 import { isValidKit } from "@romper/shared/kitUtilsShared";
 
-import { useKitGridKeyboard } from "../useKitGridKeyboard";
+import { buildGridRows } from "../../utils/kitGridRows";
+import {
+  getArrowTarget,
+  groupKitsByRow,
+  useKitGridKeyboard,
+} from "../useKitGridKeyboard";
 
 const mockIsValidKit = vi.mocked(isValidKit);
 
@@ -28,368 +34,292 @@ function createMockKit(name: string): Kit {
   };
 }
 
-describe("useKitGridKeyboard", () => {
+// Three columns, grouped by bank:
+//   A: A0 A1 A2
+//      A3
+//   B: B0
+//   C: C0 C1
+const kitsToDisplay: Kit[] = ["A0", "A1", "A2", "A3", "B0", "C0", "C1"].map(
+  createMockKit,
+);
+const { rowIndexByKitIndex } = buildGridRows(
+  kitsToDisplay as KitWithRelations[],
+  { columnCount: 3, showAddCards: false },
+);
+const idx = (name: string) => kitsToDisplay.findIndex((k) => k.name === name);
+
+const keyEvent = (
+  key: string,
+  target: Element = document.createElement("div"),
+) =>
+  ({
+    key,
+    preventDefault: vi.fn(),
+    target,
+  }) as unknown as React.KeyboardEvent;
+
+describe("[UC-07] useKitGridKeyboard", () => {
   const mockOnSelectKit = vi.fn();
   const mockSetFocus = vi.fn();
   const mockOnBankFocus = vi.fn();
   const mockOnFocusKit = vi.fn();
+  const mockScrollItemIntoView = vi.fn();
+  const card = document.createElement("div");
+  card.tabIndex = -1;
 
-  const kitsToDisplay: Kit[] = [
-    createMockKit("A0"),
-    createMockKit("A1"),
-    createMockKit("A2"),
-    createMockKit("B0"),
-    createMockKit("B1"),
-    createMockKit("B2"),
-  ];
-
-  const mockContainerRef = {
+  const containerRef = {
     current: {
-      querySelector: vi.fn(() => ({
-        scrollIntoView: vi.fn(),
-      })),
+      querySelector: vi.fn(() => card),
     } as unknown as HTMLDivElement,
   };
 
-  const defaultProps = {
-    columnCount: 3,
-    containerRef: mockContainerRef,
-    focusedIdx: 1 as null | number,
+  const props = (focusedIdx: null | number = 0) => ({
+    containerRef,
+    focusedIdx,
     kitsToDisplay,
     onBankFocus: mockOnBankFocus,
     onFocusKit: mockOnFocusKit,
     onSelectKit: mockOnSelectKit,
-    rowCount: 2,
+    rowIndexByKitIndex,
+    scrollItemIntoView: mockScrollItemIntoView,
     setFocus: mockSetFocus,
+  });
+
+  const press = (key: string, focusedIdx: null | number = 0) => {
+    const { result } = renderHook(() => useKitGridKeyboard(props(focusedIdx)));
+    const event = keyEvent(key);
+    result.current.handleKeyDown(event);
+    return event;
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsValidKit.mockReturnValue(true);
-  });
-
-  describe("getGridCoords", () => {
-    it("converts flat index 0 to row 0, column 0", () => {
-      const { result } = renderHook(() => useKitGridKeyboard(defaultProps));
-
-      expect(result.current.getGridCoords(0)).toEqual({
-        columnIndex: 0,
-        rowIndex: 0,
-      });
-    });
-
-    it("converts flat index 2 to row 0, column 2", () => {
-      const { result } = renderHook(() => useKitGridKeyboard(defaultProps));
-
-      expect(result.current.getGridCoords(2)).toEqual({
-        columnIndex: 2,
-        rowIndex: 0,
-      });
-    });
-
-    it("converts flat index 3 to row 1, column 0", () => {
-      const { result } = renderHook(() => useKitGridKeyboard(defaultProps));
-
-      expect(result.current.getGridCoords(3)).toEqual({
-        columnIndex: 0,
-        rowIndex: 1,
-      });
-    });
-
-    it("converts flat index 5 to row 1, column 2", () => {
-      const { result } = renderHook(() => useKitGridKeyboard(defaultProps));
-
-      expect(result.current.getGridCoords(5)).toEqual({
-        columnIndex: 2,
-        rowIndex: 1,
-      });
+    vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((cb) => {
+      cb(0);
+      return 0;
     });
   });
 
-  describe("getFlatIndex", () => {
-    it("converts row 0, column 0 to flat index 0", () => {
-      const { result } = renderHook(() => useKitGridKeyboard(defaultProps));
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
-      expect(result.current.getFlatIndex(0, 0)).toBe(0);
+  describe("groupKitsByRow", () => {
+    it("groups kit indices into the rows drawn, per bank", () => {
+      expect(groupKitsByRow(rowIndexByKitIndex)).toEqual([
+        [0, 1, 2],
+        [3],
+        [4],
+        [5, 6],
+      ]);
     });
 
-    it("converts row 0, column 2 to flat index 2", () => {
-      const { result } = renderHook(() => useKitGridKeyboard(defaultProps));
-
-      expect(result.current.getFlatIndex(0, 2)).toBe(2);
-    });
-
-    it("converts row 1, column 0 to flat index 3", () => {
-      const { result } = renderHook(() => useKitGridKeyboard(defaultProps));
-
-      expect(result.current.getFlatIndex(1, 0)).toBe(3);
-    });
-
-    it("converts row 1, column 2 to flat index 5", () => {
-      const { result } = renderHook(() => useKitGridKeyboard(defaultProps));
-
-      expect(result.current.getFlatIndex(1, 2)).toBe(5);
+    it("handles no kits", () => {
+      expect(groupKitsByRow([])).toEqual([]);
     });
   });
 
-  describe("handleKeyDown - arrow navigation", () => {
-    it("handles ArrowRight to move focus right", () => {
-      const { result } = renderHook(() =>
-        useKitGridKeyboard({ ...defaultProps, focusedIdx: 1 }),
-      );
+  describe("getArrowTarget", () => {
+    const kitRows = groupKitsByRow(rowIndexByKitIndex);
+    const target = (key: string, from: string) => {
+      const to = getArrowTarget(key, idx(from), kitRows, kitsToDisplay.length);
+      return to === null ? null : kitsToDisplay[to].name;
+    };
 
-      const mockEvent = {
-        key: "ArrowRight",
-        preventDefault: vi.fn(),
-        target: document.createElement("div"),
-      } as unknown as React.KeyboardEvent;
-
-      result.current.handleKeyDown(mockEvent);
-
-      expect(mockSetFocus).toHaveBeenCalledWith(2);
-      expect(mockEvent.preventDefault).toHaveBeenCalled();
+    it("steps through the kits in order with Left and Right", () => {
+      expect(target("ArrowRight", "A0")).toBe("A1");
+      expect(target("ArrowRight", "A2")).toBe("A3");
+      expect(target("ArrowLeft", "B0")).toBe("A3");
+      expect(target("ArrowLeft", "A0")).toBeNull();
+      expect(target("ArrowRight", "C1")).toBeNull();
     });
 
-    it("handles ArrowLeft to move focus left", () => {
-      const { result } = renderHook(() =>
-        useKitGridKeyboard({ ...defaultProps, focusedIdx: 2 }),
-      );
+    it("moves to the same column of the row below, across bank headers", () => {
+      expect(target("ArrowDown", "A0")).toBe("A3");
+      expect(target("ArrowDown", "A3")).toBe("B0");
+      expect(target("ArrowDown", "B0")).toBe("C0");
+      expect(target("ArrowDown", "C1")).toBeNull();
+    });
 
-      const mockEvent = {
-        key: "ArrowLeft",
-        preventDefault: vi.fn(),
-        target: document.createElement("div"),
-      } as unknown as React.KeyboardEvent;
+    it("lands on the last kit of a shorter row", () => {
+      expect(target("ArrowDown", "A2")).toBe("A3");
+      expect(target("ArrowUp", "C1")).toBe("B0");
+    });
 
-      result.current.handleKeyDown(mockEvent);
+    it("moves to the same column of the row above", () => {
+      expect(target("ArrowUp", "C0")).toBe("B0");
+      expect(target("ArrowUp", "A3")).toBe("A0");
+      expect(target("ArrowUp", "A1")).toBeNull();
+    });
+  });
+
+  // RE-39: index 0 was treated as "nothing focused", so the keys did
+  // nothing from the first kit, which is where focus starts
+  describe("from the first kit", () => {
+    it("Right moves to the second kit", () => {
+      const event = press("ArrowRight", 0);
 
       expect(mockSetFocus).toHaveBeenCalledWith(1);
-      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(mockOnFocusKit).toHaveBeenCalledWith("A1");
+      expect(event.preventDefault).toHaveBeenCalled();
     });
 
-    it("handles ArrowDown to move focus down", () => {
-      const { result } = renderHook(() =>
-        useKitGridKeyboard({ ...defaultProps, focusedIdx: 1 }),
-      );
+    it("Down moves to the row below", () => {
+      press("ArrowDown", 0);
 
-      const mockEvent = {
-        key: "ArrowDown",
-        preventDefault: vi.fn(),
-        target: document.createElement("div"),
-      } as unknown as React.KeyboardEvent;
-
-      result.current.handleKeyDown(mockEvent);
-
-      expect(mockSetFocus).toHaveBeenCalledWith(4);
-      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(mockSetFocus).toHaveBeenCalledWith(idx("A3"));
     });
 
-    it("handles ArrowUp to move focus up", () => {
-      const { result } = renderHook(() =>
-        useKitGridKeyboard({ ...defaultProps, focusedIdx: 4 }),
-      );
+    it("Enter opens it", () => {
+      press("Enter", 0);
 
-      const mockEvent = {
-        key: "ArrowUp",
-        preventDefault: vi.fn(),
-        target: document.createElement("div"),
-      } as unknown as React.KeyboardEvent;
-
-      result.current.handleKeyDown(mockEvent);
-
-      expect(mockSetFocus).toHaveBeenCalledWith(1);
-      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(mockOnSelectKit).toHaveBeenCalledWith("A0");
     });
 
-    it("clamps ArrowLeft at column 0", () => {
-      const { result } = renderHook(() =>
-        useKitGridKeyboard({ ...defaultProps, focusedIdx: 3 }),
-      );
+    it("Space opens it", () => {
+      press(" ", 0);
 
-      const mockEvent = {
-        key: "ArrowLeft",
-        preventDefault: vi.fn(),
-        target: document.createElement("div"),
-      } as unknown as React.KeyboardEvent;
-
-      result.current.handleKeyDown(mockEvent);
-
-      // Already at column 0 of row 1, stays at index 3
-      expect(mockSetFocus).toHaveBeenCalledWith(3);
-    });
-
-    it("clamps ArrowUp at row 0", () => {
-      const { result } = renderHook(() =>
-        useKitGridKeyboard({ ...defaultProps, focusedIdx: 1 }),
-      );
-
-      const mockEvent = {
-        key: "ArrowUp",
-        preventDefault: vi.fn(),
-        target: document.createElement("div"),
-      } as unknown as React.KeyboardEvent;
-
-      result.current.handleKeyDown(mockEvent);
-
-      // Already at row 0, stays at index 1
-      expect(mockSetFocus).toHaveBeenCalledWith(1);
+      expect(mockOnSelectKit).toHaveBeenCalledWith("A0");
     });
   });
 
-  describe("handleKeyDown - Enter/Space selection", () => {
-    it("handles Enter to select focused kit", () => {
-      const { result } = renderHook(() =>
-        useKitGridKeyboard({ ...defaultProps, focusedIdx: 1 }),
-      );
+  describe("with nothing focused", () => {
+    it("an arrow focuses the first kit", () => {
+      press("ArrowDown", null);
 
-      const mockEvent = {
-        key: "Enter",
-        preventDefault: vi.fn(),
-        target: document.createElement("div"),
-      } as unknown as React.KeyboardEvent;
-
-      result.current.handleKeyDown(mockEvent);
-
-      expect(mockOnSelectKit).toHaveBeenCalledWith("A1");
-      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(mockSetFocus).toHaveBeenCalledWith(0);
     });
 
-    it("handles Space to select focused kit", () => {
-      const { result } = renderHook(() =>
-        useKitGridKeyboard({ ...defaultProps, focusedIdx: 1 }),
+    it("Enter opens nothing", () => {
+      const event = press("Enter", null);
+
+      expect(mockOnSelectKit).not.toHaveBeenCalled();
+      expect(event.preventDefault).toHaveBeenCalled();
+    });
+  });
+
+  describe("arrow navigation", () => {
+    it("scrolls the kit into view and gives its card keyboard focus", () => {
+      const focus = vi.spyOn(card, "focus");
+
+      press("ArrowDown", idx("A3"));
+
+      expect(mockScrollItemIntoView).toHaveBeenCalledWith(idx("B0"));
+      expect(containerRef.current.querySelector).toHaveBeenCalledWith(
+        '[data-kit="B0"]',
       );
-
-      const mockEvent = {
-        key: " ",
-        preventDefault: vi.fn(),
-        target: document.createElement("div"),
-      } as unknown as React.KeyboardEvent;
-
-      result.current.handleKeyDown(mockEvent);
-
-      expect(mockOnSelectKit).toHaveBeenCalledWith("A1");
-      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(focus).toHaveBeenCalledWith({ preventScroll: true });
     });
 
-    it("does not select kit when isValidKit returns false", () => {
+    it("stays put at the edge of the grid", () => {
+      const event = press("ArrowUp", idx("A1"));
+
+      expect(mockSetFocus).not.toHaveBeenCalled();
+      expect(event.preventDefault).toHaveBeenCalled();
+    });
+
+    it("does nothing with no kits", () => {
+      const { result } = renderHook(() =>
+        useKitGridKeyboard({
+          ...props(null),
+          kitsToDisplay: [],
+          rowIndexByKitIndex: [],
+        }),
+      );
+      result.current.handleKeyDown(keyEvent("ArrowDown"));
+
+      expect(mockSetFocus).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Enter", () => {
+    it("opens the focused kit", () => {
+      press("Enter", idx("B0"));
+
+      expect(mockOnSelectKit).toHaveBeenCalledWith("B0");
+    });
+
+    it("doesn't open an invalid kit", () => {
       mockIsValidKit.mockReturnValue(false);
 
-      const { result } = renderHook(() =>
-        useKitGridKeyboard({ ...defaultProps, focusedIdx: 1 }),
-      );
-
-      const mockEvent = {
-        key: "Enter",
-        preventDefault: vi.fn(),
-        target: document.createElement("div"),
-      } as unknown as React.KeyboardEvent;
-
-      result.current.handleKeyDown(mockEvent);
+      press("Enter", 1);
 
       expect(mockOnSelectKit).not.toHaveBeenCalled();
     });
+
+    it("leaves Enter on a card's button to the button", () => {
+      const { result } = renderHook(() => useKitGridKeyboard(props(0)));
+      const event = keyEvent("Enter", document.createElement("button"));
+
+      result.current.handleKeyDown(event);
+
+      expect(mockOnSelectKit).not.toHaveBeenCalled();
+      expect(event.preventDefault).not.toHaveBeenCalled();
+    });
   });
 
-  describe("handleKeyDown - A-Z bank navigation", () => {
-    it("handles letter key to navigate to first kit in bank", () => {
-      const { result } = renderHook(() => useKitGridKeyboard(defaultProps));
+  describe("A-Z bank navigation", () => {
+    it("focuses the first kit in the bank", () => {
+      const event = press("b");
 
-      const mockEvent = {
-        key: "b",
-        preventDefault: vi.fn(),
-        target: document.createElement("div"),
-      } as unknown as React.KeyboardEvent;
-
-      result.current.handleKeyDown(mockEvent);
-
-      // B0 is at index 3
-      expect(mockSetFocus).toHaveBeenCalledWith(3);
+      expect(mockSetFocus).toHaveBeenCalledWith(idx("B0"));
       expect(mockOnBankFocus).toHaveBeenCalledWith("B");
-      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(event.preventDefault).toHaveBeenCalled();
     });
 
-    it("handles uppercase letter key", () => {
-      const { result } = renderHook(() => useKitGridKeyboard(defaultProps));
+    it("handles an uppercase letter", () => {
+      press("C");
 
-      const mockEvent = {
-        key: "A",
-        preventDefault: vi.fn(),
-        target: document.createElement("div"),
-      } as unknown as React.KeyboardEvent;
-
-      result.current.handleKeyDown(mockEvent);
-
-      // A0 is at index 0
-      expect(mockSetFocus).toHaveBeenCalledWith(0);
-      expect(mockOnBankFocus).toHaveBeenCalledWith("A");
+      expect(mockSetFocus).toHaveBeenCalledWith(idx("C0"));
+      expect(mockOnBankFocus).toHaveBeenCalledWith("C");
     });
 
-    it("does not navigate for bank with no kits", () => {
-      const { result } = renderHook(() => useKitGridKeyboard(defaultProps));
-
-      const mockEvent = {
-        key: "z",
-        preventDefault: vi.fn(),
-        target: document.createElement("div"),
-      } as unknown as React.KeyboardEvent;
-
-      result.current.handleKeyDown(mockEvent);
+    it("does nothing for a bank with no kits", () => {
+      press("z");
 
       expect(mockSetFocus).not.toHaveBeenCalled();
       expect(mockOnBankFocus).not.toHaveBeenCalled();
     });
   });
 
-  describe("handleKeyDown - input element filtering", () => {
-    it("ignores keyboard events from input elements", () => {
-      const { result } = renderHook(() =>
-        useKitGridKeyboard({ ...defaultProps, focusedIdx: 1 }),
-      );
+  describe("text fields", () => {
+    it.each(["input", "textarea"])("ignores keys typed in an %s", (tag) => {
+      const { result } = renderHook(() => useKitGridKeyboard(props(1)));
+      const event = keyEvent("Enter", document.createElement(tag));
 
-      const inputElement = document.createElement("input");
-      const mockEvent = {
-        key: "Enter",
-        preventDefault: vi.fn(),
-        target: inputElement,
-      } as unknown as React.KeyboardEvent;
-
-      result.current.handleKeyDown(mockEvent);
+      result.current.handleKeyDown(event);
 
       expect(mockOnSelectKit).not.toHaveBeenCalled();
-      expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+      expect(event.preventDefault).not.toHaveBeenCalled();
     });
 
-    it("ignores keyboard events from textarea elements", () => {
-      const { result } = renderHook(() =>
-        useKitGridKeyboard({ ...defaultProps, focusedIdx: 1 }),
-      );
+    it("doesn't take focus from a field being typed in", () => {
+      const input = document.createElement("input");
+      document.body.appendChild(input);
+      input.focus();
+      const focus = vi.spyOn(card, "focus");
+      const { result } = renderHook(() => useKitGridKeyboard(props(0)));
 
-      const textareaElement = document.createElement("textarea");
-      const mockEvent = {
-        key: "Enter",
-        preventDefault: vi.fn(),
-        target: textareaElement,
-      } as unknown as React.KeyboardEvent;
+      result.current.scrollToKit("B0");
 
-      result.current.handleKeyDown(mockEvent);
-
-      expect(mockOnSelectKit).not.toHaveBeenCalled();
-      expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+      expect(mockSetFocus).toHaveBeenCalledWith(idx("B0"));
+      expect(focus).not.toHaveBeenCalled();
+      input.remove();
     });
   });
 
   describe("scrollToKit", () => {
-    it("scrolls to kit by name", () => {
-      const { result } = renderHook(() => useKitGridKeyboard(defaultProps));
+    it("scrolls to a kit by name", () => {
+      const { result } = renderHook(() => useKitGridKeyboard(props()));
 
       result.current.scrollToKit("B0");
 
-      // B0 is at index 3
-      expect(mockSetFocus).toHaveBeenCalledWith(3);
+      expect(mockSetFocus).toHaveBeenCalledWith(idx("B0"));
     });
 
-    it("does nothing for unknown kit name", () => {
-      const { result } = renderHook(() => useKitGridKeyboard(defaultProps));
+    it("does nothing for an unknown kit", () => {
+      const { result } = renderHook(() => useKitGridKeyboard(props()));
 
       result.current.scrollToKit("Z9");
 
@@ -399,7 +329,7 @@ describe("useKitGridKeyboard", () => {
 
   describe("scrollAndFocusKitByIndex", () => {
     it("sets focus and calls onFocusKit", () => {
-      const { result } = renderHook(() => useKitGridKeyboard(defaultProps));
+      const { result } = renderHook(() => useKitGridKeyboard(props()));
 
       result.current.scrollAndFocusKitByIndex(2);
 
@@ -407,20 +337,37 @@ describe("useKitGridKeyboard", () => {
       expect(mockOnFocusKit).toHaveBeenCalledWith("A2");
     });
 
-    it("does nothing for out-of-range index", () => {
-      const { result } = renderHook(() => useKitGridKeyboard(defaultProps));
+    it.each([99, -1])("does nothing for index %i", (index) => {
+      const { result } = renderHook(() => useKitGridKeyboard(props()));
 
-      result.current.scrollAndFocusKitByIndex(99);
+      result.current.scrollAndFocusKitByIndex(index);
 
       expect(mockSetFocus).not.toHaveBeenCalled();
     });
 
-    it("does nothing for negative index", () => {
-      const { result } = renderHook(() => useKitGridKeyboard(defaultProps));
+    it("scrolls the DOM element without a virtualized list", () => {
+      const scrollIntoView = vi.fn();
+      const element = document.createElement("div");
+      element.scrollIntoView = scrollIntoView;
+      const domRef = {
+        current: {
+          querySelector: vi.fn(() => element),
+        } as unknown as HTMLDivElement,
+      };
+      const { result } = renderHook(() =>
+        useKitGridKeyboard({
+          ...props(),
+          containerRef: domRef,
+          scrollItemIntoView: undefined,
+        }),
+      );
 
-      result.current.scrollAndFocusKitByIndex(-1);
+      result.current.scrollAndFocusKitByIndex(1);
 
-      expect(mockSetFocus).not.toHaveBeenCalled();
+      expect(scrollIntoView).toHaveBeenCalledWith({
+        behavior: "smooth",
+        block: "center",
+      });
     });
   });
 });

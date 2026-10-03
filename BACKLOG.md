@@ -62,7 +62,6 @@ This file tracks what's being done about each item.
 | RE-36 | Medium | Performance | Almost every edit reloads your whole library behind the scenes, which gets slower as the library grows. | open |
 | RE-37 | Medium | Renderer | A kit's favourite star can disagree between the browser and the editor, so a kit can show as a favourite when it isn't. | open |
 | RE-38 | Medium | Renderer | Pressing F both jumps to bank F and stars the selected kit. | open |
-| RE-39 | Medium | Renderer | Arrow keys and Enter don't work in the kit grid until you click a kit. | open |
 | RE-40 | Medium | Renderer | Some failures happen silently: a rejected drop, a failed stereo link or undo, and the reason a write failed aren't shown to you. | open |
 | RE-41 | Medium | Renderer | If turning on editing or renaming a kit fails, nothing tells you. | open |
 | RE-43 | Medium | Scan | Scan All only scans the kits you're currently viewing after a search or filter, not your whole library. | open |
@@ -97,6 +96,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-39 | Medium | Renderer | Arrow keys and Enter don't work in the kit grid until you click a kit. | done (#435: the arrows follow the rows the grid draws, and the focused card takes keyboard focus) |
 | RE-58 | Medium | Tooling | Romper's own pre-commit checks failed on a busy computer because they always started the same large number of test workers. | done (#423: workers follow the free cores; under load the suite runs on fewer workers instead of timing out) |
 | RE-74 | Medium | Samples | Dropping a sample onto a filled slot said it would insert it there and shift the rest down, but added it at the end. | done (#421: dragging files over a voice highlights the slot after the last sample, where they land) |
 | RE-75 | Medium | Voices | In an editable kit, scanning the kit overwrote voice names you'd typed. | done (#422: only voices without a name are named, as main's scan does) |

@@ -768,7 +768,7 @@ Rample's own `_save` folder alone. Cancel stops between files. See
   `electron/main/services/syncProgressManager.ts`, `electron/main/services/sdCardSafety.ts`, `electron/main/services/rtfFileService.ts`;
   `electron/main/formatConverter.ts`; `shared/rampleCardLayout.ts`.
 - **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-76 (a card that only needs removals can't be written), RE-35 (the Modified filter misses gain and bank edits),
+- **Known issues:** RE-35 (the Modified filter misses gain and bank edits),
   RE-40 (the failure toast reads a stale value), RE-57 (contract drift in
   `SyncChangeSummary` and `SyncProgress`), RE-23 (a cleared bank name is
   still written), RE-48 (the write panel has no dialog role or Escape).

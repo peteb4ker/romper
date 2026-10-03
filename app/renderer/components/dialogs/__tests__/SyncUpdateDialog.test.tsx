@@ -369,6 +369,30 @@ describe("[UC-34] SyncUpdateDialog", () => {
       expect(screen.queryByTestId("bank-summary")).not.toBeInTheDocument();
     });
 
+    // RE-76: an empty library can still clear what's left on the card
+    it("[UC-34] allows a write that only removes from the card", () => {
+      const removalsOnly: SyncChangeSummary = {
+        banks: [],
+        fileCount: 0,
+        kitCount: 0,
+        removals: ["A0", "B - OLD.rtf"],
+      };
+
+      render(
+        <SyncUpdateDialog
+          isOpen={true}
+          kitName="A0"
+          localChangeSummary={removalsOnly}
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+          sdCardPath="/path/to/sd"
+        />,
+      );
+
+      expect(screen.getByTestId("card-removals")).toBeInTheDocument();
+      expect(screen.getByText("Start Write")).not.toBeDisabled();
+    });
+
     it("lets the user cancel a write in progress (RE-07)", async () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
       const onCancelSync = vi.fn();

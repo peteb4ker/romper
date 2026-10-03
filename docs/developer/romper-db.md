@@ -102,9 +102,10 @@ Defined in `shared/db/schema.ts` using Drizzle ORM. Migrations in `electron/main
 
 ## Migrations and upgrades
 
-A new store gets its schema from Drizzle's migrator (`createRomperDbFile`). An
-existing store is brought up to date the first time Romper opens it in a
-session (`ensureDatabaseMigrations` in `electron/main/db/utils/dbMigrations.ts`):
+A store's schema is brought up to date when Romper opens its connection, once
+per connection (`migrateDatabase` in `electron/main/db/utils/dbMigrations.ts`,
+called from `connect` in `dbUtilities.ts`). A new store
+(`createRomperDbFile`) gets its whole schema the same way.
 
 - **All or nothing.** The history repair (below) and every pending migration
   run in one `BEGIN IMMEDIATE` transaction. If a statement fails or the app
@@ -119,7 +120,7 @@ session (`ensureDatabaseMigrations` in `electron/main/db/utils/dbMigrations.ts`)
   (`VACUUM INTO` a temporary name, then a rename). Each upgrade replaces the
   previous copy. To go back, quit Romper and rename the copy to
   `romper.sqlite`. If the copy can't be written, the upgrade doesn't start.
-  Nothing is copied when there's nothing to upgrade.
+  Nothing is copied for a new store or when there's nothing to upgrade.
 - **Bundled migrations only.** Migrations are read from the folder that
   ships with the code (`dist/electron/main/db/migrations` in a build,
   `electron/main/db/migrations` from source), never from the working

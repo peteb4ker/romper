@@ -106,7 +106,9 @@ in `electron/main/security/`.
   voice). Kits are keyed by their human-readable name (`A0`, `B12`), which
   other tables use as the foreign key. Slots are 0-based in the database.
   Details: [romper-db.md](romper-db.md).
-- Migrations live in `electron/main/db/migrations/` (drizzle-kit).
+- Migrations live in `electron/main/db/migrations/` (drizzle-kit). An
+  upgrade runs in one transaction after saving a copy of the database
+  (RE-33); see [romper-db.md](romper-db.md#migrations-and-upgrades).
 - **One connection per store** (RE-81). The first operation on a store opens
   it in WAL mode, applies pending migrations and keeps the connection
   (`db/utils/dbConnections.ts` holds them). It's closed when the local store

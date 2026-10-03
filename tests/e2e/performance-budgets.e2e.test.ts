@@ -32,7 +32,7 @@ import {
 } from "../utils/e2e-ipc-budget";
 import { encodeTestWav, sine } from "../validation/support/wav";
 
-test.describe("Performance budgets: IPC calls per action", () => {
+test.describe("[Q-01] Performance budgets: IPC calls per action", () => {
   let app: ElectronApplication;
   let page: Page;
   let testEnv: E2ETestEnvironment;

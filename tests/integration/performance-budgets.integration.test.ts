@@ -222,7 +222,7 @@ function wav(file: string, hz: number) {
   );
 }
 
-describe("performance budgets: main-process operations", () => {
+describe("[Q-01] performance budgets: main-process operations", () => {
   beforeEach(() => {
     work = fs.mkdtempSync(path.join(os.tmpdir(), "romper-budgets-"));
     store = path.join(work, "store");

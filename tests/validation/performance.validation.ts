@@ -65,7 +65,7 @@ interface Snapshot {
   calls: Call[];
 }
 
-test("performance profile", async () => {
+test("[Q-01] performance profile", async () => {
   test.setTimeout(60 * 60_000);
   const work = await fs.mkdtemp(path.join(os.tmpdir(), "romper-perf-"));
   const dirs = {

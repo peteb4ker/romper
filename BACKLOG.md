@@ -28,7 +28,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
-| RE-67 | Medium | Tests | The suites never run the core promise for real: no stereo or real audio through a sync, almost no byte checks on the card, and no test fails on an unexpected error. | partly done (#402: `npm run validate:full` and its workflow; #411: the e2e error guard; #415: the use case register, `[UC-NN]` tags and `npm run trace:check`; next: the focused tests and the gaps in [`traceability.md`](docs/developer/traceability.md); plan: [`validation-and-traceability.md`](docs/developer/validation-and-traceability.md)) |
+| RE-67 | Medium | Tests | The suites never run the core promise for real: no stereo or real audio through a sync, almost no byte checks on the card, and no test fails on an unexpected error. | partly done (#402: `npm run validate:full` and its workflow; #411: the e2e error guard; #415: the use case register, `[UC-NN]` tags and `npm run trace:check`; next: the focused tests and the gaps in the traceability matrix (`npm run trace`); plan: [`validation-and-traceability.md`](docs/developer/validation-and-traceability.md)) |
 | RE-18 | High | Release | Signing is silently optional. Windows v1.3.1 shipped **unsigned** (the Azure step was skipped because `AZURE_CLIENT_ID` is empty). | partly done (#387: signing required, Apple credentials checked first; Windows needs ALLOW_UNSIGNED_WINDOWS until OPS-2) |
 
 ## Owner (needs Pete)
@@ -77,12 +77,12 @@ This file tracks what's being done about each item.
 | RE-78 | Medium | Settings | Changing the local store reports success whether or not it worked; the Invalid Local Store dialog's **Re-run Setup Wizard** button never renders. | partly done (#419: the Invalid Local Store and Change Local Store dialogs report a failed save; Set Up a New Local Store renders; Preferences still ignores an invalid folder) |
 | RE-79 | Medium | Release | Windows signing signs only the Setup `.exe`, leaving the installed app unsigned once OPS-2 is done (unconfirmed). | open (before OPS-2) |
 | RE-81 | Medium | DB | Every database call opens its own connection, so operations can't share a transaction and each write pays a WAL checkpoint. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
-| RE-82 | Medium | Sync | Opening the write summary blocks the main process for about 450 ms at factory scale (per-kit queries, synchronous header reads, no yield). | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
-| RE-83 | Medium | Audio | Waveform audio has no cache; kit navigation fetched 54 buffers for 30 slots (17 MB), each a synchronous whole-file read on main. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
-| RE-84 | Medium | IPC | Nine preload methods have no caller; `readFile` and `getAudioMetadata` remain reachable. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
-| RE-85 | Medium | Security | Path checks cost one `realpathSync` per granted path per call, and a denied check loads every sample row. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
-| RE-86 | Medium | Undo | Undo replays about 26 non-atomic IPC calls for one delete and resets gain. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
-| RE-87 | Medium | Playback | Playback state lives in `KitEditor`, so each trigger re-renders the whole editor two or three times. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
+| RE-82 | Medium | Sync | Opening the write summary blocks the main process (per-kit queries, synchronous header reads, no yield). | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
+| RE-83 | Medium | Audio | Waveform audio has no cache: kit navigation fetches some buffers twice and refetches on every visit, each a synchronous whole-file read on main. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
+| RE-84 | Medium | IPC | Unused preload methods remain; `readFile` and `getAudioMetadata` are still reachable from the renderer. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
+| RE-85 | Medium | Security | Path checks get slower as a session grants paths, and a denied check loads every sample row. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
+| RE-86 | Medium | Undo | Undo replays many non-atomic IPC calls and resets gain. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
+| RE-87 | Medium | Playback | Playback state lives in `KitEditor`, so each trigger re-renders the whole editor. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
 | RE-88 | Medium | Samples | The gain knob writes to the database on every wheel step or mousemove. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
 | RE-89 | Medium | Samples | Samples added by drop are stored with no WAV metadata. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
 

@@ -201,7 +201,7 @@ Done in #415:
 
 - [`use-cases.md`](use-cases.md): UC-01 to UC-37 with status, entry points checked against the code, doc gaps and known issues. 15 supported, 20 partial, 2 not built.
 - Tests tagged `[UC-NN]` in unit, integration, e2e and validation titles.
-- `scripts/traceability.mjs` writes [`traceability.md`](traceability.md). `npm run trace:check` (in the Lint workflow) fails on an unknown ID, a supported use case with no test above unit level and no declared `**Test gap:**`, a closed gap still declared, or a stale matrix.
+- `scripts/traceability.mjs` writes `traceability.md` (no longer committed; the Lint job shows it in its summary). `npm run trace:check` (in the Lint workflow) fails on an unknown ID, a supported use case with no test above unit level and no declared `**Test gap:**`, or a closed gap still declared.
 - New findings from the audit: RE-71, RE-72, RE-73.
 
 **Size:** M.

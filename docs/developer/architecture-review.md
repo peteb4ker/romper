@@ -81,6 +81,9 @@ and byte counts are deterministic.** Timings depend on the machine:
 
 ## Measurements
 
+A snapshot from runs at `a37229af`, kept as a record and not updated. To
+measure again, run the profile.
+
 Cold start, from launch to the first kit card: 408–429 ms.
 
 | Startup call | Calls | Main ms | Returned |

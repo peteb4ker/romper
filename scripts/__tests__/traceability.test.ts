@@ -160,6 +160,17 @@ describe("findProblems and render", () => {
     );
     expect(md).toContain("3 of 3 tests carry a use case tag.");
   });
+
+  it("links to a commit on GitHub when given a base URL (the CI summary)", () => {
+    const base = "https://github.com/o/r/blob/abc/";
+    const md = render(useCases, scan, { base });
+    expect(md).toContain(
+      `| [UC-01](${base}docs/developer/use-cases.md#uc-01-set-up-from-an-sd-card) Set up from an SD card |`,
+    );
+    expect(md).toContain(
+      `- E2E: [\`tests/e2e/b.e2e.test.ts\`](${base}tests/e2e/b.e2e.test.ts#L1) (1 test)`,
+    );
+  });
 });
 
 describe("slug", () => {

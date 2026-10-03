@@ -302,6 +302,29 @@ describe("[UC-07] useKitGridKeyboard", () => {
       },
     );
 
+    // #504: Shift+F stars the focused kit, so it doesn't also jump to bank F
+    it("[UC-10] leaves Shift+F to the star and jumps on plain F", () => {
+      const kits = ["A0", "F0"].map(createMockKit);
+      const { result } = renderHook(() =>
+        useKitGridKeyboard({
+          ...props(0),
+          kitsToDisplay: kits,
+          rowIndexByKitIndex: [0, 1],
+        }),
+      );
+      const shifted = {
+        ...keyEvent("F"),
+        shiftKey: true,
+      } as unknown as React.KeyboardEvent;
+
+      result.current.handleKeyDown(shifted);
+      expect(mockSetFocus).not.toHaveBeenCalled();
+      expect(shifted.preventDefault).not.toHaveBeenCalled();
+
+      result.current.handleKeyDown(keyEvent("f"));
+      expect(mockSetFocus).toHaveBeenCalledWith(1);
+    });
+
     it("does nothing for a bank with no kits", () => {
       press("z");
 

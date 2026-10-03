@@ -20,7 +20,7 @@ Click any kit card in the Kit Browser to open it. The header shows:
 - **Back button** -- Returns to the Kit Browser (or press `Escape`)
 - **Kit navigation** -- Previous/Next arrows to step through kits sequentially (or use `,` and `.` keys)
 - **Kit ID and name** -- The bank/slot and editable name field
-- **Favorite bookmark** -- Toggle bookmark
+- **Favorite bookmark** -- Toggle bookmark (or press `F`)
 - **Modified** -- Shown when the kit has changed since it was last written to the SD card: samples added, moved or deleted, a gain or voice name changed, or a stereo link changed
 - **Locked / Editable switch** -- Turns editing on and off (see below)
 - **Scan Kit button** -- Re-analyze samples and refresh voice name detection

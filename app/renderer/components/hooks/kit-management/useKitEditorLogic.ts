@@ -50,6 +50,7 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     onRefreshKitMetadata,
     onRequestSamplesReload,
     onToggleEditableMode,
+    onToggleFavorite,
     onUpdateKitAlias,
   } = props;
 
@@ -80,6 +81,27 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
       );
     }
   }, [onToggleEditableMode, kitName, isEditable, onMessage]);
+
+  // Star or unstar the open kit from the keyboard (F). There's no click to
+  // show a failure on, so it's reported here.
+  const isFavorite = Boolean(kit?.is_favorite);
+  const toggleFavorite = React.useMemo(() => {
+    if (!onToggleFavorite || !kitName) return undefined;
+    const failed = () =>
+      onMessage?.(
+        `Couldn't ${isFavorite ? "unstar" : "star"} kit ${kitName}. Try again.`,
+        "error",
+      );
+    return async () => {
+      try {
+        const result = await onToggleFavorite(kitName);
+        if (result?.success === false) failed();
+      } catch (error) {
+        log.warn("Toggling the favourite failed:", error);
+        failed();
+      }
+    };
+  }, [onToggleFavorite, kitName, isFavorite, onMessage]);
 
   // Update kit alias via parent callback. Called on blur and Enter, so a
   // failure is reported here rather than rejected into them (RE-41)
@@ -228,6 +250,7 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     onPrevKit,
     onSampleKeyNav: kitVoicePanels.onSampleKeyNav,
     onScanKit: () => void handleScanKit(),
+    onToggleFavorite: toggleFavorite,
     samples,
     selectedSampleIdx,
     selectedVoice,

@@ -48,7 +48,7 @@ Each kit appears as a card in the grid showing:
 - **Stereo icon** -- Appears if any voices in the kit are linked as a stereo pair
 - **Lock icon** -- Appears on read-only kits (see [Kit Status Indicators](#kit-status-indicators))
 - **Amber border** -- The kit has changed since it was last written to the SD card
-- **Favorite bookmark** -- Click to bookmark frequently used kits
+- **Favorite bookmark** -- Click to bookmark frequently used kits, or press `Shift+F` on the focused kit
 - **Duplicate** and **Delete** buttons -- See [Duplicating Kits](#duplicating-kits) and [Deleting Kits](#deleting-kits)
 
 Click any kit card to open it in the [Kit Editor](kit-editor) view.
@@ -124,8 +124,8 @@ You can move around the Kit Browser with the keyboard:
 | Jump to bank | `A` through `Z` |
 | Move between kits | Arrow keys |
 | Open selected kit | `Enter` |
-| Bookmark the focused kit | `*` |
+| Bookmark the focused kit, or remove its bookmark | `Shift+F` |
 
-Navigation starts from the first kit. Click an empty part of the grid first, or press a bank letter to start from that bank's first kit. **Left** and **Right** step through the kits in order. **Up** and **Down** move to the kit in the same column of the row above or below, crossing from one bank to the next.
+Every letter jumps to its bank, so plain `F` jumps to bank F and `Shift+F` bookmarks the focused kit. Navigation starts from the first kit. Click an empty part of the grid first, or press a bank letter to start from that bank's first kit. **Left** and **Right** step through the kits in order. **Up** and **Down** move to the kit in the same column of the row above or below, crossing from one bank to the next.
 
 For the complete shortcut list, see [Keyboard Shortcuts](keyboard-shortcuts).

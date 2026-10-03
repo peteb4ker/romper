@@ -3,7 +3,10 @@ import type { Kit } from "@romper/shared/db/schema.js";
 import { isValidKit } from "@romper/shared/kitUtilsShared";
 import { RefObject, useCallback, useMemo } from "react";
 
-import { hasCommandModifier } from "../../utils/keyboardShortcuts";
+import {
+  hasCommandModifier,
+  isBrowserFavoriteKey,
+} from "../../utils/keyboardShortcuts";
 
 interface UseKitGridKeyboardProps {
   containerRef: RefObject<HTMLDivElement | null>;
@@ -212,6 +215,8 @@ export function useKitGridKeyboard({
       )
         return;
       if (hasCommandModifier(e)) return;
+      // Shift+F stars the focused kit (useKitKeyboardNav); it isn't a jump
+      if (isBrowserFavoriteKey(e)) return;
 
       // A-Z hotkey: select first kit in bank
       if (e.key.length === 1 && /^\p{Lu}$/u.test(e.key.toUpperCase())) {

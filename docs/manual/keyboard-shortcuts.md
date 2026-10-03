@@ -15,9 +15,9 @@ Romper is designed for fast keyboard-driven workflow. Many actions have a shortc
 | Jump to bank | `A` through `Z` |
 | Move between kits | Arrow keys |
 | Open selected kit | `Enter` |
-| Bookmark the focused kit | `*` |
+| Bookmark the focused kit, or remove its bookmark | `Shift+F` |
 
-When you press a bank letter, focus jumps to the first kit in that bank. Letters for banks with no kits do nothing. Every letter is a bank, so `*` bookmarks the focused kit (on many keyboards that's `Shift+8`, or the `*` on the number pad).
+When you press a bank letter, focus jumps to the first kit in that bank. Letters for banks with no kits do nothing. Every letter is a bank, so plain `F` jumps to bank F and `Shift+F` bookmarks the focused kit.
 
 `Left` and `Right` step through the kits in order. `Up` and `Down` move to the kit in the same column of the row above or below, crossing from one bank to the next.
 
@@ -31,6 +31,7 @@ When you press a bank letter, focus jumps to the first kit in that bank. Letters
 | Navigate sample slots | Up / Down arrows |
 | Play selected sample (sequencer hidden) | `Space` |
 | Toggle step sequencer | `S` |
+| Bookmark the open kit, or remove its bookmark | `F` |
 | Undo / redo the last edit | `Cmd+Z` / `Cmd+Shift+Z` (macOS), `Ctrl+Z` / `Ctrl+Y` or `Ctrl+Shift+Z` (Windows/Linux) |
 | Back to the Kit Browser | `Escape` |
 

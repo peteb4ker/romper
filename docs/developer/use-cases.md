@@ -1,7 +1,7 @@
 <!--
 title: Use case register
 status: living register (RE-67)
-updated: 2026-10-01
+updated: 2026-10-03
 context_size: large
 -->
 
@@ -486,9 +486,11 @@ appends instead (UC-19). No manual page describes replacing; the
   `replaceExisting: true`, which nothing passes.
 - **IPC:** `replace-sample-in-slot`.
 - **Main:** `electron/main/services/sampleService.ts` (`replaceSampleInSlot`).
-- **Decision needed:** build a replace gesture, or delete the dead path.
+- **Decision needed:** build a replace gesture, or delete the dead path. A
+  replace gesture must ask first while "Confirm destructive actions" is on,
+  as sample delete does (`app/renderer/components/SampleDeleteButton.tsx`).
 - **Known issues:** RE-26 (replace deletes, then adds, with no
-  transaction), RE-44.
+  transaction).
 
 ### UC-21 Move samples within a kit
 
@@ -534,11 +536,13 @@ drop targets. No user doc promises it.
 **Status:** supported
 
 Delete a sample with its trash button in an editable kit; the samples after
-it move up. Undo puts it back. See
+it move up. While "Confirm destructive actions" is on (the default), Romper
+asks first. Undo puts it back. See
 [Sample Slots](../manual/kit-editor.md#sample-slots).
 
-- **Renderer:** `app/renderer/components/hooks/voice-panels/useVoicePanelButtons.tsx` (trash
-  button) → `app/renderer/components/hooks/sample-management/useSampleActions.ts`
+- **Renderer:** `app/renderer/components/hooks/voice-panels/useVoicePanelButtons.tsx` →
+  `app/renderer/components/SampleDeleteButton.tsx` (trash button; asks first
+  while "Confirm destructive actions" is on) → `app/renderer/components/hooks/sample-management/useSampleActions.ts`
   (`handleDeleteSample`) → `app/renderer/components/hooks/sample-management/useSampleManagementOperations.ts`
   (`handleSampleDelete`, records `REINDEX_SAMPLES` undo).
 - **IPC:** `delete-sample-from-slot`; undo uses
@@ -547,9 +551,7 @@ it move up. Undo puts it back. See
   `electron/main/services/sampleBatchOperations.ts` (`deleteSampleFromSlot`) →
   `electron/main/db/operations/sampleCrudOperations.ts` (`deleteSamples`) and
   `electron/main/db/operations/sampleManagementOps.ts` (`performVoiceReindexing`).
-- **Known issues:** RE-44 (the "Confirm destructive actions" preference,
-  on by default, promises a prompt that never appears; see UC-35), RE-28,
-  RE-36.
+- **Known issues:** RE-28, RE-36.
 
 ### UC-24 Set a sample's gain
 
@@ -804,7 +806,7 @@ the theme. The manual has no Preferences section; see
 - **Main:** `electron/main/services/settingsService.ts` (`readSettings`,
   `writeSetting`); `electron/main/mainProcessSetup.ts` (`loadSettings`).
 - **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-21, RE-44, RE-48.
+- **Known issues:** RE-21, RE-48.
 
 ### UC-36 Messages and error containment
 

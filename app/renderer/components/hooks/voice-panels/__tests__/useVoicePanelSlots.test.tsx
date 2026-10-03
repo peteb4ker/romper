@@ -302,7 +302,10 @@ describe("useVoicePanelSlots", () => {
 
     render(<TestComponent />);
 
-    expect(defaultProps.renderDeleteButton).toHaveBeenCalledWith(0);
+    expect(defaultProps.renderDeleteButton).toHaveBeenCalledWith(
+      0,
+      "sample1.wav",
+    );
     expect(screen.getAllByText("Delete")).toHaveLength(2); // Two samples
   });
 

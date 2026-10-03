@@ -53,7 +53,7 @@ Each voice has up to **12 sample slots**, matching the Rample's 12-layer-per-voi
 - **Play button** -- Click to audition the sample
 - **Sample filename** -- Hover over the row to see the file's path and format
 - **Gain knob** -- Per-sample volume trim (see [Gain Control](#gain-control) below); editable kits only
-- **Delete button** -- Remove the sample from this slot; the samples below it move up. Editable kits only
+- **Delete button** -- Remove the sample from this slot; the samples below it move up. Romper asks first unless **Confirm destructive actions** is off in Preferences. Editable kits only
 - **Waveform display** -- Visual representation of the audio
 
 Right-click a sample to show its file in Finder or Explorer.

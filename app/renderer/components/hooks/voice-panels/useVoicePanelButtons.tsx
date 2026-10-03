@@ -1,5 +1,7 @@
-import { PlayIcon, StopIcon, TrashIcon } from "@phosphor-icons/react";
+import { PlayIcon, StopIcon } from "@phosphor-icons/react";
 import React from "react";
+
+import SampleDeleteButton from "../../SampleDeleteButton";
 
 export interface UseVoicePanelButtonsOptions {
   onPlay: (voice: number, sample: string) => void;
@@ -58,27 +60,16 @@ export function useVoicePanelButtons({
     [onPlay, onStop, voice],
   );
 
-  // Helper function to render delete button
+  // Helper function to render delete button. It asks first when "Confirm
+  // destructive actions" is on (RE-44).
   const renderDeleteButton = React.useCallback(
-    (slotNumber: number) => (
-      <button
-        aria-label="Delete sample"
-        className="p-1 rounded hover:bg-accent-danger/15 text-xs text-accent-danger ml-2"
-        onClick={(e) => {
-          e.stopPropagation();
+    (slotNumber: number, sampleName?: string) => (
+      <SampleDeleteButton
+        onDelete={() => {
           void sampleActionsHook.handleDeleteSample(slotNumber);
         }}
-        style={{
-          alignItems: "center",
-          display: "flex",
-          justifyContent: "center",
-          minHeight: 24,
-          minWidth: 24,
-        }}
-        title="Delete sample"
-      >
-        <TrashIcon size={14} />
-      </button>
+        sampleName={sampleName}
+      />
     ),
     [sampleActionsHook],
   );

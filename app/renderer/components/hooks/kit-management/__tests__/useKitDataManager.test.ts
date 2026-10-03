@@ -535,9 +535,9 @@ describe("useKitDataManager", () => {
       });
 
       expect(result.current.getKitByName("A0")?.modified_since_sync).toBe(true);
-      expect(result.current.getKitByName("A1")?.modified_since_sync).toBe(
-        undefined,
-      );
+      expect(
+        result.current.getKitByName("A1")?.modified_since_sync,
+      ).toBeUndefined();
       expect(globalThis.electronAPI.getKits).not.toHaveBeenCalled();
     });
 

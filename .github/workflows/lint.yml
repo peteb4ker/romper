@@ -42,7 +42,7 @@ jobs:
         run: npm run lint:check
 
       - name: Check use case traceability
-        # Fails on unknown [UC-NN] tags, supported use cases with no test
-        # above unit level, or a stale docs/developer/traceability.md
-        # (RE-67). Fix the last with `npm run trace`.
+        # Fails on unknown [UC-NN] tags or supported use cases with no test
+        # above unit level (RE-67), and writes the use case x test layer
+        # matrix to the job summary.
         run: npm run trace:check

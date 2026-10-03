@@ -1551,6 +1551,9 @@ html.js-ready .fade-in.visible {
 .sequencer-more {
     text-align: center;
     margin-top: 1.5rem;
+}
+
+/* ===================================================================
    Testing: the home page band and /testing/ (docs/testing.html).
    Figures come from docs/_data/testing.json, never from these files.
    =================================================================== */
@@ -1598,7 +1601,7 @@ html.js-ready .fade-in.visible {
 }
 
 .testing .container {
-    max-width: 860px;
+    max-width: 960px;
 }
 
 .testing-header h1 {
@@ -1813,5 +1816,106 @@ html.js-ready .fade-in.visible {
 
     .testing-budget {
         text-align: left;
+    }
+}
+
+/* Use case and quality traceability tables on /testing/ */
+.testing-trace-intro {
+    margin-top: 1.5rem;
+}
+
+.trace {
+    border: 1px solid var(--border-subtle);
+    border-radius: 1rem;
+    overflow: hidden;
+    margin-top: 1rem;
+    background-color: var(--surface-2);
+}
+
+.trace-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) repeat(4, 5.5rem);
+    gap: 0.5rem;
+    padding: 0.7rem 1.25rem;
+    align-items: start;
+    color: var(--text-primary);
+}
+
+.trace-row + .trace-row {
+    border-top: 1px solid var(--border-subtle);
+}
+
+.trace-row > span[role="cell"],
+.trace-head > span:not(:first-child) {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+}
+
+.trace-head {
+    background-color: var(--surface-1);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+.trace-head > span:first-child {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.trace-head > span:not(:first-child) {
+    font-family: var(--font-sans);
+}
+
+.trace-name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.5rem;
+}
+
+.trace-chip {
+    font-size: 0.75rem;
+    padding: 0.1rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid;
+}
+
+.trace-chip--full { border-color: var(--voice-3); color: var(--voice-3); }
+.trace-chip--partial { border-color: var(--voice-2); color: var(--text-primary); }
+.trace-chip--none { border-color: var(--border-strong); color: var(--text-secondary); }
+
+.trace-follow {
+    flex-basis: 100%;
+    margin: 0.2rem 0 0;
+    padding-left: 1.1rem;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+    .trace-head > span:not(:first-child) {
+        display: none;
+    }
+
+    .trace-row {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .trace-name {
+        grid-column: 1 / -1;
+    }
+
+    .trace-row > span[role="cell"] {
+        text-align: left;
+        font-size: 0.8rem;
+    }
+
+    .trace-row > span[role="cell"]::before {
+        content: attr(data-layer) " ";
+        font-family: var(--font-sans);
+        color: var(--text-secondary);
     }
 }

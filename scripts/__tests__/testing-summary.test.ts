@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  groupEntries,
   platformOf,
   summarise,
   summariseBudgets,
@@ -136,6 +137,73 @@ describe("summariseBudgets", () => {
     expect(summariseBudgets(rows)).toEqual([
       { action: "Opening a kit", status: "within" },
       { action: "Toggle a step", status: "improving" },
+    ]);
+  });
+});
+
+describe("groupEntries", () => {
+  const tests = (unit: number, integration = 0, e2e = 0, validation = 0) => ({
+    e2e,
+    integration,
+    unit,
+    validation,
+  });
+
+  it("groups by area and lists missing tests and open issues as follow-ups", () => {
+    const groups = groupEntries([
+      {
+        gap: null,
+        group: "Samples",
+        id: "UC-19",
+        issues: [{ id: "RE-40", text: "Some failures happen silently." }],
+        kind: "use case",
+        name: "Drop WAVs onto a voice",
+        status: "partial",
+        tests: tests(30, 20, 3),
+      },
+      {
+        gap: "opening `Finder` needs a real desktop.",
+        group: "Samples",
+        id: "UC-25",
+        issues: [],
+        kind: "use case",
+        name: "Reveal a sample",
+        status: "supported",
+        tests: tests(6),
+      },
+      {
+        gap: null,
+        group: "Samples",
+        id: "UC-22",
+        issues: [],
+        kind: "use case",
+        name: "Move a sample to another kit",
+        status: "not built",
+        tests: tests(3),
+      },
+      {
+        gap: null,
+        group: "Qualities",
+        id: "Q-06",
+        issues: [],
+        kind: "quality",
+        name: "Works with a keyboard",
+        status: "partial",
+        tests: tests(0),
+      },
+    ]);
+
+    expect(groups.map((g) => [g.name, g.kind, g.entries.length])).toEqual([
+      ["Samples", "use case", 3],
+      ["Qualities", "quality", 1],
+    ]);
+    expect(groups[0].entries.map((e) => e.followUps)).toEqual([
+      ["Some failures happen silently."],
+      ["Missing test: opening Finder needs a real desktop."],
+      [],
+    ]);
+    expect(groups[1].entries[0].followUps).toEqual([
+      "Missing test: nothing above unit level checks this yet",
     ]);
   });
 });

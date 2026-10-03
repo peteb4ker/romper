@@ -148,6 +148,7 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   const { setStepPattern, stepPattern } = useStepPattern({
     initialPattern: kit?.step_pattern,
     kitName,
+    onMessage,
     onSaved: reloadKit,
   });
 
@@ -155,6 +156,7 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   const { setTriggerConditions, triggerConditions } = useTriggerConditions({
     initialConditions: kit?.trigger_conditions,
     kitName,
+    onMessage,
     onSaved: reloadKit,
   });
 
@@ -162,6 +164,7 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   const { bpm, setBpm } = useBpm({
     initialBpm: kit?.bpm,
     kitName,
+    onMessage,
   });
 
   // Playback logic

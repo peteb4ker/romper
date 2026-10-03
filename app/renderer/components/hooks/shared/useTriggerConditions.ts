@@ -1,15 +1,21 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   createDefaultTriggerConditions,
   ensureValidTriggerConditions,
 } from "./stepPatternConstants";
+import { useSettingSave } from "./useSettingSave";
 
 export interface UseTriggerConditionsParams {
   initialConditions?: (null | string)[][] | null;
   kitName: string;
+  /** Tells the user the trigger conditions weren't saved */
+  onMessage?: (text: string, type?: string, duration?: number) => void;
   onSaved?: () => Promise<void> | void;
 }
+
+export const CONDITIONS_NOT_SAVED =
+  "Couldn't save the trigger conditions, so they're back as they were. Try again.";
 
 type TriggerConditionsState = (null | string)[][];
 
@@ -19,12 +25,22 @@ type TriggerConditionsState = (null | string)[][];
 export function useTriggerConditions({
   initialConditions,
   kitName,
+  onMessage,
   onSaved,
 }: UseTriggerConditionsParams) {
   // useState is already destructured as [value, setter]; NOSONAR
   // suppresses S6754 false positive.
   // prettier-ignore
   const [triggerConditionsState, setTriggerConditionsState] = useState<TriggerConditionsState>(() => ensureValidTriggerConditions(initialConditions)); // NOSONAR
+
+  // The conditions on screen, so rapid edits each see the one before
+  const latestRef = useRef(triggerConditionsState);
+  latestRef.current = triggerConditionsState;
+  const kitRef = useRef(kitName);
+  kitRef.current = kitName;
+
+  // A failed save puts the last saved conditions back and says so (#511)
+  const { reset, save } = useSettingSave<string, TriggerConditionsState>();
 
   // Reset to defaults when kit changes, before new kit data arrives
   const prevKitNameRef = React.useRef(kitName);
@@ -38,36 +54,36 @@ export function useTriggerConditions({
   // Sync from loaded kit data
   useEffect(() => {
     setTriggerConditionsState(ensureValidTriggerConditions(initialConditions));
-  }, [initialConditions]);
+    reset();
+  }, [initialConditions, reset]);
 
   const updateTriggerConditions = useCallback(
     async (conditions: (null | string)[][]) => {
       if (!globalThis.electronAPI?.updateTriggerConditions || !kitName) return;
 
       // Update UI state immediately for responsive feedback
+      const current = latestRef.current;
+      latestRef.current = conditions;
       setTriggerConditionsState(conditions);
 
-      try {
-        const result = await globalThis.electronAPI.updateTriggerConditions(
-          kitName,
-          conditions,
-        );
-        if (result.success) {
-          void onSaved?.();
-        } else {
-          console.error("Failed to save trigger conditions:", result.error);
-          setTriggerConditionsState(
-            ensureValidTriggerConditions(initialConditions),
-          );
-        }
-      } catch (e) {
-        console.error("Exception saving trigger conditions:", e);
-        setTriggerConditionsState(
-          ensureValidTriggerConditions(initialConditions),
-        );
-      }
+      await save({
+        current,
+        key: kitName,
+        onSaved: () => void onSaved?.(),
+        report: () => onMessage?.(CONDITIONS_NOT_SAVED, "error"),
+        restore: (saved) => {
+          // The kit changed while this was saving; its conditions are on screen
+          if (kitRef.current !== kitName) return;
+          latestRef.current = saved;
+          setTriggerConditionsState(saved);
+        },
+        send: () =>
+          globalThis.electronAPI.updateTriggerConditions(kitName, conditions),
+        value: conditions,
+        what: `the trigger conditions for kit ${kitName}`,
+      });
     },
-    [kitName, initialConditions, onSaved],
+    [kitName, onMessage, onSaved, save],
   );
 
   return {

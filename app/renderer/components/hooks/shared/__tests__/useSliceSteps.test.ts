@@ -5,7 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
 import { createEmptySliceSteps, makeSliceStep } from "../sliceConstants";
-import { useSliceSteps } from "../useSliceSteps";
+import {
+  divisionNotSaved,
+  SLICES_NOT_SAVED,
+  useSliceSteps,
+} from "../useSliceSteps";
 
 describe("useSliceSteps", () => {
   let mockElectronAPI: ReturnType<typeof setupElectronAPIMock>;
@@ -143,5 +147,79 @@ describe("useSliceSteps", () => {
     rerender({ kitName: "A1" });
     expect(result.current.sliceSteps).toEqual(createEmptySliceSteps());
     expect(result.current.slicerDivision).toBe(16);
+  });
+
+  describe("[UC-33] [UC-36] a slice edit that isn't saved says so (#511)", () => {
+    it("gives one message for a run of wheel nudges that all fail", async () => {
+      vi.mocked(globalThis.electronAPI.updateSliceSteps).mockResolvedValue({
+        error: "disk full",
+        success: false,
+      });
+      const onMessage = vi.fn();
+      const onSaved = vi.fn();
+      const { result } = renderHook(() =>
+        useSliceSteps({ kitName: "A0", onMessage, onSaved }),
+      );
+      const nudge = (start: number) => (prev: (null | SliceStep)[][]) =>
+        prev.map((row, v) =>
+          v === 0
+            ? row.map((c, s) => (s === 0 ? makeSliceStep(start, 1, 16) : c))
+            : row,
+        );
+
+      await act(async () => {
+        await Promise.all([
+          result.current.setSliceSteps(nudge(1)),
+          result.current.setSliceSteps(nudge(2)),
+          result.current.setSliceSteps(nudge(3)),
+        ]);
+        vi.runAllTimers();
+      });
+
+      expect(result.current.sliceSteps).toEqual(createEmptySliceSteps());
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      expect(onMessage).toHaveBeenCalledWith(SLICES_NOT_SAVED, "error");
+      expect(SLICES_NOT_SAVED).toBe(
+        "Couldn't save the slices, so they're back as they were. Try again.",
+      );
+      expect(onSaved).not.toHaveBeenCalled();
+    });
+
+    it("says which division is back when the division isn't saved", async () => {
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useSliceSteps({ initialDivision: 32, kitName: "A0", onMessage }),
+      );
+      vi.mocked(
+        globalThis.electronAPI.updateKitSlicerDivision,
+      ).mockResolvedValue({ error: "disk full", success: false });
+
+      await act(async () => {
+        await result.current.setSlicerDivision(64);
+      });
+
+      expect(result.current.slicerDivision).toBe(32);
+      expect(onMessage).toHaveBeenCalledWith(
+        "Couldn't save the slice division, so it's back to 32 slices. Try again.",
+        "error",
+      );
+      expect(divisionNotSaved(32)).toBe(onMessage.mock.calls[0][0]);
+    });
+
+    it("says nothing when slices are saved", async () => {
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useSliceSteps({ kitName: "A0", onMessage }),
+      );
+      const next = createEmptySliceSteps();
+      next[0][0] = makeSliceStep(4, 1, 16);
+
+      await act(async () => {
+        await result.current.setSliceSteps(next);
+        await result.current.setSlicerDivision(8);
+      });
+
+      expect(onMessage).not.toHaveBeenCalled();
+    });
   });
 });

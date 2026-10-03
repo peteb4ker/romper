@@ -1,7 +1,8 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useBpm } from "../useBpm";
+import { bpmNotSaved, useBpm } from "../useBpm";
+import { REPEAT_FAILURE_MS } from "../useSettingSave";
 
 describe("useBpm", () => {
   let mockUpdateKitBpm: unknown;
@@ -169,5 +170,98 @@ describe("useBpm", () => {
     (window as unknown).electronAPI = originalElectronAPI;
 
     expect(mockUpdateKitBpm).not.toHaveBeenCalled();
+  });
+
+  describe("[UC-30] [UC-36] a BPM that isn't saved says so (#511)", () => {
+    it("gives one message for wheel nudges that all fail, and goes back", async () => {
+      vi.mocked(globalThis.electronAPI.updateKitBpm).mockResolvedValue({
+        error: "disk full",
+        success: false,
+      });
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useBpm({ initialBpm: 120, kitName: "A0", onMessage }),
+      );
+
+      await act(async () => {
+        await Promise.all([
+          result.current.setBpm(121),
+          result.current.setBpm(122),
+          result.current.setBpm(123),
+        ]);
+      });
+
+      expect(result.current.bpm).toBe(120);
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      expect(onMessage).toHaveBeenCalledWith(
+        "Couldn't save the BPM, so it's back to 120. Try again.",
+        "error",
+      );
+    });
+
+    it("goes back to the last saved BPM, not the one the kit loaded with", async () => {
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useBpm({ initialBpm: 120, kitName: "A0", onMessage }),
+      );
+
+      await act(async () => {
+        await result.current.setBpm(125);
+      });
+      vi.mocked(globalThis.electronAPI.updateKitBpm).mockRejectedValueOnce(
+        new Error("IPC gone"),
+      );
+      await act(async () => {
+        await result.current.setBpm(130);
+      });
+
+      expect(result.current.bpm).toBe(125);
+      expect(onMessage).toHaveBeenCalledWith(bpmNotSaved(125), "error");
+    });
+
+    it("says nothing when the BPM is saved", async () => {
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useBpm({ initialBpm: 120, kitName: "A0", onMessage }),
+      );
+
+      await act(async () => {
+        await result.current.setBpm(140);
+      });
+
+      expect(result.current.bpm).toBe(140);
+      expect(onMessage).not.toHaveBeenCalled();
+    });
+
+    it("gives one message for nudges that each fail after the last, then another after a pause", async () => {
+      vi.mocked(globalThis.electronAPI.updateKitBpm).mockResolvedValue({
+        error: "disk full",
+        success: false,
+      });
+      const now = vi.spyOn(Date, "now").mockReturnValue(10_000);
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useBpm({ initialBpm: 120, kitName: "A0", onMessage }),
+      );
+
+      for (const [t, bpm] of [
+        [10_000, 121],
+        [10_300, 121],
+        [10_600, 121],
+      ]) {
+        now.mockReturnValue(t);
+        await act(async () => {
+          await result.current.setBpm(bpm);
+        });
+      }
+      expect(onMessage).toHaveBeenCalledTimes(1);
+
+      now.mockReturnValue(10_600 + REPEAT_FAILURE_MS + 1);
+      await act(async () => {
+        await result.current.setBpm(121);
+      });
+      expect(onMessage).toHaveBeenCalledTimes(2);
+      expect(result.current.bpm).toBe(120);
+    });
   });
 });

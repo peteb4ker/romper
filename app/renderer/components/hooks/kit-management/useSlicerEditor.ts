@@ -20,6 +20,7 @@ import {
   toSliceView,
 } from "../shared/sliceConstants";
 import { type FocusedStep, NUM_VOICES } from "../shared/stepPatternConstants";
+import { useSettingSave } from "../shared/useSettingSave";
 
 export interface PlayingSlice {
   id: number;
@@ -90,6 +91,32 @@ export function displayedSlotIndex(
   }
   const first = voiceSamples.findIndex(Boolean);
   return first === -1 ? null : first;
+}
+
+/**
+ * What to tell the user when a voice's slicer setting isn't saved; `saved`
+ * is the setting now back on screen (#511).
+ */
+export function sliceSettingNotSaved(
+  voiceNumber: number,
+  saved: Partial<VoiceSliceSettings>,
+): string {
+  const fields = Object.keys(saved);
+  if (fields.length === 1) {
+    if (saved.enabled != null) {
+      return `Couldn't turn slicing ${saved.enabled ? "off" : "on"} for voice ${voiceNumber}. Try again.`;
+    }
+    if (saved.rollAmount != null) {
+      return `Couldn't save the roll amount for voice ${voiceNumber}, so it's back to ${saved.rollAmount}%. Try again.`;
+    }
+    if (saved.varyLength != null) {
+      return `Couldn't turn Vary length ${saved.varyLength ? "off" : "on"} for voice ${voiceNumber}. Try again.`;
+    }
+    if (saved.maxLength != null) {
+      return `Couldn't save the longest random length for voice ${voiceNumber}, so it's back to ${saved.maxLength}. Try again.`;
+    }
+  }
+  return `Couldn't save the slicer settings for voice ${voiceNumber}. Try again.`;
 }
 
 /**
@@ -500,16 +527,28 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
 
 /**
  * Per-voice slicer settings, initialised from voice data like volume and
- * sample mode, and persisted over IPC when changed.
+ * sample mode, and persisted over IPC when changed. A change that isn't
+ * saved goes back and says so (#511).
  */
 export function useVoiceSliceSettings(
   kitName: string,
   voices: SlicerVoiceData[] | undefined,
   onVoiceSettingChanged?: () => void,
+  onMessage?: (text: string, type?: string, duration?: number) => void,
 ) {
   const [sliceSettings, setSliceSettings] = React.useState(
     defaultSettingsRecord,
   );
+  // The settings on screen, so each change knows what it replaces
+  const latestRef = React.useRef(sliceSettings);
+  latestRef.current = sliceSettings;
+  const kitRef = React.useRef(kitName);
+  kitRef.current = kitName;
+
+  // Keyed by voice and the fields changed, so a toggle and a roll amount
+  // change on the same voice don't decide each other's outcome
+  const { reset, save } = useSettingSave<string, Partial<VoiceSliceSettings>>();
+
   React.useEffect(() => {
     if (!voices?.length) return;
     setSliceSettings((prev) => {
@@ -519,22 +558,45 @@ export function useVoiceSliceSettings(
       }
       return next;
     });
-  }, [voices]);
+    reset();
+  }, [voices, reset]);
 
   const updateSliceSettings = React.useCallback(
     (voiceNumber: number, update: Partial<VoiceSliceSettings>) => {
-      setSliceSettings((prev) => ({
-        ...prev,
-        [voiceNumber]: { ...prev[voiceNumber], ...update },
-      }));
-      void globalThis.electronAPI?.updateVoiceSliceSettings?.(
-        kitName,
-        voiceNumber,
-        update,
-      );
-      onVoiceSettingChanged?.();
+      const apply = (change: Partial<VoiceSliceSettings>) =>
+        setSliceSettings((prev) => ({
+          ...prev,
+          [voiceNumber]: { ...prev[voiceNumber], ...change },
+        }));
+      const fields = Object.keys(update) as (keyof VoiceSliceSettings)[];
+      const before = latestRef.current[voiceNumber];
+      const current: Partial<VoiceSliceSettings> = {};
+      for (const field of fields) {
+        (current as Record<string, unknown>)[field] = before?.[field];
+      }
+      apply(update);
+
+      void save({
+        current,
+        key: `${voiceNumber}:${[...fields].sort().join(",")}`,
+        onSaved: () => onVoiceSettingChanged?.(),
+        report: (saved) =>
+          onMessage?.(sliceSettingNotSaved(voiceNumber, saved), "error"),
+        restore: (saved) => {
+          // The kit changed while this was saving; its settings are on screen
+          if (kitRef.current === kitName) apply(saved);
+        },
+        send: () =>
+          globalThis.electronAPI?.updateVoiceSliceSettings?.(
+            kitName,
+            voiceNumber,
+            update,
+          ),
+        value: update,
+        what: `the slicer settings for voice ${voiceNumber}`,
+      });
     },
-    [kitName, onVoiceSettingChanged],
+    [kitName, onMessage, onVoiceSettingChanged, save],
   );
 
   return { sliceSettings, updateSliceSettings };

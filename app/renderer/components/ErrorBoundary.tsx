@@ -1,5 +1,5 @@
 import { WarningCircleIcon } from "@phosphor-icons/react";
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 import { createLogger } from "../utils/logger";
 
@@ -20,6 +20,12 @@ interface ErrorBoundaryProps {
 interface ErrorBoundaryState {
   error: Error | null;
 }
+
+/**
+ * The event an e2e test dispatches on `window`, with an area's name as its
+ * detail, to make that area fail to render (test mode only).
+ */
+export const RENDER_FAULT_EVENT = "romper:e2e-render-fault";
 
 /**
  * Catches an exception thrown while rendering its children, logs it, and
@@ -52,7 +58,15 @@ export class ErrorBoundary extends React.Component<
 
   render(): React.ReactNode {
     const { error } = this.state;
-    if (!error) return this.props.children;
+    if (!error) {
+      if (!isTestMode()) return this.props.children;
+      return (
+        <>
+          {this.props.children}
+          <RenderFaultTrigger area={this.props.area} />
+        </>
+      );
+    }
 
     const { area, backLabel = "Back", onBack } = this.props;
     const buttonClass =
@@ -107,4 +121,27 @@ export class ErrorBoundary extends React.Component<
       </div>
     );
   }
+}
+
+/** True when the app runs under the e2e tests (ROMPER_TEST_MODE) */
+function isTestMode(): boolean {
+  return globalThis.window?.romperEnv?.ROMPER_TEST_MODE === "true";
+}
+
+/**
+ * Test-only: throws while rendering once an e2e test dispatches
+ * RENDER_FAULT_EVENT for this area, so the test can check the recovery
+ * screen (UC-36). It renders nothing, and is only mounted in test mode.
+ */
+function RenderFaultTrigger({ area }: { area: string }) {
+  const [fault, setFault] = useState(false);
+  useEffect(() => {
+    const onFault = (event: Event) => {
+      if ((event as CustomEvent<string>).detail === area) setFault(true);
+    };
+    globalThis.addEventListener(RENDER_FAULT_EVENT, onFault);
+    return () => globalThis.removeEventListener(RENDER_FAULT_EVENT, onFault);
+  }, [area]);
+  if (fault) throw new Error(`${area}: render fault forced by an e2e test`);
+  return null;
 }

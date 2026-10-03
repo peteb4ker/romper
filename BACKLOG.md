@@ -90,7 +90,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
-| RE-58 | Medium | Tooling | The pre-commit tests failed with Vitest worker-start timeouts on a busy machine: the fast config always started 10 workers. | done (#PR: workers follow the free cores; under load the suite runs on fewer workers instead of timing out) |
+| RE-58 | Medium | Tooling | The pre-commit tests failed with Vitest worker-start timeouts on a busy machine: the fast config always started 10 workers. | done (#423: workers follow the free cores; under load the suite runs on fewer workers instead of timing out) |
 | RE-74 | Medium | Samples | Dropping onto a filled slot said "Insert sample here (other samples will shift down)", but the file was appended. | done (#421: dragging files over a voice highlights the slot after the last sample, where they land) |
 | RE-75 | Medium | Voices | In an editable kit, Scan Kit and `/` overwrote voice names typed by hand. | done (#422: only voices without a name are named, as main's scan does) |
 | RE-80 | Medium | Settings | A local store on a drive that wasn't connected at launch was forgotten, and the first-run wizard opened. | done (#419: the saved path is kept; the Invalid Local Store dialog offers Try Again, another folder, or a new store) |

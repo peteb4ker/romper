@@ -2,7 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
-import { useStepPattern } from "../useStepPattern";
+import { STEPS_NOT_SAVED, useStepPattern } from "../useStepPattern";
 
 // Mock the step pattern constants
 vi.mock("../stepPatternConstants", () => ({
@@ -222,10 +222,7 @@ describe("useStepPattern", () => {
 
       // Should revert to initial pattern after failure
       expect(result.current.stepPattern).toEqual(initialPattern);
-      expect(console.error).toHaveBeenCalledWith(
-        "Failed to save step pattern:",
-        "Database error",
-      );
+      expect(console.error).not.toHaveBeenCalled();
     });
 
     it("reverts to initial pattern when API call throws exception", async () => {
@@ -262,10 +259,7 @@ describe("useStepPattern", () => {
 
       // Should revert to initial pattern after exception
       expect(result.current.stepPattern).toEqual(initialPattern);
-      expect(console.error).toHaveBeenCalledWith(
-        "Exception saving step pattern:",
-        apiError,
-      );
+      expect(console.error).not.toHaveBeenCalled();
     });
 
     it("reverts to default pattern when no initial pattern and API fails", async () => {
@@ -472,6 +466,123 @@ describe("useStepPattern", () => {
       const secondSetStepPattern = result.current.setStepPattern;
 
       expect(firstSetStepPattern).toBe(secondSetStepPattern);
+    });
+  });
+
+  describe("[UC-30] [UC-36] a step edit that isn't saved says so (#511)", () => {
+    const saved = [
+      [1, 0, 0, 0],
+      [0, 0, 0, 0],
+    ];
+    const edit = (n: number) => [
+      [1, ...Array.from({ length: 3 }, (_, i) => (i < n ? 1 : 0))],
+      [0, 0, 0, 0],
+    ];
+
+    it("puts the saved steps back and tells the user once when main refuses", async () => {
+      vi.mocked(globalThis.electronAPI.updateStepPattern).mockResolvedValue({
+        error: "disk full",
+        success: false,
+      });
+      const onMessage = vi.fn();
+      const onSaved = vi.fn();
+      const { result } = renderHook(() =>
+        useStepPattern({
+          initialPattern: saved,
+          kitName: "A0",
+          onMessage,
+          onSaved,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.setStepPattern(edit(1));
+      });
+
+      expect(result.current.stepPattern).toEqual(saved);
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      expect(onMessage).toHaveBeenCalledWith(STEPS_NOT_SAVED, "error");
+      expect(STEPS_NOT_SAVED).toBe(
+        "Couldn't save the steps, so they're back as they were. Try again.",
+      );
+      expect(onSaved).not.toHaveBeenCalled();
+    });
+
+    it("tells the user when the save throws", async () => {
+      vi.mocked(globalThis.electronAPI.updateStepPattern).mockRejectedValue(
+        new Error("IPC gone"),
+      );
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useStepPattern({ initialPattern: saved, kitName: "A0", onMessage }),
+      );
+
+      await act(async () => {
+        await result.current.setStepPattern(edit(2));
+      });
+
+      expect(result.current.stepPattern).toEqual(saved);
+      expect(onMessage).toHaveBeenCalledWith(STEPS_NOT_SAVED, "error");
+      expect(String(onMessage.mock.calls[0][0])).not.toMatch(/IPC gone|Error/);
+    });
+
+    it("gives one message for several quick edits that all fail", async () => {
+      vi.mocked(globalThis.electronAPI.updateStepPattern).mockResolvedValue({
+        error: "disk full",
+        success: false,
+      });
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useStepPattern({ initialPattern: saved, kitName: "A0", onMessage }),
+      );
+
+      await act(async () => {
+        await Promise.all([
+          result.current.setStepPattern(edit(1)),
+          result.current.setStepPattern(edit(2)),
+          result.current.setStepPattern(edit(3)),
+        ]);
+      });
+
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      expect(result.current.stepPattern).toEqual(saved);
+    });
+
+    it("goes back to the last saved steps, not the ones the kit loaded with", async () => {
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useStepPattern({ initialPattern: saved, kitName: "A0", onMessage }),
+      );
+
+      await act(async () => {
+        await result.current.setStepPattern(edit(1));
+      });
+      vi.mocked(globalThis.electronAPI.updateStepPattern).mockResolvedValueOnce(
+        {
+          error: "disk full",
+          success: false,
+        },
+      );
+      await act(async () => {
+        await result.current.setStepPattern(edit(3));
+      });
+
+      expect(result.current.stepPattern).toEqual(edit(1));
+      expect(onMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it("says nothing when the steps are saved", async () => {
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useStepPattern({ initialPattern: saved, kitName: "A0", onMessage }),
+      );
+
+      await act(async () => {
+        await result.current.setStepPattern(edit(1));
+      });
+
+      expect(result.current.stepPattern).toEqual(edit(1));
+      expect(onMessage).not.toHaveBeenCalled();
     });
   });
 });

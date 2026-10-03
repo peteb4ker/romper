@@ -566,7 +566,9 @@ BPM are saved with the kit. See
   `app/renderer/components/StepSequencerGrid.tsx`, `app/renderer/components/StepSequencerControls.tsx`,
   `app/renderer/components/StepSequencerDrawer.tsx`;
   `app/renderer/components/hooks/kit-management/useKitStepSequencerLogic.ts` (scheduler worker),
-  `app/renderer/components/hooks/kit-management/useSequenceHistory.ts`; `app/renderer/components/hooks/shared/useStepPattern.ts`, `app/renderer/components/hooks/shared/useBpm.ts`,
+  `app/renderer/components/hooks/kit-management/useSequenceHistory.ts`; `app/renderer/components/hooks/shared/useStepPattern.ts`, `app/renderer/components/hooks/shared/useBpm.ts`
+  (both save through `app/renderer/components/hooks/shared/useSettingSave.ts`, which
+  puts back steps or a BPM that isn't saved and says so),
   `app/renderer/components/hooks/shared/sequenceUndo.ts`.
 - **IPC:** `update-step-pattern`, `update-kit-bpm`.
 - **Main:** `electron/main/db/operations/kitCrudOperations.ts` (`updateKit`).
@@ -580,7 +582,8 @@ condition, so it fires only on some passes of the loop. See
 - **Renderer:** `app/renderer/components/StepSequencerGrid.tsx` (`ConditionPopover`,
   `handleStepContextMenu`); `app/renderer/components/ConditionPips.tsx`;
   `app/renderer/components/hooks/shared/stepPatternConstants.ts` (`shouldTrigger`),
-  `app/renderer/components/hooks/shared/useTriggerConditions.ts`; `app/renderer/components/KitStepSequencer.tsx`.
+  `app/renderer/components/hooks/shared/useTriggerConditions.ts` (saves through
+  `app/renderer/components/hooks/shared/useSettingSave.ts`); `app/renderer/components/KitStepSequencer.tsx`.
 - **IPC:** `update-trigger-conditions`.
 - **Main:** `electron/main/db/operations/kitCrudOperations.ts` (`updateKit`).
 
@@ -607,10 +610,13 @@ step, with rolls ("happy accidents") to generate patterns. See
 [Slicer](../manual/step-sequencer.md#slicer) and the spec,
 [`step-sequencer-slicer.md`](step-sequencer-slicer.md).
 
-- **Renderer:** `app/renderer/components/hooks/kit-management/useSlicerEditor.ts`;
+- **Renderer:** `app/renderer/components/hooks/kit-management/useSlicerEditor.ts`
+  (`useVoiceSliceSettings`);
   `app/renderer/components/SliceStrip.tsx`, `app/renderer/components/SliceStepEditor.tsx`;
   `app/renderer/components/hooks/shared/useSliceSteps.ts`, `app/renderer/components/hooks/shared/sliceConstants.ts`;
-  `shared/sliceTypes.ts`.
+  `shared/sliceTypes.ts`. Slices, the division and slicer settings save through
+  `app/renderer/components/hooks/shared/useSettingSave.ts`, which puts back an
+  edit that isn't saved and says so.
 - **IPC:** `update-slice-steps`, `update-kit-slicer-division`,
   `update-voice-slice-settings`, `get-sample-audio-buffer`.
 - **Main:** `electron/main/db/operations/kitCrudOperations.ts` (`updateKit`),

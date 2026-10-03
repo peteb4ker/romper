@@ -48,7 +48,7 @@ interface KitStepSequencerProps {
   kitName: string;
   /** Records sequencer edits on the kit's undo stack. */
   onAddUndoAction?: (action: AnyUndoAction) => void;
-  /** Tells the user a level or sample mode wasn't saved (RE-91) */
+  /** Tells the user a sequencer edit wasn't saved (RE-91, #511) */
   onMessage?: (text: string, type?: string, duration?: number) => void;
   onPlaySample: (
     voice: number,
@@ -87,7 +87,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
     props;
 
   // Manage BPM state at this level to ensure sequencer logic gets live updates
-  const bpmLogic = useBpm({ initialBpm: props.bpm, kitName: props.kitName });
+  const bpmLogic = useBpm({ initialBpm: props.bpm, kitName, onMessage });
 
   // Voice mute state — session only, not persisted
   const [voiceMutes, setVoiceMutes] = React.useState<Record<number, boolean>>(
@@ -245,6 +245,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
     initialDivision: props.slicerDivision,
     initialSliceSteps: props.sliceSteps,
     kitName,
+    onMessage,
     onSaved: onVoiceSettingChanged,
   });
   // Every step, condition and slice edit goes on the kit's undo stack
@@ -278,6 +279,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
     kitName,
     props.voices,
     onVoiceSettingChanged,
+    onMessage,
   );
 
   // The slicer editor needs the sequencer logic and vice versa; these refs

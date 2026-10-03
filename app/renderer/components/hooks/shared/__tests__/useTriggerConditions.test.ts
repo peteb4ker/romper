@@ -15,7 +15,10 @@ vi.mock("../stepPatternConstants", () => ({
   }),
 }));
 
-import { useTriggerConditions } from "../useTriggerConditions";
+import {
+  CONDITIONS_NOT_SAVED,
+  useTriggerConditions,
+} from "../useTriggerConditions";
 
 describe("useTriggerConditions", () => {
   let mockElectronAPI: ReturnType<typeof setupElectronAPIMock>;
@@ -469,6 +472,87 @@ describe("useTriggerConditions", () => {
       rerender();
 
       expect(result.current.setTriggerConditions).toBe(firstRef);
+    });
+  });
+
+  describe("[UC-31] [UC-36] a condition that isn't saved says so (#511)", () => {
+    const saved = [
+      ["1:2", null],
+      [null, null],
+    ];
+    const edited = [
+      ["1:2", "3:4"],
+      [null, null],
+    ];
+
+    it("puts the saved conditions back and tells the user when main refuses", async () => {
+      vi.mocked(
+        globalThis.electronAPI.updateTriggerConditions,
+      ).mockResolvedValue({
+        error: "disk full",
+        success: false,
+      });
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useTriggerConditions({
+          initialConditions: saved,
+          kitName: "A0",
+          onMessage,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.setTriggerConditions(edited);
+      });
+
+      expect(result.current.triggerConditions).toEqual(saved);
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      expect(onMessage).toHaveBeenCalledWith(
+        "Couldn't save the trigger conditions, so they're back as they were. Try again.",
+        "error",
+      );
+    });
+
+    it("tells the user when the save throws", async () => {
+      vi.mocked(
+        globalThis.electronAPI.updateTriggerConditions,
+      ).mockRejectedValue(new Error("IPC gone"));
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useTriggerConditions({
+          initialConditions: saved,
+          kitName: "A0",
+          onMessage,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.setTriggerConditions(edited);
+      });
+
+      expect(onMessage).toHaveBeenCalledWith(CONDITIONS_NOT_SAVED, "error");
+    });
+
+    it("says nothing when the conditions are saved", async () => {
+      vi.mocked(
+        globalThis.electronAPI.updateTriggerConditions,
+      ).mockResolvedValue({
+        success: true,
+      });
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useTriggerConditions({
+          initialConditions: saved,
+          kitName: "A0",
+          onMessage,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.setTriggerConditions(edited);
+      });
+
+      expect(onMessage).not.toHaveBeenCalled();
     });
   });
 });

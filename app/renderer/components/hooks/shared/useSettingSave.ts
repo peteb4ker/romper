@@ -6,6 +6,13 @@ import { createLogger } from "../../../utils/logger";
 
 const log = createLogger("save");
 
+/**
+ * A failure this soon after the last one for the same setting is part of the
+ * same gesture (wheel notches, arrow presses, quick clicks), so it isn't
+ * reported again (#511)
+ */
+export const REPEAT_FAILURE_MS = 1000;
+
 export interface SettingSave<K, V> {
   /** The value on screen before this change */
   current: V;
@@ -53,13 +60,17 @@ export async function saveFailed(
  *
  * A drag sends a save per step. Main answers them in order, so only the
  * latest change for a key decides what's restored, and a drag that fails
- * gives one message rather than one per step.
+ * gives one message rather than one per step. Changes that each finish
+ * before the next starts (wheel notches, arrow presses) also give one
+ * message while they keep failing less than `REPEAT_FAILURE_MS` apart.
  */
 export function useSettingSave<K, V>() {
   // The value main last saved, per key, once a change has been sent
   const saved = React.useRef(new Map<K, V>());
   // The latest change sent, per key
   const latest = React.useRef(new Map<K, number>());
+  // When the latest change for a key last failed
+  const lastFailure = React.useRef(new Map<K, number>());
 
   const save = React.useCallback(
     async ({
@@ -86,8 +97,12 @@ export function useSettingSave<K, V>() {
           ? (saved.current.get(key) as V)
           : current;
         restore(previous);
-        report(previous);
+        const now = Date.now();
+        const last = lastFailure.current.get(key);
+        lastFailure.current.set(key, now);
+        if (last == null || now - last > REPEAT_FAILURE_MS) report(previous);
       } else {
+        lastFailure.current.delete(key);
         onSaved?.();
       }
     },

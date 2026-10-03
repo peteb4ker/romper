@@ -7,18 +7,28 @@ import {
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { createEmptySliceSteps, ensureValidSliceSteps } from "./sliceConstants";
+import { useSettingSave } from "./useSettingSave";
 
 export interface UseSliceStepsParams {
   initialDivision?: null | number;
   initialSliceSteps?: (null | SliceStep)[][] | null;
   kitName: string;
+  /** Tells the user slices or the division weren't saved */
+  onMessage?: (text: string, type?: string, duration?: number) => void;
   onSaved?: () => Promise<void> | void;
 }
 
+export const SLICES_NOT_SAVED =
+  "Couldn't save the slices, so they're back as they were. Try again.";
+
 type SliceStepsState = (null | SliceStep)[][];
+
 type SliceStepsUpdate =
   | ((prev: SliceStepsState) => SliceStepsState)
   | SliceStepsState;
+export function divisionNotSaved(division: SlicerDivision): string {
+  return `Couldn't save the slice division, so it's back to ${division} slices. Try again.`;
+}
 
 // Kit reloads after a save are debounced so rapid edits (scroll-wheel
 // nudges, drags) don't bounce the grid back to an older saved state.
@@ -27,12 +37,13 @@ const RELOAD_DEBOUNCE_MS = 400;
 /**
  * Hook for the sequencer slicer's per-step slice data and the kit-wide
  * division (mirrors useTriggerConditions: optimistic update, IPC save,
- * rollback on failure).
+ * and on failure the last saved value back with a message, #511).
  */
 export function useSliceSteps({
   initialDivision,
   initialSliceSteps,
   kitName,
+  onMessage,
   onSaved,
 }: UseSliceStepsParams) {
   // useState is already destructured as [value, setter]; NOSONAR
@@ -45,6 +56,19 @@ export function useSliceSteps({
   // Latest value, so updater functions compose correctly across rapid edits
   const latestRef = useRef(sliceSteps);
   latestRef.current = sliceSteps;
+  const divisionRef = useRef(slicerDivision);
+  divisionRef.current = slicerDivision;
+  const kitRef = useRef(kitName);
+  kitRef.current = kitName;
+
+  const { reset: resetStepSaves, save: saveSteps } = useSettingSave<
+    string,
+    SliceStepsState
+  >();
+  const { reset: resetDivisionSaves, save: saveDivision } = useSettingSave<
+    string,
+    SlicerDivision
+  >();
 
   // Reset to defaults when kit changes, before new kit data arrives
   const prevKitNameRef = React.useRef(kitName);
@@ -59,11 +83,13 @@ export function useSliceSteps({
   // Sync from loaded kit data
   useEffect(() => {
     setSliceStepsState(ensureValidSliceSteps(initialSliceSteps));
-  }, [initialSliceSteps]);
+    resetStepSaves();
+  }, [initialSliceSteps, resetStepSaves]);
 
   useEffect(() => {
     setSlicerDivisionState(toDivision(initialDivision));
-  }, [initialDivision]);
+    resetDivisionSaves();
+  }, [initialDivision, resetDivisionSaves]);
 
   const reloadTimerRef = useRef<null | ReturnType<typeof setTimeout>>(null);
   const scheduleReload = useCallback(() => {
@@ -85,54 +111,55 @@ export function useSliceSteps({
     async (update: SliceStepsUpdate) => {
       if (!globalThis.electronAPI?.updateSliceSteps || !kitName) return;
 
-      const next =
-        typeof update === "function" ? update(latestRef.current) : update;
+      const current = latestRef.current;
+      const next = typeof update === "function" ? update(current) : update;
       latestRef.current = next;
       setSliceStepsState(next);
 
-      try {
-        const result = await globalThis.electronAPI.updateSliceSteps(
-          kitName,
-          next,
-        );
-        if (result.success) {
-          scheduleReload();
-        } else {
-          console.error("Failed to save slice steps:", result.error);
-          setSliceStepsState(ensureValidSliceSteps(initialSliceSteps));
-        }
-      } catch (e) {
-        console.error("Exception saving slice steps:", e);
-        setSliceStepsState(ensureValidSliceSteps(initialSliceSteps));
-      }
+      await saveSteps({
+        current,
+        key: kitName,
+        onSaved: scheduleReload,
+        report: () => onMessage?.(SLICES_NOT_SAVED, "error"),
+        restore: (saved) => {
+          // The kit changed while this was saving; its slices are on screen
+          if (kitRef.current !== kitName) return;
+          latestRef.current = saved;
+          setSliceStepsState(saved);
+        },
+        send: () => globalThis.electronAPI.updateSliceSteps(kitName, next),
+        value: next,
+        what: `the slices for kit ${kitName}`,
+      });
     },
-    [kitName, initialSliceSteps, scheduleReload],
+    [kitName, onMessage, saveSteps, scheduleReload],
   );
 
   const setSlicerDivision = useCallback(
     async (division: SlicerDivision) => {
       if (!globalThis.electronAPI?.updateKitSlicerDivision || !kitName) return;
 
-      const previous = slicerDivision;
+      const current = divisionRef.current;
+      divisionRef.current = division;
       setSlicerDivisionState(division);
 
-      try {
-        const result = await globalThis.electronAPI.updateKitSlicerDivision(
-          kitName,
-          division,
-        );
-        if (result.success) {
-          scheduleReload();
-        } else {
-          console.error("Failed to save slicer division:", result.error);
-          setSlicerDivisionState(previous);
-        }
-      } catch (e) {
-        console.error("Exception saving slicer division:", e);
-        setSlicerDivisionState(previous);
-      }
+      await saveDivision({
+        current,
+        key: kitName,
+        onSaved: scheduleReload,
+        report: (saved) => onMessage?.(divisionNotSaved(saved), "error"),
+        restore: (saved) => {
+          if (kitRef.current !== kitName) return;
+          divisionRef.current = saved;
+          setSlicerDivisionState(saved);
+        },
+        send: () =>
+          globalThis.electronAPI.updateKitSlicerDivision(kitName, division),
+        value: division,
+        what: `the slice division for kit ${kitName}`,
+      });
     },
-    [kitName, slicerDivision, scheduleReload],
+    [kitName, onMessage, saveDivision, scheduleReload],
   );
 
   return {

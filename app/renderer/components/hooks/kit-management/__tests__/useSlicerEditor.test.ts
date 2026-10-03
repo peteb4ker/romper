@@ -16,6 +16,7 @@ import {
 import {
   displayedSlotIndex,
   type SlicerVoiceData,
+  sliceSettingNotSaved,
   useSlicerEditor,
   useVoiceSliceSettings,
 } from "../useSlicerEditor";
@@ -534,5 +535,96 @@ describe("displayedSlotIndex", () => {
     expect(displayedSlotIndex([], 1)).toBeNull();
     expect(displayedSlotIndex(["", ""], 1)).toBeNull();
     expect(displayedSlotIndex(undefined, 1)).toBeNull();
+  });
+});
+
+describe("[UC-33] [UC-36] a slicer setting that isn't saved says so (#511)", () => {
+  beforeEach(() => {
+    setupElectronAPIMock();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const voices: SlicerVoiceData[] = [
+    { slice_enabled: false, slice_roll_amount: 50, voice_number: 1 },
+  ];
+
+  it("turns slicing back off and says so when main refuses", async () => {
+    vi.mocked(
+      globalThis.electronAPI.updateVoiceSliceSettings,
+    ).mockResolvedValue({ error: "disk full", success: false });
+    const onMessage = vi.fn();
+    const onChanged = vi.fn();
+    const { result } = renderHook(() =>
+      useVoiceSliceSettings("A0", voices, onChanged, onMessage),
+    );
+
+    await act(async () => {
+      result.current.updateSliceSettings(1, { enabled: true });
+    });
+
+    expect(result.current.sliceSettings[1].enabled).toBe(false);
+    expect(onMessage).toHaveBeenCalledTimes(1);
+    expect(onMessage).toHaveBeenCalledWith(
+      "Couldn't turn slicing on for voice 1. Try again.",
+      "error",
+    );
+    expect(onChanged).not.toHaveBeenCalled();
+  });
+
+  it("puts the roll amount back when the save throws", async () => {
+    vi.mocked(
+      globalThis.electronAPI.updateVoiceSliceSettings,
+    ).mockRejectedValue(new Error("IPC gone"));
+    const onMessage = vi.fn();
+    const { result } = renderHook(() =>
+      useVoiceSliceSettings("A0", voices, undefined, onMessage),
+    );
+
+    await act(async () => {
+      result.current.updateSliceSettings(1, { rollAmount: 25 });
+    });
+
+    expect(result.current.sliceSettings[1].rollAmount).toBe(50);
+    expect(onMessage).toHaveBeenCalledWith(
+      "Couldn't save the roll amount for voice 1, so it's back to 50%. Try again.",
+      "error",
+    );
+  });
+
+  it("reloads the kit once a setting is saved, and says nothing", async () => {
+    vi.mocked(
+      globalThis.electronAPI.updateVoiceSliceSettings,
+    ).mockResolvedValue({ success: true });
+    const onMessage = vi.fn();
+    const onChanged = vi.fn();
+    const { result } = renderHook(() =>
+      useVoiceSliceSettings("A0", voices, onChanged, onMessage),
+    );
+
+    await act(async () => {
+      result.current.updateSliceSettings(1, { varyLength: true });
+    });
+
+    expect(result.current.sliceSettings[1].varyLength).toBe(true);
+    expect(onChanged).toHaveBeenCalledTimes(1);
+    expect(onMessage).not.toHaveBeenCalled();
+  });
+
+  it("names each setting in its message", () => {
+    expect(sliceSettingNotSaved(2, { enabled: true })).toBe(
+      "Couldn't turn slicing off for voice 2. Try again.",
+    );
+    expect(sliceSettingNotSaved(2, { varyLength: false })).toBe(
+      "Couldn't turn Vary length on for voice 2. Try again.",
+    );
+    expect(sliceSettingNotSaved(2, { maxLength: 4 })).toBe(
+      "Couldn't save the longest random length for voice 2, so it's back to 4. Try again.",
+    );
+    expect(sliceSettingNotSaved(2, { enabled: true, rollAmount: 50 })).toBe(
+      "Couldn't save the slicer settings for voice 2. Try again.",
+    );
   });
 });

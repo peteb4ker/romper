@@ -12,6 +12,7 @@ import { useKitDuplication } from "./useKitDuplication";
 interface UseKitBrowserProps {
   kitListRef: RefObject<KitListComponent | null>;
   kits: KitWithRelations[];
+  localStorePath?: null | string;
   onMessage?: (text: string, type?: string, duration?: number) => void;
   onRefreshKits?: (scrollToKit?: string) => void;
 }
@@ -19,6 +20,7 @@ interface UseKitBrowserProps {
 export function useKitBrowser({
   kitListRef,
   kits: externalKits = [],
+  localStorePath,
   onMessage,
   onRefreshKits,
 }: UseKitBrowserProps) {
@@ -30,6 +32,7 @@ export function useKitBrowser({
   const bankNavigation = useKitBankNavigation({
     kitListRef,
     kits,
+    localStorePath,
     onMessage,
   });
 

@@ -103,6 +103,7 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
   const logic = useKitBrowser({
     kitListRef: kitGridRef,
     kits: filteredKits,
+    localStorePath: props.localStorePath,
     onMessage: props.onMessage,
     onRefreshKits: handleRefreshKitsWithScroll,
   });

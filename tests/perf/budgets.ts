@@ -64,6 +64,8 @@ export const BUDGETS = {
    */
   e2e: {
     "cold start to the kit grid": {
+      /** RE-90: bank names come from the banks, not the kits */
+      "get-all-banks": { max: 1 },
       "get-all-kits": { max: 1 },
       "get-local-store-status": { max: 1 },
       "read-settings": { max: 2 },

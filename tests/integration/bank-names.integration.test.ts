@@ -134,4 +134,27 @@ describe("[UC-12] Naming and clearing a bank (RE-23)", () => {
     }
     expect(rtfFiles(localStorePath)).toEqual([]);
   });
+
+  // RE-90: the browser read names from the kits, so a bank with no kits
+  // lost its name on reload. Main keeps it, and get-all-banks returns it.
+  it("keeps the name of a bank with no kits through a reload", async () => {
+    await invoke("update-bank", "C", { artist: "Empty Bank" });
+
+    // A reload: main starts again, scans the bank names, and the browser
+    // loads the kits and the banks
+    handlers.clear();
+    registerDbIpcHandlers({ localStorePath });
+    expect((await invoke("scan-banks")).success).toBe(true);
+    const kits = (await invoke("get-all-kits")) as {
+      data?: unknown[];
+    } & Result;
+    const banks = (await invoke("get-all-banks")) as {
+      data?: { artist: null | string; letter: string }[];
+    } & Result;
+
+    expect(kits.data).toEqual([]);
+    expect(banks.data?.find((bank) => bank.letter === "C")?.artist).toBe(
+      "Empty Bank",
+    );
+  });
 });

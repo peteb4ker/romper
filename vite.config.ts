@@ -1,8 +1,15 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import autoprefixer from "autoprefixer";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { defineConfig, type Plugin } from "vite";
+
+// The app's version, for the About dialog (RE-72): the same package.json
+// version the packaged app reports through app.getVersion()
+const appVersion: string = JSON.parse(
+  readFileSync(path.resolve(__dirname, "package.json"), "utf8"),
+).version;
 
 // Tightens the Content-Security-Policy in the *production* index.html while
 // leaving the dev CSP (which must allow the Vite HMR websocket) untouched.
@@ -52,6 +59,9 @@ export default defineConfig({
     postcss: {
       plugins: [autoprefixer()],
     },
+  },
+  define: {
+    "import.meta.env.VITE_APP_VERSION": JSON.stringify(appVersion),
   },
   plugins: [react(), tailwindcss(), hardenProductionCsp()],
   resolve: {

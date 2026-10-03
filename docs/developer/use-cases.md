@@ -311,11 +311,8 @@ store and written to the card as `<letter> - <name>.rtf` files. See
   `electron/main/services/rtfFileService.ts` (`writeRtfFile`, `removeRtfFile`); `electron/main/services/scanService.ts`
   (`scanBanks`); written to the card by `electron/main/services/syncService.ts`
   (`writeBankRtfFiles`).
-- **Doc gaps:** "Clearing the name removes it entirely"
-  (`kit-browser.md:28`): the database keeps the name, so it returns on
-  reload and is written to the card (RE-23). A failed save shows no
-  message, and a name given to a bank with no kits is lost on reload.
-- **Known issues:** RE-23, RE-35. Nothing tests `update-bank` at any level.
+- **Doc gaps:** a name given to a bank with no kits is lost on reload.
+- **Known issues:** RE-35.
 
 ### UC-13 Scan a kit, or scan all
 
@@ -780,8 +777,8 @@ Rample's own `_save` folder alone. Cancel stops between files. See
 - **Doc gaps:** none since the docs pass (#417).
 - **Known issues:** RE-35 (the Modified filter misses gain and bank edits),
   RE-40 (the failure toast reads a stale value), RE-57 (contract drift in
-  `SyncChangeSummary` and `SyncProgress`), RE-23 (a cleared bank name is
-  still written), RE-48 (the write panel has no dialog role or Escape).
+  `SyncChangeSummary` and `SyncProgress`), RE-48 (the write panel has no
+  dialog role or Escape).
   No test above unit level cancels a write.
 
 ## App

@@ -198,7 +198,7 @@ export interface ElectronAPI {
   ) => Promise<DbResult<{ isFavorite: boolean }>>;
   updateBank: (
     bankLetter: string,
-    updates: { artist?: null | string; rtf_filename?: null | string },
+    updates: { artist?: null | string },
   ) => Promise<DbResult<void>>;
   updateKit: (
     kitName: string,

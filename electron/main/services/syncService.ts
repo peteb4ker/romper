@@ -11,7 +11,11 @@ import {
 } from "../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
 import { logger } from "../utils/logger.js";
-import { bankRtfFileName, rtfFileService } from "./rtfFileService.js";
+import {
+  bankRtfFileName,
+  isWritableBankName,
+  rtfFileService,
+} from "./rtfFileService.js";
 import {
   type CardContents,
   findStaleCardEntries,
@@ -356,7 +360,11 @@ class SyncService {
    * and a name file for every named bank. A sample that can't be written
    * keeps its file, so skipping it leaves the card's last copy in place.
    */
-  private planCardContents(dbDir: string, samples: Sample[]): CardContents {
+  private planCardContents(
+    dbDir: string,
+    samples: Sample[],
+    warnings: string[],
+  ): CardContents {
     const kits = new Map<string, string[]>();
     for (const sample of samples) {
       const fileNames = kits.get(sample.kit_name) ?? [];
@@ -371,9 +379,18 @@ class SyncService {
     }
 
     const banksResult = getAllBanks(dbDir);
-    const bankFiles = (banksResult.success ? (banksResult.data ?? []) : [])
-      .filter((bank) => bank.artist)
-      .map((bank) => bankRtfFileName(bank.letter, bank.artist as string));
+    const bankFiles: string[] = [];
+    for (const bank of banksResult.success ? (banksResult.data ?? []) : []) {
+      if (!bank.artist) continue;
+      if (isWritableBankName(bank.artist)) {
+        bankFiles.push(bankRtfFileName(bank.letter, bank.artist));
+      } else {
+        // A name saved before RE-23's checks can't be a file name
+        warnings.push(
+          `Bank ${bank.letter}'s name "${bank.artist}" can't be written to the card, so the card won't show it. Rename the bank to fix this.`,
+        );
+      }
+    }
 
     return { bankFiles, kits };
   }
@@ -407,7 +424,11 @@ class SyncService {
       warnings: [] as string[],
     };
     const samples = samplesResult.data || [];
-    const cardContents = this.planCardContents(dbDir, samples);
+    const cardContents = this.planCardContents(
+      dbDir,
+      samples,
+      results.warnings,
+    );
     for (const sample of samples) {
       syncSampleProcessingService.processSampleForSync(
         sample,
@@ -459,22 +480,21 @@ class SyncService {
   }
 
   /**
-   * Write bank RTF files to the SD card root for banks with artist names
+   * Write bank RTF files to the SD card root for banks with artist names.
+   * A failure fails the write, like any other file the card can't take,
+   * so it isn't only logged (RE-23).
    */
   private writeBankRtfFiles(dbDir: string, sdCardPath: string): void {
-    try {
-      const banksResult = getAllBanks(dbDir);
-      if (banksResult.success && banksResult.data) {
-        const written = rtfFileService.writeAllBankRtfFiles(
-          sdCardPath,
-          banksResult.data,
-        );
-        if (written > 0) {
-          logger.log(`Wrote ${written} bank RTF files to SD card`);
-        }
-      }
-    } catch (error) {
-      console.warn("Failed to write bank RTF files to SD card:", error);
+    const banksResult = getAllBanks(dbDir);
+    if (!banksResult.success) {
+      throw new Error(`Couldn't read the bank names: ${banksResult.error}`);
+    }
+    const written = rtfFileService.writeAllBankRtfFiles(
+      sdCardPath,
+      banksResult.data ?? [],
+    );
+    if (written > 0) {
+      logger.log(`Wrote ${written} bank RTF files to SD card`);
     }
   }
 }

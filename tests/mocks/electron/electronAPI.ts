@@ -190,6 +190,7 @@ export const createElectronAPIMock = (
     data: { isFavorite: true },
     success: true,
   }),
+  updateBank: vi.fn().mockResolvedValue({ success: true }),
   updateKit: vi.fn().mockResolvedValue({ success: true }),
   updateKitBpm: vi.fn().mockResolvedValue({ success: true }),
   updateKitSlicerDivision: vi.fn().mockResolvedValue({ success: true }),

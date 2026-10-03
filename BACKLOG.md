@@ -75,7 +75,6 @@ This file tracks what's being done about each item.
 | RE-57 | Medium | Contract | The bridge contract does not bind main. `SyncChangeSummary` does not match what main returns (the renderer casts it); `SyncProgress` is defined four times with different fields and status values; several return types differ from the contract (null versus undefined, `unknown`, an `"overwrite"` mode main rejects). | open |
 | RE-58 | Medium | Tooling | The pre-commit tests fail with Vitest worker-start timeouts when the machine is busy (load average above ~20, for example several sessions testing at once), because `vitest.config.fast.ts` always starts 10 workers. | open |
 | RE-72 | Medium | About | The About dialog shows "Version: dev" in every build: nothing defines `VITE_APP_VERSION`. | open |
-| RE-74 | Medium | Samples | Dropping onto a filled slot says "Insert sample here (other samples will shift down)", but the file is appended. | open |
 | RE-75 | Medium | Voices | In an editable kit, Scan Kit and `/` overwrite voice names typed by hand. | open |
 | RE-76 | Medium | Sync | A card that only needs removals can't be written: **Start Write** is disabled when the library has no samples. | open |
 | RE-77 | Medium | Setup | A factory archive with the wrong checksum is downloaded three times, and the reason is replaced by a generic network error. | open |
@@ -86,6 +85,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-74 | Medium | Samples | Dropping onto a filled slot said "Insert sample here (other samples will shift down)", but the file was appended. | done (#PR: dragging files over a voice highlights the slot after the last sample, where they land) |
 | RE-80 | Medium | Settings | A local store on a drive that wasn't connected at launch was forgotten, and the first-run wizard opened. | done (#419: the saved path is kept; the Invalid Local Store dialog offers Try Again, another folder, or a new store) |
 | RE-71 | Medium | Stereo | Stereo link and unlink worked on kits that aren't editable, changing what the next write puts on the card. | done (#416: linking is an edit; read-only kits show the pair but offer no link or unlink, and main refuses the change) |
 | RE-73 | Medium | Setup | SD-card setup ignored a failed kit copy and imported whatever was copied, with no message. | done (#414: a failed copy stops setup with the reason) |

@@ -120,8 +120,8 @@ describe("useExternalDragHandlers", () => {
 
       expect(mockEvent.preventDefault).toHaveBeenCalled();
       expect(mockEvent.stopPropagation).toHaveBeenCalled();
-      expect(result.current.dragOverSlot).toBe(3);
-      expect(result.current.dropZone).toEqual({ mode: "insert", slot: 3 });
+      expect(result.current.dragOverSlot).toBe(0);
+      expect(result.current.dropZone).toEqual({ mode: "append", slot: 0 });
     });
 
     it("ignores non-file drags", () => {
@@ -196,7 +196,8 @@ describe("useExternalDragHandlers", () => {
       result.current.handleDragOver(mockEvent, 2);
       rerender(); // Force rerender to see state updates
 
-      expect(result.current.dragOverSlot).toBe(2);
+      // Empty voice: the file lands in slot 0, whatever is hovered (RE-74)
+      expect(result.current.dragOverSlot).toBe(0);
       expect(result.current.dropZone).not.toBeNull();
 
       // Now leave
@@ -242,7 +243,8 @@ describe("useExternalDragHandlers", () => {
       result.current.handleDragOver(dragEvent, 2);
       rerender(); // Force rerender to see state updates
 
-      expect(result.current.dragOverSlot).toBe(2);
+      // Empty voice: the file lands in slot 0, whatever is hovered (RE-74)
+      expect(result.current.dragOverSlot).toBe(0);
 
       const mockEvent = createMockEvent([createMockFile("test.wav")]);
       await result.current.handleDrop(mockEvent, 1);
@@ -430,7 +432,8 @@ describe("useExternalDragHandlers", () => {
 
       result.current.handleDragOver(dragEvent, 2);
       rerender(); // Force rerender to see state updates
-      expect(result.current.dragOverSlot).toBe(2);
+      // Empty voice: the file lands in slot 0, whatever is hovered (RE-74)
+      expect(result.current.dragOverSlot).toBe(0);
 
       // Drop
       const dropEvent = {
@@ -463,8 +466,8 @@ describe("useExternalDragHandlers", () => {
 
       result.current.handleDragOver(dragEvent, 1);
       rerender(); // Force rerender to see state updates
-      expect(result.current.dragOverSlot).toBe(1);
-      expect(result.current.dropZone).toEqual({ mode: "insert", slot: 1 });
+      expect(result.current.dragOverSlot).toBe(0);
+      expect(result.current.dropZone).toEqual({ mode: "append", slot: 0 });
 
       // Leave
       result.current.handleDragLeave();
@@ -587,7 +590,7 @@ describe("useExternalDragHandlers", () => {
       expect(result.current.dropZone).toEqual({ mode: "blocked", slot: 1 });
     });
 
-    it("shows insert mode during drag over non-full voice", () => {
+    it("highlights the slot after the last sample, wherever the pointer is (RE-74)", () => {
       const partialSamples = Array(5).fill("sample.wav");
       const { rerender, result } = renderHook(() =>
         useExternalDragHandlers({ ...defaultProps, samples: partialSamples }),
@@ -604,8 +607,10 @@ describe("useExternalDragHandlers", () => {
       result.current.handleDragOver(mockEvent, 3);
       rerender();
 
-      expect(result.current.dragOverSlot).toBe(3);
-      expect(result.current.dropZone).toEqual({ mode: "insert", slot: 3 });
+      // Hovering slot 3 of 5: the file will land in slot 5, so that's what
+      // lights up, never an "insert" the drop doesn't do
+      expect(result.current.dragOverSlot).toBe(5);
+      expect(result.current.dropZone).toEqual({ mode: "append", slot: 5 });
     });
 
     it("shows append mode when dropping at end of voice", () => {

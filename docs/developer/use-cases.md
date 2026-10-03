@@ -458,7 +458,7 @@ file is checked and added to the voice's next free slot, up to 12. See
   (`addSampleToSlot`, which refuses the right-hand voice of a linked pair) →
   `electron/main/db/operations/sampleCrudOperations.ts` (`addSample`).
 - **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-74 (the drop hint says insert; the file is appended), RE-40 (rejected drops only reach the console), RE-28,
+- **Known issues:** RE-40 (rejected drops only reach the console), RE-28,
   RE-36.
 
 ### UC-20 Replace a sample

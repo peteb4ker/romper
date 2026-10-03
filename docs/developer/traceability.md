@@ -10,7 +10,7 @@ Regenerate with `npm run trace`; CI runs `npm run trace:check`, which
 fails on an unknown ID, on a supported use case with no test above unit
 level (unless the register declares the gap), and when this file is stale.
 
-37 use cases: 15 supported, 20 partial, 2 not built. 1340 of 4363 tests carry a use case tag.
+37 use cases: 15 supported, 20 partial, 2 not built. 1341 of 4364 tests carry a use case tag.
 
 ## Matrix
 
@@ -34,7 +34,7 @@ level (unless the register declares the gap), and when this file is stale.
 | [UC-16](use-cases.md#uc-16-delete-a-kit) Delete a kit | supported | [23](#uc-16) | [22](#uc-16) | - | - |
 | [UC-17](use-cases.md#uc-17-make-a-kit-editable-and-set-its-alias) Make a kit editable and set its alias | partial | [17](#uc-17) | [1](#uc-17) | - | - |
 | [UC-18](use-cases.md#uc-18-step-to-the-previous-or-next-kit) Step to the previous or next kit | supported | [4](#uc-18) | - | [1](#uc-18) | - |
-| [UC-19](use-cases.md#uc-19-drop-wavs-onto-a-voice) Drop WAVs onto a voice | partial | [34](#uc-19) | [22](#uc-19) | - | [1](#uc-19) |
+| [UC-19](use-cases.md#uc-19-drop-wavs-onto-a-voice) Drop WAVs onto a voice | partial | [34](#uc-19) | [22](#uc-19) | [1](#uc-19) | [1](#uc-19) |
 | [UC-20](use-cases.md#uc-20-replace-a-sample) Replace a sample | not built | [3](#uc-20) | [2](#uc-20) | - | - |
 | [UC-21](use-cases.md#uc-21-move-samples-within-a-kit) Move samples within a kit | supported | [32](#uc-21) | [35](#uc-21) | - | - |
 | [UC-22](use-cases.md#uc-22-move-a-sample-to-another-kit) Move a sample to another kit | not built | [3](#uc-22) | [4](#uc-22) | - | - |
@@ -268,12 +268,13 @@ Partial or not-built use cases with no test above unit level:
 [UC-19](use-cases.md#uc-19-drop-wavs-onto-a-voice) Drop WAVs onto a voice (partial)
 
 - Unit: [`app/renderer/components/hooks/sample-management/__tests__/useSampleProcessing.test.ts`](../../app/renderer/components/hooks/sample-management/__tests__/useSampleProcessing.test.ts#L342) (4 tests)
-- Unit: [`app/renderer/components/hooks/shared/__tests__/useExternalDragHandlers.test.ts`](../../app/renderer/components/hooks/shared/__tests__/useExternalDragHandlers.test.ts#L211) (18 tests)
+- Unit: [`app/renderer/components/hooks/shared/__tests__/useExternalDragHandlers.test.ts`](../../app/renderer/components/hooks/shared/__tests__/useExternalDragHandlers.test.ts#L212) (18 tests)
 - Unit: [`app/renderer/components/hooks/shared/__tests__/useFileValidation.test.ts`](../../app/renderer/components/hooks/shared/__tests__/useFileValidation.test.ts#L217) (7 tests)
 - Unit: [`electron/main/services/crud/__tests__/sampleCrudService.test.ts`](../../electron/main/services/crud/__tests__/sampleCrudService.test.ts#L52) (5 tests)
 - Integration: [`electron/main/db/operations/__tests__/sampleCrudOperations.integration.test.ts`](../../electron/main/db/operations/__tests__/sampleCrudOperations.integration.test.ts#L38) (5 tests)
 - Integration: [`electron/main/services/__tests__/sampleService.integration.test.ts`](../../electron/main/services/__tests__/sampleService.integration.test.ts#L143) (8 tests)
 - Integration: [`electron/main/services/__tests__/sampleValidation.integration.test.ts`](../../electron/main/services/__tests__/sampleValidation.integration.test.ts#L165) (9 tests)
+- E2E: [`tests/e2e/sample-drop.e2e.test.ts`](../../tests/e2e/sample-drop.e2e.test.ts#L25) (1 test)
 - Validation: [`tests/validation/full-pipeline.validation.ts`](../../tests/validation/full-pipeline.validation.ts#L141) (1 test)
 
 ### UC-20

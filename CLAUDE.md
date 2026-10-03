@@ -202,5 +202,7 @@ Hooks in `.claude/hooks/` and `.husky/` enforce the first two.
 - [`aidlc-docs/inception/reverse-engineering/`](aidlc-docs/inception/reverse-engineering/)
   -- AI-DLC reverse-engineering set; `code-quality-assessment.md` is the
   findings register that fix commits cite by ID (`RE-01`...)
+  A dated snapshot of commit `87bea51`, not maintained beyond its "Fixed in
+  #N" notes: current status is in GitHub issues and the code.
 - [`docs/troubleshooting.md`](docs/troubleshooting.md) -- user-facing,
   including `ROMPER_ENABLE_DEVTOOLS=1` for inspecting an installed build

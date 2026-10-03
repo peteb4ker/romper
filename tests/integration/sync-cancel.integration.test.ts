@@ -15,6 +15,7 @@ import {
   createRomperDbFile,
   getKit,
 } from "../../electron/main/db/romperDbCoreORM.js";
+import { closeAllDbConnections } from "../../electron/main/db/utils/dbConnections.js";
 import { syncProgressManager } from "../../electron/main/services/syncProgressManager.js";
 import { syncService } from "../../electron/main/services/syncService.js";
 import { encodeTestWav, sine } from "../validation/support/wav.js";
@@ -104,6 +105,8 @@ describe("[UC-34] Cancelling a write to the card", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    // Windows can't delete a database file that's still open
+    closeAllDbConnections();
     fs.rmSync(tempDir, { force: true, recursive: true });
   });
 

@@ -1,7 +1,7 @@
 ---
 layout: default
 title: How Romper is tested
-description: How every change to Romper is checked, and how each release is rehearsed end to end before it ships
+description: How every change to Romper is checked, and how each release is validated end to end before it ships
 permalink: /testing/
 ---
 {%- comment -%}
@@ -15,7 +15,7 @@ the Pages build copies from the latest release (scripts/testing-summary.mjs).
 
 <header class="testing-header">
     <h1>How Romper is tested</h1>
-    <p class="testing-lede">Every change is checked automatically before it's merged, and every release is rehearsed end to end, on macOS, Windows and Linux, before it ships.</p>
+    <p class="testing-lede">Every change is checked automatically before it's merged, and every release is validated end to end, on macOS, Windows and Linux, before it ships.</p>
     {%- if t %}
     <p class="testing-status testing-status--pass">
         <span class="testing-dot" aria-hidden="true"></span>
@@ -30,30 +30,30 @@ the Pages build copies from the latest release (scripts/testing-summary.mjs).
 {%- if t %}
 {%- assign L = t.layers %}
 <h2 class="testing-h2">Four layers of checks</h2>
-<p class="testing-sub">From single pieces up to a full rehearsal with real files.</p>
+<p class="testing-sub">From isolated modules up to a full pipeline run with real files.</p>
 <div class="testing-layers">
     <div class="testing-layer">
         <span class="testing-layer-dot testing-layer-dot--1" aria-hidden="true"></span>
         <div class="testing-figure">{% include number.html value=L.unit.tests %}</div>
-        <div class="testing-layer-title">Building blocks</div>
-        <p>Tests that check each piece on its own, such as reading a WAV file's format or naming a kit.</p>
+        <div class="testing-layer-title">Unit tests</div>
+        <p>Check each module in isolation, such as WAV header parsing or kit naming.</p>
     </div>
     <div class="testing-layer">
         <span class="testing-layer-dot testing-layer-dot--2" aria-hidden="true"></span>
         <div class="testing-figure">{% include number.html value=L.integration.tests %}</div>
-        <div class="testing-layer-title">Pieces together</div>
-        <p>Tests that run the parts together with a real database and real files{% if L.integration.platforms.size > 0 %}, on {% include platforms.html list=L.integration.platforms %}{% endif %}.</p>
+        <div class="testing-layer-title">Integration tests</div>
+        <p>Exercise the modules together against a real SQLite database and real files{% if L.integration.platforms.size > 0 %}, on {% include platforms.html list=L.integration.platforms %}{% endif %}.</p>
     </div>
     <div class="testing-layer">
         <span class="testing-layer-dot testing-layer-dot--3" aria-hidden="true"></span>
         <div class="testing-figure">{% include number.html value=L.e2e.tests %}</div>
-        <div class="testing-layer-title">The whole app</div>
-        <p>Tests that open the real app and use it the way you would{% if L.e2e.platforms.size > 0 %}, on {% include platforms.html list=L.e2e.platforms %}{% endif %}.</p>
+        <div class="testing-layer-title">End-to-end tests</div>
+        <p>Drive the built app through its interface, the way a user would{% if L.e2e.platforms.size > 0 %}, on {% include platforms.html list=L.e2e.platforms %}{% endif %}.</p>
     </div>
     <div class="testing-layer">
         <span class="testing-layer-dot testing-layer-dot--4" aria-hidden="true"></span>
         <div class="testing-figure">Every release</div>
-        <div class="testing-layer-title">Real-world rehearsal</div>
+        <div class="testing-layer-title">Full-pipeline validation</div>
         <p>Downloads Squarp's factory library{% if L.rehearsal.kits > 0 %} ({% include number.html value=L.rehearsal.kits %} kits, {% include number.html value=L.rehearsal.samples %} samples){% endif %}, builds a kit, writes a card, and checks that {% if L.rehearsal.cardFiles > 0 %}all {% include number.html value=L.rehearsal.cardFiles %} files{% else %}every file{% endif %} on it are exactly what they should be, byte for byte{% if L.rehearsal.platforms.size > 0 %}, on {% include platforms.html list=L.rehearsal.platforms %}{% endif %}.</p>
     </div>
 </div>
@@ -94,7 +94,7 @@ the Pages build copies from the latest release (scripts/testing-summary.mjs).
 
 <h2 class="testing-h2">Is my card safe?</h2>
 <ul class="testing-safety">
-    <li>Every file written to the card in the rehearsal is compared with what it should be.</li>
+    <li>Every file written to the card in full-pipeline validation is compared with what it should be, byte for byte.</li>
     <li>The Rample's own settings folder on the card is never touched.</li>
     <li>Any unexpected error or warning in the app fails the checks.</li>
 </ul>

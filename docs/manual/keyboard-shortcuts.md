@@ -40,7 +40,7 @@ The arrow keys don't move on from the first kit in the list, and `Up` and `Down`
 
 The comma and period keys let you step through kits sequentially without returning to the Kit Browser. This is particularly useful for comparing similar kits or reviewing a series of edits.
 
-In a read-only kit, the slash key rescans the kit, the same as **Scan Kit**. In an editable kit, it only names voices: each voice whose first sample's filename suggests a name (such as "Kick") gets that name, replacing any name already set.
+In a read-only kit, the slash key rescans the kit, the same as **Scan Kit**. In an editable kit, it only names voices: each voice whose first sample's filename suggests a name (such as "Kick") gets that name, unless it already has one.
 
 ## Step Sequencer
 

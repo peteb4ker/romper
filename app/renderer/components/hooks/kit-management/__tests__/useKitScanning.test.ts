@@ -136,6 +136,28 @@ describe("[UC-13] useKitScanning", () => {
       expect([...result.current.flashVoices]).toEqual([1, 2]);
     });
 
+    // RE-75: a name the user typed survives a scan
+    it("[UC-27] keeps voice names that are already set", async () => {
+      const { result } = renderHook(() =>
+        useKitScanning({
+          ...defaultParams,
+          voiceNames: { 1: "My Kick", 2: null, 3: "  " },
+        }),
+      );
+
+      await act(async () => {
+        await result.current.handleInferVoiceNames();
+      });
+
+      expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledTimes(1);
+      expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
+        "A0",
+        2,
+        "Snare",
+      );
+      expect([...result.current.flashVoices]).toEqual([2]);
+    });
+
     it("prefers the targeted metadata refresh over a full reload", async () => {
       const { result } = renderHook(() => useKitScanning(defaultParams));
 

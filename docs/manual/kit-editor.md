@@ -104,7 +104,7 @@ The **kit type** (Drum, Loop, Vocal, FX, Synth/Bass) is inferred from the combin
 Click the **Scan Kit** button (or press `/`) to re-run the analysis at any time. What it does depends on the kit:
 
 - In a locked kit, it rescans the kit's folder in your local store: it adds WAV files that aren't in the kit yet, reads their format, and names voices that don't have a name. Names you set stay.
-- In an editable kit, it names each voice that has samples from its first sample's filename. This replaces a name you set by hand.
+- In an editable kit, it names each voice that has samples but no name, from its first sample's filename. Names you set stay.
 
 ## Gain Control
 

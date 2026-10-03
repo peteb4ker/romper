@@ -130,6 +130,15 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     [props.samples],
   );
 
+  // The kit's voice names, so inference keeps the ones it has (RE-75)
+  const voiceNames = React.useMemo(
+    () =>
+      Object.fromEntries(
+        (kit?.voices ?? []).map((v) => [v.voice_number, v.voice_alias]),
+      ),
+    [kit?.voices],
+  );
+
   // Scanning logic (filesystem rescan + in-memory voice name inference)
   const { flashVoices, handleInferVoiceNames, handleScanKit, scanStatus } =
     useKitScanning({
@@ -138,6 +147,7 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
       onRequestSamplesReload,
       reloadKit,
       samples,
+      voiceNames,
     });
 
   // Navigation state

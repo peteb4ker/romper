@@ -121,12 +121,11 @@ const KitsView: React.FC = () => {
   }, [navigation.selectedKit]);
   const handleScanAllFinished = useCallback(
     (progress: BulkScanProgress) => {
-      if (!selectedKitRef.current) return;
-      if (progress.status === "complete") {
-        showMessage(progress.message, "success");
-      } else if (progress.status === "error") {
-        showMessage(progress.message, "error");
-      }
+      if (!selectedKitRef.current || !("message" in progress)) return;
+      showMessage(
+        progress.message,
+        progress.status === "complete" ? "success" : "error",
+      );
     },
     [showMessage],
   );

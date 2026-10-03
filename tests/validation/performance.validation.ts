@@ -312,8 +312,11 @@ test("[Q-01] performance profile", async () => {
       await p.locator('[data-testid="stop-step-sequencer"]').click();
     });
 
+    // "Confirm destructive actions" is on by default, so the trash button
+    // asks first (RE-44)
     await measure("delete a sample", async () => {
       await p.getByTitle("Delete sample").first().click();
+      await p.locator('[data-testid="confirm-delete-sample-button"]').click();
     });
 
     await measure("back to the grid", async () => {

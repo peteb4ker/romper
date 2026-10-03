@@ -215,7 +215,7 @@ export function useVoicePanelSlotRendering({
               value={sampleData?.gain_db ?? 0}
             />
           )}
-          {isEditable && renderDeleteButton(slotNumber)}
+          {isEditable && renderDeleteButton(slotNumber, sampleName)}
           <SampleWaveform
             gainDb={sampleData?.gain_db}
             key={`${kitName}-${voice}-${uiSlotNumber}-${sampleName}`}

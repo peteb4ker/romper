@@ -1,8 +1,15 @@
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, fireEvent, render } from "@testing-library/react";
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { useConfirmDestructiveActions } from "../../../../utils/SettingsContext";
 import { useVoicePanelButtons } from "../useVoicePanelButtons";
+
+// Most tests here have "Confirm destructive actions" off, so the trash
+// button deletes at once; SampleDeleteButton.test.tsx covers the prompt
+vi.mock("../../../../utils/SettingsContext", () => ({
+  useConfirmDestructiveActions: vi.fn(() => false),
+}));
 
 // Mock @phosphor-icons/react
 vi.mock("@phosphor-icons/react", () => ({
@@ -29,6 +36,7 @@ describe("useVoicePanelButtons", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useConfirmDestructiveActions).mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -321,6 +329,19 @@ describe("useVoicePanelButtons", () => {
 
       button2?.click();
       expect(mockHandleDeleteSample).toHaveBeenCalledWith(7);
+    });
+
+    it("[UC-35] asks first when Confirm destructive actions is on (RE-44)", () => {
+      vi.mocked(useConfirmDestructiveActions).mockReturnValue(true);
+      const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
+
+      const { getByRole, getByText } = render(
+        <div>{result.current.renderDeleteButton(4, "kick.wav")}</div>,
+      );
+
+      fireEvent.click(getByRole("button", { name: "Delete sample" }));
+      expect(mockHandleDeleteSample).not.toHaveBeenCalled();
+      expect(getByText("Delete kick.wav?")).toBeInTheDocument();
     });
 
     it("handles negative slot index", () => {

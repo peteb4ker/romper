@@ -86,7 +86,7 @@ The interface has three main areas:
 
 ![Status bar]({{ site.baseurl }}/images/manual/status-bar.png)
 
-**Settings** -- Click the gear in the header, or press `Cmd+,` (macOS) / `Ctrl+,` (Windows/Linux), to open Preferences. **Appearance** sets a light, dark or system theme, and **Advanced** shows the local store path and lets you switch to another local store. The **Confirm destructive actions** option on the **Sample Management** tab has no effect: deleting a sample never asks first. Romper remembers these settings the next time it opens.
+**Settings** -- Click the gear in the header, or press `Cmd+,` (macOS) / `Ctrl+,` (Windows/Linux), to open Preferences. **Appearance** sets a light, dark or system theme, and **Advanced** shows the local store path and lets you switch to another local store. With **Confirm destructive actions** on (the default) on the **Sample Management** tab, deleting a sample asks first; turn it off to delete at once. Romper remembers these settings the next time it opens.
 
 ## Connecting Your SD Card
 

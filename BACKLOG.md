@@ -85,7 +85,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
-| RE-74 | Medium | Samples | Dropping onto a filled slot said "Insert sample here (other samples will shift down)", but the file was appended. | done (#PR: dragging files over a voice highlights the slot after the last sample, where they land) |
+| RE-74 | Medium | Samples | Dropping onto a filled slot said "Insert sample here (other samples will shift down)", but the file was appended. | done (#421: dragging files over a voice highlights the slot after the last sample, where they land) |
 | RE-80 | Medium | Settings | A local store on a drive that wasn't connected at launch was forgotten, and the first-run wizard opened. | done (#419: the saved path is kept; the Invalid Local Store dialog offers Try Again, another folder, or a new store) |
 | RE-71 | Medium | Stereo | Stereo link and unlink worked on kits that aren't editable, changing what the next write puts on the card. | done (#416: linking is an edit; read-only kits show the pair but offer no link or unlink, and main refuses the change) |
 | RE-73 | Medium | Setup | SD-card setup ignored a failed kit copy and imported whatever was copied, with no message. | done (#414: a failed copy stops setup with the reason) |

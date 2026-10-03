@@ -403,6 +403,42 @@ describe("KitsView", () => {
       confirm.mockRestore();
     });
 
+    it("[UC-13] warns from the kit editor when some kits fail to scan", async () => {
+      const confirm = vi.spyOn(globalThis, "confirm").mockReturnValue(true);
+      vi.mocked(window.electronAPI.rescanKit).mockImplementation(
+        async (kitName: string) =>
+          kitName === "A1"
+            ? { error: "folder missing", success: false }
+            : { data: { scannedSamples: 0 }, success: true },
+      );
+      render(
+        <TestSettingsProvider>
+          <KitsView />
+        </TestSettingsProvider>,
+      );
+      await waitFor(() => {
+        expect(screen.getByText("A0")).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByText("A0"));
+      await waitFor(() => {
+        expect(screen.getByText("Back")).toBeInTheDocument();
+      });
+
+      globalMenuCallbacks.onScanAll();
+
+      await waitFor(() => {
+        expect(mockShowMessage).toHaveBeenCalledWith(
+          expect.stringContaining("2 successful, 1 failed. A1: folder missing"),
+          "warning",
+        );
+      });
+      expect(mockShowMessage).not.toHaveBeenCalledWith(
+        expect.stringContaining("failed"),
+        "success",
+      );
+      confirm.mockRestore();
+    });
+
     it("[UC-13] leaves the result to the browser header when the browser is open", async () => {
       const confirm = vi.spyOn(globalThis, "confirm").mockReturnValue(true);
       render(

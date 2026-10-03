@@ -1,5 +1,5 @@
 import { TrashIcon } from "@phosphor-icons/react";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { useConfirmDestructiveActions } from "../utils/SettingsContext";
 import ActionPopover from "./shared/ActionPopover";
@@ -28,8 +28,15 @@ const SampleDeleteButton: React.FC<SampleDeleteButtonProps> = ({
 }) => {
   const confirmFirst = useConfirmDestructiveActions();
   const anchorRef = useRef<HTMLButtonElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
   const [isConfirming, setIsConfirming] = useState(false);
   const close = useCallback(() => setIsConfirming(false), []);
+
+  // Focus starts on Cancel, so Escape closes the popover rather than
+  // leaving the kit
+  useEffect(() => {
+    if (isConfirming) cancelRef.current?.focus();
+  }, [isConfirming]);
 
   return (
     <>
@@ -67,7 +74,7 @@ const SampleDeleteButton: React.FC<SampleDeleteButtonProps> = ({
           role="presentation"
         >
           <span className="text-sm font-semibold text-text-primary break-all">
-            Delete {sampleName ? sampleName : "this sample"}?
+            Delete {sampleName || "this sample"}?
           </span>
           <p className="text-xs text-text-secondary">
             The file on disk is not affected. Undo puts it back.
@@ -84,12 +91,10 @@ const SampleDeleteButton: React.FC<SampleDeleteButtonProps> = ({
               <TrashIcon size={13} />
               Delete
             </button>
-            {/* Focus starts on Cancel, so Escape closes the popover rather
-                than leaving the kit */}
             <button
-              autoFocus
               className="px-2 py-1 text-xs bg-surface-4 text-text-secondary rounded hover:bg-surface-3 font-semibold"
               onClick={close}
+              ref={cancelRef}
             >
               Cancel
             </button>

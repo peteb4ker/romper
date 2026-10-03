@@ -21,13 +21,61 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Which runners to use (RE-52, #467). Pushes (main, and the release's
+  # tag) run all three. A pull request runs Linux, plus macOS and Windows
+  # when it changes something that can behave differently there: the app,
+  # the e2e specs and their support, or how they're built and run. Other
+  # PRs (docs, unit tests, scripts) run Linux only.
+  plan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      os: ${{ steps.plan.outputs.os }}
+    steps:
+      - name: Choose the runners
+        id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          all='["ubuntu-latest","macos-latest","windows-latest"]'
+          if [ "$EVENT" = "push" ]; then
+            echo "os=$all" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$EVENT" != "pull_request" ]; then
+            echo 'os=["ubuntu-latest"]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # If the file list can't be read, run every platform
+          if ! files=$(gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[].filename'); then
+            echo "Couldn't list the PR's files; running every platform"
+            echo "os=$all" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          platform_paths='^(electron/|app/|shared/|tests/e2e/|tests/utils/|tests/validation/support/|\.github/workflows/e2e\.yml$|playwright\.config\.ts$|package\.json$|package-lock\.json$)'
+          matched=$(printf '%s\n' "$files" | grep -E "$platform_paths" || true)
+          if [ -n "$matched" ]; then
+            echo "These files can behave differently per platform, so e2e runs on all three:"
+            printf '%s\n' "$matched" | sed 's/^/  /'
+            echo "os=$all" >> "$GITHUB_OUTPUT"
+          else
+            echo "No app, e2e or build files changed; e2e runs on Linux only"
+            echo 'os=["ubuntu-latest"]' >> "$GITHUB_OUTPUT"
+          fi
+
   e2e-tests:
+    needs: plan
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ github.event_name == 'push' && fromJSON('["ubuntu-latest","macos-latest","windows-latest"]') || fromJSON('["ubuntu-latest"]') }}
+        os: ${{ fromJSON(needs.plan.outputs.os) }}
 
     steps:
       - name: Checkout code
@@ -207,18 +255,24 @@ jobs:
           path: test-results/**/*.png
           retention-days: 7
 
-  # Job to check if all e2e tests passed
+  # The required check: reports on every run, whichever runners ran, and
+  # fails if choosing them failed or any of them did
   e2e-tests-check:
     runs-on: ubuntu-latest
-    needs: e2e-tests
+    needs: [plan, e2e-tests]
     if: always()
     steps:
       - name: Check e2e test results
+        env:
+          OS: ${{ needs.plan.outputs.os }}
+          PLAN: ${{ needs.plan.result }}
+          RESULT: ${{ needs.e2e-tests.result }}
         run: |
-          if [[ "${{ needs.e2e-tests.result }}" == "success" ]]; then
+          echo "Runners: $OS"
+          if [[ "$PLAN" == "success" && "$RESULT" == "success" ]]; then
             echo "All e2e tests passed!"
             exit 0
           else
-            echo "Some e2e tests failed!"
+            echo "Some e2e tests failed! (plan: $PLAN, e2e-tests: $RESULT)"
             exit 1
           fi

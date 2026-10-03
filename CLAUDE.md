@@ -27,7 +27,14 @@ Playwright (e2e).
   it overwrites the installed app's settings. To rerun
   one spec against an existing build, use
   `npm run test:play -- tests/e2e/<file>`. It doesn't rebuild, so run
-  `npm run build` first after changing code.
+  `npm run build` first after changing code. The e2e error guard fails a
+  test on any main-process stderr line except known noise from Chromium,
+  the OS or the harness, listed in `tests/validation/support/known-noise.ts`.
+  If a run fails on such a line, add or widen its source's entry there,
+  with its platforms, a reason (required), a link where there is one, and
+  the real line as an example; don't expect it in one spec. See "Known
+  noise" in the coding guide. PRs that touch the app or e2e run e2e on
+  macOS and Windows too, not just Linux.
 - `npm run dev` -- builds everything, then runs Vite + Electron. Long-running;
   start it with `run_in_background`. The `run-app` skill covers ports,
   restarts, and screenshotting the live app.

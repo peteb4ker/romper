@@ -68,6 +68,24 @@ test.describe("E2E error guard", () => {
     await window.waitForTimeout(250);
   });
 
+  // Known noise (tests/validation/support/known-noise.ts) from an entry
+  // that applies on every platform, so the check runs on each CI runner.
+  // (Not the Node inspector's lines: Playwright reads those itself.)
+  const NOISE =
+    "[33352:1003/151539.925999:ERROR:third_party/blink/renderer/modules/media/audio/mojo_audio_output_ipc.cc:186] MojoAudioOutputIPC failed to acquire factory";
+
+  test("ignores known noise in the main process's stderr", async () => {
+    await electronApp.evaluate((_, line) => console.error(line), NOISE);
+    await window.waitForTimeout(250);
+    await expect(window.locator('[data-testid="kits-view"]')).toBeVisible();
+  });
+
+  test("still fails on known-noise text in the renderer console", async () => {
+    test.fail();
+    await window.evaluate((line) => console.error(line), NOISE);
+    await window.waitForTimeout(250);
+  });
+
   test("fails a test on an error toast, even one gone before the end", async () => {
     test.fail();
     await window.evaluate(() => {

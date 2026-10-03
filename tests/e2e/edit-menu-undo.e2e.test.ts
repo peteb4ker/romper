@@ -74,26 +74,26 @@ test.describe("Edit menu undo", () => {
     const before = await sampleCount(voice);
 
     await addSample(voice, "menu undo.wav");
-    await expect.poll(() => sampleCount(voice)).toBe(before + 1);
+    await expectSamples(voice, before + 1);
 
     await clickEditMenu("undo");
-    await expect.poll(() => sampleCount(voice)).toBe(before);
+    await expectSamples(voice, before);
 
     await clickEditMenu("redo");
-    await expect.poll(() => sampleCount(voice)).toBe(before + 1);
+    await expectSamples(voice, before + 1);
   });
 
   test("[UC-26] one Cmd/Ctrl+Z undoes exactly one step", async () => {
     const voice = await voiceWithRoom(2);
     const before = await sampleCount(voice);
     await addSample(voice, "first.wav");
-    await expect.poll(() => sampleCount(voice)).toBe(before + 1);
+    await expectSamples(voice, before + 1);
     await addSample(voice, "second.wav");
-    await expect.poll(() => sampleCount(voice)).toBe(before + 2);
+    await expectSamples(voice, before + 2);
 
     await pressUndoKey();
 
-    await expect.poll(() => sampleCount(voice)).toBe(before + 1);
+    await expectSamples(voice, before + 1);
     // Give a second handler (the menu's accelerator) time to undo again
     await window.waitForTimeout(1000);
     expect(await sampleCount(voice)).toBe(before + 1);
@@ -103,7 +103,7 @@ test.describe("Edit menu undo", () => {
     const voice = await voiceWithRoom(1);
     const before = await sampleCount(voice);
     await addSample(voice, "kept.wav");
-    await expect.poll(() => sampleCount(voice)).toBe(before + 1);
+    await expectSamples(voice, before + 1);
 
     await window.evaluate(() => {
       const input = document.createElement("input");
@@ -135,9 +135,10 @@ test.describe("Edit menu undo", () => {
 
   test("[UC-26] [Q-02] undoing a delete brings the sample back with its gain (RE-86)", async () => {
     const voice = await voiceWithRoom(2);
+    const start = await sampleCount(voice);
     await addSample(voice, "keep one.wav");
     await addSample(voice, "keep two.wav");
-    await expect.poll(() => sampleCount(voice)).toBeGreaterThanOrEqual(2);
+    await expectSamples(voice, start + 2);
     // A gain on the sample that will be deleted
     await window.evaluate(
       ([kit, v]) => window.electronAPI.updateSampleGain(kit, v, 0, -7.5),
@@ -153,7 +154,7 @@ test.describe("Edit menu undo", () => {
     await window
       .locator('[data-testid="confirm-delete-sample-button"]')
       .click();
-    await expect.poll(() => sampleCount(voice)).toBe(before.length - 1);
+    await expectSamples(voice, before.length - 1);
 
     await clickEditMenu("undo");
 
@@ -214,6 +215,22 @@ test.describe("Edit menu undo", () => {
       contents.sendInputEvent({ keyCode: "Z", modifiers, type: "keyDown" });
       contents.sendInputEvent({ keyCode: "Z", modifiers, type: "keyUp" });
     }, process.platform === "darwin");
+  }
+
+  /**
+   * Waits until the voice holds `count` samples and the editor lists them,
+   * so an undo or redo sent next finds the change on its stack (#539). The
+   * database changes before the editor records the step: a Redo sent as
+   * soon as an undo reaches the database finds nothing to redo and does
+   * nothing. The list reloads only after the step is recorded.
+   */
+  async function expectSamples(voice: number, count: number) {
+    await expect.poll(() => sampleCount(voice)).toBe(count);
+    await expect(
+      window.locator(
+        `[data-testid="sample-list-voice-${voice}"] [role="option"]`,
+      ),
+    ).toHaveCount(count);
   }
 
   async function sampleCount(voice: number): Promise<number> {

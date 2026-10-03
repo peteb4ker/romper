@@ -196,6 +196,9 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   const removals = changeSummary?.removals || [];
   // Samples that can't be written are skipped only once the user says so.
   const needsSkipConfirmation = invalidFiles.length > 0 && !skipInvalidFiles;
+  // A write with nothing to copy still removes what the library no longer
+  // has, such as every kit after they've all been deleted (RE-76)
+  const nothingToDo = fileCount === 0 && removals.length === 0;
 
   return (
     <div
@@ -605,7 +608,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                 isLoading ||
                 isGeneratingSummary ||
                 !changeSummary ||
-                fileCount === 0 ||
+                nothingToDo ||
                 needsSkipConfirmation ||
                 !localSdCardPath ||
                 (syncProgress?.status === "error" &&

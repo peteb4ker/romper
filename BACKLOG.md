@@ -51,7 +51,6 @@ This file tracks what's being done about each item.
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
 | RE-22 | Medium | IPC | Editing a kit's details could change other parts of the kit's record by mistake. | open |
-| RE-23 | Medium | Banks | Clearing a bank's name doesn't stick: the name comes back after a reload and is written to the card. | open |
 | RE-25 | Medium | Validation | Out-of-range volume, gain, tempo or sample mode values aren't rejected, so a glitch could save a value the Rample can't use. | open |
 | RE-26 | Medium | Samples | Replacing a sample can lose the original if something fails partway, and the new sample loses the old one's gain. | open |
 | RE-27 | Medium | Samples | Moving a sample to another kit can fail partway, and the moved sample loses its gain and audio details. | open |
@@ -92,6 +91,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-23 | Medium | Banks | Clearing a bank's name doesn't stick: the name comes back after a reload and is written to the card. | done (#434: clearing removes the name everywhere; main refuses names a card can't hold, with a message; a bank name file the card can't take stops the write with an error) |
 | RE-43 | Medium | Scan | Scan All only scans the kits you're currently viewing after a search or filter, not your whole library. | done (#438: Scan All scans every kit in the store, from the browser or the editor) |
 | RE-21 | Medium | Settings | Your theme and the "Confirm destructive actions" setting reset every time Romper started. | done (#433: every saved setting is loaded and kept; saves go through a temporary file) |
 | RE-41 | Medium | Renderer | If turning on editing or renaming a kit fails, nothing tells you. | done (#436: a failed toggle or rename shows a message instead of an unhandled rejection) |

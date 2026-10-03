@@ -170,7 +170,8 @@ What the numbers say:
 - **Path checks don't scale (RE-85).** `pathAccess.check` calls
   `realpathSync` on every root and every granted path, and the set of grants
   grows during a session. A denied check falls back to loading every sample
-  row.
+  row. Fixed in #530: roots and grants are canonicalised once, and the
+  fallback is a `LIMIT 1` query.
 
 ### IPC contract
 

@@ -122,6 +122,7 @@ describe("useKitBrowser", () => {
     expect(useKitBankNavigation).toHaveBeenCalledWith({
       kitListRef: defaultProps.kitListRef,
       kits: mockKits,
+      onMessage: defaultProps.onMessage,
     });
   });
 

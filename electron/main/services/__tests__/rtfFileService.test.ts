@@ -9,7 +9,11 @@ vi.mock("node:path", async (importOriginal) =>
   vi.mockObject(await importOriginal<typeof import("node:path")>()),
 );
 
-import { rtfFileService } from "../rtfFileService.js";
+import {
+  bankNameError,
+  isBankLetter,
+  rtfFileService,
+} from "../rtfFileService.js";
 
 const mockFs = vi.mocked(fs);
 const mockPath = vi.mocked(path);
@@ -115,6 +119,63 @@ describe("[UC-12] [UC-34] rtfFileService", () => {
 
       expect(written).toBe(0);
       expect(mockFs.writeFileSync).not.toHaveBeenCalled();
+    });
+  });
+  describe("validation (RE-23)", () => {
+    it.each([
+      "AC/DC",
+      "..\\up",
+      "../../escape",
+      'Say "hi"',
+      "a:b",
+      "tab\there",
+    ])("refuses %j as a bank name", (name) => {
+      expect(bankNameError(name)).not.toBeNull();
+      expect(() => rtfFileService.writeRtfFile("/store", "A", name)).toThrow();
+      expect(mockFs.writeFileSync).not.toHaveBeenCalled();
+    });
+
+    it("accepts ordinary names, including dots and accents", () => {
+      expect(bankNameError("Dr. Octagon")).toBeNull();
+      expect(bankNameError("Björk & Co")).toBeNull();
+    });
+
+    it("refuses a bank letter that isn't A to Z", () => {
+      expect(isBankLetter("A")).toBe(true);
+      for (const letter of ["a", "AA", ".*", "", "Ä"]) {
+        expect(isBankLetter(letter)).toBe(false);
+        expect(() => rtfFileService.removeRtfFile("/store", letter)).toThrow();
+      }
+      expect(mockFs.unlinkSync).not.toHaveBeenCalled();
+    });
+
+    it("matches the letter as text, not as a pattern", () => {
+      mockFs.readdirSync.mockReturnValue([
+        "a - lower.rtf" as unknown as fs.Dirent,
+        "AB - Other.rtf" as unknown as fs.Dirent,
+        "A - .txt" as unknown as fs.Dirent,
+      ]);
+
+      rtfFileService.removeRtfFile("/store", "A");
+
+      expect(mockFs.unlinkSync).toHaveBeenCalledTimes(1);
+      expect(mockFs.unlinkSync).toHaveBeenCalledWith("/store/a - lower.rtf");
+    });
+
+    it("skips stored names that can't be written when writing all banks", () => {
+      mockFs.readdirSync.mockReturnValue([]);
+
+      const written = rtfFileService.writeAllBankRtfFiles("/sd", [
+        { artist: "AC/DC", letter: "A", rtf_filename: null, scanned_at: null },
+        { artist: "ALWIS", letter: "B", rtf_filename: null, scanned_at: null },
+      ]);
+
+      expect(written).toBe(1);
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        "/sd/B - ALWIS.rtf",
+        "{\\rtf1}",
+        "utf-8",
+      );
     });
   });
 });

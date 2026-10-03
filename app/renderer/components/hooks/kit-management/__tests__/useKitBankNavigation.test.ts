@@ -621,4 +621,52 @@ describe("useKitBankNavigation", () => {
       expect(result.current.bankNames).toEqual({ Z: "Custom Bank" });
     });
   });
+  describe("[UC-12] handleBankNameChange", () => {
+    it("saves a new name and shows it", async () => {
+      const { result } = renderHook(() => useKitBankNavigation(defaultProps));
+
+      await act(async () => {
+        await result.current.handleBankNameChange("A", "New Artist");
+      });
+
+      expect(globalThis.electronAPI.updateBank).toHaveBeenCalledWith("A", {
+        artist: "New Artist",
+      });
+      expect(result.current.bankNames.A).toBe("New Artist");
+    });
+
+    it("clears the name with null (RE-23)", async () => {
+      const { result } = renderHook(() => useKitBankNavigation(defaultProps));
+
+      await act(async () => {
+        await result.current.handleBankNameChange("A", "");
+      });
+
+      expect(globalThis.electronAPI.updateBank).toHaveBeenCalledWith("A", {
+        artist: null,
+      });
+      expect(result.current.bankNames.A).toBeUndefined();
+    });
+
+    it("reports a name main refuses and keeps the old one", async () => {
+      vi.mocked(globalThis.electronAPI.updateBank).mockResolvedValueOnce({
+        error: "A bank name can't contain /",
+        success: false,
+      });
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useKitBankNavigation({ ...defaultProps, onMessage }),
+      );
+
+      await act(async () => {
+        await result.current.handleBankNameChange("A", "AC/DC");
+      });
+
+      expect(onMessage).toHaveBeenCalledWith(
+        "A bank name can't contain /",
+        "error",
+      );
+      expect(result.current.bankNames.A).toBe("Artist A");
+    });
+  });
 });

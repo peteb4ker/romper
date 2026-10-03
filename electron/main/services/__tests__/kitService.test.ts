@@ -60,7 +60,8 @@ describe("KitService", () => {
           bank_letter: "A",
           editable: true,
           locked: false,
-          modified_since_sync: false,
+          // New since the last write (RE-35)
+          modified_since_sync: true,
           name: "A5",
           step_pattern: null,
         }),

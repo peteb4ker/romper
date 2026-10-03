@@ -20,6 +20,7 @@ export {
   getKitSamples,
   getKitsMetadata,
   getSamplesToDelete,
+  markAllKitsAsSyncedExcept,
   markKitAsModified,
   markKitAsSynced,
   markKitsAsSynced,

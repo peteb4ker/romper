@@ -14,6 +14,7 @@ interface KitEditorAllProps extends KitEditorProps {
   kit?: KitWithRelations; // Kit data passed from parent - used via useKitEditorLogic hook
   kitError?: null | string; // Error from parent kit loading - used via useKitEditorLogic hook
   onCreateKit?: () => void; // Used by useKitEditorLogic hook
+  onKitModified?: (kitName: string) => void; // Shows an edit main flagged without a reload (RE-35)
   onKitUpdated?: () => Promise<void>; // Called when kit metadata is updated
   onMessage?: (text: string, type?: string, duration?: number) => void; // Used by useKitEditorLogic hook
   onRefreshKitMetadata?: () => Promise<void>; // Targeted refresh for single kit metadata (voice aliases)
@@ -115,6 +116,7 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
           kit={logic.kit}
           kitName={props.kitName}
           onBatchDropComplete={logic.reloadKit}
+          onKitModified={props.onKitModified}
           onKitUpdated={logic.reloadKit}
           onMessage={props.onMessage}
           onPlay={logic.playback.handlePlay}

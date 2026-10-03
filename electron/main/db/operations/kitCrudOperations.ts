@@ -24,6 +24,7 @@ export {
 } from "./kitFavoritesOperations.js";
 
 export {
+  markAllKitsAsSyncedExcept,
   markKitAsModified,
   markKitAsSynced,
   markKitsAsSynced,
@@ -90,7 +91,8 @@ export function copyKit(
         editable: true, // Duplicated kits are editable by default
         is_favorite: false,
         locked: false,
-        modified_since_sync: false,
+        // The copy isn't on the card yet: the next write adds it (RE-35)
+        modified_since_sync: true,
         name: destKitName,
       })
       .run();

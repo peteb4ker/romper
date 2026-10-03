@@ -16,6 +16,7 @@ interface KitVoicePanelsProps {
   kit: KitWithRelations | null; // Used by useKitVoicePanels hook
   kitName: string; // Used by useKitVoicePanels hook
   onBatchDropComplete?: () => void;
+  onKitModified?: (kitName: string) => void; // Gain changes mark the kit modified without a reload (RE-35)
   onKitUpdated?: () => Promise<void>; // Called after voice stereo mode changes to reload kit data
   onMessage?: (text: string, type?: string, duration?: number) => void; // Refused links and drops (RE-40)
   onPlay: (voice: number, slot: number) => void; // Used by useKitVoicePanels hook
@@ -283,7 +284,10 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     void loadSampleMetadata();
   }, [hookProps.kitName, props.kit]);
 
-  // Optimistic update for gain changes so SampleWaveform gets the new gainDb immediately
+  // Optimistic update for gain changes so SampleWaveform gets the new
+  // gainDb immediately. Main marks the kit modified with the gain (RE-35),
+  // so the kit's card shows it too, without reloading every kit.
+  const { onKitModified } = props;
   const handleGainChange = React.useCallback(
     (
       voice: number,
@@ -297,8 +301,9 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         if (!existing) return prev;
         return { ...prev, [key]: { ...existing, gain_db: gainDb } };
       });
+      onKitModified?.(hookProps.kitName);
     },
-    [],
+    [onKitModified, hookProps.kitName],
   );
 
   // Track which voices were recently visible so content stays rendered during collapse animation

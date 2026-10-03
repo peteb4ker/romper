@@ -50,8 +50,8 @@ item, remove it from every entry that lists it in the same PR.
 
 | Status | Use cases |
 |---|---|
-| supported | Q-04, UC-09, UC-10, UC-13, UC-14, UC-16, UC-18, UC-21, UC-23, UC-24, UC-25, UC-26, UC-27, UC-28, UC-30, UC-31, UC-32, UC-33, UC-34 |
-| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, UC-01, UC-02, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-11, UC-12, UC-15, UC-17, UC-19, UC-29, UC-35, UC-36, UC-37 |
+| supported | Q-04, UC-09, UC-10, UC-11, UC-13, UC-14, UC-16, UC-18, UC-21, UC-23, UC-24, UC-25, UC-26, UC-27, UC-28, UC-30, UC-31, UC-32, UC-33, UC-34 |
+| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, UC-01, UC-02, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-12, UC-15, UC-17, UC-19, UC-29, UC-35, UC-36, UC-37 |
 | not built | UC-20, UC-22 |
 
 The doc gaps below feed [`validation-fix-plan.md`](validation-fix-plan.md)
@@ -278,7 +278,7 @@ a favourite; the Favorites filter shows only those. See
 
 ### UC-11 Filter to kits modified since the last sync
 
-**Status:** partial
+**Status:** supported
 
 The Modified filter shows the kits changed since they were last written to
 the card. See [Modified Filter](../manual/kit-browser.md#modified-filter).
@@ -286,13 +286,14 @@ the card. See [Modified Filter](../manual/kit-browser.md#modified-filter).
 - **Renderer:** `app/renderer/components/hooks/kit-management/useKitFilters.ts` (`handleToggleModifiedFilter`);
   `app/renderer/components/KitGridItem.tsx` (amber border).
 - **Main:** `electron/main/db/operations/kitSyncOperations.ts` (`markKitAsModified`,
-  `markKitsAsSynced`); set by sample add, delete and move
-  (`electron/main/services/sampleBatchOperations.ts`, `electron/main/services/crud/sampleCrudService.ts`) and by a scan
-  that adds samples; cleared by a write (`electron/main/services/syncService.ts`).
-- **Doc gaps:** the filter shows "what needs to be synced"
-  (`kit-browser.md:95`), but gain, stereo, voice name and bank edits don't
-  set the flag, and a created or duplicated kit starts unmodified.
-- **Known issues:** RE-35.
+  `flagKitModified`, `flagBankKitsModified`, `markAllKitsAsSyncedExcept`);
+  set by sample add, delete and move
+  (`electron/main/services/sampleBatchOperations.ts`, `electron/main/services/crud/sampleCrudService.ts`), by a scan
+  that adds samples, by gain, voice name and stereo link edits
+  (`electron/main/db/operations/sampleCrudOperations.ts`, `electron/main/db/operations/voiceCrudOperations.ts`), by a
+  bank rename for every kit in the bank (`electron/main/db/operations/crudOperations.ts`, `updateBank`), and on
+  every created or duplicated kit; cleared on every kit by a completed
+  write, except kits with a skipped sample (`electron/main/services/syncService.ts`).
 
 ### UC-12 Name banks
 
@@ -310,7 +311,7 @@ store and written to the card as `<letter> - <name>.rtf` files. See
   (`scanBanks`); written to the card by `electron/main/services/syncService.ts`
   (`writeBankRtfFiles`).
 - **Doc gaps:** a name given to a bank with no kits is lost on reload.
-- **Known issues:** RE-35.
+- **Known issues:** none registered.
 
 ### UC-13 Scan a kit, or scan all
 
@@ -559,8 +560,7 @@ applied when the kit is written to the card. See
 - **Main:** `electron/main/db/operations/sampleCrudOperations.ts` (`updateSampleGain`);
   applied at write time by `electron/main/formatConverter.ts`
   (`applyGain`).
-- **Known issues:** RE-35 (a gain change doesn't mark the kit modified),
-  RE-25 (no range check in main), RE-48 (no keyboard support on the knob). Gain changes aren't
+- **Known issues:** RE-25 (no range check in main), RE-48 (no keyboard support on the knob). Gain changes aren't
   undoable (UC-26), and each change is a fire-and-forget IPC call with no
   error handling.
 
@@ -769,9 +769,8 @@ Rample's own `_save` folder alone. Cancel stops between files. See
   `electron/main/services/syncProgressManager.ts`, `electron/main/services/sdCardSafety.ts`, `electron/main/services/rtfFileService.ts`;
   `electron/main/formatConverter.ts`; `shared/rampleCardLayout.ts`.
 - **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-35 (the Modified filter misses gain and bank edits),
-  RE-57 (contract drift in `SyncChangeSummary` and `SyncProgress`), RE-48
-  (the write panel has no dialog role or Escape).
+- **Known issues:** RE-57 (contract drift in `SyncChangeSummary` and
+  `SyncProgress`), RE-48 (the write panel has no dialog role or Escape).
   No test above unit level cancels a write.
 
 ## App

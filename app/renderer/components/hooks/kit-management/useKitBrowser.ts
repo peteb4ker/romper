@@ -1,6 +1,6 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import { RefObject } from "react";
+import { RefObject, useCallback } from "react";
 
 import {
   type KitListComponent,
@@ -33,6 +33,17 @@ export function useKitBrowser({
     onMessage,
   });
 
+  // Main marks every kit in a renamed bank modified (RE-35); reload the
+  // kits so their cards and the Modified filter show it
+  const renameBank = bankNavigation.handleBankNameChange;
+  const handleBankNameChange = useCallback(
+    async (bank: string, newName: string) => {
+      await renameBank(bank, newName);
+      onRefreshKits?.();
+    },
+    [renameBank, onRefreshKits],
+  );
+
   // Return the same interface as before for backward compatibility
   return {
     // From bankNavigation
@@ -47,7 +58,7 @@ export function useKitBrowser({
     globalBankHotkeyHandler: bankNavigation.globalBankHotkeyHandler,
     handleBankClick: bankNavigation.handleBankClick,
     handleBankClickWithScroll: bankNavigation.handleBankClickWithScroll,
-    handleBankNameChange: bankNavigation.handleBankNameChange,
+    handleBankNameChange,
     // From kitCreation
     handleCreateKitInBank: kitCreation.handleCreateKitInBank,
 

@@ -267,6 +267,7 @@ describe("ScanService", () => {
         "/env/store/.romperdb",
         "A",
         expect.objectContaining({ artist: "Artist One" }),
+        { source: "scan" },
       );
     });
 
@@ -339,6 +340,7 @@ describe("ScanService", () => {
           artist: "Artist One",
           rtf_filename: "A - Artist One.rtf",
         }),
+        { source: "scan" },
       );
       expect(mockUpdateBank).toHaveBeenCalledWith(
         "/test/path/.romperdb",
@@ -347,6 +349,7 @@ describe("ScanService", () => {
           artist: "Artist Two",
           rtf_filename: "B - Artist Two.rtf",
         }),
+        { source: "scan" },
       );
       expect(mockUpdateBank).toHaveBeenCalledWith(
         "/test/path/.romperdb",
@@ -355,6 +358,7 @@ describe("ScanService", () => {
           artist: "Artist Three",
           rtf_filename: "C - Artist Three.rtf",
         }),
+        { source: "scan" },
       );
     });
 
@@ -371,6 +375,7 @@ describe("ScanService", () => {
           artist: "Artist Lower",
           rtf_filename: "a - Artist Lower.rtf",
         }),
+        { source: "scan" },
       );
     });
 

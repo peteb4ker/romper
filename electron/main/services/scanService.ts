@@ -178,11 +178,18 @@ export class ScanService {
           const artistName = match[2];
 
           // Update bank in database
-          const updateResult = updateBank(dbDir, bankLetter, {
-            artist: artistName,
-            rtf_filename: rtfFile,
-            scanned_at: scannedAt,
-          });
+          // The store's own name files already match the card, so a scan
+          // doesn't mark the bank's kits modified (RE-35)
+          const updateResult = updateBank(
+            dbDir,
+            bankLetter,
+            {
+              artist: artistName,
+              rtf_filename: rtfFile,
+              scanned_at: scannedAt,
+            },
+            { source: "scan" },
+          );
 
           if (updateResult.success) {
             updatedBanks++;

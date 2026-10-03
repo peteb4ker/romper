@@ -4,7 +4,8 @@ import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import * as schema from "@romper/shared/db/schema.js";
 import { and, eq, type SQL } from "drizzle-orm";
 
-import { withDb } from "../utils/dbUtilities.js";
+import { withDb, withDbTransaction } from "../utils/dbUtilities.js";
+import { flagKitModified } from "./kitSyncOperations.js";
 import { performVoiceReindexing } from "./sampleManagementOps.js";
 
 const { samples } = schema;
@@ -137,7 +138,8 @@ export function getSamplesToDelete(
 }
 
 /**
- * Update per-sample gain (dB trim)
+ * Update per-sample gain (dB trim). Gain is applied when the sample is
+ * written, so the kit is marked modified in the same transaction (RE-35).
  */
 export function updateSampleGain(
   dbDir: string,
@@ -146,7 +148,7 @@ export function updateSampleGain(
   slotNumber: number,
   gainDb: number,
 ): DbResult<void> {
-  return withDb(dbDir, (db) => {
+  return withDbTransaction(dbDir, (db) => {
     const result = db
       .update(samples)
       .set({ gain_db: gainDb })
@@ -164,6 +166,7 @@ export function updateSampleGain(
         `Sample not found: kit=${kitName}, voice=${voiceNumber}, slot=${slotNumber}`,
       );
     }
+    flagKitModified(db, kitName);
   });
 }
 

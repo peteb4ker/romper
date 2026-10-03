@@ -13,6 +13,8 @@ Playwright (e2e).
   runs. One file: `npm run test:unit:fast -- <path>` or
   `npm run test:integration:fast -- <path>` (integration tests run inside
   Electron as Node; don't hand-roll `ELECTRON_RUN_AS_NODE` commands).
+  The fast configs size their workers to the free cores, so a busy machine
+  runs fewer instead of timing out; `ROMPER_TEST_WORKERS=<n>` overrides.
 - `npm run typecheck`, `npm run lint:check` -- the other pre-commit gates
   (`npm run lint` auto-fixes).
 - `npm run test:e2e` -- builds, then runs Playwright against the built app.

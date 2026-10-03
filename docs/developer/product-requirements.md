@@ -19,8 +19,8 @@ This software is open source and not developed or endorsed by Squarp.
 > behaviour that isn't built, or that the code does differently, a note in
 > italics says so: _Status (2026-10-01): not built_, or _Built differently
 > (2026-10-01): ..._. The requirements themselves stay. The status of every
-> use case is in [`use-cases.md`](use-cases.md); open defects are in
-> [`BACKLOG.md`](../../BACKLOG.md).
+> use case is in [`use-cases.md`](use-cases.md); open defects are GitHub
+> issues labelled with the use case (see [`BACKLOG.md`](../../BACKLOG.md)).
 
 ## 1.1 Problem Statement
 

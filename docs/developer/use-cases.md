@@ -11,19 +11,29 @@ What Romper supports, from the user's side, and how each use case is built.
 Each entry has:
 
 - **Status:**
-  - *supported*: works as the user docs describe;
-  - *partial*: works, but the docs promise more than the code does, or a
-    known issue breaks part of it;
+  - *supported*: works as the user docs describe, with no open issues;
+  - *partial*: works, but has at least one open issue: a bug, a gap between
+    the docs and the code, or a missing test;
   - *not built*: the docs or the code suggest it, but no user can do it.
 - a description with a link to the manual;
 - entry points (renderer component or hook, IPC channels, main service),
-  checked against the code on 2026-10-01;
-- **Doc gaps:** what the docs promise that the code doesn't do. The docs
-  pass (#417) fixed the docs for every gap found by the audit; record new ones
-  here;
-- **Known issues:** open or partly done findings from
-  [`BACKLOG.md`](../../BACKLOG.md) and the
-  [findings register](../../aidlc-docs/inception/reverse-engineering/code-quality-assessment.md).
+  checked against the code on 2026-10-01.
+
+**Open issues are GitHub issues** labelled with the entry's ID, for example
+[open issues for UC-19](https://github.com/peteb4ker/romper/issues?q=is%3Aopen+label%3AUC-19).
+An issue's title says what a user would notice; its body has the details
+and links the [findings register](../../aidlc-docs/inception/reverse-engineering/code-quality-assessment.md)
+entry, if there is one. A doc gap (the docs promise what the code doesn't
+do) is an issue too, labelled `documentation`, and a missing test is one
+labelled `test`, so entries no longer list known issues or doc gaps here.
+
+Status follows the issues: a supported entry has no open issues, and a
+partial one has at least one. `npm run trace:check` fails when they
+disagree, when an open issue has no `UC-NN` or `Q-NN` label, or when an
+entry has no label on GitHub. The pull request that closes an entry's last
+open issue (`Fixes #N`) marks it supported; the check counts the issues a
+pull request fixes as closed. See [`BACKLOG.md`](../../BACKLOG.md) for the
+loop.
 
 The tests for each use case are listed in `traceability.md`, generated
 (not committed) by `npm run trace` from `[UC-NN]` tags in test titles; CI
@@ -31,32 +41,26 @@ shows it in the Lint job summary. Tag a test
 with the use cases it meaningfully covers, in its `describe` or `test` title:
 `describe("[UC-14] creating a kit", ...)`. A supported use case needs a test
 above unit level; when it has none, its entry says so in a `**Test gap:**`
-line, which `npm run trace:check` accepts until a test closes it.
+line, which `npm run trace:check` accepts until a test closes it. A declared
+test gap is an accepted limitation, not an issue.
 
 The IDs are fixed in
 [`validation-and-traceability.md`](validation-and-traceability.md). Add new
-use cases at the end of their group with the next free ID; never reuse one.
+use cases at the end of their group with the next free ID, and create its
+label (`gh label create UC-NN --description "<statement>"`); never reuse an
+ID.
 
 Everything traces from a user-oriented statement: a use case (what you can
 do) or a quality (how Romper behaves while you do it, under
-[Qualities](#qualities)). Every open item in [`BACKLOG.md`](../../BACKLOG.md)
-is listed under the **Known issues:** of at least one of them, and its
-one-liner says what a user would notice, in plain words. `npm run
-trace:check` fails when an open item isn't listed, when an entry still lists
-an item that's done, or when a one-liner has code in it. When you fix an
-item, remove it from every entry that lists it in the same PR.
+[Qualities](#qualities)).
 
 ## Summary
 
 | Status | Use cases |
 |---|---|
-| supported | Q-04, UC-09, UC-10, UC-11, UC-13, UC-14, UC-16, UC-18, UC-21, UC-23, UC-24, UC-25, UC-26, UC-27, UC-28, UC-30, UC-31, UC-32, UC-33, UC-34 |
-| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, UC-01, UC-02, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-12, UC-15, UC-17, UC-19, UC-29, UC-35, UC-36, UC-37 |
+| supported | Q-04, UC-02, UC-03, UC-09, UC-10, UC-11, UC-13, UC-14, UC-15, UC-16, UC-17, UC-18, UC-19, UC-21, UC-23, UC-25, UC-28, UC-30, UC-31, UC-33, UC-35, UC-37 |
+| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, UC-01, UC-04, UC-05, UC-06, UC-07, UC-08, UC-12, UC-24, UC-26, UC-27, UC-29, UC-32, UC-34, UC-36 |
 | not built | UC-20, UC-22 |
-
-The doc gaps below feed [`validation-fix-plan.md`](validation-fix-plan.md)
-item 10: each one is fixed in the docs, built, or given a decision.
-Undocumented features (UC-16, UC-21, UC-25) need manual sections.
 
 ## Setup and local store
 
@@ -88,13 +92,10 @@ samples keeps the first 12, and the wizard names the files it left out. See
   `electron/main/db/operations/kitScanOperations.ts` (`mergeKitScan`): up
   to 12 samples per voice, WAV metadata and voice names, in one transaction
   per kit.
-- **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-67 (the e2e only checks that the database
-  exists).
 
 ### UC-02 Set up from the factory archive
 
-**Status:** partial
+**Status:** supported
 
 The wizard's factory option downloads Squarp's sample archive (about
 313 MiB), checks its SHA-256, extracts it into a new local store and imports
@@ -111,13 +112,10 @@ and [Factory Samples](../manual/syncing.md#factory-samples).
 - **Main:** `electron/main/services/archiveService.ts` (`downloadAndExtractArchive`,
   `getFactorySamplesArchiveUrl`); `electron/main/archiveUtils.ts`
   (`downloadArchive`, `extractZipEntries`); `electron/main/services/scanService.ts` (`scanBanks`).
-- **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-67 (the e2e uses a 928-byte stub archive;
-  `npm run validate:full` runs the real one, including a cancelled setup).
 
 ### UC-03 Set up an empty library
 
-**Status:** partial
+**Status:** supported
 
 The wizard's blank option creates an empty local store and opens the
 browser on bank A with an Add Kit card. See
@@ -128,8 +126,6 @@ and [Creating Kits](../manual/kit-browser.md#creating-kits).
   `app/renderer/components/wizard/WizardPostInitGuidance.tsx`; then `app/renderer/components/KitBrowser.tsx` (UC-14).
 - **IPC:** as UC-01, without `copy-dir` and `check-disk-space`.
 - **Main:** `electron/main/services/localStoreSetupService.ts` (`createSetupDatabase`).
-- **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** none.
 
 ### UC-04 Choose an existing local store
 
@@ -147,11 +143,6 @@ folder that already holds a local store (one containing `.romperdb`). See
 - **Main:** `electron/main/services/localStoreService.ts` (`validateExistingLocalStore`) →
   `electron/main/localStoreValidator.ts` (`validateLocalStoreAndDb`);
   `electron/main/services/settingsService.ts` (`writeSetting`).
-- **Doc gaps:** the manual says to point Romper at "an existing `.romperdb`
-  directory" (`getting-started.md:67`); the picker wants the folder that
-  contains it, and choosing `.romperdb` itself fails.
-- **Known issues:** nothing tests the wizard's existing-store panel above
-  unit level.
 
 ### UC-05 Recover from an invalid or missing store
 
@@ -172,8 +163,6 @@ and [Validating Your Store](../manual/kit-browser.md#validating-your-store).
   `select-local-store-path`, `write-settings`.
 - **Main:** `electron/main/services/localStoreService.ts` (`getLocalStoreStatus`);
   `electron/main/localStoreValidator.ts` (`validateLocalStoreAgainstDb`).
-- **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-78 (Preferences ignores an invalid folder without a message), RE-56, RE-48.
 
 ### UC-06 Change the local store
 
@@ -195,9 +184,6 @@ describes it.
   `select-existing-local-store`, `write-settings`, `get-local-store-status`.
 - **Main:** `electron/main/applicationMenu.ts`; `electron/main/services/settingsService.ts`;
   `electron/main/localStoreValidator.ts`.
-- **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-78. With `ROMPER_LOCAL_PATH` set, a change has no
-  effect.
 
 ## Browse and organise
 
@@ -217,9 +203,6 @@ See [Navigating Banks](../manual/kit-browser.md#navigating-banks) and
   `app/renderer/components/hooks/useKitGridKeyboard.ts`.
 - **IPC:** `get-all-kits`.
 - **Main:** `electron/main/db/operations/kitCrudOperations.ts` (`getKits`).
-- **Doc gaps:** none.
-- **Known issues:** RE-36, RE-47, RE-48. Letter and arrow keys still reach
-  the browser behind an open dialog (#500).
 
 ### UC-08 Read kit card details
 
@@ -234,9 +217,6 @@ See [Kit Cards](../manual/kit-browser.md#kit-cards).
   `app/renderer/components/shared/KitIconRenderer.tsx`, `app/renderer/components/shared/kitItemUtils.ts`;
   `app/renderer/components/hooks/kit-management/useKitItem.ts`.
 - **IPC:** `get-all-kits`.
-- **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-47, RE-48. Nothing tests the cards above unit
-  level.
 
 ### UC-09 Search kits
 
@@ -252,8 +232,6 @@ and highlights the matches. See
   `app/renderer/utils/kitSearchUtils.ts` (`filterKitsWithSearch`);
   `app/renderer/components/shared/searchHighlight.tsx`.
 - **IPC, main:** none; search runs on the loaded kits.
-- **Known issues:** none registered. Any part of the word "stereo" ("st",
-  "re") matches every kit with a linked pair.
 
 ### UC-10 Favourite kits
 
@@ -272,8 +250,6 @@ a favourite; the Favorites filter shows only those. See
 - **IPC:** `toggle-kit-favorite`
   (`electron/main/db/favoritesIpcHandlers.ts`).
 - **Main:** `electron/main/db/operations/kitFavoritesOperations.ts`.
-- **Doc gaps:** none.
-- **Known issues:** none registered.
 
 ### UC-11 Filter to kits modified since the last sync
 
@@ -309,8 +285,6 @@ store and written to the card as `<letter> - <name>.rtf` files. See
   `electron/main/services/rtfFileService.ts` (`writeRtfFile`, `removeRtfFile`); `electron/main/services/scanService.ts`
   (`scanBanks`); written to the card by `electron/main/services/syncService.ts`
   (`writeBankRtfFiles`).
-- **Doc gaps:** a name given to a bank with no kits is lost on reload.
-- **Known issues:** none registered.
 
 ### UC-13 Scan a kit, or scan all
 
@@ -330,7 +304,6 @@ kit. See [Scanning Your Library](../manual/kit-browser.md#scanning-your-library)
 - **Main:** `electron/main/services/scanService.ts` (`rescanKit`, `scanBanks`);
   `electron/main/db/operations/kitScanOperations.ts` (`mergeKitScan`,
   `planKitScanMerge`).
-- **Known issues:** none registered.
 
 ## Kit lifecycle
 
@@ -351,12 +324,10 @@ the bank bar, and an empty library shows bank A with an Add Kit card. See
 - **IPC:** `create-kit` (`electron/main/ipcHandlers.ts`).
 - **Main:** `electron/main/services/kitService.ts` (`createKit`) →
   `electron/main/db/operations/kitCrudOperations.ts` (`addKit`).
-- **Known issues:** RE-28 (kit and its four voices are inserted without a
-  transaction).
 
 ### UC-15 Duplicate a kit
 
-**Status:** partial
+**Status:** supported
 
 Copy a kit, with its samples, gain, voice settings and sequence, into
 another slot by typing the target (for example `B5`) in the kit card's
@@ -370,10 +341,6 @@ duplicate popover. See
 - **IPC:** `copy-kit`.
 - **Main:** `electron/main/services/kitService.ts` (`copyKit`) → `electron/main/db/operations/kitCrudOperations.ts` (`copyKit`,
   one transaction).
-- **Doc gap:** the manual says to open the kit and use a **Duplicate Kit**
-  option there (`kit-browser.md:64-68`). The kit editor has no duplicate
-  control; duplicate is only on the browser card.
-- **Known issues:** RE-36.
 
 ### UC-16 Delete a kit
 
@@ -391,15 +358,10 @@ doesn't describe this yet; the only mention is in
 - **IPC:** `get-kit-delete-summary`, `delete-kit`.
 - **Main:** `electron/main/services/kitService.ts` (`deleteKit`, `getKitDeleteSummary`) →
   `electron/main/db/operations/kitCrudOperations.ts` (`deleteKit`, `getKitDeleteSummary`).
-- **Doc gap:** no manual section; "editable kits only" and the "Kit is
-  locked" refusal are undocumented, and nothing in the UI can lock a kit
-  (UC-17).
-- **Known issues:** RE-56 (dead `DeleteKitDialog` and unwired
-  `useKitDeletion` handlers).
 
 ### UC-17 Make a kit editable and set its alias
 
-**Status:** partial
+**Status:** supported
 
 Kits open read-only. The header switch makes a kit editable, which shows the
 editing controls (drop, delete, gain, voice names). The kit's display name
@@ -413,14 +375,6 @@ editing controls (drop, delete, gain, voice names). The kit's display name
   `toggleKitEditable`).
 - **IPC:** `update-kit-metadata` (`electron/main/dbIpcHandlers.ts`).
 - **Main:** `electron/main/db/operations/kitCrudOperations.ts` (`updateKit`).
-- **Doc gap:** kit locking isn't built. The manual promises a **Lock
-  toggle** that protects a kit (`kit-editor.md:24`), a clickable lock icon on
-  the card (`kit-browser.md:103`), Editable and Unsaved badges on cards
-  (`kit-browser.md:47`) and "lock important kits" (`syncing.md:78`).
-  `kits.locked` exists but nothing in the UI sets it; the switch labelled
-  "Locked" is the editable toggle. Editable mode itself is never explained.
-- **Known issues:** RE-22 (`update-kit-metadata` spreads the renderer's object),
-  RE-56 (dead `app/renderer/components/hooks/kit-management/useKit.ts`).
 
 ### UC-18 Step to the previous or next kit
 
@@ -435,14 +389,12 @@ the previous or next kit in slot order. See
   `app/renderer/components/hooks/kit-management/useKitNavigation.ts` (`handleNextKit`,
   `handlePrevKit`); wired in `app/renderer/views/KitsView.tsx`.
 - **IPC, main:** none.
-- **Known issues:** none specific. Stepping ignores the browser's search
-  and filters and clears the undo history (UC-26), both undocumented.
 
 ## Samples
 
 ### UC-19 Drop WAVs onto a voice
 
-**Status:** partial
+**Status:** supported
 
 Drag WAV files from Finder or Explorer onto a voice in an editable kit. Each
 file is checked and added to the voice's next free slot, up to 12. See
@@ -460,8 +412,6 @@ file is checked and added to the voice's next free slot, up to 12. See
 - **Main:** `electron/main/services/sampleService.ts` → `electron/main/services/crud/sampleCrudService.ts`
   (`addSampleToSlot`, which refuses the right-hand voice of a linked pair) →
   `electron/main/db/operations/sampleCrudOperations.ts` (`addSample`).
-- **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-28, RE-36.
 
 ### UC-20 Replace a sample
 
@@ -481,8 +431,6 @@ appends instead (UC-19). No manual page describes replacing; the
 - **Decision needed:** build a replace gesture, or delete the dead path. A
   replace gesture must ask first while "Confirm destructive actions" is on,
   as sample delete does (`app/renderer/components/SampleDeleteButton.tsx`).
-- **Known issues:** RE-26 (replace deletes, then adds, with no
-  transaction).
 
 ### UC-21 Move samples within a kit
 
@@ -502,9 +450,6 @@ the FAQ mention reordering
   (`moveSampleInKit`, refuses the linked partner voice) →
   `electron/main/db/operations/sampleManagementOps.ts` (`moveSample`) →
   `electron/main/db/operations/sampleMovement.ts` (`moveSampleInsertOnly`, one transaction).
-- **Doc gap:** no manual section.
-- **Known issues:** RE-28 (the modified flag is written outside the move
-  transaction), RE-36.
 
 ### UC-22 Move a sample to another kit
 
@@ -520,8 +465,6 @@ drop targets. No user doc promises it.
 - **Main:** `electron/main/services/sampleService.ts` → `electron/main/services/crud/sampleCrudService.ts` →
   `electron/main/services/sampleBatchOperations.ts` (`executeCrossKitMove`).
 - **Decision needed:** build it, or delete the backend.
-- **Known issues:** RE-27 (not atomic; drops gain and WAV metadata),
-  RE-57 (the contract offers an `"overwrite"` mode main rejects).
 
 ### UC-23 Delete a sample
 
@@ -543,11 +486,10 @@ asks first. Undo puts it back. See
   `electron/main/services/sampleBatchOperations.ts` (`deleteSampleFromSlot`) →
   `electron/main/db/operations/sampleCrudOperations.ts` (`deleteSamples`) and
   `electron/main/db/operations/sampleManagementOps.ts` (`performVoiceReindexing`).
-- **Known issues:** RE-28, RE-36.
 
 ### UC-24 Set a sample's gain
 
-**Status:** supported
+**Status:** partial
 
 Each sample in an editable kit has a gain knob, from -24 to +12 dB. Gain is
 applied when the kit is written to the card. See
@@ -559,9 +501,6 @@ applied when the kit is written to the card. See
 - **Main:** `electron/main/db/operations/sampleCrudOperations.ts` (`updateSampleGain`);
   applied at write time by `electron/main/formatConverter.ts`
   (`applyGain`).
-- **Known issues:** RE-25 (no range check in main), RE-48 (no keyboard support on the knob). Gain changes aren't
-  undoable (UC-26), and each change is a fire-and-forget IPC call with no
-  error handling.
 
 ### UC-25 Reveal a sample in Finder or Explorer
 
@@ -575,14 +514,13 @@ in the UI or the manual mentions it.
   (`handleSampleContextMenu`).
 - **IPC:** `show-item-in-folder`.
 - **Main:** `electron/main/ipcHandlers.ts` (`shell.showItemInFolder`).
-- **Doc gap:** undocumented and undiscoverable.
 
 **Test gap:** a real test would open Finder or Explorer; it needs a
 `shell` stub in main to be testable above unit level.
 
 ### UC-26 Undo and redo
 
-**Status:** supported
+**Status:** partial
 
 Cmd/Ctrl+Z and Shift+Cmd/Ctrl+Z (or Ctrl+Y), and Edit > Undo and Redo,
 undo sample adds, deletes and moves and sequencer edits in the open kit. A
@@ -599,14 +537,12 @@ focused text field keeps its own undo. See
 - **IPC:** `menu-undo`, `menu-redo` (pushed from main); undo replays the
   sample channels above.
 - **Main:** `electron/main/applicationMenu.ts` (Edit > Undo and Redo).
-- **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** none open.
 
 ## Voices and stereo
 
 ### UC-27 Name voices
 
-**Status:** supported
+**Status:** partial
 
 In an editable kit, the pencil in a voice header renames the voice. Setup
 and scans name unnamed voices from their file names and keep names set by hand. See
@@ -617,8 +553,6 @@ and scans name unnamed voices from their file names and keep names set by hand. 
   `app/renderer/components/KitVoicePanel.tsx`.
 - **IPC:** `update-voice-alias`.
 - **Main:** `electron/main/db/operations/voiceCrudOperations.ts` (`updateVoiceAlias`).
-- **Known issues:** RE-48 (the name input has no label). A failed save only reaches
-  the console.
 
 ### UC-28 Link a voice pair as stereo
 
@@ -640,7 +574,6 @@ to mono when written. See
   `electron/main/services/validation/sampleValidator.ts`
   (`validateVoiceNotLinkedPartner`); at write time,
   `electron/main/services/syncMonoAnnotation.ts` (`annotateMonoConversion`).
-- **Known issues:** none open.
 
 ## Audition
 
@@ -660,11 +593,6 @@ choke). See
 - **IPC:** `get-sample-audio-buffer` (`electron/main/ipcHandlers.ts`).
 - **Main:** `electron/main/services/sampleService.ts` (`getSampleAudioBuffer`) →
   `electron/main/services/metadata/sampleMetadataService.ts`.
-- **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-46 (the waveform redraws every frame). The e2e tests
-  cover loading and decoding the audio, and pressing Play on samples with
-  the same file name shows only the pressed one as playing; none checks
-  that sound comes out.
 
 ### UC-30 Step sequencer
 
@@ -682,7 +610,6 @@ BPM are saved with the kit. See
   `app/renderer/components/hooks/shared/sequenceUndo.ts`.
 - **IPC:** `update-step-pattern`, `update-kit-bpm`.
 - **Main:** `electron/main/db/operations/kitCrudOperations.ts` (`updateKit`).
-- **Known issues:** RE-25 (BPM isn't range-checked in main), RE-36, RE-47. Undo covers less than the manual says (UC-26).
 
 ### UC-31 Trigger conditions
 
@@ -698,11 +625,10 @@ passes of the loop. See
   `app/renderer/components/hooks/shared/useTriggerConditions.ts`; `app/renderer/components/KitStepSequencer.tsx`.
 - **IPC:** `update-trigger-conditions`.
 - **Main:** `electron/main/db/operations/kitCrudOperations.ts` (`updateKit`).
-- **Known issues:** RE-48 (conditions can only be set by right-click).
 
 ### UC-32 Sample mode, level and mute
 
-**Status:** supported
+**Status:** partial
 
 Each voice in the sequencer has a sample mode (first, random or round-robin
 across its samples), a level, and a mute that lasts for the session. See
@@ -716,8 +642,6 @@ and [Voice Volume and Mute](../manual/step-sequencer.md#voice-volume-and-mute).
   saved.
 - **Main:** `electron/main/db/operations/voiceCrudOperations.ts` (`updateVoiceVolume`,
   `updateVoiceSampleMode`).
-- **Known issues:** RE-25 (no checks in main), RE-36. Failed level and mode
-  saves are dropped silently.
 
 ### UC-33 Slicer
 
@@ -736,14 +660,12 @@ step, with rolls ("happy accidents") to generate patterns. See
   `update-voice-slice-settings`, `get-sample-audio-buffer`.
 - **Main:** `electron/main/db/operations/kitCrudOperations.ts` (`updateKit`),
   `electron/main/db/operations/voiceCrudOperations.ts` (`updateVoiceSliceSettings`).
-- **Known issues:** none open. Undo covers less than the manual says
-  (UC-26).
 
 ## Write to card
 
 ### UC-34 Write kits to the SD card
 
-**Status:** supported
+**Status:** partial
 
 **Write** in the browser header compares the store with the card and shows a
 summary: kits and samples to write, conversions, files the store no longer
@@ -767,16 +689,12 @@ Rample's own `_save` folder alone. Cancel stops between files. See
   `electron/main/services/syncValidationService.ts`, `electron/main/services/syncMonoAnnotation.ts`,
   `electron/main/services/syncProgressManager.ts`, `electron/main/services/sdCardSafety.ts`, `electron/main/services/rtfFileService.ts`;
   `electron/main/formatConverter.ts`; `shared/rampleCardLayout.ts`.
-- **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-57 (contract drift in `SyncChangeSummary` and
-  `SyncProgress`), RE-48 (the write panel has no dialog role or Escape).
-  No test above unit level cancels a write.
 
 ## App
 
 ### UC-35 Preferences
 
-**Status:** partial
+**Status:** supported
 
 Settings (Cmd/Ctrl+, or the gear in the header) has three tabs: Sample
 Management ("Confirm destructive actions"), Appearance (light, system or
@@ -792,8 +710,6 @@ the theme. The manual has no Preferences section; see
 - **Main:** `electron/main/services/settingsService.ts` (`readSettings`,
   `writeSetting`); `electron/main/mainProcessSetup.ts` (`loadSettings`);
   `electron/main/settingsFile.ts` (value checks, atomic write).
-- **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-48.
 
 ### UC-36 Messages and error containment
 
@@ -811,15 +727,10 @@ window. No manual page covers this; the requirements are in
   `app/renderer/views/KitsView.tsx`); `app/renderer/components/dialogs/CriticalErrorDialog.tsx`.
 - **IPC, main:** none of its own; each feature reports through
   `onMessage`.
-- **Doc gaps:** the PRD puts messages at the top centre and keeps errors
-  until dismissed (`product-requirements.md:595, 829-832`); they're at the
-  top right and errors go after 7 s. There's no message history.
-- **Known issues:** RE-48. The renderer has no `unhandledrejection`
-  handler. No test above unit level renders the error boundary in the app.
 
 ### UC-37 About, help, updates and diagnostics
 
-**Status:** partial
+**Status:** supported
 
 The About dialog shows the version and links; the Help menu and status bar
 link to the Romper and Rample manuals. On macOS, Romper checks for updates
@@ -835,16 +746,13 @@ and [Installation](../manual/getting-started.md#installation).
 - **Main:** `electron/main/applicationMenu.ts` (`createApplicationMenu`:
   About, Help links, the DevTools opt-in); `electron/main/autoUpdater.ts`
   (`initAutoUpdater`).
-- **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-79 (Windows signing would leave the installed app unsigned), RE-18, RE-55 (no Intel Mac build), RE-56 (dead
-  `AboutView`).
 
 ## Qualities
 
 What Romper promises about how it behaves, whatever you're doing: the
 user-oriented statements behind its non-functional work. Each has a status
-like a use case, its tests are tagged the same way (`[Q-01]`), and every
-open backlog item that isn't a use case's known issue is one of these.
+like a use case, its tests and issues are labelled the same way (`[Q-01]`,
+`Q-01`), and an issue that no use case shows goes under one of these.
 
 ### Q-01 Romper stays responsive as your library grows
 
@@ -856,8 +764,6 @@ everyday action has a work budget (`tests/perf/budgets.ts`) that a change
 can't exceed; the plan to bring the budgets down is in
 [`architecture-review.md`](architecture-review.md).
 
-- **Known issues:** RE-36, RE-46, RE-47, RE-81, RE-82, RE-83, RE-85, RE-87,
-  RE-88.
 
 ### Q-02 Your changes are saved completely, or not at all
 
@@ -867,8 +773,6 @@ An edit, a scan, an undo or an upgrade either finishes or leaves your
 library as it was; it never leaves a kit half-changed or a sample without
 its settings.
 
-- **Known issues:** RE-22, RE-25, RE-26, RE-27, RE-28, RE-33, RE-81,
-  RE-86, RE-89.
 
 ### Q-03 Romper only touches what you point it at
 
@@ -877,7 +781,6 @@ its settings.
 Romper reads your samples and writes only to your local store and the card
 you choose. Its interface can't reach any other files or folders.
 
-- **Known issues:** RE-84, RE-85.
 
 ### Q-04 The card ends up exactly matching your library
 
@@ -888,7 +791,6 @@ should be, converted where the Rample needs it, and the Rample's own
 settings folder is untouched. The full-pipeline validation checks this
 byte for byte before every release.
 
-- **Known issues:** none.
 
 ### Q-05 Releases are signed and install cleanly everywhere Romper runs
 
@@ -897,7 +799,6 @@ byte for byte before every release.
 Every release is signed, so your operating system trusts it, is built for
 each supported platform, and is made from up-to-date, secure parts.
 
-- **Known issues:** RE-18, RE-49, RE-54, RE-55, RE-79, OPS-2, OPS-3.
 
 ### Q-06 Romper works with a keyboard and assistive technology
 
@@ -906,7 +807,6 @@ each supported platform, and is made from up-to-date, secure parts.
 Everything you can do with a mouse you can do with a keyboard, and screen
 readers can name every control.
 
-- **Known issues:** RE-48.
 
 ### Q-07 Every change is tested before it reaches you
 
@@ -915,8 +815,6 @@ readers can name every control.
 A change is merged only after its tests pass on every platform, and those
 tests check what you'd notice, not just the code's internals.
 
-- **Known issues:** RE-50, RE-51, RE-52, RE-53, RE-56, RE-57, RE-67,
-  OPS-1.
 
 ## Promised, not built
 

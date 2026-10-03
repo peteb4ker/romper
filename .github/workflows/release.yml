@@ -147,7 +147,7 @@ jobs:
           gh issue create \
             --repo ${{ github.repository }} \
             --title "Release ${{ github.ref_name }} blocked: preflight failed" \
-            --label "bug,priority:high" \
+            --label "bug,priority:high,severity:high,Q-05" \
             --body "Release **${{ github.ref_name }}** didn't pass preflight (tag on main and matching package.json, signing secrets, Apple credentials and agreements, SonarCloud gate). See [the run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).
           - [Issues](https://sonarcloud.io/project/issues?id=peteb4ker_romper&severities=CRITICAL,BLOCKER)
           - [Hotspots](https://sonarcloud.io/project/security_hotspots?id=peteb4ker_romper)
@@ -161,6 +161,8 @@ jobs:
     needs: preflight
     permissions:
       contents: read
+      issues: read
+      pull-requests: read
     uses: ./.github/workflows/lint.yml
 
   typecheck:

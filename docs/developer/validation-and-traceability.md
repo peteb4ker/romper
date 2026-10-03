@@ -314,8 +314,10 @@ Each entry in `use-cases.md` has:
 - the feature description (link to the manual page);
 - implementation entry points (renderer component or hook, IPC channels, main
   service);
-- tests by layer;
-- known issues (RE IDs).
+- tests by layer (generated, see below).
+
+Its open issues are the GitHub issues labelled with its ID (`UC-14`), and
+its status follows them: supported means none are open.
 
 Promises the code doesn't keep are either built, removed from the docs, or
 listed as "not built" with a decision.
@@ -332,7 +334,10 @@ listed as "not built" with a decision.
   - a supported use case has no test above unit level, unless its register
     entry declares the gap with a `**Test gap:**` line (and the check also
     fails once a declared gap is closed, so the line goes);
-  - a test names an unknown use case ID.
+  - a test names an unknown use case ID;
+  - an open GitHub issue has no `UC-NN` or `Q-NN` label, or one the
+    register doesn't have, or a register entry has no label;
+  - a supported entry has an open issue, or a partial entry has none.
 - The matrix is generated and never committed, so it can't go stale. (It was
   committed at first, and its counts changed with almost every PR.) The
   register (descriptions, status, entry points) is edited by hand and reviewed

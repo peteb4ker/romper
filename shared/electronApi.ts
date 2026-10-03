@@ -81,12 +81,15 @@ export interface ElectronAPI {
     voiceNumber: number,
     slotNumber: number,
   ) => Promise<DbResult<{ deletedSamples: Sample[] }>>;
-  /** Installs the Squarp factory samples; main owns the archive URL. */
+  /**
+   * Installs the Squarp factory samples; main owns the archive URL.
+   * `retryable` is set only when downloading again could succeed (RE-77).
+   */
   downloadAndExtractArchive: (
     destDir: string,
     onProgress?: (p: unknown) => void,
     onError?: (e: unknown) => void,
-  ) => Promise<{ cancelled?: boolean } & DbResult>;
+  ) => Promise<{ cancelled?: boolean; retryable?: boolean } & DbResult>;
   ensureDir: (dir: string) => Promise<unknown>;
   generateSyncChangeSummary: (
     sdCardPath?: string,

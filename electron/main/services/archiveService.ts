@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import {
   ArchiveChecksumError,
+  ArchiveHttpError,
   countZipEntries,
   downloadArchive,
   extractZipEntries,
@@ -24,6 +25,29 @@ export const SQUARP_FACTORY_SAMPLES_URL =
  */
 export const SQUARP_FACTORY_SAMPLES_SHA256 =
   "1b03f1737a21598bdce05e1de344f71a1c9d64a0f314516ccf82c60215eca84c";
+
+/** The outcome of installing the factory archive */
+export interface ArchiveInstallResult {
+  cancelled?: boolean;
+  error?: string;
+  /**
+   * The download failed in a way another attempt can fix: the connection
+   * dropped or stalled, or the server had a temporary problem. A checksum
+   * mismatch, a damaged archive or a full disk would fail the same way
+   * again, so they aren't retryable (RE-77).
+   */
+  retryable?: boolean;
+  success: boolean;
+}
+
+/** File system errors that another download wouldn't fix */
+const LOCAL_FS_ERROR_CODES = new Set([
+  "EACCES",
+  "EDQUOT",
+  "ENOSPC",
+  "EPERM",
+  "EROFS",
+]);
 
 /**
  * Service for archive download and extraction operations
@@ -57,11 +81,13 @@ export class ArchiveService {
       phase: string;
     }) => void,
     signal?: AbortSignal,
-  ): Promise<{ cancelled?: boolean; error?: string; success: boolean }> {
+  ): Promise<ArchiveInstallResult> {
     let tmpZipPath: string | undefined;
+    let phase: "download" | "extract" = "download";
 
     try {
       tmpZipPath = await this.resolveArchivePath(url, progressCallback, signal);
+      phase = "extract";
       await this.performExtraction(
         tmpZipPath,
         destDir,
@@ -74,7 +100,15 @@ export class ArchiveService {
       if (signal?.aborted) {
         return { cancelled: true, error: "Setup cancelled", success: false };
       }
-      return { error: this.formatErrorMessage(e), success: false };
+      const retryable =
+        phase === "download" &&
+        url.startsWith("https://") &&
+        isTransientDownloadFailure(e);
+      return {
+        error: this.formatErrorMessage(e, phase, retryable),
+        retryable,
+        success: false,
+      };
     } finally {
       // The downloaded zip (about 313 MiB for the factory pack) is only
       // needed until extraction ends, whether it succeeded or not
@@ -180,21 +214,35 @@ export class ArchiveService {
   }
 
   /**
-   * Format error message
+   * Say why the install failed, in words the setup wizard can show as they
+   * are: it no longer replaces them with a generic network error (RE-77).
    */
-  private formatErrorMessage(e: unknown): string {
+  private formatErrorMessage(
+    e: unknown,
+    phase: "download" | "extract",
+    retryable: boolean,
+  ): string {
     if (e instanceof ArchiveChecksumError) {
       console.error("[ArchiveService]", e.message);
       return (
-        "The factory sample archive on Squarp's server has changed since " +
-        "this version of Romper was released, so Romper can't verify it. " +
-        "Update Romper, or set up from an SD card instead."
+        "The downloaded factory sample archive didn't match the expected " +
+        "checksum, so Romper didn't install it. The download may have been " +
+        "damaged on the way, or the archive on Squarp's server has changed " +
+        "since this version of Romper was released. Try again, update " +
+        "Romper, or set up from an SD card instead."
       );
     }
     let message = e instanceof Error ? e.message : String(e);
     if (message?.includes("premature close")) {
       message =
         "Extraction failed: Archive closed unexpectedly. Please try again.";
+    } else if (phase === "extract") {
+      message = `The factory sample archive couldn't be unpacked: ${message}`;
+    } else if (message === "fetch failed") {
+      message = "Couldn't connect to the download server.";
+    }
+    if (retryable && !/try again/i.test(message)) {
+      message += " Check your internet connection and try again.";
     }
     return message;
   }
@@ -293,6 +341,20 @@ export function getFactorySamplesArchiveUrl(): string {
   return override && override.trim() !== ""
     ? override
     : SQUARP_FACTORY_SAMPLES_URL;
+}
+
+/**
+ * Whether downloading again could succeed: a dropped, stalled or cut-short
+ * connection, or a temporary server error. Not a checksum mismatch, a
+ * missing file (HTTP 4xx) or a local disk error.
+ */
+function isTransientDownloadFailure(e: unknown): boolean {
+  if (e instanceof ArchiveChecksumError) return false;
+  if (e instanceof ArchiveHttpError) {
+    return e.status >= 500 || e.status === 408 || e.status === 429;
+  }
+  const code = (e as NodeJS.ErrnoException | undefined)?.code;
+  return !(code && LOCAL_FS_ERROR_CODES.has(code));
 }
 
 // Export singleton instance

@@ -103,8 +103,7 @@ export function useLocalStoreWizardFileOps({
   const extractSquarpArchive = useCallback(
     async (targetPath: string) => {
       // Main owns the archive URL; the renderer only names the destination.
-      const isTest = process.env.NODE_ENV === "test";
-      const maxRetries = isTest ? 1 : 3;
+      const maxRetries = 3;
 
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         // Throttle progress updates to avoid thousands of UI refreshes
@@ -138,6 +137,14 @@ export function useLocalStoreWizardFileOps({
         if (result?.cancelled) throw new SetupCancelledError();
         throwIfCancelled();
 
+        // Main says why it failed. Only a network failure is worth another
+        // 313 MiB download: a checksum mismatch, a damaged archive or a full
+        // disk would fail the same way again, so show main's reason now
+        // instead of retrying behind a generic network error (RE-77).
+        const reason =
+          result?.error ?? "The factory samples couldn't be installed.";
+        if (!result?.retryable) throw new Error(reason);
+
         if (attempt < maxRetries) {
           const delay = attempt * 2000;
           reportProgress({
@@ -147,7 +154,7 @@ export function useLocalStoreWizardFileOps({
           await new Promise((resolve) => setTimeout(resolve, delay));
         } else {
           throw new Error(
-            `Factory samples download failed after ${maxRetries} attempts. Please check your internet connection and try again.`,
+            `Factory samples download failed after ${maxRetries} attempts. ${reason}`,
           );
         }
       }

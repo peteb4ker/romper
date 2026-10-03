@@ -467,7 +467,7 @@ describe("[UC-02] factory archive checksum (RE-24)", () => {
     ).toEqual({ expectedSha256: undefined });
   });
 
-  it("explains a mismatch: the archive changed; update or use an SD card", async () => {
+  it("explains a mismatch, and says another download won't help (RE-77)", async () => {
     const { ArchiveChecksumError, downloadArchive } =
       await import("../../archiveUtils");
     vi.mocked(downloadArchive).mockRejectedValueOnce(
@@ -483,8 +483,128 @@ describe("[UC-02] factory archive checksum (RE-24)", () => {
     );
 
     expect(result.success).toBe(false);
+    expect(result.retryable).toBe(false);
+    expect(result.error).toMatch(/didn't match the expected checksum/);
     expect(result.error).toMatch(/archive on Squarp's server has changed/);
-    expect(result.error).toMatch(/Update Romper, or set up from an SD card/);
+    expect(result.error).toMatch(/update Romper, or set up from an SD card/);
+  });
+});
+
+describe("[UC-02] which failures are worth another download (RE-77)", () => {
+  async function failDownloadWith(error: unknown, url?: string) {
+    const { downloadArchive } = await import("../../archiveUtils");
+    vi.mocked(downloadArchive).mockRejectedValueOnce(error);
+    const { archiveService, SQUARP_FACTORY_SAMPLES_URL } =
+      await import("../archiveService");
+    return archiveService.downloadAndExtractArchive(
+      url ?? SQUARP_FACTORY_SAMPLES_URL,
+      "/mock/dest",
+    );
+  }
+
+  it("retries a dropped connection, and says to check it", async () => {
+    const result = await failDownloadWith(new TypeError("fetch failed"));
+
+    expect(result).toEqual({
+      error:
+        "Couldn't connect to the download server. Check your internet connection and try again.",
+      retryable: true,
+      success: false,
+    });
+  });
+
+  it("retries a stalled download, keeping its own advice", async () => {
+    const result = await failDownloadWith(
+      new Error(
+        "Download stalled: no data received for 60 seconds. Check your connection and try again.",
+      ),
+    );
+
+    expect(result.retryable).toBe(true);
+    expect(result.error).toBe(
+      "Download stalled: no data received for 60 seconds. Check your connection and try again.",
+    );
+  });
+
+  it("retries a temporary server error", async () => {
+    const { ArchiveHttpError } = await import("../../archiveUtils");
+    const result = await failDownloadWith(
+      new ArchiveHttpError(503, "Service Unavailable"),
+    );
+
+    expect(result.retryable).toBe(true);
+    expect(result.error).toBe(
+      "Download failed: the server answered HTTP 503 Service Unavailable Check your internet connection and try again.",
+    );
+  });
+
+  it("doesn't retry a missing archive (HTTP 404)", async () => {
+    const { ArchiveHttpError } = await import("../../archiveUtils");
+    const result = await failDownloadWith(
+      new ArchiveHttpError(404, "Not Found"),
+    );
+
+    expect(result).toEqual({
+      error: "Download failed: the server answered HTTP 404 Not Found",
+      retryable: false,
+      success: false,
+    });
+  });
+
+  it("doesn't retry a checksum mismatch", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { ArchiveChecksumError } = await import("../../archiveUtils");
+    const result = await failDownloadWith(
+      new ArchiveChecksumError("a".repeat(64), "b".repeat(64)),
+    );
+
+    expect(result.retryable).toBe(false);
+  });
+
+  it("doesn't retry a full disk", async () => {
+    const full = Object.assign(new Error("ENOSPC: no space left on device"), {
+      code: "ENOSPC",
+    });
+    const result = await failDownloadWith(full);
+
+    expect(result).toEqual({
+      error: "ENOSPC: no space left on device",
+      retryable: false,
+      success: false,
+    });
+  });
+
+  it("doesn't retry a damaged archive, and says it couldn't be unpacked", async () => {
+    unzipScript = (stream) => {
+      stream.emit("error", new Error("invalid signature: 0xf18abe10"));
+    };
+    const { archiveService, SQUARP_FACTORY_SAMPLES_URL } =
+      await import("../archiveService");
+
+    const result = await archiveService.downloadAndExtractArchive(
+      SQUARP_FACTORY_SAMPLES_URL,
+      "/mock/dest",
+    );
+
+    expect(result).toEqual({
+      error:
+        "The factory sample archive couldn't be unpacked: invalid signature: 0xf18abe10",
+      retryable: false,
+      success: false,
+    });
+  });
+
+  it("doesn't retry a local archive that isn't there", async () => {
+    vi.mocked(fs.existsSync).mockReturnValue(false);
+    const { archiveService } = await import("../archiveService");
+
+    const result = await archiveService.downloadAndExtractArchive(
+      "file:///mock/missing.zip",
+      "/mock/dest",
+    );
+
+    expect(result.retryable).toBe(false);
+    expect(result.error).toContain("Local file does not exist");
   });
 });
 

@@ -217,10 +217,13 @@ describe("useLocalStoreWizard", () => {
     });
   });
 
-  it("handles download/extract error", async () => {
+  it("[UC-02] shows main's reason when the archive can't be installed (RE-77)", async () => {
+    const reason =
+      "The downloaded factory sample archive didn't match the expected checksum, so Romper didn't install it.";
     vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
       async () => ({
-        error: "fail",
+        error: reason,
+        retryable: false,
         success: false,
       }),
     );
@@ -233,8 +236,9 @@ describe("useLocalStoreWizard", () => {
     await act(async () => {
       await result.current.initialize();
     });
-    expect(result.current.state.error).toMatch(
-      /Factory samples download failed/,
+    expect(result.current.state.error).toBe(reason);
+    expect(window.electronAPI.downloadAndExtractArchive).toHaveBeenCalledTimes(
+      1,
     );
     expect(result.current.state.isInitializing).toBe(false);
   });
@@ -281,7 +285,7 @@ describe("useLocalStoreWizard", () => {
       await result.current.initialize();
     });
     expect(result.current.state.error).toMatch(
-      /Factory samples download failed/,
+      /The connection was closed before completion/,
     );
     expect(result.current.state.isInitializing).toBe(false);
     expect(result.current.progress).toBeNull();

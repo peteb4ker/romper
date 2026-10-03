@@ -53,6 +53,7 @@ import {
   markKitsAsSynced,
 } from "../../db/romperDbCoreORM.js";
 import { convertToRampleDefault } from "../../formatConverter.js";
+import { rtfFileService } from "../rtfFileService.js";
 import {
   findStaleCardEntries,
   removeCardEntries,
@@ -435,13 +436,70 @@ describe("[UC-34] SyncService", () => {
         ],
         success: true,
       } as never);
+      const write = vi
+        .spyOn(rtfFileService, "writeAllBankRtfFiles")
+        .mockReturnValue(1);
 
-      await syncService.startKitSync(mockSettings, { sdCardPath: "/sd/card" });
+      try {
+        await syncService.startKitSync(mockSettings, {
+          sdCardPath: "/sd/card",
+        });
 
-      expect([...mockFindStaleCardEntries.mock.calls[0][1].bankFiles]).toEqual([
-        "A - ALWIS.rtf",
-      ]);
-      vi.mocked(getAllBanks).mockReturnValue({ data: [], success: true });
+        expect([
+          ...mockFindStaleCardEntries.mock.calls[0][1].bankFiles,
+        ]).toEqual(["A - ALWIS.rtf"]);
+        expect(write).toHaveBeenCalledWith("/sd/card", expect.any(Array));
+      } finally {
+        write.mockRestore();
+        vi.mocked(getAllBanks).mockReturnValue({ data: [], success: true });
+      }
+    });
+
+    it("[UC-12] fails the write when a bank name file can't be written (RE-23)", async () => {
+      const write = vi
+        .spyOn(rtfFileService, "writeAllBankRtfFiles")
+        .mockImplementation(() => {
+          throw new Error("EIO: card removed");
+        });
+
+      try {
+        const result = await syncService.startKitSync(mockSettings, {
+          sdCardPath: "/sd/card",
+        });
+
+        expect(result.success).toBe(false);
+        expect(result.error).toContain("EIO: card removed");
+        expect(mockRemoveCardEntries).not.toHaveBeenCalled();
+        expect(mockMarkKitsAsSynced).not.toHaveBeenCalled();
+      } finally {
+        write.mockRestore();
+      }
+    });
+
+    it("[UC-12] warns about a stored bank name that can't be a file name (RE-23)", async () => {
+      vi.mocked(getAllBanks).mockReturnValue({
+        data: [
+          { artist: "AC/DC", letter: "A" },
+          { artist: "ALWIS", letter: "B" },
+        ],
+        success: true,
+      } as never);
+
+      try {
+        const summary = await syncService.generateChangeSummary(
+          mockSettings,
+          "/sd/card",
+        );
+
+        expect(summary.data?.warnings).toEqual(
+          expect.arrayContaining([expect.stringContaining('"AC/DC"')]),
+        );
+        expect([
+          ...mockFindStaleCardEntries.mock.calls[0][1].bankFiles,
+        ]).toEqual(["B - ALWIS.rtf"]);
+      } finally {
+        vi.mocked(getAllBanks).mockReturnValue({ data: [], success: true });
+      }
     });
   });
 

@@ -38,7 +38,12 @@ import {
 import { checkSampleSourceAccess } from "./security/sampleSourceAccess.js";
 import { localStoreService } from "./services/localStoreService.js";
 import { localStoreSetupService } from "./services/localStoreSetupService.js";
-import { rtfFileService } from "./services/rtfFileService.js";
+import {
+  bankNameError,
+  bankRtfFileName,
+  isBankLetter,
+  rtfFileService,
+} from "./services/rtfFileService.js";
 import { scanService } from "./services/scanService.js";
 import { ServicePathManager } from "./utils/fileSystemUtils.js";
 
@@ -342,6 +347,11 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     }),
   );
 
+  // Rename or clear a bank (RE-23). An empty or null artist clears the name
+  // in the database as well as its RTF file, so it stays gone after a
+  // reload and the next write removes it from the card. The file is
+  // written first, so a name that can't be written never reaches the
+  // database.
   ipcMain.handle(
     "update-bank",
     createDbHandler(
@@ -349,31 +359,41 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
       (
         dbDir: string,
         bankLetter: string,
-        updates: { artist?: null | string; rtf_filename?: null | string },
+        updates: { artist?: null | string },
       ) => {
-        const result = updateBank(dbDir, bankLetter, {
-          artist: updates.artist ?? undefined,
-          rtf_filename: updates.rtf_filename ?? undefined,
-        });
+        if (!isBankLetter(bankLetter)) {
+          return {
+            error: `Invalid bank letter: ${JSON.stringify(bankLetter)}`,
+            success: false,
+          };
+        }
+        const artist = updates?.artist?.trim() || null;
+        if (artist) {
+          const nameError = bankNameError(artist);
+          if (nameError) return { error: nameError, success: false };
+        }
 
-        if (result.success) {
-          // Manage RTF file in local store root
+        try {
           const localStorePath =
             ServicePathManager.getLocalStorePath(inMemorySettings);
           if (localStorePath) {
-            if (updates.artist) {
-              rtfFileService.writeRtfFile(
-                localStorePath,
-                bankLetter,
-                updates.artist,
-              );
+            if (artist) {
+              rtfFileService.writeRtfFile(localStorePath, bankLetter, artist);
             } else {
               rtfFileService.removeRtfFile(localStorePath, bankLetter);
             }
           }
+        } catch (error) {
+          return {
+            error: `Couldn't save the name of bank ${bankLetter}: ${error instanceof Error ? error.message : String(error)}`,
+            success: false,
+          };
         }
 
-        return result;
+        return updateBank(dbDir, bankLetter, {
+          artist,
+          rtf_filename: artist ? bankRtfFileName(bankLetter, artist) : null,
+        });
       },
     ),
   );

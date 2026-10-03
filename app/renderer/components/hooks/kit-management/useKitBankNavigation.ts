@@ -15,11 +15,13 @@ export interface KitListComponent {
 interface UseKitBankNavigationProps {
   kitListRef: RefObject<KitListComponent | null>;
   kits: KitWithRelations[];
+  onMessage?: (text: string, type?: string, duration?: number) => void;
 }
 
 export function useKitBankNavigation({
   kitListRef,
   kits,
+  onMessage,
 }: UseKitBankNavigationProps) {
   const [selectedBank, setSelectedBank] = useState<string>("A");
   const [focusedKit, setFocusedKit] = useState<null | string>(null);
@@ -187,15 +189,12 @@ export function useKitBankNavigation({
     setSelectedBank(bank);
   }, []);
 
-  // Handler for bank name editing
+  // Handler for bank name editing. An empty name clears the bank's name
+  // (RE-23); main reports a name it can't save.
   const handleBankNameChange = useCallback(
     async (bank: string, newName: string) => {
-      const artist = newName || null;
-      const rtfFilename = newName ? `${bank} - ${newName}.rtf` : null;
-
       const result = await globalThis.electronAPI.updateBank?.(bank, {
-        artist,
-        rtf_filename: rtfFilename,
+        artist: newName || null,
       });
 
       if (result?.success) {
@@ -208,9 +207,14 @@ export function useKitBankNavigation({
           }
           return next;
         });
+      } else if (result) {
+        onMessage?.(
+          result.error ?? `Couldn't save the name of bank ${bank}`,
+          "error",
+        );
       }
     },
-    [],
+    [onMessage],
   );
 
   return {

@@ -8,7 +8,8 @@ interface LocalStoreWizardModalProps {
   onCloseApp?: () => void;
   onInitializationChange?: (isInitializing: boolean) => void;
   onSuccess: () => void;
-  setLocalStorePath: (path: string) => void;
+  /** Saves the store path; resolves false if it couldn't */
+  setLocalStorePath: (path: string) => Promise<boolean>;
 }
 
 /**

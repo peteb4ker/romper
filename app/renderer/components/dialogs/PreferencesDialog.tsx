@@ -2,6 +2,7 @@ import { GearSixIcon, XIcon } from "@phosphor-icons/react";
 import React, { useEffect, useState } from "react";
 
 import { useSettings } from "../../utils/SettingsContext";
+import { useChooseExistingLocalStore } from "../hooks/shared/useChooseExistingLocalStore";
 import AdvancedTab from "../preferences/AdvancedTab";
 import AppearanceTab from "../preferences/AppearanceTab";
 import SampleManagementTab from "../preferences/SampleManagementTab";
@@ -29,6 +30,19 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
     "advanced" | "appearance" | "samples"
   >("samples");
 
+  // A folder that isn't a store, or a save that fails, is reported on the
+  // Advanced tab (RE-78)
+  const {
+    chooseExistingStore,
+    clearError: clearChangeError,
+    error: changeError,
+    isChoosing,
+  } = useChooseExistingLocalStore(setLocalStorePath);
+
+  useEffect(() => {
+    if (!isOpen) clearChangeError();
+  }, [isOpen, clearChangeError]);
+
   // Handle escape key
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -49,17 +63,6 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
   const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
       onClose();
-    }
-  };
-
-  const handleChangeLocalStore = async () => {
-    try {
-      const result = await globalThis.electronAPI.selectExistingLocalStore?.();
-      if (result?.success && result.path) {
-        await setLocalStorePath(result.path);
-      }
-    } catch (error) {
-      console.error("Failed to change local store:", error);
     }
   };
 
@@ -152,9 +155,11 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
 
             {activeTab === "advanced" && (
               <AdvancedTab
+                changeError={changeError}
+                isChanging={isChoosing}
                 localStorePath={localStorePath}
                 localStoreStatus={localStoreStatus}
-                onChangeLocalStore={handleChangeLocalStore}
+                onChangeLocalStore={() => void chooseExistingStore()}
               />
             )}
           </div>

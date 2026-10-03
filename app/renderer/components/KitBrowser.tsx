@@ -44,7 +44,7 @@ interface KitBrowserProps {
   // Search functionality
   searchQuery?: string;
   searchResultCount?: number;
-  setLocalStorePath?: (path: string) => void;
+  setLocalStorePath?: (path: string) => Promise<boolean>;
   showFavoritesOnly?: boolean;
   showModifiedOnly?: boolean;
 }

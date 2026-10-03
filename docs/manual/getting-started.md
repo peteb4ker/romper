@@ -72,6 +72,10 @@ To stop setup while it runs, click **Cancel** and confirm. Romper stops the down
 
 If you've used Romper before and your settings were lost (reinstall, new machine), you can point Romper at an existing local store to pick up where you left off. Click **Choose Existing Store** in the wizard, then **Browse for Existing Store**, and choose the folder that contains the `.romperdb` folder (not the `.romperdb` folder itself).
 
+### Switching to Another Local Store
+
+To use a different local store later, choose **File > Change Local Store...**, or open Preferences (`Cmd+,` / `Ctrl+,`), go to **Advanced** and click **Change...**. Choose the folder that contains the `.romperdb` folder, and the Kit Browser reloads from that store. If the folder isn't a local store, Romper says why and keeps using the current one.
+
 ## The Main Interface
 
 Once setup is complete, you'll see the Kit Browser -- Romper's main view.

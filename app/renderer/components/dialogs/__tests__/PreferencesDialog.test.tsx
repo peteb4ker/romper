@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -382,7 +388,7 @@ describe("[UC-35] PreferencesDialog", () => {
 
       await waitFor(() => {
         expect(consoleErrorSpy).toHaveBeenCalledWith(
-          "Failed to change local store:",
+          "Failed to choose a local store:",
           expect.any(Error),
         );
       });
@@ -427,7 +433,7 @@ describe("[UC-35] PreferencesDialog", () => {
       // Wait for error to be logged due to missing API method
       await waitFor(() => {
         expect(consoleErrorSpy).toHaveBeenCalledWith(
-          "Failed to change local store:",
+          "Failed to choose a local store:",
           expect.any(Error),
         );
       });
@@ -435,6 +441,102 @@ describe("[UC-35] PreferencesDialog", () => {
       expect(mockSetLocalStorePath).not.toHaveBeenCalled();
 
       consoleErrorSpy.mockRestore();
+    });
+
+    describe("[UC-05] a folder that can't be used (RE-78)", () => {
+      // Earlier tests leave their dialogs mounted, so look only in this one
+      const renderOpen = () => {
+        const view = render(
+          <PreferencesDialog isOpen={true} onClose={mockOnClose} />,
+        );
+        return { ...view, ui: within(view.container) };
+      };
+      const clickChange = async (ui: ReturnType<typeof within>) => {
+        fireEvent.click(ui.getByRole("button", { name: "Advanced" }));
+        fireEvent.click(await ui.findByRole("button", { name: "Change..." }));
+      };
+
+      it("says why main refused the folder, and keeps the store", async () => {
+        vi.mocked(
+          globalThis.electronAPI.selectExistingLocalStore,
+        ).mockResolvedValue({
+          error:
+            "This directory does not contain a valid Romper database (.romperdb folder).",
+          path: null,
+          success: false,
+        });
+        const { ui } = renderOpen();
+
+        await clickChange(ui);
+
+        expect(await ui.findByRole("alert")).toHaveTextContent(
+          "does not contain a valid Romper database",
+        );
+        expect(mockSetLocalStorePath).not.toHaveBeenCalled();
+      });
+
+      it("says so when the new path can't be saved", async () => {
+        vi.mocked(
+          globalThis.electronAPI.selectExistingLocalStore,
+        ).mockResolvedValue({ error: null, path: "/other", success: true });
+        mockSetLocalStorePath.mockResolvedValue(false);
+        const { ui } = renderOpen();
+
+        await clickChange(ui);
+
+        expect(await ui.findByRole("alert")).toHaveTextContent(
+          "Couldn't save the local store setting",
+        );
+        expect(mockSetLocalStorePath).toHaveBeenCalledWith("/other");
+      });
+
+      it("says nothing when the picker is cancelled or the change saves", async () => {
+        vi.mocked(globalThis.electronAPI.selectExistingLocalStore)
+          .mockResolvedValueOnce({
+            error: "Selection cancelled",
+            path: null,
+            success: false,
+          })
+          .mockResolvedValueOnce({
+            error: null,
+            path: "/other",
+            success: true,
+          });
+        mockSetLocalStorePath.mockResolvedValue(true);
+        const { ui } = renderOpen();
+
+        await clickChange(ui);
+        await waitFor(() =>
+          expect(
+            globalThis.electronAPI.selectExistingLocalStore,
+          ).toHaveBeenCalledTimes(1),
+        );
+        fireEvent.click(await ui.findByRole("button", { name: "Change..." }));
+
+        await waitFor(() =>
+          expect(mockSetLocalStorePath).toHaveBeenCalledWith("/other"),
+        );
+        expect(ui.queryByRole("alert")).toBeNull();
+      });
+
+      it("clears the message when Preferences closes", async () => {
+        vi.mocked(
+          globalThis.electronAPI.selectExistingLocalStore,
+        ).mockResolvedValue({
+          error: "Not a store",
+          path: null,
+          success: false,
+        });
+        const { rerender, ui } = renderOpen();
+        await clickChange(ui);
+        expect(await ui.findByRole("alert")).toBeInTheDocument();
+
+        rerender(<PreferencesDialog isOpen={false} onClose={mockOnClose} />);
+        rerender(<PreferencesDialog isOpen={true} onClose={mockOnClose} />);
+
+        expect(ui.getByRole("button", { name: "Change..." })).toBeVisible();
+        expect(ui.queryByRole("alert")).toBeNull();
+      });
     });
   });
 });

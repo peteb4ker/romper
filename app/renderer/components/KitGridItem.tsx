@@ -114,6 +114,8 @@ const KitGridItem = React.memo(
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
+              // The grid's own Enter handler would open the kit again
+              e.stopPropagation();
               onSelect();
             }
           }}

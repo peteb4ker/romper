@@ -1,63 +1,113 @@
 import type { Kit } from "@romper/shared/db/schema.js";
 
 import { isValidKit } from "@romper/shared/kitUtilsShared";
-import { RefObject, useCallback } from "react";
+import { RefObject, useCallback, useMemo } from "react";
 
 interface UseKitGridKeyboardProps {
-  columnCount: number;
   containerRef: RefObject<HTMLDivElement | null>;
   focusedIdx: null | number;
   kitsToDisplay: Kit[];
   onBankFocus?: (bank: string) => void;
   onFocusKit?: (kitName: string) => void;
   onSelectKit: (kitName: string) => void;
-  rowCount: number;
+  /**
+   * The grid row that holds each kit's card, by index in `kitsToDisplay`
+   * (`buildGridRows`). Rows are grouped by bank, so a row can hold fewer
+   * kits than the grid has columns.
+   */
+  rowIndexByKitIndex: number[];
   // When provided (virtualized grids), used instead of DOM scrollIntoView
   // so off-window (unmounted) kits can still be scrolled to.
   scrollItemIntoView?: (idx: number) => void;
   setFocus: (index: number) => void;
 }
 
+/**
+ * The kit an arrow key moves to from `idx`, or null to stay put. Left and
+ * Right step through the kits in order; Up and Down move to the kit in the
+ * same column of the row above or below, or that row's last kit if it's
+ * shorter, crossing bank headers.
+ */
+export function getArrowTarget(
+  key: string,
+  idx: number,
+  kitRows: number[][],
+  kitCount: number,
+): null | number {
+  if (key === "ArrowLeft") return idx > 0 ? idx - 1 : null;
+  if (key === "ArrowRight") return idx < kitCount - 1 ? idx + 1 : null;
+
+  const row = kitRows.findIndex((kits) => kits.includes(idx));
+  if (row === -1) return null;
+  const targetRow = kitRows[key === "ArrowUp" ? row - 1 : row + 1];
+  if (!targetRow) return null;
+  const column = kitRows[row].indexOf(idx);
+  return targetRow[Math.min(column, targetRow.length - 1)];
+}
+
+/**
+ * Group kit indices into the grid's rows of cards, in order. Kits are
+ * sorted, so the kits of one row are consecutive.
+ */
+export function groupKitsByRow(rowIndexByKitIndex: number[]): number[][] {
+  const kitRows: number[][] = [];
+  let lastRow: number | undefined;
+  rowIndexByKitIndex.forEach((rowIdx, kitIdx) => {
+    if (rowIdx !== lastRow || kitRows.length === 0) {
+      kitRows.push([kitIdx]);
+      lastRow = rowIdx;
+    } else {
+      kitRows[kitRows.length - 1].push(kitIdx);
+    }
+  });
+  return kitRows;
+}
+
+const ARROW_KEYS = new Set(["ArrowDown", "ArrowLeft", "ArrowRight", "ArrowUp"]);
+
 export function useKitGridKeyboard({
-  columnCount,
   containerRef,
   focusedIdx,
   kitsToDisplay,
   onBankFocus,
   onFocusKit,
   onSelectKit,
-  rowCount,
+  rowIndexByKitIndex,
   scrollItemIntoView,
   setFocus,
 }: UseKitGridKeyboardProps) {
-  // Convert flat index to grid coordinates
-  const getGridCoords = useCallback(
-    (index: number) => {
-      const rowIndex = Math.floor(index / columnCount);
-      const columnIndex = index % columnCount;
-      return { columnIndex, rowIndex };
-    },
-    [columnCount],
+  const kitRows = useMemo(
+    () => groupKitsByRow(rowIndexByKitIndex),
+    [rowIndexByKitIndex],
   );
 
-  // Convert grid coordinates to flat index
-  const getFlatIndex = useCallback(
-    (rowIndex: number, columnIndex: number) => {
-      return rowIndex * columnCount + columnIndex;
+  // Give the kit's card keyboard focus, so its focus ring shows and Enter
+  // opens it. The virtualized list may mount the card on the next frame.
+  const focusKitCard = useCallback(
+    (kitName: string) => {
+      if (isEditing(document.activeElement)) return;
+      requestAnimationFrame(() => {
+        const card = containerRef.current?.querySelector<HTMLElement>(
+          `[data-kit="${kitName}"]`,
+        );
+        if (card && !isEditing(document.activeElement)) {
+          card.focus({ preventScroll: true });
+        }
+      });
     },
-    [columnCount],
+    [containerRef],
   );
 
   // Scroll and focus logic for CSS grid
   const scrollAndFocusKitByIndex = useCallback(
     (idx: number) => {
       if (idx < 0 || idx >= kitsToDisplay.length) return;
+      const kit = kitsToDisplay[idx];
 
       if (scrollItemIntoView) {
         // Virtualized grid: scroll via the list so unmounted kits work
         scrollItemIntoView(idx);
       } else {
-        const kit = kitsToDisplay[idx];
         const kitElement = containerRef.current?.querySelector(
           `[data-kit="${kit.name}"]`,
         );
@@ -71,9 +121,17 @@ export function useKitGridKeyboard({
       }
 
       setFocus(idx);
-      if (onFocusKit) onFocusKit(kitsToDisplay[idx].name);
+      if (onFocusKit) onFocusKit(kit.name);
+      focusKitCard(kit.name);
     },
-    [kitsToDisplay, setFocus, onFocusKit, containerRef, scrollItemIntoView],
+    [
+      kitsToDisplay,
+      setFocus,
+      onFocusKit,
+      containerRef,
+      scrollItemIntoView,
+      focusKitCard,
+    ],
   );
 
   // Helper function to scroll to a kit by name
@@ -103,10 +161,11 @@ export function useKitGridKeyboard({
     [kitsToDisplay, onBankFocus, scrollAndFocusKitByIndex],
   );
 
-  // Helper function to handle kit selection (Enter/Space)
+  // Enter/Space opens the focused kit. Index 0, the first kit, is a kit
+  // like any other: only null means nothing is focused (RE-39).
   const handleKitSelection = useCallback(
     (e: React.KeyboardEvent) => {
-      if (focusedIdx && focusedIdx < kitsToDisplay.length) {
+      if (focusedIdx !== null && focusedIdx < kitsToDisplay.length) {
         const kit = kitsToDisplay[focusedIdx];
         if (isValidKit(kit.name)) {
           onSelectKit(kit.name);
@@ -117,45 +176,27 @@ export function useKitGridKeyboard({
     [focusedIdx, kitsToDisplay, onSelectKit],
   );
 
-  // Helper function to handle arrow key navigation
+  // Arrow keys move along the grid's rows as drawn, grouped by bank
   const handleArrowNavigation = useCallback(
     (e: React.KeyboardEvent) => {
-      if (!focusedIdx) return;
-
-      const { columnIndex, rowIndex } = getGridCoords(focusedIdx);
-      let newRowIndex = rowIndex;
-      let newColumnIndex = columnIndex;
-
-      switch (e.key) {
-        case "ArrowDown":
-          newRowIndex = Math.min(rowCount - 1, rowIndex + 1);
-          break;
-        case "ArrowLeft":
-          newColumnIndex = Math.max(0, columnIndex - 1);
-          break;
-        case "ArrowRight":
-          newColumnIndex = Math.min(columnCount - 1, columnIndex + 1);
-          break;
-        case "ArrowUp":
-          newRowIndex = Math.max(0, rowIndex - 1);
-          break;
-      }
-
-      const newIndex = getFlatIndex(newRowIndex, newColumnIndex);
-      if (newIndex < kitsToDisplay.length) {
-        scrollAndFocusKitByIndex(newIndex);
-      }
       e.preventDefault();
+      if (kitsToDisplay.length === 0) return;
+      if (focusedIdx === null) {
+        scrollAndFocusKitByIndex(0);
+        return;
+      }
+
+      const target = getArrowTarget(
+        e.key,
+        focusedIdx,
+        kitRows,
+        kitsToDisplay.length,
+      );
+      if (target !== null) {
+        scrollAndFocusKitByIndex(target);
+      }
     },
-    [
-      focusedIdx,
-      getGridCoords,
-      rowCount,
-      columnCount,
-      getFlatIndex,
-      kitsToDisplay,
-      scrollAndFocusKitByIndex,
-    ],
+    [focusedIdx, kitRows, kitsToDisplay.length, scrollAndFocusKitByIndex],
   );
 
   // Grid keyboard navigation
@@ -173,14 +214,15 @@ export function useKitGridKeyboard({
         return;
       }
 
-      // Enter/Space: select focused kit
+      // Enter/Space: select focused kit, unless a button in a card (the
+      // bookmark, duplicate or delete button) has focus and takes the key
       if (e.key === "Enter" || e.key === " ") {
+        if (e.target instanceof HTMLButtonElement) return;
         handleKitSelection(e);
         return;
       }
 
-      // Arrow key navigation for grid
-      if (["ArrowDown", "ArrowLeft", "ArrowRight", "ArrowUp"].includes(e.key)) {
+      if (ARROW_KEYS.has(e.key)) {
         handleArrowNavigation(e);
       }
     },
@@ -188,10 +230,17 @@ export function useKitGridKeyboard({
   );
 
   return {
-    getFlatIndex,
-    getGridCoords,
     handleKeyDown,
     scrollAndFocusKitByIndex,
     scrollToKit,
   };
+}
+
+// Typing somewhere else (search, a bank name) keeps its focus
+function isEditing(element: Element | null): boolean {
+  return (
+    element instanceof HTMLInputElement ||
+    element instanceof HTMLTextAreaElement ||
+    (element instanceof HTMLElement && element.isContentEditable)
+  );
 }

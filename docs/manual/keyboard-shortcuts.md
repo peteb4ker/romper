@@ -19,7 +19,7 @@ Romper is designed for fast keyboard-driven workflow. Many actions have a shortc
 
 When you press a bank letter, focus jumps to the first kit in that bank. Letters for banks with no kits do nothing.
 
-The arrow keys don't move on from the first kit in the list, and `Up` and `Down` can land on the wrong kit where one bank ends and the next begins. `F` also jumps to bank F if it has kits.
+`Left` and `Right` step through the kits in order. `Up` and `Down` move to the kit in the same column of the row above or below, crossing from one bank to the next. `F` also jumps to bank F if it has kits.
 
 ## Kit Details
 

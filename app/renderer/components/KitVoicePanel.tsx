@@ -26,7 +26,7 @@ interface KitVoicePanelProps {
   ) => void;
   // Tells the user about files a drop didn't add (RE-40)
   onMessage?: (text: string, type?: string, duration?: number) => void;
-  onPlay: (voice: number, sample: string) => void;
+  onPlay: (voice: number, slot: number) => void;
   // New props for drag-and-drop sample assignment (Task 5.2.2)
   onSampleAdd?: (
     voice: number,
@@ -53,17 +53,17 @@ interface KitVoicePanelProps {
   onSampleSelect?: (voice: number, idx: number) => void;
   onSaveVoiceName: (voice: number, newName: string) => void;
 
-  onStop: (voice: number, sample: string) => void;
+  onStop: (voice: number, slot: number) => void;
   onVoiceUnlink?: (primaryVoice: number) => void;
   onWaveformPlayingChange: (
     voice: number,
-    sample: string,
+    slot: number,
     playing: boolean,
   ) => void;
   playOptions?: { [key: string]: PlayOptions | undefined };
   playTriggers: { [key: string]: number };
   playVolumes?: { [key: string]: number };
-  sampleMetadata?: { [filename: string]: SampleData }; // Optional metadata lookup
+  sampleMetadata?: { [slotKey: string]: SampleData }; // Keyed by slotKey(voice, slot)
   samplePlaying: { [key: string]: boolean };
 
   samples: string[];

@@ -28,13 +28,13 @@ export function useKitVoicePanels({
 }: {
   kit: KitWithRelations | null;
   kitName: string;
-  onPlay: (voice: number, sample: string) => void;
+  onPlay: (voice: number, slot: number) => void;
   onSampleSelect: (voice: number, idx: number) => void;
   onSaveVoiceName: (voice: number, newName: string) => void;
-  onStop: (voice: number, sample: string) => void;
+  onStop: (voice: number, slot: number) => void;
   onWaveformPlayingChange: (
     voice: number,
-    sample: string,
+    slot: number,
     playing: boolean,
   ) => void;
   playOptions?: { [key: string]: PlayOptions | undefined };

@@ -686,7 +686,7 @@ describe("KitStepSequencer", () => {
     it("previews a slice when one is clicked with the sequencer stopped", () => {
       renderSequencer({ voices: sliceVoices });
       fireEvent.click(screen.getByTestId("slice-4"));
-      expect(onPlaySample).toHaveBeenCalledWith(3, "hat.wav", 100, {
+      expect(onPlaySample).toHaveBeenCalledWith(3, 0, 100, {
         region: { length: 1 / 16, start: 4 / 16 },
       });
     });

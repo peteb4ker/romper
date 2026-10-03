@@ -504,7 +504,7 @@ the FAQ mention reordering
   `electron/main/db/operations/sampleMovement.ts` (`moveSampleInsertOnly`, one transaction).
 - **Doc gap:** no manual section.
 - **Known issues:** RE-28 (the modified flag is written outside the move
-  transaction), RE-36, RE-45.
+  transaction), RE-36.
 
 ### UC-22 Move a sample to another kit
 
@@ -560,8 +560,7 @@ applied when the kit is written to the card. See
   applied at write time by `electron/main/formatConverter.ts`
   (`applyGain`).
 - **Known issues:** RE-35 (a gain change doesn't mark the kit modified),
-  RE-25 (no range check in main), RE-45 (same-named files share gain in the
-  UI), RE-48 (no keyboard support on the knob). Gain changes aren't
+  RE-25 (no range check in main), RE-48 (no keyboard support on the knob). Gain changes aren't
   undoable (UC-26), and each change is a fire-and-forget IPC call with no
   error handling.
 
@@ -578,8 +577,6 @@ in the UI or the manual mentions it.
 - **IPC:** `show-item-in-folder`.
 - **Main:** `electron/main/ipcHandlers.ts` (`shell.showItemInFolder`).
 - **Doc gap:** undocumented and undiscoverable.
-- **Known issues:** RE-45 (metadata is keyed by file name, so a same-named
-  file in another voice can reveal the wrong path).
 
 **Test gap:** a real test would open Finder or Explorer; it needs a
 `shell` stub in main to be testable above unit level.
@@ -665,9 +662,10 @@ choke). See
 - **Main:** `electron/main/services/sampleService.ts` (`getSampleAudioBuffer`) →
   `electron/main/services/metadata/sampleMetadataService.ts`.
 - **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-45 (same-named samples in one voice share triggers),
-  RE-46 (the waveform redraws every frame). No e2e presses Play; the e2e
-  tests cover loading and decoding the audio.
+- **Known issues:** RE-46 (the waveform redraws every frame). The e2e tests
+  cover loading and decoding the audio, and pressing Play on samples with
+  the same file name shows only the pressed one as playing; none checks
+  that sound comes out.
 
 ### UC-30 Step sequencer
 
@@ -685,8 +683,7 @@ BPM are saved with the kit. See
   `app/renderer/components/hooks/shared/sequenceUndo.ts`.
 - **IPC:** `update-step-pattern`, `update-kit-bpm`.
 - **Main:** `electron/main/db/operations/kitCrudOperations.ts` (`updateKit`).
-- **Known issues:** RE-25 (BPM isn't range-checked in main), RE-45, RE-36,
-  RE-47. Undo covers less than the manual says (UC-26).
+- **Known issues:** RE-25 (BPM isn't range-checked in main), RE-36, RE-47. Undo covers less than the manual says (UC-26).
 
 ### UC-31 Trigger conditions
 

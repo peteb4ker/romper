@@ -35,7 +35,24 @@ describe("useKeyboardNavigation", () => {
     result.current.handleKeyDown(mockEvent);
 
     expect(mockEvent.preventDefault).toHaveBeenCalled();
-    expect(mockOnPlay).toHaveBeenCalledWith(1, "kick.wav");
+    expect(mockOnPlay).toHaveBeenCalledWith(1, 0);
+  });
+
+  it("[UC-29] plays the selected slot, not the first slot with that file name (RE-45)", () => {
+    const { result } = renderHook(() =>
+      useKeyboardNavigation({
+        ...defaultProps,
+        samples: ["kick.wav", "kick.wav"],
+        selectedIdx: 1,
+      }),
+    );
+
+    result.current.handleKeyDown({
+      key: " ",
+      preventDefault: vi.fn(),
+    } as unknown as React.KeyboardEvent<HTMLUListElement>);
+
+    expect(mockOnPlay).toHaveBeenCalledWith(1, 1);
   });
 
   it("ignores Enter key (removed to prevent conflicts with kit name editing)", () => {
@@ -64,7 +81,7 @@ describe("useKeyboardNavigation", () => {
 
     result.current.handleKeyDown(mockEvent);
 
-    expect(mockOnPlay).toHaveBeenCalledWith(1, "snare.wav");
+    expect(mockOnPlay).toHaveBeenCalledWith(1, 1);
   });
 
   it("ignores keys when not active", () => {
@@ -126,6 +143,6 @@ describe("useKeyboardNavigation", () => {
     result.current.handleKeyDown(mockEvent);
 
     expect(mockEvent.preventDefault).toHaveBeenCalled();
-    expect(mockOnPlay).toHaveBeenCalledWith(1, undefined); // Sample at index 5 doesn't exist
+    expect(mockOnPlay).not.toHaveBeenCalled(); // No sample at slot 5
   });
 });

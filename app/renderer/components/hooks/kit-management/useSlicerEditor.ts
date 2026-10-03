@@ -49,7 +49,7 @@ interface UseSlicerEditorParams {
   kitName: string;
   onPlaySample: (
     voice: number,
-    sample: string,
+    slot: number,
     volume?: number,
     options?: PlayOptions,
   ) => void;
@@ -287,16 +287,23 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
 
   const auditionSlice = React.useCallback(
     (startSlice: number, lengthSlices: number) => {
-      if (isSeqPlaying || editingVoice == null || !displayedSample) return;
+      if (
+        isSeqPlaying ||
+        editingVoice == null ||
+        displayedSlot == null ||
+        !displayedSample
+      )
+        return;
       onPlaySample(
         editingVoice,
-        displayedSample,
+        displayedSlot,
         voiceVolumes[editingVoice] ?? 100,
         { region: sliceRegion({ lengthSlices, startSlice }, slicerDivision) },
       );
     },
     [
       displayedSample,
+      displayedSlot,
       editingVoice,
       isSeqPlaying,
       onPlaySample,

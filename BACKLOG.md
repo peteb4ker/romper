@@ -58,7 +58,6 @@ This file tracks what's being done about each item.
 | RE-33 | Medium | DB | Upgrading an older library relies on a repair step that could leave it half-upgraded if interrupted. | open (#407 fixed the `kits.artist` snapshot drift) |
 | RE-35 | Medium | Sync | Changing a sample's gain, a voice name or a bank name doesn't mark the kit as changed, so the "modified since last write" filter misses it. | partly done (#360: scan sets it when it adds samples; #407: stereo link changes set it) |
 | RE-36 | Medium | Performance | Almost every edit reloads your whole library behind the scenes, which gets slower as the library grows. | open |
-| RE-45 | Medium | Playback | Two samples with the same file name in one voice play together, and same-named samples in different voices share a gain setting on screen. | partly done: sounds now choke at the audio layer (`voiceChoke.ts`), so the audible choke no longer depends on this state; the state itself is unchanged |
 | RE-46 | Medium | Performance | While a sample plays, its waveform does far more drawing work than it needs, which can make playback stutter on slower machines. | open |
 | RE-47 | Medium | Performance | The kit browser redraws far more than it needs to when you type, scroll or get a message. | open |
 | RE-48 | Medium | Accessibility | Parts of Romper can't be used with only a keyboard or a screen reader: the gain knob, trigger conditions (right-click only), several unlabelled fields, and dialogs. | open |
@@ -88,6 +87,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-45 | Medium | Playback | Two samples with the same file name in one voice play together, and same-named samples in different voices share a gain setting on screen. | done (#PR: each sample plays, shows as playing and keeps its gain on its own, whatever its file name) |
 | RE-38 | Medium | Renderer | Pressing F both jumps to bank F and stars the selected kit. | done (#494: letters only jump to banks, `*` bookmarks, and Cmd, Ctrl and Alt combinations are left to the menu) |
 | RE-39 | Medium | Renderer | Arrow keys and Enter don't work in the kit grid until you click a kit. | done (#435: the arrows follow the rows the grid draws, and the focused card takes keyboard focus) |
 | RE-37 | Medium | Renderer | A kit's favourite star can disagree between the browser and the editor, so a kit can show as a favourite when it isn't. | done (#431: one toggle path, and the kit list is the only favourite state) |

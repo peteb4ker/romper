@@ -518,6 +518,61 @@ describe("SampleWaveform", () => {
       expect(sources[1].stop).not.toHaveBeenCalled();
     });
 
+    it("[UC-29] doesn't play a trigger counted before it mounted (RE-45)", async () => {
+      // Triggers are counted per slot and outlive the sample in it: a sample
+      // that moves into a played slot, or the same slot in the next kit,
+      // mounts with a count above 0
+      const { sources } = setupRegionMocks();
+      const { rerender } = render(
+        <SampleWaveform
+          kitName="A1"
+          playTrigger={3}
+          slotNumber={1}
+          voiceNumber={1}
+        />,
+      );
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      });
+      expect(sources).toHaveLength(0);
+
+      await act(async () => {
+        rerender(
+          <SampleWaveform
+            kitName="A1"
+            playTrigger={4}
+            slotNumber={1}
+            voiceNumber={1}
+          />,
+        );
+      });
+      expect(sources).toHaveLength(1);
+    });
+
+    it("plays a trigger that arrives before its audio has loaded", async () => {
+      const { sources } = setupRegionMocks();
+      const { rerender } = render(
+        <SampleWaveform
+          kitName="A1"
+          playTrigger={0}
+          slotNumber={1}
+          voiceNumber={1}
+        />,
+      );
+      rerender(
+        <SampleWaveform
+          kitName="A1"
+          playTrigger={1}
+          slotNumber={1}
+          voiceNumber={1}
+        />,
+      );
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      });
+      expect(sources).toHaveLength(1);
+    });
+
     it("lets different voices sound together", async () => {
       const { sources } = setupRegionMocks();
       const play = await renderPair(1, 2);

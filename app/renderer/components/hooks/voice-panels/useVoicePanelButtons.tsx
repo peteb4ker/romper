@@ -4,8 +4,8 @@ import React from "react";
 import SampleDeleteButton from "../../SampleDeleteButton";
 
 export interface UseVoicePanelButtonsOptions {
-  onPlay: (voice: number, sample: string) => void;
-  onStop: (voice: number, sample: string) => void;
+  onPlay: (voice: number, slot: number) => void;
+  onStop: (voice: number, slot: number) => void;
   sampleActionsHook: {
     handleDeleteSample: (slotNumber: number) => Promise<void>;
   };
@@ -24,7 +24,7 @@ export function useVoicePanelButtons({
 }: UseVoicePanelButtonsOptions) {
   // Helper function to render play/stop button
   const renderPlayButton = React.useCallback(
-    (isPlaying: boolean, sampleName: string) => {
+    (isPlaying: boolean, slotNumber: number) => {
       const buttonStyle = {
         alignItems: "center",
         display: "flex",
@@ -38,7 +38,7 @@ export function useVoicePanelButtons({
           <button
             aria-label="Stop"
             className="p-1 rounded hover:bg-surface-3 text-xs text-accent-danger"
-            onClick={() => onStop(voice, sampleName)}
+            onClick={() => onStop(voice, slotNumber)}
             style={buttonStyle}
           >
             <StopIcon size={14} />
@@ -50,7 +50,7 @@ export function useVoicePanelButtons({
         <button
           aria-label="Play"
           className="p-1 rounded hover:bg-surface-3 text-xs"
-          onClick={() => onPlay(voice, sampleName)}
+          onClick={() => onPlay(voice, slotNumber)}
           style={buttonStyle}
         >
           <PlayIcon size={14} />

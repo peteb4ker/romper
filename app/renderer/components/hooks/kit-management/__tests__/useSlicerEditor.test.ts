@@ -282,7 +282,7 @@ describe("[UC-33] useSlicerEditor", () => {
         lengthSlices: 2,
         startSlice: 9,
       });
-      expect(onPlaySample).toHaveBeenCalledWith(1, "break.wav", 90, {
+      expect(onPlaySample).toHaveBeenCalledWith(1, 0, 90, {
         region: { length: 2 / 16, start: 9 / 16 },
       });
     });

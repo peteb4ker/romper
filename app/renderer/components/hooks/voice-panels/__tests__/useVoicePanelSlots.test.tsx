@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -194,7 +200,7 @@ describe("useVoicePanelSlots", () => {
     const propsWithMetadata = {
       ...defaultProps,
       sampleMetadata: {
-        "sample1.wav": {
+        "1:0": {
           filename: "sample1.wav",
           source_path: "/path/sample1.wav",
           wav_bit_depth: 16,
@@ -215,7 +221,7 @@ describe("useVoicePanelSlots", () => {
     // Verify that getSampleSlotTitle was called with the metadata
     expect(mockSlotRenderingHook.getSampleSlotTitle).toHaveBeenCalledWith(
       0,
-      propsWithMetadata.sampleMetadata["sample1.wav"],
+      propsWithMetadata.sampleMetadata["1:0"],
       false,
       false,
       "Drop hint",
@@ -251,7 +257,7 @@ describe("useVoicePanelSlots", () => {
   it("renders playing state correctly", () => {
     const propsWithPlaying = {
       ...defaultProps,
-      samplePlaying: { "1:sample1.wav": true },
+      samplePlaying: { "1:0": true },
     };
 
     const TestComponent = () => {
@@ -261,10 +267,59 @@ describe("useVoicePanelSlots", () => {
 
     render(<TestComponent />);
 
-    expect(defaultProps.renderPlayButton).toHaveBeenCalledWith(
-      true,
-      "sample1.wav",
-    );
+    expect(defaultProps.renderPlayButton).toHaveBeenCalledWith(true, 0);
+  });
+
+  describe("[UC-24] [UC-29] same-named samples (RE-45)", () => {
+    const twins = {
+      ...defaultProps,
+      sampleMetadata: {
+        "1:0": { filename: "dup.wav", gain_db: 6, source_path: "/a/dup.wav" },
+        "1:1": { filename: "dup.wav", gain_db: -3, source_path: "/b/dup.wav" },
+      },
+      samples: ["dup.wav", "dup.wav"],
+    };
+
+    const renderTwins = (props: typeof twins) => {
+      const TestComponent = () => {
+        const { renderSampleSlots } = useVoicePanelSlots(props);
+        return <ul>{renderSampleSlots()}</ul>;
+      };
+      render(<TestComponent />);
+      return screen.getAllByRole("option");
+    };
+
+    it("shows only the playing slot as playing", () => {
+      const [first, second] = renderTwins({
+        ...twins,
+        samplePlaying: { "1:1": true },
+      });
+
+      expect(first).toHaveAttribute("data-playing", "false");
+      expect(second).toHaveAttribute("data-playing", "true");
+      expect(defaultProps.renderPlayButton).toHaveBeenCalledWith(false, 0);
+      expect(defaultProps.renderPlayButton).toHaveBeenCalledWith(true, 1);
+    });
+
+    it("shows each slot's own gain", () => {
+      const [first, second] = renderTwins(twins);
+
+      expect(
+        within(first).getByRole("slider").getAttribute("aria-valuenow"),
+      ).toBe("6");
+      expect(
+        within(second).getByRole("slider").getAttribute("aria-valuenow"),
+      ).toBe("-3");
+    });
+
+    it("reports a gain change for its own slot", () => {
+      const onGainChange = vi.fn();
+      const [, second] = renderTwins({ ...twins, onGainChange });
+
+      fireEvent.wheel(within(second).getByRole("slider"), { deltaY: -100 });
+
+      expect(onGainChange).toHaveBeenCalledWith(1, 1, "dup.wav", -2);
+    });
   });
 
   it("renders waveform component with correct props", () => {

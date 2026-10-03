@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import React, { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -351,6 +352,61 @@ describe("KitVoicePanels", () => {
       });
 
       consoleSpy.mockRestore();
+    });
+  });
+
+  describe("[UC-24] gain per slot, not per file name (RE-45)", () => {
+    // Two files named dup.wav in voice 1 (from different folders) and a
+    // third in voice 2, each with its own gain
+    const twins = [
+      { samples: ["dup.wav", "dup.wav"], voice: 1, voiceName: "One" },
+      { samples: ["dup.wav"], voice: 2, voiceName: "Two" },
+    ];
+    const row = (voice: number, slot: number, gain: number) => ({
+      filename: "dup.wav",
+      gain_db: gain,
+      kit_name: "Kit1",
+      slot_number: slot,
+      source_path: `/src${voice}${slot}/dup.wav`,
+      voice_number: voice,
+    });
+
+    beforeEach(() => {
+      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+        data: [row(1, 0, 6), row(1, 1, -3), row(2, 0, 0)],
+        success: true,
+      });
+    });
+
+    // The gain knob in each sample slot of a voice
+    const knobs = (voice: number) =>
+      within(screen.getByTestId(`voice-panel-${voice}`))
+        .getAllByRole("option")
+        .map((slot) => within(slot).getByRole("slider"));
+    const gains = (voice: number) =>
+      knobs(voice).map((knob) => knob.getAttribute("aria-valuenow"));
+
+    it("shows each slot's own gain", async () => {
+      render(<MultiVoicePanelsTestWrapper isEditable voices={twins} />);
+
+      await waitFor(() => expect(gains(1)).toEqual(["6", "-3"]));
+      expect(gains(2)).toEqual(["0"]);
+    });
+
+    it("changes only the slot whose gain is set", async () => {
+      render(<MultiVoicePanelsTestWrapper isEditable voices={twins} />);
+      await waitFor(() => expect(gains(1)).toEqual(["6", "-3"]));
+
+      fireEvent.wheel(knobs(1)[1], { deltaY: -100 });
+
+      expect(window.electronAPI.updateSampleGain).toHaveBeenCalledWith(
+        "Kit1",
+        1,
+        1,
+        -2,
+      );
+      await waitFor(() => expect(gains(1)).toEqual(["6", "-2"]));
+      expect(gains(2)).toEqual(["0"]);
     });
   });
 

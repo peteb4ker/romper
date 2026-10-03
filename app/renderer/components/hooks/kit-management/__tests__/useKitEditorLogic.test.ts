@@ -328,6 +328,40 @@ describe("useKitEditorLogic", () => {
     expect(window.electronAPI.rescanKit).toHaveBeenCalledWith("TestKit");
   });
 
+  // #504: F stars or unstars the open kit
+  it("[UC-10] stars the open kit with F", async () => {
+    const onToggleFavorite = vi
+      .fn()
+      .mockResolvedValue({ data: { isFavorite: true }, success: true });
+    renderHook(() => useKitEditorLogic({ ...mockProps, onToggleFavorite }));
+
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "f" }));
+    });
+
+    expect(onToggleFavorite).toHaveBeenCalledWith("TestKit");
+    expect(mockProps.onMessage).not.toHaveBeenCalledWith(
+      expect.stringContaining("star"),
+      "error",
+    );
+  });
+
+  it("[UC-10] reports a star F couldn't save", async () => {
+    const onToggleFavorite = vi
+      .fn()
+      .mockResolvedValue({ error: "db locked", success: false });
+    renderHook(() => useKitEditorLogic({ ...mockProps, onToggleFavorite }));
+
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "f" }));
+    });
+
+    expect(mockProps.onMessage).toHaveBeenCalledWith(
+      "Couldn't star kit TestKit. Try again.",
+      "error",
+    );
+  });
+
   it("handles global keyboard navigation for sequencer toggle", () => {
     const { rerender, result } = renderHook(() => useKitEditorLogic(mockProps));
     expect(result.current.sequencerOpen).toBe(false);

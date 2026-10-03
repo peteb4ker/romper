@@ -2,7 +2,10 @@ import type { Bank, KitWithRelations } from "@romper/shared/db/schema";
 
 import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 
-import { hasCommandModifier } from "../../../utils/keyboardShortcuts";
+import {
+  hasCommandModifier,
+  isBrowserFavoriteKey,
+} from "../../../utils/keyboardShortcuts";
 import {
   bankHasKits,
   type BankNames,
@@ -197,6 +200,8 @@ export function useKitBankNavigation({
 
       // Cmd/Ctrl/Alt combinations belong to the menu and the system
       if (hasCommandModifier(e)) return;
+      // Shift+F stars the focused kit (useKitKeyboardNav); it isn't a jump
+      if (isBrowserFavoriteKey(e)) return;
 
       if (e.key.length === 1 && /^\p{Lu}$/u.test(e.key.toUpperCase())) {
         const bank = e.key.toUpperCase();

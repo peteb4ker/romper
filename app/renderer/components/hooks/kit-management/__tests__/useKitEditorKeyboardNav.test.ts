@@ -174,6 +174,45 @@ describe("useKitEditorKeyboardNav", () => {
     });
   });
 
+  // #504: F stars or unstars the open kit
+  describe("[UC-10] star shortcut (f)", () => {
+    it.each([
+      ["f", {}],
+      ["F", { shiftKey: true }],
+    ])("'%s' toggles the open kit's star", (key, modifiers) => {
+      const onToggleFavorite = vi.fn();
+      const { fire, props } = setup({ onToggleFavorite });
+      const e = fire(key, modifiers);
+      expect(onToggleFavorite).toHaveBeenCalledTimes(1);
+      expect(e.preventDefault).toHaveBeenCalled();
+      expect(props.setSequencerOpen).not.toHaveBeenCalled();
+    });
+
+    it.each(["metaKey", "ctrlKey", "altKey"])(
+      "ignores f with %s held",
+      (modifier) => {
+        const onToggleFavorite = vi.fn();
+        const { fire } = setup({ onToggleFavorite });
+        fire("f", { [modifier]: true });
+        expect(onToggleFavorite).not.toHaveBeenCalled();
+      },
+    );
+
+    it("ignores f typed in a text field", () => {
+      const onToggleFavorite = vi.fn();
+      const { fire } = setup({ onToggleFavorite });
+      setActiveElement(document.createElement("input"));
+      fire("f");
+      expect(onToggleFavorite).not.toHaveBeenCalled();
+    });
+
+    it("does nothing without a toggle", () => {
+      const { fire } = setup();
+      const e = fire("f");
+      expect(e.preventDefault).not.toHaveBeenCalled();
+    });
+  });
+
   describe("sample navigation", () => {
     it("ArrowDown / ArrowUp navigate samples", () => {
       const { fire, props } = setup();

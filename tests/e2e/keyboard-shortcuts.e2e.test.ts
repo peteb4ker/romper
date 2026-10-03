@@ -17,9 +17,10 @@ type ApiWindow = { electronAPI: ElectronAPI } & typeof globalThis;
 
 // RE-38: "F" both jumped to bank F and bookmarked the focused kit, and the
 // single-key shortcuts ignored Cmd, Ctrl and Alt, so a menu accelerator
-// such as Cmd+, also stepped to the previous kit. Letters now only jump to
-// banks, "*" bookmarks, and combinations with Cmd, Ctrl or Alt are left to
-// the menu and the system. The fixture has kits A0 and B1.
+// such as Cmd+, also stepped to the previous kit. In the kit browser plain
+// letters now only jump to banks and Shift+F stars the focused kit; in the
+// kit editor F stars the open kit (#504). Combinations with Cmd, Ctrl or Alt
+// are left to the menu and the system. The fixture has kits A0 and B1.
 test.describe("[UC-07] [UC-10] Keyboard shortcuts", () => {
   let electronApp: ElectronApplication;
   let window: Page;
@@ -56,22 +57,44 @@ test.describe("[UC-07] [UC-10] Keyboard shortcuts", () => {
     if (testEnv) await cleanupE2EFixture(testEnv);
   });
 
-  test("* bookmarks the focused kit, and F doesn't", async () => {
+  test("Shift+F stars the focused kit in the browser, and F and * don't", async () => {
     await window.keyboard.press("a");
     await expect(card("A0")).toBeFocused();
 
     await window.keyboard.press("f");
+    await window.keyboard.press("*");
+    // Nothing should happen; give a save time to show if it would
+    await window.waitForTimeout(300);
+    await expect(card("A0").getByTitle("Add to favorites")).toBeVisible();
+    expect(await savedFavourite("A0")).toBe(false);
+
+    await window.keyboard.press("Shift+F");
+    await expect(card("A0").getByTitle("Remove from favorites")).toBeVisible();
+    expect(await savedFavourite("A0")).toBe(true);
+    // Shift+F doesn't also jump away from the focused kit
+    await expect(card("A0")).toBeFocused();
+
     await window.keyboard.press("Shift+F");
     await expect(card("A0").getByTitle("Add to favorites")).toBeVisible();
     expect(await savedFavourite("A0")).toBe(false);
+  });
 
-    await window.keyboard.press("*");
-    await expect(card("A0").getByTitle("Remove from favorites")).toBeVisible();
-    expect(await savedFavourite("A0")).toBe(true);
+  test("F stars the open kit in the editor", async () => {
+    await card("B1").click();
+    await window.waitForSelector('[data-testid="kit-editor"]');
+    await expect(openKit()).toHaveText("B1");
+    const headerStar = window
+      .locator('[data-testid="kit-editor"]')
+      .getByTitle(/to favorites|from favorites/);
 
-    await window.keyboard.press("*");
-    await expect(card("A0").getByTitle("Add to favorites")).toBeVisible();
-    expect(await savedFavourite("A0")).toBe(false);
+    await expect(headerStar).toHaveAttribute("title", "Add to favorites");
+    await window.keyboard.press("f");
+    await expect(headerStar).toHaveAttribute("title", "Remove from favorites");
+    expect(await savedFavourite("B1")).toBe(true);
+
+    await window.keyboard.press("f");
+    await expect(headerStar).toHaveAttribute("title", "Add to favorites");
+    expect(await savedFavourite("B1")).toBe(false);
   });
 
   test("a bank letter with Ctrl, Cmd or Alt held doesn't jump", async () => {

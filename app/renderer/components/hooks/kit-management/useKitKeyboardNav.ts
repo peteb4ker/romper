@@ -1,9 +1,6 @@
 import { useCallback, useEffect } from "react";
 
-import {
-  FAVORITE_KEY,
-  hasCommandModifier,
-} from "../../../utils/keyboardShortcuts";
+import { isBrowserFavoriteKey } from "../../../utils/keyboardShortcuts";
 
 export interface UseKitKeyboardNavOptions {
   focusedKit: null | string;
@@ -29,13 +26,8 @@ export function useKitKeyboardNav({
         return;
       }
 
-      // "*" bookmarks the focused kit; "F" is left to jump to bank F
-      if (
-        e.key === FAVORITE_KEY &&
-        !hasCommandModifier(e) &&
-        focusedKit &&
-        onToggleFavorite
-      ) {
+      // Shift+F stars the focused kit; plain "F" jumps to bank F (#504)
+      if (isBrowserFavoriteKey(e) && focusedKit && onToggleFavorite) {
         e.preventDefault();
         e.stopPropagation();
         onToggleFavorite(focusedKit);

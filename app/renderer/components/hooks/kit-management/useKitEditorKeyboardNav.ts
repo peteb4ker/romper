@@ -2,7 +2,10 @@ import type { VoiceSamples } from "@romper/app/renderer/components/kitTypes";
 
 import React from "react";
 
-import { hasCommandModifier } from "../../../utils/keyboardShortcuts";
+import {
+  hasCommandModifier,
+  isEditorFavoriteKey,
+} from "../../../utils/keyboardShortcuts";
 
 type SampleNavParams = Pick<
   UseKitEditorKeyboardNavParams,
@@ -21,6 +24,7 @@ interface UseKitEditorKeyboardNavParams {
   onPrevKit?: () => void;
   onSampleKeyNav: (direction: "down" | "up") => void;
   onScanKit: () => void;
+  onToggleFavorite?: () => Promise<void> | void;
   samples: VoiceSamples;
   selectedSampleIdx: number;
   selectedVoice: number;
@@ -30,7 +34,7 @@ interface UseKitEditorKeyboardNavParams {
 
 /**
  * Global keyboard shortcuts for the kit editor: kit navigation (, .),
- * scanning (/), sequencer toggle (s), and sample navigation/preview
+ * scanning (/), sequencer toggle (s), star (f), and sample navigation/preview
  * (arrows + space) while the sequencer is closed.
  */
 export function useKitEditorKeyboardNav({
@@ -41,6 +45,7 @@ export function useKitEditorKeyboardNav({
   onPrevKit,
   onSampleKeyNav,
   onScanKit,
+  onToggleFavorite,
   samples,
   selectedSampleIdx,
   selectedVoice,
@@ -86,6 +91,14 @@ export function useKitEditorKeyboardNav({
         setSequencerOpen((open) => !open);
         return;
       }
+      // F stars or unstars the open kit (#504)
+      if (isEditorFavoriteKey(e)) {
+        if (onToggleFavorite) {
+          e.preventDefault();
+          void onToggleFavorite();
+        }
+        return;
+      }
       // Only handle navigation keys for sample nav if sequencer is closed
       // Enter key removed to prevent conflicts with kit name editing
       if (!sequencerOpen && [" ", "ArrowDown", "ArrowUp"].includes(e.key)) {
@@ -113,6 +126,7 @@ export function useKitEditorKeyboardNav({
     isEditable,
     onInferVoiceNames,
     onScanKit,
+    onToggleFavorite,
     setSequencerOpen,
   ]);
 }

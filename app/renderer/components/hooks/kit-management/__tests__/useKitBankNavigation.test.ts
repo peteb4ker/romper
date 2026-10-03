@@ -339,6 +339,33 @@ describe("useKitBankNavigation", () => {
       },
     );
 
+    // #504: Shift+F stars the focused kit, so it doesn't also jump to bank F
+    it("[UC-10] leaves Shift+F to the star and jumps on plain F", () => {
+      const kits = [...mockKits, { ...mockKits[2], name: "F0" }];
+      const { result } = renderHook(() =>
+        useKitBankNavigation({ ...defaultProps, kits }),
+      );
+      const press = (key: string, shiftKey: boolean) => {
+        const e = {
+          key,
+          preventDefault: vi.fn(),
+          shiftKey,
+          target: { tagName: "DIV" },
+        } as unknown as KeyboardEvent;
+        act(() => {
+          result.current.globalBankHotkeyHandler(e);
+        });
+        return e;
+      };
+
+      const shifted = press("F", true);
+      expect(result.current.focusedKit).toBe("A0");
+      expect(shifted.preventDefault).not.toHaveBeenCalled();
+
+      press("f", false);
+      expect(result.current.focusedKit).toBe("F0");
+    });
+
     it("should scroll grid via scrollAndFocusKitByIndex on hotkey press", () => {
       const { result } = renderHook(() => useKitBankNavigation(defaultProps));
 

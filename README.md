@@ -36,11 +36,18 @@ Built with modern web technologies (**Electron**, **React**, **TypeScript**, **D
 - Quick search and filtering to find the perfect kit instantly
 - Favorites system to bookmark your most-used kits
 
-### 🔊 **Built-in Audio Preview**
-- Play samples directly in the app without loading them on hardware
-- **XOX-style step sequencer** for auditioning drum patterns
-- Real-time BPM adjustment to match your project tempo
-- Waveform visualization for quick sample identification
+### 🔊 **Audio Preview and Step Sequencer**
+- Play samples directly in the app without loading them on hardware, with a waveform for each
+- **XOX-style step sequencer**: 16 steps across all 4 voices, 30–180 BPM
+- **Trigger conditions** (1:2 through 4:4) make a step fire only on some loops, for patterns up to 64 steps long
+- **Sample modes** per voice: always the first sample, random, or round-robin through the voice's layers
+- **Slicer**: cut a long sample into Rample-style slices (/8 to /128) and choose a slice for each step. **Roll** randomizes slices, **Lock** keeps the steps you like, and a step can pick a new slice every time it plays
+- Per-voice **level** and **mute**; a linked stereo pair plays as one row
+- **Undo** for step, condition and slice edits; patterns, conditions and slices are saved with each kit
+
+The sequencer is a preview: it isn't written to the SD card. See the [Step Sequencer manual page](https://peteb4ker.github.io/romper/manual/step-sequencer).
+
+![Step sequencer](docs/images/manual/step-sequencer.png)
 
 ### ✏️ **Powerful Kit Editing**
 - Drag-and-drop sample assignment to kit slots

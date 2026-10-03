@@ -1529,3 +1529,26 @@ html.js-ready .fade-in.visible {
         display: none;
     }
 }
+
+/* ===================================================================
+   Step Sequencer section (home page)
+   =================================================================== */
+.sequencer {
+    padding: 3.5rem 0;
+    background-color: var(--surface-0);
+}
+
+.sequencer-shot {
+    display: block;
+    width: 100%;
+    max-width: 1000px;
+    height: auto;
+    margin: 0 auto 2rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-subtle);
+}
+
+.sequencer-more {
+    text-align: center;
+    margin-top: 1.5rem;
+}

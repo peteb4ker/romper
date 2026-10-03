@@ -222,6 +222,12 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   // Track stopTrigger value at the time of last play to prevent a batched
   // stop from killing a freshly started source in the same render cycle.
   const stopTriggerAtPlayRef = useRef(0);
+  // The last playTrigger this slot acted on, starting at the value it
+  // mounted with. Triggers are counted per slot ("voice:slot") and outlive
+  // the sample in it, so a sample that moves into a played slot, or a slot
+  // shown again after a kit change, mounts with a count above 0 and must not
+  // play until it is triggered (RE-45).
+  const handledPlayTriggerRef = useRef(playTrigger);
   // Latest play options, read when a choke arrives
   const playOptionsRef = useRef(playOptions);
   playOptionsRef.current = playOptions;
@@ -360,7 +366,10 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   // Play sample and animate playhead (triggered by playTrigger prop)
   useEffect(() => {
     if (!audioBuffer || !audioCtxRef.current) return;
-    if (playTrigger === 0) return; // don't auto-play on mount
+    // Play only on a new trigger: not on mount, and not again when the
+    // buffer reloads
+    if (playTrigger === handledPlayTriggerRef.current) return;
+    handledPlayTriggerRef.current = playTrigger;
     const ctx = audioCtxRef.current;
     // Sequencer triggers are scheduled slightly ahead on a steady timeline
     // (performance.now() ms); convert to this context's clock

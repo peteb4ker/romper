@@ -32,13 +32,13 @@ export interface UseVoicePanelRenderingOptions {
     sampleName: string,
     gainDb: number,
   ) => void;
-  onPlay: (voice: number, sample: string) => void;
+  onPlay: (voice: number, slot: number) => void;
   onSampleSelect?: (voice: number, idx: number) => void;
-  onStop: (voice: number, sample: string) => void;
+  onStop: (voice: number, slot: number) => void;
   onVoiceUnlink?: (primaryVoice: number) => void;
   onWaveformPlayingChange: (
     voice: number,
-    sample: string,
+    slot: number,
     playing: boolean,
   ) => void;
   playOptions?: { [key: string]: PlayOptions | undefined };
@@ -51,7 +51,7 @@ export interface UseVoicePanelRenderingOptions {
       sampleData: SampleData | undefined,
     ) => void;
   };
-  sampleMetadata?: { [filename: string]: SampleData };
+  sampleMetadata?: { [slotKey: string]: SampleData }; // Keyed by slotKey(voice, slot)
   samplePlaying: { [key: string]: boolean };
   samples: string[];
   selectedIdx: number;

@@ -2,9 +2,13 @@ import { useRef, useState } from "react";
 
 import type { PlayOptions } from "../../kitTypes";
 
+import { slotKey } from "../../../utils/slotKey";
+
 /**
- * Playback state for the kit editor's samples, keyed "voice:sample". The
- * maps start empty; a missing entry reads as 0 or not playing.
+ * Playback state for the kit editor's samples, keyed by slot ("voice:slot",
+ * see `slotKey`). Not by file name: two samples with the same name, in one
+ * voice or two, are separate sounds (RE-45). The maps start empty; a missing
+ * entry reads as 0 or not playing.
  *
  * Nothing here resets when the kit's samples are reloaded. It used to: every
  * step, condition, mode, volume or alias edit reloads the kit, and the reset
@@ -36,11 +40,11 @@ export function useKitPlayback() {
 
   const handlePlay = (
     voice: number,
-    sample: string,
+    slot: number,
     volume?: number,
     options?: PlayOptions,
   ) => {
-    const key = voice + ":" + sample;
+    const key = slotKey(voice, slot);
 
     // Voice choke: stop any other sample still sounding on this voice
     const voicePrefix = voice + ":";
@@ -83,26 +87,24 @@ export function useKitPlayback() {
     }
     setPlaybackError(null);
   };
-  const handleStop = (voice: number, sample: string) => {
-    activeSamples.current.delete(voice + ":" + sample);
+  const handleStop = (voice: number, slot: number) => {
+    const key = slotKey(voice, slot);
+    activeSamples.current.delete(key);
     setStopTriggers((triggers) => ({
       ...triggers,
-      [voice + ":" + sample]: (triggers[voice + ":" + sample] || 0) + 1,
+      [key]: (triggers[key] || 0) + 1,
     }));
-    setSamplePlaying((state) => ({ ...state, [voice + ":" + sample]: false }));
+    setSamplePlaying((state) => ({ ...state, [key]: false }));
   };
   const handleWaveformPlayingChange = (
     voice: number,
-    sample: string,
+    slot: number,
     playing: boolean,
   ) => {
-    const key = voice + ":" + sample;
+    const key = slotKey(voice, slot);
     if (playing) activeSamples.current.add(key);
     else activeSamples.current.delete(key);
-    setSamplePlaying((state) => ({
-      ...state,
-      [voice + ":" + sample]: playing,
-    }));
+    setSamplePlaying((state) => ({ ...state, [key]: playing }));
   };
 
   return {

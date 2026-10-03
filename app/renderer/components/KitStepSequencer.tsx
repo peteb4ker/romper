@@ -47,7 +47,7 @@ interface KitStepSequencerProps {
   onAddUndoAction?: (action: AnyUndoAction) => void;
   onPlaySample: (
     voice: number,
-    sample: string,
+    slot: number,
     volume?: number,
     options?: PlayOptions,
   ) => void;

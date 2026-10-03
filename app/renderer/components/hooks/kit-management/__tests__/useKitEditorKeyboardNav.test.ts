@@ -186,7 +186,7 @@ describe("useKitEditorKeyboardNav", () => {
     it("Space plays the selected sample when one exists", () => {
       const { fire, props } = setup();
       fire(" ");
-      expect(props.onPlaySample).toHaveBeenCalledWith(1, "kick.wav");
+      expect(props.onPlaySample).toHaveBeenCalledWith(1, 0);
     });
 
     it("Space is a no-op when the slot is empty", () => {

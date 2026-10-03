@@ -45,7 +45,7 @@ interface UseKitStepSequencerLogicParams {
   ) => boolean;
   onPlaySample: (
     voice: number,
-    sample: string,
+    slot: number,
     volume?: number,
     options?: PlayOptions,
   ) => void;
@@ -232,28 +232,32 @@ export function useKitStepSequencerLogic(
   const roundRobinIndexRef = React.useRef<Record<number, number>>({});
 
   /**
-   * Select a sample based on the voice's sample mode
+   * Select a sample slot based on the voice's sample mode. Returns the slot,
+   * not the file name: a voice can hold two files with the same name (RE-45).
    */
   const selectSample = React.useCallback(
-    (voiceNumber: number, voiceSamples: string[]): string | undefined => {
+    (voiceNumber: number, voiceSamples: string[]): number | undefined => {
       if (!voiceSamples || voiceSamples.length === 0) return undefined;
 
       const mode = sampleModes[voiceNumber] || "first";
 
+      let slot: number;
       switch (mode) {
         case "random":
-          return voiceSamples[Math.floor(Math.random() * voiceSamples.length)]; // NOSONAR - not cryptographic, used for musical randomization
+          slot = Math.floor(Math.random() * voiceSamples.length); // NOSONAR - not cryptographic, used for musical randomization
+          break;
         case "round-robin": {
           const currentIndex = roundRobinIndexRef.current[voiceNumber] ?? 0;
-          const sample = voiceSamples[currentIndex % voiceSamples.length];
+          slot = currentIndex % voiceSamples.length;
           roundRobinIndexRef.current[voiceNumber] =
             (currentIndex + 1) % voiceSamples.length;
-          return sample;
+          break;
         }
         case "first":
         default:
-          return voiceSamples[0];
+          slot = 0;
       }
+      return voiceSamples[slot] ? slot : undefined;
     },
     [sampleModes],
   );
@@ -281,11 +285,11 @@ export function useKitStepSequencerLogic(
       });
       if (!due) continue;
 
-      const sample = selectSample(voiceNumber, samples[voiceNumber]);
+      const slot = selectSample(voiceNumber, samples[voiceNumber]);
       log.debug(
-        `Step ${currentSeqStep} voice ${voiceNumber}: cycle=${cycleCount}, sample=${sample}`,
+        `Step ${currentSeqStep} voice ${voiceNumber}: cycle=${cycleCount}, slot=${slot}`,
       );
-      if (!sample) {
+      if (slot === undefined) {
         log.debug(`No sample available for voice ${voiceNumber}`);
         continue;
       }
@@ -300,13 +304,13 @@ export function useKitStepSequencerLogic(
           slicerDivision,
           slice,
         );
-        onPlaySample(voiceNumber, sample, vol, {
+        onPlaySample(voiceNumber, slot, vol, {
           region: sliceRegion(view, slicerDivision),
           startAt,
         });
         onSliceTriggered?.(voiceNumber, view);
       } else {
-        onPlaySample(voiceNumber, sample, vol, { startAt });
+        onPlaySample(voiceNumber, slot, vol, { startAt });
       }
     }
   }, [

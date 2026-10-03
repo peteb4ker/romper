@@ -5,6 +5,7 @@ import React, { useState } from "react";
 
 import type { PlayOptions, SampleData, VoiceSamples } from "./kitTypes";
 
+import { slotKey } from "../utils/slotKey";
 import { useKitVoicePanels } from "./hooks/kit-management/useKitVoicePanels";
 import { useStereoHandling } from "./hooks/sample-management/useStereoHandling";
 import KitVoicePanel from "./KitVoicePanel";
@@ -17,7 +18,7 @@ interface KitVoicePanelsProps {
   onBatchDropComplete?: () => void;
   onKitUpdated?: () => Promise<void>; // Called after voice stereo mode changes to reload kit data
   onMessage?: (text: string, type?: string, duration?: number) => void; // Refused links and drops (RE-40)
-  onPlay: (voice: number, sample: string) => void; // Used by useKitVoicePanels hook
+  onPlay: (voice: number, slot: number) => void; // Used by useKitVoicePanels hook
   // New props for drag-and-drop sample management (Task 5.2.2 & 5.2.3)
   onSampleAdd?: (
     voice: number,
@@ -40,10 +41,10 @@ interface KitVoicePanelsProps {
   ) => Promise<void>;
   onSampleSelect: (voice: number, idx: number) => void; // Used by useKitVoicePanels hook
   onSaveVoiceName: (voice: number, newName: string) => void; // Used by useKitVoicePanels hook
-  onStop: (voice: number, sample: string) => void; // Used by useKitVoicePanels hook
+  onStop: (voice: number, slot: number) => void; // Used by useKitVoicePanels hook
   onWaveformPlayingChange: (
     voice: number,
-    sample: string,
+    slot: number,
     playing: boolean,
   ) => void; // Used by useKitVoicePanels hook
   playOptions?: { [key: string]: PlayOptions | undefined }; // Region and start time per sample key, set by sequencer
@@ -72,9 +73,11 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   // Stereo handling hook for voice linking
   const stereoHandling = useStereoHandling();
 
-  // State for sample metadata lookup
+  // Sample metadata (gain, WAV header) per slot, keyed by slotKey(voice,
+  // slot). Not by file name: two slots can hold files with the same name,
+  // and each has its own gain (RE-45).
   const [sampleMetadata, setSampleMetadata] = useState<{
-    [filename: string]: SampleData;
+    [slotKey: string]: SampleData;
   }>({});
 
   // Get voice data from kit with fallback defaults
@@ -116,7 +119,8 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   const sampleData = React.useMemo(() => {
     const samples: Sample[] = [];
     if (sampleMetadata) {
-      Object.entries(sampleMetadata).forEach(([filename, data]) => {
+      Object.values(sampleMetadata).forEach((data) => {
+        const filename = data.filename;
         // Simple hash of filename for deterministic ID generation
         const hash = filename
           .split("")
@@ -254,9 +258,9 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
           hookProps.kitName,
         );
         if (samplesResult?.success && samplesResult.data) {
-          const metadata: { [filename: string]: SampleData } = {};
+          const metadata: { [slotKey: string]: SampleData } = {};
           samplesResult.data.forEach((sample: Sample) => {
-            metadata[sample.filename] = {
+            metadata[slotKey(sample.voice_number, sample.slot_number)] = {
               filename: sample.filename,
               gain_db: sample.gain_db ?? 0,
               slot_number: sample.slot_number,
@@ -282,15 +286,16 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   // Optimistic update for gain changes so SampleWaveform gets the new gainDb immediately
   const handleGainChange = React.useCallback(
     (
-      _voice: number,
-      _slotNumber: number,
-      sampleName: string,
+      voice: number,
+      slotNumber: number,
+      _sampleName: string,
       gainDb: number,
     ) => {
+      const key = slotKey(voice, slotNumber);
       setSampleMetadata((prev) => {
-        const existing = prev[sampleName];
+        const existing = prev[key];
         if (!existing) return prev;
-        return { ...prev, [sampleName]: { ...existing, gain_db: gainDb } };
+        return { ...prev, [key]: { ...existing, gain_db: gainDb } };
       });
     },
     [],

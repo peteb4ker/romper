@@ -2,6 +2,7 @@ import React from "react";
 
 import type { SampleData } from "../../kitTypes";
 
+import { slotKey } from "../../../utils/slotKey";
 import GainKnob from "../../GainKnob";
 import SampleWaveform from "../../SampleWaveform";
 import { MAX_SLOTS_PER_VOICE } from "./constants";
@@ -89,12 +90,6 @@ export function useVoicePanelSlotRendering({
     [slotRenderingHook],
   );
 
-  // Helper to generate sample key (eliminates duplication)
-  const getSampleKey = React.useCallback(
-    (sampleName: string) => `${voice}:${sampleName}`,
-    [voice],
-  );
-
   // Helper for conditional drag handlers (eliminates duplication)
   const getConditionalDragHandlers = React.useCallback(
     (slotNumber: number) => ({
@@ -128,10 +123,11 @@ export function useVoicePanelSlotRendering({
         sampleName.length > 20
           ? sampleName.slice(0, 20) + "\u2026"
           : sampleName;
-      const sampleKey = getSampleKey(sampleName);
-      const isPlaying = samplePlaying[sampleKey];
+      // Playback and metadata are keyed by slot, not file name (RE-45)
+      const sampleKey = slotKey(voice, slotNumber);
+      const isPlaying = Boolean(samplePlaying[sampleKey]);
       const uiSlotNumber = slotNumber + 1;
-      const sampleData = sampleMetadata?.[sampleName];
+      const sampleData = sampleMetadata?.[sampleKey];
       const isSelected = selectedIdx === slotNumber && isActive;
 
       const className = slotRenderingHook.getSampleSlotClassName(
@@ -172,6 +168,7 @@ export function useVoicePanelSlotRendering({
           aria-label={`Sample ${sampleName} in slot ${uiSlotNumber}`}
           aria-selected={isSelected}
           className={className}
+          data-playing={isPlaying}
           data-testid={
             isSelected ? `sample-selected-voice-${voice}` : undefined
           }
@@ -192,7 +189,7 @@ export function useVoicePanelSlotRendering({
           title={title}
           {...combinedDragHandlers}
         >
-          {renderPlayButton(isPlaying, sampleName)}
+          {renderPlayButton(isPlaying, slotNumber)}
           <div className="flex-1 min-w-0">
             <span
               className="block truncate text-xs font-mono font-medium text-text-primary"
@@ -231,7 +228,7 @@ export function useVoicePanelSlotRendering({
               }
             }}
             onPlayingChange={(playing) =>
-              onWaveformPlayingChange(voice, sample, playing)
+              onWaveformPlayingChange(voice, slotNumber, playing)
             }
             playOptions={playOptions?.[sampleKey]}
             playTrigger={playTriggers[sampleKey] || 0}
@@ -246,7 +243,6 @@ export function useVoicePanelSlotRendering({
     },
     [
       getSlotStylingProps,
-      getSampleKey,
       voice,
       samplePlaying,
       sampleMetadata,

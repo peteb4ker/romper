@@ -226,7 +226,7 @@ describe("useKitStepSequencerLogic", () => {
 
       expect(mockOnPlaySample).toHaveBeenCalledWith(
         1,
-        "kick.wav",
+        0, // kick.wav
         100,
         scheduled,
       );
@@ -333,13 +333,13 @@ describe("useKitStepSequencerLogic", () => {
 
       expect(mockOnPlaySample).toHaveBeenCalledWith(
         1,
-        "kick.wav",
+        0, // kick.wav
         100,
         scheduled,
       );
       expect(mockOnPlaySample).toHaveBeenCalledWith(
         2,
-        "snare.wav",
+        0, // snare.wav
         100,
         scheduled,
       );
@@ -368,7 +368,7 @@ describe("useKitStepSequencerLogic", () => {
 
       expect(mockOnPlaySample).toHaveBeenCalledWith(
         1,
-        "kick.wav",
+        0, // kick.wav
         100,
         scheduled,
       );
@@ -398,7 +398,7 @@ describe("useKitStepSequencerLogic", () => {
       // With Math.random() returning 0.9, floor(0.9 * 2) = 1, so second sample
       expect(mockOnPlaySample).toHaveBeenCalledWith(
         1,
-        "kick2.wav",
+        1, // kick2.wav
         100,
         scheduled,
       );
@@ -427,7 +427,7 @@ describe("useKitStepSequencerLogic", () => {
 
       expect(mockOnPlaySample).toHaveBeenCalledWith(
         1,
-        "kick.wav",
+        0, // kick.wav
         100,
         scheduled,
       );
@@ -441,7 +441,7 @@ describe("useKitStepSequencerLogic", () => {
 
       expect(mockOnPlaySample).toHaveBeenCalledWith(
         1,
-        "kick2.wav",
+        1, // kick2.wav
         100,
         scheduled,
       );
@@ -456,9 +456,58 @@ describe("useKitStepSequencerLogic", () => {
       expect(mockOnPlaySample).toHaveBeenNthCalledWith(
         3,
         1,
-        "kick.wav",
+        0, // kick.wav
         100,
         scheduled,
+      );
+    });
+
+    it("[UC-29] round-robins by slot when two samples share a file name (RE-45)", () => {
+      const params = {
+        ...getDefaultParams(),
+        sampleModes: { 1: "round-robin" as const },
+        samples: { ...defaultSamples, 1: ["dup.wav", "dup.wav"] },
+      };
+
+      const { result } = renderHook(() => useKitStepSequencerLogic(params));
+      act(() => {
+        result.current.setIsSeqPlaying(true);
+      });
+      for (const step of [0, 4]) {
+        act(() => {
+          mockWorker.onmessage?.({
+            data: { payload: { currentStep: step }, type: "STEP" },
+          } as MessageEvent);
+        });
+      }
+
+      const voice1Slots = mockOnPlaySample.mock.calls
+        .filter(([voice]) => voice === 1)
+        .map(([, slot]) => slot);
+      expect(voice1Slots).toEqual([0, 1]);
+    });
+
+    it("skips an empty slot it lands on", () => {
+      const params = {
+        ...getDefaultParams(),
+        samples: { ...defaultSamples, 1: ["", "kick.wav"] },
+      };
+
+      const { result } = renderHook(() => useKitStepSequencerLogic(params));
+      act(() => {
+        result.current.setIsSeqPlaying(true);
+      });
+      act(() => {
+        mockWorker.onmessage?.({
+          data: { payload: { currentStep: 0 }, type: "STEP" },
+        } as MessageEvent);
+      });
+
+      expect(mockOnPlaySample).not.toHaveBeenCalledWith(
+        1,
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
       );
     });
 
@@ -483,7 +532,7 @@ describe("useKitStepSequencerLogic", () => {
       // Voice 1 should be called with volume 75
       expect(mockOnPlaySample).toHaveBeenCalledWith(
         1,
-        "kick.wav",
+        0, // kick.wav
         75,
         scheduled,
       );
@@ -511,7 +560,7 @@ describe("useKitStepSequencerLogic", () => {
       // Voice 2 should use default volume 100
       expect(mockOnPlaySample).toHaveBeenCalledWith(
         2,
-        "snare.wav",
+        0, // snare.wav
         100,
         scheduled,
       );
@@ -535,7 +584,7 @@ describe("useKitStepSequencerLogic", () => {
       // Should default to first sample
       expect(mockOnPlaySample).toHaveBeenCalledWith(
         1,
-        "kick.wav",
+        0, // kick.wav
         100,
         scheduled,
       );
@@ -1112,7 +1161,7 @@ describe("useKitStepSequencerLogic", () => {
 
       expect(mockOnPlaySample).toHaveBeenCalledWith(
         1,
-        "kick.wav",
+        0, // kick.wav
         100,
         scheduled,
       );
@@ -1126,7 +1175,7 @@ describe("useKitStepSequencerLogic", () => {
 
       expect(mockOnPlaySample).toHaveBeenCalledWith(
         1,
-        "kick.wav",
+        0, // kick.wav
         100,
         scheduled,
       );
@@ -1177,7 +1226,7 @@ describe("useKitStepSequencerLogic", () => {
 
       expect(mockOnPlaySample).toHaveBeenCalledWith(
         2,
-        "snare.wav",
+        0, // snare.wav
         100,
         scheduled,
       );
@@ -1203,7 +1252,7 @@ describe("useKitStepSequencerLogic", () => {
 
       expect(mockOnPlaySample).toHaveBeenCalledWith(
         1,
-        "kick.wav",
+        0, // kick.wav
         100,
         scheduled,
       );
@@ -1287,7 +1336,7 @@ describe("useKitStepSequencerLogic", () => {
 
       expect(mockOnPlaySample).toHaveBeenCalledWith(
         1,
-        "kick.wav",
+        0, // kick.wav
         100,
         scheduled,
       );
@@ -1381,7 +1430,7 @@ describe("useKitStepSequencerLogic", () => {
 
       playStep(result, 4);
 
-      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100, {
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, 0, 100, {
         region: { length: 2 / 16, start: 4 / 16 },
         startAt: expect.any(Number),
       });
@@ -1403,7 +1452,7 @@ describe("useKitStepSequencerLogic", () => {
       playStep(result, 8);
 
       // step 9 of 16 wraps to slice 1 of 8
-      expect(mockOnPlaySample).toHaveBeenCalledWith(1, "kick.wav", 100, {
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, 0, 100, {
         region: { length: 1 / 8, start: 0 },
         startAt: expect.any(Number),
       });
@@ -1423,7 +1472,7 @@ describe("useKitStepSequencerLogic", () => {
 
       expect(mockOnPlaySample).toHaveBeenCalledWith(
         1,
-        "kick.wav",
+        0, // kick.wav
         100,
         scheduled,
       );

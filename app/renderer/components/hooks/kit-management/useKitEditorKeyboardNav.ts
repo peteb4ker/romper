@@ -17,7 +17,7 @@ interface UseKitEditorKeyboardNavParams {
   isEditable: boolean;
   onInferVoiceNames: () => void;
   onNextKit?: () => void;
-  onPlaySample: (voice: number, sample: string) => void;
+  onPlaySample: (voice: number, slot: number) => void;
   onPrevKit?: () => void;
   onSampleKeyNav: (direction: "down" | "up") => void;
   onScanKit: () => void;
@@ -132,7 +132,7 @@ function handleSampleNavKey(key: string, params: SampleNavParams): void {
     params.selectedSampleIdx
   ];
   if (sample) {
-    params.onPlaySample(params.selectedVoice, sample);
+    params.onPlaySample(params.selectedVoice, params.selectedSampleIdx);
   }
 }
 

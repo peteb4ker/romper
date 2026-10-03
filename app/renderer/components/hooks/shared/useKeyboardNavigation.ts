@@ -2,7 +2,7 @@ import { useCallback } from "react";
 
 export interface UseKeyboardNavigationOptions {
   isActive: boolean;
-  onPlay: (voice: number, sample: string) => void;
+  onPlay: (voice: number, slot: number) => void;
   samples: string[];
   selectedIdx: number;
   voice: number;
@@ -27,8 +27,7 @@ export function useKeyboardNavigation({
       if (!isActive) return;
       if (e.key === " ") {
         e.preventDefault();
-        const sample = samples[selectedIdx];
-        onPlay(voice, sample);
+        if (samples[selectedIdx]) onPlay(voice, selectedIdx);
       }
     },
     [samples, isActive, selectedIdx, voice, onPlay],

@@ -23,7 +23,7 @@ export interface BaseVoicePanelOptions {
   onSampleSelect?: (voice: number, idx: number) => void;
   onWaveformPlayingChange: (
     voice: number,
-    sample: string,
+    slot: number,
     playing: boolean,
   ) => void;
   playOptions?: { [key: string]: PlayOptions | undefined };
@@ -35,7 +35,7 @@ export interface BaseVoicePanelOptions {
   ) => React.ReactElement;
   renderPlayButton: (
     isPlaying: boolean,
-    sampleName: string,
+    slotNumber: number,
   ) => React.ReactElement;
   sampleActionsHook: {
     handleSampleContextMenu: (
@@ -43,7 +43,7 @@ export interface BaseVoicePanelOptions {
       sampleData: SampleData | undefined,
     ) => void;
   };
-  sampleMetadata?: { [filename: string]: SampleData };
+  sampleMetadata?: { [slotKey: string]: SampleData }; // keyed by slotKey(voice, slot)
   samplePlaying: { [key: string]: boolean };
   samples: string[];
   selectedIdx: number;

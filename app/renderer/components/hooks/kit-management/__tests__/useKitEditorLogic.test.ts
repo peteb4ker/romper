@@ -567,6 +567,91 @@ describe("useKitEditorLogic", () => {
     );
   });
 
+  describe("[UC-17] [UC-36] reporting a failed toggle or rename (RE-41)", () => {
+    it("reports a failed editable toggle instead of rejecting into the click", async () => {
+      const onMessage = vi.fn();
+      const onToggleEditableMode = vi
+        .fn()
+        .mockRejectedValue(new Error("Failed to toggle editable mode"));
+      const { result } = renderHook(() =>
+        useKitEditorLogic({ ...mockProps, onMessage, onToggleEditableMode }),
+      );
+
+      await act(async () => {
+        await expect(result.current.toggleEditableMode()).resolves.toBe(
+          undefined,
+        );
+      });
+
+      expect(onMessage).toHaveBeenCalledWith(
+        "Couldn't turn editing on for kit TestKit. Try again.",
+        "error",
+      );
+    });
+
+    it("says editing couldn't be turned off on an editable kit", async () => {
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useKitEditorLogic({
+          ...mockProps,
+          kit: { ...mockKit, editable: true } as unknown,
+          onMessage,
+          onToggleEditableMode: vi.fn().mockRejectedValue(new Error("x")),
+        }),
+      );
+
+      await act(async () => {
+        await result.current.toggleEditableMode();
+      });
+
+      expect(onMessage).toHaveBeenCalledWith(
+        "Couldn't turn editing off for kit TestKit. Try again.",
+        "error",
+      );
+    });
+
+    it("reports a failed rename instead of rejecting into the blur", async () => {
+      const onMessage = vi.fn();
+      const onUpdateKitAlias = vi
+        .fn()
+        .mockRejectedValue(new Error("SQLITE_BUSY: database is locked"));
+      const { result } = renderHook(() =>
+        useKitEditorLogic({ ...mockProps, onMessage, onUpdateKitAlias }),
+      );
+
+      await act(async () => {
+        await expect(result.current.updateKitAlias("Big Drums")).resolves.toBe(
+          undefined,
+        );
+      });
+
+      expect(onUpdateKitAlias).toHaveBeenCalledWith("TestKit", "Big Drums");
+      expect(onMessage).toHaveBeenCalledWith(
+        "Couldn't save the name for kit TestKit. Try again.",
+        "error",
+      );
+    });
+
+    it("says nothing when the toggle and rename work", async () => {
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useKitEditorLogic({
+          ...mockProps,
+          onMessage,
+          onToggleEditableMode: vi.fn().mockResolvedValue(undefined),
+          onUpdateKitAlias: vi.fn().mockResolvedValue(undefined),
+        }),
+      );
+
+      await act(async () => {
+        await result.current.toggleEditableMode();
+        await result.current.updateKitAlias("Big Drums");
+      });
+
+      expect(onMessage).not.toHaveBeenCalled();
+    });
+  });
+
   describe("handleInferVoiceNames", () => {
     it("infers voice names from sample filenames and calls updateVoiceAlias", async () => {
       const propsWithSamples = {

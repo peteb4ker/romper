@@ -426,8 +426,7 @@ editing controls (drop, delete, gain, voice names). The kit's display name
   (`kit-browser.md:47`) and "lock important kits" (`syncing.md:78`).
   `kits.locked` exists but nothing in the UI sets it; the switch labelled
   "Locked" is the editable toggle. Editable mode itself is never explained.
-- **Known issues:** RE-41 (toggle and alias errors become unhandled
-  rejections), RE-22 (`update-kit-metadata` spreads the renderer's object),
+- **Known issues:** RE-22 (`update-kit-metadata` spreads the renderer's object),
   RE-56 (dead `app/renderer/components/hooks/kit-management/useKit.ts`).
 
 ### UC-18 Step to the previous or next kit
@@ -824,9 +823,8 @@ window. No manual page covers this; the requirements are in
 - **Doc gaps:** the PRD puts messages at the top centre and keeps errors
   until dismissed (`product-requirements.md:595, 829-832`); they're at the
   top right and errors go after 7 s. There's no message history.
-- **Known issues:** RE-41
-  (unhandled rejections; the renderer has no `unhandledrejection` handler),
-  RE-48. No test above unit level renders the error boundary in the app.
+- **Known issues:** RE-48. The renderer has no `unhandledrejection`
+  handler. No test above unit level renders the error boundary in the app.
 
 ### UC-37 About, help, updates and diagnostics
 

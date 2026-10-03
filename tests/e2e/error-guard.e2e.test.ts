@@ -52,6 +52,16 @@ test.describe("E2E error guard", () => {
     await window.waitForTimeout(250);
   });
 
+  // RE-92: the renderer reports these itself (a toast and a console
+  // error) rather than leaving them to Chromium, so they fail a test too
+  test("fails a test on a promise nobody caught", async () => {
+    test.fail();
+    await window.evaluate(() => {
+      void Promise.reject(new Error("e2e guard check: rejection"));
+    });
+    await expect(window.locator('[data-testid="message-error"]')).toBeVisible();
+  });
+
   test("fails a test on an error in the main process's stderr", async () => {
     test.fail();
     await electronApp.evaluate(() => console.error("e2e guard check: main"));

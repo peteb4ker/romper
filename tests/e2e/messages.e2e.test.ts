@@ -57,4 +57,31 @@ test.describe("[UC-36] Messages", () => {
       window.locator('[data-testid="message-success"]').first(),
     ).toContainText("Bank scanning complete", { timeout: 10000 });
   });
+
+  // RE-92: a promise that rejects outside a render, such as an IPC call
+  // nobody awaited, used to reach only the console
+  test.describe("a promise nobody caught", () => {
+    test.use({
+      expectedMessages: {
+        "this test rejects a promise on purpose, which is logged and shown": {
+          pattern:
+            /A background task failed|Something Romper was doing in the background didn't finish/,
+        },
+      },
+    });
+
+    test("shows one error message, without the reason", async () => {
+      await window.evaluate(() => {
+        void Promise.reject(new Error("e2e: nobody awaited this"));
+        void Promise.reject(new Error("e2e: nor this"));
+      });
+
+      const errors = window.locator('[data-testid="message-error"]');
+      await expect(errors).toHaveCount(1);
+      await expect(errors).toContainText(
+        "Something Romper was doing in the background didn't finish. Check that your last change took effect, and try it again if it didn't.",
+      );
+      await expect(errors).not.toContainText("nobody awaited");
+    });
+  });
 });

@@ -307,7 +307,8 @@ describe("KitService Integration Tests", () => {
       // Lifecycle flags reset for the duplicate
       expect(destKit.data?.editable).toBe(true);
       expect(destKit.data?.locked).toBe(false);
-      expect(destKit.data?.modified_since_sync).toBe(false);
+      // The copy isn't on the card yet, so the next write adds it (RE-35)
+      expect(destKit.data?.modified_since_sync).toBe(true);
       expect(destKit.data?.is_favorite).toBe(false);
 
       const destVoices = destKit.data?.voices ?? [];

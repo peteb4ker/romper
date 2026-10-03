@@ -564,6 +564,28 @@ describe("KitVoicePanels", () => {
     });
   });
 
+  describe("[UC-11] [UC-24] Gain changes (RE-35)", () => {
+    it("writes the gain and shows the kit as modified", () => {
+      const onKitModified = vi.fn();
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable={true}
+          onKitModified={onKitModified}
+        />,
+      );
+
+      fireEvent.wheel(screen.getAllByRole("slider")[0], { deltaY: -100 });
+
+      expect(globalThis.electronAPI.updateSampleGain).toHaveBeenCalledWith(
+        "Kit1",
+        1,
+        0,
+        1,
+      );
+      expect(onKitModified).toHaveBeenCalledWith("Kit1");
+    });
+  });
+
   describe("[UC-28] Voice linking layout", () => {
     it("should hide secondary voice panel when linked", () => {
       const voices = [

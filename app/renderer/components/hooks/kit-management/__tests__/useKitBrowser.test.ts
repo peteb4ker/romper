@@ -1,9 +1,11 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { useKitBrowser } from "../useKitBrowser";
+
+const mockRenameBank = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 
 // Mock the composed hooks
 vi.mock("../useKitCreation", () => ({
@@ -33,6 +35,7 @@ vi.mock("../useKitBankNavigation", () => ({
     globalBankHotkeyHandler: vi.fn(),
     handleBankClick: vi.fn(),
     handleBankClickWithScroll: vi.fn(),
+    handleBankNameChange: mockRenameBank,
     handleVisibleBankChange: vi.fn(),
     scrollContainerRef: { current: null },
     selectedBank: "A",
@@ -144,5 +147,19 @@ describe("useKitBrowser", () => {
     const { result } = renderHook(() => useKitBrowser(propsWithoutKits));
 
     expect(result.current.kits).toEqual([]);
+  });
+
+  it("[UC-11] reloads the kits after a bank rename, so the kits main marked show as modified (RE-35)", async () => {
+    const onRefreshKits = vi.fn();
+    const { result } = renderHook(() =>
+      useKitBrowser({ ...defaultProps, onRefreshKits }),
+    );
+
+    await act(async () => {
+      await result.current.handleBankNameChange("A", "Autechre");
+    });
+
+    expect(mockRenameBank).toHaveBeenCalledWith("A", "Autechre");
+    expect(onRefreshKits).toHaveBeenCalledTimes(1);
   });
 });

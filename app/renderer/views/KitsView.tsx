@@ -62,6 +62,7 @@ const KitsView: React.FC = () => {
     allKitSamples,
     getKitByName,
     kits,
+    markKitModified,
     refreshAllKitsAndSamples,
     refreshSingleKitMetadata,
     reloadCurrentKitSamples,
@@ -223,6 +224,7 @@ const KitsView: React.FC = () => {
             kits={navigation.sortedKits}
             onAddUndoAction={keyboardShortcuts.addUndoAction}
             onBack={navigation.handleBack}
+            onKitModified={markKitModified}
             onKitUpdated={refreshAllKitsAndSamples}
             onMessage={showMessage}
             onNextKit={navigation.handleNextKit}

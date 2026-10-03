@@ -28,7 +28,7 @@ vi.mock("../../db/romperDbCoreORM.js", () => ({
   getAllBanks: vi.fn(() => ({ data: [], success: true })),
   getKits: vi.fn(),
   getKitSamples: vi.fn(),
-  markKitsAsSynced: vi.fn(),
+  markAllKitsAsSyncedExcept: vi.fn(() => ({ data: 0, success: true })),
 }));
 
 vi.mock("../../formatConverter.js", () => ({
@@ -50,7 +50,7 @@ import {
   getAllBanks,
   getKits,
   getKitSamples,
-  markKitsAsSynced,
+  markAllKitsAsSyncedExcept,
 } from "../../db/romperDbCoreORM.js";
 import { convertToRampleDefault } from "../../formatConverter.js";
 import { rtfFileService } from "../rtfFileService.js";
@@ -71,7 +71,7 @@ const mockGetAudioMetadata = vi.mocked(getAudioMetadata);
 const mockValidateSampleFormat = vi.mocked(validateSampleFormat);
 const mockGetKits = vi.mocked(getKits);
 const mockGetKitSamples = vi.mocked(getKitSamples);
-const mockMarkKitsAsSynced = vi.mocked(markKitsAsSynced);
+const mockMarkKitsAsSynced = vi.mocked(markAllKitsAsSyncedExcept);
 const _mockConvertToRampleDefault = vi.mocked(convertToRampleDefault);
 const mockBrowserWindow = vi.mocked(BrowserWindow);
 const mockValidateSdCardTarget = vi.mocked(validateSdCardTarget);
@@ -301,10 +301,7 @@ describe("[UC-34] SyncService", () => {
 
     it("returns sync results with file count", async () => {
       // Mock successful sync
-      mockMarkKitsAsSynced.mockResolvedValue({
-        data: undefined,
-        success: true,
-      });
+      mockMarkKitsAsSynced.mockReturnValue({ data: 1, success: true });
 
       const result = await syncService.startKitSync(mockSettings, mockOptions);
 
@@ -554,7 +551,7 @@ describe("[UC-34] SyncService", () => {
       vi.spyOn(syncFileOperationsService, "processAllFiles").mockResolvedValue(
         2,
       );
-      mockMarkKitsAsSynced.mockReturnValue({ success: true });
+      mockMarkKitsAsSynced.mockReturnValue({ data: 1, success: true });
     });
 
     afterEach(() => {
@@ -662,15 +659,33 @@ describe("[UC-34] SyncService", () => {
       expect([...kits.get("B2")!]).toEqual(["1-01 gone.wav"]);
     });
 
-    it("leaves kits with a skipped sample marked as modified", async () => {
+    it("[UC-11] leaves kits with a skipped sample marked as modified", async () => {
       await syncService.startKitSync(mockSettings, {
         sdCardPath: "/sd/card",
         skipInvalidFiles: true,
       });
 
+      // Every other kit is in step with the card, including C3 and kits
+      // with no files to write (RE-35)
       expect(mockMarkKitsAsSynced).toHaveBeenCalledWith(
         "/local/store/.romperdb",
-        ["C3"],
+        ["A1", "B2"],
+      );
+    });
+
+    it("[UC-11] clears the flag after a write with no files to write (RE-35)", async () => {
+      vi.mocked(syncSampleProcessingService.gatherAllSamples).mockResolvedValue(
+        { data: [], success: true },
+      );
+
+      const result = await syncService.startKitSync(mockSettings, {
+        sdCardPath: "/sd/card",
+      });
+
+      expect(result.success).toBe(true);
+      expect(mockMarkKitsAsSynced).toHaveBeenCalledWith(
+        "/local/store/.romperdb",
+        [],
       );
     });
   });

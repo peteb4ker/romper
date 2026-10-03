@@ -17,6 +17,7 @@ interface UseKitDataManagerReturn {
   getKitByName: (kitName: string) => KitWithRelations | undefined;
   kits: KitWithRelations[];
   loadKitsData: (scrollToKit?: string) => Promise<void>;
+  markKitModified: (kitName: string) => void;
   refreshAllKitsAndSamples: () => Promise<void>;
   refreshSingleKitMetadata: (kitName: string) => Promise<void>;
   reloadCurrentKitSamples: (kitName: string) => Promise<void>;
@@ -207,6 +208,19 @@ export function useKitDataManager({
     [],
   );
 
+  // Show a kit as modified since the last write after an edit main has
+  // already flagged (RE-35). Leaves state alone when it's already flagged,
+  // so a gain knob turned step by step re-renders once.
+  const markKitModified = useCallback((kitName: string) => {
+    setKits((prevKits) =>
+      prevKits.some((kit) => kit.name === kitName && !kit.modified_since_sync)
+        ? prevKits.map((kit) =>
+            kit.name === kitName ? { ...kit, modified_since_sync: true } : kit,
+          )
+        : prevKits,
+    );
+  }, []);
+
   // Toggle kit favorite status
   const toggleKitFavorite = useCallback(
     async (kitName: string): Promise<DbResult<{ isFavorite: boolean }>> => {
@@ -322,6 +336,7 @@ export function useKitDataManager({
     getKitByName,
     kits,
     loadKitsData,
+    markKitModified,
     refreshAllKitsAndSamples,
     refreshSingleKitMetadata,
     reloadCurrentKitSamples,

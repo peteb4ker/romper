@@ -3,7 +3,8 @@ import type { Bank, DbResult } from "@romper/shared/db/schema.js";
 import * as schema from "@romper/shared/db/schema.js";
 import { eq } from "drizzle-orm";
 
-import { withDb } from "../utils/dbUtilities.js";
+import { withDb, withDbTransaction } from "../utils/dbUtilities.js";
+import { flagBankKitsModified } from "./kitSyncOperations.js";
 
 // Re-export operations from extracted modules
 export {
@@ -16,6 +17,7 @@ export {
   getKitDeleteSummary,
   getKits,
   getKitsMetadata,
+  markAllKitsAsSyncedExcept,
   markKitAsModified,
   markKitAsSynced,
   markKitsAsSynced,
@@ -57,14 +59,21 @@ export function getAllBanks(dbDir: string): DbResult<Bank[]> {
 }
 
 /**
- * Update bank information
+ * Update bank information.
+ *
+ * A bank's name is written to the card as an RTF file beside its kits, so
+ * renaming or clearing it marks every kit in the bank modified (RE-35).
+ * A bank scan passes `source: "scan"`: it reads names back from the
+ * store's own RTF files, which already match the card, so it changes
+ * nothing the next write would.
  */
 export function updateBank(
   dbDir: string,
   bankLetter: string,
   updates: Partial<Bank>,
+  { source = "edit" }: { source?: "edit" | "scan" } = {},
 ): DbResult<void> {
-  return withDb(dbDir, (db) => {
+  return withDbTransaction(dbDir, (db) => {
     const updateData: Partial<Bank> = {};
 
     // Only include allowed fields
@@ -78,6 +87,15 @@ export function updateBank(
       return; // Nothing to update
     }
 
+    const before =
+      source === "edit" && updateData.artist !== undefined
+        ? db
+            .select({ artist: banks.artist })
+            .from(banks)
+            .where(eq(banks.letter, bankLetter))
+            .get()
+        : undefined;
+
     const result = db
       .update(banks)
       .set(updateData)
@@ -86,6 +104,10 @@ export function updateBank(
 
     if (result.changes === 0) {
       throw new Error(`Bank '${bankLetter}' not found`);
+    }
+
+    if (before && (before.artist || null) !== (updateData.artist || null)) {
+      flagBankKitsModified(db, bankLetter);
     }
   });
 }

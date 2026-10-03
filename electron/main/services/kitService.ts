@@ -70,7 +70,7 @@ export class KitService {
       bank_letter: kitSlot.charAt(0), // Extract bank letter from kit name
       editable: true, // User-created kits are editable by default
       locked: false,
-      modified_since_sync: false,
+      modified_since_sync: true, // New since the last write (RE-35)
       name: kitSlot,
       step_pattern: null,
     };

@@ -511,6 +511,51 @@ describe("useKitDataManager", () => {
     });
   });
 
+  describe("[UC-11] markKitModified (RE-35)", () => {
+    const loaded = async () => {
+      const hook = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          localStorePath: "/test/path",
+          needsLocalStoreSetup: false,
+        }),
+      );
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      return hook;
+    };
+
+    it("shows the kit as modified without reloading the kits", async () => {
+      const { result } = await loaded();
+      vi.mocked(globalThis.electronAPI.getKits).mockClear();
+
+      act(() => {
+        result.current.markKitModified("A0");
+      });
+
+      expect(result.current.getKitByName("A0")?.modified_since_sync).toBe(true);
+      expect(result.current.getKitByName("A1")?.modified_since_sync).toBe(
+        undefined,
+      );
+      expect(globalThis.electronAPI.getKits).not.toHaveBeenCalled();
+    });
+
+    it("keeps the same kits when the kit is already modified, so a gain knob re-renders once", async () => {
+      const { result } = await loaded();
+      act(() => {
+        result.current.markKitModified("A0");
+      });
+      const kits = result.current.kits;
+
+      act(() => {
+        result.current.markKitModified("A0");
+      });
+
+      expect(result.current.kits).toBe(kits);
+    });
+  });
+
   describe("[UC-10] toggleKitFavorite", () => {
     it("should successfully toggle kit favorite status", async () => {
       vi.mocked(window.electronAPI.toggleKitFavorite).mockResolvedValue({

@@ -4,12 +4,15 @@ import type { VoiceSliceSettings } from "@romper/shared/sliceTypes.js";
 import * as schema from "@romper/shared/db/schema.js";
 import { and, eq } from "drizzle-orm";
 
-import { withDb } from "../utils/dbUtilities.js";
+import { withDb, withDbTransaction } from "../utils/dbUtilities.js";
+import { flagKitModified } from "./kitSyncOperations.js";
 
-const { kits, voices } = schema;
+const { voices } = schema;
 
 /**
- * Update voice alias
+ * Update voice alias. Renaming a voice is an edit to the kit, so a name
+ * that actually changes marks the kit modified (RE-35); saving the same
+ * name again doesn't.
  */
 export function updateVoiceAlias(
   dbDir: string,
@@ -17,13 +20,19 @@ export function updateVoiceAlias(
   voiceNumber: number,
   alias: string,
 ): DbResult<void> {
-  return withDb(dbDir, (db) => {
-    db.update(voices)
-      .set({ voice_alias: alias })
-      .where(
-        and(eq(voices.kit_name, kitName), eq(voices.voice_number, voiceNumber)),
-      )
-      .run();
+  return withDbTransaction(dbDir, (db) => {
+    const voice = and(
+      eq(voices.kit_name, kitName),
+      eq(voices.voice_number, voiceNumber),
+    );
+    const current = db
+      .select({ voice_alias: voices.voice_alias })
+      .from(voices)
+      .where(voice)
+      .get();
+    if (!current || (current.voice_alias ?? "") === (alias ?? "")) return;
+    db.update(voices).set({ voice_alias: alias }).where(voice).run();
+    flagKitModified(db, kitName);
   });
 }
 
@@ -97,10 +106,7 @@ export function updateVoiceStereoMode(
         and(eq(voices.kit_name, kitName), eq(voices.voice_number, voiceNumber)),
       )
       .run();
-    db.update(kits)
-      .set({ modified_since_sync: true })
-      .where(eq(kits.name, kitName))
-      .run();
+    flagKitModified(db, kitName);
   });
 }
 

@@ -69,7 +69,7 @@ To copy an existing kit to a different slot:
 2. Type the target slot, for example `B5`. It must be a free slot from `A0` to `Z99`
 3. Click **Duplicate** or press **Enter**
 
-All samples, voice settings and the step sequence are copied to the new location. The copy is editable, isn't a favorite, and isn't marked as modified.
+All samples, voice settings and the step sequence are copied to the new location. The copy is editable, isn't a favorite, and is marked as modified until you next write it to the card.
 
 ### Deleting Kits
 
@@ -98,7 +98,7 @@ Click the **Favorites** toggle (bookmark icon with count) to show only kits you'
 
 ### Modified Filter
 
-Click the **Modified** toggle to show only kits marked as changed since they were last written to your SD card (the cards with an amber border). Adding, removing or moving samples, and linking or unlinking a stereo pair, mark a kit as modified. Changing a sample's gain doesn't, and a new or duplicated kit starts unmarked, so the filter can miss kits that the next write will change.
+Click the **Modified** toggle to show only kits marked as changed since they were last written to your SD card (the cards with an amber border). Adding, removing or moving samples, changing a sample's gain, renaming a voice, and linking or unlinking a stereo pair mark a kit as modified. Renaming or clearing a bank's name marks every kit in that bank, since the name is written to the card beside them. A new or duplicated kit starts marked. Writing to the card clears the mark on every kit, except a kit with a sample the write skipped.
 
 ## Kit Status Indicators
 

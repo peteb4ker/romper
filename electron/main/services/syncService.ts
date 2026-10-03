@@ -7,7 +7,7 @@ import * as path from "node:path";
 import {
   getAllBanks,
   getKits,
-  markKitsAsSynced,
+  markAllKitsAsSyncedExcept,
 } from "../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
 import { logger } from "../utils/logger.js";
@@ -258,16 +258,14 @@ class SyncService {
       // never leaves a kit with less than it had.
       this.removeStaleEntries(options.sdCardPath, cardContents);
 
-      // A kit with a skipped sample isn't in sync with the card, so it keeps
-      // its "modified since sync" flag.
-      const incompleteKits = new Set(
-        validationErrors.map((error) => error.kitName),
-      );
-      this.markKitsAsSynced(
-        inMemorySettings,
-        allFiles.filter((file) => !incompleteKits.has(file.kitName)),
-        syncedFiles,
-      );
+      // The card now mirrors the store, so every kit is in step with it,
+      // except a kit with a skipped sample: it keeps its "modified since
+      // sync" flag.
+      const incompleteKits = new Set<string>();
+      for (const error of validationErrors) {
+        if (error.kitName) incompleteKits.add(error.kitName);
+      }
+      this.markKitsAsSynced(dbDir, [...incompleteKits]);
 
       return {
         data: {
@@ -330,28 +328,16 @@ class SyncService {
   }
 
   /**
-   * Mark kits as synced after successful operation
+   * Mark kits as synced after a completed write: every kit but the ones
+   * the write left incomplete, including kits with no files to write
+   * (RE-35)
    */
-  private markKitsAsSynced(
-    inMemorySettings: Record<string, unknown>,
-    allFiles: SyncFileOperation[],
-    syncedFiles: number,
-  ): void {
-    const localStorePath =
-      ServicePathManager.getLocalStorePath(inMemorySettings);
-    if (!localStorePath || !syncedFiles) return;
-
-    const dbDir = ServicePathManager.getDbPath(localStorePath);
-    const syncedKitNames = [...new Set(allFiles.map((file) => file.kitName))];
-
-    const markSyncedResult = markKitsAsSynced(dbDir, syncedKitNames);
-    if (markSyncedResult.success) {
-      logger.log(
-        `Marked ${syncedKitNames.length} kits as synced:`,
-        syncedKitNames,
-      );
+  private markKitsAsSynced(dbDir: string, incompleteKits: string[]): void {
+    const result = markAllKitsAsSyncedExcept(dbDir, incompleteKits);
+    if (result.success) {
+      logger.log(`Marked ${result.data} kits as synced`);
     } else {
-      console.warn("Failed to mark kits as synced:", markSyncedResult.error);
+      console.warn("Failed to mark kits as synced:", result.error);
     }
   }
 

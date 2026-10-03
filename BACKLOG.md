@@ -56,7 +56,6 @@ This file tracks what's being done about each item.
 | RE-27 | Medium | Samples | Moving a sample to another kit can fail partway, and the moved sample loses its gain and audio details. | open |
 | RE-28 | Medium | DB | Some changes are saved in several steps (creating a kit, deleting a sample, scanning), so a failure partway can leave a kit half-updated. | open |
 | RE-33 | Medium | DB | Upgrading an older library relies on a repair step that could leave it half-upgraded if interrupted. | open (#407 fixed the `kits.artist` snapshot drift) |
-| RE-35 | Medium | Sync | Changing a sample's gain, a voice name or a bank name doesn't mark the kit as changed, so the "modified since last write" filter misses it. | partly done (#360: scan sets it when it adds samples; #407: stereo link changes set it) |
 | RE-36 | Medium | Performance | Almost every edit reloads your whole library behind the scenes, which gets slower as the library grows. | open |
 | RE-46 | Medium | Performance | While a sample plays, its waveform does far more drawing work than it needs, which can make playback stutter on slower machines. | open |
 | RE-47 | Medium | Performance | The kit browser redraws far more than it needs to when you type, scroll or get a message. | open |
@@ -87,6 +86,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-35 | Medium | Sync | Changing a sample's gain, a voice name or a bank name doesn't mark the kit as changed, so the "modified since last write" filter misses it. | done (#360: scan sets it when it adds samples; #407: stereo link changes set it; #PRNUM: gain, voice name and bank name edits, and new and duplicated kits, set it; a write clears it on every kit it brought in line) |
 | RE-45 | Medium | Playback | Two samples with the same file name in one voice play together, and same-named samples in different voices share a gain setting on screen. | done (#497: each sample plays, shows as playing and keeps its gain on its own, whatever its file name) |
 | RE-38 | Medium | Renderer | Pressing F both jumps to bank F and stars the selected kit. | done (#494: letters only jump to banks, `*` bookmarks, and Cmd, Ctrl and Alt combinations are left to the menu) |
 | RE-39 | Medium | Renderer | Arrow keys and Enter don't work in the kit grid until you click a kit. | done (#435: the arrows follow the rows the grid draws, and the focused card takes keyboard focus) |

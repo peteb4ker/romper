@@ -15,6 +15,7 @@ interface KitEditorContainerProps {
   kits: KitWithRelations[];
   onAddUndoAction: (action: AnyUndoAction) => void;
   onBack: (scrollToKit?: string) => Promise<void>;
+  onKitModified?: (kitName: string) => void;
   onKitUpdated: () => Promise<void>;
   onMessage: (text: string, type?: string, duration?: number) => void;
   onNextKit: () => void;
@@ -43,6 +44,7 @@ const KitEditorContainer: React.FC<KitEditorContainerProps> = (props) => {
     kits,
     onAddUndoAction,
     onBack,
+    onKitModified,
     onKitUpdated,
     onMessage,
     onNextKit,
@@ -84,6 +86,7 @@ const KitEditorContainer: React.FC<KitEditorContainerProps> = (props) => {
       kits={kits}
       onAddUndoAction={onAddUndoAction}
       onBack={handleBack}
+      onKitModified={onKitModified}
       onKitUpdated={onKitUpdated}
       onMessage={handleMessage}
       onNextKit={onNextKit}

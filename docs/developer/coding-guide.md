@@ -92,3 +92,42 @@ the pieces fit.
   Assigning `window.electronAPI` is a lint error, and reassigning
   `global.window` breaks `globalThis.electronAPI`.
 - Don't `.skip` a failing test; fix the cause.
+
+## Performance budgets
+
+Performance is held in place by budgets in
+[`tests/perf/budgets.ts`](../../tests/perf/budgets.ts), checked on every PR.
+They pin deterministic work, not wall-clock time:
+
+- IPC calls per user action, by channel
+  (`tests/e2e/performance-budgets.e2e.test.ts`, through the main-process
+  probe in `tests/perf/ipc-probe.cjs`);
+- database connections, SQL statements and synchronous fs calls per
+  main-process operation
+  (`tests/integration/performance-budgets.integration.test.ts`).
+
+The factory-scale profile (`tests/validation/performance.validation.ts`) also
+checks headroom budgets for returned bytes and main-thread stalls, but only
+in the manual validation workflow: timings on shared runners are too noisy
+to gate a PR.
+
+How the checks read a budget:
+
+- **`max` is a ratchet.** It's the value measured when the budget was set,
+  so a count that goes up fails as a regression. If your change adds work on
+  purpose, raise `max` in the same PR and say why in its description.
+- **`target` and `until: "RE-NN"`** record what a planned refactor (see
+  [`architecture-review.md`](architecture-review.md)) will bring a count
+  down to. When a count reaches its target, the check fails as stale. Set
+  `max` to the new count and delete `target` and `until` in the PR that got
+  it there, as with a stale `knownBug: "RE-NN"` marker.
+- **A measured metric with no budget fails.** A new IPC channel showing up
+  in an action gets a budget, or the change gets rethought. `total` is the
+  one metric that may go unbudgeted.
+- **Lowered a count without a target?** Tighten `max` to the new value, so
+  the ratchet holds the gain.
+
+Numbers live in `budgets.ts` and nowhere else: don't copy counts into
+Markdown, PR templates or comments. Set `ROMPER_BUDGET_REPORT=<file>` to have
+the budget tests append their measurements to that file as JSON lines.
+

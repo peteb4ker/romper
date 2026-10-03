@@ -1,7 +1,8 @@
 /**
- * Main-process probe for the performance scenario, loaded before the app
- * with Electron's `--require <this file>` so it sees every IPC handler from
- * the first one registered.
+ * Main-process IPC probe, loaded before the app with Electron's
+ * `--require <this file>` so it sees every IPC handler from the first one
+ * registered. The e2e budgets (tests/utils/e2e-ipc-budget.ts) and the
+ * performance profile (tests/validation/performance.validation.ts) use it.
  *
  * It wraps `ipcMain.handle` to time each invoke and keeps the result so its
  * size can be measured later, outside the timed region. An event-loop-delay
@@ -13,6 +14,9 @@ const { monitorEventLoopDelay, performance } = require("node:perf_hooks");
 
 const origin = performance.now();
 let calls = [];
+// Calls started since the last reset, and calls still awaiting their handler
+let started = 0;
+let pending = 0;
 const loop = monitorEventLoopDelay({ resolution: 5 });
 loop.enable();
 
@@ -20,15 +24,22 @@ const handle = ipcMain.handle.bind(ipcMain);
 ipcMain.handle = (channel, listener) =>
   handle(channel, async (event, ...args) => {
     const start = performance.now();
-    let pending;
+    started++;
+    pending++;
+    let running;
     let syncMs;
     try {
-      pending = listener(event, ...args);
+      running = listener(event, ...args);
     } finally {
       // Until the handler's first await: time the main thread was held
       syncMs = performance.now() - start;
     }
-    const result = await pending;
+    let result;
+    try {
+      result = await running;
+    } finally {
+      pending--;
+    }
     calls.push({
       args: JSON.stringify(args).slice(0, 160),
       at: start - origin,
@@ -56,11 +67,17 @@ function sizeOf(value, seen = new Set()) {
 }
 
 globalThis.__romperProbe = {
+  /** Calls started since the last reset (a pending call counts) */
   count() {
-    return calls.length;
+    return started;
+  },
+  /** Calls whose handler hasn't finished */
+  pending() {
+    return pending;
   },
   reset() {
     calls = [];
+    started = 0;
     loop.reset();
   },
   snapshot() {
@@ -74,6 +91,7 @@ globalThis.__romperProbe = {
       p99Ms: loop.percentile(99) / 1e6,
     };
     calls = [];
+    started = 0;
     loop.reset();
     return { blocking, calls: out };
   },

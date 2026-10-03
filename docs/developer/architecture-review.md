@@ -55,7 +55,7 @@ does. It sets up the factory store in the wizard, cold-starts the app three
 times, and then performs each common action.
 
 A main-process probe
-([`ipc-probe.cjs`](../../tests/validation/support/ipc-probe.cjs)), loaded
+([`ipc-probe.cjs`](../../tests/perf/ipc-probe.cjs)), loaded
 with Electron's `--require`, records the following for each action:
 - every IPC call;
 - the handler's time;
@@ -261,7 +261,14 @@ The direction, without new libraries:
 One PR each, in this order. Each step reruns the profile and adds its own
 assertions.
 
-| # | Change | IDs | Size | Measured target |
+**Budgets.** The targets in this table now live in code, in
+[`tests/perf/budgets.ts`](../../tests/perf/budgets.ts), as `target` values
+marked `until: "RE-NN"`. Every PR checks them; when a step reaches a target,
+the check fails until the budget is tightened in that PR. The target column
+below describes the goal; the budgets file has the numbers. See the coding
+guide's [performance budgets](coding-guide.md#performance-budgets) section.
+
+| # | Change | IDs | Size | Measured target (budgets in `tests/perf/budgets.ts`) |
 |---|---|---|---|---|
 | 1 | Persistent connection per store; reentrant unit of work; handles passed down; reindex in the same transaction | RE-81, RE-28 | M | the test asserts one connection per store; delete is 1 connection, not 5 |
 | 2 | Replace as one in-place update (keeps gain and metadata) | RE-26 | S | fault injection leaves no partial state |

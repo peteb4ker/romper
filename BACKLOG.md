@@ -86,7 +86,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
-| RE-35 | Medium | Sync | Changing a sample's gain, a voice name or a bank name doesn't mark the kit as changed, so the "modified since last write" filter misses it. | done (#360: scan sets it when it adds samples; #407: stereo link changes set it; #PRNUM: gain, voice name and bank name edits, and new and duplicated kits, set it; a write clears it on every kit it brought in line) |
+| RE-35 | Medium | Sync | Changing a sample's gain, a voice name or a bank name doesn't mark the kit as changed, so the "modified since last write" filter misses it. | done (#360: scan sets it when it adds samples; #407: stereo link changes set it; #498: gain, voice name and bank name edits, and new and duplicated kits, set it; a write clears it on every kit it brought in line) |
 | RE-45 | Medium | Playback | Two samples with the same file name in one voice play together, and same-named samples in different voices share a gain setting on screen. | done (#497: each sample plays, shows as playing and keeps its gain on its own, whatever its file name) |
 | RE-38 | Medium | Renderer | Pressing F both jumps to bank F and stars the selected kit. | done (#494: letters only jump to banks, `*` bookmarks, and Cmd, Ctrl and Alt combinations are left to the menu) |
 | RE-39 | Medium | Renderer | Arrow keys and Enter don't work in the kit grid until you click a kit. | done (#435: the arrows follow the rows the grid draws, and the focused card takes keyboard focus) |

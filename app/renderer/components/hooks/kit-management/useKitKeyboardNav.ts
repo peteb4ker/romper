@@ -1,5 +1,10 @@
 import { useCallback, useEffect } from "react";
 
+import {
+  FAVORITE_KEY,
+  hasCommandModifier,
+} from "../../../utils/keyboardShortcuts";
+
 export interface UseKitKeyboardNavOptions {
   focusedKit: null | string;
   globalBankHotkeyHandler: (e: KeyboardEvent) => void;
@@ -24,8 +29,13 @@ export function useKitKeyboardNav({
         return;
       }
 
-      // F key to toggle favorite on focused kit
-      if (e.key.toLowerCase() === "f" && focusedKit && onToggleFavorite) {
+      // "*" bookmarks the focused kit; "F" is left to jump to bank F
+      if (
+        e.key === FAVORITE_KEY &&
+        !hasCommandModifier(e) &&
+        focusedKit &&
+        onToggleFavorite
+      ) {
         e.preventDefault();
         e.stopPropagation();
         onToggleFavorite(focusedKit);

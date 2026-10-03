@@ -3,6 +3,8 @@ import type { Kit } from "@romper/shared/db/schema.js";
 import { isValidKit } from "@romper/shared/kitUtilsShared";
 import { RefObject, useCallback, useMemo } from "react";
 
+import { hasCommandModifier } from "../../utils/keyboardShortcuts";
+
 interface UseKitGridKeyboardProps {
   containerRef: RefObject<HTMLDivElement | null>;
   focusedIdx: null | number;
@@ -209,6 +211,7 @@ export function useKitGridKeyboard({
         e.target instanceof HTMLTextAreaElement
       )
         return;
+      if (hasCommandModifier(e)) return;
 
       // A-Z hotkey: select first kit in bank
       if (e.key.length === 1 && /^\p{Lu}$/u.test(e.key.toUpperCase())) {

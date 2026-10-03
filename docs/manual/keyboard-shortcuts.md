@@ -6,7 +6,7 @@ prev_page:
   title: Syncing
 ---
 
-Romper is designed for fast keyboard-driven workflow. Many actions have a shortcut, and visible focus indicators help you track where you are when navigating without a mouse.
+Romper is designed for fast keyboard-driven workflow. Many actions have a shortcut, and visible focus indicators help you track where you are when navigating without a mouse. The single-key shortcuts below ignore presses with `Cmd`, `Ctrl` or `Alt` held, so menu shortcuts such as `Cmd+,` (Preferences) don't also trigger them.
 
 ## Kit Browser
 
@@ -15,11 +15,11 @@ Romper is designed for fast keyboard-driven workflow. Many actions have a shortc
 | Jump to bank | `A` through `Z` |
 | Move between kits | Arrow keys |
 | Open selected kit | `Enter` |
-| Bookmark the focused kit | `F` |
+| Bookmark the focused kit | `*` |
 
-When you press a bank letter, focus jumps to the first kit in that bank. Letters for banks with no kits do nothing.
+When you press a bank letter, focus jumps to the first kit in that bank. Letters for banks with no kits do nothing. Every letter is a bank, so `*` bookmarks the focused kit (on many keyboards that's `Shift+8`, or the `*` on the number pad).
 
-`Left` and `Right` step through the kits in order. `Up` and `Down` move to the kit in the same column of the row above or below, crossing from one bank to the next. `F` also jumps to bank F if it has kits.
+`Left` and `Right` step through the kits in order. `Up` and `Down` move to the kit in the same column of the row above or below, crossing from one bank to the next.
 
 ## Kit Details
 

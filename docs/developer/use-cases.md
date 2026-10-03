@@ -50,8 +50,8 @@ item, remove it from every entry that lists it in the same PR.
 
 | Status | Use cases |
 |---|---|
-| supported | Q-04, UC-09, UC-13, UC-14, UC-16, UC-18, UC-21, UC-23, UC-24, UC-25, UC-26, UC-27, UC-28, UC-30, UC-31, UC-32, UC-33, UC-34 |
-| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, UC-01, UC-02, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-10, UC-11, UC-12, UC-15, UC-17, UC-19, UC-29, UC-35, UC-36, UC-37 |
+| supported | Q-04, UC-09, UC-10, UC-13, UC-14, UC-16, UC-18, UC-21, UC-23, UC-24, UC-25, UC-26, UC-27, UC-28, UC-30, UC-31, UC-32, UC-33, UC-34 |
+| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, UC-01, UC-02, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-11, UC-12, UC-15, UC-17, UC-19, UC-29, UC-35, UC-36, UC-37 |
 | not built | UC-20, UC-22 |
 
 The doc gaps below feed [`validation-fix-plan.md`](validation-fix-plan.md)
@@ -219,8 +219,9 @@ See [Navigating Banks](../manual/kit-browser.md#navigating-banks) and
 - **IPC:** `get-all-kits`.
 - **Main:** `electron/main/db/operations/kitCrudOperations.ts` (`getKits`).
 - **Doc gaps:** none.
-- **Known issues:** RE-38 (letter hotkeys clash with "F"), RE-36, RE-47,
-  RE-48.
+- **Known issues:** RE-36, RE-47, RE-48. Letter and arrow keys still reach
+  the browser behind an open dialog (left over from RE-38; not yet
+  registered).
 
 ### UC-08 Read kit card details
 
@@ -258,23 +259,23 @@ and highlights the matches. See
 
 ### UC-10 Favourite kits
 
-**Status:** partial
+**Status:** supported
 
-The star on a kit card, the header in the kit editor, or the "F" key marks
+The star on a kit card, the header in the kit editor, or the `*` key marks
 a favourite; the Favorites filter shows only those. See
 [Favorites Filter](../manual/kit-browser.md#favorites-filter).
 
 - **Renderer:** `app/renderer/components/KitGridItem.tsx` →
   `app/renderer/components/hooks/kit-management/useKitFilters.ts` (`handleToggleFavorite`,
-  `handleToggleFavoritesFilter`, the count from the kit list); `app/renderer/components/hooks/kit-management/useKitKeyboardNav.ts` ("F");
+  `handleToggleFavoritesFilter`, the count from the kit list); `app/renderer/components/hooks/kit-management/useKitKeyboardNav.ts` (`*`);
   `app/renderer/components/KitHeader.tsx`; both toggle through
   `app/renderer/components/hooks/kit-management/useKitDataManager.ts` (`toggleKitFavorite`), which
   updates the kit list.
 - **IPC:** `toggle-kit-favorite`
   (`electron/main/db/favoritesIpcHandlers.ts`).
 - **Main:** `electron/main/db/operations/kitFavoritesOperations.ts`.
-- **Doc gaps:** the "F" shortcut isn't in the shortcut list.
-- **Known issues:** RE-38 ("F" also jumps to bank F).
+- **Doc gaps:** none.
+- **Known issues:** none registered.
 
 ### UC-11 Filter to kits modified since the last sync
 

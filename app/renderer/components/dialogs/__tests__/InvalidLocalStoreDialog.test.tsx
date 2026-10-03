@@ -49,7 +49,7 @@ describe("[UC-05] InvalidLocalStoreDialog", () => {
     onMessage: vi.fn(),
   };
 
-  const mockSetLocalStorePath = vi.fn();
+  const mockSetLocalStorePath = vi.fn().mockResolvedValue(true);
   const mockRefreshLocalStoreStatus = vi.fn();
   const mockElectronAPI = {
     closeApp: vi.fn(),
@@ -59,6 +59,7 @@ describe("[UC-05] InvalidLocalStoreDialog", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSetLocalStorePath.mockResolvedValue(true);
     (useSettings as unknown).mockReturnValue({
       refreshLocalStoreStatus: mockRefreshLocalStoreStatus,
       setLocalStorePath: mockSetLocalStorePath,
@@ -160,10 +161,79 @@ describe("[UC-05] InvalidLocalStoreDialog", () => {
     fireEvent.click(useButton);
 
     expect(mockSetLocalStorePath).toHaveBeenCalledWith("/valid/path");
-    expect(defaultProps.onMessage).toHaveBeenCalledWith(
-      "Local store directory updated successfully. Refreshing...",
-      "success",
+    await waitFor(() =>
+      expect(defaultProps.onMessage).toHaveBeenCalledWith(
+        "Local store directory updated.",
+        "success",
+      ),
     );
+  });
+
+  it("reports a save that failed (RE-78)", async () => {
+    mockSetLocalStorePath.mockResolvedValue(false);
+    mockElectronAPI.selectLocalStorePath.mockResolvedValue("/valid/path");
+    mockElectronAPI.validateLocalStore.mockResolvedValue({ isValid: true });
+    render(<InvalidLocalStoreDialog {...defaultProps} />);
+
+    fireEvent.click(screen.getByTestId("file-picker-button"));
+    await waitFor(() =>
+      expect(screen.getByText("Use This Directory")).not.toBeDisabled(),
+    );
+    fireEvent.click(screen.getByText("Use This Directory"));
+
+    await waitFor(() =>
+      expect(defaultProps.onMessage).toHaveBeenCalledWith(
+        "Couldn't save the new local store directory.",
+        "error",
+      ),
+    );
+  });
+
+  // RE-80: a store on a drive that wasn't connected at launch
+  describe("Try Again", () => {
+    it("reopens the store once it can be opened", async () => {
+      mockElectronAPI.validateLocalStore.mockResolvedValue({ isValid: true });
+      render(<InvalidLocalStoreDialog {...defaultProps} />);
+
+      fireEvent.click(screen.getByTestId("retry-local-store-btn"));
+
+      await waitFor(() =>
+        expect(mockRefreshLocalStoreStatus).toHaveBeenCalled(),
+      );
+      expect(mockElectronAPI.validateLocalStore).toHaveBeenCalledWith(
+        "/invalid/path",
+      );
+      expect(mockSetLocalStorePath).not.toHaveBeenCalled();
+    });
+
+    it("says why when the store still can't be opened", async () => {
+      mockElectronAPI.validateLocalStore.mockResolvedValue({
+        error: "Local store directory does not exist",
+        isValid: false,
+      });
+      render(<InvalidLocalStoreDialog {...defaultProps} />);
+
+      fireEvent.click(screen.getByTestId("retry-local-store-btn"));
+
+      expect(await screen.findByTestId("retry-error")).toHaveTextContent(
+        "Local store directory does not exist",
+      );
+      expect(mockRefreshLocalStoreStatus).not.toHaveBeenCalled();
+    });
+  });
+
+  it("offers to set up a new store when given a way to", () => {
+    const onRerunWizard = vi.fn();
+    render(
+      <InvalidLocalStoreDialog
+        {...defaultProps}
+        onRerunWizard={onRerunWizard}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Set Up a New Local Store"));
+
+    expect(onRerunWizard).toHaveBeenCalled();
   });
 
   it("should handle exit app", () => {
@@ -179,7 +249,8 @@ describe("[UC-05] InvalidLocalStoreDialog", () => {
     render(<InvalidLocalStoreDialog {...defaultProps} />);
 
     // Should not show validation result initially
-    expect(screen.queryByTestId("refresh")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Valid local store directory/)).toBeNull();
+    expect(screen.queryByText("Validating directory...")).toBeNull();
   });
 
   it("should handle API errors gracefully", async () => {

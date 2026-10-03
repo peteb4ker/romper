@@ -79,14 +79,14 @@ This file tracks what's being done about each item.
 | RE-75 | Medium | Voices | In an editable kit, Scan Kit and `/` overwrite voice names typed by hand. | open |
 | RE-76 | Medium | Sync | A card that only needs removals can't be written: **Start Write** is disabled when the library has no samples. | open |
 | RE-77 | Medium | Setup | A factory archive with the wrong checksum is downloaded three times, and the reason is replaced by a generic network error. | open |
-| RE-78 | Medium | Settings | Changing the local store reports success whether or not it worked; the Invalid Local Store dialog's **Re-run Setup Wizard** button never renders. | open |
+| RE-78 | Medium | Settings | Changing the local store reports success whether or not it worked; the Invalid Local Store dialog's **Re-run Setup Wizard** button never renders. | partly done (#PR: the Invalid Local Store and Change Local Store dialogs report a failed save; Set Up a New Local Store renders; Preferences still ignores an invalid folder) |
 | RE-79 | Medium | Release | Windows signing signs only the Setup `.exe`, leaving the installed app unsigned once OPS-2 is done (unconfirmed). | open (before OPS-2) |
-| RE-80 | Medium | Settings | A local store on a drive that isn't mounted at launch is forgotten; the first-run wizard opens. | open |
 
 ## Done
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-80 | Medium | Settings | A local store on a drive that wasn't connected at launch was forgotten, and the first-run wizard opened. | done (#PR: the saved path is kept; the Invalid Local Store dialog offers Try Again, another folder, or a new store) |
 | RE-71 | Medium | Stereo | Stereo link and unlink worked on kits that aren't editable, changing what the next write puts on the card. | done (#416: linking is an edit; read-only kits show the pair but offer no link or unlink, and main refuses the change) |
 | RE-73 | Medium | Setup | SD-card setup ignored a failed kit copy and imported whatever was copied, with no message. | done (#414: a failed copy stops setup with the reason) |
 | RE-66 | Medium | Setup | Cancel during setup quit mid-import on first run and left a half-built store that blocked a retry in the same folder. | done (#408 cleans up on quit; #414: Cancel stops the download, extraction or import, removes what setup wrote, and closes once it has stopped) |

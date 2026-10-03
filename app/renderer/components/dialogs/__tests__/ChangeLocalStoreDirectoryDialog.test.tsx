@@ -445,11 +445,44 @@ describe("[UC-06] ChangeLocalStoreDirectoryDialog", () => {
       });
     });
 
+    it("reports a save that failed and stays open (RE-78)", async () => {
+      const mockOnMessage = vi.fn();
+      const mockOnClose = vi.fn();
+      vi.mocked(useSettings).mockReturnValue({
+        ...mockSettings,
+        setLocalStorePath: vi.fn().mockResolvedValue(false),
+      });
+      vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
+        "/valid/path",
+      );
+
+      render(
+        <ChangeLocalStoreDirectoryDialog
+          {...defaultProps}
+          onClose={mockOnClose}
+          onMessage={mockOnMessage}
+        />,
+      );
+      fireEvent.click(screen.getByTestId("file-picker-button"));
+      await waitFor(() =>
+        expect(screen.getByText("Update Directory")).not.toBeDisabled(),
+      );
+      fireEvent.click(screen.getByText("Update Directory"));
+
+      await waitFor(() =>
+        expect(mockOnMessage).toHaveBeenCalledWith(
+          "Couldn't save the new local store directory. The current one is still in use.",
+          "error",
+        ),
+      );
+      expect(mockOnClose).not.toHaveBeenCalled();
+    });
+
     it("shows success message and closes dialog after update", async () => {
       const newPath = "/valid/path";
       const mockOnMessage = vi.fn();
       const mockOnClose = vi.fn();
-      const mockSetLocalStorePath = vi.fn().mockResolvedValue(undefined);
+      const mockSetLocalStorePath = vi.fn().mockResolvedValue(true);
       vi.mocked(useSettings).mockReturnValue({
         ...mockSettings,
         setLocalStorePath: mockSetLocalStorePath,

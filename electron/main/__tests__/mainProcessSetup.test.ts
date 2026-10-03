@@ -10,7 +10,7 @@ import {
   loadSettings,
   loadWindowState,
   saveWindowState,
-  validateAndFixLocalStore,
+  validateSavedLocalStore,
 } from "../mainProcessSetup.js";
 
 beforeEach(() => {
@@ -94,10 +94,10 @@ describe("[UC-35] loadSettings", () => {
   });
 });
 
-describe("[UC-05] validateAndFixLocalStore", () => {
+describe("[UC-05] validateSavedLocalStore", () => {
   it("returns settings unchanged when no localStorePath and no env override", () => {
     const settings = { localStorePath: null };
-    const result = validateAndFixLocalStore(settings, "/mock/settings.json");
+    const result = validateSavedLocalStore(settings);
     expect(result).toEqual({ localStorePath: null });
     expect(console.log).toHaveBeenCalledWith(
       "[Validation] No local store path to validate",
@@ -107,7 +107,7 @@ describe("[UC-05] validateAndFixLocalStore", () => {
   it("validates localStorePath when present and valid", () => {
     const settings = { localStorePath: "/mock/store" };
     vi.mocked(validateLocalStoreAndDb).mockReturnValue({ isValid: true });
-    const result = validateAndFixLocalStore(settings, "/mock/settings.json");
+    const result = validateSavedLocalStore(settings);
     expect(validateLocalStoreAndDb).toHaveBeenCalledWith("/mock/store");
     expect(result.localStorePath).toBe("/mock/store");
     expect(console.log).toHaveBeenCalledWith(
@@ -115,50 +115,29 @@ describe("[UC-05] validateAndFixLocalStore", () => {
     );
   });
 
-  it("removes invalid localStorePath and writes updated settings", () => {
-    const settings = { localStorePath: "/invalid/path" };
+  // RE-80: a store on a drive that isn't connected must not be forgotten
+  it("keeps an invalid saved path and doesn't rewrite the settings", () => {
+    const settings = { localStorePath: "/Volumes/Samples/romper" };
     vi.mocked(validateLocalStoreAndDb).mockReturnValue({
       error: "Path does not exist",
       errorSummary: "Invalid path",
       isValid: false,
     });
-    const result = validateAndFixLocalStore(settings, "/mock/settings.json");
-    expect(result.localStorePath).toBeNull();
-    expect(console.warn).toHaveBeenCalledWith(
-      "[Startup] ✗ Saved local store path is invalid",
-    );
-    expect(fs.writeFileSync).toHaveBeenCalledWith(
-      "/mock/settings.json",
-      expect.any(String),
-      "utf-8",
-    );
-  });
+    const writeFileSync = vi.spyOn(fs, "writeFileSync");
 
-  it("handles write error when removing invalid localStorePath", () => {
-    const settings = { localStorePath: "/invalid/path" };
-    vi.mocked(validateLocalStoreAndDb).mockReturnValue({
-      error: "Path does not exist",
-      isValid: false,
-    });
-    vi.spyOn(fs, "writeFileSync").mockImplementation(() => {
-      throw new Error("Write failed");
-    });
-    const result = validateAndFixLocalStore(settings, "/mock/settings.json");
-    expect(result.localStorePath).toBeNull();
-    expect(console.error).toHaveBeenCalledWith(
-      "[Startup] Failed to update settings file:",
-      expect.any(Error),
+    const result = validateSavedLocalStore(settings);
+
+    expect(result.localStorePath).toBe("/Volumes/Samples/romper");
+    expect(writeFileSync).not.toHaveBeenCalled();
+    expect(console.warn).toHaveBeenCalledWith(
+      "[Startup] ✗ Saved local store can't be opened",
     );
   });
 
   it("accepts valid env override and returns settings unchanged", () => {
     const settings = { localStorePath: null };
     vi.mocked(validateLocalStoreAndDb).mockReturnValue({ isValid: true });
-    const result = validateAndFixLocalStore(
-      settings,
-      "/mock/settings.json",
-      "/env/override",
-    );
+    const result = validateSavedLocalStore(settings, "/env/override");
     expect(validateLocalStoreAndDb).toHaveBeenCalledWith("/env/override");
     expect(result).toEqual({ localStorePath: null });
     expect(console.log).toHaveBeenCalledWith(
@@ -171,11 +150,7 @@ describe("[UC-05] validateAndFixLocalStore", () => {
     vi.mocked(validateLocalStoreAndDb)
       .mockReturnValueOnce({ error: "Invalid", isValid: false })
       .mockReturnValueOnce({ isValid: true });
-    const result = validateAndFixLocalStore(
-      settings,
-      "/mock/settings.json",
-      "/invalid/env",
-    );
+    const result = validateSavedLocalStore(settings, "/invalid/env");
     expect(console.warn).toHaveBeenCalledWith(
       "[Validation] ✗ Environment override path is invalid",
     );

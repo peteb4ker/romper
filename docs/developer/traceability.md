@@ -10,7 +10,7 @@ Regenerate with `npm run trace`; CI runs `npm run trace:check`, which
 fails on an unknown ID, on a supported use case with no test above unit
 level (unless the register declares the gap), and when this file is stale.
 
-37 use cases: 15 supported, 20 partial, 2 not built. 1334 of 4357 tests carry a use case tag.
+37 use cases: 15 supported, 20 partial, 2 not built. 1340 of 4363 tests carry a use case tag.
 
 ## Matrix
 
@@ -20,8 +20,8 @@ level (unless the register declares the gap), and when this file is stale.
 | [UC-02](use-cases.md#uc-02-set-up-from-the-factory-archive) Set up from the factory archive | partial | [82](#uc-02) | [13](#uc-02) | [2](#uc-02) | [2](#uc-02) |
 | [UC-03](use-cases.md#uc-03-set-up-an-empty-library) Set up an empty library | partial | [32](#uc-03) | [2](#uc-03) | [3](#uc-03) | - |
 | [UC-04](use-cases.md#uc-04-choose-an-existing-local-store) Choose an existing local store | partial | [10](#uc-04) | - | - | - |
-| [UC-05](use-cases.md#uc-05-recover-from-an-invalid-or-missing-store) Recover from an invalid or missing store | partial | [35](#uc-05) | - | - | - |
-| [UC-06](use-cases.md#uc-06-change-the-local-store) Change the local store | partial | [37](#uc-06) | [1](#uc-06) | - | - |
+| [UC-05](use-cases.md#uc-05-recover-from-an-invalid-or-missing-store) Recover from an invalid or missing store | partial | [38](#uc-05) | - | [2](#uc-05) | - |
+| [UC-06](use-cases.md#uc-06-change-the-local-store) Change the local store | partial | [38](#uc-06) | [1](#uc-06) | - | - |
 | [UC-07](use-cases.md#uc-07-browse-kits-by-bank) Browse kits by bank | partial | [12](#uc-07) | [5](#uc-07) | [10](#uc-07) | - |
 | [UC-08](use-cases.md#uc-08-read-kit-card-details) Read kit card details | partial | [64](#uc-08) | - | - | - |
 | [UC-09](use-cases.md#uc-09-search-kits) Search kits | supported | [53](#uc-09) | - | [1](#uc-09) | - |
@@ -68,7 +68,6 @@ full-pipeline validation (`npm run validate:full`), which doesn't run on PRs:
 Partial or not-built use cases with no test above unit level:
 
 - [UC-04](use-cases.md#uc-04-choose-an-existing-local-store) Choose an existing local store (partial)
-- [UC-05](use-cases.md#uc-05-recover-from-an-invalid-or-missing-store) Recover from an invalid or missing store (partial)
 - [UC-08](use-cases.md#uc-08-read-kit-card-details) Read kit card details (partial)
 
 ## Tests by use case
@@ -130,16 +129,17 @@ Partial or not-built use cases with no test above unit level:
 
 [UC-05](use-cases.md#uc-05-recover-from-an-invalid-or-missing-store) Recover from an invalid or missing store (partial)
 
-- Unit: [`app/renderer/components/dialogs/__tests__/InvalidLocalStoreDialog.test.tsx`](../../app/renderer/components/dialogs/__tests__/InvalidLocalStoreDialog.test.tsx#L44) (11 tests)
+- Unit: [`app/renderer/components/dialogs/__tests__/InvalidLocalStoreDialog.test.tsx`](../../app/renderer/components/dialogs/__tests__/InvalidLocalStoreDialog.test.tsx#L44) (15 tests)
 - Unit: [`electron/main/__tests__/localStoreValidator.test.ts`](../../electron/main/__tests__/localStoreValidator.test.ts#L48) (10 tests)
-- Unit: [`electron/main/__tests__/mainProcessSetup.test.ts`](../../electron/main/__tests__/mainProcessSetup.test.ts#L97) (6 tests)
+- Unit: [`electron/main/__tests__/mainProcessSetup.test.ts`](../../electron/main/__tests__/mainProcessSetup.test.ts#L97) (5 tests)
 - Unit: [`electron/main/services/__tests__/localStoreService.test.ts`](../../electron/main/services/__tests__/localStoreService.test.ts#L54) (8 tests)
+- E2E: [`tests/e2e/missing-store.e2e.test.ts`](../../tests/e2e/missing-store.e2e.test.ts#L24) (2 tests)
 
 ### UC-06
 
 [UC-06](use-cases.md#uc-06-change-the-local-store) Change the local store (partial)
 
-- Unit: [`app/renderer/components/dialogs/__tests__/ChangeLocalStoreDirectoryDialog.test.tsx`](../../app/renderer/components/dialogs/__tests__/ChangeLocalStoreDirectoryDialog.test.tsx#L46) (32 tests)
+- Unit: [`app/renderer/components/dialogs/__tests__/ChangeLocalStoreDirectoryDialog.test.tsx`](../../app/renderer/components/dialogs/__tests__/ChangeLocalStoreDirectoryDialog.test.tsx#L46) (33 tests)
 - Unit: [`app/renderer/components/dialogs/__tests__/PreferencesDialog.test.tsx`](../../app/renderer/components/dialogs/__tests__/PreferencesDialog.test.tsx#L259) (5 tests)
 - Integration: [`electron/main/services/__tests__/settingsService.integration.test.ts`](../../electron/main/services/__tests__/settingsService.integration.test.ts#L256) (1 test)
 

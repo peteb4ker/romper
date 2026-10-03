@@ -22,10 +22,10 @@ type SettingsAction =
       payload: LocalStoreValidationDetailedResult | null;
       type: "UPDATE_LOCAL_STORE_STATUS";
     }
+  | { payload: null | string; type: "UPDATE_LOCAL_STORE_PATH" }
   | { payload: Settings; type: "INIT_SUCCESS" }
   | { payload: string; type: "INIT_ERROR" }
   | { payload: string; type: "SET_ERROR" }
-  | { payload: string; type: "UPDATE_LOCAL_STORE_PATH" }
   | { payload: ThemeMode; type: "UPDATE_THEME_MODE" }
   | { type: "CLEAR_ERROR" }
   | { type: "INIT_START" };
@@ -46,7 +46,12 @@ interface SettingsContextProps {
   refreshLocalStoreStatus: () => Promise<void>;
   setConfirmDestructiveActions: (enabled: boolean) => Promise<void>;
   // Actions
-  setLocalStorePath: (path: string) => Promise<void>;
+  /**
+   * Save the local store path (null forgets it, which opens the setup
+   * wizard). Resolves to whether the save worked; a failure is also set as
+   * the context's error.
+   */
+  setLocalStorePath: (path: null | string) => Promise<boolean>;
   setThemeMode: (mode: ThemeMode) => Promise<void>;
   themeMode: ThemeMode;
 }
@@ -218,17 +223,19 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Update local store path
   const setLocalStorePath = useCallback(
-    async (path: string) => {
+    async (path: null | string) => {
       try {
         await globalThis.electronAPI.setSetting("localStorePath", path);
         dispatch({ payload: path, type: "UPDATE_LOCAL_STORE_PATH" });
         await refreshLocalStoreStatus();
+        return true;
       } catch (error) {
         console.error("Failed to update local store path:", error);
         dispatch({
           payload: describeError("Failed to save local store path", error),
           type: "SET_ERROR",
         });
+        return false;
       }
     },
     [refreshLocalStoreStatus],

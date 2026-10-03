@@ -264,6 +264,8 @@ const KitsView: React.FC = () => {
         }
         localStorePath={localStoreStatus?.localStorePath || null}
         onMessage={showMessage}
+        // Forgetting the saved store opens the setup wizard (RE-80)
+        onRerunWizard={() => void setLocalStorePath(null)}
       />
 
       {/* Critical Environment Error Dialog */}

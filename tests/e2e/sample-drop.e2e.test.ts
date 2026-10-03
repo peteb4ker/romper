@@ -44,6 +44,12 @@ test.describe("[UC-19] Dropping a file on a filled slot", () => {
     await window.locator('[data-testid="kit-item-A0"]').click();
     await window.waitForSelector('[data-testid="kit-editor"]');
     await window.getByTitle("Enable editable mode").click();
+    // Turning editing on refreshes the kit; wait for it to settle so the
+    // refresh can't re-render the voice panel under the drag below
+    await expect(window.getByTitle("Disable editable mode")).toBeVisible();
+    await expect(
+      window.locator('[data-testid="drop-zone-voice-1"]'),
+    ).toBeVisible();
   });
 
   test.afterEach(async () => {
@@ -91,11 +97,17 @@ test.describe("[UC-19] Dropping a file on a filled slot", () => {
         }
       }, types);
 
-    // Hovering the filled slot lights up the empty slot after it
-    await dispatch(["dragenter", "dragover"]);
-    await expect(
-      window.locator('[data-testid="drop-zone-voice-1"]'),
-    ).toHaveAttribute("title", "Add sample to end of voice");
+    // Hovering the filled slot lights up the empty slot after it. A late
+    // re-render can clear the hover, so hover again until it shows, as a
+    // real drag keeps sending dragover
+    await expect(async () => {
+      await dispatch(["dragenter", "dragover"]);
+      await expect(
+        window.locator('[data-testid="drop-zone-voice-1"]'),
+      ).toHaveAttribute("title", "Add sample to end of voice", {
+        timeout: 1000,
+      });
+    }).toPass();
     await expect(window.locator('[title*="Insert sample here"]')).toHaveCount(
       0,
     );

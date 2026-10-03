@@ -88,6 +88,18 @@ export class ArchiveChecksumError extends Error {
   }
 }
 
+/** The server answered with an HTTP error instead of the archive. */
+export class ArchiveHttpError extends Error {
+  constructor(
+    readonly status: number,
+    statusText: string,
+  ) {
+    const answer = `${status} ${statusText}`.trim();
+    super(`Download failed: the server answered HTTP ${answer}`);
+    this.name = "ArchiveHttpError";
+  }
+}
+
 /**
  * Download `url` to `targetPath`. The body streams to `<targetPath>.part`,
  * hashed as it arrives, and is renamed to `targetPath` only once the status,
@@ -131,8 +143,7 @@ export async function downloadArchive(
       signal,
     });
     if (!response.ok || !response.body) {
-      const status = `${response.status} ${response.statusText}`.trim();
-      throw new Error(`Download failed: the server answered HTTP ${status}`);
+      throw new ArchiveHttpError(response.status, response.statusText);
     }
 
     const totalBytes = expectedLength(response.headers);

@@ -321,14 +321,10 @@ describe("useLocalStoreWizardFileOps", () => {
       expect(mockSetError).toHaveBeenCalledWith("network blip");
     });
 
-    it("should handle extraction errors", async () => {
-      mockApi.downloadAndExtractArchive = vi.fn(() =>
-        Promise.resolve({ error: "Download failed", success: false }),
-      );
-
-      const { result } = renderHook(() =>
+    const renderFileOps = (api = mockApi) =>
+      renderHook(() =>
         useLocalStoreWizardFileOps({
-          api: mockApi,
+          api,
           reportProgress: mockReportProgress,
           reportStepProgress: mockReportStepProgress,
           setError: mockSetError,
@@ -336,30 +332,96 @@ describe("useLocalStoreWizardFileOps", () => {
         }),
       );
 
+    it("shows main's reason at once for a failure another download can't fix (RE-77)", async () => {
+      const reason =
+        "The downloaded factory sample archive didn't match the expected checksum, so Romper didn't install it.";
+      mockApi.downloadAndExtractArchive = vi.fn(() =>
+        Promise.resolve({ error: reason, retryable: false, success: false }),
+      );
+      const { result } = renderFileOps();
+
       await expect(
         result.current.extractSquarpArchive("/target/path"),
-      ).rejects.toThrow("Factory samples download failed");
+      ).rejects.toThrow(reason);
+      expect(mockApi.downloadAndExtractArchive).toHaveBeenCalledTimes(1);
+      expect(mockReportProgress).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          phase: expect.stringContaining("retrying"),
+        }),
+      );
+    });
+
+    it("doesn't retry a failure main doesn't mark retryable", async () => {
+      mockApi.downloadAndExtractArchive = vi.fn(() =>
+        Promise.resolve({ error: "Disk full", success: false }),
+      );
+      const { result } = renderFileOps();
+
+      await expect(
+        result.current.extractSquarpArchive("/target/path"),
+      ).rejects.toThrow("Disk full");
+      expect(mockApi.downloadAndExtractArchive).toHaveBeenCalledTimes(1);
+    });
+
+    describe("a network failure", () => {
+      beforeEach(() => {
+        vi.useFakeTimers();
+      });
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      const networkFailure = {
+        error:
+          "Couldn't connect to the download server. Check your internet connection and try again.",
+        retryable: true,
+        success: false,
+      };
+
+      it("is retried, and the last attempt's reason is shown", async () => {
+        mockApi.downloadAndExtractArchive = vi.fn(() =>
+          Promise.resolve(networkFailure),
+        );
+        const { result } = renderFileOps();
+
+        const run = result.current.extractSquarpArchive("/target/path");
+        const outcome = expect(run).rejects.toThrow(
+          `Factory samples download failed after 3 attempts. ${networkFailure.error}`,
+        );
+        await vi.runAllTimersAsync();
+        await outcome;
+
+        expect(mockApi.downloadAndExtractArchive).toHaveBeenCalledTimes(3);
+        expect(mockReportProgress).toHaveBeenCalledWith({
+          percent: 0,
+          phase: "Download failed, retrying (attempt 2 of 3)...",
+        });
+      });
+
+      it("stops retrying once an attempt succeeds", async () => {
+        mockApi.downloadAndExtractArchive = vi
+          .fn()
+          .mockResolvedValueOnce(networkFailure)
+          .mockResolvedValueOnce({ success: true });
+        const { result } = renderFileOps();
+
+        const run = result.current.extractSquarpArchive("/target/path");
+        await vi.runAllTimersAsync();
+        await run;
+
+        expect(mockApi.downloadAndExtractArchive).toHaveBeenCalledTimes(2);
+      });
     });
 
     it("should handle missing API method", async () => {
-      const apiWithoutExtract = {
+      const { result } = renderFileOps({
         ...mockApi,
         downloadAndExtractArchive: undefined,
-      };
-
-      const { result } = renderHook(() =>
-        useLocalStoreWizardFileOps({
-          api: apiWithoutExtract,
-          reportProgress: mockReportProgress,
-          reportStepProgress: mockReportStepProgress,
-          setError: mockSetError,
-          setWizardState: mockSetWizardState,
-        }),
-      );
+      });
 
       await expect(
         result.current.extractSquarpArchive("/target/path"),
-      ).rejects.toThrow("Factory samples download failed");
+      ).rejects.toThrow("The factory samples couldn't be installed.");
     });
   });
 

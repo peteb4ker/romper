@@ -60,8 +60,8 @@ Downloading the Rample factory samples requires an internet connection. If the d
 
 - **Check your connection** -- Ensure you have a stable internet connection. The factory sample archive is about 313 MiB.
 - **Firewall or proxy** -- If you are behind a corporate firewall or proxy, the download may be blocked. Try from a different network.
-- **Retry** -- Romper makes up to 3 attempts, each downloading the whole archive again. If all of them fail, click **Initialize Local Store** to try again.
-- **Archive changed** -- Romper checks that the download is the exact archive it expects. If Squarp changes the file on its server, every attempt fails. Update Romper, or set up from an SD card instead.
+- **Retry** -- When the connection drops or stalls, Romper makes up to 3 attempts, each downloading the whole archive again. If all of them fail, click **Initialize Local Store** to try again. Other failures, such as a full disk or a damaged archive, aren't retried: Romper shows the reason straight away.
+- **"Didn't match the expected checksum"** -- Romper checks that the download is the exact archive it expects. A mismatch means the download was damaged on the way, or Squarp changed the file on its server. Try again once; if it fails the same way, update Romper, or set up from an SD card instead.
 - **Use another source** -- You can set up from an SD card or a blank folder instead. Romper can only download the factory samples during first-time setup, so you can't add them to a library later.
 
 ---

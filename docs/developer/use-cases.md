@@ -104,17 +104,16 @@ and [Factory Samples](../manual/syncing.md#factory-samples).
 
 - **Renderer:** the UC-01 wizard, plus
   `app/renderer/components/hooks/wizard/useLocalStoreWizardFileOps.ts` (`extractSquarpArchive`, three
-  attempts).
+  attempts when main marks the failure `retryable`, otherwise main's reason
+  at once).
 - **IPC:** `download-and-extract-archive`; push events `archive-progress`,
   `archive-error`; `scan-banks` at startup for bank names.
 - **Main:** `electron/main/services/archiveService.ts` (`downloadAndExtractArchive`,
   `getFactorySamplesArchiveUrl`); `electron/main/archiveUtils.ts`
   (`downloadArchive`, `extractZipEntries`); `electron/main/services/scanService.ts` (`scanBanks`).
 - **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-77 (a checksum mismatch is downloaded three times,
-  behind a generic network error), RE-67 (the e2e uses a 928-byte stub
-  archive; `npm run validate:full` runs the real one, including a cancelled
-  setup).
+- **Known issues:** RE-67 (the e2e uses a 928-byte stub archive;
+  `npm run validate:full` runs the real one, including a cancelled setup).
 
 ### UC-03 Set up an empty library
 

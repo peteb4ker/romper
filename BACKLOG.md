@@ -69,7 +69,6 @@ This file tracks what's being done about each item.
 | RE-55 | Medium | Release | There's no build for Intel Macs, ARM Windows or ARM Linux. | open |
 | RE-56 | Medium | Dead code | Unused code remains in Romper, which makes it harder to change safely. | partly done (#372 deletes `rampleNamingService` and `stereoSyncProcessor`) |
 | RE-57 | Medium | Contract | The app's two halves can disagree about the data they exchange without any check catching it, which can hide bugs. | open |
-| RE-77 | Medium | Setup | If the factory download is corrupted, Romper downloads it three times and then reports a generic network error instead of the real reason. | open |
 | RE-78 | Medium | Settings | Choosing an invalid folder for your local store in Preferences fails without telling you. | partly done (#419: the Invalid Local Store and Change Local Store dialogs report a failed save; Set Up a New Local Store renders; Preferences still ignores an invalid folder) |
 | RE-79 | Medium | Release | Once Windows signing is turned on, the installed app itself may still be unsigned (unconfirmed). | open (before OPS-2) |
 | RE-81 | Medium | DB | Every save opens and closes the library's database, which is slower than needed and stops related changes from being saved together. | open (plan: [`architecture-review.md`](docs/developer/architecture-review.md)) |
@@ -86,6 +85,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-77 | Medium | Setup | If the factory download is corrupted, Romper downloads it three times and then reports a generic network error instead of the real reason. | done (#PRNUM: only a dropped, stalled or cut-short download is retried; a checksum mismatch, a damaged archive or a full disk shows its own reason at once) |
 | RE-35 | Medium | Sync | Changing a sample's gain, a voice name or a bank name doesn't mark the kit as changed, so the "modified since last write" filter misses it. | done (#360: scan sets it when it adds samples; #407: stereo link changes set it; #498: gain, voice name and bank name edits, and new and duplicated kits, set it; a write clears it on every kit it brought in line) |
 | RE-45 | Medium | Playback | Two samples with the same file name in one voice play together, and same-named samples in different voices share a gain setting on screen. | done (#497: each sample plays, shows as playing and keeps its gain on its own, whatever its file name) |
 | RE-38 | Medium | Renderer | Pressing F both jumps to bank F and stars the selected kit. | done (#494: letters only jump to banks, `*` bookmarks, and Cmd, Ctrl and Alt combinations are left to the menu) |

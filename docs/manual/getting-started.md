@@ -108,7 +108,9 @@ For full details on the sync process, see [Syncing](syncing).
 
 **"This folder already contains a Romper local store"** -- Choose another folder, or click **Choose Existing Store** to use the store that's there.
 
-**"Factory samples download failed after 3 attempts"** -- Check your internet connection and click **Initialize Local Store** to try again. The factory samples download is about 313 MiB and needs a stable connection. Romper also refuses an archive that isn't the exact file it expects, so if Squarp changes the file on its server, every attempt fails; update Romper, or set up from an SD card instead.
+**"Factory samples download failed after 3 attempts"** -- The connection dropped or stalled each time, and the message says how. Check your internet connection and click **Initialize Local Store** to try again. The factory samples download is about 313 MiB and needs a stable connection.
+
+**"Didn't match the expected checksum"** -- Romper refuses an archive that isn't the exact file it expects, and doesn't download it again on its own. The download may have been damaged on the way, or Squarp changed the file on its server. Click **Initialize Local Store** to try once more; if it fails the same way, update Romper, or set up from an SD card instead.
 
 **Sample limit notice** -- Rample supports a maximum of 12 samples per voice. If a voice on your card has more, Romper keeps the first 12, and after setup it lists each kit and voice with how many samples were skipped. Click **Continue** to open the Kit Browser.
 

@@ -1,7 +1,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import { getAllSamples, getKitSamples } from "../db/romperDbCoreORM.js";
+import { isSourcePathReferenced } from "../db/operations/sampleSourceQueries.js";
+import { getKitSamples } from "../db/romperDbCoreORM.js";
 import { DB_FILENAME } from "../db/utils/dbUtilities.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
 import { pathAccess, type PathAccessResult } from "./pathAccess.js";
@@ -73,15 +74,11 @@ function isReferencedByStore(settings: Settings, filePath: string): boolean {
   if (!path.isAbsolute(filePath)) return false;
   const dbDir = getStoreDbDir(settings);
   if (!dbDir) return false;
+  // Paths are stored as the user gave them, which is normally already
+  // resolved; match either form, without loading every row (RE-85)
+  const wanted = [...new Set([filePath, path.resolve(filePath)])];
   try {
-    const result = getAllSamples(dbDir);
-    const wanted = path.resolve(filePath);
-    return (result.data ?? []).some(
-      (sample) =>
-        typeof sample.source_path === "string" &&
-        sample.source_path !== "" &&
-        path.resolve(sample.source_path) === wanted,
-    );
+    return isSourcePathReferenced(dbDir, wanted).data === true;
   } catch {
     return false;
   }

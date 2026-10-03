@@ -29,6 +29,12 @@ import { ServicePathManager } from "../utils/fileSystemUtils.js";
  * Grants live only in main-process memory; the renderer can ask main to show
  * a dialog, but never add a root directly. Env and settings roots are read
  * on every check, so a store the user switches to takes effect immediately.
+ *
+ * Cost (RE-85): the target is canonicalised on every check. Roots are
+ * canonicalised once each time the set of roots changes (a settings or env
+ * change, or a new grant), and read grants once when they're granted, into
+ * a set the check looks the target's folders up in. So a check costs the
+ * same however many files have been granted this session.
  */
 
 export type PathAccessMode = "read" | "write";
@@ -51,8 +57,16 @@ export class PathAccessError extends Error {
 }
 
 export class PathAccessPolicy {
+  /**
+   * Read grants, canonical and case-folded where the filesystem ignores
+   * case. Each one also covers everything under it.
+   */
   private readonly grantedReadPaths = new Set<string>();
+  /** Read grants already canonicalised, as given, so a repeat costs nothing */
+  private readonly grantedReadRequests = new Set<string>();
   private readonly grantedRoots = new Set<string>();
+  /** The canonical roots, and the uncanonicalised roots they came from */
+  private rootsCache: { canonical: string[]; key: string } | null = null;
   private settings: PathAccessSettings = {};
 
   /**
@@ -75,21 +89,13 @@ export class PathAccessPolicy {
       return { error: (error as Error).message, ok: false };
     }
 
-    const candidates =
-      mode === "write"
-        ? this.getRoots()
-        : [...this.getRoots(), ...this.grantedReadPaths];
-
-    for (const candidate of candidates) {
-      let root: string;
-      try {
-        root = canonicalizePath(candidate);
-      } catch {
-        continue; // A root that can't be resolved grants nothing.
-      }
+    for (const root of this.getCanonicalRoots()) {
       if (isSameOrInside(target, root)) {
         return { ok: true };
       }
+    }
+    if (mode === "read" && this.isGrantedRead(target)) {
+      return { ok: true };
     }
 
     return {
@@ -113,11 +119,22 @@ export class PathAccessPolicy {
     return roots.filter((r): r is string => r !== null);
   }
 
-  /** Allow reading `p` (and anything under it) for the rest of the session. */
+  /**
+   * Allow reading `p` (and anything under it) for the rest of the session.
+   * It's canonicalised now, once: the grant is the file the user gave, not
+   * whatever a symlink at that path points to later. A path that can't be
+   * resolved (a dangling or looping symlink) grants nothing.
+   */
   grantRead(p: unknown): void {
     const value = nonEmptyString(p);
-    if (value && path.isAbsolute(value)) {
-      this.grantedReadPaths.add(path.resolve(value));
+    if (!value || !path.isAbsolute(value)) return;
+    const requested = path.resolve(value);
+    if (this.grantedReadRequests.has(requested)) return;
+    try {
+      this.grantedReadPaths.add(foldCase(canonicalizePath(requested)));
+      this.grantedReadRequests.add(requested);
+    } catch {
+      // Grants nothing, like a root that can't be resolved
     }
   }
 
@@ -135,7 +152,9 @@ export class PathAccessPolicy {
   /** Forget session grants and settings (tests). */
   reset(): void {
     this.grantedReadPaths.clear();
+    this.grantedReadRequests.clear();
     this.grantedRoots.clear();
+    this.rootsCache = null;
     this.settings = {};
   }
 
@@ -145,6 +164,42 @@ export class PathAccessPolicy {
    */
   useSettings(settings: PathAccessSettings): void {
     this.settings = settings;
+    this.rootsCache = null;
+  }
+
+  /**
+   * The roots, canonicalised. They're read on every check but resolved only
+   * when they differ from last time, so a settings or env change (or a new
+   * grant) takes effect on the next check without re-resolving every root
+   * on every check (RE-85).
+   */
+  private getCanonicalRoots(): string[] {
+    const roots = this.getRoots();
+    const key = roots.join("\0");
+    if (this.rootsCache?.key !== key) {
+      const canonical: string[] = [];
+      for (const root of roots) {
+        try {
+          canonical.push(canonicalizePath(root));
+        } catch {
+          // A root that can't be resolved grants nothing.
+        }
+      }
+      this.rootsCache = { canonical, key };
+    }
+    return this.rootsCache.canonical;
+  }
+
+  /** True if `target` (canonical) or a folder above it was granted for reading */
+  private isGrantedRead(target: string): boolean {
+    if (this.grantedReadPaths.size === 0) return false;
+    let current = target;
+    for (;;) {
+      if (this.grantedReadPaths.has(foldCase(current))) return true;
+      const parent = path.dirname(current);
+      if (parent === current) return false;
+      current = parent;
+    }
   }
 }
 
@@ -204,13 +259,18 @@ export function getDefaultLocalStorePath(): string {
 
 /** True if `child` is `parent` or inside it. Both must be canonical. */
 export function isSameOrInside(child: string, parent: string): boolean {
-  const a = CASE_INSENSITIVE ? child.toLowerCase() : child;
-  const b = CASE_INSENSITIVE ? parent.toLowerCase() : parent;
+  const a = foldCase(child);
+  const b = foldCase(parent);
   const relative = path.relative(b, a);
   return (
     relative === "" ||
     (relative.split(path.sep)[0] !== ".." && !path.isAbsolute(relative))
   );
+}
+
+/** A path as the filesystem compares it: case-folded where it ignores case */
+function foldCase(p: string): string {
+  return CASE_INSENSITIVE ? p.toLowerCase() : p;
 }
 
 function isSymlink(p: string): boolean {

@@ -617,7 +617,7 @@ and scans name unnamed voices from their file names and keep names set by hand. 
   `app/renderer/components/KitVoicePanel.tsx`.
 - **IPC:** `update-voice-alias`.
 - **Main:** `electron/main/db/operations/voiceCrudOperations.ts` (`updateVoiceAlias`).
-- **Known issues:** RE-75 (Scan Kit in an editable kit overwrites hand-set names), RE-48 (the name input has no label). A failed save only reaches
+- **Known issues:** RE-48 (the name input has no label). A failed save only reaches
   the console.
 
 ### UC-28 Link a voice pair as stereo

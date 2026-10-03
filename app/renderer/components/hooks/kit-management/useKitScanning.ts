@@ -25,6 +25,11 @@ interface UseKitScanningParams {
   onRequestSamplesReload?: () => Promise<void>;
   reloadKit: () => Promise<void>;
   samples: VoiceSamples;
+  /**
+   * The kit's current voice names, by voice number. Voices that already
+   * have one keep it: inference only names unnamed voices (RE-75).
+   */
+  voiceNames?: Partial<Record<number, null | string>>;
 }
 
 /**
@@ -40,6 +45,7 @@ export function useKitScanning({
   onRequestSamplesReload,
   reloadKit,
   samples,
+  voiceNames,
 }: UseKitScanningParams) {
   // Scan status state (replaces toast-based feedback)
   const [scanStatus, setScanStatus] = React.useState<ScanStatus>({
@@ -138,7 +144,8 @@ export function useKitScanning({
     flashVoicePanels,
   ]);
 
-  // Handler for in-memory voice name inference (editable kits without filesystem directories)
+  // Handler for in-memory voice name inference (editable kits without
+  // filesystem directories): names only the voices that have no name
   const handleInferVoiceNames = React.useCallback(async () => {
     if (!kitName) return;
 
@@ -150,6 +157,9 @@ export function useKitScanning({
       for (const voice of [1, 2, 3, 4] as const) {
         const voiceSamples = samples[voice];
         if (!voiceSamples || voiceSamples.length === 0) continue;
+        // A name the user set, or one inferred earlier, is kept, as main's
+        // scan merge keeps it (RE-75)
+        if (voiceNames?.[voice]?.trim()) continue;
 
         const inferredType = inferVoiceTypeFromFilename(voiceSamples[0]);
         if (inferredType && globalThis.electronAPI?.updateVoiceAlias) {
@@ -187,6 +197,7 @@ export function useKitScanning({
   }, [
     kitName,
     samples,
+    voiceNames,
     reloadKit,
     onRefreshKitMetadata,
     scheduleStatusClear,

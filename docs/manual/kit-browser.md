@@ -111,7 +111,7 @@ Use **File > Scan All** (`Cmd+Shift+S` / `Ctrl+Shift+S`) to rescan your library.
 
 Scan All only scans the kits the browser is currently showing, so clear any search or filter first to scan them all. With a kit open in the Kit Editor, it scans the bank names only.
 
-To scan a single kit, open it in the Kit Editor and click **Scan Kit** or press `/`. In an editable kit, this only names voices: each voice whose first sample's filename suggests a name (such as "Kick") gets that name, replacing any name already set.
+To scan a single kit, open it in the Kit Editor and click **Scan Kit** or press `/`. In an editable kit, this only names voices: each voice whose first sample's filename suggests a name (such as "Kick") gets that name, unless it already has one.
 
 ## Keyboard Navigation
 

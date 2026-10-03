@@ -3,8 +3,9 @@
  * Use case traceability (RE-67).
  *
  *   npm run trace         # write docs/developer/traceability.md (not committed)
- *   npm run trace:check   # fail on unknown IDs, untested use cases, or issues
- *                         # and statuses that don't trace (see below)
+ *   npm run trace:check   # fail on unknown IDs or untested use cases; warn
+ *                         # when the register and the issues disagree
+ *   ... --strict-issues   # fail on those disagreements too (the release)
  *   ... --json <file>     # also write the per-entry summary (testing page)
  *
  * Reads the use case register (docs/developer/use-cases.md) and the
@@ -18,18 +19,23 @@
  * - a test names a use case the register doesn't have;
  * - a supported use case has no test above unit level and the register
  *   doesn't declare the gap (a `**Test gap:**` line);
- * - a declared gap is closed (the line must go);
- * - an open issue has no UC/Q label (unless it's a question, duplicate,
- *   invalid or dependencies issue), or a UC/Q label the register lacks;
- * - a register entry has no label on GitHub;
- * - a supported entry has an open issue, or a partial one has none: status
- *   follows the issues. Issues the current pull request fixes (`Fixes #N`)
- *   count as closed, so the PR that closes an entry's last issue also
- *   updates its status.
+ * - a declared gap is closed (the line must go).
+ *
+ * The issue checks compare the register with GitHub: an open issue with a
+ * UC/Q label the register lacks, an entry with no label on GitHub, and an
+ * entry whose status disagrees with its open issues (supported with an open
+ * issue, or partial with none). On a pull request they're warnings
+ * (`::warning::` annotations and the job summary), because anyone can open
+ * an issue and that mustn't turn every PR red. With `--strict-issues`, as
+ * the release runs it, they fail: a release can't ship while the register
+ * disagrees with the issues. Issues the current pull request fixes
+ * (`Fixes #N`) count as closed, so a fix PR's status change shows clean.
+ *
+ * An issue labelled `triage`, or with no UC/Q label, needs triage: it's
+ * listed as a notice, never fails, and doesn't count towards a status.
  *
  * Issues are read with `gh`. Without it (offline, or not signed in), the
- * issue checks are skipped with a notice, except in GitHub Actions, where
- * they must run.
+ * issue checks are skipped with a notice; `--strict-issues` fails instead.
  *
  * The matrix is generated, never committed: its counts change with every
  * new test, and a committed copy went stale on almost every PR. In CI the
@@ -295,6 +301,8 @@ const EXEMPT_LABELS = new Set([
   "question",
 ]);
 const ID_LABEL = /^(?:UC|Q)-\d+$/;
+/** New issues wait here until someone gives them a UC/Q, kind and severity. */
+const TRIAGE = "triage";
 
 function gh(exec, root, args) {
   return exec("gh", args, {
@@ -363,15 +371,25 @@ export function readGitHub({
 }
 
 /**
- * The open issues that count: not exempt, and not fixed by the current pull
+ * The open work items: not exempt, and not fixed by the current pull
  * request (it closes them when it merges).
  */
-function countedIssues({ fixing = [], issues }) {
+function workItems({ fixing = [], issues }) {
   return issues.filter(
     (issue) =>
       !fixing.includes(issue.number) &&
       !issue.labels.some((label) => EXEMPT_LABELS.has(label)),
   );
+}
+
+/** An issue nobody has triaged yet: labelled triage, or with no UC/Q. */
+const needsTriage = (issue) =>
+  issue.labels.includes(TRIAGE) ||
+  !issue.labels.some((label) => ID_LABEL.test(label));
+
+/** The open issues that count towards an entry's status: triaged work items. */
+function countedIssues(github) {
+  return workItems(github).filter((issue) => !needsTriage(issue));
 }
 
 /** Open issue numbers per UC/Q label. */
@@ -412,7 +430,6 @@ export function findProblems(useCases, scan, github) {
       );
     }
   }
-  if (github) problems.push(...issueProblems(useCases, github));
   return problems;
 }
 
@@ -420,19 +437,26 @@ export function findProblems(useCases, scan, github) {
  * Everything traces from a user-oriented statement: each open issue is
  * labelled with a use case or quality in the register, each entry has a
  * label, and an entry's status follows its open issues.
+ *
+ * `problems` are disagreements between the register and GitHub: warnings on
+ * a pull request, failures for a release (`--strict-issues`). `triage` lists
+ * the issues nobody has triaged yet; they don't count towards a status and
+ * never fail the check, so an outside issue can't block anyone.
  */
 export function issueProblems(useCases, github) {
   const problems = [];
+  const triage = [];
   const known = new Set(useCases.map((uc) => uc.id));
+  for (const issue of workItems(github).filter(needsTriage)) {
+    triage.push(
+      `#${issue.number} ("${issue.title}") needs triage: give it the UC-NN or Q-NN where a user would notice it, ` +
+        `a kind and a severity, remove ${TRIAGE}, and update the entry's status in ${REGISTER}.`,
+    );
+  }
   for (const issue of countedIssues(github)) {
-    const ids = issue.labels.filter((label) => ID_LABEL.test(label));
-    if (ids.length === 0) {
-      problems.push(
-        `#${issue.number} ("${issue.title}") has no use case or quality label: ` +
-          `add the UC-NN or Q-NN where a user would notice it.`,
-      );
-    }
-    for (const id of ids.filter((i) => !known.has(i))) {
+    for (const id of issue.labels.filter(
+      (l) => ID_LABEL.test(l) && !known.has(l),
+    )) {
       problems.push(
         `#${issue.number} is labelled ${id}, which isn't in ${REGISTER}.`,
       );
@@ -460,7 +484,36 @@ export function issueProblems(useCases, github) {
       );
     }
   }
-  return problems;
+  return { problems, triage };
+}
+
+/** The issue checks as Markdown, for the CI job summary. */
+export function renderIssueChecks({ problems, triage }, { strict }) {
+  const out = ["", "## Issue checks", ""];
+  out.push(
+    strict
+      ? "Release mode (`--strict-issues`): a disagreement fails the check."
+      : "Pull request mode: disagreements are warnings; the release check fails on them.",
+    "",
+  );
+  if (problems.length === 0 && triage.length === 0) {
+    out.push(
+      "Every open issue traces to the register, and every status matches its issues.",
+    );
+  }
+  if (problems.length > 0) {
+    out.push(
+      `### ${strict ? "Failures" : "Warnings"} (${problems.length})`,
+      "",
+    );
+    for (const p of problems) out.push(`- ${p}`);
+    out.push("");
+  }
+  if (triage.length > 0) {
+    out.push(`### Needs triage (${triage.length})`, "");
+    for (const t of triage) out.push(`- ${t}`);
+  }
+  return `${out.join("\n")}\n`;
 }
 
 /**
@@ -513,9 +566,10 @@ export function render(useCases, scan, { base = "../../" } = {}) {
     "`describe` around it, carries the tag (`[UC-14]`). Counts are tests.",
     "",
     "Generated by `npm run trace` and not committed. CI runs",
-    "`npm run trace:check`, which fails on an unknown ID, on a supported use",
+    "`npm run trace:check`, which fails on an unknown ID or on a supported use",
     "case with no test above unit level (unless the register declares the gap),",
-    "and when an entry's status doesn't match its open GitHub issues.",
+    "and warns when an entry's status doesn't match its open GitHub issues",
+    "(the release fails on that).",
     "",
     `${useCases.length} use cases: ${statusCount("supported")} supported, ` +
       `${statusCount("partial")} partial, ${statusCount("not built")} not built. ` +
@@ -588,6 +642,7 @@ export function render(useCases, scan, { base = "../../" } = {}) {
 export function run({
   check = false,
   env = process.env,
+  strictIssues = false,
   github: readIssues = () => readGitHub({ env, root }),
   json,
   root = ROOT,
@@ -616,14 +671,14 @@ export function run({
       const reason = String(error.stderr || error.message)
         .trim()
         .split("\n")[0];
-      if (check && env.GITHUB_ACTIONS === "true") {
+      if (check && strictIssues) {
         log.error(
-          `Traceability check failed: can't read GitHub issues (${reason}). The job needs GH_TOKEN and issues: read.`,
+          `Traceability check failed: --strict-issues needs the GitHub issues, and gh can't read them (${reason}). The job needs GH_TOKEN and issues: read.`,
         );
         return 1;
       }
       log.log(
-        `Skipping the issue checks: can't read GitHub issues with gh (${reason}).`,
+        `${env.GITHUB_ACTIONS === "true" ? "::warning title=Traceability::" : ""}Skipping the issue checks: can't read GitHub issues with gh (${reason}).`,
       );
     }
   }
@@ -654,13 +709,41 @@ export function run({
         : "../../";
     fs.appendFileSync(summaryFile, render(useCases, scan, { base }));
   }
-  const problems = findProblems(useCases, scan, github);
+  const problems = findProblems(useCases, scan);
+  const issues = github
+    ? issueProblems(useCases, github)
+    : { problems: [], triage: [] };
+  if (github && summaryFile) {
+    fs.appendFileSync(
+      summaryFile,
+      renderIssueChecks(issues, { strict: strictIssues }),
+    );
+  }
+  const inActions = env.GITHUB_ACTIONS === "true";
+  const annotate = (level, title, message) =>
+    log.log(
+      inActions
+        ? `::${level} title=${title}::${message}`
+        : `${level}: ${message}`,
+    );
+  for (const t of issues.triage) annotate("notice", "Needs triage", t);
+  if (strictIssues) {
+    problems.push(...issues.problems);
+  } else {
+    for (const p of issues.problems) {
+      annotate("warning", "Register and issues disagree", p);
+    }
+  }
   if (problems.length > 0) {
     log.error(`Traceability check failed (${problems.length}):`);
     for (const p of problems) log.error(`- ${p}`);
     return 1;
   }
-  log.log(`Traceability OK: ${totals}`);
+  const warned =
+    !strictIssues && issues.problems.length > 0
+      ? ` ${issues.problems.length} issue warning(s); the release check fails on them.`
+      : "";
+  log.log(`Traceability OK: ${totals}${warned}`);
   return 0;
 }
 
@@ -673,13 +756,21 @@ if (
   const json = jsonAt === -1 ? undefined : args[jsonAt + 1];
   const unknown = args.filter(
     (a, i) =>
-      a !== "--check" && !(jsonAt !== -1 && (i === jsonAt || i === jsonAt + 1)),
+      a !== "--check" &&
+      a !== "--strict-issues" &&
+      !(jsonAt !== -1 && (i === jsonAt || i === jsonAt + 1)),
   );
   if (unknown.length > 0 || (jsonAt !== -1 && !json)) {
     console.error(
-      `Unknown option ${unknown[0] ?? "--json"}. Options: --check, --json <file>`,
+      `Unknown option ${unknown[0] ?? "--json"}. Options: --check, --strict-issues, --json <file>`,
     );
     process.exit(2);
   }
-  process.exit(run({ check: args.includes("--check"), json }));
+  process.exit(
+    run({
+      check: args.includes("--check"),
+      json,
+      strictIssues: args.includes("--strict-issues"),
+    }),
+  );
 }

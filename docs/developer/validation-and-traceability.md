@@ -334,10 +334,16 @@ listed as "not built" with a decision.
   - a supported use case has no test above unit level, unless its register
     entry declares the gap with a `**Test gap:**` line (and the check also
     fails once a declared gap is closed, so the line goes);
-  - a test names an unknown use case ID;
-  - an open GitHub issue has no `UC-NN` or `Q-NN` label, or one the
-    register doesn't have, or a register entry has no label;
-  - a supported entry has an open issue, or a partial entry has none.
+  - a test names an unknown use case ID.
+
+  It also compares the register with the open GitHub issues: an issue with
+  a `UC-NN` or `Q-NN` label the register doesn't have, an entry with no
+  label, and a supported entry with an open issue or a partial one with
+  none. On a pull request these are warnings (annotations and the job
+  summary), since anyone can open an issue; the release preflight runs
+  `npm run trace:check -- --strict-issues`, which fails on them. Issues
+  that need triage (labelled `triage`, or with no UC/Q label) are listed
+  and never fail.
 - The matrix is generated and never committed, so it can't go stale. (It was
   committed at first, and its counts changed with almost every PR.) The
   register (descriptions, status, entry points) is edited by hand and reviewed

@@ -87,20 +87,24 @@ the repo or on GitHub.
   has the protocol. Each issue is labelled with the use case or quality
   (`UC-NN`, `Q-NN` in `docs/developer/use-cases.md`) where a user would
   notice it, a kind and a severity. The loop:
-  1. Pick: `gh issue list --label severity:high`, then medium, then by use
+  1. Triage first: `gh issue list --label triage` (and unlabelled issues).
+     Give each a UC/Q label, a kind and a severity, remove `triage`, and
+     update the entry's status in a PR.
+  2. Pick: `gh issue list --label severity:high`, then medium, then by use
      case (`--label UC-19`); skip claimed ones.
-  2. Claim: a draft PR whose description says `Fixes #N`, or a comment on
+  3. Claim: a draft PR whose description says `Fixes #N`, or a comment on
      the issue.
-  3. Fix it, with tests tagged `[UC-NN]` or `[Q-NN]`.
-  4. The PR says `Fixes #N`; if it fixes the entry's last open issue, it
+  4. Fix it, with tests tagged `[UC-NN]` or `[Q-NN]`.
+  5. The PR says `Fixes #N`; if it fixes the entry's last open issue, it
      marks the entry supported in `use-cases.md`. Merging closes the issue,
      and the release notes list the closed issues.
-  5. A new finding becomes an issue, with a plain title saying what a user
+  6. A new finding becomes an issue, with a plain title saying what a user
      would notice.
 
-  `npm run trace:check` fails on an open issue without a UC/Q label, and
-  when a status disagrees with the issues: supported means no open issues,
-  partial means at least one.
+  Supported means no open issues; partial means at least one.
+  `npm run trace:check` warns on a PR when a status disagrees with the
+  issues (fix the warning if your PR caused it), and the release fails on
+  it (`--strict-issues`).
 - **Plans:** for work bigger than one PR, commit a spec to
   `docs/developer/<feature>.md` before implementing (like
   `step-sequencer-slicer.md`), and link it from an issue or the PR.

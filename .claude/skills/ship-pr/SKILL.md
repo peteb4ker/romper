@@ -32,8 +32,9 @@ is already green, skip auto-merge and merge it directly (rebase method).
    merging closes it (`Part of #N` for a partial fix). If it fixes a use
    case's or quality's last open issue, the PR marks that entry supported
    in `docs/developer/use-cases.md`; the Lint job's `npm run trace:check`
-   counts the PR's fixed issues as closed and fails until it does. The
-   check reruns when the description is edited.
+   counts the PR's fixed issues as closed and warns until it does (the
+   release fails on it). The check reruns when the description is edited.
+   Warnings about issues the PR didn't touch aren't the PR's to fix.
 6. **UI changes carry their screenshots.** If the PR changes how a captured
    view looks, it must include the regenerated screenshots and manual text
    (`capture-screenshots` command). If it merged without them, raise a

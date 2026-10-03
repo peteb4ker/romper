@@ -1,5 +1,8 @@
 // @vitest-environment node
-import { describe, expect, it } from "vitest";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   buildIndex,
@@ -9,6 +12,7 @@ import {
   parseRegister,
   readGitHub,
   render,
+  renderIssueChecks,
   run,
   scanTests,
   slug,
@@ -233,10 +237,13 @@ describe("tracing GitHub issues to user-oriented statements", () => {
   });
 
   it("passes when every issue is labelled and statuses follow the issues", () => {
-    expect(issueProblems(useCases, healthy)).toEqual([]);
+    expect(issueProblems(useCases, healthy)).toEqual({
+      problems: [],
+      triage: [],
+    });
   });
 
-  it("fails an issue with no UC or Q label, unless it isn't a work item", () => {
+  it("lists an issue with no UC or Q label, or labelled triage, as needing triage, not as a problem", () => {
     const github = {
       ...healthy,
       issues: [
@@ -244,47 +251,50 @@ describe("tracing GitHub issues to user-oriented statements", () => {
         issue(3, "bug"),
         issue(4, "question"),
         issue(5, "dependencies"),
+        issue(8, "triage", "UC-23"),
       ],
     };
-    expect(issueProblems(useCases, github)).toEqual([
-      expect.stringContaining(
-        '#3 ("Issue 3") has no use case or quality label',
-      ),
-    ]);
+    expect(issueProblems(useCases, github)).toEqual({
+      problems: [],
+      triage: [
+        expect.stringContaining('#3 ("Issue 3") needs triage'),
+        expect.stringContaining('#8 ("Issue 8") needs triage'),
+      ],
+    });
   });
 
-  it("fails an issue labelled with an ID the register doesn't have", () => {
+  it("reports an issue labelled with an ID the register doesn't have", () => {
     const github = {
       ...healthy,
       issues: [...healthy.issues, issue(6, "UC-99", "UC-19")],
     };
-    expect(issueProblems(useCases, github)).toEqual([
+    expect(issueProblems(useCases, github).problems).toEqual([
       "#6 is labelled UC-99, which isn't in docs/developer/use-cases.md.",
     ]);
   });
 
-  it("fails an entry with no label on GitHub", () => {
+  it("reports an entry with no label on GitHub", () => {
     const github = { ...healthy, labels: labels.filter((l) => l !== "UC-20") };
-    expect(issueProblems(useCases, github)).toEqual([
+    expect(issueProblems(useCases, github).problems).toEqual([
       expect.stringContaining("UC-20 has no label on GitHub"),
     ]);
   });
 
-  it("fails a supported entry with an open issue", () => {
+  it("reports a supported entry with an open issue", () => {
     const github = {
       ...healthy,
       issues: [...healthy.issues, issue(7, "UC-23", "bug")],
     };
-    expect(issueProblems(useCases, github)).toEqual([
+    expect(issueProblems(useCases, github).problems).toEqual([
       expect.stringContaining(
         "UC-23 Delete a sample is supported but has open issues (#7)",
       ),
     ]);
   });
 
-  it("fails a partial entry with no open issue, but not a not-built one", () => {
+  it("reports a partial entry with no open issue, but not a not-built one", () => {
     const github = { ...healthy, issues: [issue(2, "Q-01")] };
-    expect(issueProblems(useCases, github)).toEqual([
+    expect(issueProblems(useCases, github).problems).toEqual([
       expect.stringContaining(
         "UC-19 Drop WAVs onto a voice is partial but no open issue is labelled UC-19",
       ),
@@ -293,20 +303,30 @@ describe("tracing GitHub issues to user-oriented statements", () => {
 
   it("counts the issues the current pull request fixes as closed", () => {
     const github = { ...healthy, fixing: [1, 2] };
-    expect(issueProblems(useCases, github)).toEqual([
+    expect(issueProblems(useCases, github).problems).toEqual([
       expect.stringContaining("UC-19 Drop WAVs onto a voice is partial"),
       expect.stringContaining("Q-01 Romper stays responsive"),
     ]);
   });
 
-  it("runs the issue checks from findProblems only when GitHub was read", () => {
+  it("keeps the issue checks out of findProblems", () => {
     const scan = buildIndex(
       ["tests/e2e/x.e2e.test.ts"],
       () => `test("[UC-23] delete", async () => {});`,
     );
-    const github = { ...healthy, issues: [] };
-    expect(findProblems(useCases, scan, github)).toHaveLength(2);
-    expect(findProblems(useCases, scan, null)).toEqual([]);
+    expect(findProblems(useCases, scan)).toEqual([]);
+  });
+
+  it("renders the issue checks for the job summary", () => {
+    const md = renderIssueChecks(
+      { problems: ["UC-23 is off"], triage: ["#3 needs triage"] },
+      { strict: false },
+    );
+    expect(md).toContain("### Warnings (1)\n\n- UC-23 is off");
+    expect(md).toContain("### Needs triage (1)\n\n- #3 needs triage");
+    expect(
+      renderIssueChecks({ problems: ["x"], triage: [] }, { strict: true }),
+    ).toContain("### Failures (1)");
   });
 
   it("summarises each entry for the testing page", () => {
@@ -389,6 +409,117 @@ describe("tracing GitHub issues to user-oriented statements", () => {
   });
 });
 
+describe("run: pull requests warn, the release fails", () => {
+  const register = `# Use cases
+
+## Samples
+
+### UC-19 Drop WAVs onto a voice
+
+**Status:** supported
+
+### UC-23 Delete a sample
+
+**Status:** supported
+`;
+  let root: string;
+  let summary: string;
+  beforeEach(() => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), "romper-trace-"));
+    fs.mkdirSync(path.join(root, "docs/developer"), { recursive: true });
+    fs.mkdirSync(path.join(root, "tests/e2e"), { recursive: true });
+    fs.writeFileSync(path.join(root, "docs/developer/use-cases.md"), register);
+    fs.writeFileSync(
+      path.join(root, "tests/e2e/a.e2e.test.ts"),
+      `test("[UC-19] [UC-23] a", async () => {});`,
+    );
+    summary = path.join(root, "summary.md");
+  });
+  afterEach(() => fs.rmSync(root, { force: true, recursive: true }));
+
+  // UC-23 is supported but has an open issue; #2 hasn't been triaged.
+  const github = () => ({
+    fixing: [],
+    issues: [
+      { labels: ["UC-23", "bug"], number: 1, title: "A" },
+      { labels: ["triage"], number: 2, title: "B" },
+    ],
+    labels: ["UC-19", "UC-23"],
+  });
+  const capture = () => {
+    const out: string[] = [];
+    const log = {
+      error: (m: string) => out.push(m),
+      log: (m: string) => out.push(m),
+    };
+    return { log, out };
+  };
+
+  it("warns on a pull request, with annotations and the job summary", () => {
+    const { log, out } = capture();
+    const code = run({
+      check: true,
+      env: { GITHUB_ACTIONS: "true" },
+      github,
+      log,
+      root,
+      summaryFile: summary,
+    });
+    expect(code).toBe(0);
+    expect(out).toContainEqual(
+      expect.stringMatching(
+        /^::warning title=Register and issues disagree::UC-23 Delete a sample is supported but has open issues \(#1\)/,
+      ),
+    );
+    expect(out).toContainEqual(
+      expect.stringMatching(/^::notice title=Needs triage::#2 \("B"\)/),
+    );
+    const md = fs.readFileSync(summary, "utf8");
+    expect(md).toContain("### Warnings (1)");
+    expect(md).toContain("### Needs triage (1)");
+  });
+
+  it("fails with --strict-issues, but not on an issue that needs triage", () => {
+    const { log, out } = capture();
+    expect(
+      run({ check: true, env: {}, github, log, root, strictIssues: true }),
+    ).toBe(1);
+    expect(out).toContain("Traceability check failed (1):");
+    expect(out).toContainEqual(
+      expect.stringContaining("- UC-23 Delete a sample is supported"),
+    );
+
+    const triageOnly = () => ({ ...github(), issues: [github().issues[1]] });
+    expect(
+      run({
+        check: true,
+        env: {},
+        github: triageOnly,
+        log: capture().log,
+        root,
+        strictIssues: true,
+      }),
+    ).toBe(0);
+  });
+
+  it("still fails a pull request on the test rules", () => {
+    fs.writeFileSync(
+      path.join(root, "tests/e2e/a.e2e.test.ts"),
+      `test("[UC-19] [UC-77] a", async () => {});`,
+    );
+    const { log } = capture();
+    expect(
+      run({
+        check: true,
+        env: {},
+        github: () => ({ ...github(), issues: [] }),
+        log,
+        root,
+      }),
+    ).toBe(1);
+  });
+});
+
 describe("run without GitHub", () => {
   const unavailable = () => {
     throw Object.assign(new Error("gh failed"), {
@@ -414,7 +545,7 @@ describe("run without GitHub", () => {
     );
   });
 
-  it("fails in GitHub Actions, where the checks must run", () => {
+  it("warns on a pull request in GitHub Actions", () => {
     const { log, out } = quiet();
     expect(
       run({
@@ -424,7 +555,24 @@ describe("run without GitHub", () => {
         log,
         summaryFile: undefined,
       }),
+    ).toBe(0);
+    expect(out[0]).toMatch(
+      /^::warning title=Traceability::Skipping the issue checks/,
+    );
+  });
+
+  it("fails with --strict-issues, which needs the issues", () => {
+    const { log, out } = quiet();
+    expect(
+      run({
+        check: true,
+        env: {},
+        github: unavailable,
+        log,
+        strictIssues: true,
+        summaryFile: undefined,
+      }),
     ).toBe(1);
-    expect(out[0]).toContain("can't read GitHub issues");
+    expect(out[0]).toContain("--strict-issues needs the GitHub issues");
   });
 });

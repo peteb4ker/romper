@@ -79,6 +79,8 @@ test.describe("[UC-36] Refused edits reach the user (RE-40)", () => {
     await window.locator('[data-testid="kit-item-A0"]').click();
     await window.waitForSelector('[data-testid="kit-editor"]');
     await window.getByTitle("Enable editable mode").click();
+    // Editable: voice 3 takes drops
+    await window.waitForSelector('[data-testid="drop-zone-voice-3"]');
   });
 
   test.afterEach(async () => {

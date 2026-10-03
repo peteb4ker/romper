@@ -634,7 +634,9 @@ describe("KitVoicePanels", () => {
           "error",
         ),
       );
-      expect(gain()).toBe("-3");
+      // The restore and the message are sent together; the knob shows the
+      // restored gain once React renders it
+      await waitFor(() => expect(gain()).toBe("-3"));
       expect(onMessage.mock.calls[0][0]).not.toMatch(/not found|Error:/);
       expect(onKitModified).not.toHaveBeenCalled();
     });
@@ -657,8 +659,11 @@ describe("KitVoicePanels", () => {
       fireEvent.wheel(knob(), { deltaY: -100 });
       fireEvent.wheel(knob(), { deltaY: -100 });
 
+      // Only the latest step's failure restores and reports; the knob shows
+      // the restored gain once React renders it
       await waitFor(() => expect(onMessage).toHaveBeenCalledTimes(1));
-      expect(gain()).toBe("-3");
+      await waitFor(() => expect(gain()).toBe("-3"));
+      expect(onMessage).toHaveBeenCalledTimes(1);
     });
 
     it("says nothing when the gain is saved", async () => {

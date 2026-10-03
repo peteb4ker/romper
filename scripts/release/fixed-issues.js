@@ -10,8 +10,12 @@
 
 import { execFileSync } from "node:child_process";
 
-/** Labels whose issues never appear in the notes. */
-const SKIPPED_LABELS = new Set(["duplicate", "ops"]);
+/**
+ * Labels whose issues never appear in the notes: owner-only chores,
+ * duplicates, and automated SonarCloud quality-gate tracking, none of which
+ * is a fix a user would notice.
+ */
+const SKIPPED_LABELS = new Set(["duplicate", "ops", "sonarcloud"]);
 
 /** Use cases come before qualities; each in numeric order. */
 const GROUP_KINDS = ["UC", "Q"];

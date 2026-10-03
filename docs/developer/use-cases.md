@@ -220,7 +220,7 @@ See [Navigating Banks](../manual/kit-browser.md#navigating-banks) and
 - **Main:** `electron/main/db/operations/kitCrudOperations.ts` (`getKits`).
 - **Doc gaps:** none.
 - **Known issues:** RE-36, RE-47, RE-48. Letter and arrow keys still reach
-  the browser behind an open dialog (not yet registered).
+  the browser behind an open dialog (#500).
 
 ### UC-08 Read kit card details
 

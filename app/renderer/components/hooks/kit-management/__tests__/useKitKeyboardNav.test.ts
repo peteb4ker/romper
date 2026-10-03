@@ -3,6 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useKitKeyboardNav } from "../useKitKeyboardNav";
 
+function openModal(): HTMLElement {
+  const modal = document.createElement("div");
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  document.body.appendChild(modal);
+  return modal;
+}
+
 describe("useKitKeyboardNav", () => {
   const mockGlobalBankHotkeyHandler = vi.fn();
   const mockOnToggleFavorite = vi.fn();
@@ -210,6 +218,23 @@ describe("useKitKeyboardNav", () => {
 
       expect(mockOnToggleFavorite).not.toHaveBeenCalled();
       expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+    });
+
+    // #500: keys pressed in a dialog are the dialog's
+    it("[UC-07] ignores the bookmark key while a modal dialog is open", () => {
+      const modal = openModal();
+      const mockEvent = {
+        key: "*",
+        preventDefault: vi.fn(),
+        shiftKey: true,
+        stopPropagation: vi.fn(),
+        target: document.body,
+      } as unknown as KeyboardEvent;
+
+      favoritesHandler(mockEvent);
+
+      expect(mockOnToggleFavorite).not.toHaveBeenCalled();
+      modal.remove();
     });
 
     it("ignores other keys", () => {

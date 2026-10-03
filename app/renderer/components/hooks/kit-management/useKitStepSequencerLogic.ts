@@ -7,6 +7,7 @@ import type { PlayOptions } from "../../kitTypes";
 import type { SequenceEditMeta } from "./useSequenceHistory";
 
 import { createLogger } from "../../../utils/logger";
+import { isModalDialogOpen } from "../../../utils/modalDialog";
 import {
   resolveTriggeredSlice,
   sliceRegion,
@@ -477,7 +478,7 @@ export function useKitStepSequencerLogic(
   React.useEffect(() => {
     if (!sequencerOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== " " || e.defaultPrevented) return;
+      if (e.key !== " " || e.defaultPrevented || isModalDialogOpen()) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (usesSpaceItself(e.target)) return;
       e.preventDefault();

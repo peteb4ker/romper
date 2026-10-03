@@ -7,6 +7,7 @@ import {
   hasCommandModifier,
   isBrowserFavoriteKey,
 } from "../../utils/keyboardShortcuts";
+import { isModalDialogOpen } from "../../utils/modalDialog";
 
 interface UseKitGridKeyboardProps {
   containerRef: RefObject<HTMLDivElement | null>;
@@ -217,6 +218,8 @@ export function useKitGridKeyboard({
       if (hasCommandModifier(e)) return;
       // Shift+F stars the focused kit (useKitKeyboardNav); it isn't a jump
       if (isBrowserFavoriteKey(e)) return;
+      // Keys pressed in a dialog are the dialog's (#500)
+      if (isModalDialogOpen()) return;
 
       // A-Z hotkey: select first kit in bank
       if (e.key.length === 1 && /^\p{Lu}$/u.test(e.key.toUpperCase())) {

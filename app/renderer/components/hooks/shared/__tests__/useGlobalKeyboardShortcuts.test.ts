@@ -456,6 +456,29 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
       input.remove();
     });
 
+    // #500: Escape in a dialog closes the dialog, not the kit behind it,
+    // and Cmd+Z there doesn't undo a kit edit
+    it("[UC-07] leaves Escape and Cmd+Z to an open modal dialog", () => {
+      renderHook(() =>
+        useGlobalKeyboardShortcuts({
+          currentKitName: "test-kit",
+          isEditMode: true,
+          onBackNavigation: mockOnBackNavigation as () => void,
+        }),
+      );
+      const modal = document.createElement("div");
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "true");
+      document.body.appendChild(modal);
+
+      fireEvent.keyDown(document.body, { key: "Escape" });
+      fireEvent.keyDown(document.body, { key: "z", metaKey: true });
+
+      expect(mockOnBackNavigation).not.toHaveBeenCalled();
+      expect(mockUndo).not.toHaveBeenCalled();
+      modal.remove();
+    });
+
     it("does not go back on an Escape a component already handled", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({

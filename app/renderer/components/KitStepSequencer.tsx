@@ -6,6 +6,7 @@ import React from "react";
 import type { SliceView } from "./hooks/shared/sliceConstants";
 import type { PlayOptions, SequenceUndo } from "./kitTypes";
 
+import { isModalDialogOpen } from "../utils/modalDialog";
 import { useKitStepSequencerLogic } from "./hooks/kit-management/useKitStepSequencerLogic";
 import { useSequenceHistory } from "./hooks/kit-management/useSequenceHistory";
 import {
@@ -365,7 +366,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
       return;
     }
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "?" || e.defaultPrevented) return;
+      if (e.key !== "?" || e.defaultPrevented || isModalDialogOpen()) return;
       const el = e.target as HTMLElement | null;
       if (el?.closest?.("input, textarea, select, [contenteditable]")) return;
       e.preventDefault();

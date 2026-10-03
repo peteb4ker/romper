@@ -6,6 +6,7 @@ import {
   hasCommandModifier,
   isEditorFavoriteKey,
 } from "../../../utils/keyboardShortcuts";
+import { isModalDialogOpen } from "../../../utils/modalDialog";
 
 type SampleNavParams = Pick<
   UseKitEditorKeyboardNavParams,
@@ -56,6 +57,10 @@ export function useKitEditorKeyboardNav({
     function handleGlobalKeyDown(e: KeyboardEvent) {
       // Ignore if a modal, input, textarea, or contenteditable is focused
       if (isTypingTarget(document.activeElement)) {
+        return;
+      }
+      // Keys pressed in a dialog are the dialog's (#500)
+      if (isModalDialogOpen()) {
         return;
       }
       // Cmd/Ctrl/Alt combinations belong to the menu and the system: Cmd+,

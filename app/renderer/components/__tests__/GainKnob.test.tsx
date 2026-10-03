@@ -1,8 +1,8 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import GainKnob from "../GainKnob";
+import GainKnob, { gainForKey } from "../GainKnob";
 
 describe("[UC-24] GainKnob", () => {
   const defaultProps = {
@@ -189,6 +189,90 @@ describe("[UC-24] GainKnob", () => {
 
       const slider = screen.getByRole("slider");
       expect(slider).toHaveAttribute("viewBox", "0 0 20 20");
+    });
+  });
+
+  // RE-48: the knob had no keyboard support
+  describe("[Q-06] keyboard", () => {
+    it("is in the tab order unless disabled", () => {
+      const { rerender } = render(<GainKnob {...defaultProps} />);
+      expect(screen.getByRole("slider")).toHaveAttribute("tabindex", "0");
+      rerender(<GainKnob {...defaultProps} disabled />);
+      expect(screen.getByRole("slider")).toHaveAttribute("tabindex", "-1");
+    });
+
+    it.each([
+      ["ArrowUp", false, 1],
+      ["ArrowRight", false, 1],
+      ["ArrowDown", false, -1],
+      ["ArrowLeft", false, -1],
+      ["ArrowUp", true, 0.5],
+      ["PageUp", false, 6],
+      ["PageDown", false, -6],
+      ["Home", false, -24],
+      ["End", false, 12],
+    ])("%s (Shift: %s) sets the gain to %s dB", (key, shiftKey, expected) => {
+      const onChange = vi.fn();
+      render(<GainKnob onChange={onChange} value={0} />);
+      const slider = screen.getByRole("slider");
+
+      const notCancelled = fireEvent.keyDown(slider, { key, shiftKey });
+
+      expect(onChange).toHaveBeenCalledWith(expected);
+      expect(notCancelled).toBe(false);
+      expect(slider).toHaveAttribute("aria-valuenow", String(expected));
+    });
+
+    it("0 returns to unity gain", () => {
+      const onChange = vi.fn();
+      render(<GainKnob onChange={onChange} value={-6} />);
+      fireEvent.keyDown(screen.getByRole("slider"), { key: "0" });
+      expect(onChange).toHaveBeenCalledWith(0);
+    });
+
+    it("stays within -24 to +12 dB", () => {
+      const onChange = vi.fn();
+      render(<GainKnob onChange={onChange} value={11} />);
+      fireEvent.keyDown(screen.getByRole("slider"), { key: "PageUp" });
+      expect(onChange).toHaveBeenCalledWith(12);
+    });
+
+    it("keeps its keys from the sample list around it", () => {
+      const onParentKey = vi.fn();
+      render(
+        <div onKeyDown={onParentKey}>
+          <GainKnob {...defaultProps} />
+        </div>,
+      );
+      fireEvent.keyDown(screen.getByRole("slider"), { key: "ArrowDown" });
+      expect(onParentKey).not.toHaveBeenCalled();
+    });
+
+    it("ignores keys when disabled or with Cmd, Ctrl or Alt", () => {
+      const onChange = vi.fn();
+      const { rerender } = render(
+        <GainKnob disabled onChange={onChange} value={0} />,
+      );
+      fireEvent.keyDown(screen.getByRole("slider"), { key: "ArrowUp" });
+      rerender(<GainKnob onChange={onChange} value={0} />);
+      fireEvent.keyDown(screen.getByRole("slider"), {
+        key: "ArrowUp",
+        metaKey: true,
+      });
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it("shows the value while focused", () => {
+      render(<GainKnob {...defaultProps} value={3} />);
+      expect(screen.queryByText("+3 dB")).not.toBeInTheDocument();
+      fireEvent.focus(screen.getByRole("slider"));
+      expect(screen.getByText("+3 dB")).toBeInTheDocument();
+      fireEvent.blur(screen.getByRole("slider"));
+      expect(screen.queryByText("+3 dB")).not.toBeInTheDocument();
+    });
+
+    it("gainForKey ignores other keys", () => {
+      expect(gainForKey("a", 0, false)).toBeNull();
     });
   });
 });

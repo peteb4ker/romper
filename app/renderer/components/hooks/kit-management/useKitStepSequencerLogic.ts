@@ -495,6 +495,15 @@ export function useKitStepSequencerLogic(
       const ref = gridRef || gridRefInternal;
       if (ref?.current) {
         requestAnimationFrame(() => {
+          // Step options opened from the keyboard in the meantime keep focus
+          // (frames come late in a hidden window)
+          if (
+            (document.activeElement as HTMLElement | null)?.closest?.(
+              '[data-testid="condition-popover"]',
+            )
+          ) {
+            return;
+          }
           ref.current?.focus();
         });
       }

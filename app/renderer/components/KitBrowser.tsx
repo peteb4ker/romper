@@ -15,6 +15,7 @@ import KitBankNav from "./KitBankNav";
 import KitBrowserHeader from "./KitBrowserHeader";
 import KitGrid, { KitGridHandle } from "./KitGrid";
 import LocalStoreWizardUI from "./LocalStoreWizardUI";
+import ModalDialog from "./shared/ModalDialog";
 
 interface KitBrowserProps {
   /** Scan All's progress; the scan itself runs in KitsView (RE-43) */
@@ -248,14 +249,20 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
       </div>
       {/* Local Store Wizard Modal */}
       {showLocalStoreWizard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-surface-2 rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.4)] border border-border-subtle p-6 w-full max-w-lg">
-            <h2 className="text-xl font-bold mb-4 text-text-primary">
-              Romper Local Store Setup
-            </h2>
-            <LocalStoreWizardUI {...localStoreWizardProps} />
-          </div>
-        </div>
+        <ModalDialog
+          aria-labelledby="kit-browser-setup-title"
+          className="bg-surface-2 rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.4)] border border-border-subtle p-6 w-full max-w-lg"
+          // The wizard's Cancel stops setup before closing, so Escape
+          // doesn't close it behind setup's back
+        >
+          <h2
+            className="text-xl font-bold mb-4 text-text-primary"
+            id="kit-browser-setup-title"
+          >
+            Romper Local Store Setup
+          </h2>
+          <LocalStoreWizardUI {...localStoreWizardProps} />
+        </ModalDialog>
       )}
 
       {/* ValidationResultsDialog */}

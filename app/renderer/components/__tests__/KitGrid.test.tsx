@@ -96,6 +96,19 @@ describe("KitGrid", () => {
     expect(screen.getByTestId("kit-item-BKit3")).toBeInTheDocument();
   });
 
+  // RE-48: the grid held listbox options, which can't contain buttons
+  it("[Q-06] is a grid of rows and cells", () => {
+    render(<KitGrid {...baseProps} />);
+
+    const grid = screen.getByRole("grid", { name: "Kit grid" });
+    expect(grid.querySelectorAll('[role="option"]')).toHaveLength(0);
+    const card = screen.getByTestId("kit-item-AKit1");
+    expect(card).toHaveAttribute("role", "gridcell");
+    expect(card.closest('[role="row"]')).not.toBeNull();
+    const header = screen.getAllByRole("rowheader")[0];
+    expect(header.closest('[role="row"]')).not.toBeNull();
+  });
+
   describe("[UC-14] creating a kit where there are none (RE-64)", () => {
     it("shows the hint and an add-kit card for bank A in an empty library", () => {
       const onCreateKitInBank = vi.fn();

@@ -87,6 +87,7 @@ const renderKitAliasInput = (
   kit: Kit | null,
 ) => (
   <input
+    aria-label="Kit name"
     autoFocus
     className="border-b border-accent-primary bg-transparent text-base font-semibold text-text-primary focus:outline-none px-1 w-48 text-center"
     onBlur={() => {

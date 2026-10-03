@@ -6,11 +6,42 @@ const RANGE = MAX_DB - MIN_DB; // 36
 const START_ANGLE = 225; // 7 o'clock (degrees, 0 = 3 o'clock, CW)
 const END_ANGLE = -45; // 5 o'clock
 const SWEEP = 270; // total degrees of arc
+const PAGE_STEP_DB = 6; // Page Up / Page Down
 
 interface GainKnobProps {
   disabled?: boolean;
   onChange: (db: number) => void;
   value: number;
+}
+
+/** Gain change for a key on the focused knob, or null if it isn't one. */
+export function gainForKey(
+  key: string,
+  db: number,
+  shiftKey: boolean,
+): null | number {
+  const step = shiftKey ? 0.5 : 1;
+  switch (key) {
+    // 0 sets unity gain, like a click
+    case "0":
+      return 0;
+    case "ArrowDown":
+    case "ArrowLeft":
+      return db - step;
+    case "ArrowRight":
+    case "ArrowUp":
+      return db + step;
+    case "End":
+      return MAX_DB;
+    case "Home":
+      return MIN_DB;
+    case "PageDown":
+      return db - PAGE_STEP_DB;
+    case "PageUp":
+      return db + PAGE_STEP_DB;
+    default:
+      return null;
+  }
 }
 
 function arcPath(
@@ -55,6 +86,7 @@ function polarToCart(
 const GainKnob: React.FC<GainKnobProps> = ({ disabled, onChange, value }) => {
   const [localDb, setLocalDb] = useState(value);
   const [isHovered, setIsHovered] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);
   const dragStartValue = useRef(0);
@@ -110,6 +142,21 @@ const GainKnob: React.FC<GainKnobProps> = ({ disabled, onChange, value }) => {
     [disabled, updateGain, localDb],
   );
 
+  // Keyboard: arrows by 1 dB (Shift: 0.5), Page Up/Down by 6 dB, Home and
+  // End to the ends, 0 to unity (Q-06, RE-48). The keys stay with the knob:
+  // the sample list and the kit editor use the arrows too.
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (disabled || e.metaKey || e.ctrlKey || e.altKey) return;
+      const next = gainForKey(e.key, localDb, e.shiftKey);
+      if (next === null) return;
+      e.preventDefault();
+      e.stopPropagation();
+      updateGain(next);
+    },
+    [disabled, localDb, updateGain],
+  );
+
   useEffect(() => {
     if (!isDragging) return;
 
@@ -132,7 +179,7 @@ const GainKnob: React.FC<GainKnobProps> = ({ disabled, onChange, value }) => {
     };
   }, [isDragging, updateGain]);
 
-  const active = isHovered || isDragging;
+  const active = isHovered || isDragging || isFocused;
   const cx = 10;
   const cy = 10;
   const r = 7;
@@ -161,13 +208,20 @@ const GainKnob: React.FC<GainKnobProps> = ({ disabled, onChange, value }) => {
       style={{ zIndex: active ? 10 : undefined }}
     >
       <svg
+        aria-disabled={disabled || undefined}
         aria-label={`Gain: ${formatDb(localDb)}`}
         aria-valuemax={MAX_DB}
         aria-valuemin={MIN_DB}
         aria-valuenow={localDb}
-        className="transition-transform duration-150 ease-out"
+        aria-valuetext={formatDb(localDb)}
+        className="transition-transform duration-150 ease-out rounded-full focus:outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-accent-primary"
         height={20}
+        onBlur={() => setIsFocused(false)}
         onClick={handleClick}
+        // Mouse presses don't focus the knob (handleMouseDown prevents it),
+        // so focus means the keyboard: show the value as hover does
+        onFocus={() => setIsFocused(true)}
+        onKeyDown={handleKeyDown}
         onMouseDown={handleMouseDown}
         onWheel={handleWheel}
         role="slider"
@@ -175,6 +229,7 @@ const GainKnob: React.FC<GainKnobProps> = ({ disabled, onChange, value }) => {
           cursor: disabled ? "default" : "ns-resize",
           transform: active ? "scale(1.6)" : "scale(1)",
         }}
+        tabIndex={disabled ? -1 : 0}
         viewBox="0 0 20 20"
         width={20}
       >

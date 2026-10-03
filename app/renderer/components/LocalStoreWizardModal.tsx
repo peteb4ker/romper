@@ -1,6 +1,7 @@
 import React from "react";
 
 import LocalStoreWizardUI from "./LocalStoreWizardUI";
+import ModalDialog from "./shared/ModalDialog";
 
 interface LocalStoreWizardModalProps {
   isOpen: boolean;
@@ -30,25 +31,31 @@ const LocalStoreWizardModal: React.FC<LocalStoreWizardModalProps> = ({
   const handleClose = onCloseApp || onClose;
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-surface-1 rounded-lg p-6 max-w-2xl w-full mx-4">
-        <div className="mb-4">
-          <h2 className="text-xl font-bold text-text-primary">
-            Local Store Setup Required
-          </h2>
-          <p className="text-text-secondary mt-2">
-            The local store must be set up before the app can be used. Please
-            complete the setup wizard to continue.
-          </p>
-        </div>
-        <LocalStoreWizardUI
-          onClose={handleClose}
-          onInitializationChange={onInitializationChange}
-          onSuccess={onSuccess}
-          setLocalStorePath={setLocalStorePath}
-        />
+    // Setup must finish (or the app close) first: Escape doesn't dismiss it
+    <ModalDialog
+      aria-labelledby="local-store-setup-title"
+      className="bg-surface-1 rounded-lg p-6 max-w-2xl w-full mx-4"
+      data-testid="local-store-wizard-modal"
+    >
+      <div className="mb-4">
+        <h2
+          className="text-xl font-bold text-text-primary"
+          id="local-store-setup-title"
+        >
+          Local Store Setup Required
+        </h2>
+        <p className="text-text-secondary mt-2">
+          The local store must be set up before the app can be used. Please
+          complete the setup wizard to continue.
+        </p>
       </div>
-    </div>
+      <LocalStoreWizardUI
+        onClose={handleClose}
+        onInitializationChange={onInitializationChange}
+        onSuccess={onSuccess}
+        setLocalStorePath={setLocalStorePath}
+      />
+    </ModalDialog>
   );
 };
 

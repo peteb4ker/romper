@@ -570,8 +570,8 @@ BPM are saved with the kit. See
 
 ### UC-31 Trigger conditions
 
-Right-click a step to give it an A:B condition, so it fires only on some
-passes of the loop. See
+Right-click a step, or press `C` on the focused step, to give it an A:B
+condition, so it fires only on some passes of the loop. See
 [Trigger Conditions](../manual/step-sequencer.md#trigger-conditions-step-logic).
 
 - **Renderer:** `app/renderer/components/StepSequencerGrid.tsx` (`ConditionPopover`,

@@ -136,6 +136,7 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
 
       <TransportBlock label="BPM">
         <input
+          aria-label="Tempo (BPM)"
           className={`${BLOCK_CLASS} text-sm font-semibold text-center border border-border-strong bg-surface-2 tabular-nums cursor-ns-resize focus:cursor-text focus:outline-none focus:ring-2 focus:ring-accent-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
           data-testid="bpm-input"
           max={180}

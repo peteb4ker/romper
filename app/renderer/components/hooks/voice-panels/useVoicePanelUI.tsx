@@ -45,6 +45,7 @@ export function useVoicePanelUI({
         {voiceNameEditorHook.editing ? (
           <>
             <input
+              aria-label={`Name of voice ${voice}`}
               autoFocus
               className="ml-1 px-2 py-0.5 rounded border border-accent-primary text-sm font-semibold bg-surface-2 text-text-primary w-32"
               onChange={(e) => voiceNameEditorHook.setEditValue(e.target.value)}

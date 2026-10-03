@@ -120,7 +120,7 @@ const KitGridItem = React.memo(
             }
           }}
           ref={ref}
-          role="option"
+          role="gridcell"
           tabIndex={isSelected ? 0 : -1}
           {...rest}
         >

@@ -71,6 +71,8 @@ describe("KitHeader", () => {
       />,
     );
     const input = screen.getByDisplayValue("Edit Alias");
+    // [Q-06] RE-48: the field had no label
+    expect(screen.getByRole("textbox", { name: "Kit name" })).toBe(input);
     fireEvent.change(input, { target: { value: "New Alias" } });
     expect(setKitAliasInput).toHaveBeenCalledWith("New Alias");
     fireEvent.keyDown(input, { key: "Enter" });

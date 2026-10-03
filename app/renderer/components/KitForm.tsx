@@ -55,6 +55,7 @@ const KitForm: React.FC<KitFormProps> = ({
                 </span>
               ))}
               <input
+                aria-label="New tag"
                 autoFocus
                 className="border-b border-accent-primary bg-transparent text-xs text-accent-primary focus:outline-none px-1 w-20"
                 onChange={(e) => setTagInput(e.target.value)}

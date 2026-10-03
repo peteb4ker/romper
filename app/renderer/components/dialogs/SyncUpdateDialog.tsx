@@ -18,6 +18,8 @@ import type {
   SyncUpdateDialogProps,
 } from "./SyncUpdateDialog.types.js";
 
+import ModalDialog from "../shared/ModalDialog";
+
 export type { SyncChangeSummary };
 
 interface DismissButtonProps {
@@ -201,11 +203,16 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   const nothingToDo = fileCount === 0 && removals.length === 0;
 
   return (
-    <div
+    // A side panel without a backdrop, but modal all the same: the write
+    // works from the library as it was when it opened
+    <ModalDialog
+      aria-labelledby="sync-dialog-title"
       className={`fixed right-0 top-0 h-full w-[380px] z-50 flex flex-col card-grain border-l border-border-subtle shadow-[−8px_0_40px_rgba(0,0,0,0.3)] ${
         isClosing ? "animate-sync-panel-exit" : "animate-sync-panel-enter"
       }`}
       data-testid="sync-dialog"
+      onClose={isLoading ? undefined : handleClose}
+      overlayClassName={null}
     >
       {/* Header */}
       <div
@@ -221,7 +228,10 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
             size={16}
             weight="bold"
           />
-          <h2 className="text-sm font-semibold text-text-primary">
+          <h2
+            className="text-sm font-semibold text-text-primary"
+            id="sync-dialog-title"
+          >
             Write to SD Card
           </h2>
         </div>
@@ -633,7 +643,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </ModalDialog>
   );
 };
 

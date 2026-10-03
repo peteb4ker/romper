@@ -6,6 +6,7 @@ import {
 import React, { useEffect, useRef, useState } from "react";
 
 import { useSettings } from "../../utils/SettingsContext";
+import ModalDialog from "../shared/ModalDialog";
 import FilePickerButton from "../utils/FilePickerButton";
 
 interface InvalidLocalStoreDialogProps {
@@ -216,126 +217,133 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75">
-      <div className="mx-4 w-full max-w-md rounded-lg bg-surface-2 border border-border-subtle p-6 shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
-        <div className="mb-4 flex items-center space-x-3">
-          <WarningIcon className="text-accent-danger" size={24} />
-          <h2 className="text-lg font-semibold text-text-primary">
-            Invalid Local Store
-          </h2>
-        </div>
+    // Blocks the app until a store is chosen: Escape doesn't dismiss it
+    <ModalDialog
+      aria-labelledby="invalid-local-store-title"
+      className="mx-4 w-full max-w-md rounded-lg bg-surface-2 border border-border-subtle p-6 shadow-[0_8px_40px_rgba(0,0,0,0.4)]"
+      data-testid="invalid-local-store-dialog"
+      overlayClassName="fixed inset-0 z-50 flex items-center justify-center bg-black/75"
+    >
+      <div className="mb-4 flex items-center space-x-3">
+        <WarningIcon className="text-accent-danger" size={24} />
+        <h2
+          className="text-lg font-semibold text-text-primary"
+          id="invalid-local-store-title"
+        >
+          Invalid Local Store
+        </h2>
+      </div>
 
-        <div className="mb-4">
-          <p className="text-sm text-text-secondary mb-3">{errorMessage}</p>
-
-          {localStorePath && (
-            <div className="mb-3">
-              <PathDisplay
-                label="Current path"
-                path={localStorePath}
-                variant="current"
-              />
-            </div>
-          )}
-
-          <p className="text-sm text-text-tertiary">
-            If it's on a drive that isn't connected, connect the drive and click{" "}
-            <strong>Try Again</strong>. Otherwise choose another local store
-            directory, or set up a new one.
-          </p>
-          {retryError && (
-            <p
-              className="mt-2 text-sm text-accent-danger"
-              data-testid="retry-error"
-            >
-              {retryError}
-            </p>
-          )}
-        </div>
+      <div className="mb-4">
+        <p className="text-sm text-text-secondary mb-3">{errorMessage}</p>
 
         {localStorePath && (
-          <div className="mb-4">
-            <button
-              className="w-full rounded bg-accent-primary px-4 py-2 text-white hover:bg-accent-primary/80 disabled:opacity-50 flex items-center justify-center gap-2"
-              data-testid="retry-local-store-btn"
-              disabled={isRetrying || isUpdating || isSelecting}
-              onClick={handleTryAgain}
-              type="button"
-            >
-              <ArrowsClockwiseIcon
-                className={isRetrying ? "animate-spin" : undefined}
-                size={16}
-              />
-              {isRetrying ? "Checking..." : "Try Again"}
-            </button>
-          </div>
-        )}
-
-        {/* Directory Selection */}
-        <div className="mb-4">
-          <FilePickerButton
-            disabled={isUpdating}
-            icon={<FolderIcon size={16} />}
-            isSelecting={isSelecting}
-            onClick={handleSelectDirectory}
-          >
-            Choose Another Local Store Directory
-          </FilePickerButton>
-        </div>
-
-        {/* Selected Path Display */}
-        {selectedPath && (
-          <div className="mb-4">
+          <div className="mb-3">
             <PathDisplay
-              label="Selected path"
-              path={selectedPath}
-              variant="selected"
+              label="Current path"
+              path={localStorePath}
+              variant="current"
             />
           </div>
         )}
 
-        {/* Validation Result */}
-        {validationResult && (
-          <div className="mb-4">{renderValidationStatus()}</div>
+        <p className="text-sm text-text-tertiary">
+          If it's on a drive that isn't connected, connect the drive and click{" "}
+          <strong>Try Again</strong>. Otherwise choose another local store
+          directory, or set up a new one.
+        </p>
+        {retryError && (
+          <p
+            className="mt-2 text-sm text-accent-danger"
+            data-testid="retry-error"
+          >
+            {retryError}
+          </p>
         )}
-
-        {/* Action Buttons */}
-        <div className="flex flex-col gap-3">
-          <div className="flex space-x-3">
-            <button
-              className="flex-1 rounded bg-accent-primary px-4 py-2 text-white hover:bg-accent-primary/80 disabled:opacity-50"
-              disabled={
-                !selectedPath ||
-                !validationResult?.isValid ||
-                isUpdating ||
-                isSelecting
-              }
-              onClick={handleUpdatePath}
-            >
-              {isUpdating ? "Updating..." : "Use This Directory"}
-            </button>
-            <button
-              className="rounded bg-accent-danger px-4 py-2 text-white hover:bg-accent-danger/80 disabled:opacity-50"
-              disabled={isUpdating || isSelecting}
-              onClick={handleExitApp}
-            >
-              Exit App
-            </button>
-          </div>
-          {onRerunWizard && (
-            <button
-              className="w-full rounded bg-surface-4 px-4 py-2 text-text-primary hover:bg-surface-3 disabled:opacity-50"
-              data-testid="rerun-wizard-btn"
-              disabled={isUpdating || isSelecting || isRetrying}
-              onClick={onRerunWizard}
-              type="button"
-            >
-              Set Up a New Local Store
-            </button>
-          )}
-        </div>
       </div>
-    </div>
+
+      {localStorePath && (
+        <div className="mb-4">
+          <button
+            className="w-full rounded bg-accent-primary px-4 py-2 text-white hover:bg-accent-primary/80 disabled:opacity-50 flex items-center justify-center gap-2"
+            data-testid="retry-local-store-btn"
+            disabled={isRetrying || isUpdating || isSelecting}
+            onClick={handleTryAgain}
+            type="button"
+          >
+            <ArrowsClockwiseIcon
+              className={isRetrying ? "animate-spin" : undefined}
+              size={16}
+            />
+            {isRetrying ? "Checking..." : "Try Again"}
+          </button>
+        </div>
+      )}
+
+      {/* Directory Selection */}
+      <div className="mb-4">
+        <FilePickerButton
+          disabled={isUpdating}
+          icon={<FolderIcon size={16} />}
+          isSelecting={isSelecting}
+          onClick={handleSelectDirectory}
+        >
+          Choose Another Local Store Directory
+        </FilePickerButton>
+      </div>
+
+      {/* Selected Path Display */}
+      {selectedPath && (
+        <div className="mb-4">
+          <PathDisplay
+            label="Selected path"
+            path={selectedPath}
+            variant="selected"
+          />
+        </div>
+      )}
+
+      {/* Validation Result */}
+      {validationResult && (
+        <div className="mb-4">{renderValidationStatus()}</div>
+      )}
+
+      {/* Action Buttons */}
+      <div className="flex flex-col gap-3">
+        <div className="flex space-x-3">
+          <button
+            className="flex-1 rounded bg-accent-primary px-4 py-2 text-white hover:bg-accent-primary/80 disabled:opacity-50"
+            disabled={
+              !selectedPath ||
+              !validationResult?.isValid ||
+              isUpdating ||
+              isSelecting
+            }
+            onClick={handleUpdatePath}
+          >
+            {isUpdating ? "Updating..." : "Use This Directory"}
+          </button>
+          <button
+            className="rounded bg-accent-danger px-4 py-2 text-white hover:bg-accent-danger/80 disabled:opacity-50"
+            disabled={isUpdating || isSelecting}
+            onClick={handleExitApp}
+          >
+            Exit App
+          </button>
+        </div>
+        {onRerunWizard && (
+          <button
+            className="w-full rounded bg-surface-4 px-4 py-2 text-text-primary hover:bg-surface-3 disabled:opacity-50"
+            data-testid="rerun-wizard-btn"
+            disabled={isUpdating || isSelecting || isRetrying}
+            onClick={onRerunWizard}
+            type="button"
+          >
+            Set Up a New Local Store
+          </button>
+        )}
+      </div>
+    </ModalDialog>
   );
 };
 

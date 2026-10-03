@@ -21,7 +21,6 @@ interface KitBrowserProps {
   bulkScanProgress?: BulkScanProgress;
   // Filter functionality
   favoritesCount?: number;
-  getKitFavoriteState?: (kitName: string) => boolean;
   handleToggleFavorite?: (kitName: string) => void;
 
   handleToggleFavoritesFilter?: () => void;
@@ -226,7 +225,6 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
           bankNames={bankNames}
           emptyBank={emptyBank}
           focusedKit={focusedKit}
-          getKitFavoriteState={props.getKitFavoriteState}
           isCreatingKit={isCreatingKit}
           isFiltered={isFiltered}
           kitData={kits}

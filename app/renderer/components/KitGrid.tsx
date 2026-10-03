@@ -35,7 +35,6 @@ interface KitGridProps {
   bankNames: Record<string, string>;
   emptyBank?: null | string; // bank with no kits to show with an add-kit card (RE-64)
   focusedKit?: null | string; // externally controlled focus
-  getKitFavoriteState?: (kitName: string) => boolean; // Still needed for computing state
   isCreatingKit?: boolean;
   isFiltered?: boolean;
   kitData?: KitWithRelations[]; // Kit data from database
@@ -126,7 +125,6 @@ const useContainerSize = () => {
 interface GridRowData {
   bankNames: Record<string, string>;
   focusedIdx: null | number;
-  getKitFavoriteState?: (kitName: string) => boolean;
   gridWidth: number;
   isCreatingKit?: boolean;
   kitData?: KitWithRelations[];
@@ -245,7 +243,6 @@ const GridRowRenderer: React.FC<ListChildComponentProps<GridRowData>> = ({
           <div key={kit.name} style={{ flexShrink: 0, width: CARD_WIDTH }}>
             <KitGridCard
               focusedIdx={data.focusedIdx}
-              getKitFavoriteState={data.getKitFavoriteState}
               isNew={kit.name === data.newlyAnimatedKit}
               kit={kit}
               kitData={data.kitData}
@@ -284,7 +281,6 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       bankNames,
       emptyBank,
       focusedKit,
-      getKitFavoriteState,
       isCreatingKit,
       isFiltered,
       kitData,
@@ -430,7 +426,6 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
     const itemData: GridRowData = {
       bankNames,
       focusedIdx,
-      getKitFavoriteState,
       gridWidth: columnCount * CARD_WIDTH + (columnCount - 1) * GAP,
       isCreatingKit,
       kitData,

@@ -1,92 +1,72 @@
-import type { KitWithRelations } from "@romper/shared/db/schema";
+import type { DbResult, KitWithRelations } from "@romper/shared/db/schema";
 
 import { compareKitSlots } from "@romper/shared/kitUtilsShared";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 export interface UseKitFiltersOptions {
+  /** Every kit in the library, unfiltered; the filter badges count these */
+  allKits?: KitWithRelations[];
+  /** The kits to filter (already narrowed by search) */
   kits?: KitWithRelations[];
   onMessage?: (text: string, type?: string, duration?: number) => void;
+  /**
+   * The one favourite toggle (`useKitDataManager.toggleKitFavorite`). It
+   * writes the database and updates the kit list, so the browser and the
+   * editor read the same `is_favorite` (RE-37).
+   */
+  onToggleFavorite?: (
+    kitName: string,
+  ) => Promise<DbResult<{ isFavorite: boolean }>>;
 }
 
 /**
- * Hook for managing kit filtering functionality including favorites and modified filters
- * Extracted from KitBrowser to reduce component complexity
+ * Favourites and Modified filters for the kit browser. Favourite state is
+ * read from the kits themselves; this hook keeps no copy of it.
  */
-export function useKitFilters({ kits, onMessage }: UseKitFiltersOptions) {
-  // Task 20.1.4: Favorites filter state
+export function useKitFilters({
+  allKits,
+  kits,
+  onMessage,
+  onToggleFavorite,
+}: UseKitFiltersOptions) {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-  const [favoritesCount, setFavoritesCount] = useState(0);
-
-  // Track individual kit favorite states independently
-  const [kitFavoriteStates, setKitFavoriteStates] = useState<
-    Record<string, boolean>
-  >({});
-
-  // Use ref to always have access to the latest state in callbacks
-  const kitFavoriteStatesRef = useRef<Record<string, boolean>>({});
-
-  // Update ref whenever state changes
-  useEffect(() => {
-    kitFavoriteStatesRef.current = kitFavoriteStates;
-  }, [kitFavoriteStates]);
-
-  // Task 20.2.2: Modified filter state
   const [showModifiedOnly, setShowModifiedOnly] = useState(false);
-  const [modifiedCount, setModifiedCount] = useState(0);
 
-  // Task 20.1.4 & 20.2.2: Filter kits based on active filters and maintain sorted order
   const filteredKits = useMemo(() => {
     let filteredList = kits ?? [];
 
     if (showFavoritesOnly) {
-      filteredList = filteredList.filter((kit) => {
-        // Check local state first (for immediate updates), then database state
-        if (kit.name in kitFavoriteStates) {
-          return kitFavoriteStates[kit.name];
-        }
-        return kit.is_favorite || false;
-      });
+      filteredList = filteredList.filter((kit) => kit.is_favorite);
     }
 
     if (showModifiedOnly) {
       filteredList = filteredList.filter((kit) => kit.modified_since_sync);
     }
 
-    // Sort by kit slot names for consistent order (matches useKitNavigation.sortedKits)
-    return filteredList.sort((a, b) => compareKitSlots(a.name, b.name));
-  }, [
-    kits,
-    showFavoritesOnly,
-    showModifiedOnly,
-    kitFavoriteStates, // Direct dependency ensures immediate re-filtering when local state changes
-  ]);
+    // Sort a copy by slot (matches useKitNavigation.sortedKits); sorting in
+    // place would reorder the caller's array
+    return [...filteredList].sort((a, b) => compareKitSlots(a.name, b.name));
+  }, [kits, showFavoritesOnly, showModifiedOnly]);
 
-  // Task 20.1.2: Handler for favorites toggle
+  // The badges count the whole library, whatever search or filter is on
+  const libraryKits = allKits ?? kits;
+  const favoritesCount = useMemo(
+    () => libraryKits?.filter((kit) => kit.is_favorite).length ?? 0,
+    [libraryKits],
+  );
+  const modifiedCount = useMemo(
+    () => libraryKits?.filter((kit) => kit.modified_since_sync).length ?? 0,
+    [libraryKits],
+  );
+
   const handleToggleFavorite = useCallback(
     async (kitName: string) => {
+      if (!onToggleFavorite) return;
       try {
-        const result =
-          await globalThis.electronAPI.toggleKitFavorite?.(kitName);
-        if (result?.success) {
-          // Update individual kit favorite state immediately (for instant UI update)
-          const newFavoriteState = result.data?.isFavorite ?? false;
-          setKitFavoriteStates((prev) => ({
-            ...prev,
-            [kitName]: newFavoriteState,
-          }));
-
-          // Update favorites count for filter badge (lightweight)
-          const countResult =
-            await globalThis.electronAPI.getFavoriteKitsCount?.();
-          if (countResult?.success && typeof countResult.data === "number") {
-            setFavoritesCount(countResult.data);
-          }
-
-          // Note: No need to call onRefreshKits since local state update will trigger
-          // immediate re-filtering via kitFavoriteStates dependency in filteredKits memo
-        } else {
+        const result = await onToggleFavorite(kitName);
+        if (!result.success) {
           onMessage?.(
-            `Failed to toggle favorite: ${result?.error || "Unknown error"}`,
+            `Failed to toggle favorite: ${result.error || "Unknown error"}`,
             "error",
           );
         }
@@ -97,68 +77,20 @@ export function useKitFilters({ kits, onMessage }: UseKitFiltersOptions) {
         );
       }
     },
-    [onMessage], // Removed onRefreshKits and showFavoritesOnly since they're no longer needed
+    [onMessage, onToggleFavorite],
   );
 
-  // Task 20.1.4: Toggle favorites filter
   const handleToggleFavoritesFilter = useCallback(() => {
-    setShowFavoritesOnly(!showFavoritesOnly);
-  }, [showFavoritesOnly]);
+    setShowFavoritesOnly((shown) => !shown);
+  }, []);
 
-  // Task 20.2.2: Toggle modified filter
   const handleToggleModifiedFilter = useCallback(() => {
-    setShowModifiedOnly(!showModifiedOnly);
-  }, [showModifiedOnly]);
-
-  // Task 20.1.4: Fetch favorites count when kits change
-  useEffect(() => {
-    const fetchFavoritesCount = async () => {
-      // Don't fetch favorites count if there are no kits (no local store configured)
-      if (!kits || kits.length === 0) {
-        setFavoritesCount(0);
-        return;
-      }
-
-      try {
-        const result = await globalThis.electronAPI.getFavoriteKitsCount?.();
-        if (result?.success && typeof result.data === "number") {
-          setFavoritesCount(result.data);
-        } else {
-          setFavoritesCount(0);
-        }
-      } catch (error) {
-        console.error("Failed to fetch favorites count:", error);
-        setFavoritesCount(0);
-      }
-    };
-
-    void fetchFavoritesCount();
-  }, [kits]); // Re-fetch when kits change
-
-  // Task 20.2.2: Calculate modified count when kits change
-  useEffect(() => {
-    const modifiedKits = kits?.filter((kit) => kit.modified_since_sync) ?? [];
-    setModifiedCount(modifiedKits.length);
-  }, [kits]);
-
-  // Helper function to get favorite state for a kit (from local state or kit data)
-  const getKitFavoriteState = useCallback(
-    (kitName: string) => {
-      // Check local state first, then database state
-      if (kitName in kitFavoriteStates) {
-        return kitFavoriteStates[kitName];
-      }
-      // Fallback to kit data from server
-      const kit = kits?.find((k) => k.name === kitName);
-      return kit?.is_favorite || false;
-    },
-    [kits, kitFavoriteStates], // Include kitFavoriteStates dependency for consistency
-  );
+    setShowModifiedOnly((shown) => !shown);
+  }, []);
 
   return {
     favoritesCount,
     filteredKits,
-    getKitFavoriteState,
     handleToggleFavorite,
     handleToggleFavoritesFilter,
     handleToggleModifiedFilter,

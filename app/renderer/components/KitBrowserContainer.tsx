@@ -11,7 +11,6 @@ type KitBrowserContainerProps = Readonly<{
   bulkScanProgress?: BulkScanProgress;
   // Favorites filter functionality
   favoritesCount?: number;
-  getKitFavoriteState?: (kitName: string) => boolean;
   handleToggleFavorite?: (kitName: string) => void;
   handleToggleFavoritesFilter?: () => void;
   handleToggleModifiedFilter?: () => void;
@@ -45,7 +44,6 @@ const KitBrowserContainer: React.FC<KitBrowserContainerProps> = (props) => {
     bulkScanProgress,
     // Favorites filter props
     favoritesCount,
-    getKitFavoriteState,
     handleToggleFavorite,
     handleToggleFavoritesFilter,
     handleToggleModifiedFilter,
@@ -101,7 +99,6 @@ const KitBrowserContainer: React.FC<KitBrowserContainerProps> = (props) => {
       bulkScanProgress={bulkScanProgress}
       // Favorites filter props
       favoritesCount={favoritesCount}
-      getKitFavoriteState={getKitFavoriteState}
       handleToggleFavorite={handleToggleFavorite}
       handleToggleFavoritesFilter={handleToggleFavoritesFilter}
       handleToggleModifiedFilter={handleToggleModifiedFilter}

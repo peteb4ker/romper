@@ -9,7 +9,6 @@ import KitGridItem from "./KitGridItem";
 
 interface KitGridCardProps {
   focusedIdx: null | number;
-  getKitFavoriteState?: (kitName: string) => boolean;
   isNew?: boolean;
   kit: Kit;
   kitData?: KitWithRelations[] | null;
@@ -42,7 +41,6 @@ function hasSearchSampleMatches(
 
 export const KitGridCard: React.FC<KitGridCardProps> = ({
   focusedIdx,
-  getKitFavoriteState,
   isNew,
   kit,
   kitData,
@@ -63,9 +61,8 @@ export const KitGridCard: React.FC<KitGridCardProps> = ({
   const isSelected = focusedIdx === globalIndex;
   const kitDataItem = kitData?.find((k) => k.name === kit.name) ?? null;
 
-  const isFavorite = getKitFavoriteState
-    ? getKitFavoriteState(kit.name)
-    : kitDataItem?.is_favorite;
+  // The kit list is the one source of favourite state (RE-37)
+  const isFavorite = kitDataItem?.is_favorite ?? kit.is_favorite;
 
   const handleSelectKit = () => {
     if (isValid) {

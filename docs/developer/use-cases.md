@@ -197,8 +197,8 @@ describes it.
 - **Main:** `electron/main/applicationMenu.ts`; `electron/main/services/settingsService.ts`;
   `electron/main/localStoreValidator.ts`.
 - **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-78, RE-37 (favourite state can carry over by kit
-  name). With `ROMPER_LOCAL_PATH` set, a change has no effect.
+- **Known issues:** RE-78. With `ROMPER_LOCAL_PATH` set, a change has no
+  effect.
 
 ## Browse and organise
 
@@ -268,15 +268,15 @@ a favourite; the Favorites filter shows only those. See
 
 - **Renderer:** `app/renderer/components/KitGridItem.tsx` →
   `app/renderer/components/hooks/kit-management/useKitFilters.ts` (`handleToggleFavorite`,
-  `handleToggleFavoritesFilter`); `app/renderer/components/hooks/kit-management/useKitKeyboardNav.ts` ("F");
-  `app/renderer/components/KitHeader.tsx` → `app/renderer/components/hooks/kit-management/useKitDataManager.ts` (`toggleKitFavorite`).
-- **IPC:** `toggle-kit-favorite`, `get-favorite-kits-count`
+  `handleToggleFavoritesFilter`, the count from the kit list); `app/renderer/components/hooks/kit-management/useKitKeyboardNav.ts` ("F");
+  `app/renderer/components/KitHeader.tsx`; both toggle through
+  `app/renderer/components/hooks/kit-management/useKitDataManager.ts` (`toggleKitFavorite`), which
+  updates the kit list.
+- **IPC:** `toggle-kit-favorite`
   (`electron/main/db/favoritesIpcHandlers.ts`).
 - **Main:** `electron/main/db/operations/kitFavoritesOperations.ts`.
 - **Doc gaps:** the "F" shortcut isn't in the shortcut list.
-- **Known issues:** RE-37 (the browser and the editor keep separate
-  favourite state, so a star can go stale), RE-38 ("F" also jumps to bank
-  F). No e2e.
+- **Known issues:** RE-38 ("F" also jumps to bank F).
 
 ### UC-11 Filter to kits modified since the last sync
 

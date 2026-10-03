@@ -9,6 +9,8 @@ interface UseGlobalKeyboardShortcutsProps {
   currentKitName?: string;
   isEditMode?: boolean;
   onBackNavigation?: () => void;
+  /** Tells the user when an undo or redo fails (RE-40) */
+  onMessage?: (text: string, type?: string, duration?: number) => void;
 }
 
 /** True for text-entry targets, which keep native undo. */
@@ -26,8 +28,9 @@ export function useGlobalKeyboardShortcuts({
   currentKitName,
   isEditMode,
   onBackNavigation,
+  onMessage,
 }: UseGlobalKeyboardShortcutsProps) {
-  const undoRedo = useUndoRedo(currentKitName || "");
+  const undoRedo = useUndoRedo(currentKitName || "", onMessage);
 
   // Helper function to check if target is in input field or dialog
   const isTargetInInputOrDialog = useCallback(

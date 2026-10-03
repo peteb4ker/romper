@@ -15,7 +15,27 @@ import { useUndoRedoState } from "./useUndoRedoState";
 
 const log = createLogger("UNDO");
 
-export function useUndoRedo(kitName: string) {
+type MessageFn = (text: string, type?: string, duration?: number) => void;
+
+/**
+ * What the user sees when an undo or redo fails (RE-40): the change, from
+ * its description, and what to do. The reason stays in the log.
+ */
+export function undoFailureMessage(
+  action: AnyUndoAction,
+  direction: "redo" | "undo",
+): string {
+  const change = action.description
+    .replace(/ \(with reindexing\)$/, "")
+    .replace(/^./, (c) => c.toLowerCase());
+  return `Couldn't ${direction}: ${change}. Check the kit, then try again.`;
+}
+
+/**
+ * Undo and redo for the open kit. `onMessage` tells the user when one
+ * fails; the hook's `error` keeps the reason.
+ */
+export function useUndoRedo(kitName: string, onMessage?: MessageFn) {
   // State management hook
   const state = useUndoRedoState({ kitName });
 
@@ -38,6 +58,7 @@ export function useUndoRedo(kitName: string) {
     } else {
       log.warn("Undo operation failed:", result.error || "No error message");
       state.setError(result.error || "Failed to undo action");
+      onMessage?.(undoFailureMessage(actionToUndo, "undo"), "error");
     }
   };
 
@@ -50,15 +71,19 @@ export function useUndoRedo(kitName: string) {
       state.handleRedoSuccess(actionToRedo);
       state.emitRefreshEvent();
     } else {
+      log.warn("Redo operation failed:", result.error || "No error message");
       state.setError(result.error || "Failed to redo action");
+      onMessage?.(undoFailureMessage(actionToRedo, "redo"), "error");
     }
   };
 
   // Handle redo error
-  const handleRedoError = (error: unknown) => {
+  const handleRedoError = (error: unknown, actionToRedo: AnyUndoAction) => {
+    log.warn("Exception during redo:", error);
     state.setError(
       `Failed to redo action: ${error instanceof Error ? error.message : String(error)}`,
     );
+    onMessage?.(undoFailureMessage(actionToRedo, "redo"), "error");
   };
 
   // Undo the most recent action
@@ -81,16 +106,17 @@ export function useUndoRedo(kitName: string) {
       };
       handleUndoResult(operationResult, actionToUndo);
     } catch (error) {
-      log.error("Exception during undo:", error);
+      log.warn("Exception during undo:", error);
       state.setError(
         `Failed to undo action: ${error instanceof Error ? error.message : String(error)}`,
       );
+      onMessage?.(undoFailureMessage(actionToUndo, "undo"), "error");
     } finally {
       log.debug("Undo operation completed");
       state.setUndoing(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kitName, state.undoStack, state.isUndoing]);
+  }, [kitName, onMessage, state.undoStack, state.isUndoing]);
 
   // Redo the most recent undone action
   const redo = useCallback(async () => {
@@ -110,12 +136,12 @@ export function useUndoRedo(kitName: string) {
       };
       handleRedoResult(operationResult, actionToRedo);
     } catch (error) {
-      handleRedoError(error);
+      handleRedoError(error, actionToRedo);
     } finally {
       state.setRedoing(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kitName, state.redoStack, state.isRedoing]);
+  }, [kitName, onMessage, state.redoStack, state.isRedoing]);
 
   return {
     // Actions

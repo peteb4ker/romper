@@ -24,6 +24,8 @@ interface KitVoicePanelProps {
     sampleName: string,
     gainDb: number,
   ) => void;
+  // Tells the user about files a drop didn't add (RE-40)
+  onMessage?: (text: string, type?: string, duration?: number) => void;
   onPlay: (voice: number, sample: string) => void;
   // New props for drag-and-drop sample assignment (Task 5.2.2)
   onSampleAdd?: (
@@ -100,6 +102,7 @@ const KitVoicePanel: React.FC<
   linkedWith,
   onBatchDropComplete,
   onGainChange,
+  onMessage,
   onPlay,
   onSampleAdd,
   onSampleDelete,
@@ -148,6 +151,7 @@ const KitVoicePanel: React.FC<
     isEditable: effectiveEditable,
     kitName,
     onBatchDropComplete,
+    onMessage,
     onSampleAdd,
     onSampleMove,
     onSampleReplace,

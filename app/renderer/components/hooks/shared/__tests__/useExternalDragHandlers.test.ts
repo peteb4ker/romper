@@ -28,11 +28,15 @@ describe("useExternalDragHandlers", () => {
     processAssignment: vi.fn(),
   };
 
+  const onMessage = vi.fn();
+
   const defaultProps = {
     fileValidation: mockFileValidation,
     isEditable: true,
+    onMessage,
     sampleProcessing: mockSampleProcessing,
     samples: [],
+    voice: 2,
   };
 
   // Shared mock factory functions
@@ -214,7 +218,9 @@ describe("useExternalDragHandlers", () => {
       mockFileValidation.getFilePathFromDrop.mockResolvedValue(
         "/path/to/file.wav",
       );
-      mockFileValidation.validateDroppedFile.mockResolvedValue({ valid: true });
+      mockFileValidation.validateDroppedFile.mockResolvedValue({
+        validation: { valid: true },
+      });
       mockSampleProcessing.getCurrentKitSamples.mockResolvedValue([]);
       mockSampleProcessing.isDuplicateSample.mockResolvedValue(false);
       mockSampleProcessing.processAssignment.mockResolvedValue(true);
@@ -334,7 +340,9 @@ describe("useExternalDragHandlers", () => {
         useExternalDragHandlers(defaultProps),
       );
 
-      mockFileValidation.validateDroppedFile.mockResolvedValue(null);
+      mockFileValidation.validateDroppedFile.mockResolvedValue({
+        rejection: "notWav",
+      });
 
       const mockEvent = createMockEvent([createMockFile("invalid.txt")]);
       await result.current.handleDrop(mockEvent, 1);
@@ -368,7 +376,7 @@ describe("useExternalDragHandlers", () => {
       await result.current.handleDrop(mockEvent, 1);
 
       expect(console.error).toHaveBeenCalledWith(
-        "Error handling drop:",
+        "[ExternalDrag] Error handling drop:",
         expect.any(Error),
       );
     });
@@ -521,7 +529,7 @@ describe("useExternalDragHandlers", () => {
       vi.clearAllMocks();
       mockFileValidation.getFilePathFromDrop.mockResolvedValue("test.wav");
       mockFileValidation.validateDroppedFile.mockResolvedValue({
-        name: "test.wav",
+        validation: { name: "test.wav" },
       });
       mockSampleProcessing.getCurrentKitSamples.mockResolvedValue([
         "sample1.wav",
@@ -651,6 +659,169 @@ describe("useExternalDragHandlers", () => {
 
       // Only 2 slots available (10 and 11), so only 2 files can be added
       expect(mockSampleProcessing.processAssignment).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("[UC-19] [UC-36] telling the user about rejected files (RE-40)", () => {
+    const files = (...names: string[]) => names.map(createMockFile);
+
+    beforeEach(() => {
+      mockFileValidation.getFilePathFromDrop.mockImplementation(
+        async (file: { name: string }) => `/src/${file.name}`,
+      );
+      mockFileValidation.validateDroppedFile.mockResolvedValue({
+        validation: { isValid: true },
+      });
+      mockSampleProcessing.getCurrentKitSamples.mockResolvedValue([]);
+      mockSampleProcessing.isDuplicateSample.mockResolvedValue(false);
+      mockSampleProcessing.processAssignment.mockResolvedValue(true);
+    });
+
+    it("says nothing when every file is added", async () => {
+      const { result } = renderHook(() =>
+        useExternalDragHandlers(defaultProps),
+      );
+
+      await result.current.handleDrop(createMockEvent(files("a.wav")), 0);
+
+      expect(onMessage).not.toHaveBeenCalled();
+    });
+
+    it("names a file dropped on a full voice", async () => {
+      const { result } = renderHook(() =>
+        useExternalDragHandlers({
+          ...defaultProps,
+          samples: Array(12).fill("s.wav"),
+        }),
+      );
+
+      await result.current.handleDrop(createMockEvent(files("kick.wav")), 0);
+
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      expect(onMessage).toHaveBeenCalledWith(
+        "kick.wav wasn't added: voice 2 is full (12 samples). Delete one to make room.",
+        "warning",
+      );
+    });
+
+    it("names the files left over when the voice fills up", async () => {
+      const { result } = renderHook(() =>
+        useExternalDragHandlers({
+          ...defaultProps,
+          samples: Array(11).fill("s.wav"),
+        }),
+      );
+
+      await result.current.handleDrop(
+        createMockEvent(files("a.wav", "b.wav", "c.wav")),
+        0,
+      );
+
+      expect(mockSampleProcessing.processAssignment).toHaveBeenCalledTimes(1);
+      expect(onMessage).toHaveBeenCalledWith(
+        "b.wav and c.wav weren't added: voice 2 is full (12 samples). Delete one to make room.",
+        "warning",
+      );
+    });
+
+    it("names a duplicate", async () => {
+      mockSampleProcessing.isDuplicateSample.mockResolvedValue(true);
+      const { result } = renderHook(() =>
+        useExternalDragHandlers(defaultProps),
+      );
+
+      await result.current.handleDrop(createMockEvent(files("snare.wav")), 0);
+
+      expect(onMessage).toHaveBeenCalledWith(
+        "snare.wav wasn't added: it's already in voice 2.",
+        "warning",
+      );
+    });
+
+    it("names a file that isn't a WAV", async () => {
+      mockFileValidation.validateDroppedFile.mockResolvedValue({
+        rejection: "notWav",
+      });
+      const { result } = renderHook(() =>
+        useExternalDragHandlers(defaultProps),
+      );
+
+      await result.current.handleDrop(createMockEvent(files("notes.txt")), 0);
+
+      expect(onMessage).toHaveBeenCalledWith(
+        "notes.txt wasn't added: only WAV files can be added.",
+        "warning",
+      );
+    });
+
+    it("gives one message for several rejected files and adds the rest", async () => {
+      mockSampleProcessing.isDuplicateSample.mockImplementation(
+        async (_all: unknown[], filePath: string) =>
+          filePath === "/src/kick.wav",
+      );
+      mockFileValidation.validateDroppedFile.mockImplementation(
+        async (filePath: string) =>
+          filePath.endsWith(".txt")
+            ? { rejection: "notWav" }
+            : { validation: { isValid: true } },
+      );
+      const onBatchDropComplete = vi.fn();
+      const { result } = renderHook(() =>
+        useExternalDragHandlers({ ...defaultProps, onBatchDropComplete }),
+      );
+
+      await result.current.handleDrop(
+        createMockEvent(files("kick.wav", "notes.txt", "hat.wav", "a.txt")),
+        0,
+      );
+
+      expect(mockSampleProcessing.processAssignment).toHaveBeenCalledTimes(1);
+      expect(onBatchDropComplete).toHaveBeenCalled();
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      expect(onMessage).toHaveBeenCalledWith(
+        "kick.wav wasn't added: it's already in voice 2. " +
+          "notes.txt and a.txt weren't added: only WAV files can be added.",
+        "warning",
+      );
+    });
+
+    it("reports an error when the kit's samples can't be read", async () => {
+      mockSampleProcessing.getCurrentKitSamples.mockResolvedValue(null);
+      const { result } = renderHook(() =>
+        useExternalDragHandlers(defaultProps),
+      );
+
+      await result.current.handleDrop(
+        createMockEvent(files("a.wav", "b.wav")),
+        0,
+      );
+
+      expect(onMessage).toHaveBeenCalledWith(
+        "a.wav and b.wav weren't added: Romper couldn't check them. Try again.",
+        "error",
+      );
+    });
+
+    it("reports an error for the files left when the drop fails", async () => {
+      mockFileValidation.validateDroppedFile
+        .mockResolvedValueOnce({ validation: { isValid: true } })
+        .mockRejectedValueOnce(new Error("IPC channel closed"));
+      const { result } = renderHook(() =>
+        useExternalDragHandlers(defaultProps),
+      );
+
+      await result.current.handleDrop(
+        createMockEvent(files("a.wav", "b.wav", "c.wav")),
+        0,
+      );
+
+      expect(mockSampleProcessing.processAssignment).toHaveBeenCalledTimes(1);
+      expect(onMessage).toHaveBeenCalledWith(
+        "b.wav and c.wav weren't added: Romper couldn't check them. Try again.",
+        "error",
+      );
+      // The raw reason stays in the log
+      expect(onMessage.mock.calls[0][0]).not.toContain("IPC channel closed");
     });
   });
 });

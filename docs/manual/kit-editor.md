@@ -70,10 +70,11 @@ The primary way to add samples is drag and drop, in an editable kit:
 
 **Rules and limits:**
 
-- Only `.wav` files that Romper can read are added. Other files are skipped.
+- Only `.wav` files that Romper can read are added. Other files are skipped, and a message names them.
 - WAV files that aren't 44.1 kHz, 8- or 16-bit PCM are accepted; they're converted when you write to the card.
-- A maximum of 12 samples per voice. If you drop more files than the voice has free slots, the rest are skipped. A full voice turns red and shows "Voice is full (12 samples maximum)" when you drag over it.
-- A file that's already in the same voice is skipped. The same file can be used in other voices.
+- A maximum of 12 samples per voice. If you drop more files than the voice has free slots, the rest are skipped, and a message names them. A full voice turns red and shows "Voice is full (12 samples maximum)" when you drag over it.
+- A file that's already in the same voice is skipped, and a message says so. The same file can be used in other voices.
+- When a drop skips several files, one message lists them all with the reason for each, for example "kick.wav wasn't added: voice 2 is full (12 samples). Delete one to make room."
 - New samples always go after the voice's last sample, wherever you drop them.
 - Romper stores a reference to each file, not a copy, so keep your sample folders where they are.
 
@@ -91,7 +92,7 @@ When you write to the card:
 - A stereo file on a voice that isn't linked is mixed down to mono (the average of its two channels), because a mono voice plays one channel. The write summary marks the bank as needing conversion.
 - Mono files are written as they are on either kind of voice.
 
-To link a pair, the right-hand voice must be empty. Romper doesn't link a pair whose right-hand voice holds samples; delete or move them first.
+To link a pair, the right-hand voice must be empty. Romper doesn't link a pair whose right-hand voice holds samples, and says so; delete or move them first.
 
 ### Voice Names and Kit Type
 

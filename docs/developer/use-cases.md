@@ -50,8 +50,8 @@ item, remove it from every entry that lists it in the same PR.
 
 | Status | Use cases |
 |---|---|
-| supported | Q-04, UC-09, UC-14, UC-16, UC-18, UC-21, UC-23, UC-24, UC-25, UC-27, UC-28, UC-30, UC-31, UC-32, UC-33, UC-34 |
-| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, UC-01, UC-02, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-10, UC-11, UC-12, UC-13, UC-15, UC-17, UC-19, UC-26, UC-29, UC-35, UC-36, UC-37 |
+| supported | Q-04, UC-09, UC-14, UC-16, UC-18, UC-21, UC-23, UC-24, UC-25, UC-26, UC-27, UC-28, UC-30, UC-31, UC-32, UC-33, UC-34 |
+| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, UC-01, UC-02, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-10, UC-11, UC-12, UC-13, UC-15, UC-17, UC-19, UC-29, UC-35, UC-36, UC-37 |
 | not built | UC-20, UC-22 |
 
 The doc gaps below feed [`validation-fix-plan.md`](validation-fix-plan.md)
@@ -460,7 +460,8 @@ file is checked and added to the voice's next free slot, up to 12. See
   `app/renderer/components/hooks/shared/useExternalDragHandlers.ts` (`handleDragOver`, `handleDrop`),
   `app/renderer/components/hooks/shared/useFileValidation.ts` (`validateDroppedFile`);
   `app/renderer/components/hooks/sample-management/useSampleProcessing.ts` (`processAssignment`),
-  `app/renderer/components/hooks/sample-management/useSampleManagementOperations.ts` (`handleSampleAdd`). Drop zones have
+  `app/renderer/components/hooks/sample-management/useSampleManagementOperations.ts` (`handleSampleAdd`);
+  `app/renderer/components/utils/dropRejections.ts` (one message naming the files a drop didn't add). Drop zones have
   test ID `drop-zone-voice-N`.
 - **IPC:** `validate-sample-format`, `get-all-samples-for-kit`,
   `add-sample-to-slot` (`electron/main/db/sampleIpcHandlers.ts`).
@@ -468,8 +469,7 @@ file is checked and added to the voice's next free slot, up to 12. See
   (`addSampleToSlot`, which refuses the right-hand voice of a linked pair) →
   `electron/main/db/operations/sampleCrudOperations.ts` (`addSample`).
 - **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-40 (rejected drops only reach the console), RE-28,
-  RE-36.
+- **Known issues:** RE-28, RE-36.
 
 ### UC-20 Replace a sample
 
@@ -592,7 +592,7 @@ in the UI or the manual mentions it.
 
 ### UC-26 Undo and redo
 
-**Status:** partial
+**Status:** supported
 
 Cmd/Ctrl+Z and Shift+Cmd/Ctrl+Z (or Ctrl+Y), and Edit > Undo and Redo,
 undo sample adds, deletes and moves and sequencer edits in the open kit. A
@@ -610,7 +610,7 @@ focused text field keeps its own undo. See
   sample channels above.
 - **Main:** `electron/main/applicationMenu.ts` (Edit > Undo and Redo).
 - **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-40 (undo errors never reach the UI).
+- **Known issues:** none open.
 
 ## Voices and stereo
 
@@ -650,7 +650,7 @@ to mono when written. See
   `electron/main/services/validation/sampleValidator.ts`
   (`validateVoiceNotLinkedPartner`); at write time,
   `electron/main/services/syncMonoAnnotation.ts` (`annotateMonoConversion`).
-- **Known issues:** RE-40 (a refused link only reaches the console).
+- **Known issues:** none open.
 
 ## Audition
 
@@ -779,8 +779,7 @@ Rample's own `_save` folder alone. Cancel stops between files. See
   `electron/main/formatConverter.ts`; `shared/rampleCardLayout.ts`.
 - **Doc gaps:** none since the docs pass (#417).
 - **Known issues:** RE-35 (the Modified filter misses gain and bank edits),
-  RE-40 (the failure toast reads a stale value), RE-57 (contract drift in
-  `SyncChangeSummary` and `SyncProgress`), RE-23 (a cleared bank name is
+  RE-57 (contract drift in `SyncChangeSummary` and `SyncProgress`), RE-23 (a cleared bank name is
   still written), RE-48 (the write panel has no dialog role or Escape).
   No test above unit level cancels a write.
 
@@ -825,7 +824,7 @@ window. No manual page covers this; the requirements are in
 - **Doc gaps:** the PRD puts messages at the top centre and keeps errors
   until dismissed (`product-requirements.md:595, 829-832`); they're at the
   top right and errors go after 7 s. There's no message history.
-- **Known issues:** RE-40 (several failures never reach a message), RE-41
+- **Known issues:** RE-41
   (unhandled rejections; the renderer has no `unhandledrejection` handler),
   RE-48. No test above unit level renders the error boundary in the app.
 
@@ -941,8 +940,7 @@ marked not built. Build any that are wanted, then document them again.
 - Kit locking from the UI, and status badges on kit cards (UC-08, UC-17).
 - Importing factory samples after setup (UC-02).
 - Resuming a partial download (UC-02).
-- A warning when a dropped file is already in another voice; a visible
-  message for rejected drops (UC-19; RE-40).
+- A warning when a dropped file is already in another voice (UC-19).
 - Undo for gain, voice names, the editable switch, stereo links, kit
   create, duplicate and delete, and the sequencer's BPM, level, sample mode
   and slicer settings (UC-26).

@@ -116,6 +116,7 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
           kitName={props.kitName}
           onBatchDropComplete={logic.reloadKit}
           onKitUpdated={logic.reloadKit}
+          onMessage={props.onMessage}
           onPlay={logic.playback.handlePlay}
           onSampleAdd={logic.sampleManagement.handleSampleAdd}
           onSampleDelete={logic.sampleManagement.handleSampleDelete}

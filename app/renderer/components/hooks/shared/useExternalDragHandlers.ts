@@ -1,7 +1,13 @@
 import { useCallback, useState } from "react";
 
 import { createLogger } from "../../../utils/logger";
+import {
+  type DropRejection,
+  type DropRejectionReason,
+  formatDropRejections,
+} from "../../utils/dropRejections";
 import { isVoiceAtSampleLimit } from "../../utils/kitOperations";
+import { type DroppedFileCheck } from "./useFileValidation";
 
 const log = createLogger("ExternalDrag");
 
@@ -9,10 +15,12 @@ export interface UseExternalDragHandlersOptions {
   // Processing hooks
   fileValidation: {
     getFilePathFromDrop: (file: File) => Promise<string>;
-    validateDroppedFile: (filePath: string) => Promise<unknown>;
+    validateDroppedFile: (filePath: string) => Promise<DroppedFileCheck>;
   };
   isEditable: boolean;
   onBatchDropComplete?: () => void;
+  /** Tells the user which dropped files weren't added, and why */
+  onMessage?: (text: string, type?: string, duration?: number) => void;
   sampleProcessing: {
     getCurrentKitSamples: () => Promise<null | unknown[]>;
     isDuplicateSample: (
@@ -28,6 +36,8 @@ export interface UseExternalDragHandlersOptions {
     ) => Promise<boolean>;
   };
   samples: string[];
+  /** The voice files are dropped on, for messages */
+  voice: number;
 }
 
 /**
@@ -38,8 +48,10 @@ export function useExternalDragHandlers({
   fileValidation,
   isEditable,
   onBatchDropComplete,
+  onMessage,
   sampleProcessing,
   samples,
+  voice,
 }: UseExternalDragHandlersOptions) {
   const [dragOverSlot, setDragOverSlot] = useState<null | number>(null);
   const [dropZone, setDropZone] = useState<{
@@ -85,6 +97,15 @@ export function useExternalDragHandlers({
     setDropZone(null);
   }, []);
 
+  // One message for every file the drop didn't add (RE-40)
+  const reportRejections = useCallback(
+    (rejections: DropRejection[]) => {
+      const message = formatDropRejections(rejections, voice);
+      if (message) onMessage?.(message.text, message.type);
+    },
+    [onMessage, voice],
+  );
+
   const handleDrop = useCallback(
     async (e: React.DragEvent, slotNumber: number) => {
       e.preventDefault();
@@ -92,23 +113,36 @@ export function useExternalDragHandlers({
 
       if (!isEditable) return;
 
-      // Check if drop is blocked due to 12-sample limit
-      if (isVoiceAtSampleLimit(samples)) {
-        log.debug("Drop blocked: voice already has 12 samples");
-        setDragOverSlot(null);
-        setDropZone(null);
-        return;
-      }
-
       setDragOverSlot(null);
       setDropZone(null);
 
       const files = Array.from(e.dataTransfer.files);
       if (files.length === 0) return;
 
+      const rejections: DropRejection[] = [];
+      const reject = (from: number, reason: DropRejectionReason) => {
+        for (const file of files.slice(from)) {
+          rejections.push({ fileName: file.name, reason });
+        }
+      };
+
+      // Check if drop is blocked due to 12-sample limit
+      if (isVoiceAtSampleLimit(samples)) {
+        log.debug("Drop blocked: voice already has 12 samples");
+        reject(0, "full");
+        reportRejections(rejections);
+        return;
+      }
+
+      // The file being handled, so a failure can name it and the rest
+      let current = 0;
+      let addedCount = 0;
       try {
         const allSamples = await sampleProcessing.getCurrentKitSamples();
-        if (!allSamples) return;
+        if (!allSamples) {
+          reject(0, "checkFailed");
+          return;
+        }
 
         // Track occupied slots during this batch to avoid stale state
         const occupiedSlots = new Set<number>();
@@ -116,9 +150,8 @@ export function useExternalDragHandlers({
           if (s) occupiedSlots.add(i);
         });
 
-        let addedCount = 0;
-
-        for (const file of files) {
+        for (; current < files.length; current++) {
+          const file = files[current];
           const filePath = await fileValidation.getFilePathFromDrop(file);
           log.debug("Processing dropped file:", filePath);
 
@@ -126,11 +159,16 @@ export function useExternalDragHandlers({
             allSamples,
             filePath,
           );
-          if (isDuplicate) continue;
+          if (isDuplicate) {
+            rejections.push({ fileName: file.name, reason: "duplicate" });
+            continue;
+          }
 
-          const formatValidation =
-            await fileValidation.validateDroppedFile(filePath);
-          if (!formatValidation) continue;
+          const check = await fileValidation.validateDroppedFile(filePath);
+          if ("rejection" in check) {
+            rejections.push({ fileName: file.name, reason: check.rejection });
+            continue;
+          }
 
           // Find next available slot, starting from the drop target
           let targetSlot = -1;
@@ -143,13 +181,14 @@ export function useExternalDragHandlers({
           }
 
           if (targetSlot < 0) {
-            console.warn("No available slots remaining in this voice");
+            log.debug("No available slots remaining in this voice");
+            reject(current, "full");
             break;
           }
 
           await sampleProcessing.processAssignment(
             filePath,
-            formatValidation,
+            check.validation,
             allSamples,
             slotNumber,
             targetSlot,
@@ -158,18 +197,22 @@ export function useExternalDragHandlers({
           occupiedSlots.add(targetSlot);
           addedCount++;
         }
-
-        if (addedCount > 0 && onBatchDropComplete) {
-          onBatchDropComplete();
-        }
       } catch (error) {
-        console.error("Error handling drop:", error);
+        log.error("Error handling drop:", error);
+        reject(current, "checkFailed");
+      } finally {
+        reportRejections(rejections);
+      }
+
+      if (addedCount > 0 && onBatchDropComplete) {
+        onBatchDropComplete();
       }
     },
     [
       isEditable,
       onBatchDropComplete,
       fileValidation,
+      reportRejections,
       sampleProcessing,
       samples,
     ],

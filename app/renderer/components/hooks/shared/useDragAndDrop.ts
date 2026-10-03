@@ -8,6 +8,8 @@ export interface UseDragAndDropOptions {
   isEditable: boolean;
   kitName: string;
   onBatchDropComplete?: () => void;
+  /** Tells the user about files a drop didn't add */
+  onMessage?: (text: string, type?: string, duration?: number) => void;
   onSampleAdd?: (
     voice: number,
     slotNumber: number,
@@ -51,6 +53,7 @@ export function useDragAndDrop({
   isEditable,
   kitName,
   onBatchDropComplete,
+  onMessage,
   onSampleAdd,
   onSampleMove,
   onSampleReplace,
@@ -79,8 +82,10 @@ export function useDragAndDrop({
     fileValidation,
     isEditable: effectiveEditable,
     onBatchDropComplete,
+    onMessage,
     sampleProcessing,
     samples,
+    voice,
   });
 
   // Internal drag handlers hook

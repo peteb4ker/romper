@@ -101,11 +101,16 @@ export function useKitSync({ onMessage, onRefreshKits }: UseKitSyncOptions) {
             log.error("Failed to refresh kit data:", error);
           }
         }
-      } else if (onMessage && syncError) {
-        onMessage(`Write failed: ${syncError}`, "error");
+      } else {
+        // Not syncError: this render's value is from before the write, so
+        // it's never the reason (RE-40). The write panel shows the reason.
+        onMessage?.(
+          "The write to the SD card didn't finish. The write panel says why; fix that, then write again.",
+          "error",
+        );
       }
     },
-    [startSync, onMessage, syncError, onRefreshKits],
+    [startSync, onMessage, onRefreshKits],
   );
 
   // Handler to close sync dialog

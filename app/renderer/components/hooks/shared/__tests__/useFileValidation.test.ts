@@ -1,7 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useFileValidation } from "../useFileValidation";
+import { rejectionForIssues, useFileValidation } from "../useFileValidation";
 
 describe("useFileValidation", () => {
   beforeEach(() => {
@@ -104,113 +104,35 @@ describe("useFileValidation", () => {
     });
   });
 
-  describe("handleValidationIssues", () => {
-    it("should reject and show error for critical issues", async () => {
-      const { result } = renderHook(() => useFileValidation());
-
-      const validation = {
-        issues: [
+  describe("[UC-19] rejectionForIssues (RE-40)", () => {
+    it("rejects a file that isn't a WAV", () => {
+      expect(
+        rejectionForIssues([
           { message: "Unsupported extension", type: "extension" },
           { message: "File access denied", type: "fileAccess" },
-          { message: "Bitrate warning", type: "bitrate" },
-        ],
-      };
-
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
-
-      const canContinue =
-        await result.current.handleValidationIssues(validation);
-
-      expect(canContinue).toBe(false);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Cannot assign sample due to critical format issues:",
-        "Unsupported extension, File access denied",
-      );
-
-      consoleErrorSpy.mockRestore();
+        ]),
+      ).toBe("notWav");
     });
 
-    it("should allow and show warning for non-critical issues", async () => {
-      const { result } = renderHook(() => useFileValidation());
+    it("rejects a WAV that can't be read", () => {
+      expect(
+        rejectionForIssues([{ message: "Cannot read", type: "fileAccess" }]),
+      ).toBe("unreadable");
+      expect(
+        rejectionForIssues([
+          { message: "Invalid audio format", type: "invalidFormat" },
+        ]),
+      ).toBe("unreadable");
+    });
 
-      const validation = {
-        issues: [
-          { message: "High bitrate", type: "bitrate" },
+    it("accepts issues that are converted at write time", () => {
+      expect(
+        rejectionForIssues([
+          { message: "High bit depth", type: "bitDepth" },
           { message: "Unsupported sample rate", type: "sampleRate" },
-        ],
-      };
-
-      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation();
-
-      const canContinue =
-        await result.current.handleValidationIssues(validation);
-
-      expect(canContinue).toBe(true);
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        "Sample has format issues that will require conversion during SD card sync:",
-        "High bitrate, Unsupported sample rate",
-      );
-
-      consoleWarnSpy.mockRestore();
-    });
-
-    it("should handle invalidFormat as critical issue", async () => {
-      const { result } = renderHook(() => useFileValidation());
-
-      const validation = {
-        issues: [{ message: "Invalid audio format", type: "invalidFormat" }],
-      };
-
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
-
-      const canContinue =
-        await result.current.handleValidationIssues(validation);
-
-      expect(canContinue).toBe(false);
-
-      consoleErrorSpy.mockRestore();
-    });
-
-    it("should handle empty issues array", async () => {
-      const { result } = renderHook(() => useFileValidation());
-
-      const validation = {
-        issues: [],
-      };
-
-      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation();
-
-      const canContinue =
-        await result.current.handleValidationIssues(validation);
-
-      expect(canContinue).toBe(true);
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        "Sample has format issues that will require conversion during SD card sync:",
-        "",
-      );
-
-      consoleWarnSpy.mockRestore();
-    });
-
-    it("should handle mixed critical and non-critical issues", async () => {
-      const { result } = renderHook(() => useFileValidation());
-
-      const validation = {
-        issues: [
-          { message: "Unsupported extension", type: "extension" },
-          { message: "High bitrate", type: "bitrate" },
-          { message: "File access denied", type: "fileAccess" },
-        ],
-      };
-
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
-
-      const canContinue =
-        await result.current.handleValidationIssues(validation);
-
-      expect(canContinue).toBe(false);
-
-      consoleErrorSpy.mockRestore();
+        ]),
+      ).toBeNull();
+      expect(rejectionForIssues([])).toBeNull();
     });
   });
 
@@ -231,12 +153,12 @@ describe("useFileValidation", () => {
 
       const { result } = renderHook(() => useFileValidation());
 
-      const validation = await result.current.validateDroppedFile(testFilePath);
+      const check = await result.current.validateDroppedFile(testFilePath);
 
       expect(window.electronAPI.validateSampleFormat).toHaveBeenCalledWith(
         testFilePath,
       );
-      expect(validation).toEqual(mockValidation);
+      expect(check).toEqual({ validation: mockValidation });
     });
 
     it("should handle invalid file with resolvable issues", async () => {
@@ -251,18 +173,14 @@ describe("useFileValidation", () => {
         success: true,
       });
 
-      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation();
-
       const { result } = renderHook(() => useFileValidation());
 
-      const validation = await result.current.validateDroppedFile(testFilePath);
+      const check = await result.current.validateDroppedFile(testFilePath);
 
-      expect(validation).toEqual(mockValidation);
-
-      consoleWarnSpy.mockRestore();
+      expect(check).toEqual({ validation: mockValidation });
     });
 
-    it("should return null for invalid file with critical issues", async () => {
+    it("rejects a file with critical issues as not a WAV", async () => {
       const mockValidation = {
         issues: [{ message: "Unsupported extension", type: "extension" }],
         isValid: false,
@@ -274,95 +192,91 @@ describe("useFileValidation", () => {
         success: true,
       });
 
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
-
       const { result } = renderHook(() => useFileValidation());
 
-      const validation = await result.current.validateDroppedFile(testFilePath);
+      const check = await result.current.validateDroppedFile(testFilePath);
 
-      expect(validation).toBeNull();
-
-      consoleErrorSpy.mockRestore();
+      expect(check).toEqual({ rejection: "notWav" });
     });
 
-    it("should return null when electronAPI not available", async () => {
+    it("can't check the file when electronAPI isn't available", async () => {
       const originalAPI = (window as unknown).electronAPI;
       (window as unknown).electronAPI = undefined;
 
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation();
 
       const { result } = renderHook(() => useFileValidation());
 
-      const validation = await result.current.validateDroppedFile(testFilePath);
+      const check = await result.current.validateDroppedFile(testFilePath);
 
-      expect(validation).toBeNull();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Format validation not available",
+      expect(check).toEqual({ rejection: "checkFailed" });
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        "[FileValidation] Format validation not available",
       );
 
-      consoleErrorSpy.mockRestore();
+      consoleWarnSpy.mockRestore();
       (window as unknown).electronAPI = originalAPI;
     });
 
-    it("should return null when validateSampleFormat method not available", async () => {
+    it("can't check the file when validateSampleFormat isn't available", async () => {
       const originalAPI = (window as unknown).electronAPI;
       (window as unknown).electronAPI = {}; // Missing validateSampleFormat
 
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation();
 
       const { result } = renderHook(() => useFileValidation());
 
-      const validation = await result.current.validateDroppedFile(testFilePath);
+      const check = await result.current.validateDroppedFile(testFilePath);
 
-      expect(validation).toBeNull();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Format validation not available",
+      expect(check).toEqual({ rejection: "checkFailed" });
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        "[FileValidation] Format validation not available",
       );
 
-      consoleErrorSpy.mockRestore();
+      consoleWarnSpy.mockRestore();
       (window as unknown).electronAPI = originalAPI;
     });
 
-    it("should return null when validation API call fails", async () => {
+    it("can't check the file when the validation call fails", async () => {
       vi.mocked(window.electronAPI.validateSampleFormat).mockResolvedValue({
         error: "Validation service unavailable",
         success: false,
       });
 
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation();
 
       const { result } = renderHook(() => useFileValidation());
 
-      const validation = await result.current.validateDroppedFile(testFilePath);
+      const check = await result.current.validateDroppedFile(testFilePath);
 
-      expect(validation).toBeNull();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Format validation failed:",
+      expect(check).toEqual({ rejection: "checkFailed" });
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        "[FileValidation] Format validation failed:",
         "Validation service unavailable",
       );
 
-      consoleErrorSpy.mockRestore();
+      consoleWarnSpy.mockRestore();
     });
 
-    it("should return null when validation has no data", async () => {
+    it("can't check the file when validation returns no data", async () => {
       vi.mocked(window.electronAPI.validateSampleFormat).mockResolvedValue({
         data: null,
         success: true,
       });
 
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation();
 
       const { result } = renderHook(() => useFileValidation());
 
-      const validation = await result.current.validateDroppedFile(testFilePath);
+      const check = await result.current.validateDroppedFile(testFilePath);
 
-      expect(validation).toBeNull();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Format validation failed:",
+      expect(check).toEqual({ rejection: "checkFailed" });
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        "[FileValidation] Format validation failed:",
         undefined,
       );
 
-      consoleErrorSpy.mockRestore();
+      consoleWarnSpy.mockRestore();
     });
   });
 
@@ -372,7 +286,6 @@ describe("useFileValidation", () => {
 
       expect(result.current).toEqual({
         getFilePathFromDrop: expect.any(Function),
-        handleValidationIssues: expect.any(Function),
         validateDroppedFile: expect.any(Function),
       });
     });

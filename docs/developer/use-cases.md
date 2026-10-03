@@ -218,11 +218,9 @@ See [Navigating Banks](../manual/kit-browser.md#navigating-banks) and
   `app/renderer/components/hooks/useKitGridKeyboard.ts`.
 - **IPC:** `get-all-kits`.
 - **Main:** `electron/main/db/operations/kitCrudOperations.ts` (`getKits`).
-- **Doc gaps:** arrow keys and Enter (`kit-browser.md:126-130`,
-  `keyboard-shortcuts.md:13-17`) do nothing from the first kit, the
-  default focus (RE-39).
-- **Known issues:** RE-39, RE-38 (letter hotkeys clash with "F"), RE-36,
-  RE-47, RE-48.
+- **Doc gaps:** none.
+- **Known issues:** RE-38 (letter hotkeys clash with "F"), RE-36, RE-47,
+  RE-48.
 
 ### UC-08 Read kit card details
 

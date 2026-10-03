@@ -82,6 +82,33 @@ the pieces fit.
   A spec that triggers errors on purpose declares them, keyed by the reason:
   `test.use({ expectedMessages: { "<reason>": { pattern, sources } } })`. Unexpected
   warnings are listed as test annotations and don't fail the test.
+- Known noise: main-process stderr that Chromium, the OS or the test
+  harness writes, not Romper, is listed in
+  `tests/validation/support/known-noise.ts`. The e2e guard and the
+  full-pipeline validation both ignore a stderr line that matches an entry
+  on one of its platforms; every other stderr line stays an error (a
+  warning if it says "warn"), and the list never applies to renderer
+  console errors, page errors or the UI. When a run fails on a line
+  Romper didn't write, add to the list rather than to one spec:
+  - one entry per source (the Chromium component, the OS service); a new
+    line from a listed source widens that entry's pattern;
+  - a pattern as narrow as the line allows (Chromium's file name and the
+    message, not just `ERROR`);
+  - the `platforms` it's been seen on, or its cause applies to; it's
+    still an error elsewhere;
+  - a `reason` saying why it isn't Romper's error (required; the unit test
+    fails without it), and a `link` to the issue, upstream bug or
+    upstream code that logs it where there is one;
+  - a real line from the failing run in `examples`, which the unit test
+    checks the pattern matches.
+
+  An error Romper itself logs on purpose isn't noise: declare it in the
+  spec's `expectedMessages`.
+- Pull requests that touch the app, the e2e specs or how they run
+  (`electron/`, `app/`, `shared/`, `tests/e2e/`, `tests/utils/`,
+  `tests/validation/support/`, the e2e workflow, the Playwright config,
+  `package.json` or the lockfile) run e2e on Linux, macOS and Windows;
+  other PRs run Linux only. Pushes to `main` run all three.
 - The full-pipeline validation (`tests/validation/*.validation.ts`) is not
   part of any suite. `npm run validate:full` builds the app, then sets up a
   store from the factory archive, adds a kit with stereo samples, writes it

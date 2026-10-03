@@ -203,8 +203,12 @@ jobs:
 
   e2e:
     needs: preflight
+    # pull-requests: read for e2e.yml's plan job, which lists a PR's files
+    # (on a tag push it doesn't, but a called workflow's jobs can't ask for
+    # more than the caller grants)
     permissions:
       contents: read
+      pull-requests: read
     uses: ./.github/workflows/e2e.yml
 
   # The full-pipeline rehearsal on all three platforms: factory archive to a

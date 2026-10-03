@@ -9,13 +9,18 @@
  *   panel's warnings, errors, invalid files and removals.
  *
  * Each run declares the messages it expects (with a reason); anything else
- * at warning or error level is unexpected and fails the run.
+ * at warning or error level is unexpected and fails the run. Main-process
+ * stderr from Chromium, the OS or the harness is expected everywhere
+ * through the known-noise list (./known-noise.ts); any other stderr line is
+ * an error, or a warning if it says "warn".
  */
 import type {
   ConsoleMessage,
   ElectronApplication,
   Page,
 } from "@playwright/test";
+
+import { matchKnownNoise } from "./known-noise";
 
 export interface CapturedMessage {
   at: string;
@@ -213,8 +218,26 @@ export class MessageCollector {
     }
   }
 
-  classify(expectations: Expectation[]): ClassifiedMessage[] {
+  /**
+   * Marks each message expected or not. Main-process stderr that matches a
+   * known-noise entry (Chromium, the OS, the harness) is expected on every
+   * run; everything else is expected only if one of `expectations` matches.
+   */
+  classify(
+    expectations: Expectation[],
+    platform: string = process.platform,
+  ): ClassifiedMessage[] {
     return this.messages.map((m) => {
+      const noise =
+        m.source === "main-stderr"
+          ? matchKnownNoise(m.text, platform)
+          : undefined;
+      if (noise) {
+        return {
+          ...m,
+          expectedBecause: `known noise (${noise.source}): ${noise.reason}`,
+        };
+      }
       const match = expectations.find(
         (e) =>
           (!e.sources || e.sources.includes(m.source)) &&

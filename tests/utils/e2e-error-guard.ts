@@ -8,7 +8,10 @@
  * errors, error toasts, the error boundary and the wizard's error, and the
  * main process's stderr. When the test ends, any error-level message that
  * isn't expected fails it. Unexpected warnings are listed as annotations
- * and don't fail it.
+ * and don't fail it. Main-process stderr from Chromium, the OS or the
+ * harness is expected everywhere through the known-noise list
+ * (tests/validation/support/known-noise.ts); see its header for when to
+ * add an entry.
  *
  * A spec declares what it expects, keyed by the reason it's expected, as
  * the validation does:
@@ -106,7 +109,9 @@ async function check(messages: ClassifiedMessage[], testInfo: TestInfo) {
     throw new Error(
       [
         `The app reported ${errors.length} unexpected error(s). Fix them, or ` +
-          "declare them in the spec's expectedMessages with a reason:",
+          "declare them in the spec's expectedMessages with a reason. " +
+          "Main-process stderr from Chromium or the OS, not Romper, goes " +
+          "in tests/validation/support/known-noise.ts instead:",
         ...errors.map((m) => `  [${m.source}] ${m.text}`),
       ].join("\n"),
     );

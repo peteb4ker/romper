@@ -1,44 +1,16 @@
 /**
- * Messages every run of the app produces, whatever it does: Chromium's own
- * logging about the machine, the Node inspector Playwright drives main
- * through, and one known Low finding. The full-pipeline validation and the
+ * Messages every run of the app produces that a test can't tell from
+ * Romper's own: known Low findings. The full-pipeline validation and the
  * e2e error guard both start from these.
+ *
+ * Main-process stderr from Chromium, the OS or the test harness isn't
+ * listed here: `MessageCollector.classify` ignores it through the
+ * known-noise list (./known-noise.ts), which has the policy for adding to
+ * it.
  */
 import type { Expectation } from "./collector";
 
 export const BASELINE_EXPECTED: Expectation[] = [
-  // Chromium's own logging about the CI machine, not about Romper
-  {
-    pattern: /:ERROR:dbus\/(bus|object_proxy)\.cc:\d+\]/,
-    reason: "Linux CI runners have no D-Bus session for Chromium to connect to",
-    sources: ["main-stderr"],
-  },
-  {
-    pattern:
-      /:ERROR:gpu\/ipc\/client\/command_buffer_proxy_impl\.cc:\d+\] (ContextResult::kTransientFailure|GPU state invalid after WaitForGetOffsetInRange)/,
-    reason: "Chromium's GPU process fails on the GPU-less Linux CI runners",
-    sources: ["main-stderr"],
-  },
-  {
-    pattern:
-      /:ERROR:sandbox\/mac\/system_services\.cc:\d+\] SetApplicationIsDaemon/,
-    reason:
-      "Chromium logs this on macOS runners when the app runs as an accessory (hidden window)",
-    sources: ["main-stderr"],
-  },
-  {
-    pattern:
-      /:ERROR:base\/apple\/mach_port_rendezvous\.cc:\d+\] mach_msg send: \(ipc\/send\) invalid destination port/,
-    reason:
-      "Chromium logs this on macOS runners when a helper process it signals has already exited",
-    sources: ["main-stderr"],
-  },
-  {
-    pattern:
-      /^(Debugger (listening|ending) on ws:|For help, see: https:\/\/nodejs\.org|Waiting for the debugger to disconnect)/,
-    reason: "Playwright drives the main process through the Node inspector",
-    sources: ["main-stderr"],
-  },
   {
     pattern: /'frame-ancestors' is ignored when delivered via a <meta> element/,
     reason: "frame-ancestors in a <meta> CSP has no effect (register: Low)",

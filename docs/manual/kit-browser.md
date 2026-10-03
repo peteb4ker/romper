@@ -109,7 +109,7 @@ Click the **Modified** toggle to show only kits marked as changed since they wer
 
 Use **File > Scan All** (`Cmd+Shift+S` / `Ctrl+Shift+S`) to rescan your library. After you confirm, Romper reads the bank names from the RTF label files, then re-reads each kit's folder in your local store. New WAV files in a read-only kit's folder are added (up to 12 per voice), missing WAV details are filled in, and voices without a name are named from their samples. Existing samples, gain and slot order are kept, and editable kits never gain samples from their folders. Banks are also scanned automatically at startup.
 
-Scan All only scans the kits the browser is currently showing, so clear any search or filter first to scan them all. With a kit open in the Kit Editor, it scans the bank names only.
+Scan All scans every kit in your library, whatever the search or filters show, and also works with a kit open in the Kit Editor. In the Kit Browser, the header shows its progress; in the Kit Editor, a message shows the result when it finishes.
 
 To scan a single kit, open it in the Kit Editor and click **Scan Kit** or press `/`. In an editable kit, this only names voices: each voice whose first sample's filename suggests a name (such as "Kick") gets that name, unless it already has one.
 

@@ -26,14 +26,6 @@ vi.mock("../hooks/wizard/useLocalStoreWizard", () => ({
   }),
 }));
 
-vi.mock("../hooks/kit-management/useKitScan", () => ({
-  useKitScan: () => ({
-    handleScanAllKits: vi.fn(),
-    rescanAllVoiceNames: vi.fn(),
-    scanningProgress: null,
-  }),
-}));
-
 vi.mock("../hooks/kit-management/useKitBrowser", () => ({
   useKitBrowser: vi.fn(),
 }));
@@ -551,18 +543,25 @@ describe("KitBrowser", () => {
     });
   });
 
-  describe("imperative handle ref", () => {
-    it("exposes handleScanAllKits through ref", () => {
-      const ref = React.createRef();
-
+  describe("[UC-13] Scan All progress", () => {
+    it("shows the progress KitsView passes in (RE-43)", () => {
       render(
         <MockMessageDisplayProvider>
-          <KitBrowser {...baseProps} ref={ref} />
+          <KitBrowser
+            {...baseProps}
+            bulkScanProgress={{
+              current: 1,
+              currentKit: "A0",
+              status: "scanning",
+              total: 2,
+            }}
+          />
         </MockMessageDisplayProvider>,
       );
 
-      // The ref should expose handleScanAllKits method
-      expect(typeof ref.current?.handleScanAllKits).toBe("function");
+      expect(screen.getByTestId("bulk-scan-progress")).toHaveTextContent(
+        "1/2: A0",
+      );
     });
   });
 

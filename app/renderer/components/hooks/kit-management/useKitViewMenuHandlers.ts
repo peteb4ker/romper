@@ -1,7 +1,3 @@
-import type { KitBrowserHandle } from "@romper/app/renderer/components/KitBrowser";
-
-import React, { useRef } from "react";
-
 import { createLogger } from "../../../utils/logger";
 import { useBankScanning } from "../shared/useBankScanning";
 import { isTypingTarget } from "../shared/useGlobalKeyboardShortcuts";
@@ -14,14 +10,12 @@ interface UseKitViewMenuHandlersProps {
   onMessage: (text: string, type?: string, duration?: number) => void;
   /** Romper's redo, for Edit > Redo outside a text field */
   onRedo?: () => void;
+  /** Scans every kit in the store, whatever the browser shows (RE-43) */
+  onScanAllKits?: () => Promise<void> | void;
   /** Romper's undo, for Edit > Undo outside a text field */
   onUndo?: () => void;
   openChangeDirectory: () => void;
   openPreferences: () => void;
-}
-
-interface UseKitViewMenuHandlersReturn {
-  kitBrowserRef: React.RefObject<KitBrowserHandle | null>;
 }
 
 /**
@@ -31,13 +25,11 @@ interface UseKitViewMenuHandlersReturn {
 export function useKitViewMenuHandlers({
   onMessage,
   onRedo,
+  onScanAllKits,
   onUndo,
   openChangeDirectory,
   openPreferences,
-}: UseKitViewMenuHandlersProps): UseKitViewMenuHandlersReturn {
-  // Ref to access KitBrowser scan functionality
-  const kitBrowserRef = useRef<KitBrowserHandle | null>(null);
-
+}: UseKitViewMenuHandlersProps): void {
   // Bank scanning hook
   const { scanBanks } = useBankScanning({
     onMessage,
@@ -64,22 +56,15 @@ export function useKitViewMenuHandlers({
       log.debug("Menu scan all triggered");
       // Scan All touches every kit, so ask first (RE-04)
       if (!globalThis.confirm(SCAN_ALL_CONFIRM_MESSAGE)) return;
-      // Run bank scan first (fast), then kit scan
-      void scanBanks().then(() => {
-        if (kitBrowserRef.current?.handleScanAllKits) {
-          kitBrowserRef.current.handleScanAllKits();
-        }
-      });
+      // Run bank scan first (fast), then every kit, in the browser or the
+      // editor (RE-43)
+      void scanBanks().then(() => onScanAllKits?.());
     },
     onUndo: () => {
       log.debug("Menu undo triggered");
       runEditCommand("undo", onUndo);
     },
   });
-
-  return {
-    kitBrowserRef,
-  };
 }
 
 /**

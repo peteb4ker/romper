@@ -23,8 +23,8 @@ describe("useKitViewMenuHandlers", () => {
     vi.clearAllMocks();
   });
 
-  it("should initialize with required handlers", () => {
-    const { result } = renderHook(() =>
+  it("registers the menu handlers", () => {
+    renderHook(() =>
       useKitViewMenuHandlers({
         onMessage: mockOnMessage,
         openChangeDirectory: vi.fn(),
@@ -32,35 +32,9 @@ describe("useKitViewMenuHandlers", () => {
       }),
     );
 
-    expect(result.current.kitBrowserRef).toBeDefined();
-    expect(result.current.kitBrowserRef.current).toBeNull();
-  });
-
-  it("should handle optional parameters", () => {
-    const { result } = renderHook(() =>
-      useKitViewMenuHandlers({
-        onMessage: mockOnMessage,
-        openChangeDirectory: vi.fn(),
-        openPreferences: vi.fn(),
-      }),
-    );
-
-    expect(result.current.kitBrowserRef).toBeDefined();
-  });
-
-  it("should handle different callback functions", () => {
-    const mockOpenChangeDirectory = vi.fn();
-    const mockOpenPreferences = vi.fn();
-
-    const { result } = renderHook(() =>
-      useKitViewMenuHandlers({
-        onMessage: mockOnMessage,
-        openChangeDirectory: mockOpenChangeDirectory,
-        openPreferences: mockOpenPreferences,
-      }),
-    );
-
-    expect(result.current.kitBrowserRef).toBeDefined();
+    const handlers = vi.mocked(useMenuEvents).mock.calls.at(-1)![0];
+    expect(handlers.onScanAll).toBeInstanceOf(Function);
+    expect(handlers.onPreferences).toBeInstanceOf(Function);
   });
 
   describe("[UC-26] Edit > Undo and Redo (RE-65)", () => {
@@ -139,14 +113,14 @@ describe("useKitViewMenuHandlers", () => {
 
     const triggerScanAll = async () => {
       vi.mocked(useBankScanning).mockReturnValue({ scanBanks } as never);
-      const { result } = renderHook(() =>
+      renderHook(() =>
         useKitViewMenuHandlers({
           onMessage: mockOnMessage,
+          onScanAllKits: handleScanAllKits,
           openChangeDirectory: vi.fn(),
           openPreferences: vi.fn(),
         }),
       );
-      result.current.kitBrowserRef.current = { handleScanAllKits } as never;
 
       const handlers = vi.mocked(useMenuEvents).mock.calls.at(-1)![0];
       handlers.onScanAll?.();

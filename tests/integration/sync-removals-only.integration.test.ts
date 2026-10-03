@@ -1,9 +1,6 @@
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import { closeAllDbConnections } from "../../electron/main/db/utils/dbConnections.js";
 
 vi.mock("electron", () => ({
   BrowserWindow: {
@@ -13,6 +10,7 @@ vi.mock("electron", () => ({
 
 import { createRomperDbFile } from "../../electron/main/db/romperDbCoreORM.js";
 import { syncService } from "../../electron/main/services/syncService.js";
+import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 // RE-76: a library with nothing left to copy can still be written, so the
 // card is cleared of the kits and bank names the library no longer has.
@@ -23,7 +21,7 @@ describe("[UC-34] Writing a library with nothing to copy (RE-76)", () => {
   let settings: { localStorePath: string };
 
   beforeEach(() => {
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "sync-removals-only-"));
+    tempDir = createTempStore("sync-removals-only-");
     const localStorePath = path.join(tempDir, "store");
     sdCardPath = path.join(tempDir, "card");
     fs.mkdirSync(localStorePath, { recursive: true });
@@ -40,9 +38,7 @@ describe("[UC-34] Writing a library with nothing to copy (RE-76)", () => {
   });
 
   afterEach(() => {
-    // Windows can't delete a database file that's still open
-    closeAllDbConnections();
-    fs.rmSync(tempDir, { force: true, recursive: true });
+    removeTempStore(tempDir);
   });
 
   it("lists the card's leftovers for removal with no files to copy", async () => {

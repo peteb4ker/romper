@@ -1,9 +1,6 @@
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import { closeAllDbConnections } from "../../electron/main/db/utils/dbConnections.js";
 
 vi.mock("electron", () => ({
   BrowserWindow: {
@@ -25,6 +22,7 @@ import {
 import { kitService } from "../../electron/main/services/kitService.js";
 import { scanService } from "../../electron/main/services/scanService.js";
 import { syncService } from "../../electron/main/services/syncService.js";
+import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 // RE-35: every edit that changes the kit sets "modified since sync", so the
 // Modified filter shows it, and a completed write clears it again.
@@ -70,7 +68,7 @@ describe("[UC-11] Edits mark a kit modified since the last write (RE-35)", () =>
     });
 
   beforeEach(() => {
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "modified-flag-"));
+    tempDir = createTempStore("modified-flag-");
     localStorePath = path.join(tempDir, "store");
     dbDir = path.join(localStorePath, ".romperdb");
     sdCardPath = path.join(tempDir, "card");
@@ -94,9 +92,7 @@ describe("[UC-11] Edits mark a kit modified since the last write (RE-35)", () =>
   });
 
   afterEach(() => {
-    // Windows can't delete a database file that's still open
-    closeAllDbConnections();
-    fs.rmSync(tempDir, { force: true, recursive: true });
+    removeTempStore(tempDir);
   });
 
   it("a gain change marks the kit modified", () => {

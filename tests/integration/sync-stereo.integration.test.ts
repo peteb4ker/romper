@@ -1,9 +1,6 @@
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import { closeAllDbConnections } from "../../electron/main/db/utils/dbConnections.js";
 
 vi.mock("electron", () => ({
   BrowserWindow: {
@@ -18,6 +15,7 @@ import {
   updateVoiceStereoMode,
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { syncService } from "../../electron/main/services/syncService.js";
+import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 // RE-29: stereo is a voice setting. A stereo file on a voice linked as stereo
 // is written as it is; on a voice that isn't linked, it's mixed to mono.
@@ -66,7 +64,7 @@ describe("[UC-28] [UC-34] Writing stereo files to the card (RE-29)", () => {
   const sources: Record<string, string> = {};
 
   beforeEach(() => {
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "sync-stereo-"));
+    tempDir = createTempStore("sync-stereo-");
     const localStorePath = path.join(tempDir, "store");
     dbDir = path.join(localStorePath, ".romperdb");
     sdCardPath = path.join(tempDir, "card");
@@ -112,9 +110,7 @@ describe("[UC-28] [UC-34] Writing stereo files to the card (RE-29)", () => {
   });
 
   afterEach(() => {
-    // Windows can't delete a database file that's still open
-    closeAllDbConnections();
-    fs.rmSync(tempDir, { force: true, recursive: true });
+    removeTempStore(tempDir);
   });
 
   it("shows the mono mix as a conversion in the write summary", async () => {

@@ -1,12 +1,9 @@
 import AdmZip from "adm-zip";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import { closeAllDbConnections } from "../../electron/main/db/utils/dbConnections.js";
 
 vi.mock("electron", () => ({
   BrowserWindow: {
@@ -19,6 +16,7 @@ import {
   LocalStoreSetupService,
   SetupCancelledError,
 } from "../../electron/main/services/localStoreSetupService.js";
+import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 /**
  * Whether this process still has `file` open. Windows can't delete an open
@@ -46,7 +44,7 @@ describe("[UC-02] Cancelling setup (RE-66)", () => {
   let setup: LocalStoreSetupService;
 
   beforeEach(() => {
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "setup-cancel-"));
+    tempDir = createTempStore("setup-cancel-");
     target = path.join(tempDir, "store");
     fs.mkdirSync(target);
     // Something of the user's that was there before setup
@@ -55,9 +53,7 @@ describe("[UC-02] Cancelling setup (RE-66)", () => {
   });
 
   afterEach(() => {
-    // Windows can't delete a database file that's still open
-    closeAllDbConnections();
-    fs.rmSync(tempDir, { force: true, recursive: true });
+    removeTempStore(tempDir);
   });
 
   it("aborts an extraction part way and cleans up only what it wrote", async () => {

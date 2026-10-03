@@ -66,6 +66,14 @@ the pieces fit.
   `<file>.test.ts(x)`, and run in jsdom. Integration tests go in
   `tests/integration/*.integration.test.ts` and run inside Electron.
   E2E tests are `*.e2e.test.ts` (mostly `tests/e2e/`).
+- An integration test that needs a store on disk makes it with
+  `createTempStore("<prefix>-")` and deletes it with `removeTempStore(dir)`
+  in `afterEach` (`tests/integration/support/tempStore.ts`). Don't close
+  database connections yourself first: the integration runner closes them
+  all when each test ends, before `afterEach` runs, so a test can't leave
+  a database open for Windows to refuse to delete. A plain `fs.rmSync` in
+  `afterEach` works too; `removeTempStore` also retries and is safe in
+  `afterAll`.
 - E2E specs import `test` and `expect` from `tests/utils/e2e-error-guard`,
   not `@playwright/test`. The guard watches every app a test launches and
   fails the test on an error-level message nobody expected: a renderer

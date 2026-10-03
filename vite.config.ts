@@ -161,7 +161,15 @@ export default defineConfig({
       pool: "threads",
       // Optimized reporters for CI
       reporter: isCI ? ["dot"] : ["verbose"],
-      setupFiles: ["./vitest.setup.ts"],
+      // Integration tests close every database connection when a test's
+      // body ends, before its afterEach hooks delete temp stores (Windows
+      // can't delete an open database file). See tests/integration/support.
+      runner: isIntegration
+        ? "./tests/integration/support/runner.ts"
+        : undefined,
+      setupFiles: isIntegration
+        ? ["./vitest.setup.ts", "./tests/integration/support/setup.ts"]
+        : ["./vitest.setup.ts"],
       testTimeout: isCI ? 15000 : 30000,
     };
   })(),

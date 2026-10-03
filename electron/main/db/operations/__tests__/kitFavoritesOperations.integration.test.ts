@@ -1,9 +1,10 @@
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
-import { closeAllDbConnections } from "../../utils/dbConnections.js";
+import {
+  createTempStore,
+  removeTempStore,
+} from "../../../../../tests/integration/support/tempStore.js";
 import { createRomperDbFile } from "../../utils/dbUtilities.js";
 import { addKit } from "../kitCrudOperations.js";
 import {
@@ -18,15 +19,13 @@ describe("[UC-10] Kit Favorites Operations - Integration Tests", () => {
   let dbDir: string;
 
   beforeEach(() => {
-    tempDir = mkdtempSync(join(tmpdir(), "romper-kit-favs-"));
+    tempDir = createTempStore("romper-kit-favs-");
     dbDir = join(tempDir, ".romperdb");
     createRomperDbFile(dbDir);
   });
 
   afterEach(() => {
-    // Windows can't delete a database file that's still open
-    closeAllDbConnections();
-    rmSync(tempDir, { force: true, recursive: true });
+    removeTempStore(tempDir);
   });
 
   describe("toggleKitFavorite", () => {

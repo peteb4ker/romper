@@ -113,8 +113,10 @@ in `electron/main/security/`.
   setting changes, before setup cleanup moves a failed store aside, before
   a database file is deleted, and on `will-quit`, which also checkpoints the
   write-ahead log into the file. Windows can't delete or rename an open
-  database, so anything that does must call `closeDbConnection` first;
-  tests that delete temp stores call `closeAllDbConnections` in teardown.
+  database, so anything that does must call `closeDbConnection` first.
+  Integration tests don't need to: the shared teardown closes every
+  connection when each test ends, before the test's own cleanup deletes
+  its temp store (see [Testing](#testing)).
   `busy_timeout` stays: there's no single-instance lock, so another Romper
   or a tool can hold the write lock.
 - **A unit of work per change** (RE-28). `withDb(dbDir, fn)` runs reads and
@@ -283,6 +285,16 @@ or `require` shims.
   with `vi.mocked(globalThis.electronAPI.someMethod)` (assigning
   `window.electronAPI` is a lint error in tests).
 - **Integration** (Node inside Electron): `tests/integration/*.integration.test.ts`.
+  They run on Vitest's default runner extended by
+  `tests/integration/support/runner.ts`, which closes every store
+  connection when a test's body ends, passed or failed, and before any
+  `afterEach` hook, so a test's cleanup can delete its temp store on
+  Windows. (An `afterEach` in a setup file can't: Vitest runs a test's own
+  `afterEach` hooks first.) `tests/integration/support/setup.ts` hands the
+  runner the test file's connection registry.
+  `createTempStore`/`removeTempStore` (`tests/integration/support/tempStore.ts`)
+  make and delete temp stores; `removeTempStore` closes connections again
+  first, so it's also safe in `afterAll`.
 - **E2E** (Playwright against the built app): `*.e2e.test.ts`, mostly in
   `tests/e2e/`. Only e2e exercises app startup.
 - Unit coverage thresholds are in `vite.config.ts`.

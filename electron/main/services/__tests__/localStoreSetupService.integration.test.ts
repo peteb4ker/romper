@@ -1,10 +1,12 @@
 import * as fs from "node:fs";
-import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import {
+  createTempStore,
+  removeTempStore,
+} from "../../../../tests/integration/support/tempStore.js";
 import { addKit, getKit } from "../../db/romperDbCoreORM.js";
-import { closeAllDbConnections } from "../../db/utils/dbConnections.js";
 import { LocalStoreSetupService } from "../localStoreSetupService.js";
 
 // RE-10: pointing setup at a folder that already has a store used to hit a
@@ -16,16 +18,14 @@ describe("[UC-01] [UC-02] [UC-03] LocalStoreSetupService with a real database (R
   let dbDir: string;
 
   beforeEach(() => {
-    tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "romper-setup-int-"));
+    tmpRoot = createTempStore("romper-setup-int-");
     target = path.join(tmpRoot, "store");
     fs.mkdirSync(target);
     dbDir = path.join(target, ".romperdb");
   });
 
   afterEach(() => {
-    // Windows can't delete a database file that's still open
-    closeAllDbConnections();
-    fs.rmSync(tmpRoot, { force: true, recursive: true });
+    removeTempStore(tmpRoot);
   });
 
   it("never lets a second setup touch an existing store", () => {

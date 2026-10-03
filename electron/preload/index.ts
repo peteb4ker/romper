@@ -1,5 +1,6 @@
 import type {
   ElectronAPI,
+  KitMetadataUpdates,
   SettingsData,
   SettingsKey,
   SyncOptions,
@@ -481,15 +482,7 @@ const electronAPI = {
     return ipcRenderer.invoke("update-bank", bankLetter, updates);
   },
 
-  updateKit: (
-    kitName: string,
-    updates: {
-      alias?: string;
-      artist?: string;
-      description?: string;
-      tags?: string[];
-    },
-  ) => {
+  updateKit: (kitName: string, updates: KitMetadataUpdates) => {
     isDev && console.debug("[IPC] updateKit invoked", kitName, updates);
     return ipcRenderer.invoke("update-kit-metadata", kitName, updates);
   },

@@ -682,7 +682,7 @@ describe("preload/index.tsx", () => {
         method: "setupImportKit",
       },
       {
-        args: ["TestKit", { alias: "Updated Kit", artist: "Test Artist" }],
+        args: ["TestKit", { alias: "Updated Kit", editable: true }],
         ipcChannel: "update-kit-metadata",
         method: "updateKit",
       },

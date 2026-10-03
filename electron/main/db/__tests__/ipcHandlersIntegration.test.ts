@@ -199,10 +199,7 @@ describe("IPC Handlers Integration Tests", () => {
       registerDbIpcHandlers(mockInMemorySettings);
       const handler = mockIpcHandlers.get("update-kit-metadata");
 
-      const updates = {
-        alias: "Updated Kit",
-        description: "New description",
-      };
+      const updates = { alias: "Updated Kit", editable: true };
 
       const result = await handler({}, "A0", updates);
 
@@ -212,6 +209,22 @@ describe("IPC Handlers Integration Tests", () => {
         updates,
       );
       expect(result).toEqual(undefined);
+    });
+
+    test("[Q-02] refuses fields other than alias and editable (RE-22)", async () => {
+      registerDbIpcHandlers(mockInMemorySettings);
+      const handler = mockIpcHandlers.get("update-kit-metadata");
+
+      const result = await handler({}, "A0", {
+        alias: "Updated Kit",
+        description: "New description",
+      });
+
+      expect(result).toEqual({
+        error: "Kit details can't change description",
+        success: false,
+      });
+      expect(romperDbCoreORM.updateKit).not.toHaveBeenCalled();
     });
 
     test("should handle update-kit-metadata error when kit not found", async () => {

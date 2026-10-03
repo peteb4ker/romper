@@ -68,8 +68,8 @@ describe("updateKit - Unit Tests", () => {
     });
 
     const updates = {
+      alias: "Updated alias",
       bpm: 140,
-      description: "Updated description",
       editable: true,
       is_favorite: false,
     };
@@ -77,8 +77,8 @@ describe("updateKit - Unit Tests", () => {
     updateKit(mockDbDir, mockKitName, updates);
 
     expect(mockSet).toHaveBeenCalledWith({
+      alias: "Updated alias",
       bpm: 140,
-      description: "Updated description",
       editable: true,
       is_favorite: false,
     });

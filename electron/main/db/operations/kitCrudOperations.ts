@@ -294,9 +294,9 @@ export function updateKit(
   dbDir: string,
   kitName: string,
   updates: {
+    alias?: null | string;
     bank_letter?: string;
     bpm?: number;
-    description?: string;
     editable?: boolean;
     is_favorite?: boolean;
     modified?: boolean;

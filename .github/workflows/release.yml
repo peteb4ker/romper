@@ -205,8 +205,17 @@ jobs:
       contents: read
     uses: ./.github/workflows/e2e.yml
 
+  # The full-pipeline rehearsal on all three platforms: factory archive to a
+  # card, byte for byte, plus the performance profile. A release ships only
+  # if it passes, and its results are published with the release.
+  validate:
+    needs: preflight
+    permissions:
+      contents: read
+    uses: ./.github/workflows/validate-full.yml
+
   build:
-    needs: [preflight, lint, typecheck, tests, e2e]
+    needs: [preflight, lint, typecheck, tests, e2e, validate]
     strategy:
       fail-fast: false
       matrix:
@@ -498,6 +507,13 @@ jobs:
       - name: Display structure of downloaded files
         run: find release-artifacts -type f -name "*" | head -20
 
+      - name: Summarise the release's checks
+        # Read by the website's testing page (docs/testing.html)
+        run: >
+          node scripts/testing-summary.mjs release-artifacts
+          --version ${{ github.ref_name }} --commit ${{ github.sha }}
+          --out release-artifacts/testing-summary.json
+
       # The notes list the issues closed as completed since the previous
       # tag, which the script reads with gh. Without a token it leaves that
       # section out and warns.
@@ -535,6 +551,7 @@ jobs:
             release-artifacts/**/*.deb
             release-artifacts/**/*.rpm
             release-artifacts/**/*.AppImage
+            release-artifacts/testing-summary.json
           # Tags containing a hyphen (e.g. v1.3.0-rc.1) are prereleases:
           # published on GitHub but NOT marked latest, so the
           # update.electronjs.org feed (which serves the latest stable

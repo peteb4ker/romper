@@ -48,7 +48,10 @@ condensed checklist for these steps.
       OSes) and e2e tests (all three OSes), run on the tagged commit by calling the CI
       workflows. CI results on `main` don't count: a push to `main` replaces
       the queued run for the previous commit, so many commits never get a
-      complete run.
+      complete run. The full-pipeline rehearsal (`validate-full.yml`: the
+      factory archive to a card, byte for byte, plus the performance
+      profile) runs too, on all three OSes; nothing is built until it
+      passes. A flaky rehearsal job can be re-run on its own.
    3. Builds on macOS, arm64 only (rcodesign sign + notarize, see
       [code-signing.md](code-signing.md)), Windows x64 (Azure Trusted
       Signing, or unsigned while `ALLOW_UNSIGNED_WINDOWS` is `true`), and
@@ -65,9 +68,14 @@ condensed checklist for these steps.
       closes the issue, and only closed issues reach the notes. The conventional commits since the
       last tag follow. The step reads issues with `GH_TOKEN`; run locally,
       the script uses your `gh` login, or leaves the section out and says
-      so on stderr.
-5. **Verify** the release page: all six artifacts are attached, and **Latest**
-   points where you expect.
+      so on stderr. `scripts/testing-summary.mjs` turns the run's test
+      results, rehearsal reports and performance budget results into
+      `testing-summary.json`, attached to the release. Publishing the
+      release rebuilds the website, whose
+      [testing page](https://peteb4ker.github.io/romper/testing/) shows the
+      latest release's summary.
+5. **Verify** the release page: all six artifacts and `testing-summary.json`
+   are attached, and **Latest** points where you expect.
 
 Only a tag-triggered run exercises macOS signing
 (`electron/resources/rcodesign.toml`). PR CI doesn't, so treat any change to

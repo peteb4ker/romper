@@ -46,9 +46,18 @@ jobs:
       # Coverage runs on PRs too (~10s slower than test:unit:fast) so
       # SonarCloud can analyze PRs, including coverage on new code.
       - name: Run unit tests
-        run: npm run test:unit
+        # The JSON results feed the testing summary a release publishes
+        run: npm run test:unit -- --reporter=json --outputFile.json=reports/results-unit.json
         env:
           CI: true
+
+      - name: Upload unit test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-results-unit
+          path: reports/results-unit.json
+          retention-days: 7
 
       - name: Upload unit coverage artifacts
         uses: actions/upload-artifact@v5
@@ -114,10 +123,18 @@ jobs:
           sleep 2
 
       - name: Run integration tests
-        run: npm run test:integration
+        run: npm run test:integration -- --reporter=json --outputFile.json=reports/results-integration.json
         env:
           CI: true
           DISPLAY: ${{ matrix.os == 'ubuntu-latest' && ':99' || '' }}
+
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-results-integration-${{ matrix.os }}
+          path: reports/results-integration.json
+          retention-days: 7
 
       - name: Upload integration coverage artifacts
         if: matrix.os == 'ubuntu-latest'

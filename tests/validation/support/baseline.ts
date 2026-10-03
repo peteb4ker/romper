@@ -28,6 +28,13 @@ export const BASELINE_EXPECTED: Expectation[] = [
   },
   {
     pattern:
+      /:ERROR:base\/apple\/mach_port_rendezvous\.cc:\d+\] mach_msg send: \(ipc\/send\) invalid destination port/,
+    reason:
+      "Chromium logs this on macOS runners when a helper process it signals has already exited",
+    sources: ["main-stderr"],
+  },
+  {
+    pattern:
       /^(Debugger (listening|ending) on ws:|For help, see: https:\/\/nodejs\.org|Waiting for the debugger to disconnect)/,
     reason: "Playwright drives the main process through the Node inspector",
     sources: ["main-stderr"],

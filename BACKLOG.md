@@ -96,7 +96,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
-| RE-43 | Medium | Scan | Scan All only scans the kits you're currently viewing after a search or filter, not your whole library. | done (this branch: fix/re-43-scan-all; Scan All scans every kit in the store, from the browser or the editor) |
+| RE-43 | Medium | Scan | Scan All only scans the kits you're currently viewing after a search or filter, not your whole library. | done (#438: Scan All scans every kit in the store, from the browser or the editor) |
 | RE-58 | Medium | Tooling | Romper's own pre-commit checks failed on a busy computer because they always started the same large number of test workers. | done (#423: workers follow the free cores; under load the suite runs on fewer workers instead of timing out) |
 | RE-74 | Medium | Samples | Dropping a sample onto a filled slot said it would insert it there and shift the rest down, but added it at the end. | done (#421: dragging files over a voice highlights the slot after the last sample, where they land) |
 | RE-75 | Medium | Voices | In an editable kit, scanning the kit overwrote voice names you'd typed. | done (#422: only voices without a name are named, as main's scan does) |

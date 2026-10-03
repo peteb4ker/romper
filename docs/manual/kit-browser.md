@@ -27,6 +27,8 @@ Each bank that contains kits starts with a header showing its letter and artist 
 
 Each bank header shows a pencil icon that lets you edit the bank's artist name inline. Click the pencil (or click the existing name) to enter edit mode, type the new name, and press **Enter** to save or **Escape** to cancel. Clearing the name removes it entirely: Romper deletes the bank's label file from your local store and forgets the name, and the next sync removes the name file from the card. A bank name becomes a file name, so it can't contain `/ \ : * ? " < > |`; Romper shows a message and keeps the old name if you type one of them.
 
+A bank keeps its name when it has no kits: open it from its dimmed letter to name it, and hover the letter to see the name.
+
 Bank names are stored in the database and written as RTF label files (`A - Artist Name.rtf`) to your local store. When you sync to an SD card, these RTF files are also written to the card root so the Rample hardware displays the correct artist names.
 
 ## Kit Cards

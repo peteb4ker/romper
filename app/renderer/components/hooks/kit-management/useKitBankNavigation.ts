@@ -1,4 +1,4 @@
-import type { KitWithRelations } from "@romper/shared/db/schema";
+import type { Bank, KitWithRelations } from "@romper/shared/db/schema";
 
 import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 
@@ -16,12 +16,15 @@ export interface KitListComponent {
 interface UseKitBankNavigationProps {
   kitListRef: RefObject<KitListComponent | null>;
   kits: KitWithRelations[];
+  /** The open store; its bank names are loaded when it changes */
+  localStorePath?: null | string;
   onMessage?: (text: string, type?: string, duration?: number) => void;
 }
 
 export function useKitBankNavigation({
   kitListRef,
   kits,
+  localStorePath,
   onMessage,
 }: UseKitBankNavigationProps) {
   const [selectedBank, setSelectedBank] = useState<string>("A");
@@ -34,18 +37,41 @@ export function useKitBankNavigation({
   const isProgrammaticScrollRef = useRef(false);
   const scrollTargetBankRef = useRef<null | string>(null);
 
-  // Generate bank names from kit data
+  // Bank names come from the banks themselves: a bank with no kits, or
+  // whose kits a filter hides, has no kit to carry its name (RE-90)
   useEffect(() => {
-    const bankNamesFromData: BankNames = {};
-
-    kits.forEach((kit: KitWithRelations) => {
-      if (kit.bank?.artist && kit.name?.[0]) {
-        const bankLetter = kit.name[0].toUpperCase();
-        bankNamesFromData[bankLetter] = kit.bank.artist;
+    if (!localStorePath) return;
+    let current = true;
+    void globalThis.electronAPI.getAllBanks?.().then((result) => {
+      if (current && result?.success && result.data) {
+        setBankNames(namesFromBanks(result.data));
       }
     });
+    return () => {
+      current = false;
+    };
+  }, [localStorePath]);
 
-    setBankNames(bankNamesFromData);
+  // Reloaded kits carry their bank's current name (a bank scan may have
+  // changed it); banks without loaded kits keep theirs
+  useEffect(() => {
+    const fromKits = new Map<string, null | string>();
+    for (const kit of kits) {
+      const bankLetter = kit.name?.[0]?.toUpperCase();
+      if (bankLetter && kit.bank) {
+        fromKits.set(bankLetter, kit.bank.artist ?? null);
+      }
+    }
+    if (fromKits.size === 0) return;
+
+    setBankNames((prev) => {
+      const next = { ...prev };
+      for (const [bankLetter, artist] of fromKits) {
+        if (artist) next[bankLetter] = artist;
+        else delete next[bankLetter];
+      }
+      return next;
+    });
   }, [kits]);
 
   // Focus the first kit when kits change
@@ -243,4 +269,13 @@ export function useKitBankNavigation({
     showEmptyBank,
     shownEmptyBank,
   };
+}
+
+/** The named banks in the database, by letter */
+function namesFromBanks(banks: Bank[]): BankNames {
+  const names: BankNames = {};
+  for (const bank of banks) {
+    if (bank.artist) names[bank.letter] = bank.artist;
+  }
+  return names;
 }

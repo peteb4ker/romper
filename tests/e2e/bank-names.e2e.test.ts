@@ -35,9 +35,9 @@ test.describe("[UC-12] Bank names", () => {
     });
   };
 
-  const setBankName = async (name: string) => {
-    await window.locator('[data-testid="bank-name-edit-A"]').click();
-    const input = window.locator('[data-testid="bank-name-input-A"]');
+  const setBankName = async (name: string, bank = "A") => {
+    await window.locator(`[data-testid="bank-name-edit-${bank}"]`).click();
+    const input = window.locator(`[data-testid="bank-name-input-${bank}"]`);
     await input.fill(name);
     await input.press("Enter");
   };
@@ -101,6 +101,27 @@ test.describe("[UC-12] Bank names", () => {
 
     await writeToCard();
     expect(cardRtfFiles()).toEqual([]);
+  });
+
+  // RE-90: the browser read bank names from the kits, so a bank with no
+  // kits lost its name on reload
+  test("a bank with no kits keeps its name after a relaunch", async () => {
+    const bankC = () => window.getByRole("button", { name: "Jump to bank C" });
+
+    await bankC().click();
+    await setBankName("Empty Bank", "C");
+    await expect(
+      window.locator('[data-testid="bank-name-display-C"]'),
+    ).toHaveText("Empty Bank");
+
+    await electronApp.close();
+    await launch();
+
+    await expect(bankC()).toHaveAttribute("title", "Empty Bank");
+    await bankC().click();
+    await expect(
+      window.locator('[data-testid="bank-name-display-C"]'),
+    ).toHaveText("Empty Bank");
   });
 
   test.describe("a name the card can't hold", () => {

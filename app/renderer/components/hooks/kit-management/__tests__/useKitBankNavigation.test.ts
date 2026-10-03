@@ -1,6 +1,6 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useKitBankNavigation } from "../useKitBankNavigation";
@@ -127,6 +127,112 @@ describe("useKitBankNavigation", () => {
       const { result } = renderHook(() => useKitBankNavigation(props));
 
       expect(result.current.bankNames).toEqual({});
+    });
+  });
+
+  describe("[UC-12] names of banks without loaded kits (RE-90)", () => {
+    const bankRow = (letter: string, artist: null | string) => ({
+      artist,
+      letter,
+      rtf_filename: artist ? `${letter} - ${artist}.rtf` : null,
+      scanned_at: null,
+    });
+
+    beforeEach(() => {
+      vi.mocked(globalThis.electronAPI.getAllBanks).mockResolvedValue({
+        data: [
+          bankRow("A", "Artist A"),
+          bankRow("B", "Artist B"),
+          bankRow("C", "Empty Bank"),
+          bankRow("D", null),
+        ],
+        success: true,
+      });
+    });
+
+    it("loads every bank's name from the banks, not the kits", async () => {
+      const { result } = renderHook(() =>
+        useKitBankNavigation({ ...defaultProps, localStorePath: "/store" }),
+      );
+
+      await waitFor(() =>
+        expect(result.current.bankNames).toEqual({
+          A: "Artist A",
+          B: "Artist B",
+          C: "Empty Bank",
+        }),
+      );
+    });
+
+    it("keeps a bank's name when its kits are filtered out", async () => {
+      const { rerender, result } = renderHook(
+        (props) => useKitBankNavigation(props),
+        { initialProps: { ...defaultProps, localStorePath: "/store" } },
+      );
+      await waitFor(() =>
+        expect(result.current.bankNames.C).toBe("Empty Bank"),
+      );
+
+      rerender({
+        ...defaultProps,
+        kits: [mockKits[2]],
+        localStorePath: "/store",
+      });
+
+      expect(result.current.bankNames).toEqual({
+        A: "Artist A",
+        B: "Artist B",
+        C: "Empty Bank",
+      });
+    });
+
+    it("keeps a name given to an empty bank when the kits reload", async () => {
+      vi.mocked(globalThis.electronAPI.updateBank).mockResolvedValue({
+        success: true,
+      });
+      const { rerender, result } = renderHook(
+        (props) => useKitBankNavigation(props),
+        { initialProps: { ...defaultProps, localStorePath: "/store" } },
+      );
+      await waitFor(() =>
+        expect(result.current.bankNames.C).toBe("Empty Bank"),
+      );
+
+      await act(() => result.current.handleBankNameChange("D", "New Name"));
+      rerender({
+        ...defaultProps,
+        kits: [...mockKits],
+        localStorePath: "/store",
+      });
+
+      expect(result.current.bankNames.D).toBe("New Name");
+    });
+
+    it("takes a reloaded kit's bank name over the loaded one", async () => {
+      const { rerender, result } = renderHook(
+        (props) => useKitBankNavigation(props),
+        { initialProps: { ...defaultProps, localStorePath: "/store" } },
+      );
+      await waitFor(() =>
+        expect(result.current.bankNames.C).toBe("Empty Bank"),
+      );
+
+      rerender({
+        ...defaultProps,
+        kits: [{ ...mockKits[2], bank: { artist: null } }],
+        localStorePath: "/store",
+      });
+
+      expect(result.current.bankNames).toEqual({
+        A: "Artist A",
+        C: "Empty Bank",
+      });
+    });
+
+    it("doesn't load names without a store", () => {
+      renderHook(() => useKitBankNavigation(defaultProps));
+
+      expect(globalThis.electronAPI.getAllBanks).not.toHaveBeenCalled();
     });
   });
 

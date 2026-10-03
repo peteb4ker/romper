@@ -2,10 +2,11 @@
 /**
  * Use case traceability (RE-67).
  *
- *   npm run trace         # write docs/developer/traceability.md (not committed)
- *   npm run trace:check   # fail on unknown IDs or untested use cases; warn
- *                         # when the register and the issues disagree
- *   ... --strict-issues   # fail on those disagreements too (the release)
+ *   npm run trace         # print each entry's status; write
+ *                         # docs/developer/traceability.md (not committed)
+ *   npm run trace:check   # fail on unknown IDs or closed test gaps; warn on
+ *                         # what a release can't ship with
+ *   ... --strict-issues   # fail on those too (the release)
  *   ... --json <file>     # also write the per-entry summary (testing page)
  *
  * Reads the use case register (docs/developer/use-cases.md) and the
@@ -13,29 +14,35 @@
  * A tag on a `describe` covers every test inside it.
  *
  * The backlog is GitHub issues, each labelled with the use case or quality
- * (`UC-NN`, `Q-NN`) where a user would notice it. The labels are the trace.
+ * (`UC-NN`, `Q-NN`) where a user would notice it. The labels are the trace,
+ * and they set each entry's status: supported when no open issue carries
+ * its label, partial when at least one does. Status is generated, never
+ * written in the register, so a fix PR doesn't touch it: closing the issue
+ * is enough. Only "not built" is set by hand (`**Status:** not built`),
+ * because no issue can say it; open issues on a not-built entry (building
+ * it, say) don't change it. Any other `**Status:**` line is an error.
  *
- * The check fails when:
+ * The check always fails when:
  * - a test names a use case the register doesn't have;
- * - a supported use case has no test above unit level and the register
- *   doesn't declare the gap (a `**Test gap:**` line);
- * - a declared gap is closed (the line must go).
+ * - a declared test gap (a `**Test gap:**` line) is closed: the line must go;
+ * - the register has a hand-set supported or partial status.
  *
- * The issue checks compare the register with GitHub: an open issue with a
- * UC/Q label the register lacks, an entry with no label on GitHub, and an
- * entry whose status disagrees with its open issues (supported with an open
- * issue, or partial with none). On a pull request they're warnings
- * (`::warning::` annotations and the job summary), because anyone can open
- * an issue and that mustn't turn every PR red. With `--strict-issues`, as
- * the release runs it, they fail: a release can't ship while the register
- * disagrees with the issues. Issues the current pull request fixes
- * (`Fixes #N`) count as closed, so a fix PR's status change shows clean.
+ * The issue checks need GitHub, and say what a release can't ship with: an
+ * open issue with a UC/Q label the register lacks, an entry with no label on
+ * GitHub, and a supported entry with no test above unit level that doesn't
+ * declare the gap. On a pull request they're warnings (`::warning::`
+ * annotations and the job summary), because anyone can open or close an
+ * issue and that mustn't turn every PR red. With `--strict-issues`, as the
+ * release runs it, they fail. Issues the current pull request fixes
+ * (`Fixes #N`) count as closed, so a fix PR's summary shows the status its
+ * merge brings.
  *
  * An issue labelled `triage`, or with no UC/Q label, needs triage: it's
  * listed as a notice, never fails, and doesn't count towards a status.
  *
  * Issues are read with `gh`. Without it (offline, or not signed in), the
- * issue checks are skipped with a notice; `--strict-issues` fails instead.
+ * issue checks are skipped with a notice and statuses show as unknown;
+ * `--strict-issues` fails instead.
  *
  * The matrix is generated, never committed: its counts change with every
  * new test, and a committed copy went stale on almost every PR. In CI the
@@ -59,7 +66,10 @@ const LAYER_LABELS = {
   unit: "Unit",
   validation: "Validation",
 };
-const STATUSES = ["supported", "partial", "not built"];
+/** The only status set by hand; supported and partial come from the issues. */
+const NOT_BUILT = "not built";
+export const STATUSES = ["supported", "partial", NOT_BUILT];
+const ISSUES_URL = "https://github.com/peteb4ker/romper/issues";
 
 const SKIP_DIRS = new Set([
   ".claude",
@@ -106,8 +116,10 @@ export function findTestFiles(root) {
 
 /**
  * Parse the register: `### UC-NN Name` (use cases) and `### Q-NN Name`
- * (qualities) headings, each with a `**Status:**` line, under `## Group`
- * headings. Collects each entry's declared test gap.
+ * (qualities) headings under `## Group` headings. Collects each entry's
+ * declared test gap, and marks the entries with `**Status:** not built`.
+ * Every other status is generated (`deriveStatuses`), so the register
+ * mustn't set one.
  */
 export function parseRegister(markdown) {
   const useCases = [];
@@ -124,7 +136,7 @@ export function parseRegister(markdown) {
         id: heading[1],
         kind: heading[2] === "Q" ? "quality" : "use case",
         name: heading[3],
-        status: null,
+        notBuilt: false,
       };
       useCases.push(current);
       inGap = false;
@@ -145,9 +157,14 @@ export function parseRegister(markdown) {
     inGap = false;
     const status = /^\*\*Status:\*\*\s*(.+?)\s*$/.exec(line);
     if (status) {
-      const value = STATUSES.find((s) => status[1].toLowerCase().startsWith(s));
-      if (value) current.status = value;
-      else errors.push(`${current.id}: unknown status "${status[1]}"`);
+      if (status[1].toLowerCase().startsWith(NOT_BUILT))
+        current.notBuilt = true;
+      else {
+        errors.push(
+          `${current.id}: remove its "**Status:** ${status[1]}" line from ${REGISTER}. ` +
+            `Supported and partial are generated from the open issues; only "${NOT_BUILT}" is set by hand.`,
+        );
+      }
     }
     const gap = /^\*\*Test gap:\*\*\s*(.+?)\s*$/.exec(line);
     if (gap) {
@@ -159,7 +176,6 @@ export function parseRegister(markdown) {
   for (const uc of useCases) {
     if (seen.has(uc.id)) errors.push(`${uc.id} appears twice in ${REGISTER}`);
     seen.add(uc.id);
-    if (!uc.status) errors.push(`${uc.id} has no **Status:** line`);
   }
   return { errors, useCases };
 }
@@ -404,8 +420,29 @@ export function openIssuesByEntry(github) {
   return byEntry;
 }
 
-/** Problems the check fails on, as messages. */
-export function findProblems(useCases, scan, github) {
+/**
+ * Each entry with its generated status and the open issues behind it.
+ * Not built is set in the register and stays, whatever is open. Otherwise
+ * an entry is partial while a triaged open issue carries its label, and
+ * supported when none does. Without GitHub (`github` null) the status is
+ * unknown: null, with `openIssues` null.
+ */
+export function deriveStatuses(useCases, github) {
+  const byEntry = github ? openIssuesByEntry(github) : null;
+  return useCases.map((uc) => {
+    const openIssues = byEntry
+      ? [...(byEntry.get(uc.id) ?? [])].sort((a, b) => a - b)
+      : null;
+    let status = null;
+    if (uc.notBuilt) status = NOT_BUILT;
+    else if (openIssues)
+      status = openIssues.length > 0 ? "partial" : "supported";
+    return { ...uc, openIssues, status };
+  });
+}
+
+/** Problems the check fails on whatever GitHub says, as messages. */
+export function findProblems(useCases, scan) {
   const problems = [];
   const known = new Set(useCases.map((uc) => uc.id));
   for (const tag of scan.tags) {
@@ -416,15 +453,7 @@ export function findProblems(useCases, scan, github) {
     }
   }
   for (const uc of useCases) {
-    if (uc.status !== "supported") continue;
-    const covered = aboveUnit(scan.index, uc.id);
-    if (!covered && !uc.gap) {
-      problems.push(
-        `${uc.id} ${uc.name} is supported but has no integration, e2e or validation test. ` +
-          `Tag one with [${uc.id}], or declare the gap with a **Test gap:** line in ${REGISTER}.`,
-      );
-    }
-    if (covered && uc.gap) {
+    if (uc.gap && aboveUnit(scan.index, uc.id)) {
       problems.push(
         `${uc.id} ${uc.name} now has a test above unit level: remove its **Test gap:** line from ${REGISTER}.`,
       );
@@ -434,23 +463,24 @@ export function findProblems(useCases, scan, github) {
 }
 
 /**
- * Everything traces from a user-oriented statement: each open issue is
- * labelled with a use case or quality in the register, each entry has a
- * label, and an entry's status follows its open issues.
+ * What a release can't ship with, from the register, GitHub and the tests:
+ * each open issue is labelled with a use case or quality in the register,
+ * each entry has a label, and each supported entry (no open issues) has a
+ * test above unit level or declares the gap.
  *
- * `problems` are disagreements between the register and GitHub: warnings on
- * a pull request, failures for a release (`--strict-issues`). `triage` lists
- * the issues nobody has triaged yet; they don't count towards a status and
- * never fail the check, so an outside issue can't block anyone.
+ * `problems` are warnings on a pull request and failures for a release
+ * (`--strict-issues`). `triage` lists the issues nobody has triaged yet;
+ * they don't count towards a status and never fail the check, so an
+ * outside issue can't block anyone.
  */
-export function issueProblems(useCases, github) {
+export function issueProblems(useCases, github, scan = null) {
   const problems = [];
   const triage = [];
   const known = new Set(useCases.map((uc) => uc.id));
   for (const issue of workItems(github).filter(needsTriage)) {
     triage.push(
       `#${issue.number} ("${issue.title}") needs triage: give it the UC-NN or Q-NN where a user would notice it, ` +
-        `a kind and a severity, remove ${TRIAGE}, and update the entry's status in ${REGISTER}.`,
+        `a kind and a severity, and remove ${TRIAGE}.`,
     );
   }
   for (const issue of countedIssues(github)) {
@@ -463,24 +493,22 @@ export function issueProblems(useCases, github) {
     }
   }
   const labels = new Set(github.labels);
-  const byEntry = openIssuesByEntry(github);
-  for (const uc of useCases) {
+  for (const uc of deriveStatuses(useCases, github)) {
     if (!labels.has(uc.id)) {
       problems.push(
         `${uc.id} has no label on GitHub: gh label create ${uc.id} --description "${uc.name}"`,
       );
     }
-    const open = byEntry.get(uc.id) ?? [];
-    if (uc.status === "supported" && open.length > 0) {
+    if (
+      scan &&
+      uc.status === "supported" &&
+      !uc.gap &&
+      !aboveUnit(scan.index, uc.id)
+    ) {
       problems.push(
-        `${uc.id} ${uc.name} is supported but has open issues (${open.map((n) => `#${n}`).join(", ")}): ` +
-          `mark it partial in ${REGISTER}, or close them.`,
-      );
-    }
-    if (uc.status === "partial" && open.length === 0) {
-      problems.push(
-        `${uc.id} ${uc.name} is partial but no open issue is labelled ${uc.id}: ` +
-          `open one for what's missing, or mark it supported in ${REGISTER}.`,
+        `${uc.id} ${uc.name} is supported (no open issues) but has no integration, e2e or validation test. ` +
+          `Tag one with [${uc.id}], declare the gap with a **Test gap:** line in ${REGISTER}, ` +
+          `or open a test issue labelled ${uc.id}.`,
       );
     }
   }
@@ -492,13 +520,13 @@ export function renderIssueChecks({ problems, triage }, { strict }) {
   const out = ["", "## Issue checks", ""];
   out.push(
     strict
-      ? "Release mode (`--strict-issues`): a disagreement fails the check."
-      : "Pull request mode: disagreements are warnings; the release check fails on them.",
+      ? "Release mode (`--strict-issues`): each of these fails the check."
+      : "Pull request mode: these are warnings; the release check fails on them.",
     "",
   );
   if (problems.length === 0 && triage.length === 0) {
     out.push(
-      "Every open issue traces to the register, and every status matches its issues.",
+      "Every open issue traces to the register, every entry has its label, and every supported entry has a test above unit level or declares the gap.",
     );
   }
   if (problems.length > 0) {
@@ -517,19 +545,19 @@ export function renderIssueChecks({ problems, triage }, { strict }) {
 }
 
 /**
- * Per use case and quality, for the website's testing page: status, tagged
- * tests per layer, the declared test gap, and the number of open issues
- * labelled with it (null when GitHub couldn't be read).
+ * Per use case and quality, for the website's testing page: generated
+ * status, tagged tests per layer, the declared test gap, and the number of
+ * open issues labelled with it (status and count are null when GitHub
+ * couldn't be read).
  */
 export function summarise(useCases, scan, github = null) {
-  const byEntry = github ? openIssuesByEntry(github) : null;
-  return useCases.map((uc) => ({
+  return deriveStatuses(useCases, github).map((uc) => ({
     gap: uc.gap,
     group: uc.group,
     id: uc.id,
     kind: uc.kind,
     name: uc.name,
-    openIssues: byEntry ? (byEntry.get(uc.id)?.length ?? 0) : null,
+    openIssues: uc.openIssues ? uc.openIssues.length : null,
     status: uc.status,
     tests: Object.fromEntries(
       LAYERS.map((layer) => [layer, countIn(scan.index, uc.id, layer)]),
@@ -537,15 +565,61 @@ export function summarise(useCases, scan, github = null) {
   }));
 }
 
+/** The open issues labelled with an entry's ID, on GitHub. */
+export const issuesLink = (id) => `${ISSUES_URL}?q=is%3Aopen+label%3A${id}`;
+
+const statusName = (status) => status ?? "unknown";
+
+/** Entries per status, in STATUSES order, then unknown. */
+function byStatus(entries) {
+  return [...STATUSES, null]
+    .map((status) => ({
+      entries: entries.filter((uc) => uc.status === status),
+      status,
+    }))
+    .filter(({ entries: list }) => list.length > 0);
+}
+
+/**
+ * The generated statuses as console lines (`npm run trace`): one line per
+ * status, partial entries with their open issues.
+ */
+export function statusLines(entries) {
+  const out = [
+    "Status, generated from the open issues (supported: none open; partial: at least one; not built: set in the register):",
+  ];
+  for (const { entries: list, status } of byStatus(entries)) {
+    const ids = list.map((uc) =>
+      status === "partial"
+        ? `${uc.id} (${uc.openIssues.map((n) => `#${n}`).join(", ")})`
+        : uc.id,
+    );
+    const note = status === null ? " (can't read GitHub)" : "";
+    out.push(
+      `  ${statusName(status)} (${list.length})${note}: ${ids.join(", ")}`,
+    );
+  }
+  return out;
+}
+
 function cell(index, id, layer) {
   const n = countIn(index, id, layer);
   return n === 0 ? "-" : `[${n}](#${id.toLowerCase()})`;
 }
 
-/** The generated markdown. Deterministic: no dates, sorted throughout. */
+/** An entry's status for the matrix, linking its open issues. */
+function statusCell(uc) {
+  const open = uc.openIssues?.length ?? 0;
+  return open === 0
+    ? statusName(uc.status)
+    : `${uc.status} ([${open} open](${issuesLink(uc.id)}))`;
+}
+
 /**
- * The matrix as Markdown. `base` prefixes repository paths in links:
- * relative to docs/developer by default, or a blob URL for the CI summary.
+ * The matrix as Markdown, deterministic: no dates, sorted throughout.
+ * `useCases` carry their generated status (`deriveStatuses`). `base`
+ * prefixes repository paths in links: relative to docs/developer by
+ * default, or a blob URL for the CI summary.
  */
 export function render(useCases, scan, { base = "../../" } = {}) {
   const { index } = scan;
@@ -554,7 +628,9 @@ export function render(useCases, scan, { base = "../../" } = {}) {
   const register = base === "../../" ? "use-cases.md" : `${base}${REGISTER}`;
   const ucLink = (uc) =>
     `[${uc.id}](${register}#${slug(`${uc.id} ${uc.name}`)}) ${uc.name}`;
-  const statusCount = (s) => useCases.filter((uc) => uc.status === s).length;
+  const counts = byStatus(useCases)
+    .map(({ entries, status }) => `${entries.length} ${statusName(status)}`)
+    .join(", ");
 
   push(
     "<!-- Generated by `npm run trace` (scripts/traceability.mjs). Don't edit by hand. -->",
@@ -562,18 +638,34 @@ export function render(useCases, scan, { base = "../../" } = {}) {
     "# Use case traceability",
     "",
     `Which tests cover each use case in [\`use-cases.md\`](${register}), by`,
-    "layer. A test covers a use case when its title, or the title of a",
-    "`describe` around it, carries the tag (`[UC-14]`). Counts are tests.",
+    "layer, and each one's status. A test covers a use case when its title, or",
+    "the title of a `describe` around it, carries the tag (`[UC-14]`). Counts",
+    "are tests.",
     "",
     "Generated by `npm run trace` and not committed. CI runs",
-    "`npm run trace:check`, which fails on an unknown ID or on a supported use",
-    "case with no test above unit level (unless the register declares the gap),",
-    "and warns when an entry's status doesn't match its open GitHub issues",
-    "(the release fails on that).",
+    "`npm run trace:check`, which fails on an unknown ID or a closed test gap,",
+    "and warns on what a release can't ship with: an issue or entry without",
+    "its label, or a supported use case with no test above unit level that",
+    "doesn't declare the gap (the release fails on those).",
     "",
-    `${useCases.length} use cases: ${statusCount("supported")} supported, ` +
-      `${statusCount("partial")} partial, ${statusCount("not built")} not built. ` +
+    `${useCases.length} use cases: ${counts}. ` +
       `${scan.tagged} of ${scan.total} tests carry a use case tag.`,
+    "",
+    "## Status",
+    "",
+    "Generated from the open GitHub issues labelled with each entry's ID,",
+    "leaving out issues that need triage: supported has none open, partial has",
+    "at least one. Not built is set in the register. On a pull request, the",
+    "issues it fixes count as closed. Each ID links to its open issues.",
+    "",
+    "| Status | Entries |",
+    "|---|---|",
+  );
+  for (const { entries, status } of byStatus(useCases)) {
+    const ids = entries.map((uc) => `[${uc.id}](${issuesLink(uc.id)})`);
+    push(`| ${statusName(status)} (${entries.length}) | ${ids.join(", ")} |`);
+  }
+  push(
     "",
     "## Matrix",
     "",
@@ -582,7 +674,7 @@ export function render(useCases, scan, { base = "../../" } = {}) {
   );
   for (const uc of useCases) {
     const cells = LAYERS.map((layer) => cell(index, uc.id, layer));
-    push(`| ${ucLink(uc)} | ${uc.status} | ${cells.join(" | ")} |`);
+    push(`| ${ucLink(uc)} | ${statusCell(uc)} | ${cells.join(" | ")} |`);
   }
 
   const gaps = useCases.filter(
@@ -613,13 +705,25 @@ export function render(useCases, scan, { base = "../../" } = {}) {
   const otherGaps = useCases.filter(
     (uc) => uc.status !== "supported" && !aboveUnit(index, uc.id),
   );
-  push("", "Partial or not-built use cases with no test above unit level:", "");
+  push(
+    "",
+    "Partial, not-built or unknown use cases with no test above unit level:",
+    "",
+  );
   if (otherGaps.length === 0) push("- none");
-  for (const uc of otherGaps) push(`- ${ucLink(uc)} (${uc.status})`);
+  for (const uc of otherGaps) {
+    push(`- ${ucLink(uc)} (${statusName(uc.status)})`);
+  }
 
   push("", "## Tests by use case");
   for (const uc of useCases) {
-    push("", `### ${uc.id}`, "", `${ucLink(uc)} (${uc.status})`, "");
+    push(
+      "",
+      `### ${uc.id}`,
+      "",
+      `${ucLink(uc)} (${statusName(uc.status)})`,
+      "",
+    );
     const byLayer = index.get(uc.id);
     let any = false;
     for (const layer of LAYERS) {
@@ -663,30 +767,31 @@ export function run({
   );
   const totals = `${useCases.length} use cases and qualities, ${scan.tagged} of ${scan.total} tests tagged.`;
 
+  // Statuses come from the issues, so every mode reads them
   let github = null;
-  if (check || json) {
-    try {
-      github = readIssues();
-    } catch (error) {
-      const reason = String(error.stderr || error.message)
-        .trim()
-        .split("\n")[0];
-      if (check && strictIssues) {
-        log.error(
-          `Traceability check failed: --strict-issues needs the GitHub issues, and gh can't read them (${reason}). The job needs GH_TOKEN and issues: read.`,
-        );
-        return 1;
-      }
-      log.log(
-        `${env.GITHUB_ACTIONS === "true" ? "::warning title=Traceability::" : ""}Skipping the issue checks: can't read GitHub issues with gh (${reason}).`,
+  try {
+    github = readIssues();
+  } catch (error) {
+    const reason = String(error.stderr || error.message)
+      .trim()
+      .split("\n")[0];
+    if (check && strictIssues) {
+      log.error(
+        `Traceability check failed: --strict-issues needs the GitHub issues, and gh can't read them (${reason}). The job needs GH_TOKEN and issues: read.`,
       );
+      return 1;
     }
+    log.log(
+      `${env.GITHUB_ACTIONS === "true" ? "::warning title=Traceability::" : ""}Skipping the issue checks and showing statuses as unknown: can't read GitHub issues with gh (${reason}).`,
+    );
   }
   if (github?.fixing?.length > 0) {
     log.log(
       `Counting ${github.fixing.map((n) => `#${n}`).join(", ")} as closed: this pull request fixes ${github.fixing.length === 1 ? "it" : "them"}.`,
     );
   }
+  const entries = deriveStatuses(useCases, github);
+  for (const line of statusLines(entries)) log.log(line);
 
   if (json) {
     fs.writeFileSync(
@@ -696,7 +801,7 @@ export function run({
   }
 
   if (!check) {
-    fs.writeFileSync(path.join(root, OUTPUT), render(useCases, scan));
+    fs.writeFileSync(path.join(root, OUTPUT), render(entries, scan));
     log.log(`Wrote ${OUTPUT}: ${totals}`);
     return 0;
   }
@@ -707,11 +812,11 @@ export function run({
       GITHUB_REPOSITORY && GITHUB_SHA
         ? `${GITHUB_SERVER_URL ?? "https://github.com"}/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}/`
         : "../../";
-    fs.appendFileSync(summaryFile, render(useCases, scan, { base }));
+    fs.appendFileSync(summaryFile, render(entries, scan, { base }));
   }
   const problems = findProblems(useCases, scan);
   const issues = github
-    ? issueProblems(useCases, github)
+    ? issueProblems(useCases, github, scan)
     : { problems: [], triage: [] };
   if (github && summaryFile) {
     fs.appendFileSync(
@@ -731,7 +836,7 @@ export function run({
     problems.push(...issues.problems);
   } else {
     for (const p of issues.problems) {
-      annotate("warning", "Register and issues disagree", p);
+      annotate("warning", "Release blocker", p);
     }
   }
   if (problems.length > 0) {

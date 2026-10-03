@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  countStatuses,
   groupEntries,
   platformOf,
   summarise,
@@ -34,17 +35,30 @@ describe("platformOf", () => {
 });
 
 describe("summarise", () => {
-  const useCases = [
-    { status: "supported" },
-    { status: "supported" },
-    { status: "partial" },
-    { status: "not built" },
+  // Statuses as traceability.mjs generates them from the open issues
+  const entry = (id: string, kind: string, status: string) => ({
+    gap: null,
+    group: kind === "quality" ? "Qualities" : "Samples",
+    id,
+    kind,
+    name: id,
+    openIssues: status === "partial" ? 1 : 0,
+    status,
+    tests: { e2e: 0, integration: 0, unit: 0, validation: 0 },
+  });
+  const entries = [
+    entry("UC-19", "use case", "supported"),
+    entry("UC-20", "use case", "not built"),
+    entry("UC-23", "use case", "supported"),
+    entry("UC-24", "use case", "partial"),
+    entry("Q-01", "quality", "partial"),
   ];
 
   it("counts each layer once and lists the platforms where it all passed", () => {
     const summary = summarise({
       commit: "abc",
       date: "2026-10-03",
+      entries,
       files: [
         {
           content: vitest(3800, 3800),
@@ -71,7 +85,6 @@ describe("summarise", () => {
           path: "validation-report-macos-latest/validation-report/performance/report.json",
         },
       ],
-      useCases,
       version: "v1.3.2",
     });
 
@@ -103,6 +116,30 @@ describe("summarise", () => {
       total: 4,
     });
     expect(summary.version).toBe("v1.3.2");
+    // The page's chips show the generated status
+    expect(
+      summary.groups.flatMap(
+        (g: { entries: { id: string; status: string }[] }) =>
+          g.entries.map((e) => [e.id, e.status]),
+      ),
+    ).toEqual([
+      ["UC-19", "supported"],
+      ["UC-20", "not built"],
+      ["UC-23", "supported"],
+      ["UC-24", "partial"],
+      ["Q-01", "partial"],
+    ]);
+  });
+});
+
+describe("countStatuses", () => {
+  it("refuses an entry with no status, which means the issues weren't read", () => {
+    expect(() =>
+      countStatuses([
+        { id: "UC-19", status: "supported" },
+        { id: "UC-23", status: null },
+      ]),
+    ).toThrow("No status for UC-23");
   });
 });
 

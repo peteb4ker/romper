@@ -10,14 +10,11 @@ context_size: large
 What Romper supports, from the user's side, and how each use case is built.
 Each entry has:
 
-- **Status:**
-  - *supported*: works as the user docs describe, with no open issues;
-  - *partial*: works, but has at least one open issue: a bug, a gap between
-    the docs and the code, or a missing test;
-  - *not built*: the docs or the code suggest it, but no user can do it.
 - a description with a link to the manual;
 - entry points (renderer component or hook, IPC channels, main service),
-  checked against the code on 2026-10-01.
+  checked against the code on 2026-10-01;
+- `**Status:** not built`, only when the docs or the code suggest it but no
+  user can do it.
 
 **Open issues are GitHub issues** labelled with the entry's ID, for example
 [open issues for UC-19](https://github.com/peteb4ker/romper/issues?q=is%3Aopen+label%3AUC-19).
@@ -26,17 +23,9 @@ and links the [findings register](../../aidlc-docs/inception/reverse-engineering
 entry, if there is one. A doc gap (the docs promise what the code doesn't
 do) is an issue too, labelled `documentation`, and a missing test is one
 labelled `test`, so entries no longer list known issues or doc gaps here.
-
-Status follows the issues: a supported entry has no open issues, and a
-partial one has at least one. `npm run trace:check` checks this, along with
-labels the register doesn't have and entries with no label on GitHub. On a
-pull request a disagreement is a warning; the release fails on it
-(`--strict-issues`), so a release ships statuses that match its issues.
 Issues labelled `triage`, or with no `UC-NN` or `Q-NN` label, haven't been
-triaged yet: they don't count towards a status and are listed separately.
-The pull request that closes an entry's last open issue (`Fixes #N`) marks
-it supported; the check counts the issues a pull request fixes as closed.
-See [`BACKLOG.md`](../../BACKLOG.md) for the loop.
+triaged yet and don't count. See [`BACKLOG.md`](../../BACKLOG.md) for the
+loop.
 
 The tests for each use case are listed in `traceability.md`, generated
 (not committed) by `npm run trace` from `[UC-NN]` tags in test titles; CI
@@ -57,19 +46,23 @@ Everything traces from a user-oriented statement: a use case (what you can
 do) or a quality (how Romper behaves while you do it, under
 [Qualities](#qualities)).
 
-## Summary
+## Status
 
-| Status | Use cases |
-|---|---|
-| supported | Q-04, UC-02, UC-03, UC-04, UC-05, UC-06, UC-08, UC-09, UC-10, UC-11, UC-12, UC-14, UC-15, UC-16, UC-17, UC-18, UC-19, UC-21, UC-23, UC-24, UC-25, UC-26, UC-27, UC-32, UC-35, UC-37 |
-| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, Q-08, UC-01, UC-07, UC-13, UC-28, UC-29, UC-30, UC-31, UC-33, UC-34, UC-36 |
-| not built | UC-20, UC-22 |
+Status isn't written here: `scripts/traceability.mjs` generates it from the
+open GitHub issues. An entry is *supported* (works as the user docs
+describe) when no open issue carries its label, and *partial* (works, with
+a known bug, doc gap or missing test) when at least one does. Only *not
+built* is set by hand, with a `**Status:** not built` line; open issues on
+a not-built entry, such as one to build it, don't change it. So a fix
+never edits this file to change a status: closing the issue is enough. See
+each entry's status in the Lint job summary, the output of `npm run trace`,
+the [website's testing page](https://peteb4ker.github.io/romper/testing/)
+(as of the latest release), or on GitHub as the open issues for its label:
+`https://github.com/peteb4ker/romper/issues?q=is%3Aopen+label%3AUC-NN`.
 
 ## Setup and local store
 
 ### UC-01 Set up from an SD card
-
-**Status:** partial
 
 On first launch, the setup wizard copies the kit folders from a Rample SD
 card into a new local store and imports them. A voice with more than 12
@@ -98,8 +91,6 @@ samples keeps the first 12, and the wizard names the files it left out. See
 
 ### UC-02 Set up from the factory archive
 
-**Status:** supported
-
 The wizard's factory option downloads Squarp's sample archive (about
 313 MiB), checks its SHA-256, extracts it into a new local store and imports
 it. See
@@ -118,8 +109,6 @@ and [Factory Samples](../manual/syncing.md#factory-samples).
 
 ### UC-03 Set up an empty library
 
-**Status:** supported
-
 The wizard's blank option creates an empty local store and opens the
 browser on bank A with an Add Kit card. See
 [Choosing a Local Store](../manual/getting-started.md#choosing-a-local-store)
@@ -131,8 +120,6 @@ and [Creating Kits](../manual/kit-browser.md#creating-kits).
 - **Main:** `electron/main/services/localStoreSetupService.ts` (`createSetupDatabase`).
 
 ### UC-04 Choose an existing local store
-
-**Status:** supported
 
 On first launch, **Choose Existing Store** in the wizard points Romper at a
 folder that already holds a local store (one containing `.romperdb`). See
@@ -148,8 +135,6 @@ folder that already holds a local store (one containing `.romperdb`). See
   `electron/main/services/settingsService.ts` (`writeSetting`).
 
 ### UC-05 Recover from an invalid or missing store
-
-**Status:** supported
 
 When the saved local store is missing or no longer valid, Romper asks for
 another. See
@@ -168,8 +153,6 @@ and [Validating Your Store](../manual/kit-browser.md#validating-your-store).
   `electron/main/localStoreValidator.ts` (`validateLocalStoreAgainstDb`).
 
 ### UC-06 Change the local store
-
-**Status:** supported
 
 File > **Change Local Store...** or Settings > Advanced > **Change** switches
 to another local store, and the browser reloads in place. A folder that isn't
@@ -194,8 +177,6 @@ a local store is refused with the reason. See
 
 ### UC-07 Browse kits by bank
 
-**Status:** partial
-
 The kit browser shows every kit in a grid grouped by bank, A to Z. The bank
 bar on the left and the letter keys jump to a bank; clicking a kit opens it.
 See [Navigating Banks](../manual/kit-browser.md#navigating-banks) and
@@ -211,8 +192,6 @@ See [Navigating Banks](../manual/kit-browser.md#navigating-banks) and
 
 ### UC-08 Read kit card details
 
-**Status:** supported
-
 Each kit card shows the kit ID and alias, sample counts per voice, voice
 names, a kit type icon, a stereo icon, a favourite star, a lock icon on
 read-only kits and an amber border on kits changed since the last write.
@@ -224,8 +203,6 @@ See [Kit Cards](../manual/kit-browser.md#kit-cards).
 - **IPC:** `get-all-kits`.
 
 ### UC-09 Search kits
-
-**Status:** supported
 
 The search box filters the grid to kits whose name, alias, bank artist,
 voice names or sample file names contain the text (two characters or more),
@@ -239,8 +216,6 @@ and highlights the matches. See
 - **IPC, main:** none; search runs on the loaded kits.
 
 ### UC-10 Favourite kits
-
-**Status:** supported
 
 The star on a kit card or in the kit editor's header, `Shift+F` on the
 focused kit in the kit browser, or `F` in the kit editor marks a
@@ -260,8 +235,6 @@ favourite; the Favorites filter shows only those. See
 
 ### UC-11 Filter to kits modified since the last sync
 
-**Status:** supported
-
 The Modified filter shows the kits changed since they were last written to
 the card. See [Modified Filter](../manual/kit-browser.md#modified-filter).
 
@@ -279,8 +252,6 @@ the card. See [Modified Filter](../manual/kit-browser.md#modified-filter).
 
 ### UC-12 Name banks
 
-**Status:** supported
-
 Each bank header has an editable artist name. Names are stored in the local
 store and written to the card as `<letter> - <name>.rtf` files. See
 [Editing Bank Names](../manual/kit-browser.md#editing-bank-names).
@@ -295,8 +266,6 @@ store and written to the card as `<letter> - <name>.rtf` files. See
   (`writeBankRtfFiles`).
 
 ### UC-13 Scan a kit, or scan all
-
-**Status:** partial
 
 **Scan Kit** in the kit editor (or "/") rebuilds a read-only kit's samples
 from its folder, keeping edits, and names unnamed voices; in an editable
@@ -317,8 +286,6 @@ kit. See [Scanning Your Library](../manual/kit-browser.md#scanning-your-library)
 
 ### UC-14 Create a kit
 
-**Status:** supported
-
 Click the **Add Kit** card at the end of a bank to create a blank kit in
 the bank's first free slot. An empty bank opens from its dimmed letter in
 the bank bar, and an empty library shows bank A with an Add Kit card. See
@@ -335,8 +302,6 @@ the bank bar, and an empty library shows bank A with an Add Kit card. See
 
 ### UC-15 Duplicate a kit
 
-**Status:** supported
-
 Copy a kit, with its samples, gain, voice settings and sequence, into
 another slot by typing the target (for example `B5`) in the kit card's
 duplicate popover. See
@@ -351,8 +316,6 @@ duplicate popover. See
   one transaction).
 
 ### UC-16 Delete a kit
-
-**Status:** supported
 
 Delete an editable kit from its card, after a popover that says how many
 samples it holds. The next write removes it from the card. The manual
@@ -369,8 +332,6 @@ doesn't describe this yet; the only mention is in
 
 ### UC-17 Make a kit editable and set its alias
 
-**Status:** supported
-
 Kits open read-only. The header switch makes a kit editable, which shows the
 editing controls (drop, delete, gain, voice names). The kit's display name
 (alias) is edited in the header. See
@@ -386,8 +347,6 @@ editing controls (drop, delete, gain, voice names). The kit's display name
 
 ### UC-18 Step to the previous or next kit
 
-**Status:** supported
-
 In the kit editor, the header's arrow buttons and the `,` and `.` keys open
 the previous or next kit in slot order. See
 [Navigating Between Kits](../manual/kit-editor.md#navigating-between-kits).
@@ -401,8 +360,6 @@ the previous or next kit in slot order. See
 ## Samples
 
 ### UC-19 Drop WAVs onto a voice
-
-**Status:** supported
 
 Drag WAV files from Finder or Explorer onto a voice in an editable kit. Each
 file is checked and added to the voice's next free slot, up to 12. See
@@ -444,8 +401,6 @@ appends instead (UC-19). No manual page describes replacing; the
 
 ### UC-21 Move samples within a kit
 
-**Status:** supported
-
 Drag a sample to another slot or voice in the same kit; the samples after
 it shift to make room. The manual doesn't describe this; the website and
 the FAQ mention reordering
@@ -479,8 +434,6 @@ drop targets. No user doc promises it.
 
 ### UC-23 Delete a sample
 
-**Status:** supported
-
 Delete a sample with its trash button in an editable kit; the samples after
 it move up. While "Confirm destructive actions" is on (the default), Romper
 asks first. Undo puts it back. See
@@ -500,8 +453,6 @@ asks first. Undo puts it back. See
 
 ### UC-24 Set a sample's gain
 
-**Status:** supported
-
 Each sample in an editable kit has a gain knob, from -24 to +12 dB. Gain is
 applied when the kit is written to the card. See
 [Gain Control](../manual/kit-editor.md#gain-control).
@@ -518,8 +469,6 @@ applied when the kit is written to the card. See
 
 ### UC-25 Reveal a sample in Finder or Explorer
 
-**Status:** supported
-
 Right-click a sample to show its source file in Finder or Explorer. Nothing
 in the UI or the manual mentions it.
 
@@ -533,8 +482,6 @@ in the UI or the manual mentions it.
 `shell` stub in main to be testable above unit level.
 
 ### UC-26 Undo and redo
-
-**Status:** supported
 
 Cmd/Ctrl+Z and Shift+Cmd/Ctrl+Z (or Ctrl+Y), and Edit > Undo and Redo,
 undo sample adds, deletes and moves and sequencer edits in the open kit. A
@@ -560,8 +507,6 @@ focused text field keeps its own undo. See
 
 ### UC-27 Name voices
 
-**Status:** supported
-
 In an editable kit, the pencil in a voice header renames the voice. Setup
 and scans name unnamed voices from their file names and keep names set by hand. See
 [Voice Names and Kit Type](../manual/kit-editor.md#voice-names-and-kit-type).
@@ -573,8 +518,6 @@ and scans name unnamed voices from their file names and keep names set by hand. 
 - **Main:** `electron/main/db/operations/voiceCrudOperations.ts` (`updateVoiceAlias`).
 
 ### UC-28 Link a voice pair as stereo
-
-**Status:** partial
 
 The chain icon between two voices links them as a stereo pair: the left
 voice's files play and are written in stereo, and the right voice is hidden.
@@ -597,8 +540,6 @@ to mono when written. See
 
 ### UC-29 Play a sample
 
-**Status:** partial
-
 The play button on a sample, or Space on the selected one, previews it.
 Starting a sample stops whatever else is playing on that voice (voice
 choke). See
@@ -613,8 +554,6 @@ choke). See
   `electron/main/services/metadata/sampleMetadataService.ts`.
 
 ### UC-30 Step sequencer
-
-**Status:** partial
 
 A 16-step grid per voice previews a kit's pattern at a set BPM. Patterns and
 BPM are saved with the kit. See
@@ -631,8 +570,6 @@ BPM are saved with the kit. See
 
 ### UC-31 Trigger conditions
 
-**Status:** partial
-
 Right-click a step to give it an A:B condition, so it fires only on some
 passes of the loop. See
 [Trigger Conditions](../manual/step-sequencer.md#trigger-conditions-step-logic).
@@ -645,8 +582,6 @@ passes of the loop. See
 - **Main:** `electron/main/db/operations/kitCrudOperations.ts` (`updateKit`).
 
 ### UC-32 Sample mode, level and mute
-
-**Status:** supported
 
 Each voice in the sequencer has a sample mode (first, random or round-robin
 across its samples), a level, and a mute that lasts for the session. See
@@ -663,8 +598,6 @@ and [Voice Volume and Mute](../manual/step-sequencer.md#voice-volume-and-mute).
   `updateVoiceSampleMode`).
 
 ### UC-33 Slicer
-
-**Status:** partial
 
 The slicer cuts a voice's sample into equal slices and plays a slice per
 step, with rolls ("happy accidents") to generate patterns. See
@@ -683,8 +616,6 @@ step, with rolls ("happy accidents") to generate patterns. See
 ## Write to card
 
 ### UC-34 Write kits to the SD card
-
-**Status:** partial
 
 **Write** in the browser header compares the store with the card and shows a
 summary: kits and samples to write, conversions, files the store no longer
@@ -713,8 +644,6 @@ Rample's own `_save` folder alone. Cancel stops between files. See
 
 ### UC-35 Preferences
 
-**Status:** supported
-
 Settings (Cmd/Ctrl+, or the gear in the header) has three tabs: Sample
 Management ("Confirm destructive actions"), Appearance (light, system or
 dark) and Advanced (the local store; see UC-06). The status bar also cycles
@@ -731,8 +660,6 @@ the theme. The manual has no Preferences section; see
   `electron/main/settingsFile.ts` (value checks, atomic write).
 
 ### UC-36 Messages and error containment
-
-**Status:** partial
 
 Results and errors show as toasts at the top right that dismiss themselves.
 An error boundary around the app, the kit list and the kit editor catches a
@@ -752,8 +679,6 @@ background-failure message, and the requirements are in
   `onMessage`.
 
 ### UC-37 About, help, updates and diagnostics
-
-**Status:** supported
 
 The About dialog shows the version and links; the Help menu and status bar
 link to the Romper and Rample manuals. On macOS, Romper checks for updates
@@ -779,8 +704,6 @@ like a use case, its tests and issues are labelled the same way (`[Q-01]`,
 
 ### Q-01 Romper stays responsive as your library grows
 
-**Status:** partial
-
 Opening the app, opening and moving between kits, editing, and preparing a
 write stay quick with hundreds of kits and thousands of samples. Each
 everyday action has a work budget (`tests/perf/budgets.ts`) that a change
@@ -790,8 +713,6 @@ can't exceed; the plan to bring the budgets down is in
 
 ### Q-02 Your changes are saved completely, or not at all
 
-**Status:** partial
-
 An edit, a scan, an undo or an upgrade either finishes or leaves your
 library as it was; it never leaves a kit half-changed or a sample without
 its settings.
@@ -799,15 +720,11 @@ its settings.
 
 ### Q-03 Romper only touches what you point it at
 
-**Status:** partial
-
 Romper reads your samples and writes only to your local store and the card
 you choose. Its interface can't reach any other files or folders.
 
 
 ### Q-04 The card ends up exactly matching your library
-
-**Status:** supported
 
 After a write, every file on the card is exactly what your library says it
 should be, converted where the Rample needs it, and the Rample's own
@@ -817,15 +734,11 @@ byte for byte before every release.
 
 ### Q-05 Releases are signed and install cleanly everywhere Romper runs
 
-**Status:** partial
-
 Every release is signed, so your operating system trusts it, is built for
 each supported platform, and is made from up-to-date, secure parts.
 
 
 ### Q-06 Romper works with a keyboard and assistive technology
-
-**Status:** partial
 
 Everything you can do with a mouse you can do with a keyboard, and screen
 readers can name every control.
@@ -833,14 +746,10 @@ readers can name every control.
 
 ### Q-07 Every change is tested before it reaches you
 
-**Status:** partial
-
 A change is merged only after its tests pass on every platform, and those
 tests check what you'd notice, not just the code's internals.
 
 ### Q-08 Romper supports or mirrors the Rample's features
-
-**Status:** partial
 
 What you can do on the Rample, Romper either prepares for it (writes what
 the Rample reads from the card), mirrors so you can preview it on your

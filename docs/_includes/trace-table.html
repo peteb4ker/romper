@@ -1,0 +1,37 @@
+{%- comment -%}
+One area's use cases or qualities: status, tagged tests per layer, and
+follow-ups (a missing test, open issues). include trace-table.html group=g
+{%- endcomment -%}
+{%- assign g = include.group -%}
+<div class="trace" role="table" aria-label="{{ g.name }}">
+    <div class="trace-row trace-head" role="row">
+        <span role="columnheader">{{ g.name }}</span>
+        <span role="columnheader">Unit</span>
+        <span role="columnheader">Integration</span>
+        <span role="columnheader">End-to-end</span>
+        <span role="columnheader">Full pipeline</span>
+    </div>
+    {%- for e in g.entries %}
+    <div class="trace-row" role="row">
+        <div role="cell" class="trace-name">
+            <span>{{ e.name }}</span>
+            {%- if e.status == "supported" %}
+            <span class="trace-chip trace-chip--full">{% if g.kind == "quality" %}Holds{% else %}Fully working{% endif %}</span>
+            {%- elsif e.status == "partial" %}
+            <span class="trace-chip trace-chip--partial">{% if g.kind == "quality" %}In progress{% else %}Known limits{% endif %}</span>
+            {%- else %}
+            <span class="trace-chip trace-chip--none">Not built yet</span>
+            {%- endif %}
+            {%- if e.followUps.size > 0 %}
+            <ul class="trace-follow">
+                {%- for f in e.followUps %}<li>{{ f }}</li>{% endfor %}
+            </ul>
+            {%- endif %}
+        </div>
+        <span role="cell" data-layer="Unit">{% if e.tests.unit > 0 %}{{ e.tests.unit }}{% else %}&ndash;{% endif %}</span>
+        <span role="cell" data-layer="Integration">{% if e.tests.integration > 0 %}{{ e.tests.integration }}{% else %}&ndash;{% endif %}</span>
+        <span role="cell" data-layer="End-to-end">{% if e.tests.e2e > 0 %}{{ e.tests.e2e }}{% else %}&ndash;{% endif %}</span>
+        <span role="cell" data-layer="Full pipeline">{% if e.tests.validation > 0 %}{{ e.tests.validation }}{% else %}&ndash;{% endif %}</span>
+    </div>
+    {%- endfor %}
+</div>

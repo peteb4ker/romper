@@ -20,7 +20,13 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { parseRegister } from "./traceability.mjs";
+import {
+  buildIndex,
+  findTestFiles,
+  parseBacklog,
+  parseRegister,
+  summarise as summariseEntries,
+} from "./traceability.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PLATFORMS = { macos: "macOS", ubuntu: "Linux", windows: "Windows" };
@@ -36,10 +42,53 @@ const sortPlatforms = (set) =>
   [...set].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b));
 
 /**
+ * Use cases and qualities for the testing page, grouped by area in register
+ * order, each with its follow-ups: a missing test (none above unit level, or
+ * the gap the register declares) and its open backlog items.
+ */
+export function groupEntries(entries) {
+  const groups = [];
+  for (const entry of entries) {
+    const aboveUnit =
+      entry.tests.integration + entry.tests.e2e + entry.tests.validation > 0;
+    const plain = (text) => text.replaceAll("`", "");
+    const followUps = [];
+    if (entry.status !== "not built" && !aboveUnit) {
+      followUps.push(
+        entry.gap
+          ? `Missing test: ${plain(entry.gap)}`
+          : "Missing test: nothing above unit level checks this yet",
+      );
+    }
+    for (const issue of entry.issues) followUps.push(plain(issue.text));
+    let group = groups.at(-1);
+    if (group?.name !== entry.group) {
+      group = { entries: [], kind: entry.kind, name: entry.group };
+      groups.push(group);
+    }
+    group.entries.push({
+      followUps,
+      id: entry.id,
+      name: entry.name,
+      status: entry.status,
+      tests: entry.tests,
+    });
+  }
+  return groups;
+}
+
+/**
  * Summarise a release run.
  * @param {{ path: string, content: string }[]} files report files found
  */
-export function summarise({ commit, date, files, useCases, version }) {
+export function summarise({
+  commit,
+  date,
+  entries = [],
+  files,
+  useCases,
+  version,
+}) {
   const layer = () => ({ passed: 0, platforms: new Set(), tests: 0 });
   const layers = {
     e2e: layer(),
@@ -115,6 +164,7 @@ export function summarise({ commit, date, files, useCases, version }) {
       },
       unit: finish(layers.unit),
     },
+    groups: groupEntries(entries),
     performance: summariseBudgets(budgets),
     useCases: {
       notBuilt: useCases.filter((u) => u.status === "not built").length,
@@ -190,12 +240,22 @@ if (
     );
     process.exit(2);
   }
-  const { useCases } = parseRegister(
+  const { useCases: entries } = parseRegister(
     fs.readFileSync(path.join(ROOT, "docs/developer/use-cases.md"), "utf8"),
+  );
+  // Use case status and counts are for use cases only; qualities are listed
+  // with them on the page
+  const useCases = entries.filter((e) => e.kind === "use case");
+  const scan = buildIndex(findTestFiles(ROOT), (f) =>
+    fs.readFileSync(path.join(ROOT, f), "utf8"),
+  );
+  const backlog = parseBacklog(
+    fs.readFileSync(path.join(ROOT, "BACKLOG.md"), "utf8"),
   );
   const summary = summarise({
     commit: option("commit") ?? "",
     date: new Date().toISOString().slice(0, 10),
+    entries: summariseEntries(entries, scan, backlog),
     files: findReports(dir),
     useCases,
     version: option("version") ?? "",

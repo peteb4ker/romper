@@ -72,6 +72,19 @@ the Pages build copies from the latest release (scripts/testing-summary.mjs).
     <li><span class="testing-key testing-key--none" aria-hidden="true"></span>{{ u.notBuilt }} not built yet</li>
 </ul>
 
+{%- if t.groups.size > 0 %}
+<p class="testing-sub testing-trace-intro">Each use case below lists how many tests are tagged with it at each layer, and its follow-ups: a test still missing, or an open issue, in the words of what you'd notice.</p>
+{%- for g in t.groups %}{% if g.kind == "use case" %}
+{% include trace-table.html group=g %}
+{%- endif %}{% endfor %}
+
+<h2 class="testing-h2">How Romper behaves</h2>
+<p class="testing-sub">Promises that hold whatever you're doing, each tested and tracked the same way.</p>
+{%- for g in t.groups %}{% if g.kind == "quality" %}
+{% include trace-table.html group=g %}
+{%- endif %}{% endfor %}
+{%- endif %}
+
 <h2 class="testing-h2">Does it stay fast?</h2>
 <p class="testing-sub">Each everyday action has a work budget. A change that makes Romper do more work than its budget allows fails its checks and can't be merged.</p>
 {%- if t.performance.size > 0 %}

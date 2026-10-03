@@ -127,6 +127,10 @@ describe("useKitSync", () => {
       expect(mockStartSync).toHaveBeenCalledWith({
         sdCardPath: "/path/to/sd",
       });
+      expect(mockOnMessage).toHaveBeenCalledWith(
+        "The write to the SD card didn't finish. The write panel says why; fix that, then write again.",
+        "error",
+      );
     });
 
     it("does nothing when no SD card path is provided", async () => {

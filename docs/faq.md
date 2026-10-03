@@ -58,7 +58,7 @@ Your sample files are only copied during an explicit sync operation, and only to
 - Moving sample layers within the kit
 - Step sequencer edits: steps, trigger conditions, slices and rolls
 
-Sample changes undo only while the kit is editable; sequencer edits undo in read-only kits too. Use the standard keyboard shortcuts (**Cmd+Z** / **Ctrl+Z** to undo, **Cmd+Shift+Z** / **Ctrl+Shift+Z** to redo, or **Ctrl+Y** on Windows and Linux) or the Edit menu. The undo history is cleared when you open another kit or go back to the Kit Browser.
+Sample changes undo only while the kit is editable; sequencer edits undo in read-only kits too. Use the standard keyboard shortcuts (**Cmd+Z** / **Ctrl+Z** to undo, **Cmd+Shift+Z** / **Ctrl+Shift+Z** to redo, or **Ctrl+Y** on Windows and Linux) or the Edit menu. The undo history is cleared when you open another kit or go back to the Kit Browser. If an undo or redo can't be done, a message names the change it couldn't reverse; check the kit, then try again.
 
 Other changes can't be undone, including sample gain, kit and voice names, stereo links, the editable switch, and creating, duplicating or deleting kits.
 

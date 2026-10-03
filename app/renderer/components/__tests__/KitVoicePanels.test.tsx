@@ -704,6 +704,151 @@ describe("KitVoicePanels", () => {
       });
     });
   });
+  describe("[UC-28] [UC-36] telling the user about a refused link (RE-40)", () => {
+    const voices = (secondary: string[], stereo = false) => [
+      { samples: ["kick.wav"], stereo_mode: stereo, voice: 1, voiceName: "A" },
+      { samples: secondary, voice: 2, voiceName: "B" },
+      { samples: [], voice: 3, voiceName: "C" },
+      { samples: [], voice: 4, voiceName: "D" },
+    ];
+
+    it("says why when the right-hand voice has samples", async () => {
+      const onMessage = vi.fn();
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable={true}
+          onMessage={onMessage}
+          voices={voices(["hat.wav"])}
+        />,
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("link-button-1-2"));
+      });
+
+      expect(window.electronAPI.updateVoiceStereoMode).not.toHaveBeenCalled();
+      expect(onMessage).toHaveBeenCalledWith(
+        "Voices 1 and 2 weren't linked: voice 2 has samples. Delete or move them, then link again.",
+        "warning",
+      );
+    });
+
+    it("reports a link main refuses", async () => {
+      const onMessage = vi.fn();
+      const onKitUpdated = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(window.electronAPI.updateVoiceStereoMode).mockResolvedValue({
+        error:
+          "Kit Kit1 isn't editable. Make it editable to link or unlink voices.",
+        success: false,
+      });
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable={true}
+          onKitUpdated={onKitUpdated}
+          onMessage={onMessage}
+          voices={voices([])}
+        />,
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("link-button-1-2"));
+      });
+
+      await waitFor(() =>
+        expect(onMessage).toHaveBeenCalledWith(
+          "Voices 1 and 2 weren't linked. Check that the kit is editable and voice 2 is empty, then try again.",
+          "error",
+        ),
+      );
+      consoleError.mockRestore();
+    });
+
+    it("reports a link whose write throws", async () => {
+      const onMessage = vi.fn();
+      vi.mocked(window.electronAPI.updateVoiceStereoMode).mockRejectedValue(
+        new Error("SQLITE_BUSY: database is locked"),
+      );
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable={true}
+          onMessage={onMessage}
+          voices={voices([])}
+        />,
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("link-button-1-2"));
+      });
+
+      await waitFor(() => expect(onMessage).toHaveBeenCalledTimes(1));
+      expect(onMessage.mock.calls[0][0]).not.toMatch(/SQLITE|Error:/);
+      consoleError.mockRestore();
+    });
+
+    it("says nothing when the link works", async () => {
+      const onMessage = vi.fn();
+      vi.mocked(window.electronAPI.updateVoiceStereoMode).mockResolvedValue({
+        success: true,
+      });
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable={true}
+          onKitUpdated={vi.fn().mockResolvedValue(undefined)}
+          onMessage={onMessage}
+          voices={voices([])}
+        />,
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("link-button-1-2"));
+      });
+
+      await waitFor(() =>
+        expect(window.electronAPI.updateVoiceStereoMode).toHaveBeenCalled(),
+      );
+      expect(onMessage).not.toHaveBeenCalled();
+    });
+
+    it("reports an unlink main refuses, and doesn't reload", async () => {
+      const onMessage = vi.fn();
+      const onKitUpdated = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(window.electronAPI.updateVoiceStereoMode).mockResolvedValue({
+        error: "Kit Kit1 isn't editable.",
+        success: false,
+      });
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable={true}
+          onKitUpdated={onKitUpdated}
+          onMessage={onMessage}
+          voices={voices([], true)}
+        />,
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("stereo-badge-1"));
+      });
+
+      await waitFor(() =>
+        expect(onMessage).toHaveBeenCalledWith(
+          "Voices 1 and 2 weren't unlinked. Check that the kit is editable, then try again.",
+          "error",
+        ),
+      );
+      expect(onKitUpdated).not.toHaveBeenCalled();
+      consoleError.mockRestore();
+    });
+  });
+
   // RE-71: stereo linking is an edit
   describe("[UC-28] on a read-only kit", () => {
     it("offers no link control", () => {

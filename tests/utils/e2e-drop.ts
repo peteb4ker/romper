@@ -1,7 +1,16 @@
 import type { Page } from "@playwright/test";
 
-/** Drop real files on a voice the way a Finder/Explorer drop arrives */
-export async function dropFiles(page: Page, voice: number, files: string[]) {
+/**
+ * Drop real files on a voice the way a Finder/Explorer drop arrives: on its
+ * drop zone, or on `target` (a selector), such as a sample in a full voice,
+ * which has no drop zone.
+ */
+export async function dropFiles(
+  page: Page,
+  voice: number,
+  files: string[],
+  target = `[data-testid="drop-zone-voice-${voice}"]`,
+) {
   await page.evaluate(() => {
     if (document.getElementById("e2e-drop-files")) return;
     const input = document.createElement("input");
@@ -14,12 +23,12 @@ export async function dropFiles(page: Page, voice: number, files: string[]) {
   // Files from a real file input carry their paths, so the preload's
   // webUtils.getPathForFile works as it does for an OS drop
   await page.setInputFiles("#e2e-drop-files", files);
-  await page.evaluate((v) => {
+  await page.evaluate((selector) => {
     const input = document.getElementById("e2e-drop-files") as HTMLInputElement;
     const transfer = new DataTransfer();
     for (const file of Array.from(input.files ?? [])) transfer.items.add(file);
-    const zone = document.querySelector(`[data-testid="drop-zone-voice-${v}"]`);
-    if (!zone) throw new Error(`no drop zone for voice ${v}`);
+    const zone = document.querySelector(selector);
+    if (!zone) throw new Error(`nothing to drop on at ${selector}`);
     for (const type of ["dragenter", "dragover", "drop"]) {
       zone.dispatchEvent(
         new DragEvent(type, {
@@ -29,5 +38,5 @@ export async function dropFiles(page: Page, voice: number, files: string[]) {
         }),
       );
     }
-  }, voice);
+  }, target);
 }

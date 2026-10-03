@@ -16,6 +16,7 @@ interface KitVoicePanelsProps {
   kitName: string; // Used by useKitVoicePanels hook
   onBatchDropComplete?: () => void;
   onKitUpdated?: () => Promise<void>; // Called after voice stereo mode changes to reload kit data
+  onMessage?: (text: string, type?: string, duration?: number) => void; // Refused links and drops (RE-40)
   onPlay: (voice: number, sample: string) => void; // Used by useKitVoicePanels hook
   // New props for drag-and-drop sample management (Task 5.2.2 & 5.2.3)
   onSampleAdd?: (
@@ -141,10 +142,27 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     return samples;
   }, [sampleMetadata, hookProps.kitName]);
 
+  // Writes a voice's stereo setting; a refusal from main fails the link or
+  // unlink, so the user hears about it (RE-40)
+  const writeStereoMode = React.useCallback(
+    async (voiceNumber: number, updates: { stereo_mode?: boolean }) => {
+      const result = await globalThis.electronAPI?.updateVoiceStereoMode?.(
+        hookProps.kitName,
+        voiceNumber,
+        updates.stereo_mode ?? false,
+      );
+      if (result && !result.success) {
+        throw new Error(result.error || "updateVoiceStereoMode failed");
+      }
+    },
+    [hookProps.kitName],
+  );
+
   // Voice linking handlers
   const handleVoiceLink = React.useCallback(
     async (primaryVoice: number) => {
       const secondaryVoice = primaryVoice + 1;
+      const notLinked = `Voices ${primaryVoice} and ${secondaryVoice} weren't linked`;
 
       // Block if either voice is already linked
       const primaryStatus = stereoHandling.getVoiceLinkingStatus(
@@ -156,33 +174,35 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         voiceData,
       );
       if (primaryStatus.isLinked || secondaryStatus.isLinked) {
-        console.warn("One of these voices is already linked");
+        props.onMessage?.(
+          `${notLinked}: one of them is already in a stereo pair. Unlink that pair first.`,
+          "warning",
+        );
         return;
       }
 
       // Block if secondary voice has samples
       const secondarySamples = hookProps.samples[secondaryVoice] || [];
       if (secondarySamples.some((s) => s?.trim())) {
-        console.warn(
-          `Voice ${secondaryVoice} has samples — remove them before linking`,
+        props.onMessage?.(
+          `${notLinked}: voice ${secondaryVoice} has samples. Delete or move them, then link again.`,
+          "warning",
         );
         return;
       }
 
-      await stereoHandling.linkVoicesForStereo(
+      const result = await stereoHandling.linkVoicesForStereo(
         primaryVoice,
         voiceData,
         sampleData,
-        async (voiceNumber, updates) => {
-          if (globalThis.electronAPI?.updateVoiceStereoMode) {
-            await globalThis.electronAPI.updateVoiceStereoMode(
-              hookProps.kitName,
-              voiceNumber,
-              updates.stereo_mode ?? false,
-            );
-          }
-        },
+        writeStereoMode,
       );
+      if (!result.success) {
+        props.onMessage?.(
+          `${notLinked}. Check that the kit is editable and voice ${secondaryVoice} is empty, then try again.`,
+          "error",
+        );
+      }
       await props.onKitUpdated?.();
     },
     [
@@ -190,7 +210,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
       voiceData,
       sampleData,
       hookProps.samples,
-      hookProps.kitName,
+      writeStereoMode,
       props,
     ],
   );
@@ -200,23 +220,18 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
       const result = await stereoHandling.unlinkVoices(
         primaryVoice,
         voiceData,
-        async (voiceNumber, updates) => {
-          if (globalThis.electronAPI?.updateVoiceStereoMode) {
-            await globalThis.electronAPI.updateVoiceStereoMode(
-              hookProps.kitName,
-              voiceNumber,
-              updates.stereo_mode ?? false,
-            );
-          }
-        },
+        writeStereoMode,
       );
       if (!result.success) {
-        console.warn(result.error);
+        props.onMessage?.(
+          `Voices ${primaryVoice} and ${primaryVoice + 1} weren't unlinked. Check that the kit is editable, then try again.`,
+          "error",
+        );
         return;
       }
       await props.onKitUpdated?.();
     },
-    [stereoHandling, voiceData, hookProps.kitName, props],
+    [stereoHandling, voiceData, writeStereoMode, props],
   );
 
   // State to track internal drag operations across all voices
@@ -385,6 +400,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                   linkedWith={linkingStatus.linkedWith}
                   onBatchDropComplete={props.onBatchDropComplete}
                   onGainChange={handleGainChange}
+                  onMessage={props.onMessage}
                   onPlay={hookProps.onPlay}
                   onSampleAdd={props.onSampleAdd}
                   onSampleDelete={props.onSampleDelete}

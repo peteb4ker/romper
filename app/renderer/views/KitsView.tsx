@@ -105,6 +105,7 @@ const KitsView: React.FC = () => {
           void navigation.handleBack();
         }
       : undefined,
+    onMessage: showMessage,
   });
 
   // Menu handlers

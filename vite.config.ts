@@ -60,9 +60,10 @@ export default defineConfig({
       plugins: [autoprefixer()],
     },
   },
-  define: {
-    "import.meta.env.VITE_APP_VERSION": JSON.stringify(appVersion),
-  },
+  // Builds only: under Vitest the About tests set the version themselves
+  define: process.env.VITEST
+    ? {}
+    : { "import.meta.env.VITE_APP_VERSION": JSON.stringify(appVersion) },
   plugins: [react(), tailwindcss(), hardenProductionCsp()],
   resolve: {
     alias: {

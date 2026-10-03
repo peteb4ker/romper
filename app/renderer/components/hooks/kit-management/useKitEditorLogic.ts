@@ -102,6 +102,7 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   // Voice alias management
   const { updateVoiceAlias } = useVoiceAlias({
     kitName,
+    onMessage,
     onUpdate: () => {
       reloadKit().catch(console.error);
     },
@@ -187,9 +188,8 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
       setSelectedVoice(voice);
       setSelectedSampleIdx(idx);
     },
-    onSaveVoiceName: (voice: number, alias: null | string) => {
-      updateVoiceAlias(voice, alias ?? "").catch(console.error);
-    },
+    onSaveVoiceName: (voice: number, alias: null | string) =>
+      updateVoiceAlias(voice, alias ?? ""),
     onStop: playback.handleStop,
     onWaveformPlayingChange: playback.handleWaveformPlayingChange,
     playTriggers: playback.playTriggers,

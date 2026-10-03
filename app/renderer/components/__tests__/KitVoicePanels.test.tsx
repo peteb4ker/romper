@@ -565,7 +565,7 @@ describe("KitVoicePanels", () => {
   });
 
   describe("[UC-11] [UC-24] Gain changes (RE-35)", () => {
-    it("writes the gain and shows the kit as modified", () => {
+    it("writes the gain and shows the kit as modified", async () => {
       const onKitModified = vi.fn();
       render(
         <MultiVoicePanelsTestWrapper
@@ -582,7 +582,104 @@ describe("KitVoicePanels", () => {
         0,
         1,
       );
-      expect(onKitModified).toHaveBeenCalledWith("Kit1");
+      await waitFor(() => expect(onKitModified).toHaveBeenCalledWith("Kit1"));
+    });
+  });
+
+  describe("[UC-24] [UC-36] a gain that isn't saved (RE-91)", () => {
+    const voices = [{ samples: ["kick.wav"], voice: 1, voiceName: "Kick" }];
+
+    beforeEach(() => {
+      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+        data: [
+          {
+            filename: "kick.wav",
+            gain_db: -3,
+            kit_name: "Kit1",
+            slot_number: 0,
+            source_path: "/src/kick.wav",
+            voice_number: 1,
+          },
+        ],
+        success: true,
+      });
+    });
+
+    const knob = () =>
+      within(screen.getByTestId("voice-panel-1")).getAllByRole("slider")[0];
+    const gain = () => knob().getAttribute("aria-valuenow");
+
+    it("puts a refused gain back and says so", async () => {
+      vi.mocked(window.electronAPI.updateSampleGain).mockResolvedValue({
+        error: "Sample not found: kit=Kit1, voice=1, slot=0",
+        success: false,
+      });
+      const onKitModified = vi.fn();
+      const onMessage = vi.fn();
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable
+          onKitModified={onKitModified}
+          onMessage={onMessage}
+          voices={voices}
+        />,
+      );
+      await waitFor(() => expect(gain()).toBe("-3"));
+
+      fireEvent.wheel(knob(), { deltaY: -100 });
+
+      await waitFor(() =>
+        expect(onMessage).toHaveBeenCalledWith(
+          "Couldn't save the gain for kick.wav, so it's back to -3 dB. Try again.",
+          "error",
+        ),
+      );
+      expect(gain()).toBe("-3");
+      expect(onMessage.mock.calls[0][0]).not.toMatch(/not found|Error:/);
+      expect(onKitModified).not.toHaveBeenCalled();
+    });
+
+    it("gives one message for a turn whose saves all fail", async () => {
+      vi.mocked(window.electronAPI.updateSampleGain).mockRejectedValue(
+        new Error("IPC channel closed"),
+      );
+      const onMessage = vi.fn();
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable
+          onMessage={onMessage}
+          voices={voices}
+        />,
+      );
+      await waitFor(() => expect(gain()).toBe("-3"));
+
+      fireEvent.wheel(knob(), { deltaY: -100 });
+      fireEvent.wheel(knob(), { deltaY: -100 });
+      fireEvent.wheel(knob(), { deltaY: -100 });
+
+      await waitFor(() => expect(onMessage).toHaveBeenCalledTimes(1));
+      expect(gain()).toBe("-3");
+    });
+
+    it("says nothing when the gain is saved", async () => {
+      const onMessage = vi.fn();
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable
+          onMessage={onMessage}
+          voices={voices}
+        />,
+      );
+      await waitFor(() => expect(gain()).toBe("-3"));
+
+      fireEvent.wheel(knob(), { deltaY: -100 });
+
+      await waitFor(() =>
+        expect(window.electronAPI.updateSampleGain).toHaveBeenCalled(),
+      );
+      await act(async () => {});
+      expect(gain()).toBe("-2");
+      expect(onMessage).not.toHaveBeenCalled();
     });
   });
 

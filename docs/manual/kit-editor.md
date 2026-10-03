@@ -98,7 +98,7 @@ To link a pair, the right-hand voice must be empty. Romper doesn't link a pair w
 
 Romper automatically analyzes sample filenames to suggest voice names. For example, if Voice 1 contains files named `KICK_LOW_01.wav`, `KICK_LOW_02.wav`, etc., Romper labels that voice "Kick".
 
-In an editable kit, you can also name a voice yourself: click the pencil next to its name, type the name, and press `Enter` or click the tick.
+In an editable kit, you can also name a voice yourself: click the pencil next to its name, type the name, and press `Enter` or click the tick. If the name can't be saved, the voice keeps its old name and a message says so.
 
 The **kit type** (Drum, Loop, Vocal, FX, Synth/Bass) is inferred from the combination of voice names. A kit with voices named Kick, Snare, HiHat, and Clap would be classified as a Drum kit.
 
@@ -121,6 +121,8 @@ In an editable kit, each sample slot has a small **gain knob** that lets you tri
 The knob scales up on hover so you can see the arc position clearly, even though it's compact in the sample row.
 
 Gain changes can't be undone with **Undo**; click the knob to go back to 0 dB.
+
+If a gain change can't be saved, the knob goes back to the saved gain and a message says so; try again.
 
 ### Gain vs. Voice Volume
 

@@ -123,6 +123,8 @@ When two voices are configured for stereo playback (e.g., Voices 1+2 or Voices 3
 
 Sequencer patterns, trigger conditions, BPM, levels, sample modes, and slicer settings are all saved per-kit in the database. Your patterns persist across sessions. Voice mutes are session-only.
 
+If a level or sample mode can't be saved, it goes back to the saved setting and a message says so; try again.
+
 ## Example: Building a Pattern with the C0 Factory Kit
 
 This example uses the factory default **C0** kit to demonstrate steps, trigger conditions, sample selection modes, and volume controls working together. Try recreating this pattern and pressing play to hear how it sounds.

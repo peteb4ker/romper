@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 
 export interface UseVoiceNameEditorOptions {
-  onSaveVoiceName: (voice: number, newName: string) => void;
+  // Resolves to false when the name wasn't saved (RE-91)
+  onSaveVoiceName: (voice: number, newName: string) => Promise<boolean> | void;
   voice: number;
   voiceName: null | string;
 }
@@ -24,9 +25,13 @@ export function useVoiceNameEditor({
   }, [voiceName]);
 
   const handleSave = useCallback(() => {
-    onSaveVoiceName(voice, editValue.trim());
+    const saved = onSaveVoiceName(voice, editValue.trim());
     setEditing(false);
-  }, [onSaveVoiceName, voice, editValue]);
+    // A name that wasn't saved isn't kept for the next edit (RE-91)
+    void Promise.resolve(saved).then((ok) => {
+      if (ok === false) setEditValue(voiceName || "");
+    });
+  }, [onSaveVoiceName, voice, editValue, voiceName]);
 
   const handleCancel = useCallback(() => {
     setEditValue(voiceName || "");

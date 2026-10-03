@@ -1,34 +1,47 @@
 import { useCallback } from "react";
 
+import { saveFailed } from "../shared/useSettingSave";
+
 export interface UseVoiceAliasParams {
   kitName: string;
+  onMessage?: (text: string, type?: string, duration?: number) => void;
   onUpdate?: () => void;
 }
 
 /**
  * Hook for managing voice aliases
  */
-export function useVoiceAlias({ kitName, onUpdate }: UseVoiceAliasParams) {
+export function useVoiceAlias({
+  kitName,
+  onMessage,
+  onUpdate,
+}: UseVoiceAliasParams) {
+  // Resolves to whether the name was saved. The voice keeps its old name
+  // on screen until the kit reloads, so a failed save leaves it there and
+  // says so (RE-91).
   const updateVoiceAlias = useCallback(
-    async (voiceNumber: number, voiceAlias: string) => {
-      if (!globalThis.electronAPI?.updateVoiceAlias || !kitName) return;
+    async (voiceNumber: number, voiceAlias: string): Promise<boolean> => {
+      if (!globalThis.electronAPI?.updateVoiceAlias || !kitName) return false;
 
-      try {
-        const result = await globalThis.electronAPI.updateVoiceAlias(
+      const failed = await saveFailed(
+        globalThis.electronAPI.updateVoiceAlias(
           kitName,
           voiceNumber,
           voiceAlias,
+        ),
+        `the name for voice ${voiceNumber}`,
+      );
+      if (failed) {
+        onMessage?.(
+          `Couldn't save the name for voice ${voiceNumber}. Try again.`,
+          "error",
         );
-        if (result.success) {
-          onUpdate?.();
-        } else {
-          console.error("Failed to update voice alias:", result.error);
-        }
-      } catch (e) {
-        console.error("Failed to update voice alias:", e);
+        return false;
       }
+      onUpdate?.();
+      return true;
     },
-    [kitName, onUpdate],
+    [kitName, onMessage, onUpdate],
   );
 
   return {

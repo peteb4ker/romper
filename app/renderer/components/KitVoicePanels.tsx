@@ -8,6 +8,7 @@ import type { PlayOptions, SampleData, VoiceSamples } from "./kitTypes";
 import { slotKey } from "../utils/slotKey";
 import { useKitVoicePanels } from "./hooks/kit-management/useKitVoicePanels";
 import { useStereoHandling } from "./hooks/sample-management/useStereoHandling";
+import { useSettingSave } from "./hooks/shared/useSettingSave";
 import KitVoicePanel from "./KitVoicePanel";
 
 interface KitVoicePanelsProps {
@@ -41,7 +42,7 @@ interface KitVoicePanelsProps {
     filePath: string,
   ) => Promise<void>;
   onSampleSelect: (voice: number, idx: number) => void; // Used by useKitVoicePanels hook
-  onSaveVoiceName: (voice: number, newName: string) => void; // Used by useKitVoicePanels hook
+  onSaveVoiceName: (voice: number, newName: string) => Promise<boolean> | void; // Used by useKitVoicePanels hook
   onStop: (voice: number, slot: number) => void; // Used by useKitVoicePanels hook
   onWaveformPlayingChange: (
     voice: number,
@@ -63,6 +64,12 @@ interface KitVoicePanelsProps {
   stopTriggers: { [key: string]: number }; // Used by useKitVoicePanels hook
 }
 
+/** A gain as the knob shows it: "+3 dB", "0 dB", "-6 dB" */
+function formatGain(db: number): string {
+  const rounded = Math.round(db);
+  return rounded > 0 ? `+${rounded} dB` : `${rounded} dB`;
+}
+
 const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   const hookProps = useKitVoicePanels({
     ...props,
@@ -80,6 +87,11 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   const [sampleMetadata, setSampleMetadata] = useState<{
     [slotKey: string]: SampleData;
   }>({});
+  // Gain saves; reset when the metadata is reloaded from main (RE-91)
+  const { reset: resetGainSaves, save: saveGain } = useSettingSave<
+    string,
+    number
+  >();
 
   // Get voice data from kit with fallback defaults
   const voiceData = React.useMemo(() => {
@@ -274,6 +286,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
             };
           });
           setSampleMetadata(metadata);
+          resetGainSaves();
         }
       } catch (error) {
         console.error("Failed to load sample metadata:", error);
@@ -282,28 +295,53 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     };
 
     void loadSampleMetadata();
-  }, [hookProps.kitName, props.kit]);
+  }, [hookProps.kitName, props.kit, resetGainSaves]);
 
   // Optimistic update for gain changes so SampleWaveform gets the new
   // gainDb immediately. Main marks the kit modified with the gain (RE-35),
-  // so the kit's card shows it too, without reloading every kit.
-  const { onKitModified } = props;
+  // so the kit's card shows it too, without reloading every kit. If main
+  // doesn't save it, the knob goes back and a message says so (RE-91).
+  const { onKitModified, onMessage } = props;
+  const setSlotGain = React.useCallback((key: string, gainDb: number) => {
+    setSampleMetadata((prev) => {
+      const existing = prev[key];
+      if (!existing) return prev;
+      return { ...prev, [key]: { ...existing, gain_db: gainDb } };
+    });
+  }, []);
   const handleGainChange = React.useCallback(
-    (
-      voice: number,
-      slotNumber: number,
-      _sampleName: string,
-      gainDb: number,
-    ) => {
+    (voice: number, slotNumber: number, sampleName: string, gainDb: number) => {
       const key = slotKey(voice, slotNumber);
-      setSampleMetadata((prev) => {
-        const existing = prev[key];
-        if (!existing) return prev;
-        return { ...prev, [key]: { ...existing, gain_db: gainDb } };
+      setSlotGain(key, gainDb);
+      void saveGain({
+        current: sampleMetadata[key]?.gain_db ?? 0,
+        key,
+        onSaved: () => onKitModified?.(hookProps.kitName),
+        report: (saved) =>
+          onMessage?.(
+            `Couldn't save the gain for ${sampleName}, so it's back to ${formatGain(saved)}. Try again.`,
+            "error",
+          ),
+        restore: (saved) => setSlotGain(key, saved),
+        send: () =>
+          globalThis.electronAPI?.updateSampleGain?.(
+            hookProps.kitName,
+            voice,
+            slotNumber,
+            gainDb,
+          ),
+        value: gainDb,
+        what: `the gain for voice ${voice} slot ${slotNumber}`,
       });
-      onKitModified?.(hookProps.kitName);
     },
-    [onKitModified, hookProps.kitName],
+    [
+      hookProps.kitName,
+      onKitModified,
+      onMessage,
+      sampleMetadata,
+      saveGain,
+      setSlotGain,
+    ],
   );
 
   // Track which voices were recently visible so content stays rendered during collapse animation

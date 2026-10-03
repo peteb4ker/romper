@@ -124,7 +124,10 @@ in `electron/main/security/`.
   take the handle (`RomperDb`) and throw on failure, so an operation
   composes them in one `withDbTransaction`: a kit with its voices, a delete
   with its reindex, every sample edit with the kit's modified flag, a setup
-  import with its scan merge.
+  import with its scan merge. Replace is one in-place update of the row
+  (slot and gain stay; the new file's header is stored), and a move
+  between kits moves the row itself, so gain and WAV metadata go with it
+  (RE-26, RE-27).
 - better-sqlite3 ships N-API prebuilds (`prebuilds/<platform>-<arch>.node`)
   that load in both Node and Electron, so nothing is rebuilt at install
   (Forge's `rebuildConfig` rebuilds no modules). Integration tests run

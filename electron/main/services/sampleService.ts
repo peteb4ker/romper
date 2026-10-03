@@ -147,7 +147,8 @@ export class SampleService {
   }
 
   /**
-   * Replace a sample in a specific voice slot
+   * Replace the file in an occupied slot, keeping the slot and its gain
+   * (RE-26)
    */
   replaceSampleInSlot(
     inMemorySettings: Record<string, unknown>,
@@ -155,20 +156,8 @@ export class SampleService {
     voiceNumber: number,
     slotNumber: number,
     filePath: string,
-  ): DbResult<{ sampleId: number }> {
-    // Delegate to CRUD service - first delete then add
-    const deleteResult = this.deleteSampleFromSlotWithoutReindexing(
-      inMemorySettings,
-      kitName,
-      voiceNumber,
-      slotNumber,
-    );
-
-    if (!deleteResult.success) {
-      return { error: deleteResult.error, success: false };
-    }
-
-    return this.addSampleToSlot(
+  ): DbResult<{ replacedSample: Sample; sampleId: number }> {
+    return sampleCrudService.replaceSampleInSlot(
       inMemorySettings,
       kitName,
       voiceNumber,

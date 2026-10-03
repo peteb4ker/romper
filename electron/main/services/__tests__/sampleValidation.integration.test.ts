@@ -1,4 +1,4 @@
-import type { NewKit, NewSample } from "@romper/shared/db/schema.js";
+import type { NewKit } from "@romper/shared/db/schema.js";
 
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -239,40 +239,6 @@ describe("SampleValidation Integration Tests", () => {
     it("should allow movement within the same voice to a different slot", () => {
       const result = sampleValidationService.validateSampleMovement(1, 0, 1, 3);
       expect(result.success).toBe(true);
-    });
-  });
-
-  describe("SampleValidationService.validateAndGetSampleToMove", () => {
-    it("should return the sample when it exists", () => {
-      const sample: NewSample = {
-        filename: "kick.wav",
-        kit_name: "A1",
-        slot_number: 0,
-        source_path: "/test/kick.wav",
-        voice_number: 1,
-      };
-      addSample(TEST_DB_PATH, sample);
-
-      const result = sampleValidationService.validateAndGetSampleToMove(
-        TEST_DB_PATH,
-        "A1",
-        1,
-        0,
-      );
-      expect(result.success).toBe(true);
-      expect(result.data).toBeTruthy();
-      expect(result.data!.filename).toBe("kick.wav");
-    });
-
-    it("should fail when no sample exists at the position", () => {
-      const result = sampleValidationService.validateAndGetSampleToMove(
-        TEST_DB_PATH,
-        "A1",
-        1,
-        0,
-      );
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("No sample found");
     });
   });
 

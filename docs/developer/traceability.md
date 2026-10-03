@@ -10,7 +10,7 @@ Regenerate with `npm run trace`; CI runs `npm run trace:check`, which
 fails on an unknown ID, on a supported use case with no test above unit
 level (unless the register declares the gap), and when this file is stale.
 
-37 use cases: 15 supported, 20 partial, 2 not built. 1344 of 4367 tests carry a use case tag.
+37 use cases: 15 supported, 20 partial, 2 not built. 1346 of 4369 tests carry a use case tag.
 
 ## Matrix
 
@@ -28,7 +28,7 @@ level (unless the register declares the gap), and when this file is stale.
 | [UC-10](use-cases.md#uc-10-favourite-kits) Favourite kits | partial | [23](#uc-10) | [10](#uc-10) | - | - |
 | [UC-11](use-cases.md#uc-11-filter-to-kits-modified-since-the-last-sync) Filter to kits modified since the last sync | partial | [2](#uc-11) | [6](#uc-11) | - | - |
 | [UC-12](use-cases.md#uc-12-name-banks) Name banks | partial | [19](#uc-12) | [6](#uc-12) | - | - |
-| [UC-13](use-cases.md#uc-13-scan-a-kit-or-scan-all) Scan a kit, or scan all | partial | [21](#uc-13) | [16](#uc-13) | [1](#uc-13) | - |
+| [UC-13](use-cases.md#uc-13-scan-a-kit-or-scan-all) Scan a kit, or scan all | partial | [22](#uc-13) | [16](#uc-13) | [1](#uc-13) | - |
 | [UC-14](use-cases.md#uc-14-create-a-kit) Create a kit | supported | [33](#uc-14) | [10](#uc-14) | [2](#uc-14) | [1](#uc-14) |
 | [UC-15](use-cases.md#uc-15-duplicate-a-kit) Duplicate a kit | partial | [18](#uc-15) | [10](#uc-15) | - | - |
 | [UC-16](use-cases.md#uc-16-delete-a-kit) Delete a kit | supported | [23](#uc-16) | [22](#uc-16) | - | - |
@@ -42,7 +42,7 @@ level (unless the register declares the gap), and when this file is stale.
 | [UC-24](use-cases.md#uc-24-set-a-samples-gain) Set a sample's gain | supported | [21](#uc-24) | [4](#uc-24) | - | [1](#uc-24) |
 | [UC-25](use-cases.md#uc-25-reveal-a-sample-in-finder-or-explorer) Reveal a sample in Finder or Explorer | supported | [5](#uc-25) | - | - | - |
 | [UC-26](use-cases.md#uc-26-undo-and-redo) Undo and redo | partial | [44](#uc-26) | [3](#uc-26) | [3](#uc-26) | - |
-| [UC-27](use-cases.md#uc-27-name-voices) Name voices | supported | [33](#uc-27) | [8](#uc-27) | - | - |
+| [UC-27](use-cases.md#uc-27-name-voices) Name voices | supported | [34](#uc-27) | [8](#uc-27) | [1](#uc-27) | - |
 | [UC-28](use-cases.md#uc-28-link-a-voice-pair-as-stereo) Link a voice pair as stereo | supported | [17](#uc-28) | [9](#uc-28) | [2](#uc-28) | [1](#uc-28) |
 | [UC-29](use-cases.md#uc-29-play-a-sample) Play a sample | partial | [20](#uc-29) | [4](#uc-29) | [3](#uc-29) | - |
 | [UC-30](use-cases.md#uc-30-step-sequencer) Step sequencer | supported | [6](#uc-30) | [3](#uc-30) | [1](#uc-30) | - |
@@ -203,7 +203,7 @@ Partial or not-built use cases with no test above unit level:
 
 [UC-13](use-cases.md#uc-13-scan-a-kit-or-scan-all) Scan a kit, or scan all (partial)
 
-- Unit: [`app/renderer/components/hooks/kit-management/__tests__/useKitScanning.test.ts`](../../app/renderer/components/hooks/kit-management/__tests__/useKitScanning.test.ts#L7) (10 tests)
+- Unit: [`app/renderer/components/hooks/kit-management/__tests__/useKitScanning.test.ts`](../../app/renderer/components/hooks/kit-management/__tests__/useKitScanning.test.ts#L7) (11 tests)
 - Unit: [`app/renderer/components/hooks/kit-management/__tests__/useKitViewMenuHandlers.test.ts`](../../app/renderer/components/hooks/kit-management/__tests__/useKitViewMenuHandlers.test.ts#L136) (2 tests)
 - Unit: [`electron/main/db/operations/__tests__/kitScanOperations.test.ts`](../../electron/main/db/operations/__tests__/kitScanOperations.test.ts#L42) (9 tests)
 - Integration: [`electron/main/db/operations/__tests__/kitScanOperations.integration.test.ts`](../../electron/main/db/operations/__tests__/kitScanOperations.integration.test.ts#L22) (7 tests)
@@ -347,12 +347,14 @@ Partial or not-built use cases with no test above unit level:
 
 [UC-27](use-cases.md#uc-27-name-voices) Name voices (supported)
 
+- Unit: [`app/renderer/components/hooks/kit-management/__tests__/useKitScanning.test.ts`](../../app/renderer/components/hooks/kit-management/__tests__/useKitScanning.test.ts#L140) (1 test)
 - Unit: [`app/renderer/components/hooks/voice-panels/__tests__/useVoiceAlias.test.ts`](../../app/renderer/components/hooks/voice-panels/__tests__/useVoiceAlias.test.ts#L27) (7 tests)
 - Unit: [`app/renderer/components/hooks/voice-panels/__tests__/useVoiceNameEditor.test.ts`](../../app/renderer/components/hooks/voice-panels/__tests__/useVoiceNameEditor.test.ts#L6) (11 tests)
 - Unit: [`app/renderer/components/hooks/voice-panels/__tests__/useVoicePanelUI.test.tsx`](../../app/renderer/components/hooks/voice-panels/__tests__/useVoicePanelUI.test.tsx#L62) (15 tests)
 - Integration: [`electron/main/db/__tests__/romperDbCoreORM.integration.test.ts`](../../electron/main/db/__tests__/romperDbCoreORM.integration.test.ts#L261) (2 tests)
 - Integration: [`electron/main/db/operations/__tests__/kitScanOperations.integration.test.ts`](../../electron/main/db/operations/__tests__/kitScanOperations.integration.test.ts#L188) (1 test)
 - Integration: [`electron/main/db/operations/__tests__/voiceCrudOperations.integration.test.ts`](../../electron/main/db/operations/__tests__/voiceCrudOperations.integration.test.ts#L38) (5 tests)
+- E2E: [`tests/e2e/voice-names.e2e.test.ts`](../../tests/e2e/voice-names.e2e.test.ts#L20) (1 test)
 
 ### UC-28
 

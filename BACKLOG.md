@@ -58,7 +58,6 @@ This file tracks what's being done about each item.
 | RE-33 | Medium | DB | Upgrading an older library relies on a repair step that could leave it half-upgraded if interrupted. | open (#407 fixed the `kits.artist` snapshot drift) |
 | RE-35 | Medium | Sync | Changing a sample's gain, a voice name or a bank name doesn't mark the kit as changed, so the "modified since last write" filter misses it. | partly done (#360: scan sets it when it adds samples; #407: stereo link changes set it) |
 | RE-36 | Medium | Performance | Almost every edit reloads your whole library behind the scenes, which gets slower as the library grows. | open |
-| RE-37 | Medium | Renderer | A kit's favourite star can disagree between the browser and the editor, so a kit can show as a favourite when it isn't. | open |
 | RE-38 | Medium | Renderer | Pressing F both jumps to bank F and stars the selected kit. | open |
 | RE-39 | Medium | Renderer | Arrow keys and Enter don't work in the kit grid until you click a kit. | open |
 | RE-45 | Medium | Playback | Two samples with the same file name in one voice play together, and same-named samples in different voices share a gain setting on screen. | partly done: sounds now choke at the audio layer (`voiceChoke.ts`), so the audible choke no longer depends on this state; the state itself is unchanged |
@@ -91,6 +90,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-37 | Medium | Renderer | A kit's favourite star can disagree between the browser and the editor, so a kit can show as a favourite when it isn't. | done (#431: one toggle path, and the kit list is the only favourite state) |
 | RE-23 | Medium | Banks | Clearing a bank's name doesn't stick: the name comes back after a reload and is written to the card. | done (#434: clearing removes the name everywhere; main refuses names a card can't hold, with a message; a bank name file the card can't take stops the write with an error) |
 | RE-43 | Medium | Scan | Scan All only scans the kits you're currently viewing after a search or filter, not your whole library. | done (#438: Scan All scans every kit in the store, from the browser or the editor) |
 | RE-21 | Medium | Settings | Your theme and the "Confirm destructive actions" setting reset every time Romper started. | done (#433: every saved setting is loaded and kept; saves go through a temporary file) |

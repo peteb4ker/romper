@@ -89,9 +89,9 @@ describe("[UC-35] settings file", () => {
 
     it("treats a missing or empty store path as no store", () => {
       expect(normalizeSettings({}).localStorePath).toBeNull();
-      expect(normalizeSettings({ localStorePath: "" }).localStorePath).toBe(
-        null,
-      );
+      expect(
+        normalizeSettings({ localStorePath: "" }).localStorePath,
+      ).toBeNull();
     });
   });
 

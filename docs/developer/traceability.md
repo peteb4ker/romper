@@ -10,7 +10,7 @@ Regenerate with `npm run trace`; CI runs `npm run trace:check`, which
 fails on an unknown ID, on a supported use case with no test above unit
 level (unless the register declares the gap), and when this file is stale.
 
-37 use cases: 15 supported, 20 partial, 2 not built. 1341 of 4364 tests carry a use case tag.
+37 use cases: 15 supported, 20 partial, 2 not built. 1344 of 4367 tests carry a use case tag.
 
 ## Matrix
 
@@ -49,7 +49,7 @@ level (unless the register declares the gap), and when this file is stale.
 | [UC-31](use-cases.md#uc-31-trigger-conditions) Trigger conditions | supported | [42](#uc-31) | [1](#uc-31) | - | - |
 | [UC-32](use-cases.md#uc-32-sample-mode-level-and-mute) Sample mode, level and mute | supported | [23](#uc-32) | [7](#uc-32) | - | - |
 | [UC-33](use-cases.md#uc-33-slicer) Slicer | supported | [48](#uc-33) | [5](#uc-33) | [2](#uc-33) | - |
-| [UC-34](use-cases.md#uc-34-write-kits-to-the-sd-card) Write kits to the SD card | supported | [121](#uc-34) | [72](#uc-34) | [3](#uc-34) | [1](#uc-34) |
+| [UC-34](use-cases.md#uc-34-write-kits-to-the-sd-card) Write kits to the SD card | supported | [122](#uc-34) | [74](#uc-34) | [3](#uc-34) | [1](#uc-34) |
 | [UC-35](use-cases.md#uc-35-preferences) Preferences | partial | [37](#uc-35) | [23](#uc-35) | - | - |
 | [UC-36](use-cases.md#uc-36-messages-and-error-containment) Messages and error containment | partial | [20](#uc-36) | - | [1](#uc-36) | - |
 | [UC-37](use-cases.md#uc-37-about-help-updates-and-diagnostics) About, help, updates and diagnostics | partial | [34](#uc-37) | [4](#uc-37) | [2](#uc-37) | - |
@@ -423,7 +423,7 @@ Partial or not-built use cases with no test above unit level:
 
 [UC-34](use-cases.md#uc-34-write-kits-to-the-sd-card) Write kits to the SD card (supported)
 
-- Unit: [`app/renderer/components/dialogs/__tests__/SyncUpdateDialog.test.tsx`](../../app/renderer/components/dialogs/__tests__/SyncUpdateDialog.test.tsx#L8) (28 tests)
+- Unit: [`app/renderer/components/dialogs/__tests__/SyncUpdateDialog.test.tsx`](../../app/renderer/components/dialogs/__tests__/SyncUpdateDialog.test.tsx#L8) (29 tests)
 - Unit: [`app/renderer/components/hooks/shared/__tests__/useSyncUpdate.test.ts`](../../app/renderer/components/hooks/shared/__tests__/useSyncUpdate.test.ts#L267) (5 tests)
 - Unit: [`electron/main/services/__tests__/rtfFileService.test.ts`](../../electron/main/services/__tests__/rtfFileService.test.ts#L17) (6 tests)
 - Unit: [`electron/main/services/__tests__/sdCardSafety.test.ts`](../../electron/main/services/__tests__/sdCardSafety.test.ts#L17) (25 tests)
@@ -434,6 +434,7 @@ Partial or not-built use cases with no test above unit level:
 - Integration: [`electron/main/db/operations/__tests__/kitSyncOperations.integration.test.ts`](../../electron/main/db/operations/__tests__/kitSyncOperations.integration.test.ts#L14) (7 tests)
 - Integration: [`electron/main/services/__tests__/syncValidationService.integration.test.ts`](../../electron/main/services/__tests__/syncValidationService.integration.test.ts#L15) (18 tests)
 - Integration: [`tests/integration/sync-referenced-samples.integration.test.ts`](../../tests/integration/sync-referenced-samples.integration.test.ts#L23) (5 tests)
+- Integration: [`tests/integration/sync-removals-only.integration.test.ts`](../../tests/integration/sync-removals-only.integration.test.ts#L18) (2 tests)
 - Integration: [`tests/integration/sync-stereo.integration.test.ts`](../../tests/integration/sync-stereo.integration.test.ts#L59) (3 tests)
 - Integration: [`tests/integration/sync-unsaved-state.integration.test.ts`](../../tests/integration/sync-unsaved-state.integration.test.ts#L23) (3 tests)
 - Integration: [`tests/integration/sync-wav-formats.integration.test.ts`](../../tests/integration/sync-wav-formats.integration.test.ts#L74) (1 test)

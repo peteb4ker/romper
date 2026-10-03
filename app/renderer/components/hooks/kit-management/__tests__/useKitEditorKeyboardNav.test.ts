@@ -44,8 +44,12 @@ function setup(overrides = {}) {
     initialProps: props,
   });
 
-  const fire = (key: string) => {
-    const e = { key, preventDefault: vi.fn() } as unknown as KeyboardEvent;
+  const fire = (key: string, modifiers: Partial<KeyboardEvent> = {}) => {
+    const e = {
+      key,
+      preventDefault: vi.fn(),
+      ...modifiers,
+    } as unknown as KeyboardEvent;
     handlers.at(-1)?.(e);
     return e;
   };
@@ -117,6 +121,32 @@ describe("useKitEditorKeyboardNav", () => {
       const { fire, props } = setup();
       fire(".");
       expect(props.onNextKit).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // RE-38: Cmd+, opens Preferences and also stepped to the previous kit
+  describe("[UC-18] Cmd, Ctrl and Alt combinations", () => {
+    it.each([
+      [",", { metaKey: true }],
+      [".", { ctrlKey: true }],
+      ["/", { metaKey: true }],
+      ["s", { ctrlKey: true }],
+      ["ArrowDown", { altKey: true }],
+    ])("ignore %s with %o", (key, modifiers) => {
+      const { fire, props } = setup();
+      const e = fire(key, modifiers);
+      expect(props.onPrevKit).not.toHaveBeenCalled();
+      expect(props.onNextKit).not.toHaveBeenCalled();
+      expect(props.onScanKit).not.toHaveBeenCalled();
+      expect(props.setSequencerOpen).not.toHaveBeenCalled();
+      expect(props.onSampleKeyNav).not.toHaveBeenCalled();
+      expect(e.preventDefault).not.toHaveBeenCalled();
+    });
+
+    it("still allows Shift", () => {
+      const { fire, props } = setup();
+      fire("S", { shiftKey: true });
+      expect(props.setSequencerOpen).toHaveBeenCalled();
     });
   });
 

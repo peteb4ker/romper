@@ -2,6 +2,7 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 
+import { hasCommandModifier } from "../../../utils/keyboardShortcuts";
 import {
   bankHasKits,
   type BankNames,
@@ -167,6 +168,9 @@ export function useKitBankNavigation({
       if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") {
         return;
       }
+
+      // Cmd/Ctrl/Alt combinations belong to the menu and the system
+      if (hasCommandModifier(e)) return;
 
       if (e.key.length === 1 && /^\p{Lu}$/u.test(e.key.toUpperCase())) {
         const bank = e.key.toUpperCase();

@@ -2,6 +2,8 @@ import type { VoiceSamples } from "@romper/app/renderer/components/kitTypes";
 
 import React from "react";
 
+import { hasCommandModifier } from "../../../utils/keyboardShortcuts";
+
 type SampleNavParams = Pick<
   UseKitEditorKeyboardNavParams,
   | "onPlaySample"
@@ -49,6 +51,11 @@ export function useKitEditorKeyboardNav({
     function handleGlobalKeyDown(e: KeyboardEvent) {
       // Ignore if a modal, input, textarea, or contenteditable is focused
       if (isTypingTarget(document.activeElement)) {
+        return;
+      }
+      // Cmd/Ctrl/Alt combinations belong to the menu and the system: Cmd+,
+      // opens Preferences and must not also step to the previous kit
+      if (hasCommandModifier(e)) {
         return;
       }
 

@@ -210,6 +210,29 @@ describe("useKitBankNavigation", () => {
       expect(mockEvent.preventDefault).toHaveBeenCalled();
     });
 
+    // RE-38: Cmd/Ctrl/Alt combinations belong to the menu and the system
+    it.each(["metaKey", "ctrlKey", "altKey"])(
+      "[UC-07] ignores a letter with %s held",
+      (modifier) => {
+        const { result } = renderHook(() => useKitBankNavigation(defaultProps));
+        const before = result.current.focusedKit;
+
+        const mockEvent = {
+          key: "b",
+          [modifier]: true,
+          preventDefault: vi.fn(),
+          target: { tagName: "DIV" },
+        } as unknown as KeyboardEvent;
+
+        act(() => {
+          result.current.globalBankHotkeyHandler(mockEvent);
+        });
+
+        expect(result.current.focusedKit).toBe(before);
+        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+      },
+    );
+
     it("should scroll grid via scrollAndFocusKitByIndex on hotkey press", () => {
       const { result } = renderHook(() => useKitBankNavigation(defaultProps));
 

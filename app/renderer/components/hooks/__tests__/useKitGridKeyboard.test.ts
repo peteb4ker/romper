@@ -285,6 +285,23 @@ describe("[UC-07] useKitGridKeyboard", () => {
       expect(mockOnBankFocus).toHaveBeenCalledWith("C");
     });
 
+    // RE-38: Cmd+A and the like belong to the system, not the bank jump
+    it.each(["metaKey", "ctrlKey", "altKey"])(
+      "ignores a letter with %s held",
+      (modifier) => {
+        const { result } = renderHook(() => useKitGridKeyboard(props(0)));
+        const event = {
+          ...keyEvent("b"),
+          [modifier]: true,
+        } as unknown as React.KeyboardEvent;
+
+        result.current.handleKeyDown(event);
+
+        expect(mockSetFocus).not.toHaveBeenCalled();
+        expect(event.preventDefault).not.toHaveBeenCalled();
+      },
+    );
+
     it("does nothing for a bank with no kits", () => {
       press("z");
 

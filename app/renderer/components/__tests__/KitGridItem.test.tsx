@@ -486,7 +486,7 @@ describe("KitGridItem", () => {
       render(<KitGridItem {...defaultProps} />);
 
       const container = screen.getByTestId("kit-item-A0");
-      expect(container).toHaveAttribute("role", "option");
+      expect(container).toHaveAttribute("role", "gridcell");
       expect(container).toHaveAttribute("aria-label", "Kit A0 - 10 samples");
       expect(container).toHaveAttribute("aria-selected", "false");
     });

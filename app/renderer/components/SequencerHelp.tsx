@@ -30,7 +30,7 @@ const ALL_SHORTCUTS: { group: string; items: Shortcut[] }[] = [
       { does: "Play / stop", keys: ["Space"] },
       { does: "Move between steps", keys: ["←", "↑", "↓", "→"] },
       { does: "Toggle the step", keys: ["Enter"] },
-      { does: "Step options (conditions, slice)", keys: ["Right-click"] },
+      { does: "Step options (conditions, slice)", keys: ["C", "Right-click"] },
       { does: "Undo / redo", keys: [UNDO, REDO] },
       {
         does: "Close step options, then the slicer, then the kit",

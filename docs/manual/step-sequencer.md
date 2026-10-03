@@ -42,7 +42,7 @@ During playback the current step's whole column lights up, a light runs along th
 
 ![Condition popover]({{ site.baseurl }}/images/manual/condition-popover.png){: .img-right}
 
-Trigger conditions let you control *which cycles* a step fires on, effectively creating patterns much longer than 16 steps. Right-click any step to open the condition popover.
+Trigger conditions let you control *which cycles* a step fires on, effectively creating patterns much longer than 16 steps. Right-click any step to open the condition popover, or press `C` on the focused step (the context-menu key and `Shift+F10` work too). In the popover, `Up` and `Down` move between conditions and `Enter` picks one.
 
 Each condition uses an **A:B** format, meaning "fire on the Ath repetition of every B cycles":
 
@@ -144,7 +144,7 @@ Here's what's programmed in each voice:
 
 1. Open the **C0** kit and press `S` to show the sequencer
 2. Click steps to activate them in each row (refer to the screenshot above)
-3. Right-click each step that needs a condition and select the appropriate **A:B** value
+3. Right-click each step that needs a condition (or press `C` on it) and select the appropriate **A:B** value
 4. Click **Rnd** in each row's **Sample** switch
 5. Press **Play** and listen to the pattern evolve over 4 cycles
 
@@ -155,6 +155,7 @@ Here's what's programmed in each voice:
 | Show/hide sequencer | `S` |
 | Play / stop | `Space` |
 | Toggle step | `Enter` |
+| Step options (condition, slice) | `C`, or right-click |
 | Navigate steps | Arrow keys |
 | Undo / redo a step, condition or slice edit | `Cmd+Z` / `Cmd+Shift+Z` (`Ctrl+Z` / `Ctrl+Y`) |
 | Close step options, then the slicer, then the kit | `Escape` |

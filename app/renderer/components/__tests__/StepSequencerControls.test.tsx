@@ -102,6 +102,10 @@ describe("StepSequencerControls", () => {
     expect(bpmInput).toBeInTheDocument();
     expect(bpmInput).toHaveValue(140);
     expect(screen.getByText("BPM")).toBeInTheDocument();
+    // [Q-06] RE-48: the field had no label
+    expect(screen.getByRole("spinbutton", { name: "Tempo (BPM)" })).toBe(
+      bpmInput,
+    );
   });
 
   it("displays BPM input field with correct attributes", () => {

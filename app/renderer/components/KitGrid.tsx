@@ -182,12 +182,15 @@ const GridRowRenderer: React.FC<ListChildComponentProps<GridRowData>> = ({
     width: data.gridWidth,
   };
 
+  // The grid is rows of cells (Q-06, RE-48): each kit card is a gridcell,
+  // and a bank's header is the row header of its own row
   if (row.type === "hint") {
     return (
-      <div style={style}>
+      <div role="row" style={style}>
         <p
           className="text-sm text-text-secondary"
           data-testid="empty-library-hint"
+          role="gridcell"
           style={innerStyle}
         >
           No kits yet. Add one below, or pick a bank from the A–Z index.
@@ -198,8 +201,9 @@ const GridRowRenderer: React.FC<ListChildComponentProps<GridRowData>> = ({
 
   if (row.type === "header") {
     return (
-      <div style={style}>
+      <div role="row" style={style}>
         <div
+          role="rowheader"
           style={{
             ...innerStyle,
             paddingTop: row.isFirstBank ? 0 : BANK_SPACING,
@@ -217,7 +221,7 @@ const GridRowRenderer: React.FC<ListChildComponentProps<GridRowData>> = ({
   }
 
   const addKitCard = data.onCreateKitInBank ? (
-    <div style={{ flexShrink: 0, width: CARD_WIDTH }}>
+    <div role="gridcell" style={{ flexShrink: 0, width: CARD_WIDTH }}>
       <AddKitCard
         bankLetter={row.bank}
         isCreating={!!data.isCreatingKit}
@@ -228,7 +232,7 @@ const GridRowRenderer: React.FC<ListChildComponentProps<GridRowData>> = ({
 
   if (row.type === "add") {
     return (
-      <div style={style}>
+      <div role="row" style={style}>
         <div style={{ ...innerStyle, display: "flex", gap: GAP }}>
           {addKitCard}
         </div>
@@ -237,7 +241,7 @@ const GridRowRenderer: React.FC<ListChildComponentProps<GridRowData>> = ({
   }
 
   return (
-    <div style={style}>
+    <div role="row" style={style}>
       <div style={{ ...innerStyle, display: "flex", gap: GAP }}>
         {row.kits.map((kit) => (
           <div key={kit.name} style={{ flexShrink: 0, width: CARD_WIDTH }}>

@@ -8,6 +8,7 @@ import {
 import React, { useEffect, useRef, useState } from "react";
 
 import { useSettings } from "../../utils/SettingsContext";
+import ModalDialog from "../shared/ModalDialog";
 import FilePickerButton from "../utils/FilePickerButton";
 
 interface ChangeLocalStoreDirectoryDialogProps {
@@ -152,141 +153,146 @@ const ChangeLocalStoreDirectoryDialog: React.FC<
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="bg-surface-2 border border-border-subtle w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.4)] p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <FolderIcon className="text-accent-primary" size={24} />
-            Change Local Store Directory
-          </h2>
-          <button
-            aria-label="Close"
-            className="text-text-tertiary hover:text-text-primary"
-            onClick={handleClose}
-          >
-            <XIcon size={24} />
-          </button>
+    <ModalDialog
+      aria-labelledby="change-local-store-title"
+      className="bg-surface-2 border border-border-subtle w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.4)] p-6"
+      data-testid="change-local-store-dialog"
+      onClose={isUpdating ? undefined : handleClose}
+    >
+      <div className="flex justify-between items-center mb-4">
+        <h2
+          className="text-xl font-bold flex items-center gap-2"
+          id="change-local-store-title"
+        >
+          <FolderIcon className="text-accent-primary" size={24} />
+          Change Local Store Directory
+        </h2>
+        <button
+          aria-label="Close"
+          className="text-text-tertiary hover:text-text-primary"
+          onClick={handleClose}
+        >
+          <XIcon size={24} />
+        </button>
+      </div>
+
+      {/* Vertical layout */}
+      <div className="space-y-6 mb-6">
+        {/* Current Directory */}
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold text-text-primary">
+            Current Directory
+          </h3>
+          <div className="p-4 rounded-lg border border-border-default bg-surface-3">
+            <p className="font-mono text-sm text-text-primary break-all">
+              {localStorePath || (
+                <span className="text-text-tertiary italic">Not set</span>
+              )}
+            </p>
+          </div>
         </div>
 
-        {/* Vertical layout */}
-        <div className="space-y-6 mb-6">
-          {/* Current Directory */}
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-text-primary">
-              Current Directory
-            </h3>
-            <div className="p-4 rounded-lg border border-border-default bg-surface-3">
-              <p className="font-mono text-sm text-text-primary break-all">
-                {localStorePath || (
-                  <span className="text-text-tertiary italic">Not set</span>
-                )}
-              </p>
-            </div>
-          </div>
+        {/* New Directory Selection */}
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-text-primary">
+            Select New Directory
+          </h3>
 
-          {/* New Directory Selection */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-text-primary">
-              Select New Directory
-            </h3>
-
-            {/* Directory path and button row */}
-            <div className="flex gap-3 items-start">
-              <div className="flex-1">
-                {selectedPath ? (
-                  <div
-                    className={`p-3 rounded-lg border ${
-                      validationResult?.isValid &&
-                      selectedPath !== localStorePath
-                        ? "border-accent-success/50 bg-accent-success/10"
-                        : "border-border-default bg-surface-3"
-                    }`}
-                  >
-                    <p className="font-mono text-sm text-text-primary break-all">
-                      {selectedPath}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="p-3 rounded-lg border-2 border-dashed border-border-default bg-surface-3">
-                    <p className="text-sm text-text-tertiary italic text-center">
-                      No directory selected
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <FilePickerButton
-                className="px-4 py-3 bg-accent-primary text-white rounded-lg hover:bg-accent-primary/80 flex items-center gap-2 font-medium whitespace-nowrap"
-                disabled={isValidating || isUpdating}
-                icon={<FolderIcon size={18} />}
-                isSelecting={isSelecting}
-                onClick={handleSelectDirectory}
-              >
-                Choose Directory
-              </FilePickerButton>
-            </div>
-
-            {/* Validation Messages - Only show warnings/errors */}
-            {validationResult && selectedPath === localStorePath && (
-              <div className="flex items-center gap-2 p-3 rounded-lg border border-accent-warning/30 bg-accent-warning/10">
-                <WarningIcon
-                  className="text-accent-warning flex-shrink-0"
-                  size={16}
-                />
-                <p className="text-sm text-accent-warning">
-                  This is the same as your current directory. Choose a different
-                  directory to make changes.
-                </p>
-              </div>
-            )}
-
-            {validationResult &&
-              selectedPath !== localStorePath &&
-              !validationResult.isValid && (
-                <div className="flex items-center gap-2 p-3 rounded-lg border border-accent-danger/30 bg-accent-danger/10">
-                  <WarningIcon
-                    className="text-accent-danger flex-shrink-0"
-                    size={16}
-                  />
-                  <p className="text-sm text-accent-danger">
-                    {validationResult.error ||
-                      "This directory does not contain a valid Romper database."}
+          {/* Directory path and button row */}
+          <div className="flex gap-3 items-start">
+            <div className="flex-1">
+              {selectedPath ? (
+                <div
+                  className={`p-3 rounded-lg border ${
+                    validationResult?.isValid && selectedPath !== localStorePath
+                      ? "border-accent-success/50 bg-accent-success/10"
+                      : "border-border-default bg-surface-3"
+                  }`}
+                >
+                  <p className="font-mono text-sm text-text-primary break-all">
+                    {selectedPath}
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3 rounded-lg border-2 border-dashed border-border-default bg-surface-3">
+                  <p className="text-sm text-text-tertiary italic text-center">
+                    No directory selected
                   </p>
                 </div>
               )}
+            </div>
+
+            <FilePickerButton
+              className="px-4 py-3 bg-accent-primary text-white rounded-lg hover:bg-accent-primary/80 flex items-center gap-2 font-medium whitespace-nowrap"
+              disabled={isValidating || isUpdating}
+              icon={<FolderIcon size={18} />}
+              isSelecting={isSelecting}
+              onClick={handleSelectDirectory}
+            >
+              Choose Directory
+            </FilePickerButton>
           </div>
-        </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-end gap-3 pt-6 border-t border-border-subtle">
-          <button
-            className="px-6 py-2.5 text-text-secondary hover:text-text-primary border border-border-default rounded-lg hover:bg-surface-3 font-medium transition-colors"
-            disabled={isUpdating}
-            onClick={handleClose}
-          >
-            Cancel
-          </button>
+          {/* Validation Messages - Only show warnings/errors */}
+          {validationResult && selectedPath === localStorePath && (
+            <div className="flex items-center gap-2 p-3 rounded-lg border border-accent-warning/30 bg-accent-warning/10">
+              <WarningIcon
+                className="text-accent-warning flex-shrink-0"
+                size={16}
+              />
+              <p className="text-sm text-accent-warning">
+                This is the same as your current directory. Choose a different
+                directory to make changes.
+              </p>
+            </div>
+          )}
 
-          <button
-            className="px-6 py-2.5 bg-accent-primary text-white rounded-lg hover:bg-accent-primary/80 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium transition-colors"
-            disabled={
-              !selectedPath ||
-              !validationResult?.isValid ||
-              isUpdating ||
-              selectedPath === localStorePath
-            }
-            onClick={handleUpdateDirectory}
-          >
-            {isUpdating ? (
-              <ArrowsClockwiseIcon className="animate-spin" size={16} />
-            ) : (
-              <CheckCircleIcon size={16} />
+          {validationResult &&
+            selectedPath !== localStorePath &&
+            !validationResult.isValid && (
+              <div className="flex items-center gap-2 p-3 rounded-lg border border-accent-danger/30 bg-accent-danger/10">
+                <WarningIcon
+                  className="text-accent-danger flex-shrink-0"
+                  size={16}
+                />
+                <p className="text-sm text-accent-danger">
+                  {validationResult.error ||
+                    "This directory does not contain a valid Romper database."}
+                </p>
+              </div>
             )}
-            {isUpdating ? "Updating..." : "Update Directory"}
-          </button>
         </div>
       </div>
-    </div>
+
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3 pt-6 border-t border-border-subtle">
+        <button
+          className="px-6 py-2.5 text-text-secondary hover:text-text-primary border border-border-default rounded-lg hover:bg-surface-3 font-medium transition-colors"
+          disabled={isUpdating}
+          onClick={handleClose}
+        >
+          Cancel
+        </button>
+
+        <button
+          className="px-6 py-2.5 bg-accent-primary text-white rounded-lg hover:bg-accent-primary/80 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium transition-colors"
+          disabled={
+            !selectedPath ||
+            !validationResult?.isValid ||
+            isUpdating ||
+            selectedPath === localStorePath
+          }
+          onClick={handleUpdateDirectory}
+        >
+          {isUpdating ? (
+            <ArrowsClockwiseIcon className="animate-spin" size={16} />
+          ) : (
+            <CheckCircleIcon size={16} />
+          )}
+          {isUpdating ? "Updating..." : "Update Directory"}
+        </button>
+      </div>
+    </ModalDialog>
   );
 };
 

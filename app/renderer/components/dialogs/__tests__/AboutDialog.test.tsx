@@ -159,7 +159,7 @@ describe("[UC-37] AboutDialog", () => {
 
       render(<AboutDialog {...defaultProps} onClose={onClose} />);
 
-      const backdrop = screen.getByRole("dialog");
+      const backdrop = screen.getByTestId("about-dialog-backdrop");
       await user.click(backdrop);
 
       expect(onClose).toHaveBeenCalledOnce();
@@ -284,7 +284,7 @@ describe("[UC-37] AboutDialog", () => {
     it("has correct CSS classes for modal overlay", () => {
       render(<AboutDialog {...defaultProps} />);
 
-      const dialog = screen.getByRole("dialog");
+      const dialog = screen.getByTestId("about-dialog-backdrop");
       expect(dialog).toHaveClass(
         "fixed",
         "inset-0",
@@ -299,7 +299,7 @@ describe("[UC-37] AboutDialog", () => {
     it("has correct CSS classes for modal content", () => {
       render(<AboutDialog {...defaultProps} />);
 
-      const content = screen.getByRole("dialog").firstChild as HTMLElement;
+      const content = screen.getByRole("dialog");
       expect(content).toHaveClass(
         "relative",
         "rounded-lg",

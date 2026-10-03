@@ -45,6 +45,10 @@ describe("[UC-12] BankHeader", () => {
       const input = screen.getByTestId("bank-name-input-A");
       expect(input).toBeDefined();
       expect((input as HTMLInputElement).value).toBe("Artist");
+      // [Q-06] RE-48: the field had no label
+      expect(screen.getByRole("textbox", { name: "Name of bank A" })).toBe(
+        input,
+      );
     });
 
     it("enters edit mode on name text click", () => {

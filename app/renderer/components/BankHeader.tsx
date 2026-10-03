@@ -96,6 +96,7 @@ const BankHeader: React.FC<BankHeaderProps> = ({
           </span>
           {isEditing ? (
             <input
+              aria-label={`Name of bank ${bank}`}
               className="text-xs text-text-primary bg-surface-1 border border-border-strong rounded px-1 py-0.5 min-w-[80px] max-w-[200px] outline-none focus:ring-1 focus:ring-accent-primary"
               data-testid={`bank-name-input-${bank}`}
               onBlur={handleSave}
@@ -160,6 +161,7 @@ const BankHeader: React.FC<BankHeaderProps> = ({
         </span>
         {isEditing ? (
           <input
+            aria-label={`Name of bank ${bank}`}
             className="text-sm text-text-primary bg-surface-1 border border-border-strong rounded px-2 py-0.5 min-w-[100px] max-w-[250px] outline-none focus:ring-1 focus:ring-accent-primary"
             data-testid={`bank-name-input-${bank}`}
             onBlur={handleSave}

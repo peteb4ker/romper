@@ -224,6 +224,45 @@ interface ConditionPopoverProps {
   sliceSection?: React.ReactNode;
 }
 
+/**
+ * The keys that open the focused step's options, the keyboard's right-click
+ * (Q-06, RE-48): C, the context-menu key, or Shift+F10.
+ */
+export function isStepOptionsKey(
+  e: Pick<
+    React.KeyboardEvent,
+    "altKey" | "ctrlKey" | "key" | "metaKey" | "shiftKey"
+  >,
+): boolean {
+  if (e.metaKey || e.ctrlKey || e.altKey) return false;
+  return (
+    e.key === "c" ||
+    e.key === "C" ||
+    e.key === "ContextMenu" ||
+    (e.key === "F10" && e.shiftKey)
+  );
+}
+
+/** Up and Down move between the condition choices in the step options. */
+function moveBetweenOptions(
+  e: React.KeyboardEvent,
+  popover: HTMLElement | null,
+): void {
+  if (!popover || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
+  const options = Array.from(
+    popover.querySelectorAll<HTMLElement>('[data-testid^="condition-option-"]'),
+  );
+  if (options.length === 0) return;
+  const at = options.indexOf(document.activeElement as HTMLElement);
+  const step = e.key === "ArrowDown" ? 1 : -1;
+  const next =
+    at === -1
+      ? options[0]
+      : options[(at + step + options.length) % options.length];
+  e.preventDefault();
+  next.focus();
+}
+
 const ConditionPopover: React.FC<ConditionPopoverProps> = ({
   currentCondition,
   onClose,
@@ -268,7 +307,9 @@ const ConditionPopover: React.FC<ConditionPopoverProps> = ({
       // Keep typing in the popover from reaching the grid's shortcuts
       // (portals still bubble React events); Escape must reach the dismiss hook.
       onKeyDown={(e) => {
-        if (e.key !== "Escape") e.stopPropagation();
+        if (e.key === "Escape") return;
+        e.stopPropagation();
+        moveBetweenOptions(e, popoverRef.current);
       }}
       ref={popoverRef}
       role="dialog"
@@ -506,6 +547,31 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
     setPopover({ stepIdx, voiceIdx, x: e.clientX, y: e.clientY });
   };
 
+  // The keyboard's way in: open the focused step's options under its pad
+  const handleGridKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    const onPad =
+      target === e.currentTarget ||
+      target.getAttribute?.("role") === "gridcell";
+    if (onPad && isStepOptionsKey(e)) {
+      const { step: stepIdx, voice: voiceIdx } = focusedStep;
+      const pad = gridRef.current?.querySelector<HTMLElement>(
+        `[data-testid="seq-step-${voiceIdx}-${stepIdx}"]`,
+      );
+      const rect = pad?.getBoundingClientRect();
+      e.preventDefault();
+      e.stopPropagation();
+      setPopover({
+        stepIdx,
+        voiceIdx,
+        x: rect?.left ?? 0,
+        y: (rect?.bottom ?? 0) + 4,
+      });
+      return;
+    }
+    handleStepGridKeyDown(e);
+  };
+
   const closePopover = React.useCallback(() => {
     setPopover(null);
     gridRef.current?.focus();
@@ -522,7 +588,7 @@ const StepSequencerGrid: React.FC<StepSequencerGridProps> = ({
         }
       }}
       onFocus={() => setHasFocus(true)}
-      onKeyDown={handleStepGridKeyDown}
+      onKeyDown={handleGridKeyDown}
       onMouseLeave={() => onStepHover?.(null)}
       ref={gridRef}
       role="grid"

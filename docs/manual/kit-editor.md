@@ -117,6 +117,7 @@ In an editable kit, each sample slot has a small **gain knob** that lets you tri
 - **Scroll** the mouse wheel over the knob to nudge the value up or down by 1 dB; hold Shift for finer 0.5 dB steps
 - **Click** the knob to reset it to **0 dB** (unity gain)
 - Hover over the knob to see the current dB value
+- With the keyboard, `Tab` to the knob, then use the arrow keys to change it by 1 dB (Shift: 0.5 dB), `Page Up` / `Page Down` by 6 dB, `Home` / `End` for -24 dB / +12 dB, and `0` for 0 dB
 
 The knob scales up on hover so you can see the arc position clearly, even though it's compact in the sample row.
 

@@ -453,6 +453,74 @@ describe("StepSequencerGrid", () => {
       expect(popover).toBeInTheDocument();
     });
 
+    // RE-48: trigger conditions could only be set by right-click
+    describe("[Q-06] from the keyboard", () => {
+      it.each([
+        ["c", false],
+        ["C", true],
+        ["ContextMenu", false],
+        ["F10", true],
+      ])("%s (Shift: %s) opens the focused step's options", (key, shiftKey) => {
+        const onConditionChange = vi.fn();
+        render(
+          <StepSequencerGrid
+            {...defaultProps}
+            focusedStep={{ step: 5, voice: 2 }}
+            onConditionChange={onConditionChange}
+          />,
+        );
+        const grid = screen.getByTestId("kit-step-sequencer-grid");
+
+        fireEvent.keyDown(grid, { key, shiftKey });
+
+        expect(screen.getByTestId("condition-popover")).toBeInTheDocument();
+        expect(defaultProps.handleStepGridKeyDown).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByTestId("condition-option-1:2"));
+        expect(onConditionChange).toHaveBeenCalledWith(2, 5, "1:2");
+      });
+
+      it("leaves F10 without Shift, and C with Cmd, to the grid", () => {
+        render(<StepSequencerGrid {...defaultProps} />);
+        const grid = screen.getByTestId("kit-step-sequencer-grid");
+
+        fireEvent.keyDown(grid, { key: "F10" });
+        fireEvent.keyDown(grid, { key: "c", metaKey: true });
+
+        expect(
+          screen.queryByTestId("condition-popover"),
+        ).not.toBeInTheDocument();
+        expect(defaultProps.handleStepGridKeyDown).toHaveBeenCalledTimes(2);
+      });
+
+      it("ignores C typed in the row controls", () => {
+        render(<StepSequencerGrid {...defaultProps} />);
+        fireEvent.keyDown(screen.getByTestId("voice-mute-0"), { key: "c" });
+        expect(
+          screen.queryByTestId("condition-popover"),
+        ).not.toBeInTheDocument();
+      });
+
+      it("Up and Down move between the conditions", () => {
+        render(<StepSequencerGrid {...defaultProps} />);
+        fireEvent.keyDown(screen.getByTestId("kit-step-sequencer-grid"), {
+          key: "c",
+        });
+        expect(document.activeElement).toBe(
+          screen.getByTestId("condition-option-always"),
+        );
+
+        fireEvent.keyDown(document.activeElement!, { key: "ArrowDown" });
+        const second = document.activeElement as HTMLElement;
+        expect(second).not.toBe(screen.getByTestId("condition-option-always"));
+        expect(second.dataset.testid).toMatch(/^condition-option-/);
+
+        fireEvent.keyDown(second, { key: "ArrowUp" });
+        expect(document.activeElement).toBe(
+          screen.getByTestId("condition-option-always"),
+        );
+      });
+    });
+
     it("right-click selects the step it opens options for", () => {
       render(<StepSequencerGrid {...defaultProps} />);
 

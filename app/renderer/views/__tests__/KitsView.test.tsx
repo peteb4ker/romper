@@ -337,12 +337,42 @@ describe("KitsView", () => {
       // Trigger the unified scan all callback
       globalMenuCallbacks.onScanAll();
 
-      // The real implementation runs bank scan then checks kitBrowserRef.current?.handleScanAllKits
-      // Since kitBrowserRef is null in our test, bank scan runs but kit scan is a no-op
+      // Bank scan first, then every kit
       await waitFor(() => {
         expect(mockScanBanks).toHaveBeenCalled();
       });
+      await waitFor(() => {
+        expect(window.electronAPI.rescanKit).toHaveBeenCalledTimes(3);
+      });
       expect(confirm).toHaveBeenCalledTimes(1);
+      confirm.mockRestore();
+    });
+
+    it("[UC-13] scans every kit while a search filters the grid (RE-43)", async () => {
+      const confirm = vi.spyOn(globalThis, "confirm").mockReturnValue(true);
+      render(
+        <TestSettingsProvider>
+          <KitsView />
+        </TestSettingsProvider>,
+      );
+      await screen.findAllByText("B0");
+
+      fireEvent.change(screen.getByLabelText("Search kits"), {
+        target: { value: "B0" },
+      });
+      await waitFor(() => {
+        expect(screen.queryAllByText("A1")).toHaveLength(0);
+      });
+
+      globalMenuCallbacks.onScanAll();
+
+      await waitFor(() => {
+        expect(window.electronAPI.rescanKit).toHaveBeenCalledTimes(3);
+      });
+      const scanned = vi
+        .mocked(window.electronAPI.rescanKit)
+        .mock.calls.map(([kitName]) => kitName);
+      expect(scanned.sort()).toEqual(["A0", "A1", "B0"]);
       confirm.mockRestore();
     });
 

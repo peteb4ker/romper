@@ -5,9 +5,10 @@ import type {
   MoveSampleBetweenKitsAction,
   ReindexSamplesAction,
   ReplaceSampleAction,
+  VoiceSnapshot,
 } from "@romper/shared/undoTypes";
 
-import { createActionId } from "@romper/shared/undoTypes";
+import { createActionId, snapshotVoices } from "@romper/shared/undoTypes";
 import { useCallback } from "react";
 
 import type { MoveOperationResult } from "./types.js";
@@ -42,49 +43,33 @@ export function useSampleManagementUndoActions({
   kitName,
   skipUndoRecording,
 }: UseSampleManagementUndoActionsOptions) {
-  // Helper function to get old sample for undo recording
-  const getOldSampleForUndo = useCallback(
-    async (voice: number, slotNumber: number) => {
-      if (skipUndoRecording) return null;
-
-      const samplesResult =
-        await globalThis.electronAPI?.getAllSamplesForKit?.(kitName);
-      if (samplesResult?.success && samplesResult.data) {
-        return (
-          samplesResult.data.find(
-            (s) => s.voice_number === voice && s.slot_number === slotNumber,
-          ) || null
-        );
-      }
-      return null;
-    },
-    [kitName, skipUndoRecording],
-  );
-
-  // Helper function to get sample to delete for undo recording
-  const getSampleToDeleteForUndo = useCallback(
-    async (voice: number, slotNumber: number) => {
+  /**
+   * Before an edit: the slot's row and the voices' full rows, so undo can
+   * put them back exactly, gain and all (RE-86). Null when undo isn't
+   * being recorded or the kit can't be read.
+   */
+  const snapshotForUndo = useCallback(
+    async (voice: number, slotNumber: number, voices: number[] = [voice]) => {
       if (skipUndoRecording) return null;
 
       try {
         const samplesResult =
           await globalThis.electronAPI?.getAllSamplesForKit?.(kitName);
-        if (samplesResult?.success && samplesResult.data) {
-          return (
+        if (!samplesResult?.success || !samplesResult.data) return null;
+        return {
+          sample:
             samplesResult.data.find(
-              (sample) =>
-                sample.voice_number === voice &&
-                sample.slot_number === slotNumber,
-            ) || null
-          );
-        }
+              (s) => s.voice_number === voice && s.slot_number === slotNumber,
+            ) ?? null,
+          voicesBefore: snapshotVoices(samplesResult.data, voices),
+        };
       } catch (error) {
         console.error(
           "[SampleManagement] Failed to get sample data for undo recording:",
           error,
         );
+        return null;
       }
-      return null;
     },
     [kitName, skipUndoRecording],
   );
@@ -115,6 +100,7 @@ export function useSampleManagementUndoActions({
       slotNumber: number,
       oldSample: Sample,
       filePath: string,
+      voicesBefore: VoiceSnapshot[],
     ): ReplaceSampleAction => ({
       data: {
         newSample: {
@@ -127,6 +113,7 @@ export function useSampleManagementUndoActions({
         },
         slot: slotNumber,
         voice,
+        voicesBefore,
       },
       description: `Replace sample in voice ${voice}, slot ${slotNumber + 1}`,
       id: createActionId(),
@@ -143,6 +130,7 @@ export function useSampleManagementUndoActions({
       slotNumber: number,
       sampleToDelete: Sample,
       result: ReindexOperationResult,
+      voicesBefore: VoiceSnapshot[],
     ): ReindexSamplesAction => ({
       data: {
         affectedSamples:
@@ -161,6 +149,7 @@ export function useSampleManagementUndoActions({
         },
         deletedSlot: slotNumber,
         voice,
+        voicesBefore,
       },
       description: `Delete sample from voice ${voice}, slot ${slotNumber + 1} (with reindexing)`,
       id: createActionId(),
@@ -175,13 +164,9 @@ export function useSampleManagementUndoActions({
       fromSlot: number;
       fromVoice: number;
       result: SampleOperationResult;
-      stateSnapshot: {
-        sample: { filename: string; source_path: string };
-        slot: number;
-        voice: number;
-      }[];
       toSlot: number;
       toVoice: number;
+      voicesBefore: VoiceSnapshot[];
     }): MoveSampleAction => ({
       data: {
         affectedSamples:
@@ -206,9 +191,9 @@ export function useSampleManagementUndoActions({
               source_path: params.result.data.replacedSample.source_path,
             }
           : undefined,
-        stateSnapshot: params.stateSnapshot,
         toSlot: params.toSlot,
         toVoice: params.toVoice,
+        voicesBefore: params.voicesBefore,
       },
       description: `Move sample from voice ${params.fromVoice}, slot ${params.fromSlot + 1} to voice ${params.toVoice}, slot ${params.toSlot + 1}`,
       id: createActionId(),
@@ -271,7 +256,6 @@ export function useSampleManagementUndoActions({
     createReindexSamplesAction,
     createReplaceSampleAction,
     createSameKitMoveAction,
-    getOldSampleForUndo,
-    getSampleToDeleteForUndo,
+    snapshotForUndo,
   };
 }

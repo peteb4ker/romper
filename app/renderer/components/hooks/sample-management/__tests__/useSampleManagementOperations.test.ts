@@ -15,8 +15,7 @@ vi.mock("../useSampleManagementUndoActions", () => ({
       data: {},
       type: "REPLACE_SAMPLE",
     })),
-    getOldSampleForUndo: vi.fn(),
-    getSampleToDeleteForUndo: vi.fn(),
+    snapshotForUndo: vi.fn(),
   })),
 }));
 
@@ -34,6 +33,9 @@ const mockElectronAPI = {
 
 // Ensure window is properly typed and electronAPI is available
 (window as unknown).electronAPI = mockElectronAPI;
+
+/** The voice before the edit, as undo keeps it (RE-86) */
+const voicesBefore = [{ samples: [], voice: 1 }];
 
 describe("useSampleManagementOperations", () => {
   const mockOptions = {
@@ -162,7 +164,10 @@ describe("useSampleManagementOperations", () => {
           data: {},
           type: "REPLACE_SAMPLE",
         })),
-        getOldSampleForUndo: vi.fn().mockResolvedValue(mockOldSample),
+        snapshotForUndo: vi.fn().mockResolvedValue({
+          sample: mockOldSample,
+          voicesBefore,
+        }),
       };
 
       // Mock the hook return
@@ -179,7 +184,14 @@ describe("useSampleManagementOperations", () => {
 
       await result.current.handleSampleReplace(1, 0, "/path/to/new.wav");
 
-      expect(mockUndoActions.getOldSampleForUndo).toHaveBeenCalledWith(1, 0);
+      expect(mockUndoActions.snapshotForUndo).toHaveBeenCalledWith(1, 0);
+      expect(mockUndoActions.createReplaceSampleAction).toHaveBeenCalledWith(
+        1,
+        0,
+        mockOldSample,
+        "/path/to/new.wav",
+        voicesBefore,
+      );
       expect(mockElectronAPI.replaceSampleInSlot).toHaveBeenCalledWith(
         "Test Kit",
         1,
@@ -245,7 +257,10 @@ describe("useSampleManagementOperations", () => {
           data: {},
           type: "REINDEX_SAMPLES",
         })),
-        getSampleToDeleteForUndo: vi.fn().mockResolvedValue(mockSampleToDelete),
+        snapshotForUndo: vi.fn().mockResolvedValue({
+          sample: mockSampleToDelete,
+          voicesBefore,
+        }),
       };
 
       // Mock the hook return
@@ -263,10 +278,7 @@ describe("useSampleManagementOperations", () => {
 
       await result.current.handleSampleDelete(1, 0);
 
-      expect(mockUndoActions.getSampleToDeleteForUndo).toHaveBeenCalledWith(
-        1,
-        0,
-      );
+      expect(mockUndoActions.snapshotForUndo).toHaveBeenCalledWith(1, 0);
       expect(mockElectronAPI.deleteSampleFromSlot).toHaveBeenCalledWith(
         "Test Kit",
         1,
@@ -282,6 +294,7 @@ describe("useSampleManagementOperations", () => {
         0,
         mockSampleToDelete,
         mockDeleteResult,
+        voicesBefore,
       );
       expect(mockOptions.onAddUndoAction).toHaveBeenCalled();
     });
@@ -308,7 +321,7 @@ describe("useSampleManagementOperations", () => {
 
     it("should handle delete sample exception", async () => {
       const mockUndoActions = {
-        getSampleToDeleteForUndo: vi
+        snapshotForUndo: vi
           .fn()
           .mockRejectedValue(new Error("Undo prep failed")),
       };

@@ -9,6 +9,7 @@ import type {
   SliceStep,
   VoiceSliceSettings,
 } from "@romper/shared/sliceTypes.js";
+import type { VoiceSnapshot } from "@romper/shared/undoTypes.js";
 
 const { contextBridge, ipcRenderer, webUtils } = require("electron");
 
@@ -431,6 +432,10 @@ const electronAPI = {
   rescanKitsMissingMetadata: () => {
     isDev && console.debug("[IPC] rescanKitsMissingMetadata invoked");
     return ipcRenderer.invoke("rescan-kits-missing-metadata");
+  },
+  restoreKitVoices: (kitName: string, voices: VoiceSnapshot[]) => {
+    isDev && console.debug("[IPC] restoreKitVoices invoked", kitName);
+    return ipcRenderer.invoke("restore-kit-voices", kitName, voices);
   },
   scanBanks: () => {
     isDev && console.debug("[IPC] scanBanks invoked");

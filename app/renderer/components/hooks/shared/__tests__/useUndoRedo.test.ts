@@ -1,4 +1,3 @@
-import { dbSlotToUiSlot } from "@romper/shared/slotUtils";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -13,6 +12,7 @@ const mockElectronAPI = {
   moveSampleBetweenKits: vi.fn(),
   moveSampleInKit: vi.fn(),
   replaceSampleInSlot: vi.fn(),
+  restoreKitVoices: vi.fn(),
 };
 
 // Setup window.electronAPI mock
@@ -123,300 +123,57 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
     expect(result.current.redoCount).toBe(0);
   });
 
-  describe("Move-Undo Gap Bug Fix", () => {
-    it("should fix the gap bug: move 1.12→1.9 then undo restores perfectly", async () => {
-      // Test the specific bug fix for move-undo operations leaving gaps
-
-      // Create the state snapshot that would be captured before the move
-      const stateSnapshot = [
+  describe("[Q-02] Move undo restores the voice exactly", () => {
+    it("move 1.12→1.9 then undo puts all twelve rows back, gain included, in one call", async () => {
+      // Voice 1 before the move: full rows, as undo keeps them (RE-86)
+      const voicesBefore = [
         {
-          sample: {
-            filename: "sample1.wav",
-            source_path: "/path/1.wav",
-          },
-          slot: 0,
-          voice: 1,
-        },
-        {
-          sample: {
-            filename: "sample2.wav",
-            source_path: "/path/2.wav",
-          },
-          slot: 1,
-          voice: 1,
-        },
-        {
-          sample: {
-            filename: "sample3.wav",
-            source_path: "/path/3.wav",
-          },
-          slot: 2,
-          voice: 1,
-        },
-        {
-          sample: {
-            filename: "sample4.wav",
-            source_path: "/path/4.wav",
-          },
-          slot: 3,
-          voice: 1,
-        },
-        {
-          sample: {
-            filename: "sample5.wav",
-            source_path: "/path/5.wav",
-          },
-          slot: 4,
-          voice: 1,
-        },
-        {
-          sample: {
-            filename: "sample6.wav",
-            source_path: "/path/6.wav",
-          },
-          slot: 5,
-          voice: 1,
-        },
-        {
-          sample: {
-            filename: "sample7.wav",
-            source_path: "/path/7.wav",
-          },
-          slot: 6,
-          voice: 1,
-        },
-        {
-          sample: {
-            filename: "sample8.wav",
-            source_path: "/path/8.wav",
-          },
-          slot: 7,
-          voice: 1,
-        },
-        {
-          sample: {
-            filename: "sample9.wav",
-            source_path: "/path/9.wav",
-          },
-          slot: 8,
-          voice: 1,
-        },
-        {
-          sample: {
-            filename: "sample10.wav",
-            source_path: "/path/10.wav",
-          },
-          slot: 9,
-          voice: 1,
-        },
-        {
-          sample: {
-            filename: "sample11.wav",
-            source_path: "/path/11.wav",
-          },
-          slot: 10,
-          voice: 1,
-        },
-        {
-          sample: {
-            filename: "sample12.wav",
-            source_path: "/path/12.wav",
-          },
-          slot: 11,
+          samples: Array.from({ length: 12 }, (_, slot) => ({
+            filename: `sample${slot + 1}.wav`,
+            gain_db: -slot,
+            slot_number: slot,
+            source_path: `/path/${slot + 1}.wav`,
+            wav_bit_depth: 16,
+            wav_bitrate: 705600,
+            wav_channels: 1,
+            wav_sample_rate: 44100,
+          })),
           voice: 1,
         },
       ];
-
-      // Simulate the current state AFTER the move 1.12→1.9
-      // sample12 moved to slot 9, samples 9-11 shifted right
-      const currentStateAfterMove = [
-        {
-          filename: "sample1.wav",
-          slot_number: 0,
-          source_path: "/path/1.wav",
-          voice_number: 1,
-        },
-        {
-          filename: "sample2.wav",
-          slot_number: 1,
-          source_path: "/path/2.wav",
-          voice_number: 1,
-        },
-        {
-          filename: "sample3.wav",
-          slot_number: 2,
-          source_path: "/path/3.wav",
-          voice_number: 1,
-        },
-        {
-          filename: "sample4.wav",
-          slot_number: 3,
-          source_path: "/path/4.wav",
-          voice_number: 1,
-        },
-        {
-          filename: "sample5.wav",
-          slot_number: 4,
-          source_path: "/path/5.wav",
-          voice_number: 1,
-        },
-        {
-          filename: "sample6.wav",
-          slot_number: 5,
-          source_path: "/path/6.wav",
-          voice_number: 1,
-        },
-        {
-          filename: "sample7.wav",
-          slot_number: 6,
-          source_path: "/path/7.wav",
-          voice_number: 1,
-        },
-        {
-          filename: "sample8.wav",
-          slot_number: 7,
-          source_path: "/path/8.wav",
-          voice_number: 1,
-        },
-        {
-          filename: "sample12.wav",
-          slot_number: 8,
-          source_path: "/path/12.wav",
-          voice_number: 1,
-        }, // moved here
-        {
-          filename: "sample9.wav",
-          slot_number: 9,
-          source_path: "/path/9.wav",
-          voice_number: 1,
-        }, // shifted
-        {
-          filename: "sample10.wav",
-          slot_number: 10,
-          source_path: "/path/10.wav",
-          voice_number: 1,
-        }, // shifted
-        {
-          filename: "sample11.wav",
-          slot_number: 11,
-          source_path: "/path/11.wav",
-          voice_number: 1,
-        }, // shifted
-      ];
-
-      // Mock the getAllSamplesForKit call that happens during undo
-      mockElectronAPI.getAllSamplesForKit.mockResolvedValue({
-        data: currentStateAfterMove,
-        success: true,
-      });
-
-      // Mock successful delete and add operations
-      mockElectronAPI.deleteSampleFromSlotWithoutReindexing.mockResolvedValue({
-        data: { deletedSamples: [] },
-        success: true,
-      });
-
-      mockElectronAPI.addSampleToSlot.mockResolvedValue({
-        data: { sampleId: 123 },
-        success: true,
-      });
-
-      // Create the move action that would be recorded
-      const moveAction = {
-        data: {
-          affectedSamples: [
-            {
-              newSlot: 10,
-              oldSlot: 9,
-              sample: {
-                filename: "sample9.wav",
-                source_path: "/path/9.wav",
-              },
-              voice: 1,
-            },
-            {
-              newSlot: 11,
-              oldSlot: 10,
-              sample: {
-                filename: "sample10.wav",
-                source_path: "/path/10.wav",
-              },
-              voice: 1,
-            },
-            {
-              newSlot: 12,
-              oldSlot: 11,
-              sample: {
-                filename: "sample11.wav",
-                source_path: "/path/11.wav",
-              },
-              voice: 1,
-            },
-          ],
-          fromSlot: 11, // 0-based
-          fromVoice: 1,
-          mode: "insert" as const,
-          movedSample: {
-            filename: "sample12.wav",
-            source_path: "/path/12.wav",
-          },
-          stateSnapshot,
-          toSlot: 8, // 0-based
-          toVoice: 1,
-        },
-        description: "Move sample from voice 1, slot 12 to voice 1, slot 9",
-        id: "test-action",
-        timestamp: new Date(),
-        type: "MOVE_SAMPLE" as const,
-      };
-
-      // Create undo hook and add the action
-      const { result } = renderHook(() => useUndoRedo("TestKit"));
+      const { result } = renderHook(() => useUndoRedo("test-kit"));
 
       act(() => {
-        result.current.addAction(moveAction);
+        result.current.addAction({
+          data: {
+            affectedSamples: [],
+            fromSlot: 11,
+            fromVoice: 1,
+            movedSample: {
+              filename: "sample12.wav",
+              source_path: "/path/12.wav",
+            },
+            toSlot: 8,
+            toVoice: 1,
+            voicesBefore,
+          },
+          type: "MOVE_SAMPLE",
+        });
       });
 
-      expect(result.current.undoCount).toBe(1);
-      expect(result.current.canUndo).toBe(true);
-
-      // Perform the undo
       await act(async () => {
         await result.current.undo();
       });
 
-      // Verify the fix: should delete ALL current samples from voice 1, then restore from snapshot
-      const deleteCalls =
-        mockElectronAPI.deleteSampleFromSlotWithoutReindexing.mock.calls;
-      const addCalls = mockElectronAPI.addSampleToSlot.mock.calls;
-
-      // Should delete all 12 current samples
-      expect(deleteCalls.length).toBe(12);
-
-      // Should restore all 12 samples from snapshot
-      expect(addCalls.length).toBe(12);
-
-      // Verify all current samples are deleted (0-based slots)
-      const expectedDeleteSlots = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-      const actualDeleteSlots = deleteCalls
-        .map((call) => call[2])
-        .sort((a, b) => a - b);
-      expect(actualDeleteSlots).toEqual(expectedDeleteSlots);
-
-      // Verify all snapshot samples are restored to correct positions (0-based)
-      stateSnapshot.forEach((snapshotSample) => {
-        const correspondingAddCall = addCalls.find(
-          (call) =>
-            call[1] === snapshotSample.voice && // voice matches
-            call[2] === dbSlotToUiSlot(snapshotSample.slot) - 1 && // slot matches (convert db slot to 0-based display slot)
-            call[3] === snapshotSample.sample.source_path, // source_path matches
-        );
-
-        expect(correspondingAddCall).toBeDefined(
-          `Sample ${snapshotSample.sample.filename} should be restored to voice ${snapshotSample.voice}, slot ${snapshotSample.slot}`,
-        );
-      });
-
+      expect(mockElectronAPI.restoreKitVoices).toHaveBeenCalledTimes(1);
+      expect(mockElectronAPI.restoreKitVoices).toHaveBeenCalledWith(
+        "test-kit",
+        voicesBefore,
+      );
+      expect(mockElectronAPI.addSampleToSlot).not.toHaveBeenCalled();
+      expect(
+        mockElectronAPI.deleteSampleFromSlotWithoutReindexing,
+      ).not.toHaveBeenCalled();
       expect(result.current.error).toBe(null);
     });
   });
@@ -566,7 +323,24 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
   });
 
   describe("REPLACE_SAMPLE Undo Operations", () => {
-    it("should undo REPLACE_SAMPLE by restoring old sample", async () => {
+    it("should undo REPLACE_SAMPLE by restoring the voice as it was", async () => {
+      const voicesBefore = [
+        {
+          samples: [
+            {
+              filename: "old.wav",
+              gain_db: -4.5,
+              slot_number: 1,
+              source_path: "/path/to/old.wav",
+              wav_bit_depth: 24,
+              wav_bitrate: null,
+              wav_channels: 2,
+              wav_sample_rate: 48000,
+            },
+          ],
+          voice: 1,
+        },
+      ];
       const { result } = renderHook(() => useUndoRedo("test-kit"));
 
       act(() => {
@@ -582,6 +356,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
             },
             slot: 1,
             voice: 1,
+            voicesBefore,
           },
           type: "REPLACE_SAMPLE",
         });
@@ -591,12 +366,11 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
         await result.current.undo();
       });
 
-      expect(mockElectronAPI.replaceSampleInSlot).toHaveBeenCalledWith(
+      expect(mockElectronAPI.restoreKitVoices).toHaveBeenCalledWith(
         "test-kit",
-        1,
-        1,
-        "/path/to/old.wav",
+        voicesBefore,
       );
+      expect(mockElectronAPI.replaceSampleInSlot).not.toHaveBeenCalled();
     });
   });
 

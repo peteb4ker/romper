@@ -1,14 +1,11 @@
-import { samples } from "@romper/shared/db/schema.js";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import {
-  createRomperDbFile,
-  withDbTransaction,
-} from "../../utils/dbUtilities.js";
+import { createRomperDbFile } from "../../utils/dbUtilities.js";
 import { addKit } from "../kitCrudOperations.js";
+import { addSample } from "../sampleCrudOperations.js";
 import { isSourcePathReferenced } from "../sampleSourceQueries.js";
 
 describe("[Q-01] [Q-03] isSourcePathReferenced (RE-85)", () => {
@@ -20,19 +17,16 @@ describe("[Q-01] [Q-03] isSourcePathReferenced (RE-85)", () => {
     dbDir = join(tempDir, ".romperdb");
     createRomperDbFile(dbDir);
     addKit(dbDir, { bank_letter: "A", name: "A0" });
-    withDbTransaction(dbDir, (db) =>
-      db
-        .insert(samples)
-        .values(
-          ["/library/kick.wav", "/library/snare.wav"].map((source_path, i) => ({
-            filename: `${i}.wav`,
-            kit_name: "A0",
-            slot_number: i,
-            source_path,
-            voice_number: 1,
-          })),
-        )
-        .run(),
+    // The same setup as the other operations tests, which clean up on
+    // Windows: rows added through addSample
+    ["/library/kick.wav", "/library/snare.wav"].forEach((source_path, i) =>
+      addSample(dbDir, {
+        filename: `${i}.wav`,
+        kit_name: "A0",
+        slot_number: i,
+        source_path,
+        voice_number: 1,
+      }),
     );
   });
 

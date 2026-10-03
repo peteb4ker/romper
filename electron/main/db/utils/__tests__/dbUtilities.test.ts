@@ -4,13 +4,23 @@ import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const sqliteInstances: Array<{ close: ReturnType<typeof vi.fn> }> = [];
+// What the upgrade transaction throws (RE-33: migrations run in one
+// transaction on the connection, not through Drizzle's migrator)
+let migrationError: Error | null = null;
 
 vi.mock("better-sqlite3", () => ({
   default: vi.fn(function () {
     const instance = {
       close: vi.fn(),
+      exec: vi.fn(),
       pragma: vi.fn(),
-      prepare: vi.fn(() => ({ all: vi.fn(() => []) })),
+      prepare: vi.fn(() => ({ all: vi.fn(() => []), run: vi.fn() })),
+      transaction: vi.fn(() => {
+        const run = () => {
+          if (migrationError) throw migrationError;
+        };
+        return Object.assign(run, { immediate: run });
+      }),
     };
     sqliteInstances.push(instance);
     return instance;
@@ -21,16 +31,10 @@ vi.mock("drizzle-orm/better-sqlite3", () => ({
   drizzle: vi.fn(() => ({})),
 }));
 
-vi.mock("drizzle-orm/better-sqlite3/migrator", () => ({
-  migrate: vi.fn(),
-}));
-
 vi.mock("../dbMigrations.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../dbMigrations.js")>()),
   getMigrationsPath: vi.fn(() => "/migrations"),
 }));
-
-import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 
 import { getMigrationsPath } from "../dbMigrations.js";
 import { createRomperDbFile, openDbConnectionCount } from "../dbUtilities";
@@ -40,7 +44,7 @@ describe("createRomperDbFile connection handling", () => {
 
   beforeEach(() => {
     sqliteInstances.length = 0;
-    vi.mocked(migrate).mockReset();
+    migrationError = null;
     vi.mocked(getMigrationsPath).mockReturnValue("/migrations");
     vi.spyOn(console, "error").mockImplementation(() => {});
     dbDir = fs.mkdtempSync(path.join(os.tmpdir(), "romper-dbutil-"));
@@ -61,13 +65,10 @@ describe("createRomperDbFile connection handling", () => {
       success: false,
     });
     expect(sqliteInstances).toHaveLength(0);
-    expect(migrate).not.toHaveBeenCalled();
   });
 
   it("closes the database when a migration throws", () => {
-    vi.mocked(migrate).mockImplementation(() => {
-      throw new Error("migration exploded");
-    });
+    migrationError = new Error("migration exploded");
 
     const result = createRomperDbFile(dbDir);
 

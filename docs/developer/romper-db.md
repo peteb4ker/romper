@@ -100,6 +100,54 @@ Individual sample file assignments to voice slots.
 
 Defined in `shared/db/schema.ts` using Drizzle ORM. Migrations in `electron/main/db/migrations/`.
 
+## Migrations and upgrades
+
+A new store gets its schema from Drizzle's migrator (`createRomperDbFile`). An
+existing store is brought up to date the first time Romper opens it in a
+session (`ensureDatabaseMigrations` in `electron/main/db/utils/dbMigrations.ts`):
+
+- **All or nothing.** The history repair (below) and every pending migration
+  run in one `BEGIN IMMEDIATE` transaction. If a statement fails or the app
+  is interrupted, SQLite rolls the whole upgrade back, so the store stays at
+  its old version and the next launch tries again (RE-33). This does what
+  Drizzle's migrator does (pending means journal entries newer than the
+  newest row in `__drizzle_migrations`; each migration's statements run,
+  then a row with its hash is recorded), but in a transaction the repair can
+  share.
+- **A copy first.** Before an upgrade changes anything, a consistent copy of
+  the database is written to `.romperdb/romper.sqlite.before-upgrade`
+  (`VACUUM INTO` a temporary name, then a rename). Each upgrade replaces the
+  previous copy. To go back, quit Romper and rename the copy to
+  `romper.sqlite`. If the copy can't be written, the upgrade doesn't start.
+  Nothing is copied when there's nothing to upgrade.
+- **Bundled migrations only.** Migrations are read from the folder that
+  ships with the code (`dist/electron/main/db/migrations` in a build,
+  `electron/main/db/migrations` from source), never from the working
+  directory.
+
+### The missing 0008 and the two 0009s
+
+`0008_ordinary_mastermind` (adding `samples.wav_bit_depth` and
+`samples.wav_channels`) shipped and was then deleted. `0009_purple_zaladane`
+replaced it, adding those two columns and `voices.stereo_mode`. A later
+migration took the next free number, giving `0009_foamy_hardball`. Drizzle
+orders migrations by their journal timestamps, not their names, so the
+duplicate number is harmless, and both files stay as they are: renaming or
+editing a shipped migration changes its hash.
+
+A store that applied the deleted 0008 has two of 0009_purple_zaladane's
+columns and no record of it, so Drizzle would re-run it and fail on a
+duplicate column. `repairMigrationHistory` detects that state, adds whichever
+of the three columns are missing and records 0009_purple_zaladane as applied,
+in one transaction. Running it again changes nothing.
+
+`electron/main/db/utils/__tests__/dbMigrations.integration.test.ts` builds a
+store at every version a user could have (each journal entry, plus the
+deleted 0008) by replaying that release's migrations. It checks that each one
+upgrades to the current schema with its kits intact, that a failure part way
+through (in the repair or a later migration) leaves the store unchanged, and
+that the copy is made.
+
 ---
 
-_Last updated: 2026-10-01_
+_Last updated: 2026-10-03_

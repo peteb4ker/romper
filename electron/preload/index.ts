@@ -110,6 +110,7 @@ contextBridge.exposeInMainWorld("romperEnv", {
   ROMPER_LOCAL_PATH: process.env.ROMPER_LOCAL_PATH,
   ROMPER_SDCARD_PATH: process.env.ROMPER_SDCARD_PATH,
   ROMPER_SQUARP_ARCHIVE_URL: process.env.ROMPER_SQUARP_ARCHIVE_URL,
+  ROMPER_TEST_MODE: process.env.ROMPER_TEST_MODE,
 });
 
 // The contract is canonical (shared/electronApi.ts); `satisfies` makes a

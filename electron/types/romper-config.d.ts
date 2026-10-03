@@ -6,6 +6,7 @@ declare global {
       ROMPER_LOCAL_PATH?: string;
       ROMPER_SDCARD_PATH?: string;
       ROMPER_SQUARP_ARCHIVE_URL?: string;
+      ROMPER_TEST_MODE?: string;
     };
   }
 }

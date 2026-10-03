@@ -1,8 +1,14 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ErrorBoundary } from "../ErrorBoundary";
+import { ErrorBoundary, RENDER_FAULT_EVENT } from "../ErrorBoundary";
 
 let shouldThrow = true;
 function Flaky({ label = "content" }: { label?: string }) {
@@ -122,5 +128,54 @@ describe("[UC-36] ErrorBoundary (RE-12)", () => {
 
     expect(reload).toHaveBeenCalledTimes(1);
     vi.unstubAllGlobals();
+  });
+
+  describe("the e2e render fault trigger", () => {
+    const fault = (area: string) =>
+      act(() => {
+        globalThis.dispatchEvent(
+          new CustomEvent(RENDER_FAULT_EVENT, { detail: area }),
+        );
+      });
+
+    afterEach(() => {
+      delete globalThis.window.romperEnv;
+    });
+
+    it("makes only the named area fail, in test mode", () => {
+      shouldThrow = false;
+      globalThis.window.romperEnv = { ROMPER_TEST_MODE: "true" };
+      render(
+        <ErrorBoundary area="Romper">
+          <ErrorBoundary area="Kit editor">
+            <Flaky label="editor" />
+          </ErrorBoundary>
+        </ErrorBoundary>,
+      );
+
+      fault("Kit editor");
+
+      const fallback = screen.getByTestId("error-boundary");
+      expect(fallback).toHaveTextContent("Kit editor stopped working");
+      expect(fallback).toHaveTextContent("render fault forced by an e2e test");
+
+      // It fails once: Try again renders the area again
+      fireEvent.click(screen.getByTestId("error-boundary-retry"));
+      expect(screen.getByText("editor")).toBeInTheDocument();
+    });
+
+    it("does nothing outside test mode", () => {
+      shouldThrow = false;
+      render(
+        <ErrorBoundary area="Kit editor">
+          <Flaky label="editor" />
+        </ErrorBoundary>,
+      );
+
+      fault("Kit editor");
+
+      expect(screen.getByText("editor")).toBeInTheDocument();
+      expect(screen.queryByTestId("error-boundary")).not.toBeInTheDocument();
+    });
   });
 });

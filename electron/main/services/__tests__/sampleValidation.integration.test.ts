@@ -1,11 +1,13 @@
 import type { NewKit } from "@romper/shared/db/schema.js";
 
 import * as fs from "node:fs";
-import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { deleteDbFileWithRetry } from "../../db/fileOperations.js";
+import {
+  createTempStore,
+  removeTempStore,
+} from "../../../../tests/integration/support/tempStore.js";
 import {
   addKit,
   addSample,
@@ -13,7 +15,6 @@ import {
   getKitSamples,
   updateVoiceStereoMode,
 } from "../../db/romperDbCoreORM.js";
-import { closeAllDbConnections } from "../../db/utils/dbConnections.js";
 import { sampleCrudService } from "../crud/sampleCrudService.js";
 import { sampleBatchOperationsService } from "../sampleBatchOperations.js";
 import { SampleValidationService } from "../sampleValidation.js";
@@ -24,24 +25,6 @@ import { SampleValidator } from "../validation/sampleValidator.js";
 // so nothing is written into the source tree.
 let TEST_DB_DIR: string;
 let TEST_DB_PATH: string;
-
-async function cleanupSqliteFiles(dir: string) {
-  if (!fs.existsSync(dir)) return;
-
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      await cleanupSqliteFiles(fullPath);
-    } else if (entry.name.endsWith(".sqlite")) {
-      try {
-        await deleteDbFileWithRetry(fullPath);
-      } catch (error) {
-        console.warn(`Failed to delete SQLite file ${fullPath}:`, error);
-      }
-    }
-  }
-}
 
 /**
  * Create a minimal valid WAV file for testing
@@ -97,7 +80,7 @@ describe("SampleValidation Integration Tests", () => {
   let testWavDir: string;
 
   beforeEach(() => {
-    TEST_DB_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "romper-sample-val-"));
+    TEST_DB_DIR = createTempStore("romper-sample-val-");
     TEST_DB_PATH = path.join(TEST_DB_DIR, ".romperdb");
     createRomperDbFile(TEST_DB_PATH);
 
@@ -120,11 +103,8 @@ describe("SampleValidation Integration Tests", () => {
     addKit(TEST_DB_PATH, kitRecord);
   });
 
-  afterEach(async () => {
-    // Windows can't delete a database file that's still open
-    closeAllDbConnections();
-    await cleanupSqliteFiles(TEST_DB_DIR);
-    fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
+  afterEach(() => {
+    removeTempStore(TEST_DB_DIR);
   });
 
   describe("SampleValidationService.validateVoiceAndSlot", () => {

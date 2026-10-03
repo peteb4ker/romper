@@ -1,9 +1,6 @@
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import { closeAllDbConnections } from "../../electron/main/db/utils/dbConnections.js";
 
 vi.mock("electron", () => ({
   BrowserWindow: {
@@ -14,6 +11,7 @@ vi.mock("electron", () => ({
 import { getKit } from "../../electron/main/db/romperDbCoreORM.js";
 import { LocalStoreSetupService } from "../../electron/main/services/localStoreSetupService.js";
 import { encodeTestWav, sine } from "../validation/support/wav.js";
+import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 // RE-34: setup imports each kit in main: samples (12 per voice, in card
 // order), WAV metadata and voice names, in one transaction per kit. Only
@@ -37,7 +35,7 @@ describe("[UC-01] [UC-02] Setup imports kits in main (RE-34)", () => {
   let setup: LocalStoreSetupService;
 
   beforeEach(() => {
-    store = fs.mkdtempSync(path.join(os.tmpdir(), "setup-import-"));
+    store = createTempStore("setup-import-");
     dbDir = path.join(store, ".romperdb");
     setup = new LocalStoreSetupService();
     expect(setup.createSetupDatabase(dbDir).success).toBe(true);
@@ -55,9 +53,7 @@ describe("[UC-01] [UC-02] Setup imports kits in main (RE-34)", () => {
   });
 
   afterEach(() => {
-    // Windows can't delete a database file that's still open
-    closeAllDbConnections();
-    fs.rmSync(store, { force: true, recursive: true });
+    removeTempStore(store);
   });
 
   it("imports samples in card order, with WAV metadata and voice names", () => {

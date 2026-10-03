@@ -4,12 +4,8 @@
 
 import type { Kit } from "@romper/shared/db/schema";
 
-import * as fs from "node:fs";
-import * as os from "node:os";
-import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { deleteDbFileWithRetry } from "../../electron/main/db/fileOperations";
 import {
   addKit,
   addSample,
@@ -19,34 +15,16 @@ import {
   markKitAsModified,
   markKitsAsSynced,
 } from "../../electron/main/db/romperDbCoreORM";
-import { closeAllDbConnections } from "../../electron/main/db/utils/dbConnections.js";
+import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 describe("[UC-11] [UC-34] Sync Unsaved State Integration", () => {
   // A temp folder per test, not one in the source tree
   let TEST_DB_DIR: string;
 
-  async function cleanupSqliteFiles(dir: string) {
-    if (!fs.existsSync(dir)) return;
-
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        await cleanupSqliteFiles(fullPath);
-      } else if (entry.name.endsWith(".sqlite")) {
-        try {
-          await deleteDbFileWithRetry(fullPath);
-        } catch (error) {
-          console.warn(`Failed to delete SQLite file ${fullPath}:`, error);
-        }
-      }
-    }
-  }
-
   beforeEach(() => {
     // Clear migration cache to ensure fresh database setup
     clearMigrationCache();
-    TEST_DB_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "romper-sync-state-"));
+    TEST_DB_DIR = createTempStore("romper-sync-state-");
 
     // Create a fresh database
     const dbResult = createRomperDbFile(TEST_DB_DIR);
@@ -55,11 +33,8 @@ describe("[UC-11] [UC-34] Sync Unsaved State Integration", () => {
     }
   });
 
-  afterEach(async () => {
-    // Windows can't delete a database file that's still open
-    closeAllDbConnections();
-    await cleanupSqliteFiles(TEST_DB_DIR);
-    fs.rmSync(TEST_DB_DIR, { force: true, maxRetries: 5, recursive: true });
+  afterEach(() => {
+    removeTempStore(TEST_DB_DIR);
   });
 
   it("should clear modified_since_sync flag when kit is marked as synced", () => {

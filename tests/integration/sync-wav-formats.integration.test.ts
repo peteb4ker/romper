@@ -1,9 +1,6 @@
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import { closeAllDbConnections } from "../../electron/main/db/utils/dbConnections.js";
 
 vi.mock("electron", () => ({
   BrowserWindow: {
@@ -17,6 +14,7 @@ import {
   createRomperDbFile,
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { syncService } from "../../electron/main/services/syncService.js";
+import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 // RE-08: WAV files whose fmt chunk isn't the first 16 bytes after the RIFF
 // header are written correctly; files Romper can't read are listed in the
@@ -81,7 +79,7 @@ describe("[UC-34] Syncing WAV files with unusual headers (RE-08)", () => {
   const sources: Record<string, string> = {};
 
   beforeEach(() => {
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "sync-wav-formats-"));
+    tempDir = createTempStore("sync-wav-formats-");
     const localStorePath = path.join(tempDir, "store");
     dbDir = path.join(localStorePath, ".romperdb");
     sdCardPath = path.join(tempDir, "card");
@@ -129,9 +127,7 @@ describe("[UC-34] Syncing WAV files with unusual headers (RE-08)", () => {
   });
 
   afterEach(() => {
-    // Windows can't delete a database file that's still open
-    closeAllDbConnections();
-    fs.rmSync(tempDir, { force: true, recursive: true });
+    removeTempStore(tempDir);
   });
 
   it("lists the unreadable file and writes the rest in a format the Rample reads", async () => {

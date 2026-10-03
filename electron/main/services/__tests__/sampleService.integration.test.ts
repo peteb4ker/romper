@@ -1,20 +1,21 @@
 import type { NewKit } from "@romper/shared/db/schema.js";
 
 import * as fs from "node:fs";
-import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type { InMemorySettings } from "../../types/settings.js";
 
-import { deleteDbFileWithRetry } from "../../db/fileOperations.js";
+import {
+  createTempStore,
+  removeTempStore,
+} from "../../../../tests/integration/support/tempStore.js";
 import {
   addKit,
   createRomperDbFile,
   getKit,
   getKitSamples,
 } from "../../db/romperDbCoreORM.js";
-import { closeAllDbConnections } from "../../db/utils/dbConnections.js";
 import { SampleService } from "../sampleService.js";
 
 // Test utilities
@@ -23,24 +24,6 @@ import { SampleService } from "../sampleService.js";
 let TEST_DB_DIR: string;
 let TEST_LOCAL_STORE_PATH: string;
 let TEST_DB_PATH: string;
-
-async function cleanupSqliteFiles(dir: string) {
-  if (!fs.existsSync(dir)) return;
-
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      await cleanupSqliteFiles(fullPath);
-    } else if (entry.name.endsWith(".sqlite")) {
-      try {
-        await deleteDbFileWithRetry(fullPath);
-      } catch (error) {
-        console.warn(`Failed to delete SQLite file ${fullPath}:`, error);
-      }
-    }
-  }
-}
 
 /**
  * Create a minimal valid WAV file for testing
@@ -105,9 +88,7 @@ describe("SampleService Integration Tests", () => {
   let testWavDir: string;
 
   beforeEach(() => {
-    TEST_DB_DIR = fs.mkdtempSync(
-      path.join(os.tmpdir(), "romper-sample-service-"),
-    );
+    TEST_DB_DIR = createTempStore("romper-sample-service-");
     TEST_LOCAL_STORE_PATH = TEST_DB_DIR;
     TEST_DB_PATH = path.join(TEST_DB_DIR, ".romperdb");
 
@@ -136,11 +117,8 @@ describe("SampleService Integration Tests", () => {
     addKit(TEST_DB_PATH, kitRecord);
   });
 
-  afterEach(async () => {
-    // Windows can't delete a database file that's still open
-    closeAllDbConnections();
-    await cleanupSqliteFiles(TEST_DB_DIR);
-    fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
+  afterEach(() => {
+    removeTempStore(TEST_DB_DIR);
   });
 
   describe("[UC-19] addSampleToSlot", () => {

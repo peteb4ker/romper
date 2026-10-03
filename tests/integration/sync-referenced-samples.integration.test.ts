@@ -1,9 +1,6 @@
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import { closeAllDbConnections } from "../../electron/main/db/utils/dbConnections.js";
 
 // Mock Electron's BrowserWindow to prevent getAllWindows error
 vi.mock("electron", () => ({
@@ -21,6 +18,7 @@ import {
   getKitSamples,
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { syncService } from "../../electron/main/services/syncService.js";
+import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 describe("[UC-34] Sync Referenced Samples Integration Test", () => {
   let tempDir: string;
@@ -31,7 +29,7 @@ describe("[UC-34] Sync Referenced Samples Integration Test", () => {
 
   beforeEach(() => {
     // Create temporary directories
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "sync-test-"));
+    tempDir = createTempStore("sync-test-");
     localStorePath = path.join(tempDir, "local-store");
     sdCardPath = path.join(tempDir, "sd-card");
     dbDir = path.join(localStorePath, ".romperdb");
@@ -68,10 +66,8 @@ describe("[UC-34] Sync Referenced Samples Integration Test", () => {
   });
 
   afterEach(() => {
-    // Windows can't delete a database file that's still open
-    closeAllDbConnections();
     // Clean up
-    fs.rmSync(tempDir, { force: true, recursive: true });
+    removeTempStore(tempDir);
     vi.clearAllMocks();
   });
 

@@ -1,11 +1,12 @@
 import { sql } from "drizzle-orm";
 import * as fs from "node:fs";
-import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { deleteDbFileWithRetry } from "../../fileOperations.js";
-import { closeAllDbConnections } from "../dbConnections.js";
+import {
+  createTempStore,
+  removeTempStore,
+} from "../../../../../tests/integration/support/tempStore.js";
 import {
   checkMigrationState,
   clearMigrationCache,
@@ -24,41 +25,14 @@ import {
 let TEST_DB_DIR: string;
 let TEST_DB_PATH: string;
 
-async function cleanupSqliteFiles(dir: string) {
-  if (!fs.existsSync(dir)) {
-    return;
-  }
-
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-
-    if (entry.isDirectory()) {
-      await cleanupSqliteFiles(fullPath);
-    } else if (entry.name.endsWith(".sqlite")) {
-      try {
-        await deleteDbFileWithRetry(fullPath);
-      } catch (error) {
-        console.warn(`Failed to delete SQLite file ${fullPath}:`, error);
-      }
-    }
-  }
-}
-
 describe("Database Utilities Integration Tests", () => {
   beforeEach(() => {
-    TEST_DB_DIR = fs.mkdtempSync(
-      path.join(os.tmpdir(), "romper-db-utilities-"),
-    );
+    TEST_DB_DIR = createTempStore("romper-db-utilities-");
     TEST_DB_PATH = path.join(TEST_DB_DIR, DB_FILENAME);
   });
 
-  afterEach(async () => {
-    // Windows can't delete a database file that's still open
-    closeAllDbConnections();
-    await cleanupSqliteFiles(TEST_DB_DIR);
-    fs.rmSync(TEST_DB_DIR, { force: true, recursive: true });
+  afterEach(() => {
+    removeTempStore(TEST_DB_DIR);
   });
 
   describe("Database Creation", () => {

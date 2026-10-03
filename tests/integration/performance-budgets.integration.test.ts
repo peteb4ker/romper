@@ -13,13 +13,11 @@
  */
 import fs from "node:fs";
 import { syncBuiltinESMExports } from "node:module";
-import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { InMemorySettings } from "../../electron/main/types/settings.js";
 
-import { closeAllDbConnections } from "../../electron/main/db/utils/dbConnections.js";
 import { type BudgetName, enforceBudgets } from "../perf/budgets";
 import { encodeTestWav, sine } from "../validation/support/wav";
 
@@ -82,6 +80,7 @@ import { registerDbIpcHandlers } from "../../electron/main/dbIpcHandlers.js";
 import { pathAccess } from "../../electron/main/security/pathAccess.js";
 import { syncService } from "../../electron/main/services/syncService.js";
 import { type NewSample, samples } from "../../shared/db/schema.js";
+import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 const BANKS = ["A", "B", "C"];
 /** Setup writes a store (and planning a card); Windows runners are slow */
@@ -225,7 +224,7 @@ function wav(file: string, hz: number) {
 
 describe("[Q-01] performance budgets: main-process operations", () => {
   beforeEach(() => {
-    work = fs.mkdtempSync(path.join(os.tmpdir(), "romper-budgets-"));
+    work = createTempStore("romper-budgets-");
     store = path.join(work, "store");
     card = path.join(work, "card");
     sources = path.join(work, "sources");
@@ -239,10 +238,8 @@ describe("[Q-01] performance budgets: main-process operations", () => {
   }, SLOW_RUNNER_MS);
 
   afterEach(() => {
-    // Windows can't delete a database file that's still open
-    closeAllDbConnections();
     pathAccess.reset();
-    fs.rmSync(work, { force: true, recursive: true });
+    removeTempStore(work);
   });
 
   it("add sample", async () => {

@@ -7,12 +7,13 @@ import * as schema from "@romper/shared/db/schema.js";
 import Database from "better-sqlite3";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { closeAllDbConnections } from "../../utils/dbConnections.js";
+import {
+  createTempStore,
+  removeTempStore,
+} from "../../../../../tests/integration/support/tempStore.js";
 import {
   createRomperDbFile,
   ensureDatabaseMigrations,
@@ -29,7 +30,7 @@ describe("[UC-21] Drag and Drop Integration Tests", () => {
 
   beforeEach(() => {
     // Create temporary directory for test database
-    testDbDir = mkdtempSync(path.join(tmpdir(), "romper-test-"));
+    testDbDir = createTempStore("romper-test-");
     testDbPath = path.join(testDbDir, "romper.sqlite");
 
     // Create fresh database
@@ -126,10 +127,8 @@ describe("[UC-21] Drag and Drop Integration Tests", () => {
   });
 
   afterEach(() => {
-    // Windows can't delete a database file that's still open
-    closeAllDbConnections();
     sqlite?.close();
-    rmSync(testDbDir, { force: true, recursive: true });
+    removeTempStore(testDbDir);
   });
 
   // Helper function to get all samples for a voice sorted by slot

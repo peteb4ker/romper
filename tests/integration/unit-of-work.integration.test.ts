@@ -8,7 +8,6 @@
  * runs unmodified, and then check that none of its earlier steps were kept.
  */
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -53,6 +52,7 @@ import { kitService } from "../../electron/main/services/kitService.js";
 import { LocalStoreSetupService } from "../../electron/main/services/localStoreSetupService.js";
 import { sampleService } from "../../electron/main/services/sampleService.js";
 import { encodeTestWav, sine } from "../validation/support/wav.js";
+import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 let work: string;
 let store: string;
@@ -107,7 +107,7 @@ function wav(file: string, hz = 220) {
 }
 
 beforeEach(() => {
-  work = fs.mkdtempSync(path.join(os.tmpdir(), "romper-uow-"));
+  work = createTempStore("romper-uow-");
   store = path.join(work, "store");
   dbDir = path.join(store, ".romperdb");
   expect(createRomperDbFile(dbDir).success).toBe(true);
@@ -132,9 +132,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  // Windows can't delete a database file that's still open
-  closeAllDbConnections();
-  fs.rmSync(work, { force: true, recursive: true });
+  removeTempStore(work);
 });
 
 describe("[Q-01] [Q-02] one connection per store (RE-81)", () => {

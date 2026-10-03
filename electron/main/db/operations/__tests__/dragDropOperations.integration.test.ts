@@ -1,8 +1,10 @@
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
+import {
+  createTempStore,
+  removeTempStore,
+} from "../../../../../tests/integration/support/tempStore.js";
 import {
   addKit,
   addSample,
@@ -10,7 +12,6 @@ import {
   getKitSamples,
   moveSample,
 } from "../../romperDbCoreORM";
-import { closeAllDbConnections } from "../../utils/dbConnections.js";
 
 describe("[UC-21] Drag & Drop Operations - Integration Tests", () => {
   let tempDir: string;
@@ -18,7 +19,7 @@ describe("[UC-21] Drag & Drop Operations - Integration Tests", () => {
   const testKitName = "TestKit";
 
   beforeEach(async () => {
-    tempDir = mkdtempSync(join(tmpdir(), "romper-dragdrop-"));
+    tempDir = createTempStore("romper-dragdrop-");
     dbDir = join(tempDir, ".romperdb");
     await createRomperDbFile(dbDir);
 
@@ -31,9 +32,7 @@ describe("[UC-21] Drag & Drop Operations - Integration Tests", () => {
   });
 
   afterEach(() => {
-    // Windows can't delete a database file that's still open
-    closeAllDbConnections();
-    rmSync(tempDir, { force: true, recursive: true });
+    removeTempStore(tempDir);
   });
 
   test("Insert operation: moving sample 6 to slot 1 produces correct order 1-6-2-3-4-5", async () => {

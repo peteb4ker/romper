@@ -1,9 +1,10 @@
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
-import { closeAllDbConnections } from "../../utils/dbConnections.js";
+import {
+  createTempStore,
+  removeTempStore,
+} from "../../../../../tests/integration/support/tempStore.js";
 import { createRomperDbFile } from "../../utils/dbUtilities.js";
 import { addKit, getKit, updateKit } from "../kitCrudOperations.js";
 import { markKitAsSynced } from "../kitSyncOperations.js";
@@ -21,7 +22,7 @@ describe("Voice CRUD Operations - Integration Tests", () => {
   const testKitName = "TestKit";
 
   beforeEach(() => {
-    tempDir = mkdtempSync(join(tmpdir(), "romper-voice-crud-"));
+    tempDir = createTempStore("romper-voice-crud-");
     dbDir = join(tempDir, ".romperdb");
     createRomperDbFile(dbDir);
 
@@ -33,9 +34,7 @@ describe("Voice CRUD Operations - Integration Tests", () => {
   });
 
   afterEach(() => {
-    // Windows can't delete a database file that's still open
-    closeAllDbConnections();
-    rmSync(tempDir, { force: true, recursive: true });
+    removeTempStore(tempDir);
   });
 
   describe("[UC-27] updateVoiceAlias", () => {

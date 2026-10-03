@@ -73,15 +73,18 @@ vi.mock("better-sqlite3", async (importOriginal) => {
 
 import {
   addKit,
-  addSample,
   createRomperDbFile,
   getKitSamples,
 } from "../../electron/main/db/romperDbCoreORM.js";
+import { withDbTransaction } from "../../electron/main/db/utils/dbUtilities.js";
 import { registerDbIpcHandlers } from "../../electron/main/dbIpcHandlers.js";
 import { pathAccess } from "../../electron/main/security/pathAccess.js";
 import { syncService } from "../../electron/main/services/syncService.js";
+import { type NewSample, samples } from "../../shared/db/schema.js";
 
 const BANKS = ["A", "B", "C"];
+/** Setup writes a store (and planning a card); Windows runners are slow */
+const SLOW_RUNNER_MS = 60_000;
 const KITS_PER_BANK = 2;
 const SAMPLES_PER_VOICE = 2;
 const SYNC_FS_CALLS = [
@@ -123,10 +126,14 @@ async function expectWithinBudget(
   expect(enforceBudgets(name, measured)).toEqual([]);
 }
 
-/** Three banks of two kits, four voices of two samples each */
+/**
+ * Three banks of two kits, four voices of two samples each. The samples go
+ * in with one transaction, so setup stays fast on slow Windows runners.
+ */
 function generateStore() {
   const dbDir = path.join(store, ".romperdb");
   expect(createRomperDbFile(dbDir).success).toBe(true);
+  const rows: NewSample[] = [];
   for (const bank of BANKS) {
     for (let k = 0; k < KITS_PER_BANK; k++) {
       const kit = `${bank}${k}`;
@@ -146,19 +153,21 @@ function generateStore() {
           const filename = `${voice}_${slot}.wav`;
           const file = path.join(store, kit, filename);
           wav(file, 110 * voice + 10 * slot);
-          expect(
-            addSample(dbDir, {
-              filename,
-              kit_name: kit,
-              slot_number: slot,
-              source_path: file,
-              voice_number: voice,
-            }).success,
-          ).toBe(true);
+          rows.push({
+            filename,
+            kit_name: kit,
+            slot_number: slot,
+            source_path: file,
+            voice_number: voice,
+          });
         }
       }
     }
   }
+  expect(
+    withDbTransaction(dbDir, (db) => db.insert(samples).values(rows).run())
+      .success,
+  ).toBe(true);
   return dbDir;
 }
 
@@ -226,7 +235,7 @@ describe("performance budgets: main-process operations", () => {
     settings = { localStorePath: store, sdCardPath: card };
     registerDbIpcHandlers(settings);
     pathAccess.grantRoot(card);
-  });
+  }, SLOW_RUNNER_MS);
 
   afterEach(() => {
     pathAccess.reset();
@@ -283,26 +292,30 @@ describe("performance budgets: main-process operations", () => {
     );
   });
 
-  it("plan a sync (write summary)", async () => {
-    // A card written by an earlier sync, then one edit since
-    const written = await syncService.startKitSync(settings, {
-      sdCardPath: card,
-    });
-    expect(written.success).toBe(true);
-    await invoke(
-      "add-sample-to-slot",
-      "B1",
-      2,
-      SAMPLES_PER_VOICE,
-      dropped("new.wav"),
-    );
-    // Load anything planning imports lazily, outside the measured call
-    await invoke("generateSyncChangeSummary", card);
+  it(
+    "plan a sync (write summary)",
+    async () => {
+      // A card written by an earlier sync, then one edit since
+      const written = await syncService.startKitSync(settings, {
+        sdCardPath: card,
+      });
+      expect(written.success).toBe(true);
+      await invoke(
+        "add-sample-to-slot",
+        "B1",
+        2,
+        SAMPLES_PER_VOICE,
+        dropped("new.wav"),
+      );
+      // Load anything planning imports lazily, outside the measured call
+      await invoke("generateSyncChangeSummary", card);
 
-    await expectWithinBudget(
-      "integration/plan a sync (write summary)",
-      () => invoke("generateSyncChangeSummary", card),
-      ["connections", "statements", "syncFsCalls"],
-    );
-  });
+      await expectWithinBudget(
+        "integration/plan a sync (write summary)",
+        () => invoke("generateSyncChangeSummary", card),
+        ["connections", "statements", "syncFsCalls"],
+      );
+    },
+    SLOW_RUNNER_MS,
+  );
 });

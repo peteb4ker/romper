@@ -16,6 +16,19 @@ export const IPC_PROBE_ARGS = [
   path.resolve("tests/perf/ipc-probe.cjs"),
 ];
 
+/**
+ * Channels left out of the counts, because how often they're called
+ * depends on timing, not on the action. `get-favorite-kits-count` runs from
+ * an effect on every change to the renderer's `kits` array (useKitFilters).
+ * Whether two `setKits` calls after an edit render once or twice depends on
+ * whether their IPC replies land in the same task, so a delete made one call
+ * locally and two on a loaded CI runner. RE-36 (edits patch instead of
+ * reloading) and RE-37 (one favourites path) remove the cause.
+ */
+export const UNCOUNTED_CHANNELS: readonly string[] = [
+  "get-favorite-kits-count",
+];
+
 /** No IPC call for this long means the action has settled */
 export const IPC_QUIET_MS = 750;
 
@@ -43,7 +56,10 @@ export async function measureIpc(
   return takeIpcCounts(app);
 }
 
-/** The calls since the last reset, by channel plus `total`; then reset */
+/**
+ * The calls since the last reset, by channel plus `total`, leaving out
+ * UNCOUNTED_CHANNELS; then reset
+ */
 export async function takeIpcCounts(
   app: ElectronApplication,
 ): Promise<Record<string, number>> {
@@ -52,8 +68,9 @@ export async function takeIpcCounts(
       .snapshot()
       .calls.map((call) => call.channel),
   );
-  const counts: Record<string, number> = { total: channels.length };
-  for (const channel of channels) counts[channel] = (counts[channel] ?? 0) + 1;
+  const counted = channels.filter((c) => !UNCOUNTED_CHANNELS.includes(c));
+  const counts: Record<string, number> = { total: counted.length };
+  for (const channel of counted) counts[channel] = (counts[channel] ?? 0) + 1;
   return counts;
 }
 

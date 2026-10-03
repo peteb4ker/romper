@@ -62,7 +62,7 @@ do) or a quality (how Romper behaves while you do it, under
 | Status | Use cases |
 |---|---|
 | supported | Q-04, UC-02, UC-03, UC-04, UC-05, UC-06, UC-08, UC-09, UC-10, UC-11, UC-12, UC-14, UC-15, UC-16, UC-17, UC-18, UC-19, UC-21, UC-23, UC-24, UC-25, UC-26, UC-27, UC-32, UC-35, UC-37 |
-| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, UC-01, UC-07, UC-13, UC-28, UC-29, UC-30, UC-31, UC-33, UC-34, UC-36 |
+| partial | Q-01, Q-02, Q-03, Q-05, Q-06, Q-07, Q-08, UC-01, UC-07, UC-13, UC-28, UC-29, UC-30, UC-31, UC-33, UC-34, UC-36 |
 | not built | UC-20, UC-22 |
 
 ## Setup and local store
@@ -837,6 +837,17 @@ readers can name every control.
 
 A change is merged only after its tests pass on every platform, and those
 tests check what you'd notice, not just the code's internals.
+
+### Q-08 Romper supports or mirrors the Rample's features
+
+**Status:** partial
+
+What you can do on the Rample, Romper either prepares for it (writes what
+the Rample reads from the card), mirrors so you can preview it on your
+computer (like the step sequencer's slicer), or documents. Each Rample
+feature is traced to the use cases that cover it, from the
+[Rample manual](https://squarp.net/rample/manual/); features Romper doesn't
+touch are candidates for the backlog.
 
 
 ## Promised, not built

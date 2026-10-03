@@ -115,13 +115,13 @@ export class SampleValidator {
     voiceNumber: number,
     slotNumber: number,
   ): { error?: string; isValid: boolean } {
-    // Validate voice number (1-4)
-    if (voiceNumber < 1 || voiceNumber > 4) {
+    // Validate voice number (1-4). NaN and fractions fail too (RE-25).
+    if (!Number.isInteger(voiceNumber) || voiceNumber < 1 || voiceNumber > 4) {
       return { error: "Voice number must be between 1 and 4", isValid: false };
     }
 
     // Validate slot index (0-11 for 12 slots total)
-    if (slotNumber < 0 || slotNumber >= 12) {
+    if (!Number.isInteger(slotNumber) || slotNumber < 0 || slotNumber >= 12) {
       return {
         error: "Slot index must be between 0 and 11 (12 slots per voice)",
         isValid: false,

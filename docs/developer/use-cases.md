@@ -838,7 +838,7 @@ and [Installation](../manual/getting-started.md#installation).
   About, Help links, the DevTools opt-in); `electron/main/autoUpdater.ts`
   (`initAutoUpdater`).
 - **Doc gaps:** none since the docs pass (#417).
-- **Known issues:** RE-79 (Windows signing would leave the installed app unsigned), RE-72, RE-18, RE-55 (no Intel Mac build), RE-56 (dead
+- **Known issues:** RE-79 (Windows signing would leave the installed app unsigned), RE-18, RE-55 (no Intel Mac build), RE-56 (dead
   `AboutView`).
 
 ## Promised, not built

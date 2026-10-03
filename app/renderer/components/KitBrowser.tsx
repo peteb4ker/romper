@@ -22,7 +22,6 @@ export interface KitBrowserHandle {
 interface KitBrowserProps {
   // Filter functionality
   favoritesCount?: number;
-  getKitFavoriteState?: (kitName: string) => boolean;
   handleToggleFavorite?: (kitName: string) => void;
 
   handleToggleFavoritesFilter?: () => void;
@@ -239,7 +238,6 @@ const KitBrowser = React.forwardRef<KitBrowserHandle, KitBrowserProps>(
             bankNames={bankNames}
             emptyBank={emptyBank}
             focusedKit={focusedKit}
-            getKitFavoriteState={props.getKitFavoriteState}
             isCreatingKit={isCreatingKit}
             isFiltered={isFiltered}
             kitData={kits}

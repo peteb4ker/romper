@@ -3,511 +3,270 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useKitFilters } from "../useKitFilters";
+import { useKitFilters, type UseKitFiltersOptions } from "../useKitFilters";
 
-// Mock electron API
-const mockToggleKitFavorite = vi.fn();
-const mockGetFavoriteKitsCount = vi.fn();
-
-// Ensure electronAPI is properly mocked (code reads globalThis.electronAPI)
-globalThis.electronAPI = {
-  getFavoriteKitsCount: mockGetFavoriteKitsCount,
-  toggleKitFavorite: mockToggleKitFavorite,
-} as unknown as typeof globalThis.electronAPI;
+const kit = (
+  name: string,
+  is_favorite: boolean,
+  modified_since_sync: boolean,
+): KitWithRelations =>
+  ({ is_favorite, modified_since_sync, name }) as KitWithRelations;
 
 describe("useKitFilters", () => {
-  const mockOnMessage = vi.fn();
-  const mockOnRefreshKits = vi.fn();
+  const onMessage = vi.fn();
+  const onToggleFavorite = vi.fn();
 
-  const mockKits: KitWithRelations[] = [
-    {
-      id: 1,
-      is_favorite: true,
-      modified_since_sync: false,
-      name: "Kit1",
-    } as KitWithRelations,
-    {
-      id: 2,
-      is_favorite: false,
-      modified_since_sync: true,
-      name: "Kit2",
-    } as KitWithRelations,
-    {
-      id: 3,
-      is_favorite: true,
-      modified_since_sync: true,
-      name: "Kit3",
-    } as KitWithRelations,
+  const kits = [
+    kit("A1", true, false),
+    kit("A0", false, true),
+    kit("B0", true, true),
   ];
 
-  const defaultProps = {
-    kits: mockKits,
-    onMessage: mockOnMessage,
-    onRefreshKits: mockOnRefreshKits,
-  };
+  const props = (
+    overrides: Partial<UseKitFiltersOptions> = {},
+  ): UseKitFiltersOptions => ({
+    allKits: kits,
+    kits,
+    onMessage,
+    onToggleFavorite,
+    ...overrides,
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
-
-    // Reset and configure mock functions
-    mockGetFavoriteKitsCount.mockResolvedValue({
-      data: 2,
+    onToggleFavorite.mockResolvedValue({
+      data: { isFavorite: true },
       success: true,
-    });
-    mockToggleKitFavorite.mockResolvedValue({
-      data: { is_favorite: true },
-      success: true,
-    });
-
-    // Ensure window.electronAPI is properly set up for each test
-    Object.defineProperty(window, "electronAPI", {
-      value: {
-        getFavoriteKitsCount: mockGetFavoriteKitsCount,
-        toggleKitFavorite: mockToggleKitFavorite,
-      },
-      writable: true,
     });
   });
 
   describe("filtering", () => {
-    it("returns all kits when no filters are active", () => {
-      const { result } = renderHook(() => useKitFilters(defaultProps));
+    it("returns every kit, sorted by slot, when no filter is on", () => {
+      const { result } = renderHook(() => useKitFilters(props()));
 
-      expect(result.current.filteredKits).toHaveLength(3);
+      expect(result.current.filteredKits.map((k) => k.name)).toEqual([
+        "A0",
+        "A1",
+        "B0",
+      ]);
       expect(result.current.showFavoritesOnly).toBe(false);
       expect(result.current.showModifiedOnly).toBe(false);
     });
 
-    it("filters kits by favorites only", async () => {
-      const { result } = renderHook(() => useKitFilters(defaultProps));
+    it("doesn't reorder the caller's array", () => {
+      const input = [...kits];
+      renderHook(() => useKitFilters(props({ kits: input })));
 
-      act(() => {
-        result.current.handleToggleFavoritesFilter();
-      });
+      expect(input.map((k) => k.name)).toEqual(["A1", "A0", "B0"]);
+    });
+
+    it("[UC-10] filters to favourites", () => {
+      const { result } = renderHook(() => useKitFilters(props()));
+
+      act(() => result.current.handleToggleFavoritesFilter());
 
       expect(result.current.showFavoritesOnly).toBe(true);
-      expect(result.current.filteredKits).toHaveLength(2);
-      expect(result.current.filteredKits.every((kit) => kit.is_favorite)).toBe(
-        true,
-      );
+      expect(result.current.filteredKits.map((k) => k.name)).toEqual([
+        "A1",
+        "B0",
+      ]);
     });
 
-    it("[UC-11] filters kits by modified only", async () => {
-      const { result } = renderHook(() => useKitFilters(defaultProps));
+    it("[UC-11] filters to modified kits", () => {
+      const { result } = renderHook(() => useKitFilters(props()));
 
-      act(() => {
-        result.current.handleToggleModifiedFilter();
-      });
+      act(() => result.current.handleToggleModifiedFilter());
 
       expect(result.current.showModifiedOnly).toBe(true);
-      expect(result.current.filteredKits).toHaveLength(2);
-      expect(
-        result.current.filteredKits.every((kit) => kit.modified_since_sync),
-      ).toBe(true);
+      expect(result.current.filteredKits.map((k) => k.name)).toEqual([
+        "A0",
+        "B0",
+      ]);
     });
 
-    it("combines multiple filters", async () => {
-      const { result } = renderHook(() => useKitFilters(defaultProps));
+    it("combines both filters", () => {
+      const { result } = renderHook(() => useKitFilters(props()));
 
       act(() => {
         result.current.handleToggleFavoritesFilter();
         result.current.handleToggleModifiedFilter();
       });
 
-      expect(result.current.filteredKits).toHaveLength(1);
-      expect(result.current.filteredKits[0].name).toBe("Kit3");
+      expect(result.current.filteredKits.map((k) => k.name)).toEqual(["B0"]);
     });
 
-    it("handles empty kits array", () => {
+    it("turns a filter off again", () => {
+      const { result } = renderHook(() => useKitFilters(props()));
+
+      act(() => result.current.handleToggleFavoritesFilter());
+      act(() => result.current.handleToggleFavoritesFilter());
+
+      expect(result.current.showFavoritesOnly).toBe(false);
+      expect(result.current.filteredKits).toHaveLength(3);
+    });
+
+    it("handles no kits", () => {
       const { result } = renderHook(() =>
-        useKitFilters({ ...defaultProps, kits: undefined }),
+        useKitFilters(props({ allKits: undefined, kits: undefined })),
       );
 
       expect(result.current.filteredKits).toEqual([]);
+      expect(result.current.favoritesCount).toBe(0);
+      expect(result.current.modifiedCount).toBe(0);
     });
   });
 
-  describe("[UC-10] handleToggleFavorite", () => {
-    it("successfully toggles favorite status", async () => {
-      // Ensure the mock is set up correctly
-      expect(window.electronAPI).toBeDefined();
-      expect(window.electronAPI.toggleKitFavorite).toBeDefined();
-
-      mockToggleKitFavorite.mockResolvedValueOnce({
-        data: { isFavorite: true },
-        success: true,
+  // RE-37: favourite state comes from the kits alone, so a toggle made
+  // anywhere (grid, "F", editor header) shows everywhere once the kit list
+  // updates
+  describe("[UC-10] favourite state follows the kit list", () => {
+    it("re-filters when a kit's is_favorite changes", () => {
+      const { rerender, result } = renderHook((p) => useKitFilters(p), {
+        initialProps: props(),
       });
+      act(() => result.current.handleToggleFavoritesFilter());
+      expect(result.current.filteredKits.map((k) => k.name)).toEqual([
+        "A1",
+        "B0",
+      ]);
 
-      const { result } = renderHook(() => useKitFilters(defaultProps));
+      const updated = [
+        kit("A1", false, false),
+        kit("A0", true, true),
+        kit("B0", true, true),
+      ];
+      rerender(props({ allKits: updated, kits: updated }));
 
-      await act(async () => {
-        await result.current.handleToggleFavorite("Kit1");
-      });
-
-      expect(mockToggleKitFavorite).toHaveBeenCalledWith("Kit1");
-      // onRefreshKits is no longer called since local state handles filtering
-      expect(mockOnRefreshKits).not.toHaveBeenCalled();
-      expect(mockGetFavoriteKitsCount).toHaveBeenCalled();
+      expect(result.current.filteredKits.map((k) => k.name)).toEqual([
+        "A0",
+        "B0",
+      ]);
     });
 
-    it("does not call onRefreshKits even when showFavoritesOnly is true", async () => {
-      mockToggleKitFavorite.mockResolvedValueOnce({
-        data: { isFavorite: true },
-        success: true,
+    it("keeps no state of its own across a kit list change", () => {
+      const { rerender, result } = renderHook((p) => useKitFilters(p), {
+        initialProps: props(),
       });
 
-      const { result } = renderHook(() => useKitFilters(defaultProps));
+      // A new local store with a kit of the same name that isn't a favourite
+      const otherStore = [kit("A1", false, false)];
+      rerender(props({ allKits: otherStore, kits: otherStore }));
+      act(() => result.current.handleToggleFavoritesFilter());
 
-      // First enable favorites filter
-      act(() => {
-        result.current.handleToggleFavoritesFilter();
-      });
-
-      await act(async () => {
-        await result.current.handleToggleFavorite("Kit1");
-      });
-
-      expect(mockToggleKitFavorite).toHaveBeenCalledWith("Kit1");
-      // onRefreshKits should not be called since local state handles filtering immediately
-      expect(mockOnRefreshKits).not.toHaveBeenCalled();
-      expect(mockGetFavoriteKitsCount).toHaveBeenCalled();
-    });
-
-    it("handles toggle favorite failure", async () => {
-      mockToggleKitFavorite.mockResolvedValueOnce({
-        error: "Database error",
-        success: false,
-      });
-
-      const { result } = renderHook(() => useKitFilters(defaultProps));
-
-      await act(async () => {
-        await result.current.handleToggleFavorite("Kit1");
-      });
-
-      expect(mockOnMessage).toHaveBeenCalledWith(
-        "Failed to toggle favorite: Database error",
-        "error",
-      );
-      expect(mockOnRefreshKits).not.toHaveBeenCalled();
-    });
-
-    it("handles toggle favorite exception", async () => {
-      mockToggleKitFavorite.mockRejectedValueOnce(new Error("Network error"));
-
-      const { result } = renderHook(() => useKitFilters(defaultProps));
-
-      await act(async () => {
-        await result.current.handleToggleFavorite("Kit1");
-      });
-
-      expect(mockOnMessage).toHaveBeenCalledWith(
-        "Failed to toggle favorite: Network error",
-        "error",
-      );
+      expect(result.current.filteredKits).toEqual([]);
+      expect(result.current.favoritesCount).toBe(0);
     });
   });
 
   describe("counts", () => {
-    it("initializes favorites count on mount", async () => {
-      const { result } = renderHook(() => useKitFilters(defaultProps));
-
-      // Wait for useEffect to complete
-      await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
-      });
+    it("[UC-10] counts favourites in the kit list", () => {
+      const { result } = renderHook(() => useKitFilters(props()));
 
       expect(result.current.favoritesCount).toBe(2);
     });
 
-    it("calculates modified count from kits", () => {
-      const { result } = renderHook(() => useKitFilters(defaultProps));
+    it("[UC-11] counts modified kits", () => {
+      const { result } = renderHook(() => useKitFilters(props()));
 
       expect(result.current.modifiedCount).toBe(2);
     });
 
-    it("updates counts when kits change", () => {
-      const { rerender, result } = renderHook(
-        ({ kits }) => useKitFilters({ ...defaultProps, kits }),
-        {
-          initialProps: { kits: mockKits },
-        },
-      );
-
-      const newKits = [
-        { ...mockKits[0], modified_since_sync: true },
-        mockKits[1],
-      ];
-
-      rerender({ kits: newKits });
-
-      expect(result.current.modifiedCount).toBe(2);
-    });
-  });
-
-  describe("filter toggles", () => {
-    it("toggles favorites filter state", () => {
-      const { result } = renderHook(() => useKitFilters(defaultProps));
-
-      expect(result.current.showFavoritesOnly).toBe(false);
-
-      act(() => {
-        result.current.handleToggleFavoritesFilter();
-      });
-
-      expect(result.current.showFavoritesOnly).toBe(true);
-
-      act(() => {
-        result.current.handleToggleFavoritesFilter();
-      });
-
-      expect(result.current.showFavoritesOnly).toBe(false);
-    });
-
-    it("toggles modified filter state", () => {
-      const { result } = renderHook(() => useKitFilters(defaultProps));
-
-      expect(result.current.showModifiedOnly).toBe(false);
-
-      act(() => {
-        result.current.handleToggleModifiedFilter();
-      });
-
-      expect(result.current.showModifiedOnly).toBe(true);
-
-      act(() => {
-        result.current.handleToggleModifiedFilter();
-      });
-
-      expect(result.current.showModifiedOnly).toBe(false);
-    });
-  });
-
-  describe("getKitFavoriteState", () => {
-    it("returns favorite state from kit data when no local state exists", () => {
-      const { result } = renderHook(() => useKitFilters(defaultProps));
-
-      expect(result.current.getKitFavoriteState("Kit1")).toBe(true);
-      expect(result.current.getKitFavoriteState("Kit2")).toBe(false);
-      expect(result.current.getKitFavoriteState("Kit3")).toBe(true);
-    });
-
-    it("returns false for non-existent kit", () => {
-      const { result } = renderHook(() => useKitFilters(defaultProps));
-
-      expect(result.current.getKitFavoriteState("NonExistentKit")).toBe(false);
-    });
-
-    it("returns local state when kit has been toggled", async () => {
-      mockToggleKitFavorite.mockResolvedValueOnce({
-        data: { isFavorite: false },
-        success: true,
-      });
-
-      const { result } = renderHook(() => useKitFilters(defaultProps));
-
-      // Initially should return kit data
-      expect(result.current.getKitFavoriteState("Kit1")).toBe(true);
-
-      // Toggle the favorite status
-      await act(async () => {
-        await result.current.handleToggleFavorite("Kit1");
-      });
-
-      // Should now return the updated local state
-      expect(result.current.getKitFavoriteState("Kit1")).toBe(false);
-      // Other kits should still use kit data
-      expect(result.current.getKitFavoriteState("Kit2")).toBe(false);
-    });
-
-    it("prioritizes local state over kit data", async () => {
-      mockToggleKitFavorite.mockResolvedValueOnce({
-        data: { isFavorite: true },
-        success: true,
-      });
-
-      const { result } = renderHook(() => useKitFilters(defaultProps));
-
-      // Kit2 starts as false in kit data
-      expect(result.current.getKitFavoriteState("Kit2")).toBe(false);
-
-      // Toggle it to true
-      await act(async () => {
-        await result.current.handleToggleFavorite("Kit2");
-      });
-
-      // Should now return true from local state
-      expect(result.current.getKitFavoriteState("Kit2")).toBe(true);
-    });
-
-    it("works with undefined kits array", () => {
+    it("counts the whole library, not the search results", () => {
       const { result } = renderHook(() =>
-        useKitFilters({ ...defaultProps, kits: undefined }),
+        useKitFilters(props({ kits: [kits[0]] })),
       );
 
-      expect(result.current.getKitFavoriteState("AnyKit")).toBe(false);
+      expect(result.current.favoritesCount).toBe(2);
+      expect(result.current.modifiedCount).toBe(2);
+    });
+
+    it("counts the whole library while a filter is on", () => {
+      const { result } = renderHook(() => useKitFilters(props()));
+
+      act(() => result.current.handleToggleModifiedFilter());
+
+      expect(result.current.favoritesCount).toBe(2);
+      expect(result.current.modifiedCount).toBe(2);
+    });
+
+    it("falls back to the kits given when there's no library list", () => {
+      const { result } = renderHook(() =>
+        useKitFilters(props({ allKits: undefined, kits: [kits[2]] })),
+      );
+
+      expect(result.current.favoritesCount).toBe(1);
+      expect(result.current.modifiedCount).toBe(1);
+    });
+
+    it("updates when the kits change", () => {
+      const { rerender, result } = renderHook((p) => useKitFilters(p), {
+        initialProps: props(),
+      });
+
+      const updated = [kit("A0", true, true), kit("A1", true, true)];
+      rerender(props({ allKits: updated, kits: updated }));
+
+      expect(result.current.favoritesCount).toBe(2);
+      expect(result.current.modifiedCount).toBe(2);
     });
   });
 
-  describe("immediate filtering when favorites filter is active", () => {
-    it("removes kit from filtered list immediately when unfavorited", async () => {
-      const { result } = renderHook(() => useKitFilters(defaultProps));
+  describe("[UC-10] handleToggleFavorite", () => {
+    it("toggles through the data manager, not IPC of its own", async () => {
+      const { result } = renderHook(() => useKitFilters(props()));
 
-      // Enable favorites filter
-      act(() => {
-        result.current.handleToggleFavoritesFilter();
-      });
-
-      // Should show 2 favorite kits initially
-      expect(result.current.filteredKits).toHaveLength(2);
-      expect(result.current.filteredKits.every((kit) => kit.is_favorite)).toBe(
-        true,
-      );
-
-      // Mock unfavoriting Kit1 (was originally favorited)
-      mockToggleKitFavorite.mockResolvedValueOnce({
-        data: { isFavorite: false },
-        success: true,
-      });
-
-      // Unfavorite Kit1
       await act(async () => {
-        await result.current.handleToggleFavorite("Kit1");
+        await result.current.handleToggleFavorite("A0");
       });
 
-      // Kit1 should be immediately removed from filtered list due to local state update
-      expect(result.current.filteredKits).toHaveLength(1);
-      expect(result.current.filteredKits[0].name).toBe("Kit3");
+      expect(onToggleFavorite).toHaveBeenCalledWith("A0");
       expect(
-        result.current.filteredKits.find((kit) => kit.name === "Kit1"),
-      ).toBeUndefined();
-
-      // Verify local state was updated
-      expect(result.current.getKitFavoriteState("Kit1")).toBe(false);
+        vi.mocked(globalThis.electronAPI.toggleKitFavorite),
+      ).not.toHaveBeenCalled();
+      expect(onMessage).not.toHaveBeenCalled();
     });
 
-    it("adds kit to filtered list immediately when favorited", async () => {
-      const { result } = renderHook(() => useKitFilters(defaultProps));
-
-      // Enable favorites filter
-      act(() => {
-        result.current.handleToggleFavoritesFilter();
-      });
-
-      // Should show 2 favorite kits initially
-      expect(result.current.filteredKits).toHaveLength(2);
-
-      // Mock favoriting Kit2 (was originally not favorited)
-      mockToggleKitFavorite.mockResolvedValueOnce({
-        data: { isFavorite: true },
-        success: true,
-      });
-
-      // Favorite Kit2
-      await act(async () => {
-        await result.current.handleToggleFavorite("Kit2");
-      });
-
-      // Kit2 should be immediately added to filtered list due to local state update
-      expect(result.current.filteredKits).toHaveLength(3);
-      expect(
-        result.current.filteredKits.find((kit) => kit.name === "Kit2"),
-      ).toBeDefined();
-
-      // Verify local state was updated
-      expect(result.current.getKitFavoriteState("Kit2")).toBe(true);
-    });
-  });
-
-  describe("local state management", () => {
-    it("updates favorites count after successful toggle", async () => {
-      const { result } = renderHook(() => useKitFilters(defaultProps));
-
-      // Wait for initial count to be set
-      await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
-      });
-      const initialCount = result.current.favoritesCount;
-
-      // Setup mocks for the toggle
-      mockToggleKitFavorite.mockResolvedValueOnce({
-        data: { isFavorite: true },
-        success: true,
-      });
-
-      mockGetFavoriteKitsCount.mockResolvedValueOnce({
-        data: initialCount + 1,
-        success: true,
-      });
-
-      // Toggle favorite
-      await act(async () => {
-        await result.current.handleToggleFavorite("Kit2");
-      });
-
-      // Count should be updated
-      expect(result.current.favoritesCount).toBe(initialCount + 1);
-    });
-
-    it("handles getFavoriteKitsCount failure gracefully", async () => {
-      mockToggleKitFavorite.mockResolvedValueOnce({
-        data: { isFavorite: true },
-        success: true,
-      });
-
-      mockGetFavoriteKitsCount.mockResolvedValueOnce({
+    it("reports a failed toggle", async () => {
+      onToggleFavorite.mockResolvedValueOnce({
         error: "Database error",
         success: false,
       });
-
-      const { result } = renderHook(() => useKitFilters(defaultProps));
+      const { result } = renderHook(() => useKitFilters(props()));
 
       await act(async () => {
-        await result.current.handleToggleFavorite("Kit2");
+        await result.current.handleToggleFavorite("A0");
       });
 
-      // Should still update local state even if count update fails
-      expect(result.current.getKitFavoriteState("Kit2")).toBe(true);
+      expect(onMessage).toHaveBeenCalledWith(
+        "Failed to toggle favorite: Database error",
+        "error",
+      );
     });
 
-    it("maintains local state across multiple toggles", async () => {
-      const { result } = renderHook(() => useKitFilters(defaultProps));
-
-      // Toggle Kit1 to false
-      mockToggleKitFavorite.mockResolvedValueOnce({
-        data: { isFavorite: false },
-        success: true,
-      });
-
-      mockGetFavoriteKitsCount.mockResolvedValueOnce({
-        data: 1,
-        success: true,
-      });
+    it("reports a thrown error", async () => {
+      onToggleFavorite.mockRejectedValueOnce(new Error("Network error"));
+      const { result } = renderHook(() => useKitFilters(props()));
 
       await act(async () => {
-        await result.current.handleToggleFavorite("Kit1");
+        await result.current.handleToggleFavorite("A0");
       });
 
-      expect(result.current.getKitFavoriteState("Kit1")).toBe(false);
+      expect(onMessage).toHaveBeenCalledWith(
+        "Failed to toggle favorite: Network error",
+        "error",
+      );
+    });
 
-      // Toggle Kit2 to true
-      mockToggleKitFavorite.mockResolvedValueOnce({
-        data: { isFavorite: true },
-        success: true,
-      });
-
-      mockGetFavoriteKitsCount.mockResolvedValueOnce({
-        data: 2,
-        success: true,
-      });
+    it("does nothing without a toggle", async () => {
+      const { result } = renderHook(() =>
+        useKitFilters(props({ onToggleFavorite: undefined })),
+      );
 
       await act(async () => {
-        await result.current.handleToggleFavorite("Kit2");
+        await result.current.handleToggleFavorite("A0");
       });
 
-      // Both states should be maintained
-      expect(result.current.getKitFavoriteState("Kit1")).toBe(false);
-      expect(result.current.getKitFavoriteState("Kit2")).toBe(true);
+      expect(onMessage).not.toHaveBeenCalled();
     });
   });
 });

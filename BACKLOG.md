@@ -73,7 +73,6 @@ This file tracks what's being done about each item.
 | RE-55 | Medium | Release | macOS builds are arm64 only; Linux and Windows are x64 only. | open |
 | RE-56 | Medium | Dead code | About 942 LOC of unused main-process files (`stereoSyncProcessor`, `rampleNamingService`, `db/fileOperations`, `stepPatternUtils`, `sampleSlotService`, two utils) and about 1,100 LOC in the renderer (9 test-only modules, the unreachable `AboutView` route and `ValidationResultsDialog`). | partly done (#372 deletes `rampleNamingService` and `stereoSyncProcessor`) |
 | RE-57 | Medium | Contract | The bridge contract does not bind main. `SyncChangeSummary` does not match what main returns (the renderer casts it); `SyncProgress` is defined four times with different fields and status values; several return types differ from the contract (null versus undefined, `unknown`, an `"overwrite"` mode main rejects). | open |
-| RE-58 | Medium | Tooling | The pre-commit tests fail with Vitest worker-start timeouts when the machine is busy (load average above ~20, for example several sessions testing at once), because `vitest.config.fast.ts` always starts 10 workers. | open |
 | RE-77 | Medium | Setup | A factory archive with the wrong checksum is downloaded three times, and the reason is replaced by a generic network error. | open |
 | RE-78 | Medium | Settings | Changing the local store reports success whether or not it worked; the Invalid Local Store dialog's **Re-run Setup Wizard** button never renders. | partly done (#419: the Invalid Local Store and Change Local Store dialogs report a failed save; Set Up a New Local Store renders; Preferences still ignores an invalid folder) |
 | RE-79 | Medium | Release | Windows signing signs only the Setup `.exe`, leaving the installed app unsigned once OPS-2 is done (unconfirmed). | open (before OPS-2) |
@@ -91,6 +90,7 @@ This file tracks what's being done about each item.
 
 | ID | Severity | Area | Item | Status |
 |---|---|---|---|---|
+| RE-58 | Medium | Tooling | The pre-commit tests failed with Vitest worker-start timeouts on a busy machine: the fast config always started 10 workers. | done (#PR: workers follow the free cores; under load the suite runs on fewer workers instead of timing out) |
 | RE-74 | Medium | Samples | Dropping onto a filled slot said "Insert sample here (other samples will shift down)", but the file was appended. | done (#421: dragging files over a voice highlights the slot after the last sample, where they land) |
 | RE-75 | Medium | Voices | In an editable kit, Scan Kit and `/` overwrote voice names typed by hand. | done (#422: only voices without a name are named, as main's scan does) |
 | RE-80 | Medium | Settings | A local store on a drive that wasn't connected at launch was forgotten, and the first-run wizard opened. | done (#419: the saved path is kept; the Invalid Local Store dialog offers Try Again, another folder, or a new store) |

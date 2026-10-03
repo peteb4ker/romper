@@ -4,6 +4,8 @@ import autoprefixer from "autoprefixer";
 import path from "node:path";
 import { defineConfig } from "vite";
 
+import { testWorkerCount } from "./vitest.workers";
+
 // Fast test configuration without coverage for local development
 export default defineConfig({
   base: "./",
@@ -60,9 +62,9 @@ export default defineConfig({
       include: isIntegration
         ? ["**/*.integration.test.{js,ts,jsx,tsx}"]
         : ["**/*.test.{js,ts,jsx,tsx}"],
-      // Maximum parallelization for 12-core machine
-      maxWorkers: 10,
-      minWorkers: 4,
+      // Sized to the free cores, so a busy machine doesn't time workers out
+      maxWorkers: testWorkerCount(),
+      minWorkers: 1,
       pool: "threads",
       // Optimized reporters - dot is fastest
       reporter: ["dot"],

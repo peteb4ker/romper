@@ -30,7 +30,7 @@ const connections = new Map<string, StoreConnection>();
  * delete an open database file).
  */
 export function closeAllDbConnections(): void {
-  for (const dbDir of [...connections.keys()]) {
+  for (const dbDir of connections.keys()) {
     closeDbConnection(dbDir);
   }
 }

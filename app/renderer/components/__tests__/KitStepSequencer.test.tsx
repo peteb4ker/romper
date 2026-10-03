@@ -557,7 +557,8 @@ describe("KitStepSequencer", () => {
       });
 
       await waitFor(() => expect(onMessage).toHaveBeenCalledTimes(1));
-      expect(level().value).toBe("70");
+      // The slider shows the restored level once React renders it
+      await waitFor(() => expect(level().value).toBe("70"));
       expect(onMessage).toHaveBeenCalledWith(
         "Couldn't save the level for voice 1, so it's back to 70. Try again.",
         "error",
@@ -583,9 +584,14 @@ describe("KitStepSequencer", () => {
           "error",
         ),
       );
-      expect(
-        screen.getByTestId("sample-mode-0-first").getAttribute("aria-pressed"),
-      ).toBe("true");
+      // The switch shows the restored mode once React renders it
+      await waitFor(() =>
+        expect(
+          screen
+            .getByTestId("sample-mode-0-first")
+            .getAttribute("aria-pressed"),
+        ).toBe("true"),
+      );
       expect(onVoiceSettingChanged).not.toHaveBeenCalled();
     });
 

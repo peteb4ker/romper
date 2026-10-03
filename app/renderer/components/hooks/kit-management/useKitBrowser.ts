@@ -27,7 +27,11 @@ export function useKitBrowser({
   // Compose the smaller, focused hooks
   const kitCreation = useKitCreation({ kits, onMessage, onRefreshKits });
   const kitDuplication = useKitDuplication({ onRefreshKits });
-  const bankNavigation = useKitBankNavigation({ kitListRef, kits });
+  const bankNavigation = useKitBankNavigation({
+    kitListRef,
+    kits,
+    onMessage,
+  });
 
   // Return the same interface as before for backward compatibility
   return {

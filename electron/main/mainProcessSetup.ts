@@ -3,6 +3,7 @@ import fs from "node:fs";
 import type { InMemorySettings } from "./types/settings.js";
 
 import { validateLocalStoreAndDb } from "./localStoreValidator.js";
+import { normalizeSettings } from "./settingsFile.js";
 import { logger } from "./utils/logger.js";
 
 export interface WindowState {
@@ -33,10 +34,10 @@ export function loadSettings(settingsPath: string): InMemorySettings {
     const parsed = JSON.parse(fileContent);
 
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      settings = {
-        localStorePath: parsed.localStorePath || null,
-        sdCardPath: parsed.sdCardPath,
-      };
+      // Every saved setting, not only the paths: theme and "confirm
+      // destructive actions" reset on each launch and were erased by the
+      // next write when only the paths were loaded (RE-21)
+      settings = normalizeSettings(parsed);
       logger.log(
         "[Settings] Loaded settings:",
         JSON.stringify(settings, null, 2),

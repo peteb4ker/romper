@@ -138,7 +138,7 @@ const DROPS: {
 ];
 const GAIN_DB = 3;
 
-test("[UC-02] [UC-14] [UC-19] [UC-24] [UC-28] [UC-34] factory download to card, byte for byte", async () => {
+test("[UC-02] [UC-14] [UC-19] [UC-24] [UC-28] [UC-34] [Q-04] factory download to card, byte for byte", async () => {
   const work = await fs.mkdtemp(path.join(os.tmpdir(), "romper-validate-"));
   const dirs = {
     card: path.join(work, "card"),

@@ -3,7 +3,9 @@
  * Use case traceability (RE-67).
  *
  *   npm run trace         # write docs/developer/traceability.md (not committed)
- *   npm run trace:check   # fail on unknown IDs or untested use cases
+ *   npm run trace:check   # fail on unknown IDs, untested use cases, or a
+ *                         # backlog that doesn't trace (see below)
+ *   ... --json <file>     # also write the per-entry summary (testing page)
  *
  * Reads the use case register (docs/developer/use-cases.md) and the
  * `[UC-NN]` tags in test titles, and writes a use case x test layer matrix.
@@ -13,7 +15,10 @@
  * - a test names a use case the register doesn't have;
  * - a supported use case has no test above unit level and the register
  *   doesn't declare the gap (a `**Test gap:**` line);
- * - a declared gap is closed (the line must go).
+ * - a declared gap is closed (the line must go);
+ * - an open BACKLOG.md item isn't a known issue of any use case or quality,
+ *   an entry lists an item that's done or unknown, or a one-liner has code
+ *   in it: everything traces from a user-oriented statement.
  *
  * The matrix is generated, never committed: its counts change with every
  * new test, and a committed copy went stale on almost every PR. In CI the
@@ -27,6 +32,7 @@ import ts from "typescript";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const REGISTER = "docs/developer/use-cases.md";
+const BACKLOG = "BACKLOG.md";
 const OUTPUT = "docs/developer/traceability.md";
 
 export const LAYERS = ["unit", "integration", "e2e", "validation"];
@@ -81,20 +87,38 @@ export function findTestFiles(root) {
   return found.sort();
 }
 
-/** Parse the register: `### UC-NN Name` headings with a `**Status:**` line. */
+/**
+ * Parse the register: `### UC-NN Name` (use cases) and `### Q-NN Name`
+ * (qualities) headings, each with a `**Status:**` line, under `## Group`
+ * headings. Collects each entry's declared test gap and the backlog IDs on
+ * its `**Known issues:**` line.
+ */
 export function parseRegister(markdown) {
   const useCases = [];
   const errors = [];
   let current = null;
+  let group = null;
   let inGap = false;
+  let inIssues = false;
   for (const line of markdown.split("\n")) {
-    const heading = /^### (UC-\d{2}) (.+?)\s*$/.exec(line);
+    const heading = /^### ((UC|Q)-\d{2}) (.+?)\s*$/.exec(line);
     if (heading) {
-      current = { gap: null, id: heading[1], name: heading[2], status: null };
+      current = {
+        gap: null,
+        group,
+        id: heading[1],
+        issues: [],
+        kind: heading[2] === "Q" ? "quality" : "use case",
+        name: heading[3],
+        status: null,
+      };
       useCases.push(current);
       inGap = false;
+      inIssues = false;
       continue;
     }
+    const section = /^## (.+?)\s*$/.exec(line);
+    if (section) group = section[1];
     if (/^#{1,3} /.test(line)) {
       current = null;
       continue;
@@ -106,6 +130,18 @@ export function parseRegister(markdown) {
       continue;
     }
     inGap = false;
+    // So does the known issues line; it names backlog items by ID.
+    const issues = /^- \*\*Known issues:\*\*(.*)$/.exec(line);
+    if (issues || (inIssues && line.trim() && !/^(\*\*|- |#)/.test(line))) {
+      for (const m of (issues ? issues[1] : line).matchAll(
+        /\b((?:RE|OPS)-\d+)\b/g,
+      )) {
+        if (!current.issues.includes(m[1])) current.issues.push(m[1]);
+      }
+      inIssues = true;
+      continue;
+    }
+    inIssues = false;
     const status = /^\*\*Status:\*\*\s*(.+?)\s*$/.exec(line);
     if (status) {
       const value = STATUSES.find((s) => status[1].toLowerCase().startsWith(s));
@@ -188,7 +224,7 @@ export function scanTests(source, fileName = "test.ts") {
       ) {
         const kind = chain.includes("describe") ? "describe" : "test";
         const line = sf.getLineAndCharacterOfPosition(node.getStart()).line + 1;
-        const own = [...title.matchAll(/\[(UC-\d+)\]/g)].map((m) => m[1]);
+        const own = [...title.matchAll(/\[((?:UC|Q)-\d+)\]/g)].map((m) => m[1]);
         for (const id of own) tags.push({ id, line, title });
         const covered = [...inherited];
         for (const id of own) {
@@ -256,9 +292,35 @@ export function slug(text) {
     .replaceAll(/\s/g, "-");
 }
 
+/**
+ * Parse BACKLOG.md's tables: `| ID | Severity | Area | Item | Status |`, and
+ * the owner table's `| ID | Item | Status |`. An item is done when it sits
+ * under `## Done` or its status starts with "done".
+ */
+export function parseBacklog(markdown) {
+  const items = new Map();
+  let section = "";
+  for (const line of markdown.split("\n")) {
+    const heading = /^## (.+?)\s*$/.exec(line);
+    if (heading) section = heading[1];
+    const cells = line.split("|").map((c) => c.trim());
+    if (cells.length < 5 || !/^(RE|OPS)-\d+$/.test(cells[1])) continue;
+    const [item, status] =
+      cells.length >= 7 ? [cells[4], cells[5]] : [cells[2], cells[3]];
+    items.set(cells[1], {
+      done: section === "Done" || /^done\b/i.test(status),
+      id: cells[1],
+      item,
+      status,
+    });
+  }
+  return items;
+}
+
 /** Problems the check fails on, as messages. */
-export function findProblems(useCases, scan) {
+export function findProblems(useCases, scan, backlog) {
   const problems = [];
+  if (backlog) problems.push(...backlogProblems(useCases, backlog));
   const known = new Set(useCases.map((uc) => uc.id));
   for (const tag of scan.tags) {
     if (!known.has(tag.id)) {
@@ -283,6 +345,65 @@ export function findProblems(useCases, scan) {
     }
   }
   return problems;
+}
+
+/**
+ * Everything traces from a user-oriented statement: each open backlog item
+ * is a known issue of a use case or quality, entries list no finished or
+ * unknown items, and one-liners are plain language.
+ */
+function backlogProblems(useCases, backlog) {
+  const problems = [];
+  const listed = new Set();
+  for (const uc of useCases) {
+    for (const id of uc.issues) {
+      listed.add(id);
+      const item = backlog.get(id);
+      if (!item) {
+        problems.push(`${uc.id} lists ${id}, which isn't in BACKLOG.md.`);
+      } else if (item.done) {
+        problems.push(
+          `${uc.id} lists ${id}, which BACKLOG.md marks done: remove it from ${uc.id}'s **Known issues:**.`,
+        );
+      }
+    }
+  }
+  for (const item of backlog.values()) {
+    if (!item.done && !listed.has(item.id)) {
+      problems.push(
+        `${item.id} is open in BACKLOG.md but no use case or quality lists it: add it to one's **Known issues:** in ${REGISTER}.`,
+      );
+    }
+    if (item.item.includes("`")) {
+      problems.push(
+        `${item.id}: write its BACKLOG.md one-liner in plain language, without code (details belong in the findings register).`,
+      );
+    }
+  }
+  return problems;
+}
+
+/**
+ * Per use case and quality, for the website's testing page: status, tagged
+ * tests per layer, the declared test gap, and open backlog items with their
+ * one-liners.
+ */
+export function summarise(useCases, scan, backlog = new Map()) {
+  return useCases.map((uc) => ({
+    gap: uc.gap,
+    group: uc.group,
+    id: uc.id,
+    issues: uc.issues
+      .map((id) => backlog.get(id))
+      .filter((item) => item && !item.done)
+      .map(({ id, item }) => ({ id, text: item })),
+    kind: uc.kind,
+    name: uc.name,
+    status: uc.status,
+    tests: Object.fromEntries(
+      LAYERS.map((layer) => [layer, countIn(scan.index, uc.id, layer)]),
+    ),
+  }));
 }
 
 function cell(index, id, layer) {
@@ -359,11 +480,7 @@ export function render(useCases, scan, { base = "../../" } = {}) {
   const otherGaps = useCases.filter(
     (uc) => uc.status !== "supported" && !aboveUnit(index, uc.id),
   );
-  push(
-    "",
-    "Partial or not-built use cases with no test above unit level:",
-    "",
-  );
+  push("", "Partial or not-built use cases with no test above unit level:", "");
   if (otherGaps.length === 0) push("- none");
   for (const uc of otherGaps) push(`- ${ucLink(uc)} (${uc.status})`);
 
@@ -391,6 +508,7 @@ export function render(useCases, scan, { base = "../../" } = {}) {
 
 export function run({
   check = false,
+  json,
   root = ROOT,
   log = console,
   summaryFile = process.env.GITHUB_STEP_SUMMARY,
@@ -407,7 +525,18 @@ export function run({
   const scan = buildIndex(files, (f) =>
     fs.readFileSync(path.join(root, f), "utf8"),
   );
-  const totals = `${useCases.length} use cases, ${scan.tagged} of ${scan.total} tests tagged.`;
+  const backlogPath = path.join(root, BACKLOG);
+  const backlog = fs.existsSync(backlogPath)
+    ? parseBacklog(fs.readFileSync(backlogPath, "utf8"))
+    : undefined;
+  const totals = `${useCases.length} use cases and qualities, ${scan.tagged} of ${scan.total} tests tagged.`;
+
+  if (json) {
+    fs.writeFileSync(
+      json,
+      `${JSON.stringify(summarise(useCases, scan, backlog), null, 2)}\n`,
+    );
+  }
 
   if (!check) {
     fs.writeFileSync(path.join(root, OUTPUT), render(useCases, scan));
@@ -423,7 +552,7 @@ export function run({
         : "../../";
     fs.appendFileSync(summaryFile, render(useCases, scan, { base }));
   }
-  const problems = findProblems(useCases, scan);
+  const problems = findProblems(useCases, scan, backlog);
   if (problems.length > 0) {
     log.error(`Traceability check failed (${problems.length}):`);
     for (const p of problems) log.error(`- ${p}`);
@@ -438,10 +567,17 @@ if (
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   const args = process.argv.slice(2);
-  const unknown = args.filter((a) => a !== "--check");
-  if (unknown.length > 0) {
-    console.error(`Unknown option ${unknown[0]}. Options: --check`);
+  const jsonAt = args.indexOf("--json");
+  const json = jsonAt === -1 ? undefined : args[jsonAt + 1];
+  const unknown = args.filter(
+    (a, i) =>
+      a !== "--check" && !(jsonAt !== -1 && (i === jsonAt || i === jsonAt + 1)),
+  );
+  if (unknown.length > 0 || (jsonAt !== -1 && !json)) {
+    console.error(
+      `Unknown option ${unknown[0] ?? "--json"}. Options: --check, --json <file>`,
+    );
     process.exit(2);
   }
-  process.exit(run({ check: args.includes("--check") }));
+  process.exit(run({ check: args.includes("--check"), json }));
 }

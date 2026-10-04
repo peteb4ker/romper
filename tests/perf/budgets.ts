@@ -97,9 +97,9 @@ export const BUDGETS = {
       "update-sample-gain": { max: 5 },
     },
     /**
-     * B1 has two filled slots; RE-83 fetches each once. Its files have
-     * never been checked, so it costs a first open's file check (see
-     * "open a kit").
+     * B1 has two filled slots; RE-83 fetches each once. Its files are
+     * checked as it opens, the first time with a reload (see "open a
+     * kit").
      */
     "next kit": {
       "check-kit-sample-files": { max: 1 },
@@ -108,12 +108,13 @@ export const BUDGETS = {
       "get-sample-audio-buffer": { max: 4, target: 2, until: "RE-83" },
     },
     /**
-     * #537: the fixture's samples have never been checked (an older
-     * library), so the first open checks their files in one batch
-     * (`check-kit-sample-files`) and, as their status changes, reloads the
-     * kits once, which fetches the kit's samples again. Once every sample
-     * is known to be readable, opening the kit makes neither call: 1
-     * `get-all-samples-for-kit` and no `get-all-kits`.
+     * #537: every open checks the kit's files in one batch
+     * (`check-kit-sample-files`: a stat per file, and a header read only
+     * for files not known to be readable). The fixture's samples have
+     * never been checked (an older library), so the first open records
+     * their status and reloads the kits once, which fetches the kit's
+     * samples again. When nothing changed, an open costs the check and
+     * no reload: 1 `get-all-samples-for-kit` and no `get-all-kits`.
      */
     "open a kit": {
       "check-kit-sample-files": { max: 1 },

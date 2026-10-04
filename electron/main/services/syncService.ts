@@ -10,6 +10,7 @@ import {
   getSyncPlanData,
   linkVoicesAutomaticallyTx,
   markAllKitsAsSyncedExceptTx,
+  updateSampleSourceStatusTx,
   withDbTransaction,
 } from "../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
@@ -85,6 +86,11 @@ export interface SyncOutcome {
   warnings: string[];
 }
 
+interface SampleFileStatus {
+  id: number;
+  source_status: "missing" | "unreadable" | null;
+}
+
 interface SyncPlan {
   /** The banks the plan was made from; their name files go on the card */
   banks: Bank[];
@@ -92,6 +98,13 @@ interface SyncPlan {
   cardContents: CardContents;
   dbDir: string;
   files: SyncFileOperation[];
+  /**
+   * What the write found about sample files whose stored status it
+   * changes (#537): missing or unreadable, or null (to be read again when
+   * the kit opens) for a file last found missing or unreadable that's now
+   * fine. Recorded only when the write completes.
+   */
+  fileStatuses: SampleFileStatus[];
   kitCount: number;
   localStorePath: string;
   /** Quarantined kits, which aren't written (#537 rule 4) */
@@ -99,6 +112,31 @@ interface SyncPlan {
   stereo: WriteStereoSummary;
   validationErrors: SyncValidationError[];
   warnings: string[];
+}
+
+/**
+ * What planning a sample's file found, as a change to its stored
+ * `source_status`, or null when there's nothing to record (#537)
+ */
+function fileStatusChange(
+  sample: Sample,
+  errors: SyncValidationError[],
+): null | SampleFileStatus {
+  let found: SampleFileStatus["source_status"] = null;
+  if (errors.some((e) => e.unreadable)) found = "unreadable";
+  else if (errors.some((e) => e.type === "missing_file")) found = "missing";
+  const stored = sample.source_status;
+  if (found) {
+    return stored === found ? null : { id: sample.id, source_status: found };
+  }
+  // Fine now, but last found missing or unreadable: read it again on open
+  if (
+    errors.length === 0 &&
+    (stored === "missing" || stored === "unreadable")
+  ) {
+    return { id: sample.id, source_status: null };
+  }
+  return null;
 }
 
 /**
@@ -226,6 +264,7 @@ class SyncService {
         cardContents,
         dbDir,
         files: allFiles,
+        fileStatuses,
         quarantinedKits,
         stereo,
         validationErrors,
@@ -286,7 +325,7 @@ class SyncService {
       // The links the write made automatically (#537 rule 2) are recorded
       // only now the write has completed, with the synced flags, in one
       // transaction: a cancelled or failed write leaves no links behind
-      this.completeWrite(dbDir, stereo, [...incompleteKits]);
+      this.completeWrite(dbDir, stereo, [...incompleteKits], fileStatuses);
 
       return {
         data: {
@@ -308,15 +347,18 @@ class SyncService {
 
   /**
    * Record a completed write in one transaction (#537): the links its plan
-   * made automatically (rule 2), whose stereo files are now on the card,
-   * and every kit but the ones the write left incomplete marked as synced,
-   * including kits with no files to write (RE-35). A failure here fails
-   * the write, so the store never claims links or a sync it didn't make.
+   * made automatically (rule 2), whose stereo files are now on the card;
+   * the file problems it found (missing, unreadable), so the kit list
+   * shows a quarantined kit straight away; and every kit but the ones the
+   * write left incomplete marked as synced, including kits with no files
+   * to write (RE-35). A failure here fails the write, so the store never
+   * claims links or a sync it didn't make.
    */
   private completeWrite(
     dbDir: string,
     stereo: WriteStereoSummary,
     incompleteKits: string[],
+    fileStatuses: SampleFileStatus[],
   ): void {
     const byKit = new Map<string, number[]>();
     for (const { kitName, voiceNumber } of stereo.autoLinks) {
@@ -325,6 +367,9 @@ class SyncService {
     const recorded = withDbTransaction(dbDir, (db) => {
       for (const [kitName, voiceNumbers] of byKit) {
         linkVoicesAutomaticallyTx(db, kitName, voiceNumbers);
+      }
+      for (const { id, source_status } of fileStatuses) {
+        updateSampleSourceStatusTx(db, id, { source_status });
       }
       return markAllKitsAsSyncedExceptTx(db, incompleteKits);
     });
@@ -447,6 +492,7 @@ class SyncService {
     const results = emptySyncResults();
     // What reading each sample's file found, in sample order
     const sampleFiles: PlannedSampleFile[] = [];
+    const fileStatuses: SampleFileStatus[] = [];
     for (let start = 0; start < samples.length; start += PLAN_BATCH_SIZE) {
       const batch = samples.slice(start, start + PLAN_BATCH_SIZE);
       const plans = batch.map(async (sample) => {
@@ -462,7 +508,12 @@ class SyncService {
       // Batches bound how many files are open at once
       const planned = await Promise.all(plans); // NOSONAR: batched on purpose
       // Merged in sample order, whatever order the reads finished in
-      for (const sampleResults of planned) {
+      for (const [i, sampleResults] of planned.entries()) {
+        const change = fileStatusChange(
+          batch[i],
+          sampleResults.validationErrors,
+        );
+        if (change) fileStatuses.push(change);
         sampleFiles.push({
           channels: [
             ...sampleResults.filesToCopy,
@@ -508,6 +559,7 @@ class SyncService {
         cardContents,
         dbDir,
         files,
+        fileStatuses,
         kitCount,
         localStorePath,
         quarantinedKits: stereo.quarantinedKits,

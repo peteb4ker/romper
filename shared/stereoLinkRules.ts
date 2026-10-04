@@ -249,9 +249,7 @@ function linkAutomatically(kit: KitView): number[] {
 }
 
 // --- Wording -------------------------------------------------------------
-// Approved by Pete (#537). Strings marked DRAFT await his sign-off: the
-// unreadable and missing-file labels and guidance, and the quarantine
-// icon's tooltip.
+// Approved by Pete (#537).
 
 /** Rule 4's problems with the pair on voices n and n+1 */
 function pairProblems(kit: KitView, n: number): QuarantineProblem[] {
@@ -279,7 +277,7 @@ export const STEREO_LABELS = {
   quarantined: "Quarantined",
 } as const;
 
-/** Per-sample labels for a file Romper can't use (#537; DRAFT) */
+/** Per-sample labels for a file Romper can't use (#537) */
 export const SAMPLE_FILE_LABELS = {
   /** The source file isn't where the sample points */
   missing: "File not found",
@@ -289,7 +287,7 @@ export const SAMPLE_FILE_LABELS = {
 
 /**
  * The quarantine icon's tooltip and accessible name, on the kit card and
- * in the kit editor's header (#537; DRAFT)
+ * in the kit editor's header (#537)
  */
 export const QUARANTINE_ICON_LABEL =
   "Quarantined: this kit won't be written to the card until it's fixed";
@@ -309,7 +307,7 @@ export function describeLinkRefusal(
 }
 
 /**
- * Guidance for a sample whose file is missing (#537; DRAFT). It's skipped
+ * Guidance for a sample whose file is missing (#537). It's skipped
  * when the card is written; the kit isn't quarantined.
  */
 export function describeMissingSampleFile(
@@ -355,7 +353,6 @@ export function describeQuarantineProblem(problem: QuarantineProblem): string {
     case "right_voice_has_samples":
       return `Voices ${n} and ${n + 1} are a stereo pair, but voice ${n + 1} has samples. Unlink them, or remove the samples from voice ${n + 1}.`;
     case "unreadable":
-      // DRAFT (#537): awaits Pete's sign-off
       return `Romper can't read ${problem.filename}. Replace it with a WAV Romper can read, or remove it.`;
   }
 }

@@ -31,6 +31,7 @@ vi.mock("../../db/romperDbCoreORM.js", () => ({
   linkVoicesAutomaticallyTx: vi.fn(),
   // A completed write is recorded in one transaction (#537)
   markAllKitsAsSyncedExceptTx: vi.fn(() => 0),
+  updateSampleSourceStatusTx: vi.fn(),
   withDbTransaction: vi.fn((_dbDir: string, fn: (db: unknown) => unknown) => ({
     data: fn({}),
     success: true,

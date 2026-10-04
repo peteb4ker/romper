@@ -452,8 +452,10 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
       fs.writeFileSync(path.join(tempDir, "bad.wav"), "not a wav file");
 
       const checked = await scanService.checkKitSampleFiles(settings(), "A1");
+      // Every sample is checked; only the three new ones change
+      const total = getKit(dbDir, "A1").data!.samples!.length;
 
-      expect(checked.data).toEqual({ changed: 3, checked: 3 });
+      expect(checked.data).toEqual({ changed: 3, checked: total });
       expect(status("A1", "kick.wav")).toBe("readable");
       expect(
         getKit(dbDir, "A1").data!.samples!.find(
@@ -470,12 +472,85 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
       fs.writeFileSync(path.join(tempDir, "bad.wav"), wav(1));
       expect(
         (await scanService.checkKitSampleFiles(settings(), "A1")).data,
-      ).toEqual({ changed: 2, checked: 2 });
+      ).toEqual({ changed: 2, checked: total });
       expect(getKit(dbDir, "A1").data!.quarantined).toBe(false);
-      // Nothing left to check
+      // Nothing changed since
       expect(
         (await scanService.checkKitSampleFiles(settings(), "A1")).data,
-      ).toEqual({ changed: 0, checked: 0 });
+      ).toEqual({ changed: 0, checked: total });
+    });
+
+    it("the kit-open check finds a known-readable file that's gone, without re-reading the rest", async () => {
+      importCard();
+      expect(status("A1", "3 HAT.wav")).toBe("readable");
+      expect(status("A1", "2 PAD.wav")).toBe("readable");
+      fs.rmSync(path.join(store, "A1", "3 HAT.wav"));
+      // Still there, so only its existence is checked, not its header
+      fs.writeFileSync(path.join(store, "A1", "2 PAD.wav"), "not a wav");
+
+      const checked = await scanService.checkKitSampleFiles(settings(), "A1");
+
+      expect(checked.data?.changed).toBe(1);
+      expect(status("A1", "3 HAT.wav")).toBe("missing");
+      expect(status("A1", "2 PAD.wav")).toBe("readable");
+      expect(getKit(dbDir, "A1").data!.quarantined).toBe(false);
+    });
+
+    it("a write records an unreadable file, so the kit list shows the kit quarantined straight away", async () => {
+      importCard();
+      fs.writeFileSync(path.join(store, "A3", "1 PAD.wav"), "not a wav file");
+      expect(status("A3", "1 PAD.wav")).toBe("readable");
+
+      await write();
+
+      expect(status("A3", "1 PAD.wav")).toBe("unreadable");
+      const listed = (getKits(dbDir).data ?? []).find((k) => k.name === "A3");
+      expect(listed?.quarantined).toBe(true);
+    });
+
+    it("a write records a missing file it skipped, and clears it once the file is back", async () => {
+      importCard();
+      const hat = path.join(store, "A1", "3 HAT.wav");
+      const bytes = fs.readFileSync(hat);
+      fs.rmSync(hat);
+
+      const skipped = await syncService.startKitSync(settings(), {
+        sdCardPath: card,
+        skipInvalidFiles: true,
+      });
+
+      expect(skipped.success, skipped.error).toBe(true);
+      expect(status("A1", "3 HAT.wav")).toBe("missing");
+      expect(getKit(dbDir, "A1").data!.quarantined).toBe(false);
+
+      // Back again: the next write clears it, and the kit-open check
+      // reads it afresh
+      fs.writeFileSync(hat, bytes);
+      await write();
+      expect(status("A1", "3 HAT.wav")).toBeNull();
+    });
+
+    it("a cancelled write records no file problems", async () => {
+      importCard();
+      fs.writeFileSync(path.join(store, "A3", "1 PAD.wav"), "not a wav file");
+      const emit =
+        syncProgressManager.emitFileCompletionProgress.bind(
+          syncProgressManager,
+        );
+      vi.spyOn(
+        syncProgressManager,
+        "emitFileCompletionProgress",
+      ).mockImplementation((fileOp) => {
+        emit(fileOp);
+        syncService.cancelSync();
+      });
+
+      const result = await syncService.startKitSync(settings(), {
+        sdCardPath: card,
+      });
+
+      expect(result.data?.cancelled).toBe(true);
+      expect(status("A3", "1 PAD.wav")).toBe("readable");
     });
 
     it("a missing file doesn't quarantine its kit", async () => {

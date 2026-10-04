@@ -413,18 +413,17 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     voice: number;
   } | null>(null);
 
-  // Once per kit open, main checks the files of samples it doesn't know
-  // are readable, in one batch, so missing and unreadable files show early
-  // (#537). Readable samples aren't read again; a change reloads the kit.
+  // Once per kit open, main checks the kit's sample files in one batch, so
+  // missing and unreadable files show early (#537): every file is checked
+  // to still exist, and only files not known to be readable are read. A
+  // change reloads the kit.
   const checkedKits = React.useRef(new Set<string>());
   const { onKitUpdated: reloadKitAfterCheck } = props;
   const checkSampleFilesOnce = React.useCallback(
     async (loaded: Sample[]) => {
       const kitName = hookProps.kitName;
       if (checkedKits.current.has(kitName)) return;
-      if (loaded.every((sample) => sample.source_status === "readable")) {
-        return;
-      }
+      if (loaded.length === 0) return;
       checkedKits.current.add(kitName);
       const checked =
         await globalThis.electronAPI?.checkKitSampleFiles?.(kitName);

@@ -1397,7 +1397,7 @@ describe("KitVoicePanels", () => {
       expect(screen.queryByTestId("kit-quarantine-notice")).toBeNull();
     });
 
-    it("asks main to check unknown files once per kit open, and reloads when something changed", async () => {
+    it("asks main to check the kit's files once per kit open, and reloads when something changed", async () => {
       metadata({ ...row(1, 0, "kick.wav", 1), source_status: null } as never);
       vi.mocked(window.electronAPI.checkKitSampleFiles).mockResolvedValue({
         data: { changed: 1, checked: 1 },
@@ -1427,17 +1427,29 @@ describe("KitVoicePanels", () => {
       expect(window.electronAPI.checkKitSampleFiles).toHaveBeenCalledTimes(1);
     });
 
-    it("doesn't check a kit whose files are all known to be readable", async () => {
+    it("checks a kit whose files are all known to be readable, since one may be gone, and doesn't reload if none is", async () => {
       metadata({
         ...row(1, 0, "kick.wav", 1),
         source_status: "readable",
       } as never);
-      render(<MultiVoicePanelsTestWrapper voices={kitVoices()} />);
+      vi.mocked(window.electronAPI.checkKitSampleFiles).mockResolvedValue({
+        data: { changed: 0, checked: 1 },
+        success: true,
+      });
+      const onKitUpdated = vi.fn().mockResolvedValue(undefined);
+      render(
+        <MultiVoicePanelsTestWrapper
+          onKitUpdated={onKitUpdated}
+          voices={kitVoices()}
+        />,
+      );
 
       await waitFor(() =>
-        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalled(),
+        expect(window.electronAPI.checkKitSampleFiles).toHaveBeenCalledWith(
+          "Kit1",
+        ),
       );
-      expect(window.electronAPI.checkKitSampleFiles).not.toHaveBeenCalled();
+      expect(onKitUpdated).not.toHaveBeenCalled();
     });
   });
 });

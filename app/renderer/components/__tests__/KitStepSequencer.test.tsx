@@ -595,6 +595,49 @@ describe("KitStepSequencer", () => {
       expect(onVoiceSettingChanged).not.toHaveBeenCalled();
     });
 
+    it("[Q-02] puts a level back when main gives no answer (#543)", async () => {
+      // The preload method is missing, so the optional call gives undefined
+      vi.mocked(window.electronAPI.updateVoiceVolume).mockResolvedValue(
+        undefined as never,
+      );
+      const onMessage = vi.fn();
+      renderSequencer(onMessage);
+
+      fireEvent.change(level(), { target: { value: "40" } });
+
+      await waitFor(() => expect(level().value).toBe("80"));
+      expect(onMessage).toHaveBeenCalledWith(
+        "Couldn't save the level for voice 1, so it's back to 80. Try again.",
+        "error",
+      );
+    });
+
+    it("[Q-02] puts a sample mode back when main gives no answer (#543)", async () => {
+      vi.mocked(window.electronAPI.updateVoiceSampleMode).mockResolvedValue(
+        undefined as never,
+      );
+      const onMessage = vi.fn();
+      const onVoiceSettingChanged = vi.fn();
+      renderSequencer(onMessage, onVoiceSettingChanged);
+
+      fireEvent.click(screen.getByTestId("sample-mode-0-random"));
+
+      await waitFor(() =>
+        expect(onMessage).toHaveBeenCalledWith(
+          "Couldn't save the sample mode for voice 1, so it's back to 1st. Try again.",
+          "error",
+        ),
+      );
+      await waitFor(() =>
+        expect(
+          screen
+            .getByTestId("sample-mode-0-first")
+            .getAttribute("aria-pressed"),
+        ).toBe("true"),
+      );
+      expect(onVoiceSettingChanged).not.toHaveBeenCalled();
+    });
+
     it("says nothing when the level and sample mode are saved", async () => {
       const onMessage = vi.fn();
       renderSequencer(onMessage);

@@ -669,6 +669,35 @@ describe("KitVoicePanels", () => {
       expect(onMessage).toHaveBeenCalledTimes(1);
     });
 
+    it("[Q-02] puts the gain back when main gives no answer (#543)", async () => {
+      // The preload method is missing, so the optional call gives undefined
+      vi.mocked(window.electronAPI.updateSampleGain).mockResolvedValue(
+        undefined as never,
+      );
+      const onKitModified = vi.fn();
+      const onMessage = vi.fn();
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable
+          onKitModified={onKitModified}
+          onMessage={onMessage}
+          voices={voices}
+        />,
+      );
+      await waitFor(() => expect(gain()).toBe("-3"));
+
+      fireEvent.wheel(knob(), { deltaY: -100 });
+
+      await waitFor(() =>
+        expect(onMessage).toHaveBeenCalledWith(
+          "Couldn't save the gain for kick.wav, so it's back to -3 dB. Try again.",
+          "error",
+        ),
+      );
+      await waitFor(() => expect(gain()).toBe("-3"));
+      expect(onKitModified).not.toHaveBeenCalled();
+    });
+
     it("says nothing when the gain is saved", async () => {
       const onMessage = vi.fn();
       render(
@@ -1030,6 +1059,76 @@ describe("KitVoicePanels", () => {
       );
       expect(onKitUpdated).not.toHaveBeenCalled();
       consoleError.mockRestore();
+    });
+  });
+
+  describe("[Q-02] a link or unlink that gets no answer from main (#543)", () => {
+    const voices = (stereo: boolean) => [
+      { samples: ["kick.wav"], stereo_mode: stereo, voice: 1, voiceName: "A" },
+      { samples: [], voice: 2, voiceName: "B" },
+      { samples: [], voice: 3, voiceName: "C" },
+      { samples: [], voice: 4, voiceName: "D" },
+    ];
+
+    beforeEach(() => {
+      // The preload method is missing, so the optional call gives undefined
+      vi.mocked(window.electronAPI.updateVoiceStereoMode).mockResolvedValue(
+        undefined as never,
+      );
+      vi.spyOn(console, "error").mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      vi.mocked(console.error).mockRestore();
+    });
+
+    it("says the link failed", async () => {
+      const onMessage = vi.fn();
+      const onKitUpdated = vi.fn().mockResolvedValue(undefined);
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable={true}
+          onKitUpdated={onKitUpdated}
+          onMessage={onMessage}
+          voices={voices(false)}
+        />,
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("link-button-1-2"));
+      });
+
+      await waitFor(() =>
+        expect(onMessage).toHaveBeenCalledWith(
+          "Voices 1 and 2 weren't linked. Check that the kit is editable and voice 2 is empty, then try again.",
+          "error",
+        ),
+      );
+    });
+
+    it("says the unlink failed, and doesn't reload", async () => {
+      const onMessage = vi.fn();
+      const onKitUpdated = vi.fn().mockResolvedValue(undefined);
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable={true}
+          onKitUpdated={onKitUpdated}
+          onMessage={onMessage}
+          voices={voices(true)}
+        />,
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("stereo-badge-1"));
+      });
+
+      await waitFor(() =>
+        expect(onMessage).toHaveBeenCalledWith(
+          "Voices 1 and 2 weren't unlinked. Check that the kit is editable, then try again.",
+          "error",
+        ),
+      );
+      expect(onKitUpdated).not.toHaveBeenCalled();
     });
   });
 

@@ -850,5 +850,26 @@ describe("useKitBankNavigation", () => {
       );
       expect(result.current.bankNames.A).toBe("Artist A");
     });
+
+    it("[Q-02] reports a name main gives no answer for and keeps the old one (#543)", async () => {
+      // The preload method is missing, so the optional call gives undefined
+      vi.mocked(globalThis.electronAPI.updateBank).mockResolvedValueOnce(
+        undefined as never,
+      );
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useKitBankNavigation({ ...defaultProps, onMessage }),
+      );
+
+      await act(async () => {
+        await result.current.handleBankNameChange("A", "New Artist");
+      });
+
+      expect(onMessage).toHaveBeenCalledWith(
+        "Couldn't save the name of bank A",
+        "error",
+      );
+      expect(result.current.bankNames.A).toBe("Artist A");
+    });
   });
 });

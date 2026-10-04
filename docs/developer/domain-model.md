@@ -1,0 +1,877 @@
+<!--
+title: Domain model
+status: living map; checked against origin/main 3612a5be on 2026-10-03
+updated: 2026-10-03
+context_size: large
+-->
+
+# Romper domain model
+
+What each concept in Romper means, which one place owns it, who writes and
+reads it, every copy of it, the rules it must keep, and where `main`
+disagrees today.
+
+## Why this exists: concept drift
+
+Romper grew one feature at a time, mostly in parallel sessions, each fixing
+what it could see. Nothing said which place owned a concept, so each fix
+picked a source, and parallel work picked different ones. The bugs that
+followed weren't in any one function; they were in the gaps between two
+copies of the same fact:
+
+- **Bank names** came from the `banks` table, from RTF files and from the
+  loaded kits. A bank with no kits had nowhere to keep its name (#488).
+  The fix started reading the table (#512) at the same time as a cleanup
+  removed that read as unused (#514).
+- **Favourites** had two sources of truth, so the star in the browser and
+  the editor disagreed and toggling in both flipped the stored value the
+  wrong way (#453).
+- **Sample state** was copied four times in the renderer and keyed by file
+  name, so two same-named samples played together and shared a gain knob
+  (#460).
+- **Stereo** meant one thing to the code (a voice setting), another to the
+  Rample manual (a file that fills two voices) and nothing to import, so a
+  card's stereo samples came back mono (#537), and main accepted links the
+  editor refused (#541).
+- **The IPC contract** had no owner, so methods came and went per feature,
+  and **failed saves** looked like success in several places (#489, #511,
+  #543), each caller deciding for itself what a missing result meant.
+
+The remedy is one owner per concept: one table and column, one file, one
+setting or one piece of main-process state that every reader and writer
+goes through, with every other copy derived from it and refreshed by a
+known event. This document names that owner for each concept, lists every
+copy that exists today, and links an issue for each place `main` still
+disagrees.
+
+## The chain
+
+Each concept sits in a chain that runs from the hardware to the tests:
+
+**Rample feature** (a section of the [Rample manual](https://squarp.net/rample/manual/))
+→ **Romper concept** (this document: meaning, owner, copies, invariants)
+→ **use cases and qualities** (`UC-NN`, `Q-NN` in
+[`use-cases.md`](use-cases.md), each with a **Concepts:** line back here)
+→ **tests and issues** (tests tagged `[UC-NN]`, issues labelled `UC-NN`;
+`npm run trace` joins them and generates each entry's status).
+
+Read along it in either direction. When Squarp changes the manual, #538's
+index finds the changed section, the [summary](#summary) finds the
+concepts it touches, and their use cases find the tests to re-run and the
+issues to file. When an issue is filed, its label finds the use case, whose
+Concepts line finds the owner the fix must go through.
+
+Read a concept's section before changing anything it lists. If your change
+moves an owner, adds a copy or changes a meaning, update the section in the
+same pull request.
+
+## Summary
+
+| Concept | Canonical owner | Rample manual (relationship) | Use cases and qualities |
+|---|---|---|---|
+| [Local store](#local-store-library) | `localStorePath` setting (or `ROMPER_LOCAL_PATH`) | none | [UC-01](use-cases.md#uc-01-set-up-from-an-sd-card)–[UC-06](use-cases.md#uc-06-change-the-local-store), [Q-03](use-cases.md#q-03-romper-only-touches-what-you-point-it-at) |
+| [Settings](#settings) | `romper-settings.json`, held by main | Settings (none) | [UC-03](use-cases.md#uc-03-set-up-an-empty-library)–[UC-06](use-cases.md#uc-06-change-the-local-store), [UC-23](use-cases.md#uc-23-delete-a-sample), [UC-34](use-cases.md#uc-34-write-kits-to-the-sd-card), [UC-35](use-cases.md#uc-35-preferences), [UC-37](use-cases.md#uc-37-about-help-updates-and-diagnostics), [Q-03](use-cases.md#q-03-romper-only-touches-what-you-point-it-at) |
+| [Bank](#bank) | letter: kit name; name: `banks.artist` | Select a kit; How to make your own sample kits (writes; name files unverified) | [UC-01](use-cases.md#uc-01-set-up-from-an-sd-card), [UC-02](use-cases.md#uc-02-set-up-from-the-factory-archive), [UC-07](use-cases.md#uc-07-browse-kits-by-bank), [UC-09](use-cases.md#uc-09-search-kits), [UC-12](use-cases.md#uc-12-name-banks), [UC-13](use-cases.md#uc-13-scan-a-kit-or-scan-all), [UC-34](use-cases.md#uc-34-write-kits-to-the-sd-card) |
+| [Kit](#kit) | `kits` row | Select a kit; How to make your own sample kits (writes); Advanced parameters, SLICER (mirrors) | [UC-07](use-cases.md#uc-07-browse-kits-by-bank)–[UC-11](use-cases.md#uc-11-filter-to-kits-modified-since-the-last-sync), [UC-14](use-cases.md#uc-14-create-a-kit)–[UC-18](use-cases.md#uc-18-step-to-the-previous-or-next-kit), [UC-30](use-cases.md#uc-30-step-sequencer), [UC-31](use-cases.md#uc-31-trigger-conditions), [UC-33](use-cases.md#uc-33-slicer), [Q-01](use-cases.md#q-01-romper-stays-responsive-as-your-library-grows) |
+| [Voice](#voice) | `voices` row | What's inside a kit? (writes); Layers, Levels/Drive (mirrors) | [UC-08](use-cases.md#uc-08-read-kit-card-details), [UC-09](use-cases.md#uc-09-search-kits), [UC-15](use-cases.md#uc-15-duplicate-a-kit), [UC-27](use-cases.md#uc-27-name-voices), [UC-28](use-cases.md#uc-28-link-a-voice-pair-as-stereo), [UC-32](use-cases.md#uc-32-sample-mode-level-and-mute), [UC-33](use-cases.md#uc-33-slicer) |
+| [Stereo](#stereo) | `voices.stereo_mode` | How to make your own sample kits (STEREO SUPPORT); Multi–layers kits (writes) | [UC-01](use-cases.md#uc-01-set-up-from-an-sd-card), [UC-13](use-cases.md#uc-13-scan-a-kit-or-scan-all), [UC-19](use-cases.md#uc-19-drop-wavs-onto-a-voice), [UC-28](use-cases.md#uc-28-link-a-voice-pair-as-stereo), [UC-29](use-cases.md#uc-29-play-a-sample), [UC-34](use-cases.md#uc-34-write-kits-to-the-sd-card), [Q-04](use-cases.md#q-04-the-card-ends-up-exactly-matching-your-library) |
+| [Sample](#sample) | `samples` row; format: the file | How to make your own sample kits; Multi–layers kits (writes) | [UC-08](use-cases.md#uc-08-read-kit-card-details), [UC-09](use-cases.md#uc-09-search-kits), [UC-15](use-cases.md#uc-15-duplicate-a-kit), [UC-19](use-cases.md#uc-19-drop-wavs-onto-a-voice)–[UC-25](use-cases.md#uc-25-reveal-a-sample-in-finder-or-explorer), [UC-29](use-cases.md#uc-29-play-a-sample), [UC-33](use-cases.md#uc-33-slicer), [UC-34](use-cases.md#uc-34-write-kits-to-the-sd-card), [Q-01](use-cases.md#q-01-romper-stays-responsive-as-your-library-grows), [Q-04](use-cases.md#q-04-the-card-ends-up-exactly-matching-your-library) |
+| [The card and a write](#the-card-and-a-write) | the database; the card is generated | How to make your own sample kits; microSD; Settings: STORE (writes) | [UC-11](use-cases.md#uc-11-filter-to-kits-modified-since-the-last-sync), [UC-12](use-cases.md#uc-12-name-banks), [UC-16](use-cases.md#uc-16-delete-a-kit), [UC-24](use-cases.md#uc-24-set-a-samples-gain), [UC-34](use-cases.md#uc-34-write-kits-to-the-sd-card), [Q-04](use-cases.md#q-04-the-card-ends-up-exactly-matching-your-library) |
+| [Scan and setup import](#scan-and-setup-import) | the database (merge, never rebuild) | How to make your own sample kits (writes, in reverse) | [UC-01](use-cases.md#uc-01-set-up-from-an-sd-card), [UC-02](use-cases.md#uc-02-set-up-from-the-factory-archive), [UC-13](use-cases.md#uc-13-scan-a-kit-or-scan-all), [UC-27](use-cases.md#uc-27-name-voices), [Q-02](use-cases.md#q-02-your-changes-are-saved-completely-or-not-at-all) |
+| [Undo history](#undo-history) | renderer state (`useUndoRedoState`) | none | [UC-06](use-cases.md#uc-06-change-the-local-store), [UC-26](use-cases.md#uc-26-undo-and-redo), [Q-02](use-cases.md#q-02-your-changes-are-saved-completely-or-not-at-all) |
+| [Playback and voice choke](#playback-and-voice-choke) | audio layer (`claimVoice`, shared `AudioContext`) | Trig a sample; Layers (mirrors; choke unverified) | [UC-29](use-cases.md#uc-29-play-a-sample), [UC-30](use-cases.md#uc-30-step-sequencer), [UC-32](use-cases.md#uc-32-sample-mode-level-and-mute), [UC-33](use-cases.md#uc-33-slicer), [Q-01](use-cases.md#q-01-romper-stays-responsive-as-your-library-grows) |
+| [Use cases, qualities and issues](#use-cases-qualities-and-issues) | `use-cases.md`; GitHub issues | the whole manual (documents, via #538) | [Q-07](use-cases.md#q-07-every-change-is-tested-before-it-reaches-you), [Q-08](use-cases.md#q-08-romper-supports-or-mirrors-the-ramples-features) |
+| [The IPC contract](#the-ipc-contract) | `ElectronAPI` (`shared/electronApi.ts`) | none | [UC-36](use-cases.md#uc-36-messages-and-error-containment), [Q-01](use-cases.md#q-01-romper-stays-responsive-as-your-library-grows)–[Q-03](use-cases.md#q-03-romper-only-touches-what-you-point-it-at), [Q-07](use-cases.md#q-07-every-change-is-tested-before-it-reaches-you) |
+
+A range such as UC-07–UC-11 means every entry in it. Each concept's
+section has the full list, linked to the manual by heading and anchor.
+
+## How to read an entry
+
+Each concept has the same fields:
+
+- **Meaning:** what it means to the user, in a sentence.
+- **Use cases:** the entries in [`use-cases.md`](use-cases.md) that read or
+  change it; each links back here from its **Concepts:** line.
+- **Rample manual:** the manual sections it relates to, by heading and
+  anchor, and the relationship, in #538's vocabulary:
+  - **writes:** Romper produces what the Rample reads from the card;
+  - **mirrors:** Romper reproduces it on the computer for preview;
+  - **documents:** Romper's docs explain it;
+  - **none:** Romper's own concept; the Rample has no counterpart.
+
+  Anything the manual doesn't say is marked "unverified on hardware"
+  (CLAUDE.md). The headings are the stable key; the anchors are the page's
+  element ids as fetched on 2026-10-03 and look generated, so they may
+  change. See [Rample manual coverage](#rample-manual-coverage).
+- **Canonical owner:** the one source of truth: a table and column, a file,
+  a setting, or main-process state.
+- **Writers:** main operations and IPC channels, by symbol.
+- **Readers and copies:** who reads it, every derived copy (renderer state,
+  caches, files on the card) and what refreshes each copy.
+- **Invariants:** rules that must always hold.
+- **Disagreements on main:** reads or writes that bypass the owner, stale
+  copies, and different meanings. Each links its issue.
+
+Renderer paths are under `app/renderer/components/` unless they start with
+`app/renderer/utils/` or `views/`; main paths are under `electron/main/`.
+
+### Three facts behind most renderer drift
+
+1. **One kits array, many mirrors.** `useKitDataManager` holds `kits`
+   (from `get-all-kits`) and `allKitSamples`. Everything else is derived
+   from them and re-syncs only when an object's identity changes. Most edits
+   end in a full `getKits` reload (`refreshAllKitsAndSamples`, #452); some
+   don't reload at all (BPM, gain), and nothing sequences concurrent
+   reloads, so an older response can land last.
+2. **The kit editor isn't remounted between kits.** `KitsView` renders
+   `KitEditorContainer` without a `key`, and the error boundary's
+   `resetKey` only clears its error. Every `useState` and `useRef` in the
+   editor outlives a step to the next or previous kit unless it resets on
+   `kitName` itself.
+3. **Saves report in several shapes.** `DbResult`, `{ isValid }`,
+   `{ exists }`, raw values, `void` or a thrown error (see
+   [The IPC contract](#the-ipc-contract)). Each caller decides what a
+   missing result means, so "failed but looks saved" keeps coming back.
+
+## Local store (library)
+
+- **Meaning:** your library on disk: the folder that holds Romper's database
+  and the kit folders setup copied in.
+- **Use cases:** [UC-01](use-cases.md#uc-01-set-up-from-an-sd-card), [UC-02](use-cases.md#uc-02-set-up-from-the-factory-archive), [UC-03](use-cases.md#uc-03-set-up-an-empty-library), [UC-04](use-cases.md#uc-04-choose-an-existing-local-store), [UC-05](use-cases.md#uc-05-recover-from-an-invalid-or-missing-store), [UC-06](use-cases.md#uc-06-change-the-local-store), [Q-03](use-cases.md#q-03-romper-only-touches-what-you-point-it-at).
+- **Rample manual:** none. Romper's own concept. The kit folders inside it
+  follow the card layout ([How to make your own sample kits](https://squarp.net/rample/manual/#Gssvcjr)),
+  so a store made from a card holds a copy of the card's kits.
+- **Canonical owner:** the `localStorePath` setting, overridden for the
+  whole process by `ROMPER_LOCAL_PATH`. Resolved in main by
+  `ServicePathManager.getLocalStorePath` (`utils/fileSystemUtils.ts`); the
+  database is `<store>/.romperdb/romper.sqlite`.
+- **Writers:** `write-settings` (`settingsService.writeSetting`), reached
+  from `SettingsContext.setLocalStorePath`, the wizard's fallback in
+  `useLocalStoreWizard`, and Change Local Store; setup creates the folder
+  and database (`create-romper-db` → `localStoreSetupService.createSetupDatabase`).
+  Changing it closes every connection (`closeAllDbConnections`) and marks
+  setup complete (`markSetupComplete`).
+- **Readers and copies:**
+  - main: `ServicePathManager.getLocalStorePath` for almost every service;
+    `get-local-store-status` (`localStoreService.getLocalStoreStatus`) with
+    its own copy of the same precedence; `pathAccess.getRoots`.
+  - renderer: `SettingsContext` `state.settings.localStorePath`, seeded
+    from `config.localStorePath || settings.localStorePath` and then updated
+    by its own setter; `localStoreStatus` from `get-local-store-status`.
+  - the database path is built by `ServicePathManager.getDbPath` (six
+    services wrap it in a private `getDbPath`), by `localStoreValidator`,
+    `localStoreSetupService` and `pathAccess` with their own literals, and
+    by the wizard in the renderer (`` `${targetPath}/.romperdb` ``).
+- **Invariants:**
+  - A valid store is a readable, writable folder with
+    `.romperdb/romper.sqlite` whose schema validates
+    (`validateLocalStoreAndDb`). Nothing reads the store until its status
+    says it's valid (`isLocalStoreReady`, #553).
+  - One connection per store, closed when the setting changes, before a
+    database file is moved or deleted, and at quit (RE-81).
+  - Romper writes only its database and the bank name files into the store;
+    samples you add are referenced, never copied.
+- **Disagreements on main:**
+  - `validate-local-store` and `validate-local-store-basic` take
+    `ROMPER_LOCAL_PATH` before their argument, so with the override set the
+    folder you pick is never the one validated. `ServicePathManager` and
+    `getLocalStoreStatus` ignore a blank override; `readSettings`, the
+    preload and the `validate-*` handlers don't. Test-only today; part of
+    the precedence that should live in one function.
+  - Changing the store doesn't reset the open kit or the undo stack
+    (#568).
+  - `LocalStoreService.getDbPath`, `getRomperDbPath` and
+    `SettingsService.getLocalStorePath` are unused second definitions
+    (#471).
+
+## Settings
+
+Main owns every setting: the file `<userData>/romper-settings.json`, loaded
+once into `inMemorySettings` (`mainProcessSetup.loadSettings`,
+`settingsFile.normalizeSettings`) and written through `write-settings`
+(`settingsService.writeSetting`: validated, written to a temporary file and
+renamed, then applied in memory). `read-settings` returns a copy with the
+environment overrides applied, which are never saved. There's no
+`localStorage`; `sessionStorage` holds only dev hot-reload state
+(`app/renderer/utils/hmrStateManager.ts`). Window size and position are a
+separate file (`window-state.json`), not a setting.
+
+| Setting | Meaning | Default | Writers | Copies |
+|---|---|---|---|---|
+| `localStorePath` | Your library ([Local store](#local-store-library)) | none: the wizard opens | `SettingsContext.setLocalStorePath`; the wizard's fallback `setSetting` | `SettingsContext`; main `inMemorySettings`, overridden by `ROMPER_LOCAL_PATH` |
+| `sdCardPath` | The card folder you last wrote to | none | `useKitSync.handleSdCardPathChange` | `useKitSync` state (read once at mount), `SyncUpdateDialog`'s `localSdCardPath`; main reads it only to allow the path (`pathAccess.getRoots`). A write always takes the path as an argument |
+| `themeMode` | Light, dark or system | `system` (renderer) | `SettingsContext.setThemeMode` | `SettingsContext`, applied as the `dark` class |
+| `confirmDestructiveActions` | Ask before deleting a sample | `true` (renderer) | `SettingsContext.setConfirmDestructiveActions` | `SettingsContext`; read by `SampleDeleteButton`. Main never reads it |
+
+Environment overrides (launch-time, never saved): `ROMPER_LOCAL_PATH`,
+`ROMPER_SDCARD_PATH`, `ROMPER_USER_DATA_DIR`, `ROMPER_HEADLESS`,
+`ROMPER_SQUARP_ARCHIVE_URL`, `ROMPER_TEST_MODE`, `ROMPER_ENABLE_DEVTOOLS`,
+`ROMPER_DEBUG`. The preload exposes some as `romperEnv`, and the renderer
+reads them through `app/renderer/config.ts`.
+
+- **Use cases:** [UC-03](use-cases.md#uc-03-set-up-an-empty-library), [UC-04](use-cases.md#uc-04-choose-an-existing-local-store), [UC-05](use-cases.md#uc-05-recover-from-an-invalid-or-missing-store), [UC-06](use-cases.md#uc-06-change-the-local-store), [UC-23](use-cases.md#uc-23-delete-a-sample), [UC-34](use-cases.md#uc-34-write-kits-to-the-sd-card), [UC-35](use-cases.md#uc-35-preferences), [UC-37](use-cases.md#uc-37-about-help-updates-and-diagnostics), [Q-03](use-cases.md#q-03-romper-only-touches-what-you-point-it-at).
+- **Rample manual:** none. The Rample has its own settings
+  ([Settings](https://squarp.net/rample/manual/#VhwOTqd), saved with SAVE
+  SETTINGS), which Romper doesn't read or write.
+- **Invariants:** a setting has one writer path (`write-settings`) and one
+  in-memory owner (main). Path settings are checked against the allowed
+  roots before they're saved, so the renderer can't grant itself access.
+- **Disagreements on main:**
+  - `ROMPER_LOCAL_PATH` is applied four times (main `readSettings`, the
+    preload's `SettingsManager.readSettings`, `config.localStorePath` in
+    `SettingsContext`, and `ServicePathManager`) with different rules for a
+    blank value. With the override set, `SettingsContext.localStorePath`
+    follows what you pick while main keeps the override.
+  - `ROMPER_SDCARD_PATH` is honoured by `select-sd-card` only in test mode,
+    but always by the wizard (`config.sdCardPath`), `readSettings` and
+    `pathAccess`.
+  - `SettingsData` in `shared/electronApi.ts` allows a `theme` key nothing
+    uses and types `localStorePath` as `string`, where main uses
+    `null | string` (#472).
+  - A failed theme or confirmation-setting save is only logged; the
+    context's `error` isn't shown anywhere (#570).
+  - The renderer reads settings twice (`SettingsContext.initializeSettings`
+    and `useKitSync`), so `sdCardPath` lives outside the context, read once
+    at mount.
+
+## Bank
+
+A bank is one of the 26 letters A to Z. It has a letter (from its kits'
+names) and an optional name (the "artist").
+
+- **Meaning:** a group of up to 100 kits under one letter, with a name you
+  can give it.
+- **Use cases:** [UC-01](use-cases.md#uc-01-set-up-from-an-sd-card), [UC-02](use-cases.md#uc-02-set-up-from-the-factory-archive), [UC-07](use-cases.md#uc-07-browse-kits-by-bank), [UC-09](use-cases.md#uc-09-search-kits), [UC-12](use-cases.md#uc-12-name-banks), [UC-13](use-cases.md#uc-13-scan-a-kit-or-scan-all), [UC-34](use-cases.md#uc-34-write-kits-to-the-sd-card).
+- **Rample manual:** [Select a kit](https://squarp.net/rample/manual/#igGTWqk)
+  ("Kits are organized in 26 banks (A to Z)") and
+  [How to make your own sample kits](https://squarp.net/rample/manual/#Gssvcjr)
+  (the folder's first character "is the bank letter, from A to Z").
+  - letter: **writes** (the kit folder name).
+  - name: **writes**, but the manual doesn't mention bank name files. The
+    factory archive has them (`A - ALWIS.rtf`); whether the Rample shows
+    them is unverified on hardware.
+- **Canonical owner:**
+  - letter: the first character of the kit name. `kits.bank_letter` stores
+    a copy, set from the name by `addKit`, `copyKit` and
+    `importSetupKit`.
+  - name: `banks.artist`. `banks.rtf_filename` is derived from it
+    (`bankRtfFileName`); `banks.scanned_at` records the last scan. At write
+    time `banks.artist` is the only source: `planCardContents` and
+    `writeBankRtfFiles` build the card's files from it.
+- **Writers:**
+  - `update-bank` (handler in `dbIpcHandlers.ts`) writes or removes
+    `<store>/<L> - <name>.rtf` (`rtfFileService.writeRtfFile`,
+    `removeRtfFile`) and then `updateBank` (`source: "edit"`), which flags
+    every kit in the bank modified.
+  - `scan-banks` (`scanService.scanBanks`) reads `<store>/*.rtf` and calls
+    `updateBank` with `source: "scan"`, which flags nothing. Run at startup
+    (`useStartupActions`) and by Scan All (`useBankScanning`).
+  - the write puts `<L> - <name>.rtf` on the card root and removes bank
+    files the store doesn't name (`findStaleCardEntries`).
+- **Readers and copies:**
+  - main: `getAllBanks` (`get-all-banks`); every kit row joined with its
+    bank (`kitRelationalHelpers`, so `get-all-kits` and `get-kit` carry
+    `kit.bank.artist`); sync planning.
+  - files: `<store>/<L> - <name>.rtf` and `<card>/<L> - <name>.rtf`.
+  - renderer: `useKitBankNavigation` `bankNames`, merged from
+    `get-all-banks` (once per store, effect on `localStorePath`) and from
+    `kit.bank.artist` of the loaded, filtered kits (effect on `kits`), and
+    patched locally after a rename; `BankHeader` `editValue`; search
+    (`kitSearchUtils`) reads `kit.bank.artist`.
+- **Invariants:**
+  - The `banks` table always has 26 rows (migration `0001`).
+  - A name is never blank and holds none of `/ \ : * ? " < > |` or control
+    characters (`bankNameError`), because it becomes a file name.
+  - At most one name file per letter, in the store and on the card.
+- **Disagreements on main:**
+  - Three sources. The table owns the name, but `scanBanks` copies the
+    store's RTF files back into it on every launch, and the browser shows a
+    merge of `get-all-banks` and `kit.bank.artist`. `scanBanks` never clears
+    a name whose file is gone, picks the last of two files for one letter,
+    and its pattern (`/^\p{Lu} - .+\.rtf$/iu`) matches lowercase and
+    non-ASCII letters. After Scan All, a bank with no visible kits keeps its
+    old name until the browser remounts (#567).
+  - Setup from an SD card copies only kit folders, so the card's bank names
+    never reach the store, and the first write deletes them from the card
+    (#564).
+  - `update-bank` writes the store's file before the database; if
+    `updateBank` then fails, the file and the table disagree.
+  - Comments in `rtfFileService` and `sdCardSafety` state that the Rample
+    reads and shows these files, which the manual doesn't say (#571).
+
+## Kit
+
+A kit is one slot, `A0` to `Z99`, with four voices.
+
+- **Meaning:** a set of up to four voices of samples you load on the Rample
+  as one, plus Romper's own settings for it.
+- **Use cases:** [UC-07](use-cases.md#uc-07-browse-kits-by-bank), [UC-08](use-cases.md#uc-08-read-kit-card-details), [UC-09](use-cases.md#uc-09-search-kits), [UC-10](use-cases.md#uc-10-favourite-kits), [UC-11](use-cases.md#uc-11-filter-to-kits-modified-since-the-last-sync), [UC-14](use-cases.md#uc-14-create-a-kit), [UC-15](use-cases.md#uc-15-duplicate-a-kit), [UC-16](use-cases.md#uc-16-delete-a-kit), [UC-17](use-cases.md#uc-17-make-a-kit-editable-and-set-its-alias), [UC-18](use-cases.md#uc-18-step-to-the-previous-or-next-kit), [UC-30](use-cases.md#uc-30-step-sequencer), [UC-31](use-cases.md#uc-31-trigger-conditions), [UC-33](use-cases.md#uc-33-slicer), [Q-01](use-cases.md#q-01-romper-stays-responsive-as-your-library-grows).
+- **Rample manual:** [Select a kit](https://squarp.net/rample/manual/#igGTWqk)
+  ("A kit is a group of 4 samples", "up to 100 kits: A0 to A99") and
+  [How to make your own sample kits](https://squarp.net/rample/manual/#Gssvcjr)
+  ("1 kit = 1 folder", "Up to 2600 folders can be created!", and a kit
+  folder "must include at least the voice 1 sample").
+
+Kit fields, each owned by a column of `kits`:
+
+| Field | Meaning | Rample | Writers (main / IPC) | Renderer copies |
+|---|---|---|---|---|
+| `name` | Slot and identity, primary key everywhere | writes (folder name) | `createKit` (`create-kit`), `copyKit` (`copy-kit`), `importSetupKit`; never renamed | `selectedKit` (`useKitNavigation`), every key below |
+| `alias` | Your display name for the kit | none | `updateKit` via `update-kit-metadata` (`parseKitMetadataUpdates` allows only `alias` and `editable`) | `kits[i]`, patched after a save; `KitEditor` `kitAliasInput` |
+| `editable` | Whether sample, gain, voice-name and stereo edits are allowed | none | `update-kit-metadata`; on for created and duplicated kits, off for imported ones | `kits[i]`, patched; `useKitEditorLogic.isEditable`; gates undo of sample edits (`applyUndoRedo`) |
+| `locked` | Protection from scan and delete | none | nothing in the UI | `kits[i]` (`KitGridItem` `canDelete`) |
+| `is_favorite` | Starred | none | `toggleKitFavorite` (`toggle-kit-favorite`): flips the stored value and returns the new one | `kits[i]`, set from the returned value (#453 removed the shadow map) |
+| `modified_since_sync` | The kit changed since the last completed write | none | see below | `kits[i]`; `markKitModified` patches it locally after a gain save; the Modified filter and count (`useKitFilters`), card border, header badge |
+| `bpm` | Sequencer tempo, 30 to 180 | none | `updateKit` via `update-kit-bpm`; no reload after | two `useBpm` instances (`useKitEditorLogic`, unused output; `KitStepSequencer`, drives playback) |
+| `step_pattern` | 4 voices × 16 steps | none | `updateKit` via `update-step-pattern`, then a full reload | `useStepPattern` state and `latestRef`; `useSequenceHistory` |
+| `trigger_conditions` | A:B condition per step | none | `updateKit` via `update-trigger-conditions`, then a full reload | `useTriggerConditions` state and ref |
+| `slice_steps` | Slice per step, in ticks of 384 per sample | mirrors | `updateKit` via `update-slice-steps` (debounced reload) | `useSliceSteps` state and ref |
+| `slicer_division` | Slices per sample (8 to 128) | mirrors the SLICER setting | `updateKit` via `update-kit-slicer-division` | `useSliceSteps` |
+
+- **Rample relationship of the sequencer fields:** the manual describes no
+  step sequencer, tempo or trigger conditions on the module. Romper's
+  sequencer previews what an external sequencer would trigger
+  ([Trig a sample](https://squarp.net/rample/manual/#npDPEfP)): **none** for
+  BPM and conditions, **mirrors** for the slicer. The Rample's SLICER is a
+  device setting ([Settings](https://squarp.net/rample/manual/#VhwOTqd),
+  [Advanced parameters](https://squarp.net/rample/manual/#C0ft3/t),
+  [Note about start point & sample length](https://squarp.net/rample/manual/#XX9CMqGW9):
+  "/8, /16, /32, /64, /128, /12, /24, /48" or EXP); Romper stores it per
+  kit and has no EXP.
+- **Modified since last write.** Set in the same transaction as the edit
+  by `flagKitModified` (sample add, delete, move, replace, restore; gain;
+  stereo link; voice name) and `flagBankKitsModified` (bank rename); new and
+  duplicated kits start set; a scan sets it only when it adds samples.
+  Cleared on every kit by a completed, uncancelled write, except kits with a
+  skipped sample (`markAllKitsAsSyncedExcept`), and by setup import
+  (`markKitsAsSyncedTx`). It drives only the UI: every write sends the whole
+  store, whatever the flag says.
+- **Invariants:**
+  - A name is a bank letter and 0 to 99. A kit has exactly four voice rows
+    and at most 12 samples per voice.
+  - `bank_letter` equals the name's first character.
+  - A kit the Rample can open has a voice-1 sample; a write warns when it
+    doesn't (`kitsWithoutVoiceOne`).
+  - Only an editable kit takes sample, gain, voice-name and stereo-link
+    edits; sequencer edits are allowed on any kit (`applyUndoRedo`: "the
+    sequencer works on locked kits too", where "locked" means not
+    editable).
+- **Disagreements on main:**
+  - Main enforces `editable` only for stereo links (RE-71). Sample add,
+    delete, move and replace, gain, voice names and kit delete are refused
+    only by the renderer (#572).
+  - "Modified" has no single meaning: a voice-name edit sets it though
+    nothing on the card changes, a kit alias edit doesn't, and a bank scan
+    that changes a name doesn't (#566).
+  - Kit names are checked by different patterns: `isValidKit` and
+    `kitService.validateKitSlot` accept any Unicode capital
+    (`/^\p{Lu}\d{1,2}$/u`) and leading zeros (`A01`), `sdCardSafety` only
+    `[A-Z]` ignoring case (#573).
+  - BPM: the save doesn't reload, `useBpm` resets only when the incoming
+    value changes, and the editor isn't remounted, so stepping to a kit with
+    the old BPM shows and plays the new one (#565).
+  - The step pattern and trigger conditions reload every kit on every save,
+    undebounced, so a slower earlier reload can put an older pattern back
+    for a moment (#452).
+  - `updateKit` still accepts `name`, `bank_letter` and a non-column
+    `modified`; only `parseKitMetadataUpdates` stops a renderer rename
+    (RE-22). Six channels reach it with different validation.
+  - "Locked" is used in comments and the UI vocabulary for "not editable",
+    while `kits.locked` is a different, unused flag.
+
+## Voice
+
+Each kit has voices 1 to 4.
+
+- **Meaning:** one of the Rample's four outputs and the up-to-12 layered
+  samples it plays.
+- **Use cases:** [UC-08](use-cases.md#uc-08-read-kit-card-details), [UC-09](use-cases.md#uc-09-search-kits), [UC-15](use-cases.md#uc-15-duplicate-a-kit), [UC-27](use-cases.md#uc-27-name-voices), [UC-28](use-cases.md#uc-28-link-a-voice-pair-as-stereo), [UC-32](use-cases.md#uc-32-sample-mode-level-and-mute), [UC-33](use-cases.md#uc-33-slicer).
+- **Rample manual:** [What's inside a kit?](https://squarp.net/rample/manual/#YanSdon)
+  ("There are 4 voices: audio outputs SP1, SP2, SP3 and SP4", "up to 12
+  layers") and [Multi–layers kits](https://squarp.net/rample/manual/#XX2FJ2ONj).
+
+Voice fields, each owned by a column of `voices` (one row per kit and
+voice number):
+
+| Field | Meaning | Rample | Writers | Renderer copies |
+|---|---|---|---|---|
+| `voice_number` | 1 to 4; the first character of a card file | writes | created with the kit (`addKitTx`, `copyKit`); `ensureVoiceRow` can insert one | key for everything below |
+| `voice_alias` | Your name for the voice, or one inferred from a file name | none | `updateVoiceAlias` (`update-voice-alias`, flags the kit); scan and setup (`inferMissingVoiceAliases`, only unnamed voices); the editor's `handleInferVoiceNames` | `kits[i].voices`; `useKitEditorLogic.voiceNames`; `KitVoicePanels.voiceData`; `useVoiceNameEditor` `editValue`; grid icon (`extractVoiceNames`) |
+| `stereo_mode` | Links this voice with the next as a stereo pair | writes (see [Stereo](#stereo)) | `updateVoiceStereoMode` (`update-voice-stereo-mode`, refused for a read-only kit, flags the kit) | `KitVoicePanels.voiceData` → `useStereoHandling`; `KitStepSequencer.stereoLinks`; grid badge; search |
+| `voice_volume` | Preview level, 0 to 100 | mirrors [Levels/Drive effect](https://squarp.net/rample/manual/#zPtALyJ) loosely; never written to the card | `updateVoiceVolume` (`update-voice-volume`) | `KitStepSequencer` `voiceVolumes` |
+| `sample_mode` | Which layer plays: first, random, round-robin | mirrors [Layers](https://squarp.net/rample/manual/#e+hlH+Q) and the LAYER setting, with different modes | `updateVoiceSampleMode` (`update-voice-sample-mode`) | `KitStepSequencer` `sampleModes`; `useKitStepSequencerLogic` `roundRobinIndexRef` |
+| `slice_enabled`, `slice_max_length`, `slice_roll_amount`, `slice_vary_length` | Slicer settings | mirrors | `updateVoiceSliceSettings` (`update-voice-slice-settings`) | `useVoiceSliceSettings` state and ref |
+| mute | Silence a voice in the sequencer | none ([Mute groups](https://squarp.net/rample/manual/#qdSsFkF) is a different feature) | not saved | `KitStepSequencer` `voiceMutes` |
+
+- **Invariants:**
+  - Exactly one row per kit and voice number (not enforced: #510).
+  - Voice data is keyed by voice number, never by position.
+  - A sample mode is one of `first`, `random`, `round-robin`
+    (`sampleModeError`); a level is 0 to 100 (`volumeError`).
+- **Disagreements on main:**
+  - The Rample's layer modes are "MANUAL, RANDOM, CYCLIC, REVERSE CYCLIC,
+    VELOCITY", and [Multi–layers kits](https://squarp.net/rample/manual/#XX2FJ2ONj)
+    says layers play "randomly (by default)". Romper has `first` (its
+    default), `random` and `round-robin`, and saves none of it to the card,
+    since the Rample keeps layer modes in its own STORE data. A parity gap
+    for #538, not a bug.
+  - Mutes, the round-robin position and sequencer play state carry over
+    when you step to the next kit, although Romper's manual
+    (`docs/manual/step-sequencer.md`) says mute "resets when you reopen the
+    kit"; a failed level or sample-mode save
+    that lands after a step restores into the new kit (#565).
+  - The editor's `handleInferVoiceNames` ignores `updateVoiceAlias`'s
+    result and reports every voice as named (#570); `updateVoiceAlias`
+    reports success when the voice row doesn't exist.
+  - The voice level, sample mode and slicer settings don't flag the kit,
+    and neither does a kit alias, but a voice name does (#566).
+
+### Stereo
+
+- **Meaning:** a stereo pair plays and writes voice N's files in stereo and
+  leaves voice N+1 empty on the card.
+- **Use cases:** [UC-01](use-cases.md#uc-01-set-up-from-an-sd-card), [UC-13](use-cases.md#uc-13-scan-a-kit-or-scan-all), [UC-19](use-cases.md#uc-19-drop-wavs-onto-a-voice), [UC-28](use-cases.md#uc-28-link-a-voice-pair-as-stereo), [UC-29](use-cases.md#uc-29-play-a-sample), [UC-34](use-cases.md#uc-34-write-kits-to-the-sd-card), [Q-04](use-cases.md#q-04-the-card-ends-up-exactly-matching-your-library).
+- **Rample manual:** [How to make your own sample kits](https://squarp.net/rample/manual/#Gssvcjr),
+  under STEREO SUPPORT: "A stereo sample will fill 2 mono voices." and
+  [Multi–layers kits](https://squarp.net/rample/manual/#XX2FJ2ONj): "All
+  layers must be of the same type (mono OR stereo) in a voice."
+  Relationship: **writes**. The manual says nothing about voice 4, about a
+  stereo file whose next voice has samples, or about a voice that mixes
+  types: Romper's rules for those are unverified on hardware.
+- **Canonical owner:** `voices.stereo_mode` on the left-hand voice. Samples
+  carry no stereo flag (`samples.is_stereo` was dropped, RE-69). A file's
+  channel count (from its header at write time) only says whether there is
+  anything to mix down.
+- **Target meaning (signed off by Pete on #537, 2026-10-03).** Stereo stays
+  a voice setting, and is Romper's design, not Rample behaviour. When
+  importing a card or scanning a kit, for each voice that holds 2-channel
+  files:
+  1. voice 1 to 3 with the next voice empty: link the pair;
+  2. voice 1 to 3 with the next voice in use: don't link, never move or drop
+     a sample, and tell the user which voice and what to do;
+  3. voice 4: can't be linked; it stays mono, with a message;
+  4. stereo and mono layers in one voice: link if the next voice is empty,
+     and warn that the Rample expects one type per voice.
+
+  Scan applies these only to voices whose setting the user hasn't set by
+  hand, so where a voice's setting came from must be recorded. #537 builds
+  this; #541 makes main refuse links to voice 4 and to a voice whose next
+  voice has samples.
+- **Writers:** the link button (`useStereoHandling.canLinkVoices` →
+  `KitVoicePanels.writeStereoMode` → `update-voice-stereo-mode`); after
+  #537, import and scan.
+- **Readers and copies:** `annotateMonoConversion` (write: an unlinked
+  voice's multi-channel files are mixed to mono);
+  `validateVoiceNotLinkedPartner` (refuses samples on the right-hand voice);
+  the renderer copies listed under [Voice](#voice).
+- **Invariants:** a linked pair is voices N and N+1 with N ≤ 3 and N+1
+  empty; nothing is ever copied onto N+1 because a file is stereo.
+- **Disagreements on main:**
+  - Import and scan never link, so a card's stereo samples come back mono
+    (#537).
+  - Main accepts links the editor refuses (#541).
+  - Preview plays a stereo file in stereo on an unlinked voice, though the
+    card gets a mono mix (#569).
+  - A linked voice holding mono layers is written as mixed mono and stereo
+    layers with no warning (#574). Rule 4 above covers import only.
+
+## Sample
+
+A sample is one layer: a file reference in one slot of one voice.
+
+- **Meaning:** a WAV file you put in a voice, in a position (1 to 12), with
+  a gain.
+- **Use cases:** [UC-08](use-cases.md#uc-08-read-kit-card-details), [UC-09](use-cases.md#uc-09-search-kits), [UC-15](use-cases.md#uc-15-duplicate-a-kit), [UC-19](use-cases.md#uc-19-drop-wavs-onto-a-voice), [UC-20](use-cases.md#uc-20-replace-a-sample), [UC-21](use-cases.md#uc-21-move-samples-within-a-kit), [UC-22](use-cases.md#uc-22-move-a-sample-to-another-kit), [UC-23](use-cases.md#uc-23-delete-a-sample), [UC-24](use-cases.md#uc-24-set-a-samples-gain), [UC-25](use-cases.md#uc-25-reveal-a-sample-in-finder-or-explorer), [UC-29](use-cases.md#uc-29-play-a-sample), [UC-33](use-cases.md#uc-33-slicer), [UC-34](use-cases.md#uc-34-write-kits-to-the-sd-card), [Q-01](use-cases.md#q-01-romper-stays-responsive-as-your-library-grows), [Q-04](use-cases.md#q-04-the-card-ends-up-exactly-matching-your-library).
+- **Rample manual:** [How to make your own sample kits](https://squarp.net/rample/manual/#Gssvcjr)
+  ("The first character must be the number of the voice", "standard .wav
+  mono format, 16–bit or 8–bit, 44100 Hz, minimum length 50ms") and
+  [Multi–layers kits](https://squarp.net/rample/manual/#XX2FJ2ONj) ("Sample
+  layer names are numerically and alphabetically sorted").
+
+Sample fields, each owned by a column of `samples` (one row per kit,
+voice and slot):
+
+| Field | Meaning | Rample | Writers | Renderer copies |
+|---|---|---|---|---|
+| `slot_number` | Position in the voice, 0 to 11 (shown 1 to 12) | writes (the `-NN` in the card name sets the layer order) | add, move, delete with reindex, restore (`sampleCrudService`, `sampleBatchOperations`, `sampleMovement`, `restoreVoicesTx`) | `allKitSamples[kit][voice][slot]` (file name only, `""` for gaps); `sampleMetadata` keyed by `slotKey(voice, slot)` |
+| `source_path` | The file Romper reads: outside the store for samples you add, inside it for imported ones | none | add, replace; scan inserts | `sampleMetadata`; undo snapshots |
+| `filename` | The readable part of the card name | writes (`cardSampleFileName`) | add, replace, scan | `allKitSamples`; `kits[i].samples` |
+| `gain_db` | Trim from -24 to +12 dB, baked in at write | writes (no counterpart: the Rample's level is per voice) | `updateSampleGain` (`update-sample-gain`, flags the kit) | `sampleMetadata` only; `kits[i].samples[].gain_db` isn't refreshed after a save |
+| `wav_bit_depth`, `wav_channels`, `wav_sample_rate`, `wav_bitrate` | The file's format when it was added or last scanned | none (the write reads the header) | add and replace (from the validation read), scan only when null | `sampleMetadata` → tooltip and format badge (`wavMetadataFormatter`) |
+
+- **Canonical owner of the file's format:** the file itself, read at write
+  time (`validateSampleFormatAsync`, `formatConverter`). The `wav_*`
+  columns are a cache for display.
+- **Readers and copies:** besides the table above, `kits[i].samples` (from
+  `get-all-kits` and `get-kit`); `selectedKitSamples`, an effect-driven
+  mirror one render behind; `SampleWaveform`'s decoded buffer (reloads when
+  kit, voice, slot or file name change); `SliceStrip`'s peaks cache (keyed
+  by kit, voice and slot, never invalidated); the card file
+  `<kit>/<voice>-<slot> <name>.wav`.
+- **Invariants:**
+  - At most 12 per voice; one per slot; one row per source per voice
+    (unique constraints).
+  - Slots are contiguous from 0 after delete and move (reindexing).
+  - A sample on the right-hand voice of a linked pair is refused.
+  - The card name is `<voice>-<slot+1, two digits> <name>.wav`, at most 64
+    characters (`cardSampleFileName`).
+- **Disagreements on main:**
+  - Three sample copies refresh through different calls:
+    `refreshSingleKitMetadata` updates `kits[i].samples` but not
+    `allKitSamples`; `reloadCurrentKitSamples` does the opposite;
+    `sampleMetadata` refetches only when the kit object changes (#452,
+    target step 8).
+  - Search reads `allKitSamples` as objects, but its values are file-name
+    strings, so that input matches nothing; search works from
+    `kit.samples` only.
+  - The slicer's waveform cache and `SampleWaveform` don't notice a slot's
+    file changing (#575).
+  - The format badge uses its own copy of the Rample's requirements and the
+    cached `wav_*` columns, so it can say "native" for a file the write
+    converts; the write summary counts files re-encoded for gain as copies;
+    and nothing checks the manual's 50 ms minimum (#576).
+
+## The card and a write
+
+- **Meaning:** the SD card you put in the Rample, and the operation that
+  makes it match your library.
+- **Use cases:** [UC-11](use-cases.md#uc-11-filter-to-kits-modified-since-the-last-sync), [UC-12](use-cases.md#uc-12-name-banks), [UC-16](use-cases.md#uc-16-delete-a-kit), [UC-24](use-cases.md#uc-24-set-a-samples-gain), [UC-34](use-cases.md#uc-34-write-kits-to-the-sd-card), [Q-04](use-cases.md#q-04-the-card-ends-up-exactly-matching-your-library).
+- **Rample manual:** [How to make your own sample kits](https://squarp.net/rample/manual/#Gssvcjr)
+  (kit folders "must be located on the root of the SD card"),
+  [microSD](https://squarp.net/rample/manual/#XX2d0DE/0), and the STORE and
+  SAVE SETTINGS entries of [Settings](https://squarp.net/rample/manual/#VhwOTqd)
+  ("Save current kit parameters & assignments on the SD card"). The manual
+  doesn't name the folder the device writes; `_save/` comes from the Squarp
+  forum ([`sd-card-layout.md`](sd-card-layout.md)). Relationship: **writes**.
+- **Canonical owner:** the store's database. The card is a generated copy:
+  "the card mirrors the store". The card path is an argument to each
+  write, remembered in the `sdCardPath` setting.
+- **Writers:** `startKitSync` (`syncService`):
+  1. **plan** (`planSync`): one load (`getSyncPlanData`), the expected card
+     contents (`planCardContents`), a read of each source header in
+     batches (`processSampleForSync`), the voice-1 warning, and mono
+     annotation;
+  2. **refuse** when samples can't be written, unless you chose to skip
+     them;
+  3. **write** every sample (`syncFileOperations.processAllFiles`): copy, or
+     convert to 16-bit 44.1 kHz with gain and any mono mix
+     (`formatConverter`), yielding after each file;
+  4. **bank files** (`writeBankRtfFiles`) and **removal** of what the store
+     no longer has (`findStaleCardEntries`, `removeCardEntries`), only
+     after a complete, uncancelled write;
+  5. **clear** the modified flag (`markAllKitsAsSyncedExcept`).
+
+  The summary (`generateSyncChangeSummary` → `generateChangeSummary`) runs
+  the same plan.
+- **Readers and copies:** the renderer's progress store
+  (`syncProgressStore`), the summary in `SyncUpdateDialog`, `useKitSync`'s
+  remembered path.
+- **Invariants:**
+  - After a complete write, every Rample entry on the card (kit folders
+    named like kits, files in them, bank name files) is exactly what the
+    store says; `_save/` and anything else is never touched (Q-04).
+  - Nothing is removed from the card after a cancelled or failed write.
+  - A file is never copied unconverted when its conversion fails.
+  - Names are compared ignoring case (FAT32).
+- **Disagreements on main:**
+  - The card's bank names are deleted by the first write after SD-card
+    setup (#564).
+  - `SyncProgress` is defined four times with different status values, and
+    `useSyncUpdate` casts `"complete"` to `"completed"` (#472).
+  - Without a card path the plan names files under `<store>/sync_output`
+    (`getDestinationPath`), and `handleSyncFailure` deletes that folder. A
+    write always has a card path, so only a summary without one uses it.
+  - The blanket clear at the end of a write would also clear a kit changed
+    while the write ran. The write panel is modal, so only menu actions
+    could do that today.
+  - The flag is per store, not per card: writing to a second card leaves
+    every kit "unmodified" for the first.
+
+## Scan and setup import
+
+- **Meaning:** reading kit folders in the store (or on a card, at setup)
+  into the database, without losing what you've set.
+- **Use cases:** [UC-01](use-cases.md#uc-01-set-up-from-an-sd-card), [UC-02](use-cases.md#uc-02-set-up-from-the-factory-archive), [UC-13](use-cases.md#uc-13-scan-a-kit-or-scan-all), [UC-27](use-cases.md#uc-27-name-voices), [Q-02](use-cases.md#q-02-your-changes-are-saved-completely-or-not-at-all).
+- **Rample manual:** the card layout in
+  [How to make your own sample kits](https://squarp.net/rample/manual/#Gssvcjr)
+  and [Multi–layers kits](https://squarp.net/rample/manual/#XX2FJ2ONj).
+  Relationship: **writes** in reverse (Romper reads what the Rample reads).
+- **Canonical owner:** the database. Scan merges into it; it never
+  rebuilds.
+- **Writers:**
+  - kit scan: `rescan-kit` → `scanService.rescanKit` → `mergeKitScan`
+    (`planKitScanMerge`, one transaction): existing rows keep slot, voice,
+    gain and source; missing files are reported; new files are added to
+    read-only kits only, in the lowest free slot, up to 12; empty `wav_*`
+    columns are filled; unnamed voices are named from the first file.
+  - bank scan: `scan-banks` (see [Bank](#bank)).
+  - setup: the wizard copies kit folders (`copy-dir`) or extracts the
+    factory archive, then `setup-import-kit` → `importSetupKit`: `addKitTx`
+    (read-only kit, four mono voices), `mergeKitScanTx` and
+    `markKitsAsSyncedTx`, in one transaction per kit.
+  - the editor's Scan on an editable kit only names voices, in the renderer
+    (`useKitScanning.handleInferVoiceNames`).
+- **Readers and copies:** `KitScanResult` drives the scan messages; Scan
+  All runs `scanBanks` then every kit (`useKitScan.scanAllKits`), then one
+  reload.
+- **Invariants:** a locked kit is untouched; a scan never deletes a row or
+  moves a sample; a user-set voice name and (after #537) a user-set stereo
+  link survive a scan.
+- **Disagreements on main:**
+  - Setup and scan don't link stereo voices (#537).
+  - Setup from a card doesn't copy bank name files (#564).
+  - `wav_*` columns are refreshed only when empty, so a file changed on disk
+    keeps its old format on screen (#576).
+  - `planKitScanMerge`'s comment still lists a "stereo flag" on rows.
+  - Voice names are inferred twice: in main (`inferMissingVoiceAliases`,
+    from database rows) and in the renderer (`handleInferVoiceNames`, from
+    `allKitSamples`, where slot 0 may be a `""` gap).
+  - Scan All reports a partial failure as success (#540).
+
+## Undo history
+
+- **Meaning:** Cmd/Ctrl+Z steps back through your sample and sequencer
+  edits in the open kit.
+- **Use cases:** [UC-06](use-cases.md#uc-06-change-the-local-store), [UC-26](use-cases.md#uc-26-undo-and-redo), [Q-02](use-cases.md#q-02-your-changes-are-saved-completely-or-not-at-all).
+- **Rample manual:** none.
+- **Canonical owner:** renderer state, `useUndoRedoState`, held by
+  `useUndoRedo(currentKitName)` inside `useGlobalKeyboardShortcuts` in
+  `KitsView`. Not persisted.
+- **Writers:** `addAction` after a successful edit (sample add, delete,
+  move, replace; `SEQUENCE_EDIT` from `useSequenceHistory`, merged by
+  `mergeSequenceEdit`). Sample actions keep full voice rows fetched from
+  main before the edit (`VoiceSnapshot`); sequencer actions keep the
+  renderer's own pattern state.
+- **Readers and copies:** undo and redo replay through
+  `useUndoActionHandlers` and `useRedoActionHandlers`
+  (`restore-kit-voices` for delete, replace and move, one transaction;
+  add and delete channels otherwise; `writeSequenceSnapshot` for the
+  sequencer), then dispatch `romper:refresh-samples` on `document`, which
+  `useSampleRefreshListener` turns into reloads of the selected kit.
+- **Invariants:** the stack belongs to one kit in one store; it clears when
+  that changes; an undo either restores everything it touched or nothing.
+- **Disagreements on main:**
+  - The stack clears on a kit name change only, so it survives a store
+    change (#568).
+  - `writeSequenceSnapshot` sends the pattern, conditions and slices as
+    three parallel saves; if one fails, the others have committed and the
+    kit is left half undone (#570).
+  - A sequencer edit main refuses still leaves its undo entry.
+  - Undoing a move between kits refreshes only the selected kit; the move
+    itself can't be reached from the UI (UC-22).
+  - Undo isn't offered for gain, voice names, links, BPM, level, sample mode
+    or slicer settings ("Promised, not built" in
+    [`use-cases.md`](use-cases.md)).
+
+## Playback and voice choke
+
+- **Meaning:** previewing samples on the computer, one sound per voice at a
+  time.
+- **Use cases:** [UC-29](use-cases.md#uc-29-play-a-sample), [UC-30](use-cases.md#uc-30-step-sequencer), [UC-32](use-cases.md#uc-32-sample-mode-level-and-mute), [UC-33](use-cases.md#uc-33-slicer), [Q-01](use-cases.md#q-01-romper-stays-responsive-as-your-library-grows).
+- **Rample manual:** [Trig a sample](https://squarp.net/rample/manual/#npDPEfP)
+  ("Each sample is always outputted on its dedicated audio output") and
+  [Layers](https://squarp.net/rample/manual/#e+hlH+Q). Relationship:
+  **mirrors**. The manual doesn't describe a choke; that voices are
+  monophonic is Romper's design, unverified on hardware.
+- **Canonical owner:** the audio layer: `voiceChoke.ts`'s `sounding` map
+  (`claimVoice`), keyed by voice number, and the one shared `AudioContext`
+  (`sharedAudioContext.ts`).
+- **Writers:** `SampleWaveform` (each preview, sequencer trigger and slice
+  audition calls `claimVoice`); `useKitPlayback` (play and stop triggers).
+- **Readers and copies:** `useKitPlayback` state (`playTriggers`,
+  `samplePlaying`, `activeSamples`, keyed by `slotKey(voice, slot)`, never
+  reset); `useKitStepSequencerLogic` (`isSeqPlaying`, `roundRobinIndexRef`,
+  the worker); the decoded buffers fetched by kit, voice and slot
+  (`get-sample-audio-buffer`).
+- **Invariants:** starting a sound on a voice stops every other sound on it
+  at the new one's start; audio comes from main by kit, voice and slot,
+  never by path.
+- **Disagreements on main:**
+  - Preview doesn't apply the voice's stereo setting (#569).
+  - `voiceChoke.ts` says "a Rample voice is monophonic" as fact, and that
+    `useKitPlayback` is keyed by file name and resets on refresh; neither
+    holds (#571).
+  - Sequencer play state and round-robin positions carry over to the next
+    kit (#565).
+
+## Use cases, qualities and issues
+
+- **Meaning:** what you can do with Romper (`UC-NN`), how it behaves while
+  you do it (`Q-NN`), and the open problems with each.
+- **Use cases:** [Q-07](use-cases.md#q-07-every-change-is-tested-before-it-reaches-you), [Q-08](use-cases.md#q-08-romper-supports-or-mirrors-the-ramples-features).
+- **Rample manual:** **documents**: Q-08 traces Rample features to the use
+  cases that cover them (#538).
+- **Canonical owner:** the register, [`use-cases.md`](use-cases.md), for
+  entries; GitHub issues for open work, labelled with an entry's ID, a kind
+  and a severity ([`BACKLOG.md`](../../BACKLOG.md)). Status is generated
+  from the issues (`npm run trace`), never written.
+- **Readers and copies:** `scripts/traceability.mjs` (the generated
+  `traceability.md` and the Lint job summary), test titles tagged
+  `[UC-NN]`, the website's testing page. The frozen findings register
+  (`RE-` IDs) is history, not a copy to update.
+- **Invariants:** every issue carries an entry's label; an entry is
+  partial while any issue with its label is open; a supported entry has a
+  test above unit level or a declared gap.
+- **Disagreements on main:** this document links an issue for each
+  disagreement it lists; the Rample side of Q-08 has no index yet (#538).
+
+## The IPC contract
+
+- **Meaning:** the boundary between the window (renderer) and the process
+  that owns the data and files (main). Not a user concept, but every other
+  concept crosses it.
+- **Use cases:** [UC-36](use-cases.md#uc-36-messages-and-error-containment), [Q-01](use-cases.md#q-01-romper-stays-responsive-as-your-library-grows), [Q-02](use-cases.md#q-02-your-changes-are-saved-completely-or-not-at-all), [Q-03](use-cases.md#q-03-romper-only-touches-what-you-point-it-at), [Q-07](use-cases.md#q-07-every-change-is-tested-before-it-reaches-you).
+- **Rample manual:** none.
+- **Canonical owner:** `ElectronAPI` in `shared/electronApi.ts`. The
+  preload implements it (`satisfies ElectronAPI`) and the renderer's global
+  uses it, so those two can't drift. Main isn't bound to it: handlers are
+  untyped `ipcMain.handle` calls in `ipcHandlers.ts`, `dbIpcHandlers.ts`
+  and `db/*IpcHandlers.ts`. `tests/unit/ipcChannelParity.test.ts` checks
+  only that channel names match.
+- **Writers:** whoever adds a feature (the four steps in the coding guide).
+  Removals are shared work: re-check callers on current `main` at merge
+  (#514 against #512).
+- **Invariants (target):** one result shape (`DbResult`) for every call
+  that can fail; a missing result is a failure; main validates every
+  argument; every write returns what changed, so the renderer can patch
+  instead of reload (architecture review steps 5 and 7).
+- **Disagreements on main** (details on #472):
+  - return shapes differ from the contract: `getKit` returns `data: null`
+    for a missing kit; `createKit`, `copyKit`, `deleteKit`,
+    `getKitDeleteSummary` (`validateKitSlot`), `listFilesInRoot`,
+    `validateLocalStore*` and `openExternal` throw instead of returning a
+    failure; `ensureDir`, `showItemInFolder` and `cancelKitSync` are typed
+    `unknown`; `moveSampleBetweenKits` accepts `mode: "overwrite"` and
+    ignores it; `setSetting` is the one write with no result;
+  - several result families (`DbResult`, `{ isValid }`, `{ exists }`,
+    `{ writable }`, `{ sufficient }`, `{ granted }`, `{ removed }`, raw
+    values, `void`), so callers each decide what failure looks like;
+  - the preload does work of its own: `readSettings` re-applies
+    `ROMPER_LOCAL_PATH`; the archive and sync progress listeners are
+    replaced, never removed; `electronFileAPI` and `romperEnv` sit outside
+    the contract;
+  - one intent, several channels: six kit-field channels reach `updateKit`;
+    bank names come from `get-all-banks` and from every kit row; the local
+    store is validated by three channels; the wizard picks a card folder
+    with the store's folder picker (`select-local-store-path`);
+  - `delete-sample-from-slot-without-reindexing` has no renderer caller.
+
+## Rample manual coverage
+
+A first pass, from the manual as fetched on 2026-10-03 (the page shows no
+firmware version). #538's skill will regenerate this list from the manual
+and keep it current; it should use the same headings as keys.
+
+| Manual section | Anchor | Romper concepts | Relationship |
+|---|---|---|---|
+| Select a kit | `#igGTWqk` | [Kit](#kit), [Bank](#bank) | writes |
+| What's inside a kit? | `#YanSdon` | [Voice](#voice), [Sample](#sample) | writes |
+| Trig a sample | `#npDPEfP` | [Playback](#playback-and-voice-choke), the sequencer ([Kit](#kit)) | mirrors |
+| Exit | `#XX5FH9j5x` | none | none |
+| Assign a CV input | `#XX6/ehtPx` | none | none |
+| Mute groups | `#qdSsFkF` | none (Romper's mute is a preview mute) | none |
+| Layers | `#e+hlH+Q` | [Voice](#voice) sample mode | mirrors (different modes) |
+| microSD | `#XX2d0DE/0` | [The card](#the-card-and-a-write) | none |
+| Audio effects & parameters workflow | `#jonfAQR` | none | none |
+| Pitch effect | `#RSGQSY7` | none | none |
+| Bits effect | `#WHS81iW` | none | none |
+| Filter effect | `#kmNDj7V` | none | none |
+| Freeze effect | `#j/NGXhE` | none | none |
+| Levels/Drive effect | `#zPtALyJ` | [Voice](#voice) level (preview only) | mirrors, loosely |
+| Compressor effect | `#XX9bvyW9o` | none | none |
+| Tape effect | `#XX0VlcFTU` | none | none |
+| Advanced parameters | `#C0ft3/t` | [Kit](#kit) slicer (start point and length only) | mirrors |
+| Momentary effects | `#XX3QtZz4q` | none | none |
+| Punch effects | `#X8umaeb` | none | none |
+| Note about start point & sample length | `#XX9CMqGW9` | [Kit](#kit) slicer division | mirrors |
+| MIDI Keyboard Split: Chromatic Mode | `#XX6RMicNl` | none | none |
+| MIDI Keyboard Split: Layers Mode | `#mNcX51v` | none | none |
+| How to make your own sample kits (incl. STEREO SUPPORT) | `#Gssvcjr` | [Kit](#kit), [Voice](#voice), [Stereo](#stereo), [Sample](#sample), [The card](#the-card-and-a-write), [Scan](#scan-and-setup-import) | writes |
+| Multi–layers kits | `#XX2FJ2ONj` | [Voice](#voice), [Sample](#sample), [Stereo](#stereo) | writes; mirrors (layer modes) |
+| Ramplaid app | `#ibD6Mq9` | none (a third-party tool that does what Romper does) | none |
+| Settings (SLICER, LAYER, STORE, SAVE SETTINGS) | `#VhwOTqd` | [Kit](#kit) slicer division, [Voice](#voice) sample mode, [The card](#the-card-and-a-write) (`_save/`) | mirrors (SLICER, LAYER); none for the rest |
+| Midi implementation chart | `#Zj8++7M` | none | none |
+
+Anchors are fragments of `https://squarp.net/rample/manual/`.
+
+**Sections no concept covers** (candidate features for #538): mute groups;
+CV assignment and V/oct; the effects (pitch, bits, filter, freeze,
+levels/drive, compressor, tape), momentary and punch effects; the
+advanced parameters other than start and length (env, run mode); MIDI
+keyboard splits and the MIDI chart; the device settings other than SLICER
+and LAYER (MIDI channel and notes, velocity, bend, program change, CV
+range, pitch quantise, assign scope, anticlic, VU meter, flip, autosave);
+and per-kit STORE data. Romper never reads `_save/`, so what the device
+stores for a kit (effects, layer modes, assignments) is invisible to it and
+applies to whatever samples the slot holds next
+([`sd-card-layout.md`](sd-card-layout.md)).
+
+**Romper concepts with no manual section:** bank name files, the step
+sequencer, BPM, trigger conditions, voice choke, per-sample gain, kit
+alias, editable, favourites and the modified flag.
+
+## Target ownership
+
+Which owners to change, in order. Each step is one or more PRs, ties into
+the plan in [`architecture-review.md`](architecture-review.md), and closes
+the issues it names.
+
+1. **Main is the guard for every rule** (small, now). Main refuses what the
+   renderer refuses: read-only kits (#572) and stereo links (#541). Kit and
+   bank names have one pattern each, in `shared/` (#573). These are
+   preconditions for everything below: once main enforces the rules, the
+   renderer's copies can be dropped without losing a check.
+2. **One owner per stored concept in main** (small, alongside 1).
+   - Bank names: `banks.artist` only. The store's RTF files become output,
+     like the card's; `scanBanks` reads them only at setup and import
+     (#564, #567).
+   - Stereo: `voices.stereo_mode` plus where it came from (#537).
+   - Modified: one written definition, set in one place per intent
+     (#566).
+   - Settings: one function for the store path and its override.
+3. **Typed channel map, one result shape** (architecture review step 7,
+   #472). `handle(name, impl)` in main against `ElectronAPI`; every
+   fallible call returns `DbResult`; a missing result is a failure; the
+   mock `satisfies ElectronAPI`. This removes the class of #543 and #570
+   instead of fixing each caller.
+4. **Edits return the changed kit** (step 5, #452). Each intent-level
+   operation returns the kit (with its bank, voices and samples) it changed,
+   in the transaction that changed it.
+5. **One renderer kits store** (step 8). A `useSyncExternalStore` store
+   holding kits by name, voices by kit and number, samples by kit, voice
+   and slot, and banks by letter, patched from step 4's results. It
+   replaces `kits`, `allKitSamples`, `selectedKitSamples`, `sampleMetadata`,
+   `bankNames`, the two `useBpm` copies and the per-hook mirrors; per-kit
+   editor state (mutes, play state, undo) is keyed by store and kit and
+   resets with them (#565, #568, #575). `getKits` runs only at startup,
+   after scan and write, and when kits are created, copied or deleted.
+6. **Undo as transactional intents** (step 9). Undo operations go through
+   main as one call each (`restore-kit-voices` for samples, one call for a
+   sequencer snapshot) and the stack lives with the kits store, keyed by
+   store and kit (#568, #570).
+7. **Preview mirrors the card** (any time after 2). Playback reads the
+   voice's stereo setting and the same format rules the write uses, from
+   one module in `shared/` (#569, #574, #576).
+
+## Issues this map raised
+
+Filed or commented on 2026-10-03 against `origin/main` 3612a5be. The
+issues are the record; this list is a snapshot.
+
+| Issue | Concept | Summary |
+|---|---|---|
+| #564 | Bank, card | SD-card setup leaves bank names behind; the first write deletes them from the card |
+| #565 | Kit, voice | Stepping to another kit carries over BPM, mutes and sequencer state |
+| #566 | Kit | "Modified since last write" has no single meaning |
+| #567 | Bank | Bank names have three sources |
+| #568 | Local store, undo | Changing the store keeps the open kit and its undo stack |
+| #569 | Stereo, playback | Preview plays stereo on an unlinked voice; the card gets mono |
+| #570 | Saves, undo | Remaining edits that fail without telling you; half-done sequencer undo |
+| #571 | Rample claims | Code comments state Rample behaviour the manual doesn't |
+| #572 | Kit | Main enforces `editable` only for stereo links |
+| #573 | Kit, bank | Kit names and bank letters are checked by different patterns |
+| #574 | Stereo, card | A linked voice with mono layers is written mixed, without a warning |
+| #575 | Sample | The slicer waveform can show a slot's old sample |
+| #576 | Sample, card | Format badge, write summary and the 50 ms minimum disagree with the write |
+| #472, #452, #538, #543, #554 | IPC, reloads, parity, saves | Comments with the siblings found here |

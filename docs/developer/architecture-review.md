@@ -288,6 +288,10 @@ Steps 1–3 are RE-26, RE-27 and RE-28 as already researched; the persistent
 connection makes them straightforward. Steps 4 and 6 are small,
 self-contained wins. Step 5 is needed before the store (8) and undo (9).
 
+[`domain-model.md`](domain-model.md) maps each concept's owner and copies,
+and its Target ownership section orders steps 5, 7 and 8 with the owner
+changes that go before them.
+
 Quick fixes that can go in at any time:
 - the logging item from the register's Low list;
 - RE-21 (settings loading and atomic writes);

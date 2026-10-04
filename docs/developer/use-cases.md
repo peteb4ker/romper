@@ -11,6 +11,9 @@ What Romper supports, from the user's side, and how each use case is built.
 Each entry has:
 
 - a description with a link to the manual;
+- a **Concepts:** line linking the sections of
+  [`domain-model.md`](domain-model.md) the entry reads or changes, each
+  with its owner, copies and Rample manual section;
 - entry points (renderer component or hook, IPC channels, main service),
   checked against the code on 2026-10-01;
 - `**Status:** not built`, only when the docs or the code suggest it but no
@@ -70,6 +73,8 @@ card into a new local store and imports them. A voice with more than 12
 samples keeps the first 12, and the wizard names the files it left out. See
 [Choosing a Local Store](../manual/getting-started.md#choosing-a-local-store).
 
+**Concepts:** [Local store](domain-model.md#local-store-library), [Scan and setup import](domain-model.md#scan-and-setup-import), [Bank](domain-model.md#bank), [Stereo](domain-model.md#stereo).
+
 - **Renderer:** `app/renderer/views/KitsView.tsx` →
   `app/renderer/components/hooks/kit-management/useLocalStoreSetupFlow.ts` →
   `app/renderer/components/LocalStoreWizardModal.tsx`, `app/renderer/components/LocalStoreWizardUI.tsx`;
@@ -98,6 +103,8 @@ it. See
 [Choosing a Local Store](../manual/getting-started.md#choosing-a-local-store)
 and [Factory Samples](../manual/syncing.md#factory-samples).
 
+**Concepts:** [Local store](domain-model.md#local-store-library), [Scan and setup import](domain-model.md#scan-and-setup-import), [Bank](domain-model.md#bank).
+
 - **Renderer:** the UC-01 wizard, plus
   `app/renderer/components/hooks/wizard/useLocalStoreWizardFileOps.ts` (`extractSquarpArchive`, three
   attempts when main marks the failure `retryable`, otherwise main's reason
@@ -115,6 +122,8 @@ browser on bank A with an Add Kit card. See
 [Choosing a Local Store](../manual/getting-started.md#choosing-a-local-store)
 and [Creating Kits](../manual/kit-browser.md#creating-kits).
 
+**Concepts:** [Local store](domain-model.md#local-store-library), [Settings](domain-model.md#settings).
+
 - **Renderer:** the UC-01 wizard with the blank source;
   `app/renderer/components/wizard/WizardPostInitGuidance.tsx`; then `app/renderer/components/KitBrowser.tsx` (UC-14).
 - **IPC:** as UC-01, without `copy-dir` and `check-disk-space`.
@@ -125,6 +134,8 @@ and [Creating Kits](../manual/kit-browser.md#creating-kits).
 On first launch, **Choose Existing Store** in the wizard points Romper at a
 folder that already holds a local store (one containing `.romperdb`). See
 [Recovering an Existing Store](../manual/getting-started.md#recovering-an-existing-store).
+
+**Concepts:** [Local store](domain-model.md#local-store-library), [Settings](domain-model.md#settings).
 
 - **Renderer:** `app/renderer/components/LocalStoreWizardUI.tsx` (`choose-existing-store-btn`,
   `handleChooseExistingStore`); `app/renderer/utils/SettingsContext.tsx`
@@ -141,6 +152,8 @@ When the saved local store is missing or no longer valid, Romper asks for
 another. See
 [Troubleshooting Setup](../manual/getting-started.md#troubleshooting-setup)
 and [Validating Your Store](../manual/kit-browser.md#validating-your-store).
+
+**Concepts:** [Local store](domain-model.md#local-store-library), [Settings](domain-model.md#settings).
 
 - **Main, at startup:** `electron/main/mainProcessSetup.ts`
   (`validateSavedLocalStore`), which reports an invalid saved store but keeps
@@ -161,6 +174,8 @@ File > **Change Local Store...** or Settings > Advanced > **Change** switches
 to another local store, and the browser reloads in place. A folder that isn't
 a local store is refused with the reason. See
 [Switching to Another Local Store](../manual/getting-started.md#switching-to-another-local-store).
+
+**Concepts:** [Local store](domain-model.md#local-store-library), [Settings](domain-model.md#settings), [Undo history](domain-model.md#undo-history).
 
 - **Renderer:** `app/renderer/components/hooks/shared/useMenuEvents.ts`
   (`menu-change-local-store-directory`) →
@@ -186,6 +201,8 @@ The keys wait while a dialog is open.
 See [Navigating Banks](../manual/kit-browser.md#navigating-banks) and
 [Keyboard Navigation](../manual/kit-browser.md#keyboard-navigation).
 
+**Concepts:** [Bank](domain-model.md#bank), [Kit](domain-model.md#kit).
+
 - **Renderer:** `app/renderer/components/KitBrowserContainer.tsx` → `app/renderer/components/KitBrowser.tsx` →
   `app/renderer/components/KitBankNav.tsx`, `app/renderer/components/KitGrid.tsx` (rows from `app/renderer/components/utils/kitGridRows.ts`),
   `app/renderer/components/BankHeader.tsx`; `app/renderer/components/hooks/kit-management/useKitBrowser.ts`,
@@ -201,6 +218,8 @@ names, a kit type icon, a stereo icon, a favourite star, a lock icon on
 read-only kits and an amber border on kits changed since the last write.
 See [Kit Cards](../manual/kit-browser.md#kit-cards).
 
+**Concepts:** [Kit](domain-model.md#kit), [Voice](domain-model.md#voice), [Sample](domain-model.md#sample).
+
 - **Renderer:** `app/renderer/components/KitGridCard.tsx`, `app/renderer/components/KitGridItem.tsx`, `app/renderer/components/KitVoiceStrip.tsx`,
   `app/renderer/components/shared/KitIconRenderer.tsx`, `app/renderer/components/shared/kitItemUtils.ts`;
   `app/renderer/components/hooks/kit-management/useKitItem.ts`.
@@ -212,6 +231,8 @@ The search box filters the grid to kits whose name, alias, bank artist,
 voice names or sample file names contain the text (two characters or more),
 and highlights the matches. See
 [Search](../manual/kit-browser.md#search).
+
+**Concepts:** [Kit](domain-model.md#kit), [Bank](domain-model.md#bank), [Voice](domain-model.md#voice), [Sample](domain-model.md#sample).
 
 - **Renderer:** `app/renderer/components/KitBrowserHeader.tsx` → `app/renderer/components/SearchInput.tsx`;
   `app/renderer/components/hooks/kit-management/useKitSearch.ts`;
@@ -225,6 +246,8 @@ The star on a kit card or in the kit editor's header, or `;` (the
 focused kit in the kit browser, the open kit in the kit editor) marks a
 favorite; the Favorites filter shows only those. See
 [Favorites Filter](../manual/kit-browser.md#favorites-filter).
+
+**Concepts:** [Kit](domain-model.md#kit).
 
 - **Renderer:** `app/renderer/components/KitGridItem.tsx` →
   `app/renderer/components/hooks/kit-management/useKitFilters.ts` (`handleToggleFavorite`,
@@ -241,6 +264,8 @@ favorite; the Favorites filter shows only those. See
 
 The Modified filter shows the kits changed since they were last written to
 the card. See [Modified Filter](../manual/kit-browser.md#modified-filter).
+
+**Concepts:** [Kit](domain-model.md#kit), [The card and a write](domain-model.md#the-card-and-a-write).
 
 - **Renderer:** `app/renderer/components/hooks/kit-management/useKitFilters.ts` (`handleToggleModifiedFilter`);
   `app/renderer/components/KitGridItem.tsx` (amber border).
@@ -260,6 +285,8 @@ Each bank header has an editable artist name. Names are stored in the local
 store and written to the card as `<letter> - <name>.rtf` files. See
 [Editing Bank Names](../manual/kit-browser.md#editing-bank-names).
 
+**Concepts:** [Bank](domain-model.md#bank), [The card and a write](domain-model.md#the-card-and-a-write).
+
 - **Renderer:** `app/renderer/components/BankHeader.tsx` →
   `app/renderer/components/hooks/kit-management/useKitBankNavigation.ts` (`handleBankNameChange`).
 - **IPC:** `update-bank` (`electron/main/dbIpcHandlers.ts`), `get-all-banks`
@@ -275,6 +302,8 @@ store and written to the card as `<letter> - <name>.rtf` files. See
 from its folder, keeping edits, and names unnamed voices; in an editable
 kit it only names voices. File > **Scan All** scans the bank names and every
 kit. See [Scanning Your Library](../manual/kit-browser.md#scanning-your-library).
+
+**Concepts:** [Scan and setup import](domain-model.md#scan-and-setup-import), [Bank](domain-model.md#bank), [Stereo](domain-model.md#stereo).
 
 - **Renderer:** `app/renderer/components/KitHeader.tsx` and `app/renderer/components/hooks/kit-management/useKitEditorKeyboardNav.ts` →
   `app/renderer/components/hooks/kit-management/useKitScanning.ts` (`handleScanKit`);
@@ -295,6 +324,8 @@ the bank's first free slot. An empty bank opens from its dimmed letter in
 the bank bar, and an empty library shows bank A with an Add Kit card. See
 [Creating Kits](../manual/kit-browser.md#creating-kits).
 
+**Concepts:** [Kit](domain-model.md#kit).
+
 - **Renderer:** `app/renderer/components/AddKitCard.tsx` (placed by
   `app/renderer/components/KitGrid.tsx`, test ID `add-kit-<bank>`), `app/renderer/components/KitBankNav.tsx`;
   `app/renderer/components/hooks/kit-management/useKitCreation.ts` (`handleCreateKitInBank`);
@@ -311,6 +342,8 @@ another slot by typing the target (for example `B5`) in the kit card's
 duplicate popover. See
 [Duplicating Kits](../manual/kit-browser.md#duplicating-kits).
 
+**Concepts:** [Kit](domain-model.md#kit), [Voice](domain-model.md#voice), [Sample](domain-model.md#sample).
+
 - **Renderer:** the copy button on the kit card (`app/renderer/components/KitGridItem.tsx`) and
   `app/renderer/components/shared/KitItemActionPopovers.tsx` (`DuplicatePopoverContent`);
   `app/renderer/components/hooks/kit-management/useKitItemActions.ts`,
@@ -325,6 +358,8 @@ Delete an editable kit from its card, after a popover that says how many
 samples it holds. The next write removes it from the card. The manual
 doesn't describe this yet; the only mention is in
 [The Sync Process](../manual/syncing.md#the-sync-process).
+
+**Concepts:** [Kit](domain-model.md#kit), [The card and a write](domain-model.md#the-card-and-a-write).
 
 - **Renderer:** the trash button on the kit card (`app/renderer/components/KitGridItem.tsx`, test ID
   `delete-kit-button`, shown only on editable kits) and
@@ -342,6 +377,8 @@ editing controls (drop, delete, gain, voice names). The kit's display name
 [Opening a Kit](../manual/kit-editor.md#opening-a-kit) and
 [Kit Status Indicators](../manual/kit-browser.md#kit-status-indicators).
 
+**Concepts:** [Kit](domain-model.md#kit).
+
 - **Renderer:** `app/renderer/components/KitHeader.tsx` (editable switch,
   alias input); `app/renderer/components/hooks/kit-management/useKitEditorLogic.ts`;
   `app/renderer/components/hooks/kit-management/useKitDataManager.ts` (`updateKitAlias`,
@@ -354,6 +391,8 @@ editing controls (drop, delete, gain, voice names). The kit's display name
 In the kit editor, the header's arrow buttons and the `,` and `.` keys open
 the previous or next kit in slot order. See
 [Navigating Between Kits](../manual/kit-editor.md#navigating-between-kits).
+
+**Concepts:** [Kit](domain-model.md#kit).
 
 - **Renderer:** `app/renderer/components/KitHeader.tsx` (prev and next buttons);
   `app/renderer/components/hooks/kit-management/useKitEditorKeyboardNav.ts` (`,` and `.`);
@@ -368,6 +407,8 @@ the previous or next kit in slot order. See
 Drag WAV files from Finder or Explorer onto a voice in an editable kit. Each
 file is checked and added to the voice's next free slot, up to 12. See
 [Drag and Drop](../manual/kit-editor.md#drag-and-drop).
+
+**Concepts:** [Sample](domain-model.md#sample), [Stereo](domain-model.md#stereo).
 
 - **Renderer:** `app/renderer/components/hooks/shared/useDragAndDrop.ts`,
   `app/renderer/components/hooks/shared/useExternalDragHandlers.ts` (`handleDragOver`, `handleDrop`),
@@ -392,6 +433,8 @@ caller passes `replaceExisting: false`, so a drop onto an occupied slot
 appends instead (UC-19). No manual page describes replacing; the
 "Confirm destructive actions" preference mentions it.
 
+**Concepts:** [Sample](domain-model.md#sample).
+
 - **Renderer:** `app/renderer/components/hooks/sample-management/useSampleManagementOperations.ts` (`handleSampleReplace`),
   reachable only through `useSampleProcessing.executeAssignment` with
   `replaceExisting: true`, which nothing passes.
@@ -409,6 +452,8 @@ Drag a sample to another slot or voice in the same kit; the samples after
 it shift to make room. The manual doesn't describe this; the website and
 the FAQ mention reordering
 ([Can I undo changes?](../faq.md#can-i-undo-changes)).
+
+**Concepts:** [Sample](domain-model.md#sample).
 
 - **Renderer:** `app/renderer/components/hooks/shared/useInternalDragHandlers.ts`
   (`handleSampleDrop`, drag type `application/x-romper-sample`);
@@ -428,6 +473,8 @@ Move a sample from one kit to another. Main implements it, but the UI never
 passes a target kit: only one kit is open at a time and kit cards aren't
 drop targets. No user doc promises it.
 
+**Concepts:** [Sample](domain-model.md#sample).
+
 - **Renderer:** the cross-kit branch of `app/renderer/components/hooks/sample-management/useSampleManagementMoveOps.ts`,
   unreachable from `app/renderer/components/hooks/shared/useInternalDragHandlers.ts`.
 - **IPC:** `move-sample-between-kits`.
@@ -442,6 +489,8 @@ Delete a sample with its trash button in an editable kit; the samples after
 it move up. While "Confirm destructive actions" is on (the default), Romper
 asks first. Undo puts it back. See
 [Sample Slots](../manual/kit-editor.md#sample-slots).
+
+**Concepts:** [Sample](domain-model.md#sample), [Settings](domain-model.md#settings).
 
 - **Renderer:** `app/renderer/components/hooks/voice-panels/useVoicePanelButtons.tsx` →
   `app/renderer/components/SampleDeleteButton.tsx` (trash button; asks first
@@ -461,6 +510,8 @@ Each sample in an editable kit has a gain knob, from -24 to +12 dB. Gain is
 applied when the kit is written to the card. See
 [Gain Control](../manual/kit-editor.md#gain-control).
 
+**Concepts:** [Sample](domain-model.md#sample), [The card and a write](domain-model.md#the-card-and-a-write).
+
 - **Renderer:** `app/renderer/components/GainKnob.tsx`, rendered by
   `app/renderer/components/hooks/voice-panels/useVoicePanelSlotRendering.tsx`;
   saved by `app/renderer/components/KitVoicePanels.tsx` (`handleGainChange`)
@@ -475,6 +526,8 @@ applied when the kit is written to the card. See
 
 Right-click a sample to show its source file in Finder or Explorer. Nothing
 in the UI or the manual mentions it.
+
+**Concepts:** [Sample](domain-model.md#sample).
 
 - **Renderer:** `app/renderer/components/hooks/voice-panels/useVoicePanelSlotRendering.tsx`
   (context menu) → `app/renderer/components/hooks/sample-management/useSampleActions.ts`
@@ -492,6 +545,8 @@ undo sample adds, deletes and moves and sequencer edits in the open kit. A
 focused text field keeps its own undo. See
 [Keyboard Shortcuts](../manual/keyboard-shortcuts.md#kit-details) and
 [Can I undo changes?](../faq.md#can-i-undo-changes).
+
+**Concepts:** [Undo history](domain-model.md#undo-history).
 
 - **Renderer:** `app/renderer/components/hooks/shared/useGlobalKeyboardShortcuts.ts`;
   `app/renderer/components/hooks/shared/useUndoRedo.ts`, `app/renderer/components/hooks/shared/useUndoRedoState.ts`, `app/renderer/components/hooks/shared/useUndoActionHandlers.ts`,
@@ -515,6 +570,8 @@ In an editable kit, the pencil in a voice header renames the voice. Setup
 and scans name unnamed voices from their file names and keep names set by hand. See
 [Voice Names and Kit Type](../manual/kit-editor.md#voice-names-and-kit-type).
 
+**Concepts:** [Voice](domain-model.md#voice), [Scan and setup import](domain-model.md#scan-and-setup-import).
+
 - **Renderer:** `app/renderer/components/hooks/voice-panels/useVoiceNameEditor.ts`,
   `app/renderer/components/hooks/voice-panels/useVoicePanelUI.tsx` (`renderVoiceName`), `app/renderer/components/hooks/voice-panels/useVoiceAlias.ts`;
   `app/renderer/components/KitVoicePanel.tsx`.
@@ -528,6 +585,8 @@ voice's files play and are written in stereo, and the right voice is hidden.
 The Stereo badge unlinks them. On an unlinked voice, stereo files are mixed
 to mono when written. See
 [Stereo and Mono Handling](../manual/kit-editor.md#stereo-and-mono-handling).
+
+**Concepts:** [Voice](domain-model.md#voice), [Stereo](domain-model.md#stereo).
 
 - **Renderer:** `app/renderer/components/KitVoicePanels.tsx`
   (`handleVoiceLink`, `handleVoiceUnlink`, test ID `link-button-N-M`);
@@ -549,6 +608,8 @@ Starting a sample stops whatever else is playing on that voice (voice
 choke). See
 [Single Sample Playback](../manual/kit-editor.md#single-sample-playback).
 
+**Concepts:** [Playback and voice choke](domain-model.md#playback-and-voice-choke), [Sample](domain-model.md#sample), [Stereo](domain-model.md#stereo).
+
 - **Renderer:** `app/renderer/components/hooks/voice-panels/useVoicePanelButtons.tsx`
   (`renderPlayButton`); `app/renderer/components/hooks/kit-management/useKitPlayback.ts`;
   `app/renderer/components/voiceChoke.ts` (`claimVoice`);
@@ -562,6 +623,8 @@ choke). See
 A 16-step grid per voice previews a kit's pattern at a set BPM. Patterns and
 BPM are saved with the kit. See
 [Step Sequencer](../manual/step-sequencer.md#grid-basics).
+
+**Concepts:** [Kit](domain-model.md#kit), [Playback and voice choke](domain-model.md#playback-and-voice-choke).
 
 - **Renderer:** `app/renderer/components/KitStepSequencer.tsx`,
   `app/renderer/components/StepSequencerGrid.tsx`, `app/renderer/components/StepSequencerControls.tsx`,
@@ -580,6 +643,8 @@ Right-click a step, or press `C` on the focused step, to give it an A:B
 condition, so it fires only on some passes of the loop. See
 [Trigger Conditions](../manual/step-sequencer.md#trigger-conditions-step-logic).
 
+**Concepts:** [Kit](domain-model.md#kit).
+
 - **Renderer:** `app/renderer/components/StepSequencerGrid.tsx` (`ConditionPopover`,
   `handleStepContextMenu`); `app/renderer/components/ConditionPips.tsx`;
   `app/renderer/components/hooks/shared/stepPatternConstants.ts` (`shouldTrigger`),
@@ -594,6 +659,8 @@ Each voice in the sequencer has a sample mode (first, random or round-robin
 across its samples), a level, and a mute that lasts for the session. See
 [Sample Selection Mode](../manual/step-sequencer.md#sample-selection-mode)
 and [Voice Volume and Mute](../manual/step-sequencer.md#voice-volume-and-mute).
+
+**Concepts:** [Voice](domain-model.md#voice), [Playback and voice choke](domain-model.md#playback-and-voice-choke).
 
 - **Renderer:** `app/renderer/components/KitStepSequencer.tsx` (`handleVolumeChange`,
   `handleSampleModeChange`, `handleMuteToggle`), saving through
@@ -610,6 +677,8 @@ The slicer cuts a voice's sample into equal slices and plays a slice per
 step, with rolls ("happy accidents") to generate patterns. See
 [Slicer](../manual/step-sequencer.md#slicer) and the spec,
 [`step-sequencer-slicer.md`](step-sequencer-slicer.md).
+
+**Concepts:** [Kit](domain-model.md#kit), [Voice](domain-model.md#voice), [Sample](domain-model.md#sample), [Playback and voice choke](domain-model.md#playback-and-voice-choke).
 
 - **Renderer:** `app/renderer/components/hooks/kit-management/useSlicerEditor.ts`
   (`useVoiceSliceSettings`);
@@ -636,6 +705,8 @@ Rample's own `_save` folder alone. Cancel stops between files. See
 [Syncing](../manual/syncing.md) and the spec,
 [`sd-card-layout.md`](sd-card-layout.md).
 
+**Concepts:** [The card and a write](domain-model.md#the-card-and-a-write), [Sample](domain-model.md#sample), [Stereo](domain-model.md#stereo), [Bank](domain-model.md#bank), [Settings](domain-model.md#settings).
+
 - **Renderer:** `app/renderer/components/KitBrowserHeader.tsx` (test ID
   `sync-to-sd-card`); `app/renderer/components/hooks/kit-management/useKitSync.ts`;
   `app/renderer/components/hooks/shared/useSyncUpdate.ts`, `app/renderer/components/hooks/shared/syncProgressStore.ts`;
@@ -660,6 +731,8 @@ dark) and Advanced (the local store; see UC-06). The status bar also cycles
 the theme. The manual has no Preferences section; see
 [The Main Interface](../manual/getting-started.md#the-main-interface).
 
+**Concepts:** [Settings](domain-model.md#settings).
+
 - **Renderer:** `app/renderer/components/dialogs/PreferencesDialog.tsx`;
   `app/renderer/components/preferences/SampleManagementTab.tsx`, `app/renderer/components/preferences/AppearanceTab.tsx`,
   `app/renderer/components/preferences/AdvancedTab.tsx`; `app/renderer/utils/SettingsContext.tsx`;
@@ -680,6 +753,8 @@ covers this; [Troubleshooting](../troubleshooting.md) explains the
 background-failure message, and the requirements are in
 [`product-requirements.md`](product-requirements.md).
 
+**Concepts:** [The IPC contract](domain-model.md#the-ipc-contract).
+
 - **Renderer:** `app/renderer/components/hooks/shared/useMessageDisplay.ts`, `app/renderer/components/hooks/shared/useMessageApi.ts`;
   `app/renderer/components/MessageDisplay.tsx`, `app/renderer/components/MessageDisplayContext.tsx`;
   `app/renderer/components/ErrorBoundary.tsx` (mounted in `app/renderer/main.tsx` and
@@ -696,6 +771,8 @@ at launch and weekly. `ROMPER_ENABLE_DEVTOOLS=1` turns on DevTools in an
 installed build. See
 [Troubleshooting](../troubleshooting.md#inspecting-romper-with-developer-tools)
 and [Installation](../manual/getting-started.md#installation).
+
+**Concepts:** [Settings](domain-model.md#settings).
 
 - **Renderer:** `app/renderer/components/dialogs/AboutDialog.tsx`;
   `app/renderer/components/StatusBar.tsx` (manual links); `app/renderer/main.tsx`
@@ -720,6 +797,8 @@ everyday action has a work budget (`tests/perf/budgets.ts`) that a change
 can't exceed; the plan to bring the budgets down is in
 [`architecture-review.md`](architecture-review.md).
 
+**Concepts:** [Kit](domain-model.md#kit), [Sample](domain-model.md#sample), [Playback and voice choke](domain-model.md#playback-and-voice-choke), [The IPC contract](domain-model.md#the-ipc-contract).
+
 
 ### Q-02 Your changes are saved completely, or not at all
 
@@ -727,11 +806,15 @@ An edit, a scan, an undo or an upgrade either finishes or leaves your
 library as it was; it never leaves a kit half-changed or a sample without
 its settings.
 
+**Concepts:** [The IPC contract](domain-model.md#the-ipc-contract), [Undo history](domain-model.md#undo-history), [Scan and setup import](domain-model.md#scan-and-setup-import).
+
 
 ### Q-03 Romper only touches what you point it at
 
 Romper reads your samples and writes only to your local store and the card
 you choose. Its interface can't reach any other files or folders.
+
+**Concepts:** [Local store](domain-model.md#local-store-library), [Settings](domain-model.md#settings), [The IPC contract](domain-model.md#the-ipc-contract).
 
 
 ### Q-04 The card ends up exactly matching your library
@@ -741,11 +824,15 @@ should be, converted where the Rample needs it, and the Rample's own
 settings folder is untouched. The full-pipeline validation checks this
 byte for byte before every release.
 
+**Concepts:** [The card and a write](domain-model.md#the-card-and-a-write), [Stereo](domain-model.md#stereo), [Sample](domain-model.md#sample).
+
 
 ### Q-05 Releases are signed and install cleanly everywhere Romper runs
 
 Every release is signed, so your operating system trusts it, is built for
 each supported platform, and is made from up-to-date, secure parts.
+
+**Concepts:** none in the [domain model](domain-model.md); this quality is about how Romper is built and shipped.
 
 
 ### Q-06 Romper works with a keyboard and assistive technology
@@ -753,11 +840,15 @@ each supported platform, and is made from up-to-date, secure parts.
 Everything you can do with a mouse you can do with a keyboard, and screen
 readers can name every control.
 
+**Concepts:** none in the [domain model](domain-model.md); this quality is about the interface, not stored data.
+
 
 ### Q-07 Every change is tested before it reaches you
 
 A change is merged only after its tests pass on every platform, and those
 tests check what you'd notice, not just the code's internals.
+
+**Concepts:** [Use cases, qualities and issues](domain-model.md#use-cases-qualities-and-issues), [The IPC contract](domain-model.md#the-ipc-contract).
 
 ### Q-08 Romper supports or mirrors the Rample's features
 
@@ -767,6 +858,8 @@ computer (like the step sequencer's slicer), or documents. Each Rample
 feature is traced to the use cases that cover it, from the
 [Rample manual](https://squarp.net/rample/manual/); features Romper doesn't
 touch are candidates for the backlog.
+
+**Concepts:** [Use cases, qualities and issues](domain-model.md#use-cases-qualities-and-issues), [Rample manual coverage](domain-model.md#rample-manual-coverage).
 
 
 ## Promised, not built

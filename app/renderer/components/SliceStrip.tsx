@@ -179,7 +179,7 @@ function useWaveformPeaks(
     }
     const key = `${kitName}:${voiceNumber}:${slotIndex}`;
     const cached = cacheRef.current.get(key);
-    if (cached && cached.source === sampleSource) {
+    if (sampleSource != null && cached?.source === sampleSource) {
       setPeaks(cached.peaks);
       return;
     }

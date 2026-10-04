@@ -613,6 +613,36 @@ describe("[UC-33] [UC-36] a slicer setting that isn't saved says so (#511)", () 
     expect(onMessage).not.toHaveBeenCalled();
   });
 
+  it("treats the same settings in any order as one setting", async () => {
+    vi.mocked(
+      globalThis.electronAPI.updateVoiceSliceSettings,
+    ).mockResolvedValue({ error: "disk full", success: false });
+    const onMessage = vi.fn();
+    const { result } = renderHook(() =>
+      useVoiceSliceSettings("A0", voices, undefined, onMessage),
+    );
+
+    // Main answers in order, so only the latest change for the key reports
+    await act(async () => {
+      result.current.updateSliceSettings(1, { enabled: true, rollAmount: 25 });
+      result.current.updateSliceSettings(1, { enabled: true, rollAmount: 75 });
+      // Built so the linter can't put the fields back in order
+      result.current.updateSliceSettings(
+        1,
+        Object.fromEntries([
+          ["rollAmount", 100],
+          ["enabled", true],
+        ]),
+      );
+    });
+
+    expect(onMessage).toHaveBeenCalledTimes(1);
+    expect(result.current.sliceSettings[1]).toMatchObject({
+      enabled: false,
+      rollAmount: 50,
+    });
+  });
+
   it("names each setting in its message", () => {
     expect(sliceSettingNotSaved(2, { enabled: true })).toBe(
       "Couldn't turn slicing off for voice 2. Try again.",

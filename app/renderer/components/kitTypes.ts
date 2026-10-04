@@ -47,6 +47,8 @@ export interface SampleData {
   gain_db?: number;
   slot_number?: number;
   source_path: string;
+  /** What Romper found when it last read the file (#537) */
+  source_status?: null | string;
   voice_number?: number;
   wav_bit_depth?: number;
   wav_bitrate?: number;

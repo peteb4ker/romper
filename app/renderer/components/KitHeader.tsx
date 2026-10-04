@@ -9,7 +9,12 @@ import {
   CircleIcon,
   LockIcon,
   PencilSimpleIcon,
+  WarningOctagonIcon,
 } from "@phosphor-icons/react";
+import {
+  QUARANTINE_ICON_LABEL,
+  STEREO_LABELS,
+} from "@romper/shared/stereoLinkRules";
 import React, { useCallback } from "react";
 
 import LedIconGrid from "./led-icon/LedIconGrid";
@@ -18,7 +23,7 @@ interface KitHeaderProps {
   editingKitAlias: boolean;
   handleSaveKitAlias: (alias: string) => void;
   isEditable?: boolean;
-  kit: Kit | null;
+  kit: KitWithRelations | null;
   kitAliasInput: string;
   kitAliasInputRef: React.RefObject<HTMLInputElement>;
   kitIndex?: number;
@@ -268,6 +273,25 @@ const KitHeader: React.FC<KitHeaderProps> = ({
 
       {/* Right side: Action buttons */}
       <div className="flex items-center gap-2">
+        {/* A quarantined kit isn't written to the card until it's fixed
+            (#537): an icon with text and a tooltip, not colour alone */}
+        {kit?.quarantined && (
+          <div
+            className="flex items-center gap-1 mr-2"
+            data-testid="kit-header-quarantined"
+            title={QUARANTINE_ICON_LABEL}
+          >
+            <WarningOctagonIcon
+              aria-hidden="true"
+              className="text-accent-danger"
+              size={14}
+              weight="fill"
+            />
+            <span className="text-xs font-medium text-accent-danger">
+              {STEREO_LABELS.quarantined}
+            </span>
+          </div>
+        )}
         {onToggleEditableMode && (
           <div className="flex items-center gap-2">
             {kit?.modified_since_sync && (

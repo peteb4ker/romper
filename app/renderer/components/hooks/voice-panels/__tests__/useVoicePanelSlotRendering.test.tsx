@@ -1,6 +1,8 @@
-import { render } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { SAMPLE_FILE_LABELS } from "@romper/shared/stereoLinkRules";
+import { cleanup, render } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { slotKey } from "../../../../utils/slotKey";
 import { useVoicePanelSlotRendering } from "../useVoicePanelSlotRendering";
 
 describe("useVoicePanelSlotRendering", () => {
@@ -140,5 +142,50 @@ describe("useVoicePanelSlotRendering", () => {
       firstSampleSlot.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       expect(mockProps.onSampleSelect).toHaveBeenCalledWith(1, 0);
     }
+  });
+
+  describe("file labels (#537)", () => {
+    afterEach(cleanup);
+
+    function renderWithStatus(status: null | string) {
+      const props = {
+        ...mockProps,
+        sampleMetadata: {
+          [slotKey(1, 0)]: {
+            filename: "sample1.wav",
+            source_path: "/samples/sample1.wav",
+            source_status: status,
+          },
+        },
+      };
+      function StatusComponent() {
+        const { renderSampleSlots } = useVoicePanelSlotRendering(props);
+        return <ul>{renderSampleSlots()}</ul>;
+      }
+      return render(<StatusComponent />);
+    }
+
+    it("labels a sample whose file is missing", () => {
+      const { getByTestId } = renderWithStatus("missing");
+      const label = getByTestId("sample-file-label-1-0");
+      expect(label).toHaveTextContent(SAMPLE_FILE_LABELS.missing);
+      const slot = label.closest("li");
+      expect(slot).toHaveAttribute("aria-describedby", label.id);
+    });
+
+    it("labels a sample whose file can't be read", () => {
+      const { getByTestId } = renderWithStatus("unreadable");
+      expect(getByTestId("sample-file-label-1-0")).toHaveTextContent(
+        SAMPLE_FILE_LABELS.unreadable,
+      );
+    });
+
+    it("shows no label for a readable or unchecked file", () => {
+      for (const status of ["readable", null]) {
+        const { queryByTestId, unmount } = renderWithStatus(status);
+        expect(queryByTestId("sample-file-label-1-0")).toBeNull();
+        unmount();
+      }
+    });
   });
 });

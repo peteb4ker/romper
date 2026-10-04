@@ -3,6 +3,7 @@ import type { KitWithRelations, Sample } from "@romper/shared/db/schema";
 import { LinkIcon } from "@phosphor-icons/react";
 import {
   checkStereoLink,
+  describeMissingSampleFile,
   describeMixdownNote,
   describeMonoOnStereoPair,
   describeQuarantineProblem,
@@ -13,6 +14,7 @@ import {
   planKitStereo,
   QUARANTINE_NOTICE,
   STEREO_LABELS,
+  stereoSampleOf,
   type StereoSampleState,
 } from "@romper/shared/stereoLinkRules";
 import React, { useId, useState } from "react";
@@ -172,8 +174,8 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
           kit_name: hookProps.kitName || "",
           slot_number: data.slot_number ?? 0,
           source_path: data.source_path,
-          // Not needed to decide what a drop links (#537)
-          source_status: null,
+          source_status:
+            (data.source_status as Sample["source_status"]) ?? null,
           voice_number: data.voice_number ?? 1,
           wav_bit_depth: data.wav_bit_depth || null,
           wav_bitrate: data.wav_bitrate || null,
@@ -202,23 +204,40 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   );
 
   // The kit's samples as the stereo rules see them (#537): which voices
-  // hold samples (from the panels) and each one's channel count. Whether a
-  // WAV can be read takes reading its header, which the write summary and
-  // a scan do; a sample without stored metadata isn't assumed unreadable.
+  // hold samples (from the panels), each one's channel count, and whether
+  // its file was last found unreadable. Missing metadata alone isn't.
   const stereoSamples = React.useMemo(() => {
     const result: StereoSampleState[] = [];
     for (const voice of [1, 2, 3, 4]) {
       (hookProps.samples[voice] || []).forEach((name, slot) => {
         if (!name?.trim()) return;
-        result.push({
-          filename: name,
-          voice_number: voice,
-          wav_channels: sampleMetadata[slotKey(voice, slot)]?.wav_channels,
-        });
+        const meta = sampleMetadata[slotKey(voice, slot)];
+        result.push(
+          stereoSampleOf({
+            filename: name,
+            source_status: meta?.source_status,
+            voice_number: voice,
+            wav_channels: meta?.wav_channels,
+          }),
+        );
       });
     }
     return result;
   }, [hookProps.samples, sampleMetadata]);
+
+  // Samples whose file was last found missing: skipped at write, and the
+  // kit editor says how to fix it (#537)
+  const missingFiles = React.useMemo(
+    () =>
+      Object.values(sampleMetadata)
+        .filter((data) => data.source_status === "missing")
+        .sort(
+          (a, b) =>
+            (a.voice_number ?? 0) - (b.voice_number ?? 0) ||
+            (a.slot_number ?? 0) - (b.slot_number ?? 0),
+        ),
+    [sampleMetadata],
+  );
 
   // What the rules make of the kit: mixdowns, quarantine (#537)
   const stereoPlan = React.useMemo(
@@ -394,6 +413,28 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     voice: number;
   } | null>(null);
 
+  // Once per kit open, main checks the files of samples it doesn't know
+  // are readable, in one batch, so missing and unreadable files show early
+  // (#537). Readable samples aren't read again; a change reloads the kit.
+  const checkedKits = React.useRef(new Set<string>());
+  const { onKitUpdated: reloadKitAfterCheck } = props;
+  const checkSampleFilesOnce = React.useCallback(
+    async (loaded: Sample[]) => {
+      const kitName = hookProps.kitName;
+      if (checkedKits.current.has(kitName)) return;
+      if (loaded.every((sample) => sample.source_status === "readable")) {
+        return;
+      }
+      checkedKits.current.add(kitName);
+      const checked =
+        await globalThis.electronAPI?.checkKitSampleFiles?.(kitName);
+      if (checked?.success && (checked.data?.changed ?? 0) > 0) {
+        await reloadKitAfterCheck?.();
+      }
+    },
+    [hookProps.kitName, reloadKitAfterCheck],
+  );
+
   // Load sample metadata when kit changes
   React.useEffect(() => {
     const loadSampleMetadata = async () => {
@@ -414,6 +455,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
               gain_db: sample.gain_db ?? 0,
               slot_number: sample.slot_number,
               source_path: sample.source_path,
+              source_status: sample.source_status,
               voice_number: sample.voice_number,
               wav_bit_depth: sample.wav_bit_depth ?? undefined,
               wav_bitrate: sample.wav_bitrate ?? undefined,
@@ -423,6 +465,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
           });
           setSampleMetadata(metadata);
           resetGainSaves();
+          void checkSampleFilesOnce(samplesResult.data);
         }
       } catch (error) {
         console.error("Failed to load sample metadata:", error);
@@ -431,7 +474,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     };
 
     void loadSampleMetadata();
-  }, [hookProps.kitName, props.kit, resetGainSaves]);
+  }, [hookProps.kitName, props.kit, resetGainSaves, checkSampleFilesOnce]);
 
   // Optimistic update for gain changes so SampleWaveform gets the new
   // gainDb immediately. Main marks the kit modified with the gain (RE-35),
@@ -534,6 +577,24 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                 key={`${problem.kind}-${problem.voiceNumber}-${"filename" in problem ? problem.filename : ""}`}
               >
                 {describeQuarantineProblem(problem)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {missingFiles.length > 0 && (
+        <div
+          className="mb-2 px-3 py-2 rounded border border-accent-warning/40 bg-accent-warning/10 text-xs text-text-primary"
+          data-testid="kit-missing-files-notice"
+          role="status"
+        >
+          <ul className="list-disc pl-5 space-y-0.5">
+            {missingFiles.map((file) => (
+              <li key={`${file.voice_number}-${file.slot_number}`}>
+                {describeMissingSampleFile(
+                  file.filename,
+                  file.voice_number ?? 1,
+                )}
               </li>
             ))}
           </ul>

@@ -1,4 +1,7 @@
-import { STEREO_LABELS } from "@romper/shared/stereoLinkRules";
+import {
+  SAMPLE_FILE_LABELS,
+  STEREO_LABELS,
+} from "@romper/shared/stereoLinkRules";
 import React from "react";
 
 import type { SampleData } from "../../kitTypes";
@@ -135,6 +138,17 @@ export function useVoicePanelSlotRendering({
         isLinkedPrimary && sampleData?.wav_channels === 1,
       );
       const monoLabelId = `mono-in-pair-${kitName}-${voice}-${slotNumber}`;
+      // A file that's missing or can't be read says so (#537)
+      const fileStatus = sampleData?.source_status;
+      const fileLabel =
+        fileStatus === "missing" || fileStatus === "unreadable"
+          ? SAMPLE_FILE_LABELS[fileStatus]
+          : null;
+      const fileLabelId = `sample-file-${kitName}-${voice}-${slotNumber}`;
+      const describedBy =
+        [monoInPair && monoLabelId, fileLabel && fileLabelId]
+          .filter(Boolean)
+          .join(" ") || undefined;
 
       const className = slotRenderingHook.getSampleSlotClassName(
         slotNumber,
@@ -171,7 +185,7 @@ export function useVoicePanelSlotRendering({
 
       return (
         <li
-          aria-describedby={monoInPair ? monoLabelId : undefined}
+          aria-describedby={describedBy}
           aria-label={`Sample ${sampleName} in slot ${uiSlotNumber}`}
           aria-selected={isSelected}
           className={className}
@@ -211,6 +225,15 @@ export function useVoicePanelSlotRendering({
                 id={monoLabelId}
               >
                 {STEREO_LABELS.monoInPair}
+              </span>
+            )}
+            {fileLabel && (
+              <span
+                className="block truncate text-[10px] text-accent-danger"
+                data-testid={`sample-file-label-${voice}-${slotNumber}`}
+                id={fileLabelId}
+              >
+                {fileLabel}
               </span>
             )}
           </div>

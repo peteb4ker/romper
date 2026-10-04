@@ -294,4 +294,27 @@ describe("KitHeader", () => {
       ).not.toBeInTheDocument();
     });
   });
+
+  // #537: a quarantined kit isn't written until it's fixed
+  describe("[UC-08] quarantine", () => {
+    it("shows Quarantined with an icon and a tooltip, not colour alone", () => {
+      render(
+        <KitHeader
+          {...baseProps}
+          kit={{ alias: "My Kit", quarantined: true } as never}
+        />,
+      );
+      const badge = screen.getByTestId("kit-header-quarantined");
+      expect(badge).toHaveTextContent("Quarantined");
+      expect(badge).toHaveAttribute(
+        "title",
+        "Quarantined: this kit won't be written to the card until it's fixed",
+      );
+    });
+
+    it("shows nothing for a kit that isn't quarantined", () => {
+      render(<KitHeader {...baseProps} />);
+      expect(screen.queryByTestId("kit-header-quarantined")).toBeNull();
+    });
+  });
 });

@@ -4,8 +4,10 @@ import {
   LockSimpleIcon,
   MusicNoteIcon,
   TrashIcon,
+  WarningOctagonIcon,
 } from "@phosphor-icons/react";
 import { toCapitalCase } from "@romper/shared/kitUtilsShared";
+import { QUARANTINE_ICON_LABEL } from "@romper/shared/stereoLinkRules";
 import React, { useState } from "react";
 
 import type {
@@ -147,6 +149,17 @@ const KitGridItem = React.memo(
                       size={15}
                       weight="bold"
                     />
+                  </span>
+                )}
+                {kitData?.quarantined && (
+                  <span
+                    aria-label={QUARANTINE_ICON_LABEL}
+                    className="flex-shrink-0 text-accent-danger"
+                    data-testid="quarantine-indicator"
+                    role="img"
+                    title={QUARANTINE_ICON_LABEL}
+                  >
+                    <WarningOctagonIcon size={15} weight="fill" />
                   </span>
                 )}
                 {kitData?.voices?.some((v) => v.stereo_mode) && (

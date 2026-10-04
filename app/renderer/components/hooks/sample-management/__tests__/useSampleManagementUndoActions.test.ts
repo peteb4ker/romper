@@ -28,6 +28,7 @@ describe("useSampleManagementUndoActions", () => {
     kit_name: "TestKit",
     slot_number: 0,
     source_path: "/path/to/test.wav",
+    source_status: null,
     voice_number: 1,
     wav_bit_depth: 24,
     wav_bitrate: null,
@@ -42,6 +43,7 @@ describe("useSampleManagementUndoActions", () => {
         gain_db: -6,
         slot_number: 0,
         source_path: "/path/to/test.wav",
+        source_status: null,
         wav_bit_depth: 24,
         wav_bitrate: null,
         wav_channels: 2,
@@ -76,7 +78,7 @@ describe("useSampleManagementUndoActions", () => {
         useSampleManagementUndoActions(mockOptions),
       );
 
-      const expectedMethods = [
+      const expectedMethods: (keyof typeof result.current)[] = [
         "createAddSampleAction",
         "createReindexSamplesAction",
         "createSameKitMoveAction",

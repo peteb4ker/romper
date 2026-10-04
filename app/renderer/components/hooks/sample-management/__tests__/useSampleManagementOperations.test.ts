@@ -1,6 +1,12 @@
+import type {
+  ReindexSamplesAction,
+  ReplaceSampleAction,
+} from "@romper/shared/undoTypes";
+
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
 import { useSampleManagementOperations } from "../useSampleManagementOperations";
 
 // Mock dependencies
@@ -23,6 +29,20 @@ import * as undoActions from "../useSampleManagementUndoActions";
 const mockUseSampleManagementUndoActions = vi.mocked(
   undoActions.useSampleManagementUndoActions,
 );
+type UndoActions = ReturnType<
+  typeof undoActions.useSampleManagementUndoActions
+>;
+
+/** The undo hook's return, with the given action creators replaced */
+const undoActionsWith = (overrides: Partial<UndoActions>): UndoActions => ({
+  createAddSampleAction: vi.fn(),
+  createCrossKitMoveAction: vi.fn(),
+  createReindexSamplesAction: vi.fn(),
+  createReplaceSampleAction: vi.fn(),
+  createSameKitMoveAction: vi.fn(),
+  snapshotForUndo: vi.fn(),
+  ...overrides,
+});
 
 // Mock window.electronAPI
 const mockElectronAPI = {
@@ -31,8 +51,7 @@ const mockElectronAPI = {
   replaceSampleInSlot: vi.fn(),
 };
 
-// Ensure window is properly typed and electronAPI is available
-(window as unknown).electronAPI = mockElectronAPI;
+setupElectronAPIMock(mockElectronAPI);
 
 /** The voice before the edit, as undo keeps it (RE-86) */
 const voicesBefore = [{ samples: [], voice: 1 }];
@@ -50,7 +69,7 @@ describe("useSampleManagementOperations", () => {
     vi.clearAllMocks();
     vi.resetAllMocks();
     // Ensure electronAPI is always available
-    (window as unknown).electronAPI = mockElectronAPI;
+    setupElectronAPIMock(mockElectronAPI);
   });
 
   describe("[UC-19] [Q-07] handleSampleAdd", () => {
@@ -175,8 +194,7 @@ describe("useSampleManagementOperations", () => {
     });
 
     it("should handle missing electronAPI", async () => {
-      const originalAPI = (window as unknown).electronAPI;
-      (window as unknown).electronAPI = undefined;
+      vi.stubGlobal("electronAPI", undefined);
 
       const { result } = renderHook(() =>
         useSampleManagementOperations(mockOptions),
@@ -195,7 +213,7 @@ describe("useSampleManagementOperations", () => {
       );
 
       // Restore
-      (window as unknown).electronAPI = originalAPI;
+      vi.unstubAllGlobals();
     });
   });
 
@@ -206,10 +224,13 @@ describe("useSampleManagementOperations", () => {
       };
 
       const mockUndoActions = {
-        createReplaceSampleAction: vi.fn(() => ({
-          data: {},
-          type: "REPLACE_SAMPLE",
-        })),
+        createReplaceSampleAction: vi.fn(
+          () =>
+            ({
+              data: {},
+              type: "REPLACE_SAMPLE",
+            }) as ReplaceSampleAction,
+        ),
         snapshotForUndo: vi.fn().mockResolvedValue({
           sample: mockOldSample,
           voicesBefore,
@@ -217,7 +238,9 @@ describe("useSampleManagementOperations", () => {
       };
 
       // Mock the hook return
-      mockUseSampleManagementUndoActions.mockReturnValue(mockUndoActions);
+      mockUseSampleManagementUndoActions.mockReturnValue(
+        undoActionsWith(mockUndoActions),
+      );
 
       mockElectronAPI.replaceSampleInSlot.mockResolvedValue({
         data: { sampleId: 123 },
@@ -282,8 +305,7 @@ describe("useSampleManagementOperations", () => {
     });
 
     it("should handle missing electronAPI for replace", async () => {
-      const originalAPI = (window as unknown).electronAPI;
-      (window as unknown).electronAPI = { addSampleToSlot: vi.fn() }; // Missing replaceSampleInSlot
+      setupElectronAPIMock({ replaceSampleInSlot: undefined });
 
       const { result } = renderHook(() =>
         useSampleManagementOperations(mockOptions),
@@ -302,7 +324,7 @@ describe("useSampleManagementOperations", () => {
       );
 
       // Restore
-      (window as unknown).electronAPI = originalAPI;
+      setupElectronAPIMock(mockElectronAPI);
     });
   });
 
@@ -314,10 +336,13 @@ describe("useSampleManagementOperations", () => {
       };
 
       const mockUndoActions = {
-        createReindexSamplesAction: vi.fn(() => ({
-          data: {},
-          type: "REINDEX_SAMPLES",
-        })),
+        createReindexSamplesAction: vi.fn(
+          () =>
+            ({
+              data: {},
+              type: "REINDEX_SAMPLES",
+            }) as ReindexSamplesAction,
+        ),
         snapshotForUndo: vi.fn().mockResolvedValue({
           sample: mockSampleToDelete,
           voicesBefore,
@@ -325,7 +350,9 @@ describe("useSampleManagementOperations", () => {
       };
 
       // Mock the hook return
-      mockUseSampleManagementUndoActions.mockReturnValue(mockUndoActions);
+      mockUseSampleManagementUndoActions.mockReturnValue(
+        undoActionsWith(mockUndoActions),
+      );
 
       const mockDeleteResult = {
         data: { affectedSamples: [] },
@@ -388,7 +415,9 @@ describe("useSampleManagementOperations", () => {
       };
 
       // Mock the hook return
-      mockUseSampleManagementUndoActions.mockReturnValue(mockUndoActions);
+      mockUseSampleManagementUndoActions.mockReturnValue(
+        undoActionsWith(mockUndoActions),
+      );
 
       const { result } = renderHook(() =>
         useSampleManagementOperations(mockOptions),
@@ -403,8 +432,7 @@ describe("useSampleManagementOperations", () => {
     });
 
     it("should handle missing electronAPI for delete", async () => {
-      const originalAPI = (window as unknown).electronAPI;
-      (window as unknown).electronAPI = { addSampleToSlot: vi.fn() }; // Missing deleteSampleFromSlot
+      setupElectronAPIMock({ deleteSampleFromSlot: undefined });
 
       const { result } = renderHook(() =>
         useSampleManagementOperations(mockOptions),
@@ -418,7 +446,7 @@ describe("useSampleManagementOperations", () => {
       );
 
       // Restore
-      (window as unknown).electronAPI = originalAPI;
+      setupElectronAPIMock(mockElectronAPI);
     });
   });
 });

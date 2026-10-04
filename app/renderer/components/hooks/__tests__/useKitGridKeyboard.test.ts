@@ -10,6 +10,7 @@ vi.mock("@romper/shared/kitUtilsShared", async (importOriginal) => ({
 
 import { isValidKit } from "@romper/shared/kitUtilsShared";
 
+import { createMockKit as createKit } from "../../../../../tests/factories/kit.factory";
 import { buildGridRows } from "../../utils/kitGridRows";
 import {
   getArrowTarget,
@@ -20,18 +21,7 @@ import {
 const mockIsValidKit = vi.mocked(isValidKit);
 
 function createMockKit(name: string): Kit {
-  return {
-    alias: null,
-    artist: null,
-    bank_letter: name[0],
-    bpm: 120,
-    editable: false,
-    is_favorite: false,
-    locked: false,
-    modified_since_sync: false,
-    name,
-    step_pattern: null,
-  };
+  return createKit({ bank_letter: name[0], name });
 }
 
 // Three columns, grouped by bank:

@@ -4,6 +4,9 @@ import { describe, expect, it } from "vitest";
 
 import type { SearchMatchDetails } from "../../components/shared/kitItemUtils";
 
+import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
+import { createMockSample } from "../../../../tests/factories/sample.factory";
+import { createMockVoice } from "../../../../tests/factories/voice.factory";
 import {
   checkKitBasicFields,
   checkKitSamples,
@@ -12,7 +15,7 @@ import {
 } from "../kitSearchUtils";
 
 describe("[UC-09] kitSearchUtils", () => {
-  const mockKit: KitWithRelations = {
+  const mockKit: KitWithRelations = createMockKitWithRelations({
     alias: "Custom Kit",
     bank: {
       artist: "Test Artist",
@@ -28,7 +31,7 @@ describe("[UC-09] kitSearchUtils", () => {
     modified_since_sync: false,
     name: "A0",
     samples: [
-      {
+      createMockSample({
         filename: "kick_001.wav",
         id: 1,
         kit_name: "A0",
@@ -39,8 +42,8 @@ describe("[UC-09] kitSearchUtils", () => {
         wav_bitrate: null,
         wav_channels: null,
         wav_sample_rate: null,
-      },
-      {
+      }),
+      createMockSample({
         filename: "snare_002.wav",
         id: 2,
         kit_name: "A0",
@@ -51,14 +54,24 @@ describe("[UC-09] kitSearchUtils", () => {
         wav_bitrate: null,
         wav_channels: null,
         wav_sample_rate: null,
-      },
+      }),
     ],
     step_pattern: null,
     voices: [
-      { id: 1, kit_name: "A0", voice_alias: "Kick", voice_number: 1 },
-      { id: 2, kit_name: "A0", voice_alias: "Snare", voice_number: 2 },
+      createMockVoice({
+        id: 1,
+        kit_name: "A0",
+        voice_alias: "Kick",
+        voice_number: 1,
+      }),
+      createMockVoice({
+        id: 2,
+        kit_name: "A0",
+        voice_alias: "Snare",
+        voice_number: 2,
+      }),
     ],
-  };
+  });
 
   describe("checkKitBasicFields", () => {
     it("should match kit name", () => {

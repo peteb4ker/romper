@@ -2,7 +2,17 @@ import type { Sample } from "@romper/shared/db/schema.js";
 
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
+import { createMockSample } from "../../../../../../tests/factories/sample.factory";
 import { useSampleManagementUndoActions } from "../useSampleManagementUndoActions.js";
+
+// The result types the action creators take (not exported by the hook)
+type ReindexOperationResult = Parameters<
+  UndoActions["createReindexSamplesAction"]
+>[3];
+type SampleOperationResult = Parameters<
+  UndoActions["createSameKitMoveAction"]
+>[0]["result"];
+type UndoActions = ReturnType<typeof useSampleManagementUndoActions>;
 
 // Mock window.electronAPI
 const mockElectronAPI = {
@@ -32,7 +42,7 @@ describe("Type Interfaces for Sample Management", () => {
   describe("ReindexOperationResult interface", () => {
     test("should handle successful reindex result with data", () => {
       const mockSamples: Sample[] = [
-        {
+        createMockSample({
           filename: "test.wav",
           id: 1,
           kit_name: "TestKit",
@@ -41,10 +51,10 @@ describe("Type Interfaces for Sample Management", () => {
           voice_number: 1,
           wav_bitrate: null,
           wav_sample_rate: null,
-        },
+        }),
       ];
 
-      const reindexResult = {
+      const reindexResult: ReindexOperationResult = {
         data: {
           affectedSamples: mockSamples,
         },
@@ -57,7 +67,7 @@ describe("Type Interfaces for Sample Management", () => {
     });
 
     test("should handle failed reindex result without data", () => {
-      const reindexResult = {
+      const reindexResult: ReindexOperationResult = {
         data: undefined,
         success: false,
       };
@@ -67,7 +77,7 @@ describe("Type Interfaces for Sample Management", () => {
     });
 
     test("should handle reindex result with empty affected samples", () => {
-      const reindexResult = {
+      const reindexResult: ReindexOperationResult = {
         data: {
           affectedSamples: [],
         },
@@ -81,7 +91,7 @@ describe("Type Interfaces for Sample Management", () => {
 
   describe("SampleOperationResult interface", () => {
     test("should handle successful sample operation with all data", () => {
-      const mockMovedSample: Sample = {
+      const mockMovedSample = createMockSample({
         filename: "moved.wav",
         id: 1,
         kit_name: "TestKit",
@@ -90,9 +100,9 @@ describe("Type Interfaces for Sample Management", () => {
         voice_number: 1,
         wav_bitrate: null,
         wav_sample_rate: null,
-      };
+      });
 
-      const mockReplacedSample: Sample = {
+      const mockReplacedSample = createMockSample({
         filename: "replaced.wav",
         id: 2,
         kit_name: "TestKit",
@@ -101,9 +111,9 @@ describe("Type Interfaces for Sample Management", () => {
         voice_number: 1,
         wav_bitrate: null,
         wav_sample_rate: null,
-      };
+      });
 
-      const sampleResult = {
+      const sampleResult: SampleOperationResult = {
         data: {
           affectedSamples: [mockMovedSample],
           movedSample: mockMovedSample,
@@ -119,7 +129,7 @@ describe("Type Interfaces for Sample Management", () => {
     });
 
     test("should handle sample operation without replaced sample", () => {
-      const mockMovedSample: Sample = {
+      const mockMovedSample = createMockSample({
         filename: "moved.wav",
         id: 1,
         kit_name: "TestKit",
@@ -128,9 +138,9 @@ describe("Type Interfaces for Sample Management", () => {
         voice_number: 1,
         wav_bitrate: null,
         wav_sample_rate: null,
-      };
+      });
 
-      const sampleResult = {
+      const sampleResult: SampleOperationResult = {
         data: {
           affectedSamples: [],
           movedSample: mockMovedSample,
@@ -145,7 +155,7 @@ describe("Type Interfaces for Sample Management", () => {
     });
 
     test("should handle failed sample operation", () => {
-      const sampleResult = {
+      const sampleResult: SampleOperationResult = {
         data: undefined,
         success: false,
       };
@@ -155,95 +165,11 @@ describe("Type Interfaces for Sample Management", () => {
     });
   });
 
-  describe("ElectronFile interface from useFileValidation", () => {
-    test("should handle standard File object", () => {
-      // Standard File interface
-      const standardFile = new File(["content"], "test.wav", {
-        type: "audio/wav",
-      });
-
-      // ElectronFile should extend File
-      const electronFile = standardFile as unknown; // Simulating ElectronFile
-      electronFile.path = "/path/to/test.wav";
-
-      expect(electronFile.name).toBe("test.wav");
-      expect(electronFile.path).toBe("/path/to/test.wav");
-      expect(electronFile.type).toBe("audio/wav");
-    });
-
-    test("should handle File without path property", () => {
-      const standardFile = new File(["content"], "test.wav", {
-        type: "audio/wav",
-      });
-
-      // ElectronFile path is optional
-      const electronFile = standardFile as unknown;
-      expect(electronFile.path).toBeUndefined();
-      expect(electronFile.name).toBe("test.wav");
-    });
-
-    test("should handle dropped file path extraction logic", () => {
-      const mockFile = {
-        name: "dropped.wav",
-        path: "/electron/path/to/dropped.wav", // Electron-specific property
-        type: "audio/wav",
-      };
-
-      // Simulate the file validation logic
-      const filePath = (mockFile as unknown).path || mockFile.name;
-      expect(filePath).toBe("/electron/path/to/dropped.wav");
-    });
-
-    test("should fallback to filename when no path available", () => {
-      const mockFile = {
-        name: "web-file.wav",
-        type: "audio/wav",
-        // No path property (standard web File)
-      };
-
-      // Simulate the file validation logic
-      const filePath = (mockFile as unknown).path || mockFile.name;
-      expect(filePath).toBe("web-file.wav");
-    });
-  });
-
-  describe("Action type assertions", () => {
-    test("should properly cast action types for exhaustive checking", () => {
-      const mockAction = {
-        data: {},
-        description: "Test action",
-        id: "test-id",
-        timestamp: new Date(),
-        type: "UNKNOWN_ACTION_TYPE",
-      };
-
-      // This tests the pattern used in useUndoActionHandlers
-      const actionType = (mockAction as unknown).type;
-      expect(actionType).toBe("UNKNOWN_ACTION_TYPE");
-    });
-
-    test("should handle various undo action types", () => {
-      const actionTypes = [
-        "ADD_SAMPLE",
-        "DELETE_SAMPLE",
-        "MOVE_SAMPLE",
-        "MOVE_SAMPLE_BETWEEN_KITS",
-        "REINDEX_SAMPLES",
-        "REPLACE_SAMPLE",
-      ];
-
-      actionTypes.forEach((type) => {
-        const action = { data: {}, type };
-        expect((action as unknown).type).toBe(type);
-      });
-    });
-  });
-
   describe("Integration with actual hook", () => {
     test("should return all expected action creators", () => {
       const result = useSampleManagementUndoActions(mockOptions);
 
-      const expectedMethods = [
+      const expectedMethods: (keyof UndoActions)[] = [
         "createAddSampleAction",
         "createReindexSamplesAction",
         "createSameKitMoveAction",

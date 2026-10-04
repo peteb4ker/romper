@@ -235,7 +235,7 @@ describe("useSlotRendering", () => {
 
     it("includes formatted tooltip when sample data and filename are available", () => {
       // Configure the mock to return the expected tooltip format
-      (formatTooltip as unknown).mockReturnValue("kick.wav\n/path/to/kick.wav");
+      vi.mocked(formatTooltip).mockReturnValue("kick.wav\n/path/to/kick.wav");
 
       const { result } = renderHook(() => useSlotRendering(defaultProps));
 

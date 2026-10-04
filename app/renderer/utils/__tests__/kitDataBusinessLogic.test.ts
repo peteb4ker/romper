@@ -2,6 +2,8 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import { describe, expect, test } from "vitest";
 
+import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
+
 /**
  * Business Logic Tests - Isolated from React
  *
@@ -12,38 +14,28 @@ import { describe, expect, test } from "vitest";
 
 describe("Kit Data Manager Business Logic - Unit Tests", () => {
   const mockKits: KitWithRelations[] = [
-    {
+    createMockKitWithRelations({
       alias: null,
-      artist: null,
       bank_letter: "A",
       bpm: 120,
-      created_at: "2023-01-01T00:00:00.000Z",
-      description: null,
       editable: false,
-      id: 1,
       is_favorite: false,
       locked: false,
       modified_since_sync: false,
       name: "A0",
       step_pattern: null,
-      updated_at: "2023-01-01T00:00:00.000Z",
-    } as KitWithRelations,
-    {
+    }),
+    createMockKitWithRelations({
       alias: "My Favorite Kit",
-      artist: "Test Artist",
       bank_letter: "A",
       bpm: 140,
-      created_at: "2023-01-02T00:00:00.000Z",
-      description: "Test Description",
       editable: true,
-      id: 2,
       is_favorite: true,
       locked: false,
       modified_since_sync: false,
       name: "A1",
       step_pattern: [[1, 0, 1, 0]],
-      updated_at: "2023-01-02T00:00:00.000Z",
-    } as KitWithRelations,
+    }),
   ];
 
   describe("getKitByName - Kit Lookup Logic", () => {

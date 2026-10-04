@@ -193,20 +193,10 @@ describe("hmrStateManager", () => {
   });
 
   describe("setupRouteHmrHandlers", () => {
-    it("should not throw when hot module is not available", () => {
-      const originalHot = import.meta.hot;
-      Object.defineProperty(import.meta, "hot", {
-        configurable: true,
-        value: undefined,
-      });
-
+    // Each module has its own import.meta, so a test can't take the
+    // module's hot away; this checks the handlers register without throwing
+    it("should not throw when registering the handlers", () => {
       expect(() => setupRouteHmrHandlers()).not.toThrow();
-
-      // Restore original
-      Object.defineProperty(import.meta, "hot", {
-        configurable: true,
-        value: originalHot,
-      });
     });
   });
 

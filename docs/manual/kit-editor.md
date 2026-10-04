@@ -20,7 +20,7 @@ Click any kit card in the Kit Browser to open it. The header shows:
 - **Back button** -- Returns to the Kit Browser (or press `Escape`)
 - **Kit navigation** -- Previous/Next arrows to step through kits sequentially (or use `,` and `.` keys)
 - **Kit ID and name** -- The bank/slot and editable name field
-- **Favorite bookmark** -- Toggle bookmark (or press `F`)
+- **Favorite** -- Click the favorite icon to add the kit to your favorites or remove it (or press `F`)
 - **Modified** -- Shown when the kit has changed since it was last written to the SD card: samples added, moved or deleted, a gain or voice name changed, or a stereo link changed
 - **Locked / Editable switch** -- Turns editing on and off (see below)
 - **Scan Kit button** -- Re-analyze samples and refresh voice name detection
@@ -84,7 +84,7 @@ In an editable kit, drag a sample onto another slot, in the same voice or anothe
 
 ### Stereo and Mono Handling
 
-Stereo is set per voice, as on the Rample. Click the link icon between two neighbouring voices to link them as a stereo pair; the left voice shows a **Stereo** badge, and its samples play in stereo across both voices' outputs. Nothing can be added to the right-hand voice while the pair is linked. Click the **Stereo** badge to unlink the pair: the voice keeps its samples, and any stereo files on it are mixed down to mono at the next write. Linking and unlinking change what the next write puts on the card, so, like other edits, they need the kit to be editable; on a read-only kit the badge shows the pair but doesn't unlink it.
+In Romper, stereo is set per voice. The [Rample manual](https://squarp.net/rample/manual/) says "A stereo sample will fill 2 mono voices" and "All layers must be of the same type (mono OR stereo) in a voice", so Romper pairs a stereo voice with the next one. Click the link icon between two neighbouring voices to link them as a stereo pair; the left voice shows a **Stereo** badge, and its samples play in stereo across both voices' outputs. Nothing can be added to the right-hand voice while the pair is linked. Click the **Stereo** badge to unlink the pair: the voice keeps its samples, and any stereo files on it are mixed down to mono at the next write. Linking and unlinking change what the next write puts on the card, so, like other edits, they need the kit to be editable; on a read-only kit the badge shows the pair but doesn't unlink it.
 
 When you write to the card:
 
@@ -140,7 +140,7 @@ When both are active during preview, Romper combines them: the sample plays at i
 
 Click the **play icon** on any sample row to hear it. While it plays, the icon becomes a stop button; click it to stop. You can also click a sample row to select it, move the selection with the up and down arrow keys, and press `Space` to play it (while the sequencer is hidden).
 
-**Voice choke**: Each voice is monophonic -- when you trigger a new sample on a voice, any previously playing sample on that voice stops automatically. This mirrors how the Rample hardware behaves.
+**Voice choke**: Each voice is monophonic -- when you trigger a new sample on a voice, any previously playing sample on that voice stops automatically. This is meant to mirror the Rample, but the [Rample manual](https://squarp.net/rample/manual/) doesn't describe it, so it's unverified on hardware.
 
 ### Step Sequencer
 

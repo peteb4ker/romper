@@ -27,7 +27,7 @@ A kit is a collection of 4 voices. Each voice holds up to 12 sample layers that 
 
 ### Voices
 
-The Rample has 4 independent voices, color-coded in Romper to match the Rample hardware:
+The Rample has 4 independent voices. Romper color-codes them (meant to match the module's colors, unverified on hardware):
 
 - **Voice 1** -- Red
 - **Voice 2** -- Yellow

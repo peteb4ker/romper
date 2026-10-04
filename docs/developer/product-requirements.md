@@ -772,7 +772,7 @@ See [romper-db.md](romper-db.md).
 ### Stereo Sample Handling Logic
 
 - Stereo is a per-voice setting (`voices.stereo_mode`), never inferred from a file's channel count.
-- A stereo voice N is linked with voice N+1: the Rample plays the left channel on N and the right on N+1, so only N is triggered and N+1 holds no samples of its own. Voice 4 can't be a stereo primary.
+- A stereo voice N is linked with voice N+1 (the manual: "A stereo sample will fill 2 mono voices"). That the Rample plays the left channel on N and the right on N+1 is unverified on hardware. Only N is triggered and N+1 holds no samples of its own. Voice 4 can't be a stereo primary.
 - Stereo files stay single files; nothing is split.
 - At sync, stereo files on a mono voice are converted to mono. Format conversion happens only at sync, never during preview.
 

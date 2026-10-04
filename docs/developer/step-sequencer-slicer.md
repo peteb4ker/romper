@@ -68,7 +68,7 @@ _Settings → SLICER_, and the MIDI implementation chart.
 - Length is a fraction of the **total** sample length (100 % down to
   0 %), counted from the start point.
 - Each Rample voice is **monophonic**: a new trigger replaces whatever
-  the voice is playing.
+  the voice is playing. (Unverified on hardware: the manual doesn't say.)
 - For tight drum-loop slicing the manual recommends `ANTICLIC = OFF`.
   Anticlick adds a short fade that "can be perceived as jitter".
 - The Rample has no sequencer of its own. On hardware, an external
@@ -355,8 +355,8 @@ reverse.
      `AudioBufferSourceNode.start(when, offset, playLength)`.
 - **Monophonic choke.** A new trigger on a voice stops whatever that
   voice is playing, including the same sample at a different slice. This
-  matches the Rample and the existing per-voice choke in
-  `useKitPlayback`.
+  matches the existing per-voice choke in `useKitPlayback`; that it matches
+  the Rample is unverified on hardware.
 - **Anti-click.** A fixed gain ramp of about 2 ms fades in at the start
   of the slice and fades out at its end or when it is choked. Users
   cannot change it in v1.

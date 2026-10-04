@@ -28,7 +28,11 @@ import path from "node:path";
 export interface Budget {
   max: number;
   target?: number;
-  until?: `RE-${number}`;
+  /**
+   * The issue tracking the refactor (`#452`). Older budgets name a finding
+   * from the frozen findings register (`RE-36`).
+   */
+  until?: `#${number}` | `RE-${number}`;
 }
 
 /** Budgets for one action or operation, by metric */

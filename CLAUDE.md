@@ -83,8 +83,8 @@ the repo or on GitHub.
 - **Session names:** `💻 <feature> #<PR>` for a local session (desktop
   app or CLI on this machine), `☁️ <feature> #<PR>` for a cloud session. The
   project's main (coordinating) thread puts ⭐ in front:
-  `⭐💻 RE-03 scoped fs IPC #367`. Keep the feature to a few words and add
-  the PR number once a PR exists, e.g. `💻 Scan merge (RE-04) #360`,
+  `⭐💻 Scoped fs IPC #367`. Keep the feature to a few words and add
+  the PR number once a PR exists, e.g. `💻 Scan merge #360`,
   `☁️ Step slicer #354`. Rename the session (`set_session_title`) when you
   start, when you open the PR, and when the scope changes. `ListAgents`
   addresses sessions by title, so look names up again before messaging.
@@ -99,12 +99,16 @@ the repo or on GitHub.
   2. Pick: `gh issue list --label severity:high`, then medium, then by use
      case (`--label UC-19`); skip claimed ones.
   3. Claim: a draft PR whose description says `Fixes #N`, or a comment on
-     the issue.
-  4. Fix it, with tests tagged `[UC-NN]` or `[Q-NN]`.
-  5. The PR says `Fixes #N`. Merging closes the issue, and the release
-     notes list the closed issues.
-  6. A new finding becomes an issue, with a plain title saying what a user
-     would notice.
+     the issue. Branch `fix/<issue>-<slug>`; commit and PR titles end with
+     the issue number, e.g. `(#552)`.
+  4. Fix it, with tests tagged `[UC-NN]` or `[Q-NN]`, and look for
+     siblings: other callers or code paths with the same bug. Fix them or
+     file issues, and list them in the PR.
+  5. The PR body ends with `Fixes #N`. Merging closes the issue, and the
+     release notes list the closed issues.
+  6. A new finding becomes an issue: a plain title saying what a user
+     would notice, a UC/Q, kind and severity label, and the technical
+     detail in the body.
 
   Status is generated, never edited: an entry is supported when no open
   issue carries its label and partial when one does (only `**Status:** not
@@ -120,11 +124,19 @@ the repo or on GitHub.
   `step-sequencer-slicer.md`), and link it from an issue or the PR.
 - **Status:** the PR is the status record. Keep its description current
   (done, left, how it was verified) and hand off in PR comments.
-- **Findings:** the findings register
+- **Product decisions** (shortcuts, wording, behaviour choices) need
+  Pete's sign-off recorded on the issue before you build them. Don't pick
+  one yourself: if the issue has no recorded decision, ask the coordinator.
+- **Describe only what's on main.** Re-check `origin/main` before filing
+  or editing an issue; never describe code that exists only in an open PR.
+  Cite symbols (`claimVoice` in `voiceChoke.ts`), not line numbers.
+- **`RE-` IDs are retired.** GitHub issues are the only record of open work
+  and new findings. The findings register
   (`aidlc-docs/inception/reverse-engineering/code-quality-assessment.md`)
-  holds the technical detail behind an issue. A new finding with detail
-  gets the next `RE-` ID there, "Tracked in #N." in its Fix column, and a
-  **Finding:** line in the issue.
+  is a frozen, dated snapshot: don't add findings or "Fixed in #N" notes to
+  it, or cite `RE-` IDs in new commits, titles or branches. `RE-` IDs in
+  older commits, issues, code comments and docs refer to the snapshot;
+  leave them as they are.
 - **Before starting**, check what's in flight: `gh pr list`,
   `git worktree list`, and `ListAgents` for live local sessions. Don't edit
   another session's worktree or push to its branch; message it or comment on
@@ -159,6 +171,9 @@ Hooks in `.claude/hooks/` and `.husky/` enforce the first two.
   counts, sizes). Generate them at check or build time, or pin them in a
   test (performance budgets live in `tests/perf/budgets.ts`). Committed
   counts go stale on every PR and are easy to get wrong.
+- Claims about how the Rample behaves need a source: quote the
+  [Rample manual](https://squarp.net/rample/manual/), or mark the claim
+  "unverified on hardware". This covers code comments, docs and issues.
 - Don't verify UI in a browser. The renderer needs `globalThis.electronAPI`
   from the preload script, so the Vite URL is broken outside Electron. The
   chrome-devtools MCP server is denied in `.claude/settings.json`; use the
@@ -171,20 +186,30 @@ Hooks in `.claude/hooks/` and `.husky/` enforce the first two.
   bootstrap and the app never opens a window; only e2e notices. SonarCloud
   S7785 flags this line; it's a won't-fix.
 - **Voices are monophonic (voice choke).** Triggering a sample stops whatever
-  else is playing on that voice. `claimVoice` in `voiceChoke.ts` enforces it
+  else is playing on that voice. This is Romper's design; the manual
+  doesn't describe a choke, so whether the Rample does it is unverified on
+  hardware. `claimVoice` in `voiceChoke.ts` enforces it
   at the audio layer for every sound (sequencer, previews, slicer
   auditions); `handlePlay` in `useKitPlayback.ts` also chokes through React
   state, which kit refreshes reset (RE-13).
-- **Stereo is a voice setting, not a sample property.** `voices.stereo_mode`
-  drives stereo behavior; samples have no stereo flag. Never infer it from
-  a file's channel count, and never copy samples onto the adjacent voice
-  because a file is stereo; that created undeletable phantom samples.
+- **Stereo is a voice setting, not a sample property.** This is Romper's
+  design, chosen to stop phantom samples, not Rample behaviour. The manual
+  says only "A stereo sample will fill 2 mono voices." and "All layers
+  must be of the same type (mono OR stereo) in a voice." In Romper,
+  `voices.stereo_mode` drives stereo; samples have no stereo flag. Never
+  copy samples onto the adjacent voice because a file is stereo; that
+  created undeletable phantom samples. Don't infer a voice's setting from
+  a file's channel count, except as #537 decides: import and scan are to
+  link a voice holding stereo files with the next one, by the rules Pete
+  signed off there.
 - **Renderer code reaches IPC through `globalThis.electronAPI`.** In tests,
   override the default mock (wired up in `vitest.setup.ts`) with
   `vi.mocked(globalThis.electronAPI.someMethod)`; don't reassign
   `global.window`.
-- **Voice colors** follow the Rample livery (1 red, 2 yellow, 3 green,
-  4 blue) via the `--voice-1..4` tokens in `app/renderer/styles/index.css`.
+- **Voice colors** are 1 red, 2 yellow, 3 green, 4 blue, via the
+  `--voice-1..4` tokens in `app/renderer/styles/index.css`. They're meant
+  to match the module; that's unverified on hardware (the manual doesn't
+  give voice colors).
 
 ## Docs
 
@@ -211,9 +236,8 @@ Hooks in `.claude/hooks/` and `.husky/` enforce the first two.
 - [`BACKLOG.md`](BACKLOG.md) -- how to pick, claim, fix and report GitHub
   issues, and the findings fixed before the issue tracker
 - [`aidlc-docs/inception/reverse-engineering/`](aidlc-docs/inception/reverse-engineering/)
-  -- AI-DLC reverse-engineering set; `code-quality-assessment.md` is the
-  findings register that fix commits cite by ID (`RE-01`...)
-  A dated snapshot of commit `87bea51`, not maintained beyond its "Fixed in
-  #N" notes: current status is in GitHub issues and the code.
+  -- AI-DLC reverse-engineering set, a frozen snapshot of commit `87bea51`;
+  `code-quality-assessment.md` is the findings register that older `RE-`
+  IDs refer to. Current status is in GitHub issues and the code.
 - [`docs/troubleshooting.md`](docs/troubleshooting.md) -- user-facing,
   including `ROMPER_ENABLE_DEVTOOLS=1` for inspecting an installed build

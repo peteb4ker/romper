@@ -31,14 +31,17 @@ writing it to the SD card. So it should:
 2. **Behave like a pro desktop app.** That means predictable keys, honest
    undo, discoverable controls, and accessible contrast.
 3. **Tell the truth about the hardware.** Voice choke, stereo as a voice
-   setting, and slices that match the Rample's SLICER.
+   setting, and slices that match the Rample's SLICER. (The manual
+   documents SLICER; voice choke is unverified on hardware, and stereo as
+   a voice setting is Romper's design.)
 
 Point 3 is already strong. Most of what follows is about points 1 and 2.
 
 ## What already works (keep it)
 
 - **Rample livery** on every row (1 red, 2 yellow, 3 green, 4 blue),
-  matching the voice panels.
+  matching the voice panels. (That these are the module's colors is
+  unverified on hardware.)
 - **The TR layout:** 4×16 with beat groups of four, lit steps, and
   per-row mute.
 - **Timing:** a drift-free worker clock with an 80 ms lookahead, so audio

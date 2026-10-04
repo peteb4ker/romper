@@ -26,6 +26,24 @@ the pieces fit.
 - Memoize where profiling or list size calls for it. `KitGrid` virtualizes
   with react-window; follow that pattern for any other long list.
 
+## Rample behaviour
+
+Any statement about how the Squarp Rample behaves, in code comments, docs,
+tests or issues, quotes the [Rample manual](https://squarp.net/rample/manual/)
+or is marked "unverified on hardware". Romper's own design choices are
+written as Romper's, not as the module's. For example, "stereo is a voice
+setting" is Romper's design; the manual says only "A stereo sample will
+fill 2 mono voices."
+
+## Keyboard shortcuts
+
+- A shortcut that must work in the kit browser and elsewhere uses a number
+  or a special character only, with no Shift (Pete, #552). Letters are
+  reserved for bank jumps in the browser.
+- Choosing a shortcut, like any wording or behaviour choice, is a product
+  decision: it needs Pete's sign-off recorded on the issue before it's
+  built.
+
 ## IPC and the database
 
 - Renderer code calls main only through `globalThis.electronAPI`, whose type
@@ -128,6 +146,13 @@ the pieces fit.
   `global.window` breaks `globalThis.electronAPI`.
 - Don't `.skip` a failing test; fix the cause.
 
+## Fixing a bug
+
+- Look for siblings: other callers or code paths with the same bug. Fix
+  them in the same PR or file issues for them, and list them in the PR
+  description either way.
+- Cite code by symbol and file, not line number, in issues, PRs and docs.
+
 ## Performance budgets
 
 Performance is held in place by budgets in
@@ -151,11 +176,14 @@ How the checks read a budget:
 - **`max` is a ratchet.** It's the value measured when the budget was set,
   so a count that goes up fails as a regression. If your change adds work on
   purpose, raise `max` in the same PR and say why in its description.
-- **`target` and `until: "RE-NN"`** record what a planned refactor (see
+- **`target` and `until`** record what a planned refactor (see
   [`architecture-review.md`](architecture-review.md)) will bring a count
-  down to. When a count reaches its target, the check fails as stale. Set
-  `max` to the new count and delete `target` and `until` in the PR that got
-  it there, as with a stale `knownBug: "RE-NN"` marker.
+  down to. `until` names the issue that tracks it (`"#452"`); older budgets
+  name a finding from the frozen register (`"RE-36"`). When a count reaches
+  its target, the check fails as stale. Set `max` to the new count and
+  delete `target` and `until` in the PR that got it there, as with a stale
+  `knownBug` marker in the validation harness (which also takes the issue
+  number).
 - **A measured metric with no budget fails.** A new IPC channel showing up
   in an action gets a budget, or the change gets rethought. `total` is the
   one metric that may go unbudgeted.

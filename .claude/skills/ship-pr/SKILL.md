@@ -37,7 +37,18 @@ is already green, skip auto-merge and merge it directly (rebase method).
    an entry supported with no test above unit level; the check reruns when
    the description is edited. Warnings about issues the PR didn't touch
    aren't the PR's to fix.
-6. **UI changes carry their screenshots.** If the PR changes how a captured
+6. **Titles and branch name the issue.** The PR title and its commits end
+   with the issue number, e.g. `(#552)`, and the branch is
+   `fix/<issue>-<slug>`. Don't cite retired `RE-` IDs in new titles or
+   branches.
+7. **Siblings are checked.** The description says which other callers or
+   code paths could have the same bug, and what happened to each: fixed
+   here, or filed as an issue (link it). "None found" is an answer; a
+   missing check isn't.
+8. **Decisions are recorded.** A UX or product choice the PR makes
+   (shortcut, wording, behaviour) has Pete's sign-off on the issue. If it
+   doesn't, stop and ask the coordinator before merging.
+9. **UI changes carry their screenshots.** If the PR changes how a captured
    view looks, it must include the regenerated screenshots and manual text
    (`capture-screenshots` command). If it merged without them, raise a
    `docs/` PR with them before moving on.

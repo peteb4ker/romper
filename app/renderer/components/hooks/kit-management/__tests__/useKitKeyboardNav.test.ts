@@ -221,10 +221,10 @@ describe("useKitKeyboardNav", () => {
     });
 
     // #500: keys pressed in a dialog are the dialog's
-    it("[UC-07] ignores the bookmark key while a modal dialog is open", () => {
+    it("[UC-07] ignores Shift+F while a modal dialog is open", () => {
       const modal = openModal();
       const mockEvent = {
-        key: "*",
+        key: "F",
         preventDefault: vi.fn(),
         shiftKey: true,
         stopPropagation: vi.fn(),

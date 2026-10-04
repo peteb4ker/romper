@@ -50,8 +50,10 @@ test.describe("[UC-07] Shortcuts behind a dialog", () => {
     await expect(preferences()).toBeVisible();
 
     await window.keyboard.press("b");
+    await window.keyboard.press("Shift+F");
     // Nothing should happen behind the dialog; give a jump time to show
     await window.waitForTimeout(300);
+    await expect(card("A0").getByTitle("Add to favorites")).toBeVisible();
     await expect(card("A0")).toHaveAttribute("aria-selected", "true");
     await expect(card("B1")).toHaveAttribute("aria-selected", "false");
     await expect(preferences()).toBeVisible();
@@ -78,10 +80,15 @@ test.describe("[UC-07] Shortcuts behind a dialog", () => {
     );
     await expect(preferences()).toBeVisible();
 
+    const headerStar = window
+      .locator('[data-testid="kit-editor"]')
+      .getByTitle(/to favorites|from favorites/);
     await window.keyboard.press(",");
     await window.keyboard.press("s");
+    await window.keyboard.press("f");
     await window.waitForTimeout(300);
     await expect(openKit).toHaveText("B1");
+    await expect(headerStar).toHaveAttribute("title", "Add to favorites");
     await expect(
       window.locator('[data-testid="kit-step-sequencer-grid"]'),
     ).toBeVisible({ visible: sequencerShown });

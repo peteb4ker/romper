@@ -2,10 +2,7 @@ import type { Bank, KitWithRelations } from "@romper/shared/db/schema";
 
 import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 
-import {
-  hasCommandModifier,
-  isBrowserFavoriteKey,
-} from "../../../utils/keyboardShortcuts";
+import { hasCommandModifier } from "../../../utils/keyboardShortcuts";
 import { isModalDialogOpen } from "../../../utils/modalDialog";
 import {
   bankHasKits,
@@ -201,8 +198,6 @@ export function useKitBankNavigation({
 
       // Cmd/Ctrl/Alt combinations belong to the menu and the system
       if (hasCommandModifier(e)) return;
-      // Shift+F stars the focused kit (useKitKeyboardNav); it isn't a jump
-      if (isBrowserFavoriteKey(e)) return;
       // Keys pressed in a dialog are the dialog's (#500)
       if (isModalDialogOpen()) return;
 

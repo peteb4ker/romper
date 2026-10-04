@@ -1,9 +1,8 @@
 /**
  * True when Cmd, Ctrl or Alt is held. Single-key shortcuts (bank letters,
- * the star, kit navigation, the sequencer toggle) ignore these presses,
- * so menu accelerators such as Cmd+, and system combinations such as
- * Ctrl+A don't also trigger them (RE-38). Shift is allowed: the kit
- * browser stars with Shift+F.
+ * the favorite key, kit navigation, the sequencer toggle) ignore these
+ * presses, so menu accelerators such as Cmd+, and system combinations such
+ * as Ctrl+A don't also trigger them (RE-38).
  */
 export function hasCommandModifier(
   e: Pick<KeyboardEvent, "altKey" | "ctrlKey" | "metaKey">,
@@ -12,22 +11,17 @@ export function hasCommandModifier(
 }
 
 /**
- * True for the press that stars or unstars the focused kit in the kit
- * browser: Shift+F. Every plain letter jumps to its bank there, so plain
- * "F" stays the jump to bank F (RE-38, #504).
+ * True for the press that makes a kit a favorite, or stops it being one:
+ * ";" in both the kit browser (the focused kit) and the kit editor (the
+ * open kit). A shortcut that works in the browser and elsewhere uses a
+ * number or a special character, never a letter, since every letter jumps
+ * to its bank in the browser (#552).
+ *
+ * Matches the character typed (`key`), not the physical key, so it follows
+ * the keyboard layout.
  */
-export function isBrowserFavoriteKey(
-  e: Pick<KeyboardEvent, "altKey" | "ctrlKey" | "key" | "metaKey" | "shiftKey">,
-): boolean {
-  return e.shiftKey && !hasCommandModifier(e) && e.key.toLowerCase() === "f";
-}
-
-/**
- * True for the press that stars or unstars the open kit in the kit editor:
- * "F", with or without Shift. No other editor shortcut uses F (#504).
- */
-export function isEditorFavoriteKey(
+export function isFavoriteKey(
   e: Pick<KeyboardEvent, "altKey" | "ctrlKey" | "key" | "metaKey">,
 ): boolean {
-  return !hasCommandModifier(e) && e.key.toLowerCase() === "f";
+  return !hasCommandModifier(e) && e.key === ";";
 }

@@ -39,9 +39,16 @@ fill 2 mono voices."
 
 - A plain-key shortcut that must work in the kit browser and elsewhere
   uses a number or a special character only, with no Shift (Pete, #552).
-  Letters are reserved for bank jumps in the browser.
+  Letters are reserved for bank jumps in the browser. `;` toggles a
+  favorite in both the browser and the editor.
 - Standard Cmd/Ctrl menu shortcuts are exempt, Shift included: for
   example Cmd/Ctrl+Shift+S for Scan All and Cmd/Ctrl+Shift+Z for Redo.
+- Match on `KeyboardEvent.key`, not `code`, so the shortcut follows the
+  keyboard layout, and keep shared matchers in
+  `app/renderer/utils/keyboardShortcuts.ts` (`isFavoriteKey`).
+- Single-key shortcuts ignore presses with Cmd, Ctrl or Alt held
+  (`hasCommandModifier`), keys typed in a text field, and keys pressed while
+  a modal dialog is open (`isModalDialogOpen`).
 - Choosing a shortcut, like any wording or behaviour choice, is a product
   decision: it needs Pete's sign-off recorded on the issue before it's
   built.

@@ -14,7 +14,8 @@ import {
 // #500: the kit browser's and kit editor's shortcuts listen on the window,
 // so a bank letter pressed in a dialog jumped banks behind it, and Escape
 // in a dialog also left the kit. They now leave keys to an open modal
-// dialog. The fixture has kits A0 and B1.
+// dialog, including the favorite key, ";" (#552). The fixture has kits A0
+// and B1.
 test.describe("[UC-07] Shortcuts behind a dialog", () => {
   let electronApp: ElectronApplication;
   let window: Page;
@@ -42,7 +43,7 @@ test.describe("[UC-07] Shortcuts behind a dialog", () => {
     if (testEnv) await cleanupE2EFixture(testEnv);
   });
 
-  test("a bank letter pressed in a dialog doesn't jump banks", async () => {
+  test("[UC-10] [Q-06] a bank letter or ; pressed in a dialog does nothing behind it", async () => {
     await window.keyboard.press("a");
     await expect(card("A0")).toBeFocused();
 
@@ -50,7 +51,7 @@ test.describe("[UC-07] Shortcuts behind a dialog", () => {
     await expect(preferences()).toBeVisible();
 
     await window.keyboard.press("b");
-    await window.keyboard.press("Shift+F");
+    await window.keyboard.press(";");
     // Nothing should happen behind the dialog; give a jump time to show
     await window.waitForTimeout(300);
     await expect(card("A0").getByTitle("Add to favorites")).toBeVisible();
@@ -65,7 +66,7 @@ test.describe("[UC-07] Shortcuts behind a dialog", () => {
     await expect(card("B1")).toHaveAttribute("aria-selected", "true");
   });
 
-  test("[UC-18] the kit editor's keys wait while a dialog is open", async () => {
+  test("[UC-10] [UC-18] [Q-06] the kit editor's keys, ; included, wait while a dialog is open", async () => {
     await card("B1").click();
     await window.waitForSelector('[data-testid="kit-editor"]');
     const openKit = window.locator('[data-testid="kit-header-name"]');
@@ -85,7 +86,7 @@ test.describe("[UC-07] Shortcuts behind a dialog", () => {
       .getByTitle(/to favorites|from favorites/);
     await window.keyboard.press(",");
     await window.keyboard.press("s");
-    await window.keyboard.press("f");
+    await window.keyboard.press(";");
     await window.waitForTimeout(300);
     await expect(openKit).toHaveText("B1");
     await expect(headerStar).toHaveAttribute("title", "Add to favorites");

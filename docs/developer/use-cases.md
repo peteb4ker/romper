@@ -221,15 +221,15 @@ and highlights the matches. See
 
 ### UC-10 Favourite kits
 
-The star on a kit card or in the kit editor's header, `Shift+F` on the
-focused kit in the kit browser, or `F` in the kit editor marks a
-favourite; the Favorites filter shows only those. See
+The star on a kit card or in the kit editor's header, or `;` (the
+focused kit in the kit browser, the open kit in the kit editor) marks a
+favorite; the Favorites filter shows only those. See
 [Favorites Filter](../manual/kit-browser.md#favorites-filter).
 
 - **Renderer:** `app/renderer/components/KitGridItem.tsx` →
   `app/renderer/components/hooks/kit-management/useKitFilters.ts` (`handleToggleFavorite`,
-  `handleToggleFavoritesFilter`, the count from the kit list); `app/renderer/components/hooks/kit-management/useKitKeyboardNav.ts` (`Shift+F`);
-  `app/renderer/components/hooks/kit-management/useKitEditorKeyboardNav.ts` (`F`);
+  `handleToggleFavoritesFilter`, the count from the kit list); `app/renderer/components/hooks/kit-management/useKitKeyboardNav.ts` (`;`);
+  `app/renderer/components/hooks/kit-management/useKitEditorKeyboardNav.ts` (`;`);
   `app/renderer/components/KitHeader.tsx`; both toggle through
   `app/renderer/components/hooks/kit-management/useKitDataManager.ts` (`toggleKitFavorite`), which
   updates the kit list.

@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from "react";
 
-import { isBrowserFavoriteKey } from "../../../utils/keyboardShortcuts";
+import { isFavoriteKey } from "../../../utils/keyboardShortcuts";
 import { isModalDialogOpen } from "../../../utils/modalDialog";
 
 export interface UseKitKeyboardNavOptions {
@@ -18,7 +18,7 @@ export function useKitKeyboardNav({
   globalBankHotkeyHandler,
   onToggleFavorite,
 }: UseKitKeyboardNavOptions) {
-  // Task 20.1.3: Favorite toggle keyboard shortcut handler
+  // The favorite key, for the focused kit
   const favoritesKeyboardHandler = useCallback(
     (e: KeyboardEvent) => {
       // Don't handle hotkeys when typing in inputs
@@ -29,8 +29,8 @@ export function useKitKeyboardNav({
       // Keys pressed in a dialog are the dialog's (#500)
       if (isModalDialogOpen()) return;
 
-      // Shift+F stars the focused kit; plain "F" jumps to bank F (#504)
-      if (isBrowserFavoriteKey(e) && focusedKit && onToggleFavorite) {
+      // ";" makes the focused kit a favorite, or stops it being one (#552)
+      if (isFavoriteKey(e) && focusedKit && onToggleFavorite) {
         e.preventDefault();
         e.stopPropagation();
         onToggleFavorite(focusedKit);

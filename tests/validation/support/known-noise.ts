@@ -109,6 +109,18 @@ export const KNOWN_NOISE: KnownNoise[] = [
   },
   {
     examples: [
+      "[9348:1004/011137.026135:ERROR:components/viz/service/display/display.cc:271] Frame latency is negative: -0.083 ms",
+    ],
+    link: "https://github.com/peteb4ker/romper/issues/561",
+    pattern:
+      /:ERROR:components\/viz\/service\/display\/display\.cc:\d+\] Frame latency is negative: -?[\d.]+ ms$/,
+    platforms: ["darwin"],
+    reason:
+      "Chromium's compositor logs this timing check on macOS when a frame's timestamps arrive out of order; it has no effect on the app",
+    source: "Chromium viz",
+  },
+  {
+    examples: [
       "2026-10-03 16:05:20.335 Electron[19975:54134] NSSpellServer dataFromCheckingString timed out, index is 1",
       "2026-10-03 16:05:20.852 Electron[19975:54134] NSSpellServer dataFromCheckingString succeeded, index is 0",
     ],

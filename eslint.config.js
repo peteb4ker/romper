@@ -61,6 +61,7 @@ export default defineConfig([
       "_site_preview",
       "docs/_site",
       "docs/.jekyll-cache",
+      ".romper-dev",
     ],
   },
 

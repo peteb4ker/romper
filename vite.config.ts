@@ -86,6 +86,8 @@ export default defineConfig({
         // own files.
         path.resolve(__dirname, "worktrees") + "/**",
         path.resolve(__dirname, ".claude/worktrees") + "/**",
+        // npm run dev's userData, which Electron writes to while it runs
+        path.resolve(__dirname, ".romper-dev") + "/**",
       ],
     },
   },

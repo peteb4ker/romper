@@ -13,6 +13,9 @@ npm run dev   # builds, then runs Vite + Electron; renderer edits hot-reload
 ```
 
 Changes under `electron/` (main, preload) need `npm run dev` restarted.
+`npm run dev` keeps its settings in the checkout's `.romper-dev/user-data`
+(ignored by git), starting from a copy of the installed app's settings, so it
+never changes the installed app's. Delete that folder to start again.
 Environment variables are listed under Configuration in the [README](README.md).
 
 ## Workflow

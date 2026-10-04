@@ -19,6 +19,9 @@ implementation_status: harness (PR 2, #402), e2e error guard (PR 3, #411) and tr
 2. **Capture every error and warning** the app shows or logs during that run,
    and fail on anything unexpected.
 3. **Find latent bugs** along the way and register them (`RE-` IDs).
+   `RE-` IDs have since been retired: the `RE-` IDs in this spec refer to
+   the findings register, now a frozen snapshot, and new findings are
+   GitHub issues (see [`BACKLOG.md`](../../BACKLOG.md)).
 4. **Layer in the tests the suites are missing**, including the focused tests
    that come out of the harness.
 5. **Trace use cases to features, code and tests**, so we can show what Romper

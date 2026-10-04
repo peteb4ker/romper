@@ -40,7 +40,10 @@ export interface Expectation {
   pattern: RegExp;
   /** Why this message is expected */
   reason: string;
-  /** Findings register ID when the message comes from a known bug */
+  /**
+   * The issue (`#NNN`) when the message comes from a known bug. Older
+   * entries name a finding from the frozen findings register (`RE-NN`).
+   */
   ref?: string;
   /** Limit to these sources; any source when omitted */
   sources?: Source[];

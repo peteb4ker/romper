@@ -4,6 +4,12 @@ The backlog is [GitHub issues](https://github.com/peteb4ker/romper/issues):
 issues are what is going to happen; pull requests are what happened. This
 file is the protocol, plus the history from before the issue tracker.
 
+Issues are the only record of open work and new findings. The `RE-` IDs of
+the [findings register](aidlc-docs/inception/reverse-engineering/code-quality-assessment.md)
+are retired: the register is a frozen snapshot, and `RE-` IDs in older
+commits, issues, code and docs (and in the table at the end of this file)
+refer to it. Leave them as they are, and don't add to the register.
+
 Everything traces from a user-oriented statement: a use case (`UC-NN`) or a
 quality (`Q-NN`) in [`use-cases.md`](docs/developer/use-cases.md). Each
 issue carries:
@@ -65,13 +71,24 @@ Open a draft pull request whose description says `Fixes #N` (GitHub links
 it to the issue), or comment on the issue. Both are visible to local and
 cloud sessions alike.
 
+- **Branch:** `fix/<issue>-<slug>`, for example `fix/537-import-stereo`.
+- **Commit and PR titles:** conventional, ending with the issue number:
+  `fix(scan): keep stereo samples stereo after importing a card (#537)`.
+
+A UX or product decision (a shortcut, wording, a behaviour choice) needs
+Pete's sign-off recorded on the issue before you build it. If the issue has
+none, ask the coordinator; don't pick one yourself.
+
 ## Fix
 
 - Tag the tests that prove the fix with the entry's ID (`[UC-19]`, `[Q-02]`)
   in a `describe` or `test` title.
-- The pull request's description says `Fixes #N`, once per issue it fixes.
-  Merging closes the issue; the release notes list the issues a release
-  closed (see the `release` skill).
+- Look for siblings: other callers or code paths with the same bug. Fix
+  them in the pull request or file issues for them, and list them in its
+  description either way.
+- The pull request's description ends with `Fixes #N`, once per issue it
+  fixes. Merging closes the issue; the release notes list the issues a
+  release closed (see the `release` skill).
 - Don't edit the entry's status: when the pull request closes the entry's
   last open issue, it becomes supported by itself. The check counts the
   issues a pull request fixes as closed, so its job summary shows the
@@ -82,19 +99,22 @@ cloud sessions alike.
 
 ## Report a new finding
 
-Open an issue:
+First re-check `origin/main`: describe only what's on main, never code that
+exists only in an open pull request. Then open an issue:
 
 - **Title:** what a user would notice, in plain words, without code.
 - **Labels:** the UC/Q, a kind and a severity, as above.
 - **Body:** the statement, an **Affects:** link to the entry in
-  `use-cases.md`, the details, where in the code, a suggested fix, and the
-  footer "Fix it in a pull request whose description says `Fixes #<this
-  issue>`; merging closes the issue and lists it in the next release's
-  notes." When there's technical detail, also add it to the
-  [findings register](aidlc-docs/inception/reverse-engineering/code-quality-assessment.md)
-  with the next free `RE-` ID, end its Fix column with "Tracked in #N.", and
-  add a **Finding:** line to the issue.
+  `use-cases.md`, the technical detail, where in the code (by symbol and
+  file, not line number), a suggested fix, and the footer "Fix it in a pull
+  request whose description says `Fixes #<this issue>`; merging closes the
+  issue and lists it in the next release's notes."
+- A claim about how the Rample behaves quotes the
+  [Rample manual](https://squarp.net/rample/manual/) or says "unverified on
+  hardware".
 - Nothing else to update: the issue makes its entry partial by itself.
+
+The same goes for editing an issue: re-check main first.
 
 ## Fixed before the issue tracker
 

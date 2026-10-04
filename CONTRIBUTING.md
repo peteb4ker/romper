@@ -33,7 +33,9 @@ Direct commits and pushes to `main` are blocked.
 ## Commit messages
 
 Conventional commits: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`,
-`chore:`, with an imperative, specific subject under about 72 characters.
+`chore:`, with an imperative, specific subject under about 72 characters,
+ending with the GitHub issue it's for, e.g. `(#537)`. Name the branch
+`fix/<issue>-<slug>`, and end the PR description with `Fixes #<issue>`.
 Add a body when the why isn't obvious. No co-author or AI attribution
 trailers.
 

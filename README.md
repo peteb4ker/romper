@@ -34,7 +34,7 @@ Built with modern web technologies (**Electron**, **React**, **TypeScript**, **D
 - Visual browser for all your Rample sample kits with rich metadata
 - Organize kits by banks (A-Z) and slots (0-99) matching your hardware
 - Quick search and filtering to find the perfect kit instantly
-- Favorites system to bookmark your most-used kits
+- Mark your most-used kits as favorites
 
 ### 🔊 **Audio Preview and Step Sequencer**
 - Play samples directly in the app without loading them on hardware, with a waveform for each

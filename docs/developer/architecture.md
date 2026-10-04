@@ -193,6 +193,8 @@ to skip them (RE-09).
 
 - **Voices are monophonic (voice choke).** Triggering a sample stops any other
   sample playing on the same voice (`handlePlay` in `useKitPlayback.ts`).
+  This is Romper's design; the Rample manual doesn't describe a choke, so
+  whether the module does the same is unverified on hardware.
 - Kit samples are loaded over IPC by kit / voice / slot
   (`getSampleAudioBuffer`) and played through an `AudioBufferSourceNode` into
   a `GainNode`. All slots share one `AudioContext`
@@ -217,7 +219,10 @@ to skip them (RE-09).
 ## Stereo
 
 Stereo is a **voice** setting (`voices.stereo_mode`), not a sample property.
-A stereo voice pairs with the next voice. Never infer stereo from a file's
+That's Romper's design, chosen to stop phantom samples; the Rample manual
+says only "A stereo sample will fill 2 mono voices." and "All layers must be
+of the same type (mono OR stereo) in a voice." A stereo voice pairs with
+the next voice. Never infer stereo from a file's
 channel count, and never copy samples to the adjacent voice because a file
 is stereo; doing so created phantom samples that couldn't be deleted.
 Samples carry no stereo flag (RE-69 dropped `samples.is_stereo`). Unlinking

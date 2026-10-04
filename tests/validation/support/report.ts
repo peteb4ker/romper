@@ -3,8 +3,8 @@
  * message, written as `report.md` and `report.json` (plus full logs) to the
  * report folder.
  *
- * A check tied to a known bug (`knownBug: "RE-NN"`) that fails is reported
- * as "known" and doesn't fail the run. If it passes, the bug looks fixed and
+ * A check tied to a known bug (`knownBug: "#NNN"`, its issue) that fails is
+ * reported as "known" and doesn't fail the run. If it passes, the bug looks fixed and
  * the run fails until the marker is removed, so markers can't go stale.
  */
 import fs from "node:fs/promises";

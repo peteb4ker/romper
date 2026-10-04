@@ -18,9 +18,10 @@ Each entry has:
 
 **Open issues are GitHub issues** labelled with the entry's ID, for example
 [open issues for UC-19](https://github.com/peteb4ker/romper/issues?q=is%3Aopen+label%3AUC-19).
-An issue's title says what a user would notice; its body has the details
-and links the [findings register](../../aidlc-docs/inception/reverse-engineering/code-quality-assessment.md)
-entry, if there is one. A doc gap (the docs promise what the code doesn't
+An issue's title says what a user would notice; its body has the technical
+detail. (Older issues also link a `RE-` finding in the
+[findings register](../../aidlc-docs/inception/reverse-engineering/code-quality-assessment.md),
+now a frozen snapshot.) A doc gap (the docs promise what the code doesn't
 do) is an issue too, labelled `documentation`, and a missing test is one
 labelled `test`, so entries no longer list known issues or doc gaps here.
 Issues labelled `triage`, or with no `UC-NN` or `Q-NN` label, haven't been

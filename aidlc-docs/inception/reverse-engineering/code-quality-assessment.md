@@ -1,12 +1,13 @@
 # Code Quality Assessment
 
-> **Dated snapshot, not maintained.** This register is the audit of `main` at
+> **Dated snapshot, frozen.** This register is the audit of `main` at
 > commit `87bea51` (2026-09-29). The "Fixed in #N" notes in its Fix column
-> record what was fixed later, and fix commits still cite its `RE-` IDs, but
-> the rest isn't kept up to date: the Top priorities list and any row that
-> looks open are historical, and may since have been fixed, re-scoped or
-> dropped. For current behaviour read the code on `main`; for what's still
-> open, see [GitHub issues](https://github.com/peteb4ker/romper/issues).
+> record what was fixed up to 2026-10-03, when `RE-` IDs were retired: no
+> new findings or notes are added, and new work cites GitHub issues. The
+> Top priorities list and any row that looks open are historical, and may
+> since have been fixed, re-scoped or dropped. For current behaviour read
+> the code on `main`; for what's still open, see
+> [GitHub issues](https://github.com/peteb4ker/romper/issues).
 
 > Audit of `main` @ `87bea51` (app version 1.3.1), 2026-09-29. Five
 > read-only reviews covered the main process and data layer, the IPC

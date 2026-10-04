@@ -342,17 +342,16 @@ describe("useKitBankNavigation", () => {
       },
     );
 
-    // #504: Shift+F stars the focused kit, so it doesn't also jump to bank F
-    it("[UC-10] leaves Shift+F to the star and jumps on plain F", () => {
+    // #552: F is bank F's jump again; ";" toggles the favorite instead
+    it("[UC-10] jumps to bank F on F and leaves ; alone", () => {
       const kits = [...mockKits, { ...mockKits[2], name: "F0" }];
       const { result } = renderHook(() =>
         useKitBankNavigation({ ...defaultProps, kits }),
       );
-      const press = (key: string, shiftKey: boolean) => {
+      const press = (key: string) => {
         const e = {
           key,
           preventDefault: vi.fn(),
-          shiftKey,
           target: { tagName: "DIV" },
         } as unknown as KeyboardEvent;
         act(() => {
@@ -361,11 +360,11 @@ describe("useKitBankNavigation", () => {
         return e;
       };
 
-      const shifted = press("F", true);
+      const semicolon = press(";");
       expect(result.current.focusedKit).toBe("A0");
-      expect(shifted.preventDefault).not.toHaveBeenCalled();
+      expect(semicolon.preventDefault).not.toHaveBeenCalled();
 
-      press("f", false);
+      press("F");
       expect(result.current.focusedKit).toBe("F0");
     });
 

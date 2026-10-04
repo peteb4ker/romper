@@ -4,7 +4,7 @@ import React from "react";
 
 import {
   hasCommandModifier,
-  isEditorFavoriteKey,
+  isFavoriteKey,
 } from "../../../utils/keyboardShortcuts";
 import { isModalDialogOpen } from "../../../utils/modalDialog";
 
@@ -35,7 +35,7 @@ interface UseKitEditorKeyboardNavParams {
 
 /**
  * Global keyboard shortcuts for the kit editor: kit navigation (, .),
- * scanning (/), sequencer toggle (s), star (f), and sample navigation/preview
+ * scanning (/), sequencer toggle (s), favorite (;), and sample navigation/preview
  * (arrows + space) while the sequencer is closed.
  */
 export function useKitEditorKeyboardNav({
@@ -96,8 +96,8 @@ export function useKitEditorKeyboardNav({
         setSequencerOpen((open) => !open);
         return;
       }
-      // F stars or unstars the open kit (#504)
-      if (isEditorFavoriteKey(e)) {
+      // ";" makes the open kit a favorite, or stops it being one (#552)
+      if (isFavoriteKey(e)) {
         if (onToggleFavorite) {
           e.preventDefault();
           void onToggleFavorite();

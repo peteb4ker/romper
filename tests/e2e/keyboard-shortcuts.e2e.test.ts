@@ -17,11 +17,12 @@ type ApiWindow = { electronAPI: ElectronAPI } & typeof globalThis;
 
 // RE-38: "F" both jumped to bank F and bookmarked the focused kit, and the
 // single-key shortcuts ignored Cmd, Ctrl and Alt, so a menu accelerator
-// such as Cmd+, also stepped to the previous kit. In the kit browser plain
-// letters now only jump to banks and Shift+F stars the focused kit; in the
-// kit editor F stars the open kit (#504). Combinations with Cmd, Ctrl or Alt
-// are left to the menu and the system. The fixture has kits A0 and B1.
-test.describe("[UC-07] [UC-10] Keyboard shortcuts", () => {
+// such as Cmd+, also stepped to the previous kit. Letters now only jump to
+// banks in the kit browser, and ";" toggles a favorite in both views: the
+// focused kit in the browser, the open kit in the editor (#552). Combinations
+// with Cmd, Ctrl or Alt are left to the menu and the system. The fixture has
+// kits A0 and B1.
+test.describe("[UC-07] [UC-10] [Q-06] Keyboard shortcuts", () => {
   let electronApp: ElectronApplication;
   let window: Page;
   let testEnv: E2ETestEnvironment;
@@ -57,29 +58,39 @@ test.describe("[UC-07] [UC-10] Keyboard shortcuts", () => {
     if (testEnv) await cleanupE2EFixture(testEnv);
   });
 
-  test("Shift+F stars the focused kit in the browser, and F and * don't", async () => {
+  test("[UC-10] [Q-06] ; toggles the focused kit's favorite in the browser, and F jumps to bank F", async () => {
+    // A kit in bank F, for F to jump to
+    await window
+      .getByTestId("bank-nav")
+      .getByRole("button", { name: "Jump to bank F" })
+      .click();
+    await window.getByTestId("add-kit-F").click();
+    await expect(card("F0")).toBeVisible({ timeout: 10000 });
+
     await window.keyboard.press("a");
     await expect(card("A0")).toBeFocused();
 
-    await window.keyboard.press("f");
-    await window.keyboard.press("*");
-    // Nothing should happen; give a save time to show if it would
-    await window.waitForTimeout(300);
-    await expect(card("A0").getByTitle("Add to favorites")).toBeVisible();
-    expect(await savedFavourite("A0")).toBe(false);
-
-    await window.keyboard.press("Shift+F");
+    await window.keyboard.press(";");
     await expect(card("A0").getByTitle("Remove from favorites")).toBeVisible();
     expect(await savedFavourite("A0")).toBe(true);
-    // Shift+F doesn't also jump away from the focused kit
+    // ";" doesn't also move away from the focused kit
     await expect(card("A0")).toBeFocused();
 
-    await window.keyboard.press("Shift+F");
+    // F jumps to bank F and leaves favorites alone
+    await window.keyboard.press("f");
+    await expect(card("F0")).toBeFocused();
+    await expect(card("F0").getByTitle("Add to favorites")).toBeVisible();
+    expect(await savedFavourite("F0")).toBe(false);
+    expect(await savedFavourite("A0")).toBe(true);
+
+    await window.keyboard.press("a");
+    await expect(card("A0")).toBeFocused();
+    await window.keyboard.press(";");
     await expect(card("A0").getByTitle("Add to favorites")).toBeVisible();
     expect(await savedFavourite("A0")).toBe(false);
   });
 
-  test("F stars the open kit in the editor", async () => {
+  test("[UC-10] [Q-06] ; toggles the open kit's favorite in the editor, and F doesn't", async () => {
     await card("B1").click();
     await window.waitForSelector('[data-testid="kit-editor"]');
     await expect(openKit()).toHaveText("B1");
@@ -89,10 +100,17 @@ test.describe("[UC-07] [UC-10] Keyboard shortcuts", () => {
 
     await expect(headerStar).toHaveAttribute("title", "Add to favorites");
     await window.keyboard.press("f");
+    await window.keyboard.press("Shift+F");
+    // Nothing should happen; give a save time to show if it would
+    await window.waitForTimeout(300);
+    await expect(headerStar).toHaveAttribute("title", "Add to favorites");
+    expect(await savedFavourite("B1")).toBe(false);
+
+    await window.keyboard.press(";");
     await expect(headerStar).toHaveAttribute("title", "Remove from favorites");
     expect(await savedFavourite("B1")).toBe(true);
 
-    await window.keyboard.press("f");
+    await window.keyboard.press(";");
     await expect(headerStar).toHaveAttribute("title", "Add to favorites");
     expect(await savedFavourite("B1")).toBe(false);
   });

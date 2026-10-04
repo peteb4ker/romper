@@ -93,7 +93,7 @@ describe("useKitKeyboardNav", () => {
     });
   });
 
-  describe("[UC-10] favorites keyboard handler (Shift+F)", () => {
+  describe("[UC-10] [Q-06] favorite key (;)", () => {
     let favoritesHandler: (e: KeyboardEvent) => void;
 
     beforeEach(() => {
@@ -107,33 +107,37 @@ describe("useKitKeyboardNav", () => {
       favoritesHandler = favoritesCall?.[1];
     });
 
-    it.each(["F", "f"])(
-      "toggles favorite on Shift+%s when a kit is focused",
-      (key) => {
-        const mockEvent = {
-          key,
-          preventDefault: vi.fn(),
-          shiftKey: true,
-          stopPropagation: vi.fn(),
-          target: document.createElement("div"),
-        } as unknown as KeyboardEvent;
-
-        favoritesHandler(mockEvent);
-
-        expect(mockOnToggleFavorite).toHaveBeenCalledWith("Kit1");
-        expect(mockEvent.preventDefault).toHaveBeenCalled();
-        expect(mockEvent.stopPropagation).toHaveBeenCalled();
-      },
-    );
-
-    // #504: plain "F" stays the jump to bank F; "*" no longer stars
-    it.each(["f", "F", "*"])("leaves %s without Shift alone", (key) => {
-      const mockEvent = {
+    const keyEvent = (
+      key: string,
+      extra: { target?: EventTarget } & Partial<KeyboardEvent> = {},
+    ) =>
+      ({
         key,
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
         target: document.createElement("div"),
-      } as unknown as KeyboardEvent;
+        ...extra,
+      }) as unknown as KeyboardEvent;
+
+    it("toggles the focused kit's favorite on ;", () => {
+      const mockEvent = keyEvent(";");
+
+      favoritesHandler(mockEvent);
+
+      expect(mockOnToggleFavorite).toHaveBeenCalledWith("Kit1");
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(mockEvent.stopPropagation).toHaveBeenCalled();
+    });
+
+    // #552: F and Shift+F no longer toggle a favorite; F is bank F's jump
+    it.each([
+      ["f", false],
+      ["F", false],
+      ["F", true],
+      [":", true],
+      ["*", false],
+    ])("leaves %s (Shift: %s) alone", (key, shiftKey) => {
+      const mockEvent = keyEvent(key, { shiftKey });
 
       favoritesHandler(mockEvent);
 
@@ -143,16 +147,9 @@ describe("useKitKeyboardNav", () => {
     });
 
     it.each(["metaKey", "ctrlKey", "altKey"])(
-      "ignores Shift+F with %s held",
+      "ignores ; with %s held",
       (modifier) => {
-        const mockEvent = {
-          key: "F",
-          [modifier]: true,
-          preventDefault: vi.fn(),
-          shiftKey: true,
-          stopPropagation: vi.fn(),
-          target: document.createElement("div"),
-        } as unknown as KeyboardEvent;
+        const mockEvent = keyEvent(";", { [modifier]: true });
 
         favoritesHandler(mockEvent);
 
@@ -160,7 +157,7 @@ describe("useKitKeyboardNav", () => {
       },
     );
 
-    it("ignores Shift+F when no kit is focused", () => {
+    it("ignores ; when no kit is focused", () => {
       const { rerender } = renderHook(
         ({ focused }) =>
           useKitKeyboardNav({ ...defaultProps, focusedKit: focused }),
@@ -174,13 +171,7 @@ describe("useKitKeyboardNav", () => {
       const latestCall = calls[calls.length - 1];
       const updatedHandler = latestCall[1];
 
-      const mockEvent = {
-        key: "F",
-        preventDefault: vi.fn(),
-        shiftKey: true,
-        stopPropagation: vi.fn(),
-        target: document.createElement("div"),
-      } as unknown as KeyboardEvent;
+      const mockEvent = keyEvent(";");
 
       updatedHandler(mockEvent);
 
@@ -188,15 +179,10 @@ describe("useKitKeyboardNav", () => {
       expect(mockEvent.preventDefault).not.toHaveBeenCalled();
     });
 
-    it("ignores Shift+F typed in an input field", () => {
-      const inputElement = document.createElement("input");
-      const mockEvent = {
-        key: "F",
-        preventDefault: vi.fn(),
-        shiftKey: true,
-        stopPropagation: vi.fn(),
-        target: inputElement,
-      } as unknown as KeyboardEvent;
+    it("ignores ; typed in an input field", () => {
+      const mockEvent = keyEvent(";", {
+        target: document.createElement("input"),
+      });
 
       favoritesHandler(mockEvent);
 
@@ -204,15 +190,10 @@ describe("useKitKeyboardNav", () => {
       expect(mockEvent.preventDefault).not.toHaveBeenCalled();
     });
 
-    it("ignores Shift+F typed in a textarea", () => {
-      const textareaElement = document.createElement("textarea");
-      const mockEvent = {
-        key: "F",
-        preventDefault: vi.fn(),
-        shiftKey: true,
-        stopPropagation: vi.fn(),
-        target: textareaElement,
-      } as unknown as KeyboardEvent;
+    it("ignores ; typed in a textarea", () => {
+      const mockEvent = keyEvent(";", {
+        target: document.createElement("textarea"),
+      });
 
       favoritesHandler(mockEvent);
 
@@ -221,15 +202,9 @@ describe("useKitKeyboardNav", () => {
     });
 
     // #500: keys pressed in a dialog are the dialog's
-    it("[UC-07] ignores Shift+F while a modal dialog is open", () => {
+    it("[UC-07] ignores ; while a modal dialog is open", () => {
       const modal = openModal();
-      const mockEvent = {
-        key: "F",
-        preventDefault: vi.fn(),
-        shiftKey: true,
-        stopPropagation: vi.fn(),
-        target: document.body,
-      } as unknown as KeyboardEvent;
+      const mockEvent = keyEvent(";", { target: document.body });
 
       favoritesHandler(mockEvent);
 

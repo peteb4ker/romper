@@ -3,10 +3,7 @@ import type { Kit } from "@romper/shared/db/schema.js";
 import { isValidKit } from "@romper/shared/kitUtilsShared";
 import { RefObject, useCallback, useMemo } from "react";
 
-import {
-  hasCommandModifier,
-  isBrowserFavoriteKey,
-} from "../../utils/keyboardShortcuts";
+import { hasCommandModifier } from "../../utils/keyboardShortcuts";
 import { isModalDialogOpen } from "../../utils/modalDialog";
 
 interface UseKitGridKeyboardProps {
@@ -216,8 +213,6 @@ export function useKitGridKeyboard({
       )
         return;
       if (hasCommandModifier(e)) return;
-      // Shift+F stars the focused kit (useKitKeyboardNav); it isn't a jump
-      if (isBrowserFavoriteKey(e)) return;
       // Keys pressed in a dialog are the dialog's (#500)
       if (isModalDialogOpen()) return;
 

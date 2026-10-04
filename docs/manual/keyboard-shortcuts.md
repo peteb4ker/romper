@@ -8,6 +8,8 @@ prev_page:
 
 Romper is designed for fast keyboard-driven workflow. Many actions have a shortcut, and visible focus indicators help you track where you are when navigating without a mouse. The single-key shortcuts below ignore presses with `Cmd`, `Ctrl` or `Alt` held, so menu shortcuts such as `Cmd+,` (Preferences) don't also trigger them.
 
+A shortcut that works in both the Kit Browser and the Kit Editor, such as `;` for a favorite, is the same key in both. Letters are bank jumps in the Kit Browser, so these shortcuts use a number or a symbol instead.
+
 ## Kit Browser
 
 | Action | Shortcut |
@@ -15,9 +17,9 @@ Romper is designed for fast keyboard-driven workflow. Many actions have a shortc
 | Jump to bank | `A` through `Z` |
 | Move between kits | Arrow keys |
 | Open selected kit | `Enter` |
-| Add the focused kit to favorites, or remove it | `Shift+F` |
+| Add the focused kit to favorites, or remove it | `;` (semicolon) |
 
-When you press a bank letter, focus jumps to the first kit in that bank. Letters for banks with no kits do nothing. Every letter is a bank, so plain `F` jumps to bank F and `Shift+F` adds the focused kit to favorites or removes it.
+When you press a bank letter, focus jumps to the first kit in that bank. Letters for banks with no kits do nothing. Every letter is a bank, so `F` jumps to bank F.
 
 `Left` and `Right` step through the kits in order. `Up` and `Down` move to the kit in the same column of the row above or below, crossing from one bank to the next.
 
@@ -31,7 +33,7 @@ When you press a bank letter, focus jumps to the first kit in that bank. Letters
 | Navigate sample slots | Up / Down arrows |
 | Play selected sample (sequencer hidden) | `Space` |
 | Toggle step sequencer | `S` |
-| Add the open kit to favorites, or remove it | `F` |
+| Add the open kit to favorites, or remove it | `;` (semicolon) |
 | Undo / redo the last edit | `Cmd+Z` / `Cmd+Shift+Z` (macOS), `Ctrl+Z` / `Ctrl+Y` or `Ctrl+Shift+Z` (Windows/Linux) |
 | Back to the Kit Browser | `Escape` |
 

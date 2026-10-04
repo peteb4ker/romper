@@ -302,8 +302,8 @@ describe("[UC-07] useKitGridKeyboard", () => {
       },
     );
 
-    // #504: Shift+F stars the focused kit, so it doesn't also jump to bank F
-    it("[UC-10] leaves Shift+F to the star and jumps on plain F", () => {
+    // #552: F is bank F's jump again; ";" toggles the favorite instead
+    it("[UC-10] jumps to bank F on F and leaves ; alone", () => {
       const kits = ["A0", "F0"].map(createMockKit);
       const { result } = renderHook(() =>
         useKitGridKeyboard({
@@ -312,14 +312,11 @@ describe("[UC-07] useKitGridKeyboard", () => {
           rowIndexByKitIndex: [0, 1],
         }),
       );
-      const shifted = {
-        ...keyEvent("F"),
-        shiftKey: true,
-      } as unknown as React.KeyboardEvent;
 
-      result.current.handleKeyDown(shifted);
+      const semicolon = keyEvent(";");
+      result.current.handleKeyDown(semicolon);
       expect(mockSetFocus).not.toHaveBeenCalled();
-      expect(shifted.preventDefault).not.toHaveBeenCalled();
+      expect(semicolon.preventDefault).not.toHaveBeenCalled();
 
       result.current.handleKeyDown(keyEvent("f"));
       expect(mockSetFocus).toHaveBeenCalledWith(1);

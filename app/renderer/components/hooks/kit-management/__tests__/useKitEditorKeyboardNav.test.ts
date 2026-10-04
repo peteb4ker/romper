@@ -118,7 +118,7 @@ describe("useKitEditorKeyboardNav", () => {
     modal.setAttribute("aria-modal", "true");
     document.body.appendChild(modal);
 
-    for (const key of [",", ".", "/", "s", "f", "ArrowDown", " "]) fire(key);
+    for (const key of [",", ".", "/", "s", ";", "ArrowDown", " "]) fire(key);
 
     expect(onToggleFavorite).not.toHaveBeenCalled();
     expect(props.onPrevKit).not.toHaveBeenCalled();
@@ -195,41 +195,50 @@ describe("useKitEditorKeyboardNav", () => {
     });
   });
 
-  // #504: F stars or unstars the open kit
-  describe("[UC-10] star shortcut (f)", () => {
-    it.each([
-      ["f", {}],
-      ["F", { shiftKey: true }],
-    ])("'%s' toggles the open kit's star", (key, modifiers) => {
+  // #552: ";" toggles the open kit's favorite, as in the kit browser
+  describe("[UC-10] [Q-06] favorite key (;)", () => {
+    it("';' toggles the open kit's favorite", () => {
       const onToggleFavorite = vi.fn();
       const { fire, props } = setup({ onToggleFavorite });
-      const e = fire(key, modifiers);
+      const e = fire(";");
       expect(onToggleFavorite).toHaveBeenCalledTimes(1);
       expect(e.preventDefault).toHaveBeenCalled();
       expect(props.setSequencerOpen).not.toHaveBeenCalled();
     });
 
+    it.each([
+      ["f", {}],
+      ["F", { shiftKey: true }],
+      [":", { shiftKey: true }],
+    ])("'%s' doesn't toggle the favorite", (key, modifiers) => {
+      const onToggleFavorite = vi.fn();
+      const { fire } = setup({ onToggleFavorite });
+      const e = fire(key, modifiers);
+      expect(onToggleFavorite).not.toHaveBeenCalled();
+      expect(e.preventDefault).not.toHaveBeenCalled();
+    });
+
     it.each(["metaKey", "ctrlKey", "altKey"])(
-      "ignores f with %s held",
+      "ignores ; with %s held",
       (modifier) => {
         const onToggleFavorite = vi.fn();
         const { fire } = setup({ onToggleFavorite });
-        fire("f", { [modifier]: true });
+        fire(";", { [modifier]: true });
         expect(onToggleFavorite).not.toHaveBeenCalled();
       },
     );
 
-    it("ignores f typed in a text field", () => {
+    it("ignores ; typed in a text field", () => {
       const onToggleFavorite = vi.fn();
       const { fire } = setup({ onToggleFavorite });
       setActiveElement(document.createElement("input"));
-      fire("f");
+      fire(";");
       expect(onToggleFavorite).not.toHaveBeenCalled();
     });
 
     it("does nothing without a toggle", () => {
       const { fire } = setup();
-      const e = fire("f");
+      const e = fire(";");
       expect(e.preventDefault).not.toHaveBeenCalled();
     });
   });

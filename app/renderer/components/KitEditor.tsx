@@ -159,6 +159,7 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
         bpm={logic.kit?.bpm}
         gridRef={logic.sequencerGridRef as React.RefObject<HTMLDivElement>}
         kitName={props.kitName}
+        kitSamples={logic.kit?.samples}
         onAddUndoAction={props.onAddUndoAction}
         onMessage={props.onMessage}
         onPlaySample={logic.playback.handlePlay}

@@ -1,3 +1,4 @@
+import type { Sample } from "@romper/shared/db/schema";
 import type { SliceStep } from "@romper/shared/sliceTypes";
 import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
@@ -7,6 +8,7 @@ import type { SliceView } from "./hooks/shared/sliceConstants";
 import type { PlayOptions, SequenceUndo } from "./kitTypes";
 
 import { isModalDialogOpen } from "../utils/modalDialog";
+import { slotSampleSource } from "../utils/slotKey";
 import { useKitStepSequencerLogic } from "./hooks/kit-management/useKitStepSequencerLogic";
 import { useSequenceHistory } from "./hooks/kit-management/useSequenceHistory";
 import {
@@ -46,6 +48,8 @@ interface KitStepSequencerProps {
   bpm?: number;
   gridRef?: React.RefObject<HTMLDivElement>;
   kitName: string;
+  /** The kit's sample rows, which say which file each slot holds */
+  kitSamples?: Sample[];
   /** Records sequencer edits on the kit's undo stack. */
   onAddUndoAction?: (action: AnyUndoAction) => void;
   /** Tells the user a sequencer edit wasn't saved (RE-91, #511) */
@@ -380,6 +384,16 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
 
   const editingVoice = slicer.editingVoice;
   const editingIdx = editingVoice == null ? -1 : editingVoice - 1;
+  // The file in the slot the strip shows, so it loads another file that
+  // takes the slot (#575)
+  const displayedSource = slotSampleSource(
+    props.kitSamples?.find(
+      (row) =>
+        row.voice_number === editingVoice &&
+        row.slot_number === slicer.displayedSlot,
+    ),
+    slicer.displayedSample,
+  );
   const editingRowOn = (step: number) =>
     (logic.safeStepPattern[editingIdx]?.[step] ?? 0) > 0;
   const selectedStep = slicer.selectedStep;
@@ -444,6 +458,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
                 : null
             }
             sampleName={slicer.displayedSample}
+            sampleSource={displayedSource}
             selectedStep={selectedStep}
             selectedStepRandom={
               selectedStep != null &&

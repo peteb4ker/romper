@@ -1344,4 +1344,116 @@ describe("SampleWaveform", () => {
       expect(sources[1].stop).not.toHaveBeenCalled();
     });
   });
+
+  describe("[UC-29] another file taking the slot (#575)", () => {
+    // Two files with one name from different folders: a 2 s one and a
+    // 0.5 s one, told apart by the buffer each decodes to
+    const fileA = { duration: 2, label: "a" };
+    const fileB = { duration: 0.5, label: "b" };
+
+    function setupFiles() {
+      const sources: {
+        buffer: { duration: number } | null;
+        stop: ReturnType<typeof vi.fn>;
+      }[] = [];
+      const buffers = [fileA, fileB].map((file) => ({
+        duration: file.duration,
+        getChannelData: vi.fn(() => new Float32Array(100)),
+        length: file.duration * 44100,
+        numberOfChannels: 1,
+        sampleRate: 44100,
+      }));
+      let decodes = 0;
+      const ctx = createMockAudioContext({
+        createBufferSource: vi.fn(() => {
+          const source = {
+            buffer: null,
+            connect: vi.fn(),
+            disconnect: vi.fn(),
+            onended: null,
+            start: vi.fn(),
+            stop: vi.fn(),
+          };
+          sources.push(source);
+          return source;
+        }),
+        createGain: vi.fn(() => ({
+          connect: vi.fn(),
+          disconnect: vi.fn(),
+          gain: { setValueAtTime: vi.fn() },
+        })),
+        // Main answers by slot: whichever file is in it when asked
+        decodeAudioData: vi.fn(async () => buffers[decodes++]),
+      });
+      global.AudioContext = vi.fn(function () {
+        return ctx;
+      });
+      vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
+        data: new ArrayBuffer(1024),
+        success: true,
+      });
+      return { sources };
+    }
+
+    function slot(sampleSource: null | string, playTrigger = 0) {
+      return (
+        <SampleWaveform
+          kitName="A0"
+          playsStereo={false}
+          playTrigger={playTrigger}
+          sampleSource={sampleSource}
+          slotNumber={0}
+          voiceNumber={3}
+        />
+      );
+    }
+
+    async function settle() {
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      });
+    }
+
+    it("loads and plays the file that moves up into its slot", async () => {
+      const { sources } = setupFiles();
+      const view = render(slot("/a/dup.wav"));
+      await settle();
+
+      // The first file is deleted; the second moves up with the same name
+      view.rerender(slot("/b/dup.wav"));
+      await settle();
+      expect(window.electronAPI.getSampleAudioBuffer).toHaveBeenCalledTimes(2);
+
+      await act(async () => {
+        view.rerender(slot("/b/dup.wav", 1));
+      });
+      expect(sources).toHaveLength(1);
+      expect(sources[0].buffer?.duration).toBe(fileB.duration);
+    });
+
+    it("stops the file that left the slot", async () => {
+      const { sources } = setupFiles();
+      const view = render(slot("/a/dup.wav"));
+      await settle();
+      await act(async () => {
+        view.rerender(slot("/a/dup.wav", 1));
+      });
+      expect(sources[0].buffer?.duration).toBe(fileA.duration);
+      expect(sources[0].stop).not.toHaveBeenCalled();
+
+      view.rerender(slot("/b/dup.wav", 1));
+      await settle();
+      expect(sources[0].stop).toHaveBeenCalled();
+    });
+
+    it("doesn't reload when it learns which file it loaded", async () => {
+      setupFiles();
+      // The slot shows before the kit's sample rows arrive
+      const view = render(slot(null));
+      await settle();
+      view.rerender(slot("/a/dup.wav"));
+      await settle();
+      expect(window.electronAPI.getSampleAudioBuffer).toHaveBeenCalledTimes(1);
+    });
+  });
 });

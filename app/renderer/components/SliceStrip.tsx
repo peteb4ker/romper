@@ -39,6 +39,8 @@ export interface SliceStripProps {
   onUndo: () => void;
   playingView: null | SliceView;
   sampleName: null | string;
+  /** The file in the shown slot (`slotSampleSource`), or null until known */
+  sampleSource: null | string;
   selectedStep: null | number;
   selectedStepRandom: boolean;
   selectedView: null | SliceView;
@@ -151,14 +153,24 @@ function spanText(view: SliceView): string {
     : `slice ${first}`;
 }
 
-/** Decode a slot's audio into a min/max envelope for drawing. */
+/**
+ * Decode a slot's audio into a min/max envelope for drawing. `sampleSource`
+ * is the file in the slot (`slotSampleSource`), or null until it's known.
+ */
 function useWaveformPeaks(
   kitName: string,
   voiceNumber: number,
   slotIndex: null | number,
+  sampleSource: null | string,
 ): Float32Array | null {
   const [peaks, setPeaks] = React.useState<Float32Array | null>(null);
-  const cacheRef = React.useRef(new Map<string, Float32Array>());
+  // Peaks by slot, with the file they were read from. The voice panels
+  // stay usable beside the strip, and a delete or move there shifts the
+  // samples after it up a slot, so a slot's peaks are used only while it
+  // holds the same file, and dropped when another file takes it (#575).
+  const cacheRef = React.useRef(
+    new Map<string, { peaks: Float32Array; source: string }>(),
+  );
 
   React.useEffect(() => {
     if (slotIndex == null) {
@@ -167,10 +179,11 @@ function useWaveformPeaks(
     }
     const key = `${kitName}:${voiceNumber}:${slotIndex}`;
     const cached = cacheRef.current.get(key);
-    if (cached) {
-      setPeaks(cached);
+    if (cached && cached.source === sampleSource) {
+      setPeaks(cached.peaks);
       return;
     }
+    cacheRef.current.delete(key);
     setPeaks(null);
     const api = globalThis.electronAPI;
     const OfflineCtx = globalThis.OfflineAudioContext;
@@ -185,7 +198,10 @@ function useWaveformPeaks(
         const buffer = await ctx.decodeAudioData(result.data.slice(0));
         if (cancelled) return;
         const next = buildPeaks(buffer.getChannelData(0), WAVE_COLUMNS);
-        cacheRef.current.set(key, next);
+        // Kept only when it's known which file they're from
+        if (sampleSource != null) {
+          cacheRef.current.set(key, { peaks: next, source: sampleSource });
+        }
         setPeaks(next);
       })
       .catch((err) => {
@@ -194,7 +210,7 @@ function useWaveformPeaks(
     return () => {
       cancelled = true;
     };
-  }, [kitName, voiceNumber, slotIndex]);
+  }, [kitName, voiceNumber, slotIndex, sampleSource]);
 
   return peaks;
 }
@@ -320,6 +336,7 @@ const SliceStrip: React.FC<SliceStripProps> = (props) => {
     onUndo,
     playingView,
     sampleName,
+    sampleSource,
     selectedView,
     settings,
     sliceVoices,
@@ -330,7 +347,12 @@ const SliceStrip: React.FC<SliceStripProps> = (props) => {
   } = props;
 
   const voiceColor = `var(--voice-${editingVoice})`;
-  const peaks = useWaveformPeaks(kitName, editingVoice, slotIndex);
+  const peaks = useWaveformPeaks(
+    kitName,
+    editingVoice,
+    slotIndex,
+    sampleSource,
+  );
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   React.useEffect(() => {
     drawPeaks(

@@ -6,7 +6,7 @@ import React from "react";
 
 import type { SampleData } from "../../kitTypes";
 
-import { slotKey } from "../../../utils/slotKey";
+import { slotKey, slotSampleSource } from "../../../utils/slotKey";
 import GainKnob from "../../GainKnob";
 import SampleWaveform from "../../SampleWaveform";
 import { MAX_SLOTS_PER_VOICE } from "./constants";
@@ -273,6 +273,7 @@ export function useVoicePanelSlotRendering({
             playOptions={playOptions?.[sampleKey]}
             playsStereo={playsStereo}
             playTrigger={playTriggers[sampleKey] || 0}
+            sampleSource={slotSampleSource(sampleData, sampleName)}
             slotNumber={slotNumber}
             stopTrigger={stopTriggers[sampleKey] || 0}
             voiceColor={`var(--voice-${voice})`}

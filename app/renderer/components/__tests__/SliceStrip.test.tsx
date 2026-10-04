@@ -49,6 +49,7 @@ function stripProps(overrides: Partial<SliceStripProps> = {}): SliceStripProps {
     onUndo: vi.fn(),
     playingView: null,
     sampleName: "break.wav",
+    sampleSource: "/samples/break.wav",
     selectedStep: null,
     selectedStepRandom: false,
     selectedView: null,
@@ -234,6 +235,48 @@ describe("SliceStrip waveform", () => {
     rerender(<SliceStrip {...stripProps({ slotIndex: null })} />);
     rerender(<SliceStrip {...stripProps({ slotIndex: 0 })} />);
     expect(api.getSampleAudioBuffer).toHaveBeenCalledTimes(1);
+  });
+
+  it("[UC-33] loads the file that moves up into the slot (#575)", async () => {
+    api.getSampleAudioBuffer.mockResolvedValue({
+      data: new ArrayBuffer(8),
+      success: true,
+    });
+    const shown = (sampleName: string, sampleSource: string) =>
+      stripProps({ sampleName, sampleSource, slotIndex: 0 });
+    const { rerender } = render(
+      <SliceStrip {...shown("break.wav", "/a/break.wav")} />,
+    );
+    await waitFor(() => expect(fillRect).toHaveBeenCalled());
+
+    // The voice's first sample is deleted beside the open strip, and the
+    // next one, with the same name, moves up into slot 1
+    fillRect.mockClear();
+    rerender(<SliceStrip {...shown("break.wav", "/b/break.wav")} />);
+    await waitFor(() => expect(fillRect).toHaveBeenCalled());
+    expect(api.getSampleAudioBuffer).toHaveBeenCalledTimes(2);
+    expect(api.getSampleAudioBuffer).toHaveBeenLastCalledWith("A0", 1, 0);
+
+    // The deleted file's peaks were dropped, not kept for the slot
+    rerender(<SliceStrip {...shown("break.wav", "/a/break.wav")} />);
+    await waitFor(() =>
+      expect(api.getSampleAudioBuffer).toHaveBeenCalledTimes(3),
+    );
+  });
+
+  it("doesn't reuse peaks while it's unknown which file they're from", async () => {
+    api.getSampleAudioBuffer.mockResolvedValue({
+      data: new ArrayBuffer(8),
+      success: true,
+    });
+    const unknown = { sampleSource: null, slotIndex: 0 };
+    const { rerender } = render(<SliceStrip {...stripProps(unknown)} />);
+    await waitFor(() => expect(fillRect).toHaveBeenCalled());
+    rerender(<SliceStrip {...stripProps({ slotIndex: null })} />);
+    rerender(<SliceStrip {...stripProps(unknown)} />);
+    await waitFor(() =>
+      expect(api.getSampleAudioBuffer).toHaveBeenCalledTimes(2),
+    );
   });
 
   it("warns and draws nothing when the sample can't be decoded", async () => {

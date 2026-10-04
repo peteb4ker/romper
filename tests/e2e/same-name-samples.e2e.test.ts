@@ -44,14 +44,22 @@ test.describe("[UC-24] [UC-29] Samples with the same file name (RE-45)", () => {
   let testEnv: E2ETestEnvironment;
   let sourceDir: string;
 
-  /** A two-second tone at `dir/dup.wav`: long enough to still be playing */
-  async function writeDup(dir: string, hz: number) {
+  /**
+   * A tone at `dir/dup.wav`, two seconds by default: long enough to still
+   * be playing
+   */
+  async function writeDup(
+    dir: string,
+    hz: number,
+    seconds = 2,
+    amplitude = 0.5,
+  ) {
     const folder = path.join(sourceDir, dir);
     await fs.mkdir(folder, { recursive: true });
     const file = path.join(folder, "dup.wav");
     await fs.writeFile(
       file,
-      encodeTestWav([sine(hz, 2, 44100)], {
+      encodeTestWav([sine(hz, seconds, 44100, amplitude)], {
         bitDepth: 16,
         encoding: "pcm",
         sampleRate: 44100,
@@ -65,6 +73,13 @@ test.describe("[UC-24] [UC-29] Samples with the same file name (RE-45)", () => {
     return window.locator(
       `[data-testid="voice-panel-${voice}"] [aria-label="Sample dup.wav in slot ${uiSlot}"]`,
     );
+  }
+
+  /** The slot's waveform as drawn, as a data URL */
+  function drawing(voice: number, uiSlot: number) {
+    return slot(voice, uiSlot)
+      .locator(`[data-testid="sample-waveform-${voice}-${uiSlot - 1}"]`)
+      .evaluate((el: HTMLCanvasElement) => el.toDataURL());
   }
 
   /** Wait until the slot's waveform is drawn, so its audio has loaded */
@@ -192,5 +207,55 @@ test.describe("[UC-24] [UC-29] Samples with the same file name (RE-45)", () => {
       "aria-valuenow",
       "0",
     );
+  });
+
+  test("[UC-29] after the first is deleted, its slot plays the second (#575)", async () => {
+    // Played sources' buffer lengths, so the test can tell the files apart
+    await window.evaluate(() => {
+      const w = globalThis as { __played?: number[] } & typeof globalThis;
+      w.__played = [];
+      const start = AudioBufferSourceNode.prototype.start;
+      AudioBufferSourceNode.prototype.start = function (
+        this: AudioBufferSourceNode,
+        ...args: Parameters<typeof start>
+      ) {
+        w.__played?.push(Math.round((this.buffer?.duration ?? 0) * 1000));
+        return start.apply(this, args);
+      };
+    });
+    const played = () =>
+      window.evaluate(
+        () =>
+          (globalThis as { __played?: number[] } & typeof globalThis).__played,
+      );
+
+    // A 2 s file, then a quieter 0.5 s one with the same name from another
+    // folder: each draws and plays differently
+    await dropFiles(window, 3, [await writeDup("a", 220)]);
+    await expect
+      .poll(() => samplesOnVoice(window, 3), { timeout: 10000 })
+      .toHaveLength(1);
+    await dropFiles(window, 3, [await writeDup("b", 330, 0.5, 0.1)]);
+    await expect
+      .poll(async () => (await samplesOnVoice(window, 3)).length, {
+        timeout: 10000,
+      })
+      .toBe(2);
+    await waitForAudio(3, 1);
+    await waitForAudio(3, 2);
+    const second = await drawing(3, 2);
+    expect(await drawing(3, 1)).not.toBe(second);
+
+    // Delete the first: the second moves up into slot 1, name unchanged
+    await slot(3, 1).getByRole("button", { name: "Delete sample" }).click();
+    await window
+      .locator('[data-testid="confirm-delete-sample-button"]')
+      .click();
+    await expect(slot(3, 2)).toHaveCount(0);
+
+    // Slot 1 shows and plays the second file, not the deleted one
+    await expect.poll(() => drawing(3, 1), { timeout: 10000 }).toBe(second);
+    await slot(3, 1).getByRole("button", { name: "Play" }).click();
+    await expect.poll(played).toEqual([500]);
   });
 });

@@ -33,7 +33,9 @@ export const createElectronAPIMock = (
   createKit: vi.fn().mockResolvedValue({ success: true }),
   // Database setup
   createRomperDb: vi.fn().mockResolvedValue(undefined),
+  deleteKit: vi.fn().mockResolvedValue({ success: true }),
   deleteSampleFromSlot: vi.fn().mockResolvedValue(undefined),
+  deleteSampleFromSlotWithoutReindexing: vi.fn().mockResolvedValue(undefined),
 
   // Archive operations
   downloadAndExtractArchive: vi.fn().mockResolvedValue(undefined),
@@ -75,6 +77,10 @@ export const createElectronAPIMock = (
         { id: 4, kit_name: "A0", voice_alias: null, voice_number: 4 },
       ],
     },
+    success: true,
+  }),
+  getKitDeleteSummary: vi.fn().mockResolvedValue({
+    data: { kitName: "A0", locked: false, sampleCount: 0, voiceCount: 4 },
     success: true,
   }),
   // Database operations

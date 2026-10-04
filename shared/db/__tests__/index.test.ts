@@ -34,9 +34,9 @@ describe("shared/db/index", () => {
 
     it("should export type definitions", () => {
       // Test that types can be used (they're available at compile time)
-      const mockKit = {} as typeof dbIndex.Kit;
-      const mockNewKit = {} as typeof dbIndex.NewKit;
-      const mockNewSample = {} as typeof dbIndex.NewSample;
+      const mockKit = {} as dbIndex.Kit;
+      const mockNewKit = {} as dbIndex.NewKit;
+      const mockNewSample = {} as dbIndex.NewSample;
 
       expect(mockKit).toBeDefined();
       expect(mockNewKit).toBeDefined();

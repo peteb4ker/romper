@@ -38,10 +38,27 @@ vi.mock("../../electron/main/services/syncService.js", () => ({
   syncService: mockSyncService,
 }));
 
+type Handler = (event: object, arg?: unknown) => Promise<HandlerResult>;
+/** What the sync handlers resolve with, as far as these tests read it */
+interface HandlerResult {
+  data?: { filesToCopy?: unknown[]; syncedFiles?: number };
+  error?: string;
+  success: boolean;
+}
+
 describe("Sync IPC Integration Tests", () => {
-  let ipcMain: unknown;
-  let dialog: unknown;
-  let registerSyncIpcHandlers: unknown;
+  let ipcMain: typeof import("electron").ipcMain;
+  let dialog: typeof import("electron").dialog;
+  let registerSyncIpcHandlers: typeof import("../../electron/main/db/syncIpcHandlers").registerSyncIpcHandlers;
+
+  /** The handler registered for a channel; fails the test if there's none */
+  function handlerFor(channel: string): Handler {
+    const call = vi
+      .mocked(ipcMain.handle)
+      .mock.calls.find(([name]) => name === channel);
+    expect(call).toBeDefined();
+    return call?.[1] as unknown as Handler;
+  }
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -85,7 +102,7 @@ describe("Sync IPC Integration Tests", () => {
       success: true,
     });
 
-    dialog.showOpenDialog.mockResolvedValue({
+    vi.mocked(dialog.showOpenDialog).mockResolvedValue({
       canceled: false,
       filePaths: ["/Users/test/Downloads"],
     });
@@ -116,12 +133,7 @@ describe("Sync IPC Integration Tests", () => {
       registerSyncIpcHandlers({});
 
       // Get the registered handler
-      const handlerCall = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "generateSyncChangeSummary",
-      );
-      expect(handlerCall).toBeDefined();
-
-      const handler = handlerCall[1];
+      const handler = handlerFor("generateSyncChangeSummary");
       const mockEvent = {};
       const mockSettings = "/sd/card";
 
@@ -144,10 +156,7 @@ describe("Sync IPC Integration Tests", () => {
 
       registerSyncIpcHandlers({});
 
-      const handlerCall = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "generateSyncChangeSummary",
-      );
-      const handler = handlerCall[1];
+      const handler = handlerFor("generateSyncChangeSummary");
       const result = await handler({}, "/sd/card");
 
       expect(result.success).toBe(false);
@@ -157,10 +166,7 @@ describe("Sync IPC Integration Tests", () => {
     it("should handle missing settings", async () => {
       registerSyncIpcHandlers({});
 
-      const handlerCall = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "generateSyncChangeSummary",
-      );
-      const handler = handlerCall[1];
+      const handler = handlerFor("generateSyncChangeSummary");
       await handler({}, null);
 
       expect(mockSyncService.generateChangeSummary).toHaveBeenCalledWith(
@@ -174,12 +180,7 @@ describe("Sync IPC Integration Tests", () => {
     it("should start kit sync successfully", async () => {
       registerSyncIpcHandlers({});
 
-      const handlerCall = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "startKitSync",
-      );
-      expect(handlerCall).toBeDefined();
-
-      const handler = handlerCall[1];
+      const handler = handlerFor("startKitSync");
       const mockEvent = {};
       const mockSyncRequest = {
         sdCardPath: "/sd/card",
@@ -205,10 +206,7 @@ describe("Sync IPC Integration Tests", () => {
 
       registerSyncIpcHandlers({});
 
-      const handlerCall = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "startKitSync",
-      );
-      const handler = handlerCall[1];
+      const handler = handlerFor("startKitSync");
       const result = await handler(
         {},
         {
@@ -223,10 +221,7 @@ describe("Sync IPC Integration Tests", () => {
     it("should handle invalid sync request", async () => {
       registerSyncIpcHandlers({});
 
-      const handlerCall = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "startKitSync",
-      );
-      const handler = handlerCall[1];
+      const handler = handlerFor("startKitSync");
 
       // Test with missing sdCardPath: refused before the sync service runs
       const result = await handler({}, {});
@@ -238,9 +233,7 @@ describe("Sync IPC Integration Tests", () => {
     it("should refuse an SD card folder Romper was never given (RE-03)", async () => {
       registerSyncIpcHandlers({});
 
-      const handler = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "startKitSync",
-      )[1];
+      const handler = handlerFor("startKitSync");
 
       const result = await handler(
         {},
@@ -258,20 +251,16 @@ describe("Sync IPC Integration Tests", () => {
       registerSyncIpcHandlers({});
 
       // Step 1: Generate change summary
-      const generateSummaryHandler = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "generateSyncChangeSummary",
-      )[1];
+      const generateSummaryHandler = handlerFor("generateSyncChangeSummary");
 
       const settings = "/sd/card";
       const summaryResult = await generateSummaryHandler({}, settings);
 
       expect(summaryResult.success).toBe(true);
-      expect(summaryResult.data.filesToCopy).toHaveLength(1);
+      expect(summaryResult.data?.filesToCopy).toHaveLength(1);
 
       // Step 2: Start sync
-      const startSyncHandler = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "startKitSync",
-      )[1];
+      const startSyncHandler = handlerFor("startKitSync");
 
       const syncRequest = {
         sdCardPath: "/sd/card",
@@ -279,7 +268,7 @@ describe("Sync IPC Integration Tests", () => {
 
       const syncResult = await startSyncHandler({}, syncRequest);
       expect(syncResult.success).toBe(true);
-      expect(syncResult.data.syncedFiles).toBe(1);
+      expect(syncResult.data?.syncedFiles).toBe(1);
 
       // Verify all services were called correctly
       expect(mockSyncService.generateChangeSummary).toHaveBeenCalledWith(
@@ -301,9 +290,7 @@ describe("Sync IPC Integration Tests", () => {
 
       registerSyncIpcHandlers({});
 
-      const generateSummaryHandler = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "generateSyncChangeSummary",
-      )[1];
+      const generateSummaryHandler = handlerFor("generateSyncChangeSummary");
 
       const result = await generateSummaryHandler({}, "/sd/card");
 
@@ -311,9 +298,7 @@ describe("Sync IPC Integration Tests", () => {
       expect(result.error).toBe("Local store corrupted");
 
       // Subsequent sync should not be called if summary fails
-      const startSyncHandler = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "startKitSync",
-      )[1];
+      const startSyncHandler = handlerFor("startKitSync");
 
       // Even if sync is attempted, it should handle the missing data gracefully
       await startSyncHandler(
@@ -336,25 +321,21 @@ describe("Sync IPC Integration Tests", () => {
 
       registerSyncIpcHandlers({});
 
-      const handler = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "generateSyncChangeSummary",
-      )[1];
+      const handler = handlerFor("generateSyncChangeSummary");
 
       try {
         await handler({}, "/sd/card");
         expect.fail("Expected handler to throw an error");
       } catch (error) {
         expect(error).toBeInstanceOf(Error);
-        expect(error.message).toBe("Service crashed");
+        expect((error as Error).message).toBe("Service crashed");
       }
     });
 
     it("should handle malformed IPC requests", async () => {
       registerSyncIpcHandlers({});
 
-      const handler = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "startKitSync",
-      )[1];
+      const handler = handlerFor("startKitSync");
 
       // Test with undefined request: refused before the sync service runs
       const result = await handler({}, undefined);
@@ -366,9 +347,7 @@ describe("Sync IPC Integration Tests", () => {
     it("should handle concurrent IPC requests", async () => {
       registerSyncIpcHandlers({});
 
-      const handler = ipcMain.handle.mock.calls.find(
-        (call) => call[0] === "generateSyncChangeSummary",
-      )[1];
+      const handler = handlerFor("generateSyncChangeSummary");
 
       // Simulate concurrent requests
       const promises = [

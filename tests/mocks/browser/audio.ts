@@ -98,7 +98,9 @@ export const setupAudioMocks = () => {
   globalThis.AudioContext = vi
     .fn()
     .mockImplementation(() => createAudioContextMock());
-  globalThis.webkitAudioContext = globalThis.AudioContext;
+  (
+    globalThis as unknown as { webkitAudioContext: unknown }
+  ).webkitAudioContext = globalThis.AudioContext;
 
   // Mock HTMLAudioElement
   globalThis.Audio = vi

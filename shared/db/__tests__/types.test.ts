@@ -26,10 +26,10 @@ describe("shared/db/types", () => {
   describe("type structure validation", () => {
     it("should allow Kit type to be used in type assertions", () => {
       const mockKit: Partial<Kit> = {
-        id: 1,
+        bpm: 120,
         name: "Test Kit",
       };
-      expect(mockKit.id).toBe(1);
+      expect(mockKit.bpm).toBe(120);
       expect(mockKit.name).toBe("Test Kit");
     });
 

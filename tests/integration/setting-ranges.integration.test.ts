@@ -41,7 +41,7 @@ describe("[Q-02] Out-of-range settings are refused and change nothing (RE-25)", 
   const invoke = (channel: string, ...args: unknown[]) =>
     handlers.get(channel)!({}, ...args) as Promise<Result>;
   const kit = () => getKit(dbDir, "A0").data!;
-  const voice = (n: number) => kit().voices.find((v) => v.voice_number === n)!;
+  const voice = (n: number) => kit().voices!.find((v) => v.voice_number === n)!;
   const gain = () => getKitSamples(dbDir, "A0").data![0].gain_db;
 
   beforeEach(() => {

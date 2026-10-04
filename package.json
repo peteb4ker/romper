@@ -44,7 +44,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "pre-commit": "concurrently --kill-others-on-fail -n tsc,lint,test,build \"npm run typecheck\" \"npm run lint:check\" \"npm run test:husky\" \"npm run build\"",
     "test:husky": "npm run test:unit:husky && npm run test:integration:husky",
     "test:unit:husky": "NO_COLOR=true npm run test:unit:fast",

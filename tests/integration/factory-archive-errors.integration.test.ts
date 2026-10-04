@@ -42,7 +42,7 @@ describe("[UC-02] A damaged factory archive (RE-77)", () => {
     // Squarp's URL answers with bytes that aren't the pinned archive
     const body = fs.readFileSync(STUB_ZIP);
     const fetchMock = vi.fn(
-      async () =>
+      async (_url: string) =>
         new Response(body, {
           headers: { "Content-Length": String(body.length) },
           status: 200,

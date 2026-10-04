@@ -85,8 +85,12 @@ fill 2 mono voices."
 - Use ES module `import`. The exceptions are the preload (Electron loads it as
   CommonJS) and tests.
 - `npm run typecheck` covers `app/`, `electron/` (minus the preload), and
-  `shared/`, but not `__tests__/`. The preload is type-checked by its own
-  build (`npm run build:preload`).
+  `shared/` through `tsconfig.json`, and test code through
+  `tsconfig.test.json`: so far `tests/` (except `tests/e2e/`), the tests in
+  `shared/` and `vitest.setup.ts`. The other `__tests__/` folders and the
+  e2e specs aren't type-checked yet (#466); add a folder to
+  `tsconfig.test.json` once its errors are fixed. The preload is
+  type-checked by its own build (`npm run build:preload`).
 
 ## Tests
 

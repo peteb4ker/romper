@@ -73,7 +73,6 @@ const UI_LEVELS: Record<string, Level> = {
   "wizard-error": "error",
 };
 
-/** Runs in the page: returns entries not yet harvested, with current text */
 function harvestEntries(): { at: string; id: string; text: string }[] {
   const w = globalThis as unknown as {
     __harness?: {
@@ -127,6 +126,17 @@ function installObserver(watchedIds: string[]): void {
     for (const m of mutations) m.addedNodes.forEach(scan);
   }).observe(document.documentElement, { childList: true, subtree: true });
   scan(document.documentElement);
+}
+
+/** Runs in the page: returns entries not yet harvested, with current text */
+/**
+ * Listeners on a page event. Playwright's Page is an event emitter at run
+ * time, but its type leaves out listenerCount.
+ */
+function listenerCount(page: Page, event: string): number {
+  return (
+    page as unknown as { listenerCount(event: string): number }
+  ).listenerCount(event);
 }
 
 const STDOUT_PROBLEM =
@@ -191,7 +201,7 @@ export class MessageCollector {
       });
       if (acceptDialogs) {
         void dialog.accept().catch(() => {});
-      } else if (page.listenerCount("dialog") === 1) {
+      } else if (listenerCount(page, "dialog") === 1) {
         void dialog.dismiss().catch(() => {});
       }
     });

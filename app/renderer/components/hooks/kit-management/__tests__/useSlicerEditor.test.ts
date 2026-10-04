@@ -594,6 +594,32 @@ describe("[UC-33] [UC-36] a slicer setting that isn't saved says so (#511)", () 
     );
   });
 
+  it("[Q-02] turns slicing back off and says so when updateVoiceSliceSettings is missing (#543)", async () => {
+    const api = globalThis.electronAPI as unknown as Record<string, unknown>;
+    const original = api.updateVoiceSliceSettings;
+    api.updateVoiceSliceSettings = undefined;
+    try {
+      const onMessage = vi.fn();
+      const onChanged = vi.fn();
+      const { result } = renderHook(() =>
+        useVoiceSliceSettings("A0", voices, onChanged, onMessage),
+      );
+
+      await act(async () => {
+        result.current.updateSliceSettings(1, { enabled: true });
+      });
+
+      expect(result.current.sliceSettings[1].enabled).toBe(false);
+      expect(onMessage).toHaveBeenCalledWith(
+        "Couldn't turn slicing on for voice 1. Try again.",
+        "error",
+      );
+      expect(onChanged).not.toHaveBeenCalled();
+    } finally {
+      api.updateVoiceSliceSettings = original;
+    }
+  });
+
   it("reloads the kit once a setting is saved, and says nothing", async () => {
     vi.mocked(
       globalThis.electronAPI.updateVoiceSliceSettings,

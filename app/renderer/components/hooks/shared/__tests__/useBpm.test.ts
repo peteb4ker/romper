@@ -264,4 +264,54 @@ describe("useBpm", () => {
       expect(result.current.bpm).toBe(120);
     });
   });
+
+  describe("[Q-02] a BPM with nowhere to save (#543)", () => {
+    it("leaves the BPM as it was when updateKitBpm is missing", async () => {
+      const api = globalThis.electronAPI as unknown as Record<string, unknown>;
+      const original = api.updateKitBpm;
+      api.updateKitBpm = undefined;
+      try {
+        const { result } = renderHook(() =>
+          useBpm({ initialBpm: 120, kitName: "A0" }),
+        );
+
+        await act(async () => {
+          await result.current.setBpm(140);
+        });
+
+        expect(result.current.bpm).toBe(120);
+      } finally {
+        api.updateKitBpm = original;
+      }
+    });
+
+    it("leaves the BPM as it was when there's no kit", async () => {
+      const { result } = renderHook(() =>
+        useBpm({ initialBpm: 120, kitName: "" }),
+      );
+
+      await act(async () => {
+        await result.current.setBpm(140);
+      });
+
+      expect(result.current.bpm).toBe(120);
+    });
+
+    it("goes back and says so when main gives no answer", async () => {
+      vi.mocked(globalThis.electronAPI.updateKitBpm).mockResolvedValue(
+        undefined as never,
+      );
+      const onMessage = vi.fn();
+      const { result } = renderHook(() =>
+        useBpm({ initialBpm: 120, kitName: "A0", onMessage }),
+      );
+
+      await act(async () => {
+        await result.current.setBpm(140);
+      });
+
+      expect(result.current.bpm).toBe(120);
+      expect(onMessage).toHaveBeenCalledWith(bpmNotSaved(120), "error");
+    });
+  });
 });

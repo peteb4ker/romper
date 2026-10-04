@@ -33,8 +33,9 @@ export interface SettingSave<K, V> {
 
 /**
  * Waits for a save sent to main and says whether it failed: main refused it
- * (`success: false`) or the call threw. The reason goes to the log, not to
- * the user (RE-91).
+ * (`success: false`), the call threw, or there was no answer at all because
+ * the preload method or `electronAPI` is missing (#543). The reason goes to
+ * the log, not to the user (RE-91).
  */
 export async function saveFailed(
   save: Promise<DbResult | undefined> | undefined,
@@ -42,7 +43,11 @@ export async function saveFailed(
 ): Promise<boolean> {
   try {
     const result = await save;
-    if (result && !result.success) {
+    if (!result) {
+      log.warn(`Saving ${what} failed: no answer from main`);
+      return true;
+    }
+    if (!result.success) {
       log.warn(`Saving ${what} failed:`, result.error);
       return true;
     }

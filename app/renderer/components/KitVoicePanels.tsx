@@ -188,7 +188,9 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   }, [sampleMetadata, hookProps.kitName]);
 
   // Writes a voice's stereo setting; a refusal from main fails the link or
-  // unlink, so the user hears about it (RE-40)
+  // unlink, so the user hears about it (RE-40). So does no answer at all,
+  // when the preload method or electronAPI is missing (#543); that isn't a
+  // refusal, so it gets the general message.
   const writeStereoMode = React.useCallback(
     async (voiceNumber: number, updates: { stereo_mode?: boolean }) => {
       const result = await globalThis.electronAPI?.updateVoiceStereoMode?.(
@@ -196,7 +198,10 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         voiceNumber,
         updates.stereo_mode ?? false,
       );
-      if (result && !result.success) {
+      if (!result) {
+        throw new Error("updateVoiceStereoMode gave no answer");
+      }
+      if (!result.success) {
         throw new StereoRefusal(result.error || "updateVoiceStereoMode failed");
       }
     },

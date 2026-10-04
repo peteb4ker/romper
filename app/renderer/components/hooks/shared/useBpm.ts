@@ -42,14 +42,15 @@ export function useBpm({ initialBpm = 120, kitName, onMessage }: UseBpmParams) {
 
   const setBpm = React.useCallback(
     async (newBpm: number) => {
+      // Nothing to save to, so nothing changes on screen (#543)
+      if (!kitName || !globalThis.electronAPI?.updateKitBpm) return;
+
       // Validate BPM range
       const clampedBpm = Math.max(30, Math.min(180, Math.round(newBpm)));
       const current = latestRef.current;
       latestRef.current = clampedBpm;
       setBpmState(clampedBpm);
 
-      // Persist to database
-      if (!kitName || !globalThis.electronAPI?.updateKitBpm) return;
       await save({
         current,
         key: kitName,

@@ -223,10 +223,11 @@ export function useKitBankNavigation({
   }, []);
 
   // Handler for bank name editing. An empty name clears the bank's name
-  // (RE-23); main reports a name it can't save.
+  // (RE-23); main reports a name it can't save. No answer at all (the
+  // preload method is missing) isn't a save either (#543).
   const handleBankNameChange = useCallback(
     async (bank: string, newName: string) => {
-      const result = await globalThis.electronAPI.updateBank?.(bank, {
+      const result = await globalThis.electronAPI?.updateBank?.(bank, {
         artist: newName || null,
       });
 
@@ -240,9 +241,9 @@ export function useKitBankNavigation({
           }
           return next;
         });
-      } else if (result) {
+      } else {
         onMessage?.(
-          result.error ?? `Couldn't save the name of bank ${bank}`,
+          result?.error ?? `Couldn't save the name of bank ${bank}`,
           "error",
         );
       }

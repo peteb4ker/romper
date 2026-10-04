@@ -46,6 +46,34 @@ describe("useLocalStoreSetupFlow", () => {
     refreshLocalStoreStatus.mockResolvedValue(undefined);
   });
 
+  describe("[UC-05] store readiness (#553)", () => {
+    it("isn't ready until the store's status is known", () => {
+      expect(render(null).result.current.isLocalStoreReady).toBe(false);
+      expect(
+        render(makeStatus({}), false).result.current.isLocalStoreReady,
+      ).toBe(false);
+    });
+
+    it("isn't ready when the saved store is missing or invalid", () => {
+      expect(
+        render(makeStatus({ isValid: false })).result.current.isLocalStoreReady,
+      ).toBe(false);
+      expect(
+        render(makeStatus({ hasLocalStore: false, isValid: false })).result
+          .current.isLocalStoreReady,
+      ).toBe(false);
+    });
+
+    it("is ready once the status says the store is valid", () => {
+      const { rerender, result } = render(makeStatus({ isValid: false }));
+      expect(result.current.isLocalStoreReady).toBe(false);
+
+      rerender({ isInitialized: true, localStoreStatus: makeStatus({}) });
+
+      expect(result.current.isLocalStoreReady).toBe(true);
+    });
+  });
+
   describe("scenario flags", () => {
     it("reports nothing before initialization or status", () => {
       const { result } = render(null, false);

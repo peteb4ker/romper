@@ -1,20 +1,25 @@
 import { useEffect } from "react";
 
 interface UseStartupActionsProps {
+  /** Whether the local store's status says it is there and valid */
+  isLocalStoreReady: boolean;
   localStorePath: null | string;
-  needsLocalStoreSetup: boolean;
 }
 
 /**
- * Hook for handling startup actions after local store is configured
+ * Hook for handling startup actions once the local store is open.
+ *
+ * The actions wait for the store's status: a saved store that is missing
+ * at launch isn't scanned (#553). They run when the store becomes valid
+ * (at launch, after Try Again, or after setting up a new store) and again
+ * when the store changes.
  */
 export function useStartupActions({
+  isLocalStoreReady,
   localStorePath,
-  needsLocalStoreSetup,
 }: UseStartupActionsProps) {
-  // Run startup actions when local store is configured
   useEffect(() => {
-    if (!localStorePath || needsLocalStoreSetup) return;
+    if (!localStorePath || !isLocalStoreReady) return;
 
     const runStartupActions = async () => {
       // Run bank scanning on startup (after migrations)
@@ -38,5 +43,5 @@ export function useStartupActions({
     };
 
     void runStartupActions();
-  }, [localStorePath, needsLocalStoreSetup]);
+  }, [isLocalStoreReady, localStorePath]);
 }

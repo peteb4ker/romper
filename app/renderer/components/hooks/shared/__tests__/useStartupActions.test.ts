@@ -18,8 +18,8 @@ describe("useStartupActions", () => {
 
     renderHook(() =>
       useStartupActions({
+        isLocalStoreReady: true,
         localStorePath: "/mock/local/store",
-        needsLocalStoreSetup: false,
       }),
     );
 
@@ -31,8 +31,8 @@ describe("useStartupActions", () => {
   it("should not run when localStorePath is null", async () => {
     renderHook(() =>
       useStartupActions({
+        isLocalStoreReady: true,
         localStorePath: null,
-        needsLocalStoreSetup: false,
       }),
     );
 
@@ -42,11 +42,11 @@ describe("useStartupActions", () => {
     expect(vi.mocked(window.electronAPI.scanBanks)).not.toHaveBeenCalled();
   });
 
-  it("should not run when local store setup is needed", async () => {
+  it("should not run when the local store isn't ready", async () => {
     renderHook(() =>
       useStartupActions({
+        isLocalStoreReady: false,
         localStorePath: "/mock/local/store",
-        needsLocalStoreSetup: true,
       }),
     );
 
@@ -64,8 +64,8 @@ describe("useStartupActions", () => {
 
     renderHook(() =>
       useStartupActions({
+        isLocalStoreReady: true,
         localStorePath: "/mock/local/store",
-        needsLocalStoreSetup: false,
       }),
     );
 
@@ -81,8 +81,8 @@ describe("useStartupActions", () => {
 
     renderHook(() =>
       useStartupActions({
+        isLocalStoreReady: true,
         localStorePath: "/mock/local/store",
-        needsLocalStoreSetup: false,
       }),
     );
 
@@ -98,12 +98,12 @@ describe("useStartupActions", () => {
     });
 
     const { rerender } = renderHook(
-      ({ localStorePath, needsLocalStoreSetup }) =>
-        useStartupActions({ localStorePath, needsLocalStoreSetup }),
+      ({ isLocalStoreReady, localStorePath }) =>
+        useStartupActions({ isLocalStoreReady, localStorePath }),
       {
         initialProps: {
+          isLocalStoreReady: true,
           localStorePath: "/mock/store1",
-          needsLocalStoreSetup: false,
         },
       },
     );
@@ -115,12 +115,97 @@ describe("useStartupActions", () => {
     vi.mocked(window.electronAPI.scanBanks).mockClear();
 
     rerender({
+      isLocalStoreReady: true,
       localStorePath: "/mock/store2",
-      needsLocalStoreSetup: false,
     });
 
     await waitFor(() => {
       expect(vi.mocked(window.electronAPI.scanBanks)).toHaveBeenCalledWith();
     });
+  });
+});
+
+describe("[UC-05] useStartupActions with a store that isn't there at launch (#553)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(window.electronAPI.scanBanks).mockResolvedValue({
+      data: { updatedBanks: 0 },
+      success: true,
+    });
+  });
+
+  it("doesn't scan banks while the saved store is invalid", async () => {
+    renderHook(() =>
+      useStartupActions({
+        isLocalStoreReady: false,
+        localStorePath: "/missing/store",
+      }),
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(vi.mocked(window.electronAPI.scanBanks)).not.toHaveBeenCalled();
+  });
+
+  it("scans banks once the store becomes valid", async () => {
+    const { rerender } = renderHook(
+      ({ isLocalStoreReady, localStorePath }) =>
+        useStartupActions({ isLocalStoreReady, localStorePath }),
+      {
+        initialProps: {
+          isLocalStoreReady: false,
+          localStorePath: "/store" as null | string,
+        },
+      },
+    );
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(vi.mocked(window.electronAPI.scanBanks)).not.toHaveBeenCalled();
+
+    // Try Again found the store, or a new store was set up
+    rerender({ isLocalStoreReady: true, localStorePath: "/store" });
+
+    await waitFor(() => {
+      expect(vi.mocked(window.electronAPI.scanBanks)).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("scans the new store after the user sets one up instead", async () => {
+    const { rerender } = renderHook(
+      ({ isLocalStoreReady, localStorePath }) =>
+        useStartupActions({ isLocalStoreReady, localStorePath }),
+      {
+        initialProps: {
+          isLocalStoreReady: false,
+          localStorePath: "/missing/store" as null | string,
+        },
+      },
+    );
+
+    // Set Up a New Local Store forgets the saved one, then the wizard
+    // saves the new one with its status
+    rerender({ isLocalStoreReady: false, localStorePath: null });
+    rerender({ isLocalStoreReady: true, localStorePath: "/new/store" });
+
+    await waitFor(() => {
+      expect(vi.mocked(window.electronAPI.scanBanks)).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("doesn't scan again while the same store stays valid", async () => {
+    const { rerender } = renderHook(
+      ({ isLocalStoreReady, localStorePath }) =>
+        useStartupActions({ isLocalStoreReady, localStorePath }),
+      {
+        initialProps: { isLocalStoreReady: true, localStorePath: "/store" },
+      },
+    );
+    await waitFor(() => {
+      expect(vi.mocked(window.electronAPI.scanBanks)).toHaveBeenCalledTimes(1);
+    });
+
+    rerender({ isLocalStoreReady: true, localStorePath: "/store" });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(vi.mocked(window.electronAPI.scanBanks)).toHaveBeenCalledTimes(1);
   });
 });

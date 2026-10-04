@@ -68,8 +68,8 @@ describe("useKitDataManager", () => {
     const { result } = renderHook(() =>
       useKitDataManager({
         isInitialized: false,
+        isLocalStoreReady: true,
         localStorePath: null,
-        needsLocalStoreSetup: false,
       }),
     );
 
@@ -82,20 +82,20 @@ describe("useKitDataManager", () => {
     renderHook(() =>
       useKitDataManager({
         isInitialized: false,
+        isLocalStoreReady: true,
         localStorePath: "/test/path",
-        needsLocalStoreSetup: false,
       }),
     );
 
     expect(window.electronAPI.getKits).not.toHaveBeenCalled();
   });
 
-  it("should not load data when local store needs setup", () => {
+  it("should not load data when the local store isn't ready", () => {
     renderHook(() =>
       useKitDataManager({
         isInitialized: true,
+        isLocalStoreReady: false,
         localStorePath: "/test/path",
-        needsLocalStoreSetup: true,
       }),
     );
 
@@ -106,8 +106,8 @@ describe("useKitDataManager", () => {
     renderHook(() =>
       useKitDataManager({
         isInitialized: true,
+        isLocalStoreReady: true,
         localStorePath: "/test/path",
-        needsLocalStoreSetup: false,
       }),
     );
 
@@ -121,8 +121,8 @@ describe("useKitDataManager", () => {
     renderHook(() =>
       useKitDataManager({
         isInitialized: true,
+        isLocalStoreReady: true,
         localStorePath: "/test/path",
-        needsLocalStoreSetup: false,
       }),
     );
 
@@ -145,8 +145,8 @@ describe("useKitDataManager", () => {
     const { result } = renderHook(() =>
       useKitDataManager({
         isInitialized: true,
+        isLocalStoreReady: true,
         localStorePath: "/test/path",
-        needsLocalStoreSetup: false,
       }),
     );
 
@@ -164,8 +164,8 @@ describe("useKitDataManager", () => {
     const { result } = renderHook(() =>
       useKitDataManager({
         isInitialized: true,
+        isLocalStoreReady: true,
         localStorePath: "/test/path",
-        needsLocalStoreSetup: false,
       }),
     );
 
@@ -179,8 +179,8 @@ describe("useKitDataManager", () => {
     const { result } = renderHook(() =>
       useKitDataManager({
         isInitialized: true,
+        isLocalStoreReady: true,
         localStorePath: "/test/path",
-        needsLocalStoreSetup: false,
       }),
     );
 
@@ -209,8 +209,8 @@ describe("useKitDataManager", () => {
     const { result } = renderHook(() =>
       useKitDataManager({
         isInitialized: true,
+        isLocalStoreReady: true,
         localStorePath: "/test/path",
-        needsLocalStoreSetup: false,
       }),
     );
 
@@ -230,8 +230,8 @@ describe("useKitDataManager", () => {
     const { result } = renderHook(() =>
       useKitDataManager({
         isInitialized: true,
+        isLocalStoreReady: true,
         localStorePath: "/test/path",
-        needsLocalStoreSetup: false,
       }),
     );
 
@@ -250,8 +250,8 @@ describe("useKitDataManager", () => {
     const { result } = renderHook(() =>
       useKitDataManager({
         isInitialized: true,
+        isLocalStoreReady: true,
         localStorePath: "/test/path",
-        needsLocalStoreSetup: false,
       }),
     );
 
@@ -280,8 +280,8 @@ describe("useKitDataManager", () => {
     const { result } = renderHook(() =>
       useKitDataManager({
         isInitialized: true,
+        isLocalStoreReady: true,
         localStorePath: "/test/path",
-        needsLocalStoreSetup: false,
       }),
     );
 
@@ -301,8 +301,8 @@ describe("useKitDataManager", () => {
     const { result } = renderHook(() =>
       useKitDataManager({
         isInitialized: true,
+        isLocalStoreReady: true,
         localStorePath: "/test/path",
-        needsLocalStoreSetup: false,
       }),
     );
 
@@ -334,8 +334,8 @@ describe("useKitDataManager", () => {
     const { result } = renderHook(() =>
       useKitDataManager({
         isInitialized: true,
+        isLocalStoreReady: true,
         localStorePath: "/test/path",
-        needsLocalStoreSetup: false,
       }),
     );
 
@@ -362,8 +362,8 @@ describe("useKitDataManager", () => {
     const { result } = renderHook(() =>
       useKitDataManager({
         isInitialized: true,
+        isLocalStoreReady: true,
         localStorePath: "/test/path",
-        needsLocalStoreSetup: false,
       }),
     );
 
@@ -381,8 +381,8 @@ describe("useKitDataManager", () => {
       {
         initialProps: {
           isInitialized: false,
+          isLocalStoreReady: true,
           localStorePath: null,
-          needsLocalStoreSetup: false,
         },
       },
     );
@@ -392,8 +392,8 @@ describe("useKitDataManager", () => {
     // Change props to trigger data loading
     rerender({
       isInitialized: true,
+      isLocalStoreReady: true,
       localStorePath: "/test/path",
-      needsLocalStoreSetup: false,
     });
 
     // Should trigger loadKitsData
@@ -404,8 +404,8 @@ describe("useKitDataManager", () => {
     const { result } = renderHook(() =>
       useKitDataManager({
         isInitialized: true,
+        isLocalStoreReady: true,
         localStorePath: "/test/path",
-        needsLocalStoreSetup: false,
       }),
     );
 
@@ -421,8 +421,8 @@ describe("useKitDataManager", () => {
       const { result } = renderHook(() =>
         useKitDataManager({
           isInitialized: true,
+          isLocalStoreReady: true,
           localStorePath: "/test/path",
-          needsLocalStoreSetup: false,
         }),
       );
 
@@ -441,8 +441,8 @@ describe("useKitDataManager", () => {
       const { result } = renderHook(() =>
         useKitDataManager({
           isInitialized: true,
+          isLocalStoreReady: true,
           localStorePath: "/test/path",
-          needsLocalStoreSetup: false,
         }),
       );
 
@@ -461,8 +461,8 @@ describe("useKitDataManager", () => {
       const { result } = renderHook(() =>
         useKitDataManager({
           isInitialized: true,
+          isLocalStoreReady: true,
           localStorePath: "/test/path",
-          needsLocalStoreSetup: false,
         }),
       );
 
@@ -489,8 +489,8 @@ describe("useKitDataManager", () => {
       const { result } = renderHook(() =>
         useKitDataManager({
           isInitialized: true,
+          isLocalStoreReady: true,
           localStorePath: "/test/path",
-          needsLocalStoreSetup: false,
         }),
       );
 
@@ -516,8 +516,8 @@ describe("useKitDataManager", () => {
       const hook = renderHook(() =>
         useKitDataManager({
           isInitialized: true,
+          isLocalStoreReady: true,
           localStorePath: "/test/path",
-          needsLocalStoreSetup: false,
         }),
       );
       await act(async () => {
@@ -566,8 +566,8 @@ describe("useKitDataManager", () => {
       const { result } = renderHook(() =>
         useKitDataManager({
           isInitialized: true,
+          isLocalStoreReady: true,
           localStorePath: "/test/path",
-          needsLocalStoreSetup: false,
         }),
       );
 
@@ -601,8 +601,8 @@ describe("useKitDataManager", () => {
       const { result } = renderHook(() =>
         useKitDataManager({
           isInitialized: true,
+          isLocalStoreReady: true,
           localStorePath: "/test/path",
-          needsLocalStoreSetup: false,
         }),
       );
 
@@ -630,8 +630,8 @@ describe("useKitDataManager", () => {
       const { result } = renderHook(() =>
         useKitDataManager({
           isInitialized: true,
+          isLocalStoreReady: true,
           localStorePath: "/test/path",
-          needsLocalStoreSetup: false,
         }),
       );
 
@@ -661,8 +661,8 @@ describe("useKitDataManager", () => {
       const { result } = renderHook(() =>
         useKitDataManager({
           isInitialized: true,
+          isLocalStoreReady: true,
           localStorePath: "/test/path",
-          needsLocalStoreSetup: false,
         }),
       );
 
@@ -693,8 +693,8 @@ describe("useKitDataManager", () => {
       const { result } = renderHook(() =>
         useKitDataManager({
           isInitialized: true,
+          isLocalStoreReady: true,
           localStorePath: "/test/path",
-          needsLocalStoreSetup: false,
         }),
       );
 
@@ -718,8 +718,8 @@ describe("useKitDataManager", () => {
       const { result } = renderHook(() =>
         useKitDataManager({
           isInitialized: true,
+          isLocalStoreReady: true,
           localStorePath: "/test/path",
-          needsLocalStoreSetup: false,
         }),
       );
 
@@ -744,8 +744,8 @@ describe("useKitDataManager", () => {
       const { result } = renderHook(() =>
         useKitDataManager({
           isInitialized: true,
+          isLocalStoreReady: true,
           localStorePath: "/test/path",
-          needsLocalStoreSetup: false,
         }),
       );
 
@@ -771,8 +771,8 @@ describe("useKitDataManager", () => {
       const { result } = renderHook(() =>
         useKitDataManager({
           isInitialized: true,
+          isLocalStoreReady: true,
           localStorePath: "/test/path",
-          needsLocalStoreSetup: false,
         }),
       );
 
@@ -806,8 +806,8 @@ describe("useKitDataManager", () => {
       const { result } = renderHook(() =>
         useKitDataManager({
           isInitialized: true,
+          isLocalStoreReady: true,
           localStorePath: "/test/path",
-          needsLocalStoreSetup: false,
         }),
       );
 
@@ -844,8 +844,8 @@ describe("useKitDataManager", () => {
       const { result } = renderHook(() =>
         useKitDataManager({
           isInitialized: true,
+          isLocalStoreReady: true,
           localStorePath: "/test/path",
-          needsLocalStoreSetup: false,
         }),
       );
 
@@ -870,8 +870,8 @@ describe("useKitDataManager", () => {
       const { result } = renderHook(() =>
         useKitDataManager({
           isInitialized: true,
+          isLocalStoreReady: true,
           localStorePath: "/test/path",
-          needsLocalStoreSetup: false,
         }),
       );
 
@@ -895,8 +895,8 @@ describe("useKitDataManager", () => {
       const { result } = renderHook(() =>
         useKitDataManager({
           isInitialized: true,
+          isLocalStoreReady: true,
           localStorePath: "/test/path",
-          needsLocalStoreSetup: false,
         }),
       );
 
@@ -921,8 +921,8 @@ describe("useKitDataManager", () => {
       const { result } = renderHook(() =>
         useKitDataManager({
           isInitialized: true,
+          isLocalStoreReady: true,
           localStorePath: "/test/path",
-          needsLocalStoreSetup: false,
         }),
       );
 

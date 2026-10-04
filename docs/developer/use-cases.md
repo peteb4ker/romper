@@ -147,6 +147,8 @@ and [Validating Your Store](../manual/kit-browser.md#validating-your-store).
 - **Renderer:** `app/renderer/utils/SettingsContext.tsx` (`refreshLocalStoreStatus`) →
   `app/renderer/components/hooks/kit-management/useLocalStoreSetupFlow.ts` → `app/renderer/components/dialogs/InvalidLocalStoreDialog.tsx`
   or the setup wizard; `app/renderer/components/dialogs/CriticalErrorDialog.tsx`.
+  Nothing reads the store (kit load, startup bank scan, bank names) until
+  its status says it's valid (`isLocalStoreReady`, #553).
 - **IPC:** `get-local-store-status`, `validate-local-store`,
   `select-local-store-path`, `write-settings`.
 - **Main:** `electron/main/services/localStoreService.ts` (`getLocalStoreStatus`);

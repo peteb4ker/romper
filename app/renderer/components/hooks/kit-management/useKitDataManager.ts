@@ -8,8 +8,13 @@ import { groupDbSamplesByVoice } from "../../../utils/sampleGroupingUtils";
 
 interface UseKitDataManagerProps {
   isInitialized: boolean;
+  /**
+   * Whether the local store's status says it is there and valid. Kits load
+   * only then: a saved store that is missing at launch has no database to
+   * read (#553).
+   */
+  isLocalStoreReady: boolean;
   localStorePath: null | string;
-  needsLocalStoreSetup: boolean;
 }
 
 interface UseKitDataManagerReturn {
@@ -36,8 +41,8 @@ interface UseKitDataManagerReturn {
  */
 export function useKitDataManager({
   isInitialized,
+  isLocalStoreReady,
   localStorePath,
-  needsLocalStoreSetup,
 }: UseKitDataManagerProps): UseKitDataManagerReturn {
   const [kits, setKits] = useState<KitWithRelations[]>([]);
   const [allKitSamples, setAllKitSamples] = useState<{
@@ -81,7 +86,7 @@ export function useKitDataManager({
   // Main function to load all kits and their data
   const loadKitsData = useCallback(
     async (scrollToKit?: string) => {
-      if (!isInitialized || !localStorePath || needsLocalStoreSetup) {
+      if (!isInitialized || !localStorePath || !isLocalStoreReady) {
         return;
       }
       console.info("[useKitDataManager] Loading kits from", localStorePath);
@@ -129,12 +134,7 @@ export function useKitDataManager({
         }, 100); // Small delay to ensure DOM is updated
       }
     },
-    [
-      isInitialized,
-      localStorePath,
-      needsLocalStoreSetup,
-      groupLoadedKitSamples,
-    ],
+    [isInitialized, isLocalStoreReady, localStorePath, groupLoadedKitSamples],
   );
 
   // Function to reload samples for a specific kit

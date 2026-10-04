@@ -171,6 +171,10 @@ export const createElectronAPIMock = (
   // File operations
   selectSdCard: vi.fn().mockResolvedValue("/sd"),
   setSetting: vi.fn().mockResolvedValue(undefined),
+  setupImportBankNames: vi.fn().mockResolvedValue({
+    data: { importedBanks: 0 },
+    success: true,
+  }),
   setupImportKit: vi.fn().mockResolvedValue({
     data: {
       addedSamples: 0,

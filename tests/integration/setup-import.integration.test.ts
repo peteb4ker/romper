@@ -8,7 +8,7 @@ vi.mock("electron", () => ({
   },
 }));
 
-import { getKit } from "../../electron/main/db/romperDbCoreORM.js";
+import { getAllBanks, getKit } from "../../electron/main/db/romperDbCoreORM.js";
 import { LocalStoreSetupService } from "../../electron/main/services/localStoreSetupService.js";
 import { encodeTestWav, sine } from "../validation/support/wav.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
@@ -119,5 +119,95 @@ describe("[UC-01] [UC-02] Setup imports kits in main (RE-34)", () => {
     const result = setup.importSetupKit(dbDir, "B1");
     expect(result.success).toBe(false);
     expect(result.error).toMatch(/Can't read kit folder/);
+  });
+});
+
+// #564: setup from a card copied only its kit folders, so its bank names
+// never reached the store, and the first write removed them from the card.
+// Setup now reads the card's bank name files into banks.artist.
+describe("[UC-01] [UC-12] Setup imports the card's bank names (#564)", () => {
+  let store: string;
+  let card: string;
+  let dbDir: string;
+  let setup: LocalStoreSetupService;
+
+  const bankNames = () =>
+    Object.fromEntries(
+      (getAllBanks(dbDir).data ?? [])
+        .filter((bank) => bank.artist)
+        .map((bank) => [bank.letter, [bank.artist, bank.rtf_filename]]),
+    );
+
+  beforeEach(() => {
+    store = createTempStore("setup-banks-");
+    card = createTempStore("setup-banks-card-");
+    dbDir = path.join(store, ".romperdb");
+    setup = new LocalStoreSetupService();
+    expect(setup.createSetupDatabase(dbDir).success).toBe(true);
+    fs.mkdirSync(path.join(store, "A0"));
+    writeWav(path.join(store, "A0", "1 KICK.wav"), 1);
+    expect(setup.importSetupKit(dbDir, "A0").success).toBe(true);
+  });
+
+  afterEach(() => {
+    removeTempStore(store);
+    removeTempStore(card);
+  });
+
+  it("names each bank from its file, flags no kit and copies no file", () => {
+    fs.writeFileSync(path.join(card, "A - ALWIS.rtf"), String.raw`{\rtf1}`);
+    fs.writeFileSync(path.join(card, "c - Lower Case.rtf"), "");
+    // Not bank name files: a folder, no letter, no " - ", another extension
+    fs.mkdirSync(path.join(card, "D - Folder.rtf"));
+    fs.writeFileSync(path.join(card, "AB - Two.rtf"), "");
+    fs.writeFileSync(path.join(card, "E-Dash.rtf"), "");
+    fs.writeFileSync(path.join(card, "F - Text.txt"), "");
+
+    const result = setup.importSetupBankNames(dbDir, card);
+
+    expect(result).toEqual({ data: { importedBanks: 2 }, success: true });
+    expect(bankNames()).toEqual({
+      A: ["ALWIS", "A - ALWIS.rtf"],
+      C: ["Lower Case", "C - Lower Case.rtf"],
+    });
+    // A scan, not an edit: the card already has these names
+    expect(getKit(dbDir, "A0").data?.modified_since_sync).toBe(false);
+    // The table owns the names; the store gets no copies of the files
+    expect(fs.readdirSync(store).filter((f) => f.endsWith(".rtf"))).toEqual([]);
+  });
+
+  it("keeps the first file by name when a card has two for one letter", () => {
+    fs.writeFileSync(path.join(card, "B - Second.rtf"), "");
+    fs.writeFileSync(path.join(card, "B - First.rtf"), "");
+
+    expect(setup.importSetupBankNames(dbDir, card).success).toBe(true);
+    expect(bankNames()).toEqual({ B: ["First", "B - First.rtf"] });
+  });
+
+  it("imports nothing from a card without bank name files", () => {
+    expect(setup.importSetupBankNames(dbDir, card)).toEqual({
+      data: { importedBanks: 0 },
+      success: true,
+    });
+    expect(bankNames()).toEqual({});
+  });
+
+  it("refuses a store this setup didn't create", () => {
+    fs.writeFileSync(path.join(card, "A - ALWIS.rtf"), "");
+    const result = new LocalStoreSetupService().importSetupBankNames(
+      dbDir,
+      card,
+    );
+    expect(result.success).toBe(false);
+    expect(bankNames()).toEqual({});
+  });
+
+  it("reports a card folder it can't read", () => {
+    const result = setup.importSetupBankNames(
+      dbDir,
+      path.join(card, "missing"),
+    );
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/Can't read the bank names/);
   });
 });

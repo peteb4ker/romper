@@ -2,6 +2,7 @@
 // wizard's import and rescan all name and parse card files here.
 //
 //   <card>/<kit>/<voice>-<slot> <name>.wav     e.g. A0/1-01 KICK LOW.wav
+//   <card>/<letter> - <bank name>.rtf          e.g. A - ALWIS.rtf
 //
 // Kit folders sit at the card root. WAV files sit directly in the kit
 // folder; the first character of the name is the voice (1-4), and the
@@ -12,6 +13,13 @@
 export const MAX_CARD_FILE_NAME_LENGTH = 64;
 
 const WAV_EXTENSION = /\.wav$/i;
+
+/**
+ * A bank name file at the card root: `<letter> - <name>.rtf`, the letter A
+ * to Z in either case. The factory card has them; whether the Rample shows
+ * them is unverified on hardware.
+ */
+export const BANK_NAME_FILE_PATTERN = /^([A-Z]) - (.+)\.rtf$/i;
 
 // A leading voice digit, optionally with the "-NN" slot this module adds,
 // then any separators: "1 KICK", "1_KICK", "1KICK", "1-01 KICK".
@@ -58,6 +66,17 @@ export function cardSampleFileName(
   );
 
   return name ? `${prefix} ${name}${extension}` : `${prefix}${extension}`;
+}
+
+/**
+ * The bank letter (upper case) and name a bank name file holds, or null when
+ * `fileName` isn't one (see {@link BANK_NAME_FILE_PATTERN}).
+ */
+export function parseBankNameFile(
+  fileName: string,
+): { letter: string; name: string } | null {
+  const match = BANK_NAME_FILE_PATTERN.exec(fileName);
+  return match ? { letter: match[1].toUpperCase(), name: match[2] } : null;
 }
 
 /**

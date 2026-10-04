@@ -141,10 +141,14 @@ export function useLocalStoreWizard(
       await processSource();
       throwIfCancelled();
 
-      // Create the database and import the kits (main names the voices)
+      // Create the database and import the kits (main names the voices),
+      // and a card's bank names
       log.debug("initialize - creating and populating database");
       const { stereoNotices, truncationWarnings } =
-        await fileOpsHook.createAndPopulateDb(state.targetPath);
+        await fileOpsHook.createAndPopulateDb(
+          state.targetPath,
+          state.source === "sdcard" ? state.sdCardSourcePath : undefined,
+        );
       log.debug("initialize - database creation completed");
       throwIfCancelled();
 

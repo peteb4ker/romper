@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   cardSampleFileName,
   MAX_CARD_FILE_NAME_LENGTH,
+  parseBankNameFile,
   voiceOfCardFile,
 } from "../rampleCardLayout";
 
@@ -136,6 +137,33 @@ describe("[UC-34] rampleCardLayout", () => {
       expect(voiceOfCardFile("5kick.wav")).toBeNull();
       expect(voiceOfCardFile("kick.wav")).toBeNull();
       expect(voiceOfCardFile("")).toBeNull();
+    });
+  });
+
+  // #564: setup reads the card's bank names with the pattern the write
+  // uses to find them
+  describe("[UC-12] parseBankNameFile", () => {
+    it("reads the letter, upper-cased, and the name", () => {
+      expect(parseBankNameFile("A - ALWIS.rtf")).toEqual({
+        letter: "A",
+        name: "ALWIS",
+      });
+      expect(parseBankNameFile("z - Late Night - Mix.RTF")).toEqual({
+        letter: "Z",
+        name: "Late Night - Mix",
+      });
+    });
+
+    it.each([
+      "AB - Two letters.rtf",
+      "1 - Digit.rtf",
+      "É - Accent.rtf",
+      "A-NoSpaces.rtf",
+      "A - .rtf",
+      "A - Text.txt",
+      "A0",
+    ])("isn't a bank name file: %s", (fileName) => {
+      expect(parseBankNameFile(fileName)).toBeNull();
     });
   });
 });

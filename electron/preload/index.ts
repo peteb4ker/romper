@@ -419,6 +419,11 @@ const electronAPI = {
   setSetting: async (key: SettingsKey, value: unknown): Promise<void> => {
     return await settingsManager.setSetting(key, value as SettingsValue);
   },
+  setupImportBankNames: (dbDir: string, cardPath: string) => {
+    isDev &&
+      console.debug("[IPC] setupImportBankNames invoked", dbDir, cardPath);
+    return ipcRenderer.invoke("setup-import-bank-names", dbDir, cardPath);
+  },
   setupImportKit: (dbDir: string, kitName: string) => {
     isDev && console.debug("[IPC] setupImportKit invoked", dbDir, kitName);
     return ipcRenderer.invoke("setup-import-kit", dbDir, kitName);

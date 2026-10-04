@@ -686,6 +686,11 @@ describe("preload/index.tsx", () => {
         method: "setupImportKit",
       },
       {
+        args: ["/db/path", "/card"],
+        ipcChannel: "setup-import-bank-names",
+        method: "setupImportBankNames",
+      },
+      {
         args: ["TestKit", { alias: "Updated Kit", editable: true }],
         ipcChannel: "update-kit-metadata",
         method: "updateKit",

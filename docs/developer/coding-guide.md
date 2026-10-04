@@ -37,9 +37,11 @@ fill 2 mono voices."
 
 ## Keyboard shortcuts
 
-- A shortcut that must work in the kit browser and elsewhere uses a number
-  or a special character only, with no Shift (Pete, #552). Letters are
-  reserved for bank jumps in the browser.
+- A plain-key shortcut that must work in the kit browser and elsewhere
+  uses a number or a special character only, with no Shift (Pete, #552).
+  Letters are reserved for bank jumps in the browser.
+- Standard Cmd/Ctrl menu shortcuts are exempt, Shift included: for
+  example Cmd/Ctrl+Shift+S for Scan All and Cmd/Ctrl+Shift+Z for Redo.
 - Choosing a shortcut, like any wording or behaviour choice, is a product
   decision: it needs Pete's sign-off recorded on the issue before it's
   built.

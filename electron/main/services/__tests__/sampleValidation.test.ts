@@ -7,7 +7,7 @@ import * as sampleValidator from "../validation/sampleValidator.js";
 vi.mock("../../db/romperDbCoreORM.js");
 vi.mock("../validation/sampleValidator.js");
 
-const mockValidator = vi.mocked(sampleValidator);
+const mockValidator = vi.mocked(sampleValidator, true);
 
 describe("SampleValidationService", () => {
   let service: SampleValidationService;

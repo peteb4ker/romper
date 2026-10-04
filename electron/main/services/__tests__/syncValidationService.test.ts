@@ -1,3 +1,5 @@
+import type { DbResult } from "@romper/shared/db/schema.js";
+
 import * as fs from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -13,8 +15,14 @@ vi.mock("../../audioUtils.js", () => ({
   validateSampleFormatAsync: vi.fn(),
 }));
 
-import { validateSampleFormatAsync } from "../../audioUtils.js";
-import { syncValidationService } from "../syncValidationService.js";
+import {
+  type FormatValidationResult,
+  validateSampleFormatAsync,
+} from "../../audioUtils.js";
+import {
+  type SyncValidationError,
+  syncValidationService,
+} from "../syncValidationService.js";
 
 const mockFs = vi.mocked(fs);
 const mockValidateSampleFormat = vi.mocked(validateSampleFormatAsync);
@@ -29,7 +37,7 @@ describe("SyncValidationService", () => {
       vi.mocked(mockFs.promises.stat).mockRejectedValue(
         Object.assign(new Error("ENOENT"), { code: "ENOENT" }),
       );
-      const validationErrors: unknown[] = [];
+      const validationErrors: SyncValidationError[] = [];
 
       const result = await syncValidationService.validateSyncSourceFile(
         "test.wav",
@@ -52,7 +60,7 @@ describe("SyncValidationService", () => {
       vi.mocked(mockFs.promises.stat).mockResolvedValue({
         size: 1024,
       } as fs.Stats);
-      const validationErrors: unknown[] = [];
+      const validationErrors: SyncValidationError[] = [];
 
       const result = await syncValidationService.validateSyncSourceFile(
         "test.wav",
@@ -68,7 +76,10 @@ describe("SyncValidationService", () => {
 
   describe("validateSampleFormat", () => {
     it("[Q-01] reads the header asynchronously through audioUtils", async () => {
-      const mockResult = { data: { issues: [] }, success: true };
+      const mockResult = {
+        data: { issues: [] },
+        success: true,
+      } as unknown as DbResult<FormatValidationResult>;
       mockValidateSampleFormat.mockResolvedValue(mockResult);
 
       const result =
@@ -156,7 +167,7 @@ describe("SyncValidationService", () => {
 
   describe("addValidationError", () => {
     it("should add permission error with correct type", () => {
-      const validationErrors: unknown[] = [];
+      const validationErrors: SyncValidationError[] = [];
       const error = new Error("Permission denied");
 
       syncValidationService.addValidationError(
@@ -173,7 +184,7 @@ describe("SyncValidationService", () => {
     });
 
     it("should add format error with correct type", () => {
-      const validationErrors: unknown[] = [];
+      const validationErrors: SyncValidationError[] = [];
       const error = new Error("Invalid format");
 
       syncValidationService.addValidationError(
@@ -188,7 +199,7 @@ describe("SyncValidationService", () => {
     });
 
     it("should add file access error with correct type", () => {
-      const validationErrors: unknown[] = [];
+      const validationErrors: SyncValidationError[] = [];
       const error = new Error("No such file");
 
       syncValidationService.addValidationError(
@@ -203,7 +214,7 @@ describe("SyncValidationService", () => {
     });
 
     it("should add unknown error with correct type", () => {
-      const validationErrors: unknown[] = [];
+      const validationErrors: SyncValidationError[] = [];
       const error = new Error("Unknown error");
 
       syncValidationService.addValidationError(

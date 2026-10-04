@@ -1,3 +1,5 @@
+import type { Sample } from "@romper/shared/db/schema.js";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the decomposed services
@@ -103,7 +105,7 @@ describe("SampleService", () => {
 
     it("should delegate moveSampleInKit to sampleCrudService", () => {
       mockCrudService.moveSampleInKit.mockReturnValue({
-        data: { affectedSamples: [], movedSample: {} as unknown },
+        data: { affectedSamples: [], movedSample: {} as Sample },
         success: true,
       });
 

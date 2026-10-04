@@ -23,7 +23,7 @@ vi.mock("../audioUtils");
 // cover conversion
 vi.mock("../wavCodec");
 
-const mockFs = vi.mocked(fs);
+const mockFs = vi.mocked(fs, true);
 const mockDecodeWav = vi.mocked(decodeWav);
 const mockEncodeWav = vi.mocked(encodeWav);
 const mockPath = vi.mocked(path);
@@ -34,9 +34,11 @@ describe("formatConverter", () => {
     vi.clearAllMocks();
 
     // Mock RAMPLE_FORMAT_REQUIREMENTS
-    vi.mocked(RAMPLE_FORMAT_REQUIREMENTS).bitDepths = [16, 24];
-    vi.mocked(RAMPLE_FORMAT_REQUIREMENTS).sampleRates = [44100, 48000];
-    vi.mocked(RAMPLE_FORMAT_REQUIREMENTS).maxChannels = 2;
+    Object.assign(vi.mocked(RAMPLE_FORMAT_REQUIREMENTS), {
+      bitDepths: [16, 24],
+      maxChannels: 2,
+      sampleRates: [44100, 48000],
+    });
   });
 
   describe("convertSampleToRampleFormat", () => {
@@ -130,7 +132,7 @@ describe("formatConverter", () => {
       mockPath.dirname.mockReturnValue("/output/dir");
       mockFs.promises.mkdir.mockResolvedValue(undefined);
       mockFs.promises.writeFile.mockResolvedValue(undefined);
-      mockFs.promises.stat.mockResolvedValue({ size: 1024 } as unknown);
+      mockFs.promises.stat.mockResolvedValue({ size: 1024 } as fs.Stats);
 
       const options: ConversionOptions = { forceMonoConversion: true };
       const result = await convertSampleToRampleFormat(
@@ -162,7 +164,7 @@ describe("formatConverter", () => {
       mockPath.dirname.mockReturnValue("/output/dir");
       mockFs.promises.mkdir.mockResolvedValue(undefined);
       mockFs.promises.writeFile.mockResolvedValue(undefined);
-      mockFs.promises.stat.mockResolvedValue({ size: 2048 } as unknown);
+      mockFs.promises.stat.mockResolvedValue({ size: 2048 } as fs.Stats);
 
       const options: ConversionOptions = { targetChannels: 2 };
       const result = await convertSampleToRampleFormat(
@@ -193,7 +195,7 @@ describe("formatConverter", () => {
       mockPath.dirname.mockReturnValue("/output/dir");
       mockFs.promises.mkdir.mockResolvedValue(undefined);
       mockFs.promises.writeFile.mockResolvedValue(undefined);
-      mockFs.promises.stat.mockResolvedValue({ size: 1536 } as unknown);
+      mockFs.promises.stat.mockResolvedValue({ size: 1536 } as fs.Stats);
 
       const options: ConversionOptions = { targetSampleRate: 44100 };
       const result = await convertSampleToRampleFormat(
@@ -223,7 +225,7 @@ describe("formatConverter", () => {
       mockFs.promises.readFile.mockResolvedValue(Buffer.from("input wav data"));
       mockPath.dirname.mockReturnValue("/output/dir");
       mockFs.promises.writeFile.mockResolvedValue(undefined);
-      mockFs.promises.stat.mockResolvedValue({ size: 1024 } as unknown);
+      mockFs.promises.stat.mockResolvedValue({ size: 1024 } as fs.Stats);
 
       const result = await convertSampleToRampleFormat(
         "input.wav",
@@ -313,7 +315,7 @@ describe("formatConverter", () => {
       mockPath.dirname.mockReturnValue("/output/dir");
       mockFs.promises.mkdir.mockResolvedValue(undefined);
       mockFs.promises.writeFile.mockResolvedValue(undefined);
-      mockFs.promises.stat.mockResolvedValue({ size: 1024 } as unknown);
+      mockFs.promises.stat.mockResolvedValue({ size: 1024 } as fs.Stats);
 
       const options: ConversionOptions = { targetChannels: 4 };
       const result = await convertSampleToRampleFormat(
@@ -345,7 +347,7 @@ describe("formatConverter", () => {
       mockFs.promises.readFile.mockResolvedValue(Buffer.from("input wav data"));
       mockPath.dirname.mockReturnValue("/output/dir");
       mockFs.promises.writeFile.mockResolvedValue(undefined);
-      mockFs.promises.stat.mockResolvedValue({ size: 1024 } as unknown);
+      mockFs.promises.stat.mockResolvedValue({ size: 1024 } as fs.Stats);
 
       const result = await convertToRampleDefault(
         "input.wav",

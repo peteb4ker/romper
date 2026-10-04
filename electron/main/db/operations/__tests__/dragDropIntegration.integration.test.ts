@@ -26,7 +26,7 @@ describe("[UC-21] Drag and Drop Integration Tests", () => {
   let testDbDir: string;
   let testDbPath: string;
   let db: ReturnType<typeof drizzle>;
-  let sqlite: Database;
+  let sqlite: Database.Database;
 
   beforeEach(() => {
     // Create temporary directory for test database
@@ -373,7 +373,7 @@ describe("[UC-21] Drag and Drop Integration Tests", () => {
 
       // Ensure no duplicate voice-slot combinations
       for (const [key, count] of slotCounts.entries()) {
-        expect(count).toBe(1, `Duplicate samples found at ${key}`);
+        expect(count, `Duplicate samples found at ${key}`).toBe(1);
       }
     });
   });

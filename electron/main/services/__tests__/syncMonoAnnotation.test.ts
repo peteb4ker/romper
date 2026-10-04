@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import type { SyncPlanData } from "../../db/operations/kitSyncOperations.js";
 import type { SyncFileOperation } from "../syncFileOperations.js";
 
 import {
@@ -7,13 +8,16 @@ import {
   buildVoiceStereoModeCache,
 } from "../syncMonoAnnotation.js";
 
+// The voice fields the plan loads; stereo_choice doesn't matter here
+type PlanVoices = SyncPlanData["voices"];
+
 describe("[UC-28] buildVoiceStereoModeCache", () => {
   it("keys each voice's stereo setting by kit and voice", () => {
     const cache = buildVoiceStereoModeCache([
       { kit_name: "myKit", stereo_mode: false, voice_number: 1 },
       { kit_name: "myKit", stereo_mode: true, voice_number: 2 },
       { kit_name: "other", stereo_mode: true, voice_number: 1 },
-    ]);
+    ] as PlanVoices);
     expect(cache.get("myKit:1")).toBe(false);
     expect(cache.get("myKit:2")).toBe(true);
     expect(cache.get("other:1")).toBe(true);
@@ -27,7 +31,9 @@ describe("[UC-28] buildVoiceStereoModeCache", () => {
 
 describe("[UC-28] annotateMonoConversion", () => {
   it("sets forceMonoConversion for stereo files on mono voices", () => {
-    const voices = [{ kit_name: "myKit", stereo_mode: false, voice_number: 1 }];
+    const voices = [
+      { kit_name: "myKit", stereo_mode: false, voice_number: 1 },
+    ] as PlanVoices;
 
     const files: SyncFileOperation[] = [
       {
@@ -51,7 +57,9 @@ describe("[UC-28] annotateMonoConversion", () => {
   });
 
   it("does not modify mono files on mono voices", () => {
-    const voices = [{ kit_name: "myKit", stereo_mode: false, voice_number: 1 }];
+    const voices = [
+      { kit_name: "myKit", stereo_mode: false, voice_number: 1 },
+    ] as PlanVoices;
 
     const files: SyncFileOperation[] = [
       {
@@ -72,7 +80,9 @@ describe("[UC-28] annotateMonoConversion", () => {
   });
 
   it("does not modify stereo files on stereo voices", () => {
-    const voices = [{ kit_name: "myKit", stereo_mode: true, voice_number: 1 }];
+    const voices = [
+      { kit_name: "myKit", stereo_mode: true, voice_number: 1 },
+    ] as PlanVoices;
 
     const files: SyncFileOperation[] = [
       {
@@ -93,7 +103,9 @@ describe("[UC-28] annotateMonoConversion", () => {
   });
 
   it("preserves convert operation when already set", () => {
-    const voices = [{ kit_name: "myKit", stereo_mode: false, voice_number: 1 }];
+    const voices = [
+      { kit_name: "myKit", stereo_mode: false, voice_number: 1 },
+    ] as PlanVoices;
 
     const files: SyncFileOperation[] = [
       {
@@ -116,7 +128,7 @@ describe("[UC-28] annotateMonoConversion", () => {
   });
 
   it("does not annotate when voice stereo_mode is undefined", () => {
-    const voices = [];
+    const voices: PlanVoices = [];
 
     const files: SyncFileOperation[] = [
       {
@@ -137,7 +149,9 @@ describe("[UC-28] annotateMonoConversion", () => {
   });
 
   it("leaves a file alone when its channel count is unknown", () => {
-    const voices = [{ kit_name: "myKit", stereo_mode: false, voice_number: 1 }];
+    const voices = [
+      { kit_name: "myKit", stereo_mode: false, voice_number: 1 },
+    ] as PlanVoices;
 
     const files: SyncFileOperation[] = [
       {

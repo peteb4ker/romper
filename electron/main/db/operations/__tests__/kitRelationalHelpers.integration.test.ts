@@ -1,3 +1,5 @@
+import type { Voice } from "@romper/shared/db/schema.js";
+
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
@@ -14,6 +16,24 @@ import {
   type KitRelatedData,
 } from "../kitRelationalHelpers.js";
 import { addSample } from "../sampleCrudOperations.js";
+
+/** A voice row with the schema's defaults */
+function voiceRow(
+  fields: Pick<Voice, "id" | "kit_name" | "voice_number">,
+): Voice {
+  return {
+    sample_mode: "first",
+    slice_enabled: false,
+    slice_max_length: 2,
+    slice_roll_amount: 100,
+    slice_vary_length: false,
+    stereo_choice: null,
+    stereo_mode: false,
+    voice_alias: null,
+    voice_volume: 100,
+    ...fields,
+  };
+}
 
 describe("Kit Relational Helpers - Integration Tests", () => {
   let tempDir: string;
@@ -49,10 +69,12 @@ describe("Kit Relational Helpers - Integration Tests", () => {
         samples: [
           {
             filename: "kick.wav",
+            gain_db: 0,
             id: 1,
             kit_name: "A0",
             slot_number: 0,
             source_path: "/samples/kick.wav",
+            source_status: null,
             voice_number: 1,
             wav_bit_depth: null,
             wav_bitrate: null,
@@ -60,15 +82,7 @@ describe("Kit Relational Helpers - Integration Tests", () => {
             wav_sample_rate: null,
           },
         ],
-        voices: [
-          {
-            id: 1,
-            kit_name: "A0",
-            stereo_mode: false,
-            voice_alias: null,
-            voice_number: 1,
-          },
-        ],
+        voices: [voiceRow({ id: 1, kit_name: "A0", voice_number: 1 })],
       };
 
       const lookups = createKitLookups(relatedData);
@@ -89,10 +103,12 @@ describe("Kit Relational Helpers - Integration Tests", () => {
         samples: [
           {
             filename: "s1.wav",
+            gain_db: 0,
             id: 1,
             kit_name: "A0",
             slot_number: 0,
             source_path: "/s1.wav",
+            source_status: null,
             voice_number: 1,
             wav_bit_depth: null,
             wav_bitrate: null,
@@ -101,10 +117,12 @@ describe("Kit Relational Helpers - Integration Tests", () => {
           },
           {
             filename: "s2.wav",
+            gain_db: 0,
             id: 2,
             kit_name: "A0",
             slot_number: 1,
             source_path: "/s2.wav",
+            source_status: null,
             voice_number: 1,
             wav_bit_depth: null,
             wav_bitrate: null,
@@ -113,10 +131,12 @@ describe("Kit Relational Helpers - Integration Tests", () => {
           },
           {
             filename: "s3.wav",
+            gain_db: 0,
             id: 3,
             kit_name: "B0",
             slot_number: 0,
             source_path: "/s3.wav",
+            source_status: null,
             voice_number: 1,
             wav_bit_depth: null,
             wav_bitrate: null,
@@ -125,27 +145,9 @@ describe("Kit Relational Helpers - Integration Tests", () => {
           },
         ],
         voices: [
-          {
-            id: 1,
-            kit_name: "A0",
-            stereo_mode: false,
-            voice_alias: null,
-            voice_number: 1,
-          },
-          {
-            id: 2,
-            kit_name: "A0",
-            stereo_mode: false,
-            voice_alias: null,
-            voice_number: 2,
-          },
-          {
-            id: 3,
-            kit_name: "B0",
-            stereo_mode: false,
-            voice_alias: null,
-            voice_number: 1,
-          },
+          voiceRow({ id: 1, kit_name: "A0", voice_number: 1 }),
+          voiceRow({ id: 2, kit_name: "A0", voice_number: 2 }),
+          voiceRow({ id: 3, kit_name: "B0", voice_number: 1 }),
         ],
       };
 
@@ -193,10 +195,12 @@ describe("Kit Relational Helpers - Integration Tests", () => {
             [
               {
                 filename: "kick.wav",
+                gain_db: 0,
                 id: 1,
                 kit_name: "A0",
                 slot_number: 0,
                 source_path: "/samples/kick.wav",
+                source_status: null,
                 voice_number: 1,
                 wav_bit_depth: null,
                 wav_bitrate: null,
@@ -207,18 +211,7 @@ describe("Kit Relational Helpers - Integration Tests", () => {
           ],
         ]),
         voicesLookup: new Map([
-          [
-            "A0",
-            [
-              {
-                id: 1,
-                kit_name: "A0",
-                stereo_mode: false,
-                voice_alias: null,
-                voice_number: 1,
-              },
-            ],
-          ],
+          ["A0", [voiceRow({ id: 1, kit_name: "A0", voice_number: 1 })]],
         ]),
       };
 

@@ -5,10 +5,18 @@
   },
   "include": [
     "app/renderer/*.d.ts",
+    "electron/main/**/__tests__/**/*",
+    "electron/preload/__tests__/**/*",
     "electron/types/*.d.ts",
     "shared/**/__tests__/**/*",
     "tests/**/*",
     "vitest.setup.ts"
   ],
-  "exclude": ["node_modules", "dist", "coverage", "tests/e2e"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "tests/e2e",
+    "electron/main/__tests__/dbIpcHandlers.test.ts"
+  ]
 }

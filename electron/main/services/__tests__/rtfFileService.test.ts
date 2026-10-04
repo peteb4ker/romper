@@ -31,7 +31,7 @@ describe("[UC-12] [UC-34] rtfFileService", () => {
   describe("writeRtfFile", () => {
     it("should remove existing RTF files and write a new one", () => {
       mockFs.readdirSync.mockReturnValue([
-        "A - Old Artist.rtf" as unknown as fs.Dirent,
+        "A - Old Artist.rtf" as unknown as fs.Dirent<NonSharedBuffer>,
       ]);
 
       rtfFileService.writeRtfFile("/store", "A", "New Artist");
@@ -63,8 +63,8 @@ describe("[UC-12] [UC-34] rtfFileService", () => {
   describe("removeRtfFile", () => {
     it("should remove matching RTF file for bank letter", () => {
       mockFs.readdirSync.mockReturnValue([
-        "A - Artist.rtf" as unknown as fs.Dirent,
-        "B - Other.rtf" as unknown as fs.Dirent,
+        "A - Artist.rtf" as unknown as fs.Dirent<NonSharedBuffer>,
+        "B - Other.rtf" as unknown as fs.Dirent<NonSharedBuffer>,
       ]);
 
       rtfFileService.removeRtfFile("/store", "A");
@@ -75,7 +75,7 @@ describe("[UC-12] [UC-34] rtfFileService", () => {
 
     it("should not remove files for other bank letters", () => {
       mockFs.readdirSync.mockReturnValue([
-        "B - Other.rtf" as unknown as fs.Dirent,
+        "B - Other.rtf" as unknown as fs.Dirent<NonSharedBuffer>,
       ]);
 
       rtfFileService.removeRtfFile("/store", "A");
@@ -151,9 +151,9 @@ describe("[UC-12] [UC-34] rtfFileService", () => {
 
     it("matches the letter as text, not as a pattern", () => {
       mockFs.readdirSync.mockReturnValue([
-        "a - lower.rtf" as unknown as fs.Dirent,
-        "AB - Other.rtf" as unknown as fs.Dirent,
-        "A - .txt" as unknown as fs.Dirent,
+        "a - lower.rtf" as unknown as fs.Dirent<NonSharedBuffer>,
+        "AB - Other.rtf" as unknown as fs.Dirent<NonSharedBuffer>,
+        "A - .txt" as unknown as fs.Dirent<NonSharedBuffer>,
       ]);
 
       rtfFileService.removeRtfFile("/store", "A");

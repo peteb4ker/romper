@@ -1,7 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { InMemorySettings } from "../types/settings";
+
+/** The fields of a handler's result these tests read. */
+interface HandlerResult {
+  data?: unknown;
+  error?: string;
+  success?: boolean;
+}
+type IpcHandler = (
+  ...args: unknown[]
+) => HandlerResult | Promise<HandlerResult>;
+
 // Mocks for Electron and Node APIs
-const ipcMainHandlers: { [key: string]: unknown } = {};
+const ipcMainHandlers: Record<string, IpcHandler> = {};
 vi.mock("electron", () => ({
   app: {
     getPath: vi.fn(() => "/mock/userData"),
@@ -141,7 +153,7 @@ beforeEach(() => {
 describe("registerIpcHandlers", () => {
   it("registers read-settings and returns inMemorySettings", async () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    const inMemorySettings = { foo: "bar" };
+    const inMemorySettings = { foo: "bar", localStorePath: null };
     registerIpcHandlers(inMemorySettings);
     const result = await ipcMainHandlers["read-settings"]();
     expect(result).toEqual(inMemorySettings);
@@ -149,7 +161,10 @@ describe("registerIpcHandlers", () => {
 
   it("registers write-settings and updates inMemorySettings", async () => {
     const { settingsService } = await import("../services/settingsService.js");
-    const inMemorySettings: { [key: string]: unknown } = { foo: "bar" };
+    const inMemorySettings: InMemorySettings = {
+      foo: "bar",
+      localStorePath: null,
+    };
 
     // Mock writeSetting to actually modify the settings object
     vi.mocked(settingsService.writeSetting).mockImplementation(
@@ -195,7 +210,7 @@ describe("registerIpcHandlers", () => {
   it("registers open-external and opens https URLs in the system browser", async () => {
     const { shell } = await import("electron");
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
+    registerIpcHandlers({ localStorePath: null });
 
     const result = await ipcMainHandlers["open-external"](
       {},
@@ -211,7 +226,7 @@ describe("registerIpcHandlers", () => {
   it("open-external refuses non-https and invalid URLs", async () => {
     const { shell } = await import("electron");
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
+    registerIpcHandlers({ localStorePath: null });
 
     const httpResult = await ipcMainHandlers["open-external"](
       {},
@@ -233,7 +248,7 @@ describe("registerIpcHandlers", () => {
 
   it("registers ensure-dir and creates directory", async () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
+    registerIpcHandlers({ localStorePath: null });
     const result = await ipcMainHandlers["ensure-dir"]({}, "/mock/dir/romper");
     expect(result).toEqual({ success: true });
   });
@@ -246,7 +261,7 @@ describe("registerIpcHandlers", () => {
     });
 
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
+    registerIpcHandlers({ localStorePath: null });
     const result = await ipcMainHandlers["ensure-dir"]({}, "/fail/dir");
     expect(result.success).toBe(false);
     expect(result.error).toMatch(/fail/);
@@ -254,7 +269,7 @@ describe("registerIpcHandlers", () => {
 
   it("registers copy-dir and copies directory", async () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
+    registerIpcHandlers({ localStorePath: null });
     const result = await ipcMainHandlers["copy-dir"](
       {},
       "/mock/src",
@@ -265,12 +280,14 @@ describe("registerIpcHandlers", () => {
   });
 
   it("copy-dir returns error on failure", async () => {
+    const { archiveService } = await import("../services/archiveService.js");
+    vi.mocked(archiveService.copyDirectory).mockReturnValueOnce({
+      error: "fail",
+      success: false,
+    });
+
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
-    const origHandler = ipcMainHandlers["copy-dir"];
-    ipcMainHandlers["copy-dir"] = async () => {
-      return { error: "fail", success: false };
-    };
+    registerIpcHandlers({ localStorePath: null });
     const result = await ipcMainHandlers["copy-dir"](
       {},
       "/fail/src",
@@ -278,7 +295,6 @@ describe("registerIpcHandlers", () => {
     );
     expect(result.success).toBe(false);
     expect(result.error).toMatch(/fail/);
-    ipcMainHandlers["copy-dir"] = origHandler;
   });
 
   it("registers get-local-store-status and returns status", async () => {
@@ -292,7 +308,7 @@ describe("registerIpcHandlers", () => {
 
   it("registers close-app and quits app", async () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
+    registerIpcHandlers({ localStorePath: null });
 
     await ipcMainHandlers["close-app"]();
     const electron = await import("electron");
@@ -301,7 +317,7 @@ describe("registerIpcHandlers", () => {
 
   it("registers select-sd-card and returns selected path", async () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
+    registerIpcHandlers({ localStorePath: null });
 
     const result = await ipcMainHandlers["select-sd-card"]();
     expect(result).toBe("/mock/sd");
@@ -310,7 +326,7 @@ describe("registerIpcHandlers", () => {
   it("select-sd-card opens the picker at the removable-volume folder, not the home folder", async () => {
     const electron = await import("electron");
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
+    registerIpcHandlers({ localStorePath: null });
 
     await ipcMainHandlers["select-sd-card"]();
     expect(vi.mocked(electron.dialog.showOpenDialog)).toHaveBeenCalledWith(
@@ -326,7 +342,7 @@ describe("registerIpcHandlers", () => {
     });
 
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
+    registerIpcHandlers({ localStorePath: null });
 
     const result = await ipcMainHandlers["select-sd-card"]();
     expect(result).toBeNull();
@@ -384,7 +400,7 @@ describe("registerIpcHandlers", () => {
 
   it("registers list-files-in-root and returns file list", async () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
+    registerIpcHandlers({ localStorePath: null });
 
     const result = await ipcMainHandlers["list-files-in-root"](
       {},
@@ -425,7 +441,7 @@ describe("registerIpcHandlers", () => {
 
   it("registers get-user-home-dir and returns home directory", async () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
+    registerIpcHandlers({ localStorePath: null });
 
     const result = await ipcMainHandlers["get-user-home-dir"]();
     expect(typeof result).toBe("string");
@@ -439,7 +455,7 @@ describe("registerIpcHandlers", () => {
     });
 
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
+    registerIpcHandlers({ localStorePath: null });
 
     const result = await ipcMainHandlers["select-local-store-path"]();
     expect(result).toBe("/mock/local/store");
@@ -453,7 +469,7 @@ describe("registerIpcHandlers", () => {
     });
 
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
+    registerIpcHandlers({ localStorePath: null });
 
     const result = await ipcMainHandlers["select-local-store-path"]();
     expect(result).toBeNull();
@@ -467,7 +483,7 @@ describe("registerIpcHandlers", () => {
     });
 
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
+    registerIpcHandlers({ localStorePath: null });
 
     const result = await ipcMainHandlers["select-existing-local-store"]();
     expect(result).toBeDefined();
@@ -482,7 +498,7 @@ describe("registerIpcHandlers", () => {
     });
 
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
+    registerIpcHandlers({ localStorePath: null });
 
     const result = await ipcMainHandlers["select-existing-local-store"]();
     expect(result.success).toBe(false);
@@ -496,16 +512,17 @@ describe("registerIpcHandlers", () => {
       },
     };
 
+    const progress = { percent: 50, phase: "Downloading" };
     const { archiveService } = await import("../services/archiveService.js");
     vi.mocked(archiveService.downloadAndExtractArchive).mockImplementation(
       (url, dest, callback) => {
-        callback({ percent: 50 }); // Simulate progress
+        callback?.(progress); // Simulate progress
         return Promise.resolve({ success: true });
       },
     );
 
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
+    registerIpcHandlers({ localStorePath: null });
 
     const result = await ipcMainHandlers["download-and-extract-archive"](
       mockEvent,
@@ -520,9 +537,10 @@ describe("registerIpcHandlers", () => {
       expect.any(Function),
       expect.any(AbortSignal),
     );
-    expect(mockEvent.sender.send).toHaveBeenCalledWith("archive-progress", {
-      percent: 50,
-    });
+    expect(mockEvent.sender.send).toHaveBeenCalledWith(
+      "archive-progress",
+      progress,
+    );
   });
 
   it("download-and-extract-archive handles failure", async () => {
@@ -539,7 +557,7 @@ describe("registerIpcHandlers", () => {
     });
 
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
+    registerIpcHandlers({ localStorePath: null });
 
     const result = await ipcMainHandlers["download-and-extract-archive"](
       mockEvent,
@@ -565,7 +583,7 @@ describe("registerIpcHandlers", () => {
     );
 
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
+    registerIpcHandlers({ localStorePath: null });
 
     const result = await ipcMainHandlers["download-and-extract-archive"](
       mockEvent,
@@ -601,7 +619,7 @@ describe("registerIpcHandlers", () => {
     const { localStoreSetupService } =
       await import("../services/localStoreSetupService.js");
     const { registerIpcHandlers } = await import("../ipcHandlers");
-    registerIpcHandlers({});
+    registerIpcHandlers({ localStorePath: null });
 
     const result = await ipcMainHandlers["check-existing-local-store"](
       {},

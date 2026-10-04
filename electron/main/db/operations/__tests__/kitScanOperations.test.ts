@@ -41,6 +41,16 @@ function row(overrides: Partial<Sample> & Pick<Sample, "filename">): Sample {
 
 const factoryKit = { editable: false, locked: false, name: "A0" };
 
+/** A voice row as planKitScanMerge reads it: unlinked, no stereo choice */
+function voice(voiceNumber: number, voiceAlias: null | string) {
+  return {
+    stereo_choice: null,
+    stereo_mode: false,
+    voice_alias: voiceAlias,
+    voice_number: voiceNumber,
+  };
+}
+
 describe("[UC-13] planKitScanMerge", () => {
   it("adds a new folder file in the next free slot and keeps existing rows", () => {
     const existing = [row({ filename: "1 kick.wav", id: 1 })];
@@ -285,11 +295,7 @@ describe("[UC-13] planKitScanMerge", () => {
       },
       io: io(),
       kit: factoryKit,
-      voices: [
-        { voice_alias: null, voice_number: 1 },
-        { voice_alias: null, voice_number: 2 },
-        { voice_alias: "My Hats", voice_number: 4 },
-      ],
+      voices: [voice(1, null), voice(2, null), voice(4, "My Hats")],
     });
 
     expect(plan.aliasUpdates).toEqual([

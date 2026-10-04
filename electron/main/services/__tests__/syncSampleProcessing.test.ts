@@ -1,3 +1,5 @@
+import type { Sample } from "@romper/shared/db/schema.js";
+
 import * as path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -16,7 +18,10 @@ vi.mock("../syncFileOperations.js", () => ({
   },
 }));
 
-import { syncFileOperationsService } from "../syncFileOperations.js";
+import {
+  syncFileOperationsService,
+  type SyncResults,
+} from "../syncFileOperations.js";
 import { syncSampleProcessingService } from "../syncSampleProcessing.js";
 import { syncValidationService } from "../syncValidationService.js";
 
@@ -37,7 +42,7 @@ describe("SyncSampleProcessingService", () => {
       filename: "kick.wav",
       slot_number: 0,
       voice_number: 1,
-    } as unknown;
+    } as Sample;
 
     it("writes the sample flat in its kit folder on the SD card", () => {
       const result = syncSampleProcessingService.getDestinationPath(
@@ -66,7 +71,7 @@ describe("SyncSampleProcessingService", () => {
       const result = syncSampleProcessingService.getDestinationPath(
         "/local/store",
         "A0",
-        { ...(sample as object), slot_number: 2, voice_number: 3 } as never,
+        { ...sample, slot_number: 2, voice_number: 3 },
         "/sdcard",
       );
 
@@ -81,7 +86,7 @@ describe("SyncSampleProcessingService", () => {
         { kit_name: "A0", voice_number: 1 },
         { kit_name: "A0", voice_number: 3 },
         { kit_name: "B2", voice_number: 4 },
-      ] as never;
+      ] as Sample[];
 
       expect(syncSampleProcessingService.kitsWithoutVoiceOne(samples)).toEqual([
         "A1",
@@ -93,7 +98,7 @@ describe("SyncSampleProcessingService", () => {
       expect(
         syncSampleProcessingService.kitsWithoutVoiceOne([
           { kit_name: "A0", voice_number: 1 },
-        ] as never),
+        ] as Sample[]),
       ).toEqual([]);
     });
   });
@@ -105,7 +110,7 @@ describe("SyncSampleProcessingService", () => {
       slot_number: 0,
       source_path: "/source/kick.wav",
       voice_number: 1,
-    } as unknown;
+    } as Sample;
 
     const stereoSample = {
       filename: "stereo_kick.wav",
@@ -113,7 +118,7 @@ describe("SyncSampleProcessingService", () => {
       slot_number: 0,
       source_path: "/source/stereo_kick.wav",
       voice_number: 1,
-    } as unknown;
+    } as Sample;
 
     const results = {
       filesToConvert: [],
@@ -121,7 +126,7 @@ describe("SyncSampleProcessingService", () => {
       hasFormatWarnings: false,
       validationErrors: [],
       warnings: [],
-    } as unknown;
+    } as SyncResults;
 
     beforeEach(() => {
       vi.clearAllMocks();
@@ -137,7 +142,10 @@ describe("SyncSampleProcessingService", () => {
     });
 
     it("reports a sample without a source path instead of skipping it silently", async () => {
-      const sampleNoSource = { ...monoSample, source_path: undefined };
+      const sampleNoSource = {
+        ...monoSample,
+        source_path: undefined,
+      } as unknown as Sample;
 
       await syncSampleProcessingService.processSampleForSync(
         sampleNoSource,
@@ -286,7 +294,7 @@ describe("SyncSampleProcessingService", () => {
       slot_number: 0,
       source_path: "/source/stereo_kick.wav",
       voice_number: 1,
-    } as unknown;
+    } as Sample;
 
     const testMonoSample = {
       filename: "kick.wav",
@@ -294,7 +302,7 @@ describe("SyncSampleProcessingService", () => {
       slot_number: 0,
       source_path: "/source/kick.wav",
       voice_number: 1,
-    } as unknown;
+    } as Sample;
 
     const testResults = {
       filesToConvert: [],
@@ -302,7 +310,7 @@ describe("SyncSampleProcessingService", () => {
       hasFormatWarnings: false,
       validationErrors: [],
       warnings: [],
-    } as unknown;
+    } as SyncResults;
 
     beforeEach(() => {
       mockValidateSyncSourceFile.mockResolvedValue({

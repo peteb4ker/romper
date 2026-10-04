@@ -1,9 +1,19 @@
 import type { Sample } from "@romper/shared/db/schema.js";
+import type BetterSqlite3 from "better-sqlite3";
 
 import { eq } from "drizzle-orm";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type Mock,
+  type MockInstance,
+  vi,
+} from "vitest";
 
-import { withDb } from "../../utils/dbUtilities.js";
+import { type RomperDb, withDb } from "../../utils/dbUtilities.js";
 import {
   getSampleToMove,
   groupSamplesByVoice,
@@ -40,9 +50,26 @@ vi.mock("../../utils/dbUtilities.js", () => ({
   withDbTransaction: vi.fn(),
 }));
 
+/** The query-builder methods the operations call, chained on one mock */
+type MockDb = Record<
+  | "all"
+  | "delete"
+  | "from"
+  | "get"
+  | "insert"
+  | "orderBy"
+  | "run"
+  | "select"
+  | "set"
+  | "update"
+  | "values"
+  | "where",
+  Mock
+>;
+
 describe("sampleManagementOps unit tests", () => {
-  let mockDb: unknown;
-  let consoleLogSpy: unknown;
+  let mockDb: MockDb;
+  let consoleLogSpy: MockInstance<typeof console.log>;
   const testDbDir = "/test/db/dir";
   const testKitName = "Test Kit";
 
@@ -70,11 +97,11 @@ describe("sampleManagementOps unit tests", () => {
 
     // Mock withDb to execute the function with mockDb
     vi.mocked(withDb).mockImplementation(
-      (dbDir: string, fn: (db: unknown) => unknown) => {
+      (dbDir: string, fn: (db: RomperDb) => unknown) => {
         if (!dbDir || dbDir.includes("/test/")) {
           // For test database paths, actually execute the function
           try {
-            const result = fn(mockDb);
+            const result = fn(mockDb as unknown as RomperDb);
             return { data: result, success: true };
           } catch (error) {
             return {
@@ -94,7 +121,10 @@ describe("sampleManagementOps unit tests", () => {
 
     // Mock withDbTransaction to execute the function with mockDb and mock sqlite
     vi.mocked(withDbTransaction).mockImplementation(
-      (dbDir: string, fn: (db: unknown, sqlite: unknown) => unknown) => {
+      (
+        dbDir: string,
+        fn: (db: RomperDb, sqlite: BetterSqlite3.Database) => unknown,
+      ) => {
         if (!dbDir || dbDir.includes("/test/")) {
           // For test database paths, actually execute the function
           try {
@@ -102,7 +132,10 @@ describe("sampleManagementOps unit tests", () => {
               close: vi.fn(),
               exec: vi.fn(),
             };
-            const result = fn(mockDb, mockSqlite);
+            const result = fn(
+              mockDb as unknown as RomperDb,
+              mockSqlite as unknown as BetterSqlite3.Database,
+            );
             return { data: result, success: true };
           } catch (error) {
             return {
@@ -141,7 +174,7 @@ describe("sampleManagementOps unit tests", () => {
       mockDb.get.mockReturnValue(mockSample);
 
       const result = getSampleToMove(
-        mockDb,
+        mockDb as unknown as RomperDb,
         testKitName,
         testFromVoice,
         testFromSlot,
@@ -156,7 +189,7 @@ describe("sampleManagementOps unit tests", () => {
       mockDb.get.mockReturnValue(null);
 
       const result = getSampleToMove(
-        mockDb,
+        mockDb as unknown as RomperDb,
         testKitName,
         testFromVoice,
         testFromSlot,

@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import type BetterSqlite3 from "better-sqlite3";
+
+import { beforeEach, describe, expect, type Mock, test, vi } from "vitest";
 
 // Mock the database utilities
 vi.mock("../../utils/dbUtilities.js", () => ({
@@ -6,8 +8,16 @@ vi.mock("../../utils/dbUtilities.js", () => ({
 }));
 
 // The read and the write are one transaction (RE-28)
-import { withDbTransaction } from "../../utils/dbUtilities.js";
+import { type RomperDb, withDbTransaction } from "../../utils/dbUtilities.js";
 import { toggleKitFavorite } from "../kitCrudOperations.js";
+
+/** Runs the operation on a mock db and wraps it as withDbTransaction does */
+function mockTransaction(mockDb: { select: Mock; update?: Mock }) {
+  vi.mocked(withDbTransaction).mockImplementation((_dbDir, fn) => ({
+    data: fn(mockDb as unknown as RomperDb, {} as BetterSqlite3.Database),
+    success: true,
+  }));
+}
 
 describe("toggleKitFavorite - Unit Tests", () => {
   const mockDbDir = "/test/db";
@@ -40,17 +50,14 @@ describe("toggleKitFavorite - Unit Tests", () => {
       }),
     });
 
-    vi.mocked(withDbTransaction).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        select: mockSelect,
-        update: mockUpdate,
-      };
-      return fn(mockDb);
+    mockTransaction({
+      select: mockSelect,
+      update: mockUpdate,
     });
 
     const result = toggleKitFavorite(mockDbDir, mockKitName);
 
-    expect(result).toEqual({ isFavorite: true });
+    expect(result).toEqual({ data: { isFavorite: true }, success: true });
     expect(mockSelect).toHaveBeenCalled();
     expect(mockUpdate).toHaveBeenCalled();
   });
@@ -78,17 +85,14 @@ describe("toggleKitFavorite - Unit Tests", () => {
       }),
     });
 
-    vi.mocked(withDbTransaction).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        select: mockSelect,
-        update: mockUpdate,
-      };
-      return fn(mockDb);
+    mockTransaction({
+      select: mockSelect,
+      update: mockUpdate,
     });
 
     const result = toggleKitFavorite(mockDbDir, mockKitName);
 
-    expect(result).toEqual({ isFavorite: false });
+    expect(result).toEqual({ data: { isFavorite: false }, success: true });
     expect(mockSelect).toHaveBeenCalled();
     expect(mockUpdate).toHaveBeenCalled();
   });
@@ -102,11 +106,8 @@ describe("toggleKitFavorite - Unit Tests", () => {
       }),
     });
 
-    vi.mocked(withDbTransaction).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        select: mockSelect,
-      };
-      return fn(mockDb);
+    mockTransaction({
+      select: mockSelect,
     });
 
     expect(() => toggleKitFavorite(mockDbDir, "NonExistent")).toThrow(
@@ -140,12 +141,9 @@ describe("toggleKitFavorite - Unit Tests", () => {
       set: mockSet,
     });
 
-    vi.mocked(withDbTransaction).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        select: mockSelect,
-        update: mockUpdate,
-      };
-      return fn(mockDb);
+    mockTransaction({
+      select: mockSelect,
+      update: mockUpdate,
     });
 
     toggleKitFavorite(mockDbDir, mockKitName);
@@ -174,24 +172,21 @@ describe("toggleKitFavorite - Unit Tests", () => {
       name: "A0",
     };
 
-    vi.mocked(withDbTransaction).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        select: vi.fn().mockReturnValue({
-          from: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              get: vi.fn().mockReturnValue(mockKit),
-            }),
+    mockTransaction({
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            get: vi.fn().mockReturnValue(mockKit),
           }),
         }),
-        update: vi.fn().mockReturnValue({
-          set: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              run: vi.fn(),
-            }),
+      }),
+      update: vi.fn().mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            run: vi.fn(),
           }),
         }),
-      };
-      return fn(mockDb);
+      }),
     });
 
     toggleKitFavorite(mockDbDir, mockKitName);

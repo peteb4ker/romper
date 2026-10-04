@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, type SQL } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the schema and orm dependencies
@@ -26,7 +26,7 @@ vi.mock("../../utils/dbUtilities.js", () => ({
 
 import * as schema from "@romper/shared/db/schema.js";
 
-import { withDb } from "../../utils/dbUtilities.js";
+import { type RomperDb, withDb } from "../../utils/dbUtilities.js";
 // Import the functions we want to test
 import {
   buildDeleteConditions,
@@ -50,7 +50,7 @@ describe("crudOperations pure functions", () => {
 
     it("should build conditions with kit name only", () => {
       const mockCondition = { kit_name: testKitName };
-      vi.mocked(eq).mockReturnValue(mockCondition as unknown);
+      vi.mocked(eq).mockReturnValue(mockCondition as unknown as SQL);
 
       const result = buildDeleteConditions(testKitName);
 
@@ -63,9 +63,9 @@ describe("crudOperations pure functions", () => {
       const mockKitCondition = { kit_name: testKitName };
       const mockVoiceCondition = { voice_number: 1 };
       vi.mocked(eq)
-        .mockReturnValueOnce(mockKitCondition as unknown)
-        .mockReturnValueOnce(mockVoiceCondition as unknown);
-      vi.mocked(and).mockReturnValue("combined_condition" as unknown);
+        .mockReturnValueOnce(mockKitCondition as unknown as SQL)
+        .mockReturnValueOnce(mockVoiceCondition as unknown as SQL);
+      vi.mocked(and).mockReturnValue("combined_condition" as unknown as SQL);
 
       const result = buildDeleteConditions(testKitName, { voiceNumber: 1 });
 
@@ -79,9 +79,9 @@ describe("crudOperations pure functions", () => {
       const mockKitCondition = { kit_name: testKitName };
       const mockSlotCondition = { slot_number: 2 };
       vi.mocked(eq)
-        .mockReturnValueOnce(mockKitCondition as unknown)
-        .mockReturnValueOnce(mockSlotCondition as unknown);
-      vi.mocked(and).mockReturnValue("combined_condition" as unknown);
+        .mockReturnValueOnce(mockKitCondition as unknown as SQL)
+        .mockReturnValueOnce(mockSlotCondition as unknown as SQL);
+      vi.mocked(and).mockReturnValue("combined_condition" as unknown as SQL);
 
       const result = buildDeleteConditions(testKitName, { slotNumber: 2 });
 
@@ -96,10 +96,10 @@ describe("crudOperations pure functions", () => {
       const mockVoiceCondition = { voice_number: 1 };
       const mockSlotCondition = { slot_number: 2 };
       vi.mocked(eq)
-        .mockReturnValueOnce(mockKitCondition as unknown)
-        .mockReturnValueOnce(mockVoiceCondition as unknown)
-        .mockReturnValueOnce(mockSlotCondition as unknown);
-      vi.mocked(and).mockReturnValue("combined_condition" as unknown);
+        .mockReturnValueOnce(mockKitCondition as unknown as SQL)
+        .mockReturnValueOnce(mockVoiceCondition as unknown as SQL)
+        .mockReturnValueOnce(mockSlotCondition as unknown as SQL);
+      vi.mocked(and).mockReturnValue("combined_condition" as unknown as SQL);
 
       const result = buildDeleteConditions(testKitName, {
         slotNumber: 2,
@@ -128,9 +128,12 @@ describe("crudOperations pure functions", () => {
         where: vi.fn().mockReturnThis(),
       };
 
-      const mockCondition = { kit_name: "Test Kit" };
+      const mockCondition = { kit_name: "Test Kit" } as unknown as SQL;
 
-      const result = getSamplesToDelete(mockDb as unknown, mockCondition);
+      const result = getSamplesToDelete(
+        mockDb as unknown as RomperDb,
+        mockCondition,
+      );
 
       expect(mockDb.select).toHaveBeenCalled();
       expect(mockDb.from).toHaveBeenCalledWith(schema.samples);
@@ -153,9 +156,9 @@ describe("crudOperations pure functions", () => {
 
     beforeEach(() => {
       vi.mocked(withDb).mockImplementation(
-        (dbDir: string, callback: unknown) => {
+        (_dbDir: string, callback: (db: RomperDb) => unknown) => {
           try {
-            const result = callback(mockDb);
+            const result = callback(mockDb as unknown as RomperDb);
             return { data: result, success: true };
           } catch (error) {
             return { error: (error as Error).message, success: false };

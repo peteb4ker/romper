@@ -61,7 +61,7 @@ describe("stereoProcessingUtils", () => {
 
       it("should handle missing metadata gracefully", () => {
         mockGetAudioMetadata.mockReturnValue({
-          data: null,
+          data: undefined,
           success: true,
         });
 

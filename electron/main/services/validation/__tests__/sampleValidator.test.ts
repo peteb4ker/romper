@@ -150,22 +150,32 @@ describe("SampleValidator", () => {
     it("should return validation results for all samples", () => {
       const samples: Sample[] = [
         {
-          created_at: "2023-01-01",
           filename: "valid.wav",
+          gain_db: 0,
           id: 1,
           kit_name: "TestKit",
           slot_number: 0,
           source_path: "/path/to/valid.wav",
+          source_status: null,
           voice_number: 1,
+          wav_bit_depth: null,
+          wav_bitrate: null,
+          wav_channels: null,
+          wav_sample_rate: null,
         },
         {
-          created_at: "2023-01-01",
           filename: "invalid.wav",
+          gain_db: 0,
           id: 2,
           kit_name: "TestKit",
           slot_number: 1,
           source_path: "/path/to/invalid.wav",
+          source_status: null,
           voice_number: 1,
+          wav_bit_depth: null,
+          wav_bitrate: null,
+          wav_channels: null,
+          wav_sample_rate: null,
         },
       ];
 

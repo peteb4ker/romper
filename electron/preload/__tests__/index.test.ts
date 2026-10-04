@@ -1,3 +1,5 @@
+import type { SettingsData } from "@romper/shared/electronApi.js";
+
 import { describe, expect, it, vi } from "vitest";
 
 // Mock electron modules
@@ -39,7 +41,7 @@ describe("preload index", () => {
       // Test that the expected interface structure exists
       // This validates the TypeScript interface through runtime checking
 
-      const mockSettingsData = {
+      const mockSettingsData: SettingsData = {
         confirmDestructiveActions: true,
         localStorePath: "/path/to/local/store",
         theme: "dark",
@@ -53,7 +55,7 @@ describe("preload index", () => {
     });
 
     it("should allow optional properties in SettingsData", () => {
-      const partialSettings = {
+      const partialSettings: SettingsData = {
         theme: "light",
       };
 

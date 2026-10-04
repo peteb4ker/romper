@@ -87,8 +87,9 @@ fill 2 mono voices."
 - `npm run typecheck` covers `app/`, `electron/` (minus the preload), and
   `shared/` through `tsconfig.json`, and test code through
   `tsconfig.test.json`: so far `tests/` (except `tests/e2e/`), the tests in
-  `shared/` and `vitest.setup.ts`. The other `__tests__/` folders and the
-  e2e specs aren't type-checked yet (#466); add a folder to
+  `shared/`, `electron/main/` and `electron/preload/`, and
+  `vitest.setup.ts`. The `app/` tests and the e2e specs aren't
+  type-checked yet (#466); add a folder to
   `tsconfig.test.json` once its errors are fixed. The preload is
   type-checked by its own build (`npm run build:preload`).
 

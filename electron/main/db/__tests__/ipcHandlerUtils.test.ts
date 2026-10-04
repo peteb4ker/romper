@@ -1,6 +1,7 @@
 import * as path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createMockSample } from "../../../../tests/factories/sample.factory";
 import {
   createDbHandler,
   createSampleOperationHandler,
@@ -238,7 +239,10 @@ describe("ipcHandlerUtils", () => {
 
     describe("delete operation", () => {
       it("should handle successful delete operation", async () => {
-        const mockResult = { data: { deletedSamples: [] }, success: true };
+        const mockResult = {
+          data: { affectedSamples: [], deletedSamples: [] },
+          success: true,
+        };
         vi.mocked(sampleService.deleteSampleFromSlot).mockReturnValue(
           mockResult,
         );
@@ -288,7 +292,13 @@ describe("ipcHandlerUtils", () => {
 
     describe("replace operation", () => {
       it("should handle successful replace operation", async () => {
-        const mockResult = { data: { sampleId: 456 }, success: true };
+        const mockResult = {
+          data: {
+            replacedSample: createMockSample({ id: 456 }),
+            sampleId: 456,
+          },
+          success: true,
+        };
         vi.mocked(sampleService.replaceSampleInSlot).mockReturnValue(
           mockResult,
         );
@@ -362,7 +372,9 @@ describe("ipcHandlerUtils", () => {
       it("should return error for unknown operation type", async () => {
         const handler = createSampleOperationHandler(
           mockInMemorySettings,
-          "unknown" as unknown,
+          "unknown" as unknown as Parameters<
+            typeof createSampleOperationHandler
+          >[1],
         );
         const result = await handler(
           mockEvent,

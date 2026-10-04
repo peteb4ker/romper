@@ -90,7 +90,7 @@ describe("ScanService", () => {
         "1_snare.WAV",
         "2_hihat.wav",
         "readme.txt", // Non-WAV file should be ignored
-      ] as unknown);
+      ] as unknown as fs.Dirent<NonSharedBuffer>[]);
 
       mockGroupSamplesByVoice.mockReturnValue({
         1: ["1_kick.wav", "1_snare.WAV"],
@@ -175,7 +175,7 @@ describe("ScanService", () => {
 
     it("returns error when kit directory does not exist", () => {
       mockFs.existsSync.mockImplementation(
-        (path: string) => !path.includes("TestKit"),
+        (path: fs.PathLike) => !String(path).includes("TestKit"),
       );
 
       const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
@@ -259,7 +259,9 @@ describe("ScanService", () => {
     });
 
     it("scans banks in the override when no path is saved", () => {
-      mockFs.readdirSync.mockReturnValue(["A - Artist One.rtf"] as unknown);
+      mockFs.readdirSync.mockReturnValue([
+        "A - Artist One.rtf",
+      ] as unknown as fs.Dirent<NonSharedBuffer>[]);
 
       const result = scanService.scanBanks(noSavedPath);
 
@@ -274,7 +276,9 @@ describe("ScanService", () => {
     });
 
     it("rescans a kit in the override, not the saved path", () => {
-      mockFs.readdirSync.mockReturnValue([] as unknown);
+      mockFs.readdirSync.mockReturnValue(
+        [] as unknown as fs.Dirent<NonSharedBuffer>[],
+      );
       mockGroupSamplesByVoice.mockReturnValue({});
       mockMergeKitScan.mockReturnValue({
         data: {
@@ -311,7 +315,7 @@ describe("ScanService", () => {
         "invalid-format.rtf",
         "D - Artist Four.txt", // Wrong extension
         "regular-file.wav",
-      ] as unknown);
+      ] as unknown as fs.Dirent<NonSharedBuffer>[]);
     });
 
     it("successfully scans bank RTF files", () => {
@@ -356,7 +360,9 @@ describe("ScanService", () => {
     });
 
     it("converts bank letters to uppercase", () => {
-      mockFs.readdirSync.mockReturnValue(["a - Artist Lower.rtf"] as unknown);
+      mockFs.readdirSync.mockReturnValue([
+        "a - Artist Lower.rtf",
+      ] as unknown as fs.Dirent<NonSharedBuffer>[]);
 
       const result = scanService.scanBanks(mockInMemorySettings);
 

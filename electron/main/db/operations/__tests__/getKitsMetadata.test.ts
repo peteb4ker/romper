@@ -1,12 +1,20 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, type Mock, test, vi } from "vitest";
 
 // Mock the database utilities
 vi.mock("../../utils/dbUtilities.js", () => ({
   withDb: vi.fn(),
 }));
 
-import { withDb } from "../../utils/dbUtilities.js";
+import { type RomperDb, withDb } from "../../utils/dbUtilities.js";
 import { getKitsMetadata } from "../kitCrudOperations.js";
+
+/** Runs the operation on a mock db and wraps the result as withDb does */
+function mockWithDb(mockDb: Record<string, Mock>) {
+  vi.mocked(withDb).mockImplementation((_dbDir, fn) => ({
+    data: fn(mockDb as unknown as RomperDb),
+    success: true,
+  }));
+}
 
 describe("getKitsMetadata - Unit Tests", () => {
   const mockDbDir = "/test/db";
@@ -16,18 +24,15 @@ describe("getKitsMetadata - Unit Tests", () => {
   });
 
   test("should return empty array when no kits exist", () => {
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        all: vi.fn().mockReturnValue([]),
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-      };
-      return fn(mockDb);
+    mockWithDb({
+      all: vi.fn().mockReturnValue([]),
+      from: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
     });
 
     const result = getKitsMetadata(mockDbDir);
 
-    expect(result).toEqual([]);
+    expect(result.data).toEqual([]);
     expect(withDb).toHaveBeenCalledWith(mockDbDir, expect.any(Function));
   });
 
@@ -47,18 +52,15 @@ describe("getKitsMetadata - Unit Tests", () => {
       },
     ];
 
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        all: vi.fn().mockReturnValue(mockKitData),
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-      };
-      return fn(mockDb);
+    mockWithDb({
+      all: vi.fn().mockReturnValue(mockKitData),
+      from: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
     });
 
     const result = getKitsMetadata(mockDbDir);
 
-    expect(result).toEqual(mockKitData);
+    expect(result.data).toEqual(mockKitData);
   });
 
   test("should return kit metadata without bank when no bank data exists", () => {
@@ -77,18 +79,15 @@ describe("getKitsMetadata - Unit Tests", () => {
       },
     ];
 
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        all: vi.fn().mockReturnValue(mockKitData),
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-      };
-      return fn(mockDb);
+    mockWithDb({
+      all: vi.fn().mockReturnValue(mockKitData),
+      from: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
     });
 
     const result = getKitsMetadata(mockDbDir);
 
-    expect(result).toEqual(mockKitData);
+    expect(result.data).toEqual(mockKitData);
   });
 
   test("should return multiple kits efficiently", () => {
@@ -122,23 +121,20 @@ describe("getKitsMetadata - Unit Tests", () => {
     const selectMock = vi.fn().mockReturnThis();
     const fromMock = vi.fn().mockReturnThis();
     const allMock = vi.fn().mockReturnValue(mockKitData);
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        all: allMock,
-        from: fromMock,
-        select: selectMock,
-      };
-      return fn(mockDb);
+    mockWithDb({
+      all: allMock,
+      from: fromMock,
+      select: selectMock,
     });
 
     const result = getKitsMetadata(mockDbDir);
 
-    expect(result).toEqual(mockKitData);
-    expect(result).toHaveLength(2);
-    expect(result[0].name).toBe("A0");
-    expect(result[0].bank_letter).toBe("A");
-    expect(result[1].name).toBe("B1");
-    expect(result[1].bank_letter).toBe("B");
+    expect(result.data).toEqual(mockKitData);
+    expect(result.data).toHaveLength(2);
+    expect(result.data?.[0].name).toBe("A0");
+    expect(result.data?.[0].bank_letter).toBe("A");
+    expect(result.data?.[1].name).toBe("B1");
+    expect(result.data?.[1].bank_letter).toBe("B");
 
     // Verify single query was made with explicit column selection to avoid circular references
     expect(selectMock).toHaveBeenCalledTimes(1);
@@ -172,13 +168,10 @@ describe("getKitsMetadata - Unit Tests", () => {
   });
 
   test("should call withDb with correct parameters", () => {
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        all: vi.fn().mockReturnValue([]),
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-      };
-      return fn(mockDb);
+    mockWithDb({
+      all: vi.fn().mockReturnValue([]),
+      from: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
     });
 
     getKitsMetadata(mockDbDir);
@@ -190,13 +183,10 @@ describe("getKitsMetadata - Unit Tests", () => {
     const selectMock = vi.fn().mockReturnThis();
     const fromMock = vi.fn().mockReturnThis();
     const allMock = vi.fn().mockReturnValue([]);
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        all: allMock,
-        from: fromMock,
-        select: selectMock,
-      };
-      return fn(mockDb);
+    mockWithDb({
+      all: allMock,
+      from: fromMock,
+      select: selectMock,
     });
 
     getKitsMetadata(mockDbDir);
@@ -235,20 +225,17 @@ describe("getKitsMetadata - Unit Tests", () => {
       },
     ];
 
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        all: vi.fn().mockReturnValue(mockKitData),
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-      };
-      return fn(mockDb);
+    mockWithDb({
+      all: vi.fn().mockReturnValue(mockKitData),
+      from: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
     });
 
     const result = getKitsMetadata(mockDbDir);
 
-    expect(result).toEqual(mockKitData);
+    expect(result.data).toEqual(mockKitData);
     // Verify bank_letter is included but no bank relation object
-    expect(result[0].bank_letter).toBe("A");
-    expect(result[0]).not.toHaveProperty("bank");
+    expect(result.data?.[0].bank_letter).toBe("A");
+    expect(result.data?.[0]).not.toHaveProperty("bank");
   });
 });

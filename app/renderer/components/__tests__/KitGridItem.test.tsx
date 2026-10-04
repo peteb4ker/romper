@@ -1257,4 +1257,29 @@ describe("KitGridItem", () => {
       expect(screen.getByText("Snare")).toBeInTheDocument();
     });
   });
+
+  // #537: the kit list carries whether main found the kit quarantined
+  describe("[UC-08] quarantine indicator", () => {
+    it("shows an icon with a label for a quarantined kit", () => {
+      render(
+        <KitGridItem
+          {...defaultProps}
+          kitData={{ ...defaultProps.kitData, quarantined: true } as never}
+        />,
+      );
+      const indicator = screen.getByTestId("quarantine-indicator");
+      expect(indicator).toHaveAccessibleName(
+        "Quarantined: this kit won't be written to the card until it's fixed",
+      );
+      expect(indicator).toHaveAttribute(
+        "title",
+        "Quarantined: this kit won't be written to the card until it's fixed",
+      );
+    });
+
+    it("shows nothing for a kit that isn't", () => {
+      render(<KitGridItem {...defaultProps} />);
+      expect(screen.queryByTestId("quarantine-indicator")).toBeNull();
+    });
+  });
 });

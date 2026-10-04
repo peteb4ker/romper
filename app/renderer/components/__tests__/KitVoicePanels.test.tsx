@@ -1361,5 +1361,83 @@ describe("KitVoicePanels", () => {
         screen.getByRole("option", { name: "Sample kick.wav in slot 1" }),
       ).toHaveAccessibleDescription("Mono sample in a stereo pair");
     });
+
+    it("labels a sample whose file can't be read, and quarantines the kit", async () => {
+      metadata({
+        ...row(1, 0, "kick.wav", 1),
+        source_status: "unreadable",
+        wav_channels: null,
+      } as never);
+      render(<MultiVoicePanelsTestWrapper voices={kitVoices()} />);
+
+      expect(
+        await screen.findByTestId("sample-file-label-1-0"),
+      ).toHaveTextContent("Can't be read");
+      expect(
+        screen.getByRole("option", { name: "Sample kick.wav in slot 1" }),
+      ).toHaveAccessibleDescription("Can't be read");
+      expect(screen.getByTestId("kit-quarantine-notice")).toHaveTextContent(
+        "Romper can't read kick.wav. Replace it with a WAV Romper can read, or remove it.",
+      );
+    });
+
+    it("labels a sample whose file is missing and says how to fix it, without quarantine", async () => {
+      metadata({
+        ...row(1, 0, "kick.wav", 1),
+        source_status: "missing",
+      } as never);
+      render(<MultiVoicePanelsTestWrapper voices={kitVoices()} />);
+
+      expect(
+        await screen.findByTestId("sample-file-label-1-0"),
+      ).toHaveTextContent("File not found");
+      expect(screen.getByTestId("kit-missing-files-notice")).toHaveTextContent(
+        "kick.wav on voice 1 wasn't found: it was moved or deleted. Put it back, or replace or remove the sample. Until then it's skipped when you write to the card.",
+      );
+      expect(screen.queryByTestId("kit-quarantine-notice")).toBeNull();
+    });
+
+    it("asks main to check unknown files once per kit open, and reloads when something changed", async () => {
+      metadata({ ...row(1, 0, "kick.wav", 1), source_status: null } as never);
+      vi.mocked(window.electronAPI.checkKitSampleFiles).mockResolvedValue({
+        data: { changed: 1, checked: 1 },
+        success: true,
+      });
+      const onKitUpdated = vi.fn().mockResolvedValue(undefined);
+      const { rerender } = render(
+        <MultiVoicePanelsTestWrapper
+          onKitUpdated={onKitUpdated}
+          voices={kitVoices()}
+        />,
+      );
+
+      await waitFor(() => expect(onKitUpdated).toHaveBeenCalledTimes(1));
+      expect(window.electronAPI.checkKitSampleFiles).toHaveBeenCalledWith(
+        "Kit1",
+      );
+      rerender(
+        <MultiVoicePanelsTestWrapper
+          onKitUpdated={onKitUpdated}
+          voices={kitVoices()}
+        />,
+      );
+      await waitFor(() =>
+        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledTimes(2),
+      );
+      expect(window.electronAPI.checkKitSampleFiles).toHaveBeenCalledTimes(1);
+    });
+
+    it("doesn't check a kit whose files are all known to be readable", async () => {
+      metadata({
+        ...row(1, 0, "kick.wav", 1),
+        source_status: "readable",
+      } as never);
+      render(<MultiVoicePanelsTestWrapper voices={kitVoices()} />);
+
+      await waitFor(() =>
+        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalled(),
+      );
+      expect(window.electronAPI.checkKitSampleFiles).not.toHaveBeenCalled();
+    });
   });
 });

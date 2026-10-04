@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   checkStereoLink,
   describeLinkRefusal,
+  describeMissingSampleFile,
   describeMixdownNote,
   describeMonoOnStereoPair,
   describeQuarantinedKit,
@@ -15,7 +16,9 @@ import {
   isKitQuarantined,
   isLinkedAutomatically,
   planKitStereo,
+  QUARANTINE_ICON_LABEL,
   QUARANTINE_NOTICE,
+  SAMPLE_FILE_LABELS,
   STEREO_LABELS,
   type StereoSampleState,
   type StereoVoiceState,
@@ -299,5 +302,20 @@ describe("[UC-08] [UC-34] isKitQuarantined: from what the store recorded", () =>
 
   it("is quarantined by a mono sample in a stereo pair", () => {
     expect(isKitQuarantined(voices([1]), [stored(1, 1)])).toBe(true);
+  });
+});
+
+describe("[UC-08] file labels and guidance (#537; drafts)", () => {
+  it("has the per-sample labels, the icon label and the missing-file guidance", () => {
+    expect(SAMPLE_FILE_LABELS).toEqual({
+      missing: "File not found",
+      unreadable: "Can't be read",
+    });
+    expect(QUARANTINE_ICON_LABEL).toBe(
+      "Quarantined: this kit won't be written to the card until it's fixed",
+    );
+    expect(describeMissingSampleFile("kick.wav", 2)).toBe(
+      "kick.wav on voice 2 wasn't found: it was moved or deleted. Put it back, or replace or remove the sample. Until then it's skipped when you write to the card.",
+    );
   });
 });

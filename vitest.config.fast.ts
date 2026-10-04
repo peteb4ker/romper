@@ -47,6 +47,18 @@ export default defineConfig({
       coverage: {
         enabled: false,
       },
+      // Bundle the icon library into one file (#597). Its entry re-exports
+      // thousands of per-icon modules, and each test file that rendered an
+      // icon opened them all at once. The thread workers share one process,
+      // so on a busy machine that process briefly held more than 10240 file
+      // descriptors, and macOS can't spawn a child whose pipes land above
+      // OPEN_MAX (10240): spawnSync in guardGitHook.test.ts failed with
+      // EBADF.
+      deps: {
+        optimizer: {
+          client: { enabled: true, include: ["@phosphor-icons/react"] },
+        },
+      },
       environment: isIntegration ? "node" : "jsdom",
       exclude: [
         "node_modules",

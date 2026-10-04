@@ -142,6 +142,13 @@ export default defineConfig({
               statements: 84,
             },
       },
+      // Bundle the icon library into one file, as vitest.config.fast.ts
+      // does (#597), so tests resolve icons the same way in both configs.
+      deps: {
+        optimizer: {
+          client: { enabled: true, include: ["@phosphor-icons/react"] },
+        },
+      },
       environment: isIntegration ? "node" : "jsdom",
       exclude: [
         "node_modules",

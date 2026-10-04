@@ -54,21 +54,17 @@ export async function findStaleCardEntries(
   const bankFiles = lowerCaseSet(contents.bankFiles);
 
   const stale: string[] = [];
+  const kitFolders: { keep: Set<string>; name: string }[] = [];
   const entries = await fs.promises.readdir(sdCardPath, {
     withFileTypes: true,
   });
   for (const entry of entries) {
     if (entry.isDirectory() && KIT_FOLDER_PATTERN.test(entry.name)) {
       const keep = kits.get(entry.name.toUpperCase());
-      if (!keep) {
+      if (keep) {
+        kitFolders.push({ keep, name: entry.name });
+      } else {
         stale.push(entry.name);
-        continue;
-      }
-      const kitPath = path.join(sdCardPath, entry.name);
-      for (const name of await fs.promises.readdir(kitPath)) {
-        if (!keep.has(name.toLowerCase())) {
-          stale.push(path.join(entry.name, name));
-        }
       }
     } else if (
       entry.isFile() &&
@@ -78,6 +74,19 @@ export async function findStaleCardEntries(
       stale.push(entry.name);
     }
   }
+  // The kit folders are independent, so they're read together
+  const kitContents = await Promise.all(
+    kitFolders.map(({ name }) =>
+      fs.promises.readdir(path.join(sdCardPath, name)),
+    ),
+  );
+  kitFolders.forEach(({ keep, name }, i) => {
+    for (const fileName of kitContents[i]) {
+      if (!keep.has(fileName.toLowerCase())) {
+        stale.push(path.join(name, fileName));
+      }
+    }
+  });
   return stale.sort((a, b) => a.localeCompare(b));
 }
 

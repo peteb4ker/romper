@@ -88,4 +88,42 @@ describe("KitBrowserHeader", () => {
     fireEvent.click(screen.getByTestId("led-icon-grid"));
     expect(onAboutClick).toHaveBeenCalled();
   });
+
+  describe("[UC-13] Scan All result", () => {
+    it("shows a scan with no failures as a success", () => {
+      render(
+        <KitBrowserHeader
+          {...defaultProps}
+          bulkScanProgress={{
+            failedCount: 0,
+            message: "Scan completed: 2 successful, 0 failed.",
+            status: "complete",
+            successCount: 2,
+          }}
+        />,
+      );
+      const status = screen.getByTestId("bulk-scan-complete");
+      expect(status).toHaveClass("text-accent-success");
+      expect(status).not.toHaveClass("text-accent-warning");
+    });
+
+    it("shows a scan where some kits failed as a warning (#540)", () => {
+      const message = "Scan completed: 1 successful, 1 failed.";
+      render(
+        <KitBrowserHeader
+          {...defaultProps}
+          bulkScanProgress={{
+            failedCount: 1,
+            message,
+            status: "complete",
+            successCount: 1,
+          }}
+        />,
+      );
+      const status = screen.getByTestId("bulk-scan-complete");
+      expect(status).toHaveTextContent(message);
+      expect(status).toHaveClass("text-accent-warning");
+      expect(status).not.toHaveClass("text-accent-success");
+    });
+  });
 });

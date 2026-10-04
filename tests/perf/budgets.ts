@@ -148,7 +148,7 @@ export const BUDGETS = {
     },
     "plan a sync (write summary)": {
       connections: NO_NEW_CONNECTION,
-      statements: { max: 7 },
+      statements: { max: 4 },
       /** Planning's own file reads are asynchronous (RE-82). */
       syncFsCalls: { max: 0 },
     },

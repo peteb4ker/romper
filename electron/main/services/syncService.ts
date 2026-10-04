@@ -417,25 +417,25 @@ class SyncService {
     );
     for (let start = 0; start < samples.length; start += PLAN_BATCH_SIZE) {
       const batch = samples.slice(start, start + PLAN_BATCH_SIZE);
-      const planned = await Promise.all(
-        batch.map(async (sample) => {
-          const sampleResults = emptySyncResults();
-          await syncSampleProcessingService.processSampleForSync(
-            sample,
-            localStorePath,
-            sampleResults,
-            sdCardPath,
-          );
-          return sampleResults;
-        }),
-      );
+      const plans = batch.map(async (sample) => {
+        const sampleResults = emptySyncResults();
+        await syncSampleProcessingService.processSampleForSync(
+          sample,
+          localStorePath,
+          sampleResults,
+          sdCardPath,
+        );
+        return sampleResults;
+      });
+      // Batches bound how many files are open at once
+      const planned = await Promise.all(plans); // NOSONAR: batched on purpose
       // Merged in sample order, whatever order the reads finished in
       for (const sampleResults of planned) {
         results.filesToCopy.push(...sampleResults.filesToCopy);
         results.filesToConvert.push(...sampleResults.filesToConvert);
         results.validationErrors.push(...sampleResults.validationErrors);
       }
-      await yieldToEventLoop();
+      await yieldToEventLoop(); // NOSONAR: yields between batches on purpose (RE-82)
     }
     for (const kitName of syncSampleProcessingService.kitsWithoutVoiceOne(
       samples,

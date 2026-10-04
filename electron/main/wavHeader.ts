@@ -81,7 +81,10 @@ export async function parseWavHeaderAsync(
   const parser = wavHeaderParser(fileSize);
   let step = parser.next();
   while (!step.done) {
-    step = parser.next(await read(step.value.offset, step.value.length));
+    const { length, offset } = step.value;
+    // Each read's offset comes from the chunk header read before it
+    const bytes = await read(offset, length); // NOSONAR: sequential by nature
+    step = parser.next(bytes);
   }
   return step.value;
 }

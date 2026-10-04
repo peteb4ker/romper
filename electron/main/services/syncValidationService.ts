@@ -30,6 +30,11 @@ export interface SyncValidationError {
   kitName?: string;
   sourcePath: string;
   type: "access_denied" | "invalid_format" | "missing_file" | "other";
+  /**
+   * The file is there but its WAV can't be read: the kit is quarantined
+   * rather than written without it (#537 rule 4)
+   */
+  unreadable?: boolean;
 }
 
 /**

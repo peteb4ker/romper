@@ -143,9 +143,8 @@ export function useLocalStoreWizard(
 
       // Create the database and import the kits (main names the voices)
       log.debug("initialize - creating and populating database");
-      const { truncationWarnings } = await fileOpsHook.createAndPopulateDb(
-        state.targetPath,
-      );
+      const { stereoNotices, truncationWarnings } =
+        await fileOpsHook.createAndPopulateDb(state.targetPath);
       log.debug("initialize - database creation completed");
       throwIfCancelled();
 
@@ -155,7 +154,11 @@ export function useLocalStoreWizard(
       log.debug("initialize completed successfully");
       // Returned, not stored: the caller decides what to show from this
       // run's result, never from state captured before it ran (RE-42)
-      return { success: true, truncationWarnings: truncationWarnings ?? [] };
+      return {
+        stereoNotices: stereoNotices ?? [],
+        success: true,
+        truncationWarnings: truncationWarnings ?? [],
+      };
     } catch (e: unknown) {
       const cancelled =
         e instanceof SetupCancelledError || cancelRequested.current;

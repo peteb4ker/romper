@@ -9,12 +9,17 @@ import type {
 
 import * as schema from "@romper/shared/db/schema.js";
 import { inferVoiceTypeFromFilename } from "@romper/shared/kitUtilsShared.js";
+import {
+  planKitStereo,
+  type StereoSampleState,
+} from "@romper/shared/stereoLinkRules.js";
 import { and, eq } from "drizzle-orm";
 import * as path from "node:path";
 
 import type { WavMetadataFields } from "./wavMetadataFields.js";
 
 import { type RomperDb, withDbTransaction } from "../utils/dbUtilities.js";
+import { linkVoicesAutomaticallyTx } from "./voiceCrudOperations.js";
 
 export type { WavMetadataFields } from "./wavMetadataFields.js";
 
@@ -65,12 +70,17 @@ export function mergeKitScan(
   );
 }
 
-/** Merge a kit folder scan on the caller's transaction */
+/**
+ * Merge a kit folder scan on the caller's transaction. A scan never changes
+ * a stereo link: its result reports what the stereo rules will do (#537).
+ * Setup passes `linkStereoVoices` to make the links rule 2 decides.
+ */
 export function mergeKitScanTx(
   db: RomperDb,
   kitName: string,
   folder: KitFolderScan,
   io: KitScanIo,
+  options: { linkStereoVoices?: boolean } = {},
 ): KitScanResult {
   const kit = db.select().from(kits).where(eq(kits.name, kitName)).get();
   if (!kit) {
@@ -127,6 +137,11 @@ export function mergeKitScanTx(
     }
   }
 
+  // Setup links what rule 2 links (#537); a scan only reports it
+  if (options.linkStereoVoices && plan.result.stereo) {
+    linkVoicesAutomaticallyTx(db, kitName, plan.result.stereo.autoLinks);
+  }
+
   if (plan.inserts.length > 0) {
     // New samples aren't on the SD card yet
     db.update(kits)
@@ -155,7 +170,10 @@ export function mergeKitScanTx(
  *   12 per voice. Editable kits own their sample list, so re-adding folder
  *   files would undo in-app deletions; those files are reported instead.
  * - New rows carry no stereo flag: stereo is a voice setting
- *   (`voices.stereo_mode`).
+ *   (`voices.stereo_mode`). No link is changed; `result.stereo` reports
+ *   what the stereo rules will do (`planKitStereo`, #537): links made
+ *   automatically at the next write, mixdowns and quarantine. A file whose
+ *   header can't be read counts as unreadable.
  * - Voice names are inferred from the voice's first sample only for voices
  *   that have no name, so user-set names survive.
  */
@@ -170,7 +188,10 @@ export function planKitScanMerge({
   folder: KitFolderScan;
   io: KitScanIo;
   kit: Pick<Kit, "editable" | "locked" | "name">;
-  voices: Pick<Voice, "voice_alias" | "voice_number">[];
+  voices: Pick<
+    Voice,
+    "stereo_choice" | "stereo_mode" | "voice_alias" | "voice_number"
+  >[];
 }): KitScanPlan {
   const allFiles = Object.values(folder.filesByVoice).flat();
   const result: KitScanResult = {
@@ -193,6 +214,8 @@ export function planKitScanMerge({
     return plan;
   }
 
+  // Files whose WAV header can't be read (#537 rule 4)
+  const unreadable = new Set<string>();
   for (const row of existing) {
     if (!io.fileExists(row.source_path)) {
       result.missingSamples.push({
@@ -205,6 +228,8 @@ export function planKitScanMerge({
       const metadata = io.readMetadata(row.source_path);
       if (metadata) {
         plan.metadataUpdates.push({ id: row.id, metadata });
+      } else {
+        unreadable.add(row.source_path);
       }
     }
   }
@@ -245,13 +270,15 @@ export function planKitScanMerge({
 
       usedSlots.add(slot);
       referenced.add(sourcePath);
+      const metadata = io.readMetadata(sourcePath);
+      if (!metadata) unreadable.add(sourcePath);
       plan.inserts.push({
         filename,
         kit_name: kit.name,
         slot_number: slot,
         source_path: sourcePath,
         voice_number: voiceNumber,
-        ...(io.readMetadata(sourcePath) ?? {}),
+        ...(metadata ?? {}),
       });
     }
   }
@@ -262,6 +289,26 @@ export function planKitScanMerge({
     kitVoices,
   );
   result.updatedVoices = plan.aliasUpdates.length;
+
+  // What the stereo rules make of the kit once merged (#537)
+  const filledIn = new Map(
+    plan.metadataUpdates.map(({ id, metadata }) => [id, metadata]),
+  );
+  const merged: StereoSampleState[] = [
+    ...existing.map((row) => ({
+      filename: row.filename,
+      unreadable: unreadable.has(row.source_path),
+      voice_number: row.voice_number,
+      wav_channels: filledIn.get(row.id)?.wav_channels ?? row.wav_channels,
+    })),
+    ...plan.inserts.map((row) => ({
+      filename: row.filename,
+      unreadable: unreadable.has(row.source_path),
+      voice_number: row.voice_number,
+      wav_channels: row.wav_channels,
+    })),
+  ];
+  result.stereo = planKitStereo(kitVoices, merged);
 
   return plan;
 }

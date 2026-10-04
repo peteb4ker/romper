@@ -10,6 +10,7 @@ import {
 // Using text({ mode: 'json' }) for step patterns - much simpler than custom encoding!
 
 import type { SliceStep } from "../sliceTypes";
+import type { KitStereoPlan } from "../stereoLinkRules";
 
 // Banks table - contains artist metadata for each bank (A-Z)
 export const banks = sqliteTable("banks", {
@@ -60,6 +61,7 @@ export const voices = sqliteTable("voices", {
   slice_vary_length: integer("slice_vary_length", { mode: "boolean" })
     .notNull()
     .default(false), // Rolls and live-random steps also vary slice length
+  stereo_choice: text("stereo_choice").$type<"mono" | "stereo">(), // The user's own stereo choice (#537): "stereo" linked by hand, "mono" Keep mono or unlinked; null lets Romper link automatically
   stereo_mode: integer("stereo_mode", { mode: "boolean" })
     .notNull()
     .default(false), // Stereo is a voice setting: true links this voice with the next as a stereo pair; samples carry no stereo flag
@@ -145,6 +147,13 @@ export interface KitScanResult {
   scannedSamples: number;
   /** Folder files that were not added, and why */
   skippedFiles: KitScanSkippedFile[];
+  /**
+   * What the stereo rules make of the kit (#537): for setup, the links it
+   * made (`autoLinks`); for a scan, which changes no link, the links the
+   * next write will make. Mixdowns and quarantine either way. Absent for a
+   * locked kit, which a scan leaves alone.
+   */
+  stereo?: KitStereoPlan;
   /** Voices whose empty name was filled in from a filename */
   updatedVoices: number;
 }

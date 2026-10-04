@@ -234,8 +234,25 @@ only clears `stereo_mode`, and main refuses samples on the right-hand voice
 of a linked pair (`validateVoiceNotLinkedPartner`). When a sync is planned, `syncMonoAnnotation.ts` marks files with
 more than one channel (read from the file's header) on voices that aren't
 linked for downmixing (channel average, in `formatConverter.ts`), so the
-summary shows the conversion too (RE-29). That's the one place a file's
-channel count matters, and it never changes the voice's setting.
+summary shows the conversion too (RE-29); that never changes the voice's
+setting.
+
+Pete's "Final stereo rules v2" on #537 (in the Stereo section of
+[domain-model.md](domain-model.md#stereo)) decide the rest, all through
+`shared/stereoLinkRules.ts`: `planKitStereo` gives a kit's automatic links,
+mixdowns and quarantine problems, and `checkStereoLink` says when a voice
+can be linked by hand (main's `updateVoiceStereoMode` refuses any other
+link, #541). Setup (`mergeKitScanTx` with `linkStereoVoices`) and the write
+(`planWriteStereo` in `syncStereoPlan.ts`, then
+`linkVoicesAutomaticallyTx`) make the automatic links; a scan only
+reports. The write leaves a quarantined kit's files out and keeps its card
+folder (`CardContents.keepKits`), and lists links, mixdowns and quarantine
+in its summary (`SyncChangeSummary.stereo`). The user's own choice is
+`voices.stereo_choice`, set by linking, unlinking and a drop's **Link** or
+**Keep mono** (a `ModalDialog` in `KitVoicePanels`, through
+`useExternalDragHandlers`' `stereoDrop`). The voice panels note a mixed-down
+voice, label an automatic pair and a mono sample in a pair, and show the
+quarantine notice.
 
 ## Sync to SD card
 

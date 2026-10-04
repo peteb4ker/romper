@@ -1,12 +1,14 @@
 import type { KitScanResult } from "@romper/shared/db/schema";
 
 import { isValidKit } from "@romper/shared/kitUtilsShared";
+import { describeSetupAutoLink } from "@romper/shared/stereoLinkRules";
 import { useCallback, useMemo } from "react";
 
 import type { ElectronAPI } from "../../../electron.d";
 import type {
   LocalStoreWizardState,
   ProgressEvent,
+  StereoImportNotice,
   TruncationWarning,
 } from "./useLocalStoreWizardState";
 
@@ -172,6 +174,7 @@ export function useLocalStoreWizardFileOps({
       const kitFolders = await api.listFilesInRoot(targetPath);
       const validKits = getKitFolders(kitFolders);
       const truncationWarnings: TruncationWarning[] = [];
+      const stereoNotices: StereoImportNotice[] = [];
       if (validKits.length > 0) {
         await reportStepProgress({
           items: validKits,
@@ -179,11 +182,12 @@ export function useLocalStoreWizardFileOps({
             // Main imports the kit: samples, WAV metadata and voice names
             const result = await importSetupKit(dbDir, kitName);
             truncationWarnings.push(...voiceFullWarnings(kitName, result));
+            stereoNotices.push(...stereoImportNotices(kitName, result));
           },
           phase: "Writing to database",
         });
       }
-      return { dbDir, truncationWarnings, validKits };
+      return { dbDir, stereoNotices, truncationWarnings, validKits };
     },
     [api, reportStepProgress],
   );
@@ -208,6 +212,18 @@ export function useLocalStoreWizardFileOps({
 // The folders the Rample reads as kits (A0-Z99); main imports only these
 function getKitFolders(files: string[]): string[] {
   return files.filter(isValidKit);
+}
+
+/** The setup summary's lines for the pairs setup linked (#537 rule 2) */
+function stereoImportNotices(
+  kitName: string,
+  result: KitScanResult,
+): StereoImportNotice[] {
+  return (result.stereo?.autoLinks ?? []).map((voiceNumber) => ({
+    kitName,
+    message: describeSetupAutoLink(kitName, voiceNumber),
+    voiceNumber,
+  }));
 }
 
 /** One warning per voice that had more files than its 12 slots */

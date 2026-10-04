@@ -114,45 +114,60 @@ describe("[UC-34] Syncing WAV files with unusual headers (RE-08)", () => {
       name: "A0",
       step_pattern: null,
     });
-    ["junk-first.wav", "extensible.wav", "float.wav", "adpcm.wav"].forEach(
-      (name, slot) =>
-        addSample(dbDir, {
-          filename: name,
-          kit_name: "A0",
-          slot_number: slot,
-          source_path: sources[name],
-          voice_number: 1,
-        }),
+    ["junk-first.wav", "extensible.wav", "float.wav"].forEach((name, slot) =>
+      addSample(dbDir, {
+        filename: name,
+        kit_name: "A0",
+        slot_number: slot,
+        source_path: sources[name],
+        voice_number: 1,
+      }),
     );
+    // A WAV Romper can't read quarantines its kit (#537 rule 4), so it
+    // lives in a kit of its own
+    addKit(dbDir, {
+      alias: null,
+      bank_letter: "A",
+      editable: true,
+      locked: false,
+      modified_since_sync: false,
+      name: "A1",
+      step_pattern: null,
+    });
+    addSample(dbDir, {
+      filename: "adpcm.wav",
+      kit_name: "A1",
+      slot_number: 0,
+      source_path: sources["adpcm.wav"],
+      voice_number: 1,
+    });
   });
 
   afterEach(() => {
     removeTempStore(tempDir);
   });
 
-  it("lists the unreadable file and writes the rest in a format the Rample reads", async () => {
+  it("quarantines the kit with the unreadable file and writes the rest in a format the Rample reads", async () => {
     const summary = await syncService.generateChangeSummary(
       settings,
       sdCardPath,
     );
     expect(summary.data?.fileCount).toBe(3);
-    expect(summary.data?.validationErrors).toEqual([
-      expect.objectContaining({
-        error: expect.stringContaining(
-          "Unsupported WAV encoding (format 0x0002)",
-        ),
-        filename: "adpcm.wav",
-        type: "invalid_format",
-      }),
+    expect(summary.data?.validationErrors).toEqual([]);
+    expect(summary.data?.stereo.quarantined).toEqual([
+      {
+        kitName: "A1",
+        problems: [
+          { filename: "adpcm.wav", kind: "unreadable", voiceNumber: 1 },
+        ],
+      },
     ]);
 
-    const result = await syncService.startKitSync(settings, {
-      sdCardPath,
-      skipInvalidFiles: true,
-    });
+    const result = await syncService.startKitSync(settings, { sdCardPath });
     expect(result.success).toBe(true);
     expect(result.data?.syncedFiles).toBe(3);
 
+    expect(fs.existsSync(path.join(sdCardPath, "A1"))).toBe(false);
     const kit = path.join(sdCardPath, "A0");
     expect(fs.readdirSync(kit).sort()).toEqual([
       "1-01 junk-first.wav",

@@ -280,6 +280,38 @@ describe("[Q-02] Upgrading a library is all or nothing (RE-33)", () => {
     });
   });
 
+  // #537: an existing link was made by hand (only the link button linked
+  // before), so it's recorded as the user's choice and never relabelled
+  describe("[UC-28] recording existing links as the user's choice (#537)", () => {
+    it("marks linked voices as linked by hand, and leaves the rest unset", () => {
+      const dbDir = libraryAt(
+        CURRENT.slice(0, CURRENT.indexOf("0014_stereo_choice")),
+      );
+      withLibrary(dbDir, (sqlite) =>
+        sqlite.exec(
+          "UPDATE voices SET stereo_mode = 1 WHERE kit_name = 'A0' AND voice_number = 1",
+        ),
+      );
+
+      expect(upgrade(dbDir).success).toBe(true);
+
+      withLibrary(dbDir, (sqlite) => {
+        expect(
+          sqlite
+            .prepare(
+              "SELECT voice_number, stereo_mode, stereo_choice FROM voices ORDER BY voice_number",
+            )
+            .all(),
+        ).toEqual([
+          { stereo_choice: "stereo", stereo_mode: 1, voice_number: 1 },
+          { stereo_choice: null, stereo_mode: 0, voice_number: 2 },
+          { stereo_choice: null, stereo_mode: 0, voice_number: 3 },
+          { stereo_choice: null, stereo_mode: 0, voice_number: 4 },
+        ]);
+      });
+    });
+  });
+
   describe("an upgrade that fails part way", () => {
     it("leaves a library as it was when the history repair fails after adding its columns", () => {
       const dbDir = libraryAt(LEGACY);

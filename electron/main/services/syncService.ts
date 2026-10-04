@@ -1,4 +1,5 @@
 import type { Bank, DbResult, Sample } from "@romper/shared/db/schema.js";
+import type { WriteStereoSummary } from "@romper/shared/stereoLinkRules.js";
 
 import { cardSampleFileName } from "@romper/shared/rampleCardLayout.js";
 import * as fs from "node:fs";
@@ -7,7 +8,9 @@ import { setImmediate as yieldToEventLoop } from "node:timers/promises";
 
 import {
   getSyncPlanData,
+  linkVoicesAutomaticallyTx,
   markAllKitsAsSyncedExcept,
+  withDbTransaction,
 } from "../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
 import { logger } from "../utils/logger.js";
@@ -30,6 +33,7 @@ import {
 import { annotateMonoConversion } from "./syncMonoAnnotation.js";
 import { syncProgressManager } from "./syncProgressManager.js";
 import { syncSampleProcessingService } from "./syncSampleProcessing.js";
+import { type PlannedSampleFile, planWriteStereo } from "./syncStereoPlan.js";
 import { type SyncValidationError } from "./syncValidationService.js";
 
 export interface SyncBankSummary {
@@ -49,7 +53,12 @@ export interface SyncChangeSummary {
    * longer has it (paths relative to the card). Empty without a card path.
    */
   removals: string[];
-  /** Samples that can't be written (missing or unreadable source files) */
+  /**
+   * Stereo pairs linked automatically, mixdowns, and quarantined kits,
+   * which aren't written and whose copy on the card is kept (#537)
+   */
+  stereo: WriteStereoSummary;
+  /** Samples that can't be written (missing source files) */
   validationErrors: SyncValidationError[];
   warnings: string[];
 }
@@ -85,6 +94,9 @@ interface SyncPlan {
   files: SyncFileOperation[];
   kitCount: number;
   localStorePath: string;
+  /** Quarantined kits, which aren't written (#537 rule 4) */
+  quarantinedKits: Set<string>;
+  stereo: WriteStereoSummary;
   validationErrors: SyncValidationError[];
   warnings: string[];
 }
@@ -158,6 +170,7 @@ class SyncService {
         removals: sdCardPath
           ? await findStaleCardEntries(sdCardPath, plan.cardContents)
           : [],
+        stereo: plan.stereo,
         validationErrors: plan.validationErrors,
         warnings: plan.warnings,
       };
@@ -213,6 +226,8 @@ class SyncService {
         cardContents,
         dbDir,
         files: allFiles,
+        quarantinedKits,
+        stereo,
         validationErrors,
         warnings,
       } = planResult.data;
@@ -228,6 +243,10 @@ class SyncService {
           success: false,
         };
       }
+
+      // Link what rule 2 links before writing, so the store matches the
+      // stereo files this write puts on the card (#537)
+      this.linkVoicesAutomatically(dbDir, stereo);
 
       syncProgressManager.initializeSyncJob(allFiles);
 
@@ -262,9 +281,9 @@ class SyncService {
       await this.removeStaleEntries(options.sdCardPath, cardContents);
 
       // The card now mirrors the store, so every kit is in step with it,
-      // except a kit with a skipped sample: it keeps its "modified since
-      // sync" flag.
-      const incompleteKits = new Set<string>();
+      // except a kit with a skipped sample or a quarantined kit: each keeps
+      // its "modified since sync" flag.
+      const incompleteKits = new Set<string>(quarantinedKits);
       for (const error of validationErrors) {
         if (error.kitName) incompleteKits.add(error.kitName);
       }
@@ -331,6 +350,29 @@ class SyncService {
   }
 
   /**
+   * Make the links the write's plan made automatically (#537 rule 2), in
+   * one transaction, before any file is written
+   */
+  private linkVoicesAutomatically(
+    dbDir: string,
+    stereo: WriteStereoSummary,
+  ): void {
+    if (stereo.autoLinks.length === 0) return;
+    const byKit = new Map<string, number[]>();
+    for (const { kitName, voiceNumber } of stereo.autoLinks) {
+      byKit.set(kitName, [...(byKit.get(kitName) ?? []), voiceNumber]);
+    }
+    const linked = withDbTransaction(dbDir, (db) => {
+      for (const [kitName, voiceNumbers] of byKit) {
+        linkVoicesAutomaticallyTx(db, kitName, voiceNumbers);
+      }
+    });
+    if (!linked.success) {
+      throw new Error(`Couldn't link stereo pairs: ${linked.error}`);
+    }
+  }
+
+  /**
    * Mark kits as synced after a completed write: every kit but the ones
    * the write left incomplete, including kits with no files to write
    * (RE-35)
@@ -353,9 +395,12 @@ class SyncService {
     banks: Bank[],
     samples: Sample[],
     warnings: string[],
+    quarantinedKits: Set<string>,
   ): CardContents {
     const kits = new Map<string, string[]>();
     for (const sample of samples) {
+      // A quarantined kit's folder is kept as it is (#537 rule 4)
+      if (quarantinedKits.has(sample.kit_name)) continue;
       const fileNames = kits.get(sample.kit_name) ?? [];
       fileNames.push(
         cardSampleFileName(
@@ -380,7 +425,7 @@ class SyncService {
       }
     }
 
-    return { bankFiles, kits };
+    return { bankFiles, keepKits: quarantinedKits, kits };
   }
 
   /**
@@ -410,11 +455,8 @@ class SyncService {
     const { banks, kitCount, samples, voices } = loaded.data;
 
     const results = emptySyncResults();
-    const cardContents = this.planCardContents(
-      banks,
-      samples,
-      results.warnings,
-    );
+    // What reading each sample's file found, in sample order
+    const sampleFiles: PlannedSampleFile[] = [];
     for (let start = 0; start < samples.length; start += PLAN_BATCH_SIZE) {
       const batch = samples.slice(start, start + PLAN_BATCH_SIZE);
       const plans = batch.map(async (sample) => {
@@ -431,6 +473,13 @@ class SyncService {
       const planned = await Promise.all(plans); // NOSONAR: batched on purpose
       // Merged in sample order, whatever order the reads finished in
       for (const sampleResults of planned) {
+        sampleFiles.push({
+          channels: [
+            ...sampleResults.filesToCopy,
+            ...sampleResults.filesToConvert,
+          ][0]?.channels,
+          unreadable: sampleResults.validationErrors.some((e) => e.unreadable),
+        });
         results.filesToCopy.push(...sampleResults.filesToCopy);
         results.filesToConvert.push(...sampleResults.filesToConvert);
         results.validationErrors.push(...sampleResults.validationErrors);
@@ -445,9 +494,23 @@ class SyncService {
       );
     }
 
+    // The stereo rules (#537): automatic links, mixdowns and quarantine.
+    // A quarantined kit isn't written and its card folder is kept.
+    const stereo = planWriteStereo(samples, sampleFiles, voices);
+    const written = (kitName?: string) =>
+      !kitName || !stereo.quarantinedKits.has(kitName);
+    const cardContents = this.planCardContents(
+      banks,
+      samples,
+      results.warnings,
+      stereo.quarantinedKits,
+    );
+
     // Decide mono conversion while planning, so the summary shows it too
-    const files = [...results.filesToCopy, ...results.filesToConvert];
-    annotateMonoConversion(files, voices);
+    const files = [...results.filesToCopy, ...results.filesToConvert].filter(
+      (file) => written(file.kitName),
+    );
+    annotateMonoConversion(files, stereo.effectiveVoices);
 
     return {
       data: {
@@ -457,7 +520,11 @@ class SyncService {
         files,
         kitCount,
         localStorePath,
-        validationErrors: results.validationErrors,
+        quarantinedKits: stereo.quarantinedKits,
+        stereo: stereo.summary,
+        validationErrors: results.validationErrors.filter((error) =>
+          written(error.kitName),
+        ),
         warnings: results.warnings,
       },
       success: true,

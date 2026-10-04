@@ -203,7 +203,9 @@ export class LocalStoreSetupService {
    *
    * The kit is added, then its folder is merged the way a rescan merges it
    * (`mergeKitScan`), all in one transaction: up to 12 samples per voice in card
-   * order, WAV metadata, and voice names inferred from file names. Files
+   * order, WAV metadata, voice names inferred from file names, and stereo
+   * pairs for voices holding stereo samples where they can be linked
+   * (`stereo.autoLinks` says which, #537 stereo rule 2). Files
    * over the 12-per-voice limit come back as `voice_full` skips, which the
    * wizard reports. Like every imported kit, it starts with nothing to
    * write to the card ("modified since sync" off).
@@ -249,6 +251,8 @@ export class LocalStoreSetupService {
         kitName,
         { filesByVoice: groupSamplesByVoice(wavFiles), kitPath },
         { fileExists: fs.existsSync, readMetadata: readWavMetadata },
+        // Link stereo voices automatically, by stereo rule 2 (#537)
+        { linkStereoVoices: true },
       );
       // The merge flags kits it adds samples to as changed since the last
       // write, which is right for a rescan but not for a fresh import

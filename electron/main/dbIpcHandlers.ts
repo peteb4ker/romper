@@ -225,6 +225,8 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
             success: false,
           };
         }
+        // Refuses a link the kit editor would refuse (voice 4, a voice in a
+        // pair, a next voice with samples), in the update's transaction (#541)
         return updateVoiceStereoMode(dbDir, kitName, voiceNumber, stereoMode);
       },
     ),

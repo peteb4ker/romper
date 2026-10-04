@@ -1,5 +1,11 @@
 import type { KitScanResult, KitWithRelations } from "@romper/shared/db/schema";
 
+import {
+  describeQuarantinedKit,
+  describeQuarantineProblem,
+  describeWriteAutoLink,
+  describeWriteMixdown,
+} from "@romper/shared/stereoLinkRules";
 import React, { useCallback } from "react";
 
 const scanTypeDisplayMap: Record<string, string> = {
@@ -26,15 +32,39 @@ export interface ScanTotals {
   editableSkipped: number;
   lockedKits: number;
   missing: number;
+  /** Pairs the next write will link automatically (#537) */
+  stereoAutoLinks: number;
+  /** What the stereo rules will do, one sentence each (#537) */
+  stereoLines: string[];
+  /** Mono voices whose stereo samples the write mixes down (#537) */
+  stereoMixdowns: number;
+  /** Kits the write leaves off the card until they're fixed (#537) */
+  stereoQuarantined: number;
   voiceFullSkipped: number;
 }
 
 export function addScanResultToTotals(
   totals: ScanTotals,
   result: KitScanResult | undefined,
+  kitName = "",
 ): ScanTotals {
   if (!result) return totals;
   const skipped = result.skippedFiles ?? [];
+  // A scan changes no stereo link; it reports what the rules will do
+  const stereo = result.stereo;
+  const quarantined = (stereo?.quarantine.length ?? 0) > 0;
+  const stereoLines = [
+    ...(stereo?.autoLinks ?? []).map((n) => describeWriteAutoLink(kitName, n)),
+    ...(stereo?.mixdowns ?? []).map((m) =>
+      describeWriteMixdown(kitName, m.voiceNumber),
+    ),
+    ...(quarantined && stereo
+      ? [
+          describeQuarantinedKit(kitName),
+          ...stereo.quarantine.map(describeQuarantineProblem),
+        ]
+      : []),
+  ];
   return {
     added: totals.added + (result.addedSamples ?? 0),
     editableSkipped:
@@ -42,6 +72,10 @@ export function addScanResultToTotals(
       skipped.filter((f) => f.reason === "kit_editable").length,
     lockedKits: totals.lockedKits + (result.locked ? 1 : 0),
     missing: totals.missing + (result.missingSamples?.length ?? 0),
+    stereoAutoLinks: totals.stereoAutoLinks + (stereo?.autoLinks.length ?? 0),
+    stereoLines: [...totals.stereoLines, ...stereoLines],
+    stereoMixdowns: totals.stereoMixdowns + (stereo?.mixdowns.length ?? 0),
+    stereoQuarantined: totals.stereoQuarantined + (quarantined ? 1 : 0),
     voiceFullSkipped:
       totals.voiceFullSkipped +
       skipped.filter((f) => f.reason === "voice_full").length,
@@ -69,6 +103,15 @@ export function describeScanTotals(totals: ScanTotals): string {
     );
   if (totals.lockedKits > 0)
     parts.push(`${plural(totals.lockedKits, "locked kit")} left unchanged`);
+  // DRAFT wording (#537), awaiting Pete's sign-off
+  if (totals.stereoAutoLinks > 0)
+    parts.push(
+      `${plural(totals.stereoAutoLinks, "voice pair")} to link automatically at the next write`,
+    );
+  if (totals.stereoMixdowns > 0)
+    parts.push(`${plural(totals.stereoMixdowns, "voice")} to mix down to mono`);
+  if (totals.stereoQuarantined > 0)
+    parts.push(`${plural(totals.stereoQuarantined, "kit")} quarantined`);
   return parts.join(", ");
 }
 
@@ -77,6 +120,10 @@ export const EMPTY_SCAN_TOTALS: ScanTotals = {
   editableSkipped: 0,
   lockedKits: 0,
   missing: 0,
+  stereoAutoLinks: 0,
+  stereoLines: [],
+  stereoMixdowns: 0,
+  stereoQuarantined: 0,
   voiceFullSkipped: 0,
 };
 
@@ -129,7 +176,7 @@ export async function scanAllKits({
 
       if (result.success) {
         successCount++;
-        totals = addScanResultToTotals(totals, result.data);
+        totals = addScanResultToTotals(totals, result.data, kitName);
       } else {
         errorCount++;
         errors.push(result.error || "Unknown error");

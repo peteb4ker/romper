@@ -57,6 +57,7 @@ Per-voice settings within a kit. Each kit always has exactly 4 voice records.
 | slice_roll_amount | INTEGER | NOT NULL, default 100 | Percent of eligible steps a roll changes (25, 50, 75, 100) |
 | slice_vary_length | BOOLEAN | NOT NULL, default false | Rolls and random steps also vary slice length |
 | stereo_mode | BOOLEAN | NOT NULL, default false | Links this voice with the next as a stereo pair. Stereo is a voice setting: samples have no stereo flag (`samples.is_stereo` was dropped in migration `0013`, RE-69) |
+| stereo_choice | TEXT | nullable | The user's own stereo choice (#537): `stereo` after linking by hand or **Link** on a drop, `mono` after **Keep mono** or an unlink; null lets setup and the write link the voice automatically. Migration `0014` set it to `stereo` on voices already linked |
 | voice_volume | INTEGER | NOT NULL, default 100 | Per-voice volume (0-100) |
 
 ### samples

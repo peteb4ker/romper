@@ -59,38 +59,21 @@ export class SyncFileOperationsService {
     results: SyncResults,
   ): Promise<void> {
     const validationErrors = results.validationErrors;
-    const formatValidation =
-      await syncValidationService.validateSampleFormat(sourcePath);
-
-    if (!formatValidation.success || !formatValidation.data) {
-      syncValidationService.addValidationError(
-        validationErrors,
+    const firstNewError = validationErrors.length;
+    try {
+      await this.categorizeReadableFile(
+        sample,
         filename,
         sourcePath,
-        `Format validation failed: ${formatValidation.error}`,
+        destinationPath,
+        results,
       );
-      return;
-    }
-
-    const format = formatValidation.data;
-
-    // A file that can't be read or isn't a usable WAV is listed in the
-    // summary as a sample that can't be written (RE-08), never copied as-is.
-    const unusable = format.issues?.find(isFormatIssueCritical);
-    if (unusable) {
-      validationErrors.push({
-        error: unusable.message,
-        filename,
-        sourcePath,
-        type: "invalid_format",
-      });
-      return;
-    }
-
-    if (format.issues && format.issues.length > 0) {
-      this.addSyncFileToConvert(sample, destinationPath, format, results);
-    } else {
-      this.addSyncFileToCopy(sample, destinationPath, format, results);
+    } finally {
+      // The file exists (the caller checked), so any failure here is a WAV
+      // Romper can't read (#537 rule 4)
+      for (const error of validationErrors.slice(firstNewError)) {
+        error.unreadable = true;
+      }
     }
   }
 
@@ -236,6 +219,49 @@ export class SyncFileOperationsService {
       sourcePath: sample.source_path,
       voiceNumber: sample.voice_number,
     });
+  }
+
+  private async categorizeReadableFile(
+    sample: Sample,
+    filename: string,
+    sourcePath: string,
+    destinationPath: string,
+    results: SyncResults,
+  ): Promise<void> {
+    const validationErrors = results.validationErrors;
+    const formatValidation =
+      await syncValidationService.validateSampleFormat(sourcePath);
+
+    if (!formatValidation.success || !formatValidation.data) {
+      syncValidationService.addValidationError(
+        validationErrors,
+        filename,
+        sourcePath,
+        `Format validation failed: ${formatValidation.error}`,
+      );
+      return;
+    }
+
+    const format = formatValidation.data;
+
+    // A file that can't be read or isn't a usable WAV is listed in the
+    // summary as a sample that can't be written (RE-08), never copied as-is.
+    const unusable = format.issues?.find(isFormatIssueCritical);
+    if (unusable) {
+      validationErrors.push({
+        error: unusable.message,
+        filename,
+        sourcePath,
+        type: "invalid_format",
+      });
+      return;
+    }
+
+    if (format.issues && format.issues.length > 0) {
+      this.addSyncFileToConvert(sample, destinationPath, format, results);
+    } else {
+      this.addSyncFileToCopy(sample, destinationPath, format, results);
+    }
   }
 
   /**

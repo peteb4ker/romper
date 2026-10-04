@@ -50,6 +50,7 @@ export {
 } from "./sampleCrudOperations.js";
 
 export {
+  linkVoicesAutomaticallyTx,
   updateVoiceAlias,
   updateVoiceSampleMode,
   updateVoiceSliceSettings,

@@ -70,7 +70,10 @@ the [website's testing page](https://peteb4ker.github.io/romper/testing/)
 
 On first launch, the setup wizard copies the kit folders from a Rample SD
 card into a new local store and imports them. A voice with more than 12
-samples keeps the first 12, and the wizard names the files it left out. See
+samples keeps the first 12, and the wizard names the files it left out. A
+voice whose samples are all stereo is linked with the next voice
+automatically when that voice is free, and the setup summary lists each
+pair it linked (#537, stereo rule 2). See
 [Choosing a Local Store](../manual/getting-started.md#choosing-a-local-store).
 
 **Concepts:** [Local store](domain-model.md#local-store-library), [Scan and setup import](domain-model.md#scan-and-setup-import), [Bank](domain-model.md#bank), [Stereo](domain-model.md#stereo).
@@ -92,8 +95,9 @@ samples keeps the first 12, and the wizard names the files it left out. See
   `hasExistingLocalStore`, `importSetupKit`, `cleanupFailedSetup`,
   `cleanupUnfinishedSetups` on quit), which imports each kit with
   `electron/main/db/operations/kitScanOperations.ts` (`mergeKitScan`): up
-  to 12 samples per voice, WAV metadata and voice names, in one transaction
-  per kit.
+  to 12 samples per voice, WAV metadata, voice names and stereo links
+  (`planKitStereo` in `shared/stereoLinkRules.ts`), in one
+  transaction per kit.
 
 ### UC-02 Set up from the factory archive
 
@@ -301,7 +305,10 @@ store and written to the card as `<letter> - <name>.rtf` files. See
 **Scan Kit** in the kit editor (or "/") rebuilds a read-only kit's samples
 from its folder, keeping edits, and names unnamed voices; in an editable
 kit it only names voices. File > **Scan All** scans the bank names and every
-kit. See [Scanning Your Library](../manual/kit-browser.md#scanning-your-library).
+kit. A scan never changes a stereo link; it reports what the write will do:
+pairs it will link automatically, voices it will mix down to mono, and
+quarantined kits (#537). See
+[Scanning Your Library](../manual/kit-browser.md#scanning-your-library).
 
 **Concepts:** [Scan and setup import](domain-model.md#scan-and-setup-import), [Bank](domain-model.md#bank), [Stereo](domain-model.md#stereo).
 
@@ -405,8 +412,12 @@ the previous or next kit in slot order. See
 ### UC-19 Drop WAVs onto a voice
 
 Drag WAV files from Finder or Explorer onto a voice in an editable kit. Each
-file is checked and added to the voice's next free slot, up to 12. See
-[Drag and Drop](../manual/kit-editor.md#drag-and-drop).
+file is checked and added to the voice's next free slot, up to 12. A
+stereo sample on a mono voice that would be linked automatically asks
+**Link** or **Keep mono**, and the answer is remembered; a mono sample on a
+stereo pair is added with a warning, and the kit is quarantined until it's
+fixed (#537, #574).
+See [Drag and Drop](../manual/kit-editor.md#drag-and-drop).
 
 **Concepts:** [Sample](domain-model.md#sample), [Stereo](domain-model.md#stereo).
 
@@ -415,7 +426,9 @@ file is checked and added to the voice's next free slot, up to 12. See
   `app/renderer/components/hooks/shared/useFileValidation.ts` (`validateDroppedFile`);
   `app/renderer/components/hooks/sample-management/useSampleProcessing.ts` (`processAssignment`),
   `app/renderer/components/hooks/sample-management/useSampleManagementOperations.ts` (`handleSampleAdd`);
-  `app/renderer/components/utils/dropRejections.ts` (one message naming the files a drop didn't add). Drop zones have
+  `app/renderer/components/utils/dropRejections.ts` (one message naming the files a drop didn't add);
+  `app/renderer/components/KitVoicePanels.tsx` (`stereoDrop`: the
+  `stereo-drop-prompt` dialog and the stereo messages). Drop zones have
   test ID `drop-zone-voice-N`.
 - **IPC:** `validate-sample-format`, `get-all-samples-for-kit`,
   `add-sample-to-slot` (`electron/main/db/sampleIpcHandlers.ts`).
@@ -593,8 +606,10 @@ to mono when written. See
   `app/renderer/components/hooks/sample-management/useStereoHandling.ts`;
   `app/renderer/components/hooks/voice-panels/useVoicePanelUI.tsx` (`stereo-badge-N`).
 - **IPC:** `update-voice-stereo-mode` (refused for a kit that isn't
-  editable, RE-71).
-- **Main:** `electron/main/db/operations/voiceCrudOperations.ts` (`updateVoiceStereoMode`);
+  editable, RE-71, and for a link `checkStereoLink` refuses, #541).
+- **Main:** `electron/main/db/operations/voiceCrudOperations.ts` (`updateVoiceStereoMode`,
+  checking `checkStereoLink` from `shared/stereoLinkRules.ts`, the rule
+  the link button and drops use too);
   `electron/main/services/validation/sampleValidator.ts`
   (`validateVoiceNotLinkedPartner`); at write time,
   `electron/main/services/syncMonoAnnotation.ts` (`annotateMonoConversion`).
@@ -701,7 +716,10 @@ summary: kits and samples to write, conversions, files the store no longer
 has, and samples that can't be written. It then makes the card match the
 store. It converts files the Rample can't play, applies gain, mixes stereo
 files on unlinked voices to mono, writes bank name files, and leaves the
-Rample's own `_save` folder alone. Cancel stops between files. See
+Rample's own `_save` folder alone. It links stereo voices automatically
+where stereo rule 2 says, and leaves a quarantined kit off the card with
+its card folder untouched (#537); the summary lists both. Cancel stops
+between files. See
 [Syncing](../manual/syncing.md) and the spec,
 [`sd-card-layout.md`](sd-card-layout.md).
 
@@ -718,6 +736,7 @@ Rample's own `_save` folder alone. Cancel stops between files. See
   `startKitSync`, `cancelSync`, `planSync`, `removeStaleEntries`,
   `writeBankRtfFiles`); `electron/main/services/syncFileOperations.ts`, `electron/main/services/syncSampleProcessing.ts`,
   `electron/main/services/syncValidationService.ts`, `electron/main/services/syncMonoAnnotation.ts`,
+  `electron/main/services/syncStereoPlan.ts` (`planWriteStereo`),
   `electron/main/services/syncProgressManager.ts`, `electron/main/services/sdCardSafety.ts`, `electron/main/services/rtfFileService.ts`;
   `electron/main/formatConverter.ts`; `shared/rampleCardLayout.ts`.
 

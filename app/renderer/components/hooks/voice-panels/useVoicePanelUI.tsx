@@ -1,5 +1,6 @@
 import { CheckIcon, PencilSimpleIcon, XIcon } from "@phosphor-icons/react";
 import { toCapitalCase } from "@romper/shared/kitUtilsShared";
+import { STEREO_LABELS } from "@romper/shared/stereoLinkRules";
 import React from "react";
 
 import StereoIcon from "../../icons/StereoIcon";
@@ -7,8 +8,12 @@ import StereoIcon from "../../icons/StereoIcon";
 export interface UseVoicePanelUIOptions {
   isEditable: boolean;
   isLinkedPrimary?: boolean;
+  /** The pair was linked by Romper, not by hand (#537): labelled */
+  linkedAutomatically?: boolean;
   linkedWith?: number;
   onVoiceUnlink?: (primaryVoice: number) => void;
+  /** A mono voice's note: its stereo samples are mixed down (#537) */
+  stereoNote?: string;
   voice: number;
   voiceName: null | string;
   voiceNameEditorHook: {
@@ -29,8 +34,10 @@ export interface UseVoicePanelUIOptions {
 export function useVoicePanelUI({
   isEditable,
   isLinkedPrimary,
+  linkedAutomatically,
   linkedWith,
   onVoiceUnlink,
+  stereoNote,
   voice,
   voiceName,
   voiceNameEditorHook,
@@ -38,82 +45,105 @@ export function useVoicePanelUI({
   // Render voice name section
   const renderVoiceName = React.useCallback(
     (dataTestIdVoiceName?: string) => (
-      <div className="font-semibold mb-1 text-text-primary pl-1 flex items-center gap-2">
-        <span>
-          {isLinkedPrimary && linkedWith ? `${voice}+${linkedWith}` : voice}
-        </span>
-        {voiceNameEditorHook.editing ? (
-          <>
-            <input
-              aria-label={`Name of voice ${voice}`}
-              autoFocus
-              className="ml-1 px-2 py-0.5 rounded border border-accent-primary text-sm font-semibold bg-surface-2 text-text-primary w-32"
-              onChange={(e) => voiceNameEditorHook.setEditValue(e.target.value)}
-              onKeyDown={voiceNameEditorHook.handleKeyDown}
-              value={voiceNameEditorHook.editValue}
-            />
-            <button
-              className="ml-1 text-accent-success"
-              onClick={voiceNameEditorHook.handleSave}
-              title="Save"
-            >
-              <CheckIcon size={16} />
-            </button>
-            <button
-              className="ml-1 text-accent-danger"
-              onClick={voiceNameEditorHook.handleCancel}
-              title="Cancel"
-            >
-              <XIcon size={16} />
-            </button>
-          </>
-        ) : (
-          <>
-            <span
-              className={
-                voiceName
-                  ? "text-sm text-text-secondary font-medium tracking-wide"
-                  : "text-sm text-text-tertiary italic"
-              }
-              data-testid={dataTestIdVoiceName || `voice-name-${voice}`}
-            >
-              {voiceName ? toCapitalCase(voiceName) : "No voice name set"}
-            </span>
-            {isEditable && (
-              <button
-                className="ml-1 text-accent-primary"
-                onClick={voiceNameEditorHook.startEditing}
-                title="Edit voice name"
-              >
-                <PencilSimpleIcon size={16} />
-              </button>
-            )}
-          </>
-        )}
-        {/* Stereo badge: always shown; it unlinks only in an editable kit,
-            since linking is an edit (RE-71) */}
-        {isLinkedPrimary && <span className="flex-1" />}
-        {isLinkedPrimary && isEditable && (
-          <button
-            className="flex items-center gap-1 text-xs text-text-secondary opacity-80 hover:opacity-100 transition-opacity flex-shrink-0"
-            data-testid={`stereo-badge-${voice}`}
-            onClick={() => onVoiceUnlink?.(voice)}
-            title="Click to unlink stereo channels"
-            type="button"
-          >
-            Stereo
-            <StereoIcon size={18} />
-          </button>
-        )}
-        {isLinkedPrimary && !isEditable && (
-          <span
-            className="flex items-center gap-1 text-xs text-text-secondary opacity-80 flex-shrink-0"
-            data-testid={`stereo-badge-${voice}`}
-            title="Stereo pair. Make the kit editable to unlink it."
-          >
-            Stereo
-            <StereoIcon size={18} />
+      <div className="mb-1">
+        <div className="font-semibold text-text-primary pl-1 flex items-center gap-2">
+          <span>
+            {isLinkedPrimary && linkedWith ? `${voice}+${linkedWith}` : voice}
           </span>
+          {voiceNameEditorHook.editing ? (
+            <>
+              <input
+                aria-label={`Name of voice ${voice}`}
+                autoFocus
+                className="ml-1 px-2 py-0.5 rounded border border-accent-primary text-sm font-semibold bg-surface-2 text-text-primary w-32"
+                onChange={(e) =>
+                  voiceNameEditorHook.setEditValue(e.target.value)
+                }
+                onKeyDown={voiceNameEditorHook.handleKeyDown}
+                value={voiceNameEditorHook.editValue}
+              />
+              <button
+                className="ml-1 text-accent-success"
+                onClick={voiceNameEditorHook.handleSave}
+                title="Save"
+              >
+                <CheckIcon size={16} />
+              </button>
+              <button
+                className="ml-1 text-accent-danger"
+                onClick={voiceNameEditorHook.handleCancel}
+                title="Cancel"
+              >
+                <XIcon size={16} />
+              </button>
+            </>
+          ) : (
+            <>
+              <span
+                className={
+                  voiceName
+                    ? "text-sm text-text-secondary font-medium tracking-wide"
+                    : "text-sm text-text-tertiary italic"
+                }
+                data-testid={dataTestIdVoiceName || `voice-name-${voice}`}
+              >
+                {voiceName ? toCapitalCase(voiceName) : "No voice name set"}
+              </span>
+              {isEditable && (
+                <button
+                  className="ml-1 text-accent-primary"
+                  onClick={voiceNameEditorHook.startEditing}
+                  title="Edit voice name"
+                >
+                  <PencilSimpleIcon size={16} />
+                </button>
+              )}
+            </>
+          )}
+          {/* Stereo badge: always shown; it unlinks only in an editable kit,
+            since linking is an edit (RE-71) */}
+          {isLinkedPrimary && <span className="flex-1" />}
+          {/* A pair Romper linked says so (#537): visible text */}
+          {isLinkedPrimary && linkedAutomatically && (
+            <span
+              className="text-xs font-normal text-text-secondary flex-shrink-0"
+              data-testid={`auto-linked-label-${voice}`}
+            >
+              {STEREO_LABELS.linkedAutomatically}
+            </span>
+          )}
+          {isLinkedPrimary && isEditable && (
+            <button
+              className="flex items-center gap-1 text-xs text-text-secondary opacity-80 hover:opacity-100 transition-opacity flex-shrink-0"
+              data-testid={`stereo-badge-${voice}`}
+              onClick={() => onVoiceUnlink?.(voice)}
+              title="Click to unlink stereo channels"
+              type="button"
+            >
+              Stereo
+              <StereoIcon size={18} />
+            </button>
+          )}
+          {isLinkedPrimary && !isEditable && (
+            <span
+              className="flex items-center gap-1 text-xs text-text-secondary opacity-80 flex-shrink-0"
+              data-testid={`stereo-badge-${voice}`}
+              title="Stereo pair. Make the kit editable to unlink it."
+            >
+              Stereo
+              <StereoIcon size={18} />
+            </span>
+          )}
+        </div>
+        {/* While a mono voice's stereo samples are mixed down, its note says
+          so (#537 rule 1), or why it can't pair (rule 3) */}
+        {stereoNote && (
+          <p
+            className="pl-1 text-xs font-normal text-accent-warning"
+            data-testid={`stereo-note-${voice}`}
+          >
+            {stereoNote}
+          </p>
         )}
       </div>
     ),
@@ -125,6 +155,8 @@ export function useVoicePanelUI({
       isLinkedPrimary,
       linkedWith,
       onVoiceUnlink,
+      linkedAutomatically,
+      stereoNote,
     ],
   );
 

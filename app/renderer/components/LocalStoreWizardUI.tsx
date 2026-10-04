@@ -6,7 +6,10 @@ import {
 } from "@phosphor-icons/react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import type { TruncationWarning } from "./hooks/wizard/useLocalStoreWizardState";
+import type {
+  StereoImportNotice,
+  TruncationWarning,
+} from "./hooks/wizard/useLocalStoreWizardState";
 
 import { config } from "../config";
 import { useChooseExistingLocalStore } from "./hooks/shared/useChooseExistingLocalStore";
@@ -59,6 +62,9 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
     const [truncationWarnings, setTruncationWarnings] = useState<
       TruncationWarning[]
     >([]);
+    const [stereoNotices, setStereoNotices] = useState<StereoImportNotice[]>(
+      [],
+    );
     const [isCancelling, setIsCancelling] = useState(false);
     const {
       cancelSetup,
@@ -132,8 +138,10 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
       if (result.success) {
         // From this run's result: `state` here is the render before it ran
         const warnings = result.truncationWarnings ?? [];
+        const stereo = result.stereoNotices ?? [];
         setTruncationWarnings(warnings);
-        const hasWarnings = warnings.length > 0;
+        setStereoNotices(stereo);
+        const hasWarnings = warnings.length > 0 || stereo.length > 0;
         const isBlankFolder = state.source === "blank";
 
         if (isBlankFolder || hasWarnings) {
@@ -216,6 +224,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
               setShowPostInitGuidance(false);
               if (onSuccess) onSuccess();
             }}
+            stereoNotices={stereoNotices}
             truncationWarnings={truncationWarnings}
           />
         )}

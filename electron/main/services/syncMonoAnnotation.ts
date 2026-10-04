@@ -6,9 +6,10 @@ type VoiceStereoModes = SyncPlanData["voices"];
 /**
  * Mark files for mono conversion: a file with more than one channel on a
  * voice that isn't linked as stereo is mixed down to mono when it's written
- * (RE-29). Stereo is a voice setting (`voices.stereo_mode`); the file's own
- * channel count only says whether there is anything to mix. The voices come
- * from the plan's one load, not a query per kit (RE-82).
+ * (RE-29, #537 rule 1). Stereo is a voice setting (`voices.stereo_mode`,
+ * with the links the write makes automatically); the file's own channel
+ * count only says whether there is anything to mix. The voices come from
+ * the plan's one load, not a query per kit (RE-82).
  */
 export function annotateMonoConversion(
   allFiles: SyncFileOperation[],
@@ -25,7 +26,8 @@ export function annotateMonoConversion(
       fileOp.forceMonoConversion = true;
       if (fileOp.operation === "copy") {
         fileOp.operation = "convert";
-        fileOp.reason = `Stereo file on voice ${fileOp.voiceNumber}, which isn't linked as stereo: mixed to mono`;
+        // DRAFT wording (#537), awaiting Pete's sign-off
+        fileOp.reason = `Stereo sample on voice ${fileOp.voiceNumber}, a mono voice: mixed down to mono`;
       }
     }
   }

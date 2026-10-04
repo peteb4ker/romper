@@ -89,6 +89,16 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
         >
           Found {logic.scanStatus.sampleCount} samples
           {logic.scanStatus.detail ? `: ${logic.scanStatus.detail}` : ""}
+          {logic.scanStatus.stereoLines && (
+            <ul
+              className="mt-0.5 text-text-secondary"
+              data-testid="kit-scan-stereo"
+            >
+              {logic.scanStatus.stereoLines.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
       {logic.scanStatus.status === "error" && (

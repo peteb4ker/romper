@@ -1,15 +1,34 @@
 import type { KitWithRelations, Sample } from "@romper/shared/db/schema";
 
 import { LinkIcon } from "@phosphor-icons/react";
-import React, { useState } from "react";
+import {
+  checkStereoLink,
+  describeMixdownNote,
+  describeMonoOnStereoPair,
+  describeQuarantineProblem,
+  describeStereoDropPrompt,
+  describeUnlink,
+  isLinkedAutomatically,
+  isStereoSample,
+  planKitStereo,
+  QUARANTINE_NOTICE,
+  STEREO_LABELS,
+  type StereoSampleState,
+} from "@romper/shared/stereoLinkRules";
+import React, { useId, useState } from "react";
 
 import type { PlayOptions, SampleData, VoiceSamples } from "./kitTypes";
 
 import { slotKey } from "../utils/slotKey";
 import { useKitVoicePanels } from "./hooks/kit-management/useKitVoicePanels";
 import { useStereoHandling } from "./hooks/sample-management/useStereoHandling";
+import {
+  type AddedDropFile,
+  type StereoDropHandlers,
+} from "./hooks/shared/useExternalDragHandlers";
 import { useSettingSave } from "./hooks/shared/useSettingSave";
 import KitVoicePanel from "./KitVoicePanel";
+import ModalDialog from "./shared/ModalDialog";
 
 interface KitVoicePanelsProps {
   flashVoices?: Set<number>; // Voices currently showing flash animation
@@ -64,6 +83,9 @@ interface KitVoicePanelsProps {
   stopTriggers: { [key: string]: number }; // Used by useKitVoicePanels hook
 }
 
+/** Main refused a link or unlink; its message says why (#541, RE-71) */
+class StereoRefusal extends Error {}
+
 /** A gain as the knob shows it: "+3 dB", "0 dB", "-6 dB" */
 function formatGain(db: number): string {
   const rounded = Math.round(db);
@@ -105,6 +127,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         slice_max_length: 2,
         slice_roll_amount: 100,
         slice_vary_length: false,
+        stereo_choice: null,
         stereo_mode: false,
         voice_alias: null,
         voice_number,
@@ -121,6 +144,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
       slice_max_length: voice.slice_max_length ?? 2,
       slice_roll_amount: voice.slice_roll_amount ?? 100,
       slice_vary_length: voice.slice_vary_length ?? false,
+      stereo_choice: voice.stereo_choice ?? null,
       stereo_mode: voice.stereo_mode || false,
       voice_alias: voice.voice_alias,
       voice_number: voice.voice_number,
@@ -169,54 +193,77 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         updates.stereo_mode ?? false,
       );
       if (result && !result.success) {
-        throw new Error(result.error || "updateVoiceStereoMode failed");
+        throw new StereoRefusal(result.error || "updateVoiceStereoMode failed");
       }
     },
     [hookProps.kitName],
   );
 
-  // Voice linking handlers
+  // The kit's samples as the stereo rules see them (#537): which voices
+  // hold samples (from the panels) and each one's channel count. Whether a
+  // WAV can be read takes reading its header, which the write summary and
+  // a scan do; a sample without stored metadata isn't assumed unreadable.
+  const stereoSamples = React.useMemo(() => {
+    const result: StereoSampleState[] = [];
+    for (const voice of [1, 2, 3, 4]) {
+      (hookProps.samples[voice] || []).forEach((name, slot) => {
+        if (!name?.trim()) return;
+        result.push({
+          filename: name,
+          voice_number: voice,
+          wav_channels: sampleMetadata[slotKey(voice, slot)]?.wav_channels,
+        });
+      });
+    }
+    return result;
+  }, [hookProps.samples, sampleMetadata]);
+
+  // What the rules make of the kit: mixdowns, quarantine (#537)
+  const stereoPlan = React.useMemo(
+    () => planKitStereo(voiceData, stereoSamples),
+    [voiceData, stereoSamples],
+  );
+
+  const isVoiceLinked = React.useCallback(
+    (voice: number) =>
+      voiceData.some((v) => v.voice_number === voice && v.stereo_mode),
+    [voiceData],
+  );
+  const hasStereoSamples = React.useCallback(
+    (voice: number) =>
+      stereoSamples.some((s) => s.voice_number === voice && isStereoSample(s)),
+    [stereoSamples],
+  );
+
+  // Voice linking handlers. The link button refuses what main refuses,
+  // in the same words (#541)
   const handleVoiceLink = React.useCallback(
     async (primaryVoice: number) => {
-      const secondaryVoice = primaryVoice + 1;
-      const notLinked = `Voices ${primaryVoice} and ${secondaryVoice} weren't linked`;
-
-      // Block if either voice is already linked
-      const primaryStatus = stereoHandling.getVoiceLinkingStatus(
-        primaryVoice,
-        voiceData,
-      );
-      const secondaryStatus = stereoHandling.getVoiceLinkingStatus(
-        secondaryVoice,
-        voiceData,
-      );
-      if (primaryStatus.isLinked || secondaryStatus.isLinked) {
-        props.onMessage?.(
-          `${notLinked}: one of them is already in a stereo pair. Unlink that pair first.`,
-          "warning",
-        );
+      const check = checkStereoLink(primaryVoice, voiceData, stereoSamples);
+      if (!check.canLink) {
+        props.onMessage?.(check.message, "warning");
         return;
       }
 
-      // Block if secondary voice has samples
-      const secondarySamples = hookProps.samples[secondaryVoice] || [];
-      if (secondarySamples.some((s) => s?.trim())) {
-        props.onMessage?.(
-          `${notLinked}: voice ${secondaryVoice} has samples. Delete or move them, then link again.`,
-          "warning",
-        );
-        return;
-      }
-
+      // Main's refusal is shown as it says it; any other failure isn't
+      let refusal: string | undefined;
       const result = await stereoHandling.linkVoicesForStereo(
         primaryVoice,
         voiceData,
         sampleData,
-        writeStereoMode,
+        async (voice, updates) => {
+          try {
+            await writeStereoMode(voice, updates);
+          } catch (error) {
+            if (error instanceof StereoRefusal) refusal = error.message;
+            throw error;
+          }
+        },
       );
       if (!result.success) {
         props.onMessage?.(
-          `${notLinked}. Check that the kit is editable and voice ${secondaryVoice} is empty, then try again.`,
+          refusal ??
+            `Voices ${primaryVoice} and ${primaryVoice + 1} weren't linked. Check that the kit is editable and voice ${primaryVoice + 1} is empty, then try again.`,
           "error",
         );
       }
@@ -226,12 +273,14 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
       stereoHandling,
       voiceData,
       sampleData,
-      hookProps.samples,
+      stereoSamples,
       writeStereoMode,
       props,
     ],
   );
 
+  // Unlinking is always allowed and moves nothing; it says what changes on
+  // the card, and Romper won't link the voice automatically again (#537)
   const handleVoiceUnlink = React.useCallback(
     async (primaryVoice: number) => {
       const result = await stereoHandling.unlinkVoices(
@@ -246,9 +295,94 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         );
         return;
       }
+      const stereo = hasStereoSamples(primaryVoice);
+      props.onMessage?.(
+        describeUnlink(primaryVoice, stereo),
+        stereo ? "warning" : "info",
+      );
       await props.onKitUpdated?.();
     },
-    [stereoHandling, voiceData, writeStereoMode, props],
+    [stereoHandling, voiceData, writeStereoMode, hasStereoSamples, props],
+  );
+
+  // A drop of a stereo sample on a mono voice that rule 2 would link asks
+  // Link or Keep mono, and the answer is remembered (#537)
+  const [stereoPrompt, setStereoPrompt] = useState<{
+    fileName: string;
+    resolve: (link: boolean) => void;
+    voice: number;
+  } | null>(null);
+  const stereoPromptId = useId();
+  const answerStereoPrompt = React.useCallback(
+    (link: boolean) => {
+      stereoPrompt?.resolve(link);
+      setStereoPrompt(null);
+    },
+    [stereoPrompt],
+  );
+  // A prompt still open when the panels go away keeps the voice as it is
+  const stereoPromptRef = React.useRef(stereoPrompt);
+  stereoPromptRef.current = stereoPrompt;
+  React.useEffect(() => () => stereoPromptRef.current?.resolve(false), []);
+
+  const { onKitUpdated, onMessage: showMessage } = props;
+  const stereoDrop = React.useMemo<StereoDropHandlers>(
+    () => ({
+      report: async (voice: number, added: AddedDropFile[]) => {
+        if (isVoiceLinked(voice)) {
+          // A mono sample on a stereo pair is added with a warning; the
+          // kit is quarantined until it's fixed (rule 4)
+          const warnings = added
+            .filter((f) => f.channels === 1)
+            .map((f) => describeMonoOnStereoPair(f.fileName, voice));
+          if (warnings.length > 0) {
+            showMessage?.(warnings.join(" "), "warning");
+          }
+          return;
+        }
+        const stereoAdded = added.filter((f) => (f.channels ?? 0) > 1);
+        if (stereoAdded.length === 0) return;
+        // Would rule 2 link the voice, now the drop is in?
+        const after = [
+          ...stereoSamples,
+          ...added.map((f) => ({
+            filename: f.fileName,
+            voice_number: voice,
+            wav_channels: f.channels,
+          })),
+        ];
+        if (!planKitStereo(voiceData, after).autoLinks.includes(voice)) {
+          return; // A mono voice: its note says it's mixed down
+        }
+        const link = await new Promise<boolean>((resolve) =>
+          setStereoPrompt({
+            fileName: stereoAdded[0].fileName,
+            resolve,
+            voice,
+          }),
+        );
+        try {
+          // Link, or record Keep mono so it isn't linked automatically
+          await writeStereoMode(voice, { stereo_mode: link });
+          await onKitUpdated?.();
+        } catch (error) {
+          showMessage?.(
+            error instanceof StereoRefusal
+              ? error.message
+              : `Voices ${voice} and ${voice + 1} weren't linked. Check that the kit is editable and voice ${voice + 1} is empty, then try again.`,
+            "error",
+          );
+        }
+      },
+    }),
+    [
+      isVoiceLinked,
+      onKitUpdated,
+      showMessage,
+      stereoSamples,
+      voiceData,
+      writeStereoMode,
+    ],
   );
 
   // State to track internal drag operations across all voices
@@ -376,131 +510,210 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   }, [voiceData, stereoHandling.getVoiceLinkingStatus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="flex w-full relative" data-testid="voice-panels-row">
-      {/* Global slot numbers column */}
-      <div className="flex flex-col justify-start pt-8 pr-3">
-        {Array.from({ length: 12 }, (_, i) => i + 1).map((slotNumber) => (
-          <div
-            className="min-h-[28px] flex items-center justify-end"
-            key={`global-slot-${slotNumber}`}
-            style={{ marginBottom: 4 }}
-          >
+    <div className="flex flex-col w-full">
+      {stereoPlan.quarantine.length > 0 && (
+        <div
+          className="mb-2 px-3 py-2 rounded border border-accent-danger/40 bg-accent-danger/10 text-xs text-text-primary"
+          data-testid="kit-quarantine-notice"
+          role="status"
+        >
+          <p className="font-medium">
             <span
-              className="text-xs font-mono text-text-tertiary select-none bg-surface-3 px-1.5 py-0.5 rounded text-center w-8 h-5 flex items-center justify-center inline-block"
-              data-testid={`global-slot-number-${slotNumber - 1}`}
-              style={{ display: "inline-block", width: "32px" }}
+              className="mr-2 px-1.5 py-0.5 rounded bg-accent-danger text-white"
+              data-testid="kit-quarantined-label"
             >
-              {slotNumber}
+              {STEREO_LABELS.quarantined}
             </span>
-          </div>
-        ))}
-      </div>
-
-      {/* Voice panels flex layout */}
-      <div
-        className="flex gap-1.5 flex-1 min-w-0"
-        data-testid="voice-panels-flex"
-      >
-        {[1, 2, 3, 4].map((voice) => {
-          // Get voice linking status
-          const linkingStatus = stereoHandling.getVoiceLinkingStatus(
-            voice,
-            voiceData,
-          );
-          const isSecondary =
-            linkingStatus.isLinked && !linkingStatus.isPrimary;
-          const isPrimary = linkingStatus.isLinked && linkingStatus.isPrimary;
-          const nextVoiceLinked =
-            voice < 4 &&
-            stereoHandling.getVoiceLinkingStatus(voice + 1, voiceData).isLinked;
-          // Linking is an edit (RE-71): no link control on a read-only kit
-          const showChainIcon =
-            Boolean(props.isEditable) &&
-            voice < 4 &&
-            !isPrimary &&
-            !isSecondary &&
-            !nextVoiceLinked;
-
-          return (
+            {QUARANTINE_NOTICE}
+          </p>
+          <ul className="mt-1 list-disc pl-5 space-y-0.5">
+            {stereoPlan.quarantine.map((problem) => (
+              <li
+                key={`${problem.kind}-${problem.voiceNumber}-${"filename" in problem ? problem.filename : ""}`}
+              >
+                {describeQuarantineProblem(problem)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <div className="flex w-full relative" data-testid="voice-panels-row">
+        {/* Global slot numbers column */}
+        <div className="flex flex-col justify-start pt-8 pr-3">
+          {Array.from({ length: 12 }, (_, i) => i + 1).map((slotNumber) => (
             <div
-              className={[
-                "group/panel relative transition-all duration-300 ease-in-out overflow-hidden",
-                isSecondary ? "opacity-0" : "flex-1 w-0 opacity-100",
-              ].join(" ")}
-              data-testid={`voice-panel-${voice}`}
-              key={`${hookProps.kitName}-voicepanel-${voice}`}
-              style={(() => {
-                if (isSecondary)
-                  return { flex: 0, gap: 0, minWidth: 0, padding: 0 };
-                if (isPrimary) return { flex: 2 };
-                return undefined;
-              })()}
+              className="min-h-[28px] flex items-center justify-end"
+              key={`global-slot-${slotNumber}`}
+              style={{ marginBottom: 4 }}
             >
-              {!deferredSecondaries.has(voice) && (
-                <KitVoicePanel
-                  dataTestIdVoiceName={`voice-name-${voice}`}
-                  isActive={voice === hookProps.selectedVoice}
-                  isDisabled={isSecondary}
-                  isEditable={props.isEditable ?? false}
-                  isFlashing={props.flashVoices?.has(voice) ?? false}
-                  isLinkedPrimary={isPrimary}
-                  kitName={hookProps.kitName}
-                  linkedWith={linkingStatus.linkedWith}
-                  onBatchDropComplete={props.onBatchDropComplete}
-                  onGainChange={handleGainChange}
-                  onMessage={props.onMessage}
-                  onPlay={hookProps.onPlay}
-                  onSampleAdd={props.onSampleAdd}
-                  onSampleDelete={props.onSampleDelete}
-                  onSampleKeyNav={hookProps.onSampleKeyNav}
-                  onSampleMove={props.onSampleMove}
-                  onSampleReplace={props.onSampleReplace}
-                  onSampleSelect={hookProps.onSampleSelect}
-                  onSaveVoiceName={hookProps.onSaveVoiceName}
-                  onStop={hookProps.onStop}
-                  onVoiceUnlink={handleVoiceUnlink}
-                  onWaveformPlayingChange={hookProps.onWaveformPlayingChange}
-                  playOptions={hookProps.playOptions}
-                  playTriggers={hookProps.playTriggers}
-                  playVolumes={hookProps.playVolumes}
-                  sampleMetadata={sampleMetadata}
-                  samplePlaying={hookProps.samplePlaying}
-                  samples={hookProps.samples[voice] || []}
-                  selectedIdx={
-                    voice === hookProps.selectedVoice
-                      ? hookProps.selectedSampleIdx
-                      : -1
-                  }
-                  setSharedDraggedSample={setInternalDraggedSample}
-                  sharedDraggedSample={internalDraggedSample}
-                  stopTriggers={hookProps.stopTriggers}
-                  voice={voice}
-                  voiceName={
-                    hookProps.kit?.voices?.find((v) => v.voice_number === voice)
-                      ?.voice_alias || null
-                  }
-                />
-              )}
-              {/* Chain icon — right edge of panel, always visible */}
-              {showChainIcon && (
-                <div
-                  className="absolute right-0 top-0 z-10"
-                  data-testid={`chain-icon-${voice}-${voice + 1}`}
-                >
-                  <button
-                    className="opacity-80 hover:opacity-100 transition-opacity text-text-secondary"
-                    data-testid={`link-button-${voice}-${voice + 1}`}
-                    onClick={() => handleVoiceLink(voice)}
-                    title="Click to link stereo channels"
-                    type="button"
-                  >
-                    <LinkIcon size={14} />
-                  </button>
-                </div>
-              )}
+              <span
+                className="text-xs font-mono text-text-tertiary select-none bg-surface-3 px-1.5 py-0.5 rounded text-center w-8 h-5 flex items-center justify-center inline-block"
+                data-testid={`global-slot-number-${slotNumber - 1}`}
+                style={{ display: "inline-block", width: "32px" }}
+              >
+                {slotNumber}
+              </span>
             </div>
-          );
-        })}
+          ))}
+        </div>
+
+        {/* Voice panels flex layout */}
+        <div
+          className="flex gap-1.5 flex-1 min-w-0"
+          data-testid="voice-panels-flex"
+        >
+          {[1, 2, 3, 4].map((voice) => {
+            // Get voice linking status
+            const linkingStatus = stereoHandling.getVoiceLinkingStatus(
+              voice,
+              voiceData,
+            );
+            const isSecondary =
+              linkingStatus.isLinked && !linkingStatus.isPrimary;
+            const isPrimary = linkingStatus.isLinked && linkingStatus.isPrimary;
+            const nextVoiceLinked =
+              voice < 4 &&
+              stereoHandling.getVoiceLinkingStatus(voice + 1, voiceData)
+                .isLinked;
+            // Linking is an edit (RE-71): no link control on a read-only kit
+            const showChainIcon =
+              Boolean(props.isEditable) &&
+              voice < 4 &&
+              !isPrimary &&
+              !isSecondary &&
+              !nextVoiceLinked;
+
+            return (
+              <div
+                className={[
+                  "group/panel relative transition-all duration-300 ease-in-out overflow-hidden",
+                  isSecondary ? "opacity-0" : "flex-1 w-0 opacity-100",
+                ].join(" ")}
+                data-testid={`voice-panel-${voice}`}
+                key={`${hookProps.kitName}-voicepanel-${voice}`}
+                style={(() => {
+                  if (isSecondary)
+                    return { flex: 0, gap: 0, minWidth: 0, padding: 0 };
+                  if (isPrimary) return { flex: 2 };
+                  return undefined;
+                })()}
+              >
+                {!deferredSecondaries.has(voice) && (
+                  <KitVoicePanel
+                    dataTestIdVoiceName={`voice-name-${voice}`}
+                    isActive={voice === hookProps.selectedVoice}
+                    isDisabled={isSecondary}
+                    isEditable={props.isEditable ?? false}
+                    isFlashing={props.flashVoices?.has(voice) ?? false}
+                    isLinkedPrimary={isPrimary}
+                    kitName={hookProps.kitName}
+                    linkedAutomatically={
+                      isPrimary &&
+                      voiceData.some(
+                        (v) =>
+                          v.voice_number === voice && isLinkedAutomatically(v),
+                      )
+                    }
+                    linkedWith={linkingStatus.linkedWith}
+                    onBatchDropComplete={props.onBatchDropComplete}
+                    onGainChange={handleGainChange}
+                    onMessage={props.onMessage}
+                    onPlay={hookProps.onPlay}
+                    onSampleAdd={props.onSampleAdd}
+                    onSampleDelete={props.onSampleDelete}
+                    onSampleKeyNav={hookProps.onSampleKeyNav}
+                    onSampleMove={props.onSampleMove}
+                    onSampleReplace={props.onSampleReplace}
+                    onSampleSelect={hookProps.onSampleSelect}
+                    onSaveVoiceName={hookProps.onSaveVoiceName}
+                    onStop={hookProps.onStop}
+                    onVoiceUnlink={handleVoiceUnlink}
+                    onWaveformPlayingChange={hookProps.onWaveformPlayingChange}
+                    playOptions={hookProps.playOptions}
+                    playTriggers={hookProps.playTriggers}
+                    playVolumes={hookProps.playVolumes}
+                    sampleMetadata={sampleMetadata}
+                    samplePlaying={hookProps.samplePlaying}
+                    samples={hookProps.samples[voice] || []}
+                    selectedIdx={
+                      voice === hookProps.selectedVoice
+                        ? hookProps.selectedSampleIdx
+                        : -1
+                    }
+                    setSharedDraggedSample={setInternalDraggedSample}
+                    sharedDraggedSample={internalDraggedSample}
+                    stereoDrop={stereoDrop}
+                    stereoNote={(() => {
+                      const mixdown = stereoPlan.mixdowns.find(
+                        (m) => m.voiceNumber === voice,
+                      );
+                      return mixdown ? describeMixdownNote(mixdown) : undefined;
+                    })()}
+                    stopTriggers={hookProps.stopTriggers}
+                    voice={voice}
+                    voiceName={
+                      hookProps.kit?.voices?.find(
+                        (v) => v.voice_number === voice,
+                      )?.voice_alias || null
+                    }
+                  />
+                )}
+                {/* Chain icon — right edge of panel, always visible */}
+                {showChainIcon && (
+                  <div
+                    className="absolute right-0 top-0 z-10"
+                    data-testid={`chain-icon-${voice}-${voice + 1}`}
+                  >
+                    <button
+                      className="opacity-80 hover:opacity-100 transition-opacity text-text-secondary"
+                      data-testid={`link-button-${voice}-${voice + 1}`}
+                      onClick={() => handleVoiceLink(voice)}
+                      title="Click to link stereo channels"
+                      type="button"
+                    >
+                      <LinkIcon size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {stereoPrompt && (
+          <ModalDialog
+            aria-labelledby={stereoPromptId}
+            className="bg-surface-2 rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.4)] border border-border-subtle p-6 w-full max-w-md"
+            data-testid="stereo-drop-prompt"
+            // Escape keeps the voice as it is
+            onClose={() => answerStereoPrompt(false)}
+          >
+            <p className="text-sm text-text-primary" id={stereoPromptId}>
+              {describeStereoDropPrompt(
+                stereoPrompt.fileName,
+                stereoPrompt.voice,
+              )}
+            </p>
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                className="bg-surface-4 text-text-primary px-4 py-2 rounded"
+                data-testid="stereo-drop-keep-mono"
+                onClick={() => answerStereoPrompt(false)}
+                type="button"
+              >
+                Keep mono
+              </button>
+              <button
+                autoFocus
+                className="bg-accent-primary text-white px-4 py-2 rounded"
+                data-testid="stereo-drop-link"
+                onClick={() => answerStereoPrompt(true)}
+                type="button"
+              >
+                Link
+              </button>
+            </div>
+          </ModalDialog>
+        )}
       </div>
     </div>
   );

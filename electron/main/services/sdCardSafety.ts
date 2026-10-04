@@ -17,6 +17,11 @@ const BANK_RTF_PATTERN = /^[A-Z] - .+\.rtf$/i;
  */
 export interface CardContents {
   bankFiles: Iterable<string>;
+  /**
+   * Kits whose folder on the card is left exactly as it is: quarantined
+   * kits, which aren't written (#537 rule 4). Nothing in them is stale.
+   */
+  keepKits?: Iterable<string>;
   kits: ReadonlyMap<string, Iterable<string>>;
 }
 
@@ -30,7 +35,8 @@ export interface SdCardTargetCheck {
  * paths relative to the card: kit folders for kits that aren't in the
  * store (or have no samples), anything else inside a kit folder, and bank
  * name files for banks without a name. Everything else on the card (the
- * Rample's own `_save` folder, any other file or folder) is left out.
+ * Rample's own `_save` folder, any other file or folder) is left out, and
+ * so is a kept kit's folder (`keepKits`) with everything in it.
  *
  * Names are compared ignoring case: FAT32 cards and macOS volumes are case
  * insensitive, so a file sync just overwrote may keep its old case.
@@ -52,6 +58,9 @@ export async function findStaleCardEntries(
     kits.set(kitName.toUpperCase(), lowerCaseSet(fileNames));
   }
   const bankFiles = lowerCaseSet(contents.bankFiles);
+  const keepKits = new Set(
+    [...(contents.keepKits ?? [])].map((kit) => kit.toUpperCase()),
+  );
 
   const stale: string[] = [];
   const kitFolders: { keep: Set<string>; name: string }[] = [];
@@ -60,6 +69,7 @@ export async function findStaleCardEntries(
   });
   for (const entry of entries) {
     if (entry.isDirectory() && KIT_FOLDER_PATTERN.test(entry.name)) {
+      if (keepKits.has(entry.name.toUpperCase())) continue;
       const keep = kits.get(entry.name.toUpperCase());
       if (keep) {
         kitFolders.push({ keep, name: entry.name });

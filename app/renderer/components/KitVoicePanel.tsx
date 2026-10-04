@@ -5,6 +5,7 @@ import type { PlayOptions, SampleData } from "./kitTypes";
 import { useSampleActions } from "./hooks/sample-management/useSampleActions";
 import { useSlotRendering } from "./hooks/sample-management/useSlotRendering";
 import { useDragAndDrop } from "./hooks/shared/useDragAndDrop";
+import { type StereoDropHandlers } from "./hooks/shared/useExternalDragHandlers";
 import { useKeyboardNavigation } from "./hooks/shared/useKeyboardNavigation";
 import { useVoiceNameEditor } from "./hooks/voice-panels/useVoiceNameEditor";
 import { useVoicePanelRendering } from "./hooks/voice-panels/useVoicePanelRendering";
@@ -16,6 +17,8 @@ interface KitVoicePanelProps {
   isFlashing?: boolean;
   isLinkedPrimary?: boolean;
   kitName: string;
+  /** The pair was linked by Romper, not by hand (#537): labelled */
+  linkedAutomatically?: boolean;
   linkedWith?: number;
   onBatchDropComplete?: () => void;
   onGainChange?: (
@@ -84,6 +87,10 @@ interface KitVoicePanelProps {
     voice: number;
   } | null;
 
+  /** Stereo questions and messages for a drop (#537) */
+  stereoDrop?: StereoDropHandlers;
+  /** A mono voice's note: its stereo samples are mixed down (#537) */
+  stereoNote?: string;
   stopTriggers: { [key: string]: number };
   voice: number;
   voiceName: null | string;
@@ -99,6 +106,7 @@ const KitVoicePanel: React.FC<
   isFlashing = false,
   isLinkedPrimary = false,
   kitName,
+  linkedAutomatically = false,
   linkedWith,
   onBatchDropComplete,
   onGainChange,
@@ -123,6 +131,8 @@ const KitVoicePanel: React.FC<
   selectedIdx = -1,
   setSharedDraggedSample,
   sharedDraggedSample,
+  stereoDrop,
+  stereoNote,
   stopTriggers,
   voice,
   voiceName,
@@ -158,6 +168,7 @@ const KitVoicePanel: React.FC<
     samples,
     setSharedDraggedSample,
     sharedDraggedSample,
+    stereoDrop,
     voice,
   });
 
@@ -187,6 +198,7 @@ const KitVoicePanel: React.FC<
     isEditable: effectiveEditable,
     isLinkedPrimary,
     kitName,
+    linkedAutomatically,
     linkedWith,
     onGainChange,
     onPlay,
@@ -203,6 +215,7 @@ const KitVoicePanel: React.FC<
     samples,
     selectedIdx,
     slotRenderingHook: slotRendering,
+    stereoNote,
     stopTriggers,
     voice,
     voiceName,

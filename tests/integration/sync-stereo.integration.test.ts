@@ -12,6 +12,7 @@ import {
   addKit,
   addSample,
   createRomperDbFile,
+  deleteSamples,
   updateVoiceStereoMode,
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { syncService } from "../../electron/main/services/syncService.js";
@@ -152,7 +153,9 @@ describe("[UC-28] [UC-34] Writing stereo files to the card (RE-29)", () => {
   });
 
   it("writes the stereo file as it is once its voice is linked", async () => {
-    updateVoiceStereoMode(dbDir, "A0", 3, true);
+    // Linking voice 3 needs voice 4 free (#541)
+    expect(deleteSamples(dbDir, "A0", { voiceNumber: 4 }).success).toBe(true);
+    expect(updateVoiceStereoMode(dbDir, "A0", 3, true).success).toBe(true);
     const result = await syncService.startKitSync(settings, { sdCardPath });
     expect(result.success).toBe(true);
     expect(

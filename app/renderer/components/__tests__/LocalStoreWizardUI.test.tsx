@@ -202,6 +202,31 @@ describe("LocalStoreWizardUI", () => {
       expect(onSuccess).not.toHaveBeenCalled();
     });
 
+    it("[UC-01] lists what setup did with stereo voices (#537)", async () => {
+      vi.resetModules();
+      const onSuccess = vi.fn();
+      const message =
+        "Kit A0: voices 1 and 2 linked automatically as a stereo pair.";
+      const mockHook = readyToInitialize(async () => ({
+        stereoNotices: [{ kitName: "A0", message, voiceNumber: 1 }],
+        success: true,
+        truncationWarnings: [],
+      }));
+      vi.doMock("../hooks/wizard/useLocalStoreWizard", () => ({
+        useLocalStoreWizard: () => mockHook,
+      }));
+      const { default: LocalStoreWizardUI } =
+        await import("../LocalStoreWizardUI");
+      render(<LocalStoreWizardUI onClose={() => {}} onSuccess={onSuccess} />);
+
+      fireEvent.click(screen.getByTestId("wizard-initialize-btn"));
+
+      const summary = await screen.findByTestId("stereo-summary");
+      expect(summary).toHaveTextContent(message);
+      expect(screen.queryByTestId("truncation-warnings")).toBeNull();
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+
     it("finishes straight away when nothing was left out", async () => {
       vi.resetModules();
       const onSuccess = vi.fn();

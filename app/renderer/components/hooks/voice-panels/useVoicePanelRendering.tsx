@@ -25,6 +25,8 @@ export interface UseVoicePanelRenderingOptions {
   isEditable: boolean;
   isLinkedPrimary?: boolean;
   kitName: string;
+  /** The pair was linked by Romper, not by hand (#537): labelled */
+  linkedAutomatically?: boolean;
   linkedWith?: number;
   onGainChange?: (
     voice: number,
@@ -55,6 +57,7 @@ export interface UseVoicePanelRenderingOptions {
   samplePlaying: { [key: string]: boolean };
   samples: string[];
   selectedIdx: number;
+
   slotRenderingHook: {
     calculateRenderSlots: () => {
       nextAvailableSlot: number;
@@ -83,7 +86,8 @@ export interface UseVoicePanelRenderingOptions {
       slotBaseClass: string;
     };
   };
-
+  /** A mono voice's note: its stereo samples are mixed down (#537) */
+  stereoNote?: string;
   stopTriggers: { [key: string]: number };
   voice: number;
   voiceName: null | string;
@@ -108,6 +112,7 @@ export function useVoicePanelRendering({
   isEditable,
   isLinkedPrimary,
   kitName,
+  linkedAutomatically,
   linkedWith,
   onGainChange,
   onPlay,
@@ -124,6 +129,7 @@ export function useVoicePanelRendering({
   samples,
   selectedIdx,
   slotRenderingHook,
+  stereoNote,
   stopTriggers,
   voice,
   voiceName,
@@ -167,8 +173,10 @@ export function useVoicePanelRendering({
   const ui = useVoicePanelUI({
     isEditable,
     isLinkedPrimary,
+    linkedAutomatically,
     linkedWith,
     onVoiceUnlink,
+    stereoNote,
     voice,
     voiceName,
     voiceNameEditorHook,

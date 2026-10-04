@@ -135,4 +135,165 @@ test.describe("Stereo voice linking", () => {
     });
     expect(voice3?.stereo_mode).toBe(true);
   });
+
+  test("[UC-28] main refuses to link voice 4 or a voice whose next voice has samples (#541)", async () => {
+    // Asked through IPC, as a renderer bug or stale view could: voice 4
+    // can't be linked, and voice 1's next voice holds the fixture's snare
+    const results = await window.evaluate(async () => {
+      const api = (globalThis as unknown as ApiWindow).electronAPI;
+      return {
+        busy: await api.updateVoiceStereoMode("A0", 1, true),
+        voice4: await api.updateVoiceStereoMode("A0", 4, true),
+      };
+    });
+    expect(results.voice4).toEqual({
+      error: "Voice 4 can't be linked.",
+      success: false,
+    });
+    expect(results.busy).toEqual({
+      error: "Voices 1 and 2 can't be linked: voice 2 has samples.",
+      success: false,
+    });
+    const stereoVoices = await window.evaluate(async () => {
+      const res = await (globalThis as unknown as ApiWindow).electronAPI.getKit(
+        "A0",
+      );
+      return (res.data?.voices ?? [])
+        .filter((v) => v.stereo_mode)
+        .map((v) => v.voice_number);
+    });
+    expect(stereoVoices).toEqual([]);
+    // And the editor shows no pair
+    await expect(window.locator('[data-testid^="stereo-badge-"]')).toHaveCount(
+      0,
+    );
+  });
+
+  // #537 final stereo rules: a drop of a stereo sample asks first (S5)
+  async function writeStereo(name: string) {
+    const file = path.join(sourceDir, name);
+    await fs.writeFile(
+      file,
+      encodeTestWav([sine(220, 0.3, 44100), sine(330, 0.3, 44100, 0.3)], {
+        bitDepth: 16,
+        encoding: "pcm",
+        sampleRate: 44100,
+      }),
+    );
+    return file;
+  }
+  async function writeMono(name: string) {
+    const file = path.join(sourceDir, name);
+    await fs.writeFile(
+      file,
+      encodeTestWav([sine(220, 0.3, 44100)], {
+        bitDepth: 16,
+        encoding: "pcm",
+        sampleRate: 44100,
+      }),
+    );
+    return file;
+  }
+  const message = () => window.locator('[data-testid="message-display"]');
+  /** Drop once the voice's drop zone is there (the editable switch shows it) */
+  async function dropOn(voice: number, files: string[]) {
+    await expect(
+      window.locator(`[data-testid="drop-zone-voice-${voice}"]`),
+    ).toBeVisible();
+    await dropFiles(window, voice, files);
+  }
+
+  test("[UC-19] a stereo sample rule 2 would link asks, and Link links it; a mono sample then quarantines the kit (#537, #574)", async () => {
+    await expect(
+      window.locator('[data-testid="kit-quarantine-notice"]'),
+    ).toHaveCount(0);
+    await dropOn(3, [await writeStereo("pad.wav")]);
+
+    const prompt = window.getByRole("dialog");
+    await expect(prompt).toHaveText(
+      /pad\.wav is stereo\. Link voices 3 and 4 as a stereo pair\?/,
+    );
+    await prompt.getByRole("button", { name: "Link" }).click();
+
+    await expect(
+      window.locator('[data-testid="stereo-badge-3"]'),
+    ).toBeVisible();
+    // Linked by hand, so not labelled as automatic
+    await expect(
+      window.locator('[data-testid="auto-linked-label-3"]'),
+    ).toHaveCount(0);
+    await expect
+      .poll(() => samplesOnVoice(window, 3), { timeout: 10000 })
+      .toEqual(["pad.wav"]);
+
+    // A mono sample on the pair is added, with a warning, and the kit is
+    // quarantined until it's fixed
+    await dropOn(3, [await writeMono("click.wav")]);
+    await expect(message()).toContainText(
+      "click.wav is a mono sample, but voices 3 and 4 are a stereo pair and expect stereo samples.",
+    );
+    await expect(
+      window.locator('[data-testid="mono-in-pair-label-3-1"]'),
+    ).toHaveText("Mono sample in a stereo pair");
+    const notice = window.locator('[data-testid="kit-quarantine-notice"]');
+    await expect(notice).toContainText("Quarantined");
+    await expect(notice).toContainText(
+      "click.wav is a mono sample in the stereo pair on voices 3 and 4. Unlink them, or replace click.wav with a stereo sample.",
+    );
+
+    // Unlinking fixes it, says what changes, and notes the mixdown
+    await window.locator('[data-testid="stereo-badge-3"]').click();
+    await expect(message()).toContainText(
+      "Voices 3 and 4 are unlinked. Voice 3's stereo samples will be written to the card as mono.",
+    );
+    await expect(notice).toHaveCount(0);
+    await expect(window.locator('[data-testid="stereo-note-3"]')).toHaveText(
+      "Mixed down to mono instead of playing across 2 voices",
+    );
+  });
+
+  test("[UC-19] Keep mono adds the stereo sample unlinked, and is remembered", async () => {
+    await dropOn(3, [await writeStereo("pad.wav")]);
+
+    const prompt = window.getByRole("dialog");
+    await prompt.getByRole("button", { name: "Keep mono" }).click();
+
+    await expect(prompt).toHaveCount(0);
+    await expect
+      .poll(() => samplesOnVoice(window, 3), { timeout: 10000 })
+      .toEqual(["pad.wav"]);
+    await expect(window.locator('[data-testid="stereo-badge-3"]')).toHaveCount(
+      0,
+    );
+    await expect(window.locator('[data-testid="stereo-note-3"]')).toHaveText(
+      "Mixed down to mono instead of playing across 2 voices",
+    );
+
+    // Remembered: another stereo sample doesn't ask again
+    await expect(
+      window
+        .locator('[data-testid="sample-list-voice-3"]')
+        .getByRole("option", { name: "Sample pad.wav in slot 1" }),
+    ).toBeVisible();
+    await dropOn(3, [await writeStereo("pad 2.wav")]);
+    await expect(
+      window
+        .locator('[data-testid="sample-list-voice-3"]')
+        .getByRole("option", { name: "Sample pad 2.wav in slot 2" }),
+    ).toBeVisible();
+    await expect(window.getByRole("dialog")).toHaveCount(0);
+  });
+
+  test("[UC-19] a stereo sample on a mono voice that also holds a mono sample is mixed down, without asking", async () => {
+    // Voice 1 holds the fixture's mono kick (rule 1)
+    await dropOn(1, [await writeStereo("pad.wav")]);
+
+    await expect
+      .poll(() => samplesOnVoice(window, 1), { timeout: 10000 })
+      .toContain("pad.wav");
+    await expect(window.getByRole("dialog")).toHaveCount(0);
+    await expect(window.locator('[data-testid="stereo-note-1"]')).toHaveText(
+      "Mixed down to mono instead of playing across 2 voices",
+    );
+  });
 });

@@ -175,9 +175,10 @@ export function getCompatibilityStatus(
     return "native";
   }
 
-  // Check if convertible (supported by sync process)
-  // Rample can handle format conversion for bit depth and sample rate
-  // but has limits on channels
+  // Check if convertible (supported by sync process). Romper converts the
+  // bit depth and sample rate when it writes the card; the Rample manual
+  // asks for "16–bit or 8–bit, 44100 Hz" (How to make your own sample
+  // kits). A file with more than two channels counts as incompatible.
   if (channelsOk) {
     return "convertible";
   }

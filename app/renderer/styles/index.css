@@ -53,7 +53,8 @@
   --border-default: #d1d5db;
   --border-strong: #9ca3af;
 
-  /* 4-Voice Colors (Rample Turbo livery: Red, Yellow, Green, Blue) */
+  /* 4-Voice Colors: Red, Yellow, Green, Blue, after the Rample Turbo's
+     livery (unverified on hardware; the manual doesn't describe them) */
   --voice-1: #d44950;
   --voice-2: #d4b63c;
   --voice-3: #2d9668;
@@ -109,7 +110,8 @@
   --border-default: #3a3f4a;
   --border-strong: #4b5563;
 
-  /* 4-Voice Colors (Rample Turbo livery: Red, Yellow, Green, Blue) */
+  /* 4-Voice Colors: Red, Yellow, Green, Blue, after the Rample Turbo's
+     livery (unverified on hardware; the manual doesn't describe them) */
   --voice-1: #e05a60;
   --voice-2: #e8c846;
   --voice-3: #3daa78;

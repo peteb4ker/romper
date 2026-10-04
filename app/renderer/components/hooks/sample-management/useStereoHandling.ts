@@ -17,8 +17,10 @@ export interface VoiceOperationResult {
 }
 
 /**
- * Hook for voice linking and stereo sample handling
- * Implements corrected Rample stereo behavior where stereo voices link adjacent voices
+ * Hook for voice linking and stereo sample handling. Linking a voice with
+ * the next one as a stereo pair is Romper's design; the Rample manual says
+ * only "A stereo sample will fill 2 mono voices" (How to make your own
+ * sample kits). See shared/stereoLinkRules.ts.
  */
 export function useStereoHandling() {
   /**

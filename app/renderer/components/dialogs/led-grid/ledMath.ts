@@ -127,7 +127,9 @@ function hexToRgbString(hex: string): null | string {
   return `${r}, ${g}, ${b}`;
 }
 
-// Default voice colors (Squarp Rample Turbo livery)
+// Default voice colors: red, yellow, green, blue, after the Rample Turbo's
+// livery. The Rample manual doesn't describe voice colors, so matching the
+// module is unverified on hardware.
 const VOICE_COLOR_DEFAULTS: Record<number, string> = {
   1: "224, 90, 96", // red
   2: "224, 196, 64", // yellow

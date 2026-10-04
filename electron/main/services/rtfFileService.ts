@@ -14,9 +14,11 @@ const BANK_LETTER_PATTERN = /^[A-Z]$/;
 const RESERVED_NAME_CHARACTERS = /["*/:<>?\\|]/;
 
 /**
- * Service for managing RTF files that represent bank artist names.
- * The Rample hardware uses empty RTF files named `{Letter} - {Artist}.rtf`
- * at the SD card root to display bank/artist names.
+ * Service for managing the bank name files: empty RTF files named
+ * `{Letter} - {Artist}.rtf` at the SD card root, one per named bank.
+ * Romper reads and writes them because the factory archive has them. The
+ * Rample manual doesn't mention them, so whether the module reads or shows
+ * them is unverified on hardware.
  */
 class RtfFileService {
   /**
@@ -83,7 +85,7 @@ export function bankNameError(name: string): null | string {
   return null;
 }
 
-/** The bank name file the Rample shows: `{Letter} - {Artist}.rtf`. */
+/** A bank's name file on the card: `{Letter} - {Artist}.rtf`. */
 export function bankRtfFileName(
   bankLetter: string,
   artistName: string,

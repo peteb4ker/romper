@@ -1,11 +1,14 @@
 /**
- * Voice choke at the audio layer: a Rample voice is monophonic, so a sound
- * starting on a voice stops whatever else is sounding on it, whichever slot
- * or component started it.
+ * Voice choke at the audio layer: Romper plays each voice monophonically,
+ * so a sound starting on a voice stops whatever else is sounding on it,
+ * whichever slot or component started it. That's Romper's design: the
+ * Rample manual doesn't describe a choke, so whether the module does the
+ * same is unverified on hardware.
  *
- * React state also chokes (useKitPlayback), but that state is keyed by file
- * name and resets on every kit refresh (RE-13, RE-45). This registry holds
- * the live sounds themselves, so the choke can't be lost.
+ * React state also chokes (useKitPlayback's handlePlay, keyed by slot and
+ * not reset by a kit refresh since RE-13 and RE-45), but only the samples
+ * it started. This registry holds the live sounds themselves, whatever
+ * started them, so every sound on the voice is choked.
  */
 
 /** Stops one sound at `atMs` (a performance.now() time), or now. */

@@ -8,7 +8,10 @@
  */
 export const SLICE_TICKS = 384;
 
-/** Division options, matching the Rample's SLICER setting (without EXP). */
+/**
+ * Division options: the SLICER values in the Rample manual (Advanced
+ * parameters: "/8, /16, /32, /64, /128, /12, /24, /48"), without EXP.
+ */
 export const SLICER_DIVISIONS = [8, 12, 16, 24, 32, 48, 64, 128] as const;
 export type SlicerDivision = (typeof SLICER_DIVISIONS)[number];
 export const DEFAULT_SLICER_DIVISION: SlicerDivision = 16;

@@ -65,6 +65,11 @@ ROMPER_HEADLESS=true npm run screenshots -- --target manual-step-sequencer,manua
   `romper-settings.json` (`~/Library/Application Support/Romper` on macOS),
   which it only reads. Use the user's store: the targets only navigate and
   open menus, they don't edit kits.
+- **Broken kits:** targets marked `store: "broken-kits"` (the quarantined
+  kit card, its editor header, and the missing and unreadable file labels)
+  run in a second session on a store generated from the e2e fixture by
+  `tests/utils/broken-kit-store.ts`, deleted afterwards. They don't need
+  `--store`, and never touch a real library.
 - **Its own settings:** the app runs with a temporary userData folder
   (`--user-data-dir` and `ROMPER_USER_DATA_DIR`) holding a fresh
   `romper-settings.json` with that store, deleted when the script ends. The

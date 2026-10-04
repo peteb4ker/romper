@@ -10,6 +10,7 @@ import {
   type E2ETestEnvironment,
   extractE2EFixture,
 } from "../utils/e2e-fixture-extractor";
+import { openSequencer } from "../utils/e2e-sequencer";
 
 /**
  * Makes main refuse every save on an IPC channel, the way a database
@@ -57,9 +58,7 @@ test.describe("[UC-36] Sequencer edits that aren't saved say so (#511)", () => {
     // Fixture kit A0: a kick on voice 1
     await window.locator('[data-testid="kit-item-A0"]').click();
     await window.waitForSelector('[data-testid="kit-editor"]');
-    const handle = window.locator('[data-testid="kit-step-sequencer-handle"]');
-    if (await handle.isVisible()) await handle.click();
-    await window.waitForSelector('[data-testid="kit-step-sequencer-grid"]');
+    await openSequencer(window);
   });
 
   test.afterEach(async () => {

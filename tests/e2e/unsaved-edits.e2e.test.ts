@@ -10,6 +10,7 @@ import {
   type E2ETestEnvironment,
   extractE2EFixture,
 } from "../utils/e2e-fixture-extractor";
+import { openSequencer } from "../utils/e2e-sequencer";
 
 /**
  * Makes main refuse every save on an IPC channel, the way a database
@@ -103,9 +104,7 @@ test.describe("[UC-36] Edits that aren't saved say so (RE-91)", () => {
   test("[UC-32] a level or sample mode that isn't saved goes back", async () => {
     await refuseSaves(electronApp, "update-voice-volume");
     await refuseSaves(electronApp, "update-voice-sample-mode");
-    const handle = window.locator('[data-testid="kit-step-sequencer-handle"]');
-    if (await handle.isVisible()) await handle.click();
-    await window.waitForSelector('[data-testid="kit-step-sequencer-grid"]');
+    await openSequencer(window);
 
     // Level: drop voice 1 to 0
     const level = window.locator('[data-testid="voice-volume-0"]');

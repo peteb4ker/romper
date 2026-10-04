@@ -578,7 +578,7 @@ export function useVoiceSliceSettings(
 
       void save({
         current,
-        key: `${voiceNumber}:${[...fields].sort().join(",")}`,
+        key: `${voiceNumber}:${[...fields].sort((a, b) => a.localeCompare(b)).join(",")}`,
         onSaved: () => onVoiceSettingChanged?.(),
         report: (saved) =>
           onMessage?.(sliceSettingNotSaved(voiceNumber, saved), "error"),

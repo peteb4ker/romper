@@ -10,6 +10,13 @@ import {
   WarningIcon,
   XIcon,
 } from "@phosphor-icons/react";
+import {
+  describeQuarantinedKit,
+  describeQuarantineProblem,
+  describeWriteAutoLink,
+  describeWriteMixdown,
+  STEREO_LABELS,
+} from "@romper/shared/stereoLinkRules";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import type {
@@ -196,6 +203,16 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   const invalidFiles = changeSummary?.validationErrors || [];
   const warnings = changeSummary?.warnings || [];
   const removals = changeSummary?.removals || [];
+  // What the write does about stereo (#537)
+  const quarantined = changeSummary?.stereo?.quarantined ?? [];
+  const stereoLines = [
+    ...(changeSummary?.stereo?.autoLinks ?? []).map((link) =>
+      describeWriteAutoLink(link.kitName, link.voiceNumber),
+    ),
+    ...(changeSummary?.stereo?.mixdowns ?? []).map((mixdown) =>
+      describeWriteMixdown(mixdown.kitName, mixdown.voiceNumber),
+    ),
+  ];
   // Samples that can't be written are skipped only once the user says so.
   const needsSkipConfirmation = invalidFiles.length > 0 && !skipInvalidFiles;
   // A write with nothing to copy still removes what the library no longer
@@ -444,6 +461,43 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                 {conversionsNeeded && <span className="w-14" />}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Quarantined kits: not written, their card copy kept (#537) */}
+        {quarantined.length > 0 && (
+          <div className="px-4 py-2" data-testid="quarantined-kits">
+            <div className="p-2.5 rounded border border-accent-danger/30 bg-accent-danger/10 text-xs space-y-2">
+              {quarantined.map(({ kitName, problems }) => (
+                <div key={kitName}>
+                  <div className="flex items-center gap-1.5 font-medium text-accent-danger">
+                    <WarningIcon size={12} weight="bold" />
+                    <span className="px-1 rounded bg-accent-danger text-white">
+                      {STEREO_LABELS.quarantined}
+                    </span>
+                    {describeQuarantinedKit(kitName)}
+                  </div>
+                  <ul className="mt-1 pl-4 list-disc text-text-secondary space-y-0.5">
+                    {problems.map((problem) => (
+                      <li key={describeQuarantineProblem(problem)}>
+                        {describeQuarantineProblem(problem)}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Pairs linked automatically, and mixdowns (#537) */}
+        {stereoLines.length > 0 && (
+          <div className="px-4 py-2" data-testid="stereo-changes">
+            <ul className="p-2.5 rounded border border-border-subtle bg-surface-3/30 text-[11px] text-text-secondary space-y-1 max-h-24 overflow-y-auto">
+              {stereoLines.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
           </div>
         )}
 

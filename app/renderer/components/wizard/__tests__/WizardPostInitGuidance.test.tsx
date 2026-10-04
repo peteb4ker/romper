@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -55,6 +55,40 @@ describe("WizardPostInitGuidance", () => {
       />,
     );
     expect(screen.queryByTestId("truncation-warnings")).toBeNull();
+  });
+
+  it("[UC-01] lists the setup summary's stereo lines (#537)", () => {
+    const lines = [
+      "Kit A0: voices 1 and 2 linked automatically as a stereo pair.",
+      "Kit B1: voices 3 and 4 linked automatically as a stereo pair.",
+    ];
+    render(
+      <WizardPostInitGuidance
+        isBlankFolder={false}
+        onDismiss={vi.fn()}
+        stereoNotices={lines.map((message, i) => ({
+          kitName: "A0",
+          message,
+          voiceNumber: i + 1,
+        }))}
+      />,
+    );
+    const items = within(screen.getByTestId("stereo-summary")).getAllByRole(
+      "listitem",
+    );
+    expect(items.map((li) => li.textContent)).toEqual(lines);
+    expect(screen.queryByTestId("truncation-warnings")).toBeNull();
+  });
+
+  it("does not list stereo lines when there are none", () => {
+    render(
+      <WizardPostInitGuidance
+        isBlankFolder={false}
+        onDismiss={vi.fn()}
+        stereoNotices={[]}
+      />,
+    );
+    expect(screen.queryByTestId("stereo-summary")).toBeNull();
   });
 
   it("calls onDismiss when continue button clicked", async () => {

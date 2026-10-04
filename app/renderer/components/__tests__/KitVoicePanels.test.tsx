@@ -108,16 +108,19 @@ function MultiVoicePanelsTestWrapper({
 function voicesToProps(voices) {
   const samples = {};
   const kitVoices = [];
-  voices.forEach(({ samples: s, stereo_mode, voice, voiceName }) => {
-    samples[voice] = s;
-    kitVoices.push({
-      id: voice,
-      kit_name: "Kit1",
-      stereo_mode: stereo_mode || false,
-      voice_alias: voiceName,
-      voice_number: voice,
-    });
-  });
+  voices.forEach(
+    ({ samples: s, stereo_choice, stereo_mode, voice, voiceName }) => {
+      samples[voice] = s;
+      kitVoices.push({
+        id: voice,
+        kit_name: "Kit1",
+        stereo_choice: stereo_choice ?? null,
+        stereo_mode: stereo_mode || false,
+        voice_alias: voiceName,
+        voice_number: voice,
+      });
+    },
+  );
   return {
     kit: {
       alias: "Kit1",
@@ -908,7 +911,7 @@ describe("KitVoicePanels", () => {
 
       expect(window.electronAPI.updateVoiceStereoMode).not.toHaveBeenCalled();
       expect(onMessage).toHaveBeenCalledWith(
-        "Voices 1 and 2 weren't linked: voice 2 has samples. Delete or move them, then link again.",
+        "Voices 1 and 2 can't be linked: voice 2 has samples.",
         "warning",
       );
     });
@@ -937,9 +940,10 @@ describe("KitVoicePanels", () => {
         fireEvent.click(screen.getByTestId("link-button-1-2"));
       });
 
+      // Main's refusal, as main says it
       await waitFor(() =>
         expect(onMessage).toHaveBeenCalledWith(
-          "Voices 1 and 2 weren't linked. Check that the kit is editable and voice 2 is empty, then try again.",
+          "Kit Kit1 isn't editable. Make it editable to link or unlink voices.",
           "error",
         ),
       );
@@ -1054,6 +1058,308 @@ describe("KitVoicePanels", () => {
       const badge = screen.getByTestId("stereo-badge-1");
       expect(badge.tagName).not.toBe("BUTTON");
       expect(badge).toHaveTextContent("Stereo");
+    });
+  });
+
+  // #537 final stereo rules v2: drops, unlink, notes, labels, quarantine
+  describe("[UC-19] [UC-28] stereo samples", () => {
+    const wav = (channels: number) => ({
+      data: { issues: [], isValid: true, metadata: { channels } },
+      success: true,
+    });
+    const row = (
+      voice: number,
+      slot: number,
+      filename: string,
+      channels: number,
+    ) => ({
+      filename,
+      gain_db: 0,
+      id: voice * 100 + slot,
+      kit_name: "Kit1",
+      slot_number: slot,
+      source_path: `/samples/${filename}`,
+      voice_number: voice,
+      wav_bit_depth: 16,
+      wav_bitrate: null,
+      wav_channels: channels,
+      wav_sample_rate: 44100,
+    });
+    /** Voice 1 holds a mono kick; the rest as given */
+    const kitVoices = ({
+      choice3 = null as null | string,
+      stereo1 = false,
+      stereo2 = false,
+      v2 = [] as string[],
+    } = {}) => [
+      { samples: ["kick.wav"], stereo_mode: stereo1, voice: 1, voiceName: "A" },
+      { samples: v2, stereo_mode: stereo2, voice: 2, voiceName: "B" },
+      { samples: [], stereo_choice: choice3, voice: 3, voiceName: "C" },
+      { samples: [], voice: 4, voiceName: "D" },
+    ];
+    const metadata = (...rows: ReturnType<typeof row>[]) =>
+      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+        data: rows,
+        success: true,
+      });
+
+    async function dropOn(voice: number, fileName: string, channels: number) {
+      vi.mocked(window.electronAPI.validateSampleFormat).mockResolvedValue(
+        wav(channels) as never,
+      );
+      const file = new File(["x"], fileName, { type: "audio/wav" });
+      await act(async () => {
+        fireEvent.drop(screen.getByTestId(`drop-zone-voice-${voice}`), {
+          dataTransfer: {
+            files: [file],
+            items: [{ kind: "file" }],
+            types: ["Files"],
+          },
+        });
+      });
+    }
+
+    beforeEach(() => {
+      metadata(row(1, 0, "kick.wav", 1));
+      vi.mocked(window.electronAPI.updateVoiceStereoMode).mockResolvedValue({
+        success: true,
+      });
+    });
+
+    it("asks Link or Keep mono for a stereo sample rule 2 would link, and Link links", async () => {
+      const onSampleAdd = vi.fn().mockResolvedValue(undefined);
+      const onMessage = vi.fn();
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable={true}
+          onKitUpdated={vi.fn().mockResolvedValue(undefined)}
+          onMessage={onMessage}
+          onSampleAdd={onSampleAdd}
+          voices={kitVoices()}
+        />,
+      );
+
+      void dropOn(3, "pad.wav", 2);
+      const prompt = await screen.findByTestId("stereo-drop-prompt");
+      expect(screen.getByRole("dialog")).toHaveAccessibleName(
+        "pad.wav is stereo. Link voices 3 and 4 as a stereo pair?",
+      );
+      expect(prompt).toHaveTextContent("Keep mono");
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("stereo-drop-link"));
+      });
+
+      await waitFor(() =>
+        expect(window.electronAPI.updateVoiceStereoMode).toHaveBeenCalledWith(
+          "Kit1",
+          3,
+          true,
+        ),
+      );
+      expect(onSampleAdd).toHaveBeenCalledWith(3, 0, "pad.wav");
+      expect(onMessage).not.toHaveBeenCalled();
+    });
+
+    it("remembers Keep mono", async () => {
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable={true}
+          onKitUpdated={vi.fn().mockResolvedValue(undefined)}
+          onSampleAdd={vi.fn().mockResolvedValue(undefined)}
+          voices={kitVoices()}
+        />,
+      );
+
+      void dropOn(3, "pad.wav", 2);
+      await screen.findByTestId("stereo-drop-prompt");
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("stereo-drop-keep-mono"));
+      });
+
+      // Recorded as the user's mono choice: the voice stays unlinked
+      await waitFor(() =>
+        expect(window.electronAPI.updateVoiceStereoMode).toHaveBeenCalledWith(
+          "Kit1",
+          3,
+          false,
+        ),
+      );
+      expect(screen.queryByTestId("stereo-drop-prompt")).toBeNull();
+    });
+
+    it("doesn't ask once the user kept the voice mono", async () => {
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable={true}
+          onSampleAdd={vi.fn().mockResolvedValue(undefined)}
+          voices={kitVoices({ choice3: "mono" })}
+        />,
+      );
+
+      await dropOn(3, "pad.wav", 2);
+
+      expect(screen.queryByTestId("stereo-drop-prompt")).toBeNull();
+      expect(window.electronAPI.updateVoiceStereoMode).not.toHaveBeenCalled();
+    });
+
+    it("doesn't ask for a voice that also holds mono samples (rule 1)", async () => {
+      const onMessage = vi.fn();
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable={true}
+          onMessage={onMessage}
+          onSampleAdd={vi.fn().mockResolvedValue(undefined)}
+          voices={kitVoices()}
+        />,
+      );
+
+      await dropOn(1, "pad.wav", 2);
+
+      expect(screen.queryByTestId("stereo-drop-prompt")).toBeNull();
+      expect(window.electronAPI.updateVoiceStereoMode).not.toHaveBeenCalled();
+      expect(onMessage).not.toHaveBeenCalled();
+    });
+
+    it("warns about a mono sample dropped on a stereo pair (#574)", async () => {
+      const onMessage = vi.fn();
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable={true}
+          onMessage={onMessage}
+          onSampleAdd={vi.fn().mockResolvedValue(undefined)}
+          voices={kitVoices({ stereo1: true })}
+        />,
+      );
+
+      await dropOn(1, "snare.wav", 1);
+
+      await waitFor(() =>
+        expect(onMessage).toHaveBeenCalledWith(
+          "snare.wav is a mono sample, but voices 1 and 2 are a stereo pair and expect stereo samples.",
+          "warning",
+        ),
+      );
+    });
+
+    it("says an unlinked voice's stereo samples will be written as mono", async () => {
+      metadata(row(1, 0, "kick.wav", 2));
+      const onMessage = vi.fn();
+      render(
+        <MultiVoicePanelsTestWrapper
+          isEditable={true}
+          onKitUpdated={vi.fn().mockResolvedValue(undefined)}
+          onMessage={onMessage}
+          voices={kitVoices({ stereo1: true })}
+        />,
+      );
+      await waitFor(() =>
+        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalled(),
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("stereo-badge-1"));
+      });
+
+      await waitFor(() =>
+        expect(onMessage).toHaveBeenCalledWith(
+          "Voices 1 and 2 are unlinked. Voice 1's stereo samples will be written to the card as mono.",
+          "warning",
+        ),
+      );
+    });
+
+    it("notes a mono voice whose stereo samples are mixed down", async () => {
+      metadata(row(1, 0, "kick.wav", 1), row(1, 1, "pad.wav", 2));
+      render(
+        <MultiVoicePanelsTestWrapper
+          voices={[
+            {
+              samples: ["kick.wav", "pad.wav"],
+              voice: 1,
+              voiceName: "A",
+            },
+            { samples: [], voice: 2, voiceName: "B" },
+            { samples: [], voice: 3, voiceName: "C" },
+            { samples: [], voice: 4, voiceName: "D" },
+          ]}
+        />,
+      );
+
+      expect(await screen.findByTestId("stereo-note-1")).toHaveTextContent(
+        "Mixed down to mono instead of playing across 2 voices",
+      );
+      expect(screen.queryByTestId("kit-quarantine-notice")).toBeNull();
+    });
+
+    it("notes why a voice can't pair when the next voice is in a pair (rule 3)", async () => {
+      metadata(row(1, 0, "pad.wav", 2));
+      render(
+        <MultiVoicePanelsTestWrapper
+          voices={[
+            { samples: ["pad.wav"], voice: 1, voiceName: "A" },
+            { samples: [], stereo_mode: true, voice: 2, voiceName: "B" },
+            { samples: [], voice: 3, voiceName: "C" },
+            { samples: [], voice: 4, voiceName: "D" },
+          ]}
+        />,
+      );
+
+      expect(await screen.findByTestId("stereo-note-1")).toHaveTextContent(
+        "Voice 1 can't pair with voice 2 because voices 2 and 3 are linked. Unlink them to pair voices 1 and 2.",
+      );
+    });
+
+    it("labels a pair Romper linked, and not one linked by hand", async () => {
+      metadata(row(1, 0, "pad.wav", 2), row(3, 0, "pad.wav", 2));
+      render(
+        <MultiVoicePanelsTestWrapper
+          voices={[
+            {
+              samples: ["pad.wav"],
+              stereo_mode: true,
+              voice: 1,
+              voiceName: "A",
+            },
+            { samples: [], voice: 2, voiceName: "B" },
+            {
+              samples: ["pad.wav"],
+              stereo_choice: "stereo",
+              stereo_mode: true,
+              voice: 3,
+              voiceName: "C",
+            },
+            { samples: [], voice: 4, voiceName: "D" },
+          ]}
+        />,
+      );
+
+      expect(
+        await screen.findByTestId("auto-linked-label-1"),
+      ).toHaveTextContent("Linked automatically");
+      expect(screen.queryByTestId("auto-linked-label-3")).toBeNull();
+    });
+
+    it("quarantines a kit with a mono sample in a stereo pair, and labels the sample", async () => {
+      render(
+        <MultiVoicePanelsTestWrapper voices={kitVoices({ stereo1: true })} />,
+      );
+
+      const notice = await screen.findByTestId("kit-quarantine-notice");
+      expect(
+        within(notice).getByTestId("kit-quarantined-label"),
+      ).toHaveTextContent("Quarantined");
+      expect(notice).toHaveTextContent(
+        "This kit is quarantined: it won't be written to the card until this is fixed.",
+      );
+      expect(notice).toHaveTextContent(
+        "kick.wav is a mono sample in the stereo pair on voices 1 and 2. Unlink them, or replace kick.wav with a stereo sample.",
+      );
+      expect(screen.getByTestId("mono-in-pair-label-1-0")).toHaveTextContent(
+        "Mono sample in a stereo pair",
+      );
+      expect(
+        screen.getByRole("option", { name: "Sample kick.wav in slot 1" }),
+      ).toHaveAccessibleDescription("Mono sample in a stereo pair");
     });
   });
 });

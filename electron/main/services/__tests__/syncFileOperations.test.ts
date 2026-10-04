@@ -312,6 +312,8 @@ describe("[UC-34] SyncFileOperationsService", () => {
           filename: "adpcm.wav",
           sourcePath: "/src/adpcm.wav",
           type: "invalid_format",
+          // Its kit is quarantined rather than written without it (#537)
+          unreadable: true,
         },
       ]);
     });

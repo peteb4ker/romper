@@ -75,6 +75,7 @@ The primary way to add samples is drag and drop, in an editable kit:
 - A maximum of 12 samples per voice. If you drop more files than the voice has free slots, the rest are skipped, and a message names them. A full voice turns red and shows "Voice is full (12 samples maximum)" when you drag over it.
 - A file that's already in the same voice is skipped, and a message says so. The same file can be used in other voices.
 - When a drop skips several files, one message lists them all with the reason for each, for example "kick.wav wasn't added: voice 2 is full (12 samples). Delete one to make room."
+- Stereo samples: if you drop a stereo sample on a mono voice that Romper would link automatically, it asks first, for example "kick.wav is stereo. Link voices 1 and 2 as a stereo pair?" Click **Link** to link the pair, or **Keep mono** to keep the voice mono; Romper remembers. A mono sample dropped on a stereo pair is added with a warning, and the kit is quarantined until you fix it. See [Stereo and Mono Handling](#stereo-and-mono-handling).
 - New samples always go after the voice's last sample, wherever you drop them.
 - Romper stores a reference to each file, not a copy, so keep your sample folders where they are.
 
@@ -84,15 +85,28 @@ In an editable kit, drag a sample onto another slot, in the same voice or anothe
 
 ### Stereo and Mono Handling
 
-In Romper, stereo is set per voice. The [Rample manual](https://squarp.net/rample/manual/) says "A stereo sample will fill 2 mono voices" and "All layers must be of the same type (mono OR stereo) in a voice", so Romper pairs a stereo voice with the next one. Click the link icon between two neighbouring voices to link them as a stereo pair; the left voice shows a **Stereo** badge, and its samples play in stereo across both voices' outputs. Nothing can be added to the right-hand voice while the pair is linked. Click the **Stereo** badge to unlink the pair: the voice keeps its samples, and any stereo files on it are mixed down to mono at the next write. Linking and unlinking change what the next write puts on the card, so, like other edits, they need the kit to be editable; on a read-only kit the badge shows the pair but doesn't unlink it.
+The [Rample manual](https://squarp.net/rample/manual/) says "A stereo sample will fill 2 mono voices" and "All layers must be of the same type (mono OR stereo) in a voice". In Romper, stereo is set per voice: a **stereo pair** is two neighbouring voices linked together, voices 1 and 2, 2 and 3, or 3 and 4, and the left voice's samples play in stereo across both voices' outputs. A voice that isn't linked is a **mono voice**; voice 4 always is. A stereo sample is a 2-channel WAV and a mono sample a 1-channel one.
+
+Click the link icon between two neighbouring voices to link them; the left voice shows a **Stereo** badge. Nothing can be added to the right-hand voice while the pair is linked. Romper doesn't link voice 4, a voice that's already in a pair, or a voice whose next voice has samples or is in a pair, and says why, for example "Voices 2 and 3 can't be linked: voice 3 has samples." Click the **Stereo** badge to unlink the pair: the voice keeps its samples, and Romper says what changes, for example "Voices 1 and 2 are unlinked. Voice 1's stereo samples will be written to the card as mono." Linking and unlinking change what the next write puts on the card, so, like other edits, they need the kit to be editable; on a read-only kit the badge shows the pair but doesn't unlink it.
+
+How Romper handles stereo:
+
+1. **A mono voice is always fine.** It can hold any mix of stereo and mono samples. When you write to the card, its stereo samples are mixed down to mono, and the voice shows a note while that's so: **Mixed down to mono instead of playing across 2 voices**. The write summary lists it too.
+2. **Linking automatically.** When you set up from an SD card, and when you write to the card, Romper links a voice with the next one if every sample on it is stereo, the next voice is empty and not in a pair, and you haven't chosen mono for that voice. The pair shows **Linked automatically**, and the setup or write summary says so. You choose mono for a voice by clicking **Keep mono** when you drop a sample, or by unlinking it; Romper remembers.
+3. **Your links stay.** Romper never unlinks a pair. If the next voice is already in a pair, even an empty one, the voice stays mono and its note says why, for example "Voice 1 can't pair with voice 2 because voices 2 and 3 are linked. Unlink them to pair voices 1 and 2."
+4. **A stereo pair must be clean, or the kit is quarantined.** A kit is **Quarantined** when a stereo pair holds a mono sample, when the right-hand voice of a pair has samples, or when one of its WAV files can't be read. A quarantined kit isn't written to the card, and its copy already on the card is left exactly as it is: not overwritten and not removed. The kit editor shows the **Quarantined** notice with what's wrong and how to fix it, and the write summary lists it. When you fix it, for example by unlinking the pair or replacing the sample, the next write writes the kit. A WAV that can't be read is found when Romper reads it, so the write summary and **Scan Kit** report it.
+5. **Scanning changes nothing.** A scan reports what the next write will do: pairs it will link automatically, voices it will mix down to mono, and quarantined kits.
+6. **Dropping samples.** If you drop a stereo sample on a mono voice that Romper would link automatically, it asks: "kick.wav is stereo. Link voices 1 and 2 as a stereo pair?" Click **Link**, or **Keep mono** to keep the voice mono. If you drop a mono sample on a stereo pair, it's added with a warning, "kick.wav is a mono sample, but voices 1 and 2 are a stereo pair and expect stereo samples.", the sample is labelled **Mono sample in a stereo pair**, and the kit is quarantined until you fix it.
+
+Each message appears once, when it happens; the notes and labels stay while the state lasts.
+
+The Rample manual doesn't say what the module does with a stereo sample on voice 4, with one on a voice whose next voice has samples, or with a voice that mixes mono and stereo samples, so all of this is Romper's design, unverified on hardware.
 
 When you write to the card:
 
-- A stereo file on a linked voice is written as it is.
-- A stereo file on a voice that isn't linked is mixed down to mono (the average of its two channels), because a mono voice plays one channel. The write summary marks the bank as needing conversion.
-- Mono files are written as they are on either kind of voice.
-
-To link a pair, the right-hand voice must be empty. Romper doesn't link a pair whose right-hand voice holds samples, and says so; delete or move them first.
+- A stereo sample on a stereo pair is written as it is.
+- A stereo sample on a mono voice is mixed down to mono (the average of its two channels), because a mono voice plays one channel. The write summary lists the voice and marks the bank as needing conversion.
+- A mono sample on a mono voice is written as it is. On a stereo pair it quarantines the kit, which isn't written until it's fixed.
 
 ### Voice Names and Kit Type
 
@@ -104,7 +118,7 @@ The **kit type** (Drum, Loop, Vocal, FX, Synth/Bass) is inferred from the combin
 
 Click the **Scan Kit** button (or press `/`) to re-run the analysis at any time. What it does depends on the kit:
 
-- In a locked kit, it rescans the kit's folder in your local store: it adds WAV files that aren't in the kit yet, reads their format, and names voices that don't have a name. Names you set stay.
+- In a locked kit, it rescans the kit's folder in your local store: it adds WAV files that aren't in the kit yet, reads their format, and names voices that don't have a name. Names you set stay. It never changes a stereo link; it lists what the next write will do about stereo: pairs it will link automatically, voices it will mix down to mono, and whether the kit is quarantined.
 - In an editable kit, it names each voice that has samples but no name, from its first sample's filename. Names you set stay.
 
 ## Gain Control

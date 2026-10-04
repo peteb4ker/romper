@@ -46,7 +46,7 @@ describe("[UC-28] annotateMonoConversion", () => {
     expect(files[0].forceMonoConversion).toBe(true);
     expect(files[0].operation).toBe("convert");
     expect(files[0].reason).toBe(
-      "Stereo file on voice 1, which isn't linked as stereo: mixed to mono",
+      "Stereo sample on voice 1, a mono voice: mixed down to mono",
     );
   });
 

@@ -26,6 +26,7 @@ export {
   getKitsMetadata,
   getSamplesToDelete,
   getSyncPlanData,
+  linkVoicesAutomaticallyTx,
   markAllKitsAsSyncedExcept,
   markKitAsModified,
   markKitAsSynced,

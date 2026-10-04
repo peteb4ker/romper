@@ -1,5 +1,6 @@
 import type { Sample, Voice } from "@romper/shared/db/schema";
 
+import { checkStereoLink } from "@romper/shared/stereoLinkRules";
 import { useCallback } from "react";
 
 // Voice linking result
@@ -21,8 +22,9 @@ export interface VoiceOperationResult {
  */
 export function useStereoHandling() {
   /**
-   * Check if two voices can be linked for stereo operation
-   * Voice linking rules: 1→2, 2→3, 3→4 (voice 4 cannot be primary stereo voice)
+   * Check if a voice can be linked with the next one for stereo. The rules
+   * are checkStereoLink's, which main also applies when it links (#541) and
+   * import and scan apply to voices holding stereo files (#537).
    */
   const canLinkVoices = useCallback(
     (
@@ -30,54 +32,17 @@ export function useStereoHandling() {
       voices: Voice[],
       samples: Sample[],
     ): VoiceLinkingResult => {
-      // Voice 4 cannot be primary stereo voice (no voice 5 to link to)
-      if (primaryVoice === 4) {
-        return {
-          canLink: false,
-          reason: "Voice 4 cannot be linked - no voice 5 available",
-        };
+      const check = checkStereoLink(primaryVoice, voices, samples);
+      if (!check.canLink) {
+        return { canLink: false, reason: check.message };
       }
 
       const linkedVoice = primaryVoice + 1;
-      const primaryVoiceData = voices.find(
-        (v) => v.voice_number === primaryVoice,
-      );
-      const linkedVoiceData = voices.find(
-        (v) => v.voice_number === linkedVoice,
-      );
-
-      if (!primaryVoiceData || !linkedVoiceData) {
+      const hasVoice = (n: number) => voices.some((v) => v.voice_number === n);
+      if (!hasVoice(primaryVoice) || !hasVoice(linkedVoice)) {
         return {
           canLink: false,
           reason: "Voice data not found",
-        };
-      }
-
-      // Check if primary voice already in stereo mode
-      if (primaryVoiceData.stereo_mode) {
-        return {
-          canLink: false,
-          reason: `Voice ${primaryVoice} is already in stereo mode`,
-        };
-      }
-
-      // Check if linked voice is already in stereo mode
-      if (linkedVoiceData.stereo_mode) {
-        return {
-          canLink: false,
-          reason: `Voice ${linkedVoice} is already in stereo mode`,
-        };
-      }
-
-      // Check if linked voice has any samples (must be empty to link)
-      const secondaryVoiceHasAnySamples = samples.some(
-        (s) => s.voice_number === linkedVoice,
-      );
-
-      if (secondaryVoiceHasAnySamples) {
-        return {
-          canLink: false,
-          reason: `Voice ${linkedVoice} has samples — remove them before linking`,
         };
       }
 

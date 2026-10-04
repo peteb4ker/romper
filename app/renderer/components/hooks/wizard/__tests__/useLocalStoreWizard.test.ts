@@ -2,6 +2,7 @@ import type {
   KitScanResult,
   KitScanSkippedFile,
 } from "@romper/shared/db/schema";
+import type { KitStereoPlan } from "@romper/shared/stereoLinkRules";
 
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -9,7 +10,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useLocalStoreWizard } from "../useLocalStoreWizard";
 
 /** What main's setup import returns, with the given skipped files */
-function importResult(skippedFiles: KitScanSkippedFile[]): KitScanResult {
+function importResult(
+  skippedFiles: KitScanSkippedFile[],
+  stereo?: KitStereoPlan,
+): KitScanResult {
   return {
     addedSamples: 12,
     locked: false,
@@ -17,6 +21,7 @@ function importResult(skippedFiles: KitScanSkippedFile[]): KitScanResult {
     missingSamples: [],
     scannedSamples: 12 + skippedFiles.length,
     skippedFiles,
+    ...(stereo ? { stereo } : {}),
     updatedVoices: 1,
   };
 }
@@ -194,6 +199,7 @@ describe("useLocalStoreWizard", () => {
       outcome = await result.current.initialize();
     });
     expect(outcome!).toEqual({
+      stereoNotices: [],
       success: true,
       truncationWarnings: [
         expect.objectContaining({
@@ -204,6 +210,47 @@ describe("useLocalStoreWizard", () => {
           voiceNumber: 1,
         }),
       ],
+    });
+  });
+
+  // #537: the setup summary lists the pairs setup linked automatically
+  it("[UC-01] returns the setup summary's stereo lines", async () => {
+    const root = "/mock/home/Documents/romper";
+    vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
+      async (dir) => (dir === root ? ["A0"] : []),
+    );
+    vi.mocked(window.electronAPI.setupImportKit).mockImplementation(
+      async () => ({
+        data: importResult([], {
+          autoLinks: [1],
+          links: [1],
+          mixdowns: [{ reason: "mono_voice", voiceNumber: 4 }],
+          quarantine: [],
+        }),
+        success: true,
+      }),
+    );
+    const { result } = renderHook(() => useLocalStoreWizard());
+    await waitForAsync(() => result.current.defaultPath !== "");
+    act(() => {
+      result.current.setTargetPath(root);
+      result.current.setSource("squarp");
+    });
+    let outcome: Awaited<ReturnType<typeof result.current.initialize>>;
+    await act(async () => {
+      outcome = await result.current.initialize();
+    });
+    expect(outcome!).toEqual({
+      stereoNotices: [
+        {
+          kitName: "A0",
+          message:
+            "Kit A0: voices 1 and 2 linked automatically as a stereo pair.",
+          voiceNumber: 1,
+        },
+      ],
+      success: true,
+      truncationWarnings: [],
     });
   });
 

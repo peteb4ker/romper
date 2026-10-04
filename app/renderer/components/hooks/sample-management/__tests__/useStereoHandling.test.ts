@@ -65,9 +65,7 @@ describe("useStereoHandling", () => {
       const linkingResult = result.current.canLinkVoices(4, mockVoices, []);
 
       expect(linkingResult.canLink).toBe(false);
-      expect(linkingResult.reason).toBe(
-        "Voice 4 cannot be linked - no voice 5 available",
-      );
+      expect(linkingResult.reason).toBe("Voice 4 can't be linked.");
     });
 
     it("should prevent linking already stereo voice", () => {
@@ -81,7 +79,9 @@ describe("useStereoHandling", () => {
       const linkingResult = result.current.canLinkVoices(2, stereoVoices, []);
 
       expect(linkingResult.canLink).toBe(false);
-      expect(linkingResult.reason).toContain("already in stereo mode");
+      expect(linkingResult.reason).toBe(
+        "Voices 2 and 3 can't be linked: voice 2 is already in a stereo pair.",
+      );
     });
 
     it("should prevent linking when target voice has any samples", () => {
@@ -97,8 +97,8 @@ describe("useStereoHandling", () => {
       );
 
       expect(linkingResult.canLink).toBe(false);
-      expect(linkingResult.reason).toContain(
-        "has samples — remove them before linking",
+      expect(linkingResult.reason).toBe(
+        "Voices 2 and 3 can't be linked: voice 3 has samples.",
       );
     });
   });
@@ -131,9 +131,7 @@ describe("useStereoHandling", () => {
       );
 
       expect(opResult.success).toBe(false);
-      expect(opResult.error).toBe(
-        "Voice 4 cannot be linked - no voice 5 available",
-      );
+      expect(opResult.error).toBe("Voice 4 can't be linked.");
       expect(mockOnVoiceUpdate).not.toHaveBeenCalled();
     });
   });
@@ -310,7 +308,7 @@ describe("useStereoHandling", () => {
 
       expect(linkingResult.canLink).toBe(false);
       expect(linkingResult.reason).toBe(
-        "Voice 2 has samples — remove them before linking",
+        "Voices 1 and 2 can't be linked: voice 2 has samples.",
       );
     });
 
@@ -328,7 +326,7 @@ describe("useStereoHandling", () => {
 
       expect(linkingResult.canLink).toBe(false);
       expect(linkingResult.reason).toBe(
-        "Voice 2 has samples — remove them before linking",
+        "Voices 1 and 2 can't be linked: voice 2 has samples.",
       );
     });
 
@@ -360,7 +358,24 @@ describe("useStereoHandling", () => {
       );
 
       expect(linkingResult.canLink).toBe(false);
-      expect(linkingResult.reason).toBe("Voice 2 is already in stereo mode");
+      expect(linkingResult.reason).toBe(
+        "Voices 1 and 2 can't be linked: voice 2 is already in a stereo pair.",
+      );
+    });
+
+    it("[UC-28] should prevent linking the right-hand voice of a pair", () => {
+      const { result } = renderHook(() => useStereoHandling());
+      const voicesWithPair = [
+        { ...mockVoices[0], stereo_mode: true }, // Voices 1+2 linked
+        ...mockVoices.slice(1),
+      ];
+
+      const linkingResult = result.current.canLinkVoices(2, voicesWithPair, []);
+
+      expect(linkingResult.canLink).toBe(false);
+      expect(linkingResult.reason).toBe(
+        "Voices 2 and 3 can't be linked: voice 2 is already in a stereo pair.",
+      );
     });
   });
 

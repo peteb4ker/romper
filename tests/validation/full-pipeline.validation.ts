@@ -66,6 +66,12 @@ const EXPECTED: Expectation[] = [
     pattern: /won't fit|over 12|more than 12|were skipped|truncat/i,
     reason: "the factory set has two voices with more than 12 files",
   },
+  {
+    pattern:
+      /Voices 1 and 2 are unlinked\. Voice 1's stereo samples will be written to the card as mono\./,
+    reason:
+      "unlinking a pair that holds stereo samples says they'll be mixed down (#537)",
+  },
 ];
 
 /** The new kit's samples: one file each, dropped in this order */
@@ -96,6 +102,9 @@ const DROPS: {
     voice: 1,
   },
   {
+    // On a mono voice, beside the stereo file below: a mono voice may mix
+    // them (#537 rule 1). On the stereo pair it would quarantine the kit.
+    // Dropped first, so the stereo file isn't offered a link.
     file: "mono pcm16 44k1.wav",
     make: () =>
       encodeTestWav([sine(110, 0.3, 44100)], {
@@ -103,7 +112,7 @@ const DROPS: {
         encoding: "pcm",
         sampleRate: 44100,
       }),
-    voice: 1,
+    voice: 3,
   },
   {
     file: "3 stereo on a mono voice.wav",

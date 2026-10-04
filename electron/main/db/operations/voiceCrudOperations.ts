@@ -2,12 +2,39 @@ import type { DbResult } from "@romper/shared/db/schema.js";
 import type { VoiceSliceSettings } from "@romper/shared/sliceTypes.js";
 
 import * as schema from "@romper/shared/db/schema.js";
+import { checkStereoLink } from "@romper/shared/stereoLinkRules.js";
 import { and, eq } from "drizzle-orm";
 
 import { type RomperDb, withDbTransaction } from "../utils/dbUtilities.js";
 import { flagKitModified } from "./kitSyncOperations.js";
 
-const { voices } = schema;
+const { samples, voices } = schema;
+
+/**
+ * Link voices automatically (#537 rule 2), on the caller's transaction:
+ * setup and the write make the links `planKitStereo` decides. Only an
+ * unlinked voice is linked, and its stereo choice stays unset, so the pair
+ * shows as linked automatically. Nothing is ever unlinked here.
+ */
+export function linkVoicesAutomaticallyTx(
+  db: RomperDb,
+  kitName: string,
+  voiceNumbers: readonly number[],
+): void {
+  for (const voiceNumber of voiceNumbers) {
+    ensureVoiceRow(db, kitName, voiceNumber);
+    db.update(voices)
+      .set({ stereo_mode: true })
+      .where(
+        and(
+          eq(voices.kit_name, kitName),
+          eq(voices.voice_number, voiceNumber),
+          eq(voices.stereo_mode, false),
+        ),
+      )
+      .run();
+  }
+}
 
 /**
  * Update voice alias. Renaming a voice is an edit to the kit, so a name
@@ -88,9 +115,16 @@ export function updateVoiceSliceSettings(
 }
 
 /**
- * Update voice stereo mode. Linking or unlinking changes what the next write
- * puts on the card (an unlinked voice's stereo files are mixed to mono), so
- * the kit is marked modified.
+ * Link a voice with the next one as a stereo pair, or unlink it. Linking or
+ * unlinking changes what the next write puts on the card (an unlinked
+ * voice's stereo files are mixed to mono), so the kit is marked modified.
+ *
+ * Linking is refused, with S8's message and no change, when checkStereoLink
+ * refuses it (#541): voice 4, a voice already in a pair, and a voice whose
+ * next voice has samples or is in a pair. The check and the update share
+ * one transaction. Unlinking is always allowed. Either records the user's
+ * choice (`stereo_choice`), which automatic linking respects (#537). An
+ * unlink of a voice that isn't linked records "Keep mono" for it.
  */
 export function updateVoiceStereoMode(
   dbDir: string,
@@ -98,16 +132,44 @@ export function updateVoiceStereoMode(
   voiceNumber: number,
   stereoMode: boolean,
 ): DbResult<void> {
-  return withDbTransaction(dbDir, (db) => {
+  const result = withDbTransaction(dbDir, (db): DbResult<void> => {
+    if (stereoMode) {
+      const check = checkStereoLink(
+        voiceNumber,
+        db
+          .select({
+            stereo_mode: voices.stereo_mode,
+            voice_number: voices.voice_number,
+          })
+          .from(voices)
+          .where(eq(voices.kit_name, kitName))
+          .all(),
+        db
+          .select({ voice_number: samples.voice_number })
+          .from(samples)
+          .where(eq(samples.kit_name, kitName))
+          .all(),
+      );
+      // Returned, not thrown: a refusal isn't a database error
+      if (!check.canLink) return { error: check.message, success: false };
+    }
     ensureVoiceRow(db, kitName, voiceNumber);
     db.update(voices)
-      .set({ stereo_mode: stereoMode })
+      // A link or unlink by hand is the user's choice: Romper never links
+      // a voice automatically once it was unlinked (#537 rule 2)
+      .set({
+        stereo_choice: stereoMode ? "stereo" : "mono",
+        stereo_mode: stereoMode,
+      })
       .where(
         and(eq(voices.kit_name, kitName), eq(voices.voice_number, voiceNumber)),
       )
       .run();
     flagKitModified(db, kitName);
+    return { success: true };
   });
+  if (!result.success) return { error: result.error, success: false };
+  return result.data ?? { success: true };
 }
 
 /**

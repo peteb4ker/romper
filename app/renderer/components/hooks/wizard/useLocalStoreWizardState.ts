@@ -24,6 +24,16 @@ export interface ProgressEvent {
   totalKits?: number;
 }
 
+/**
+ * A setup summary line for a pair setup linked automatically (#537 rule 2).
+ * `message` names the kit.
+ */
+export interface StereoImportNotice {
+  kitName: string;
+  message: string;
+  voiceNumber: number;
+}
+
 export interface TruncationWarning {
   kept: number;
   kitName: string;

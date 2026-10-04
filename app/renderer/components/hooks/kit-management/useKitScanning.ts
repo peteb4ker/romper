@@ -10,7 +10,13 @@ import {
 } from "./useKitScan";
 
 export type ScanStatus =
-  | { detail?: string; sampleCount: number; status: "success" }
+  | {
+      detail?: string;
+      sampleCount: number;
+      status: "success";
+      /** What the stereo rules will do to the kit (#537) */
+      stereoLines?: string[];
+    }
   | { message: string; status: "error" }
   | { status: "idle" }
   | { status: "scanning" };
@@ -99,12 +105,24 @@ export function useKitScanning({
 
       if (result.success) {
         const sampleCount = result.data?.scannedSamples || 0;
-        const detail = describeScanTotals(
-          addScanResultToTotals(EMPTY_SCAN_TOTALS, result.data),
+        const totals = addScanResultToTotals(
+          EMPTY_SCAN_TOTALS,
+          result.data,
+          kitName,
         );
+        // The stereo lines say it per kit; the counts would repeat them
+        const detail = describeScanTotals({
+          ...totals,
+          stereoAutoLinks: 0,
+          stereoMixdowns: 0,
+          stereoQuarantined: 0,
+        });
         setScanStatus({
           ...(detail ? { detail } : {}),
           sampleCount,
+          ...(totals.stereoLines.length > 0
+            ? { stereoLines: totals.stereoLines }
+            : {}),
           status: "success",
         });
 

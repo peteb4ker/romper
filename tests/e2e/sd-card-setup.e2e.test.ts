@@ -19,6 +19,37 @@ interface SampleRow {
   voice_number: number;
 }
 
+/** Each kit's voices linked as stereo, from the store's database */
+function linkedVoices(storePath: string): string[] {
+  const db = new DatabaseSync(
+    path.join(storePath, ".romperdb", "romper.sqlite"),
+    { readOnly: true },
+  );
+  try {
+    return (
+      db
+        .prepare(
+          "SELECT kit_name, voice_number FROM voices WHERE stereo_mode = 1 ORDER BY kit_name, voice_number",
+        )
+        .all() as { kit_name: string; voice_number: number }[]
+    ).map((v) => `${v.kit_name}:${v.voice_number}`);
+  } finally {
+    db.close();
+  }
+}
+
+/** A short stereo tone, a different pitch on each channel */
+async function writeStereoWav(file: string) {
+  await fs.outputFile(
+    file,
+    encodeTestWav([sine(220, 0.05, 44100), sine(330, 0.05, 44100)], {
+      bitDepth: 16,
+      encoding: "pcm",
+      sampleRate: 44100,
+    }),
+  );
+}
+
 /** A short mono tone, as a Rample would play it */
 async function writeWav(file: string, hz = 220) {
   await fs.outputFile(
@@ -254,6 +285,60 @@ test.describe("[UC-01] Set up from an SD card", () => {
         .locator('[data-testid="sample-list-voice-2"]')
         .getByRole("option", { name: "Sample 2 SNARE.wav in slot 1" }),
     ).toBeVisible();
+  });
+
+  // #537: a card's stereo samples stayed mono, so the next write mixed
+  // them down. Setup links a voice automatically when every sample on it is
+  // stereo and the next voice is free, and its summary says so; a voice it
+  // can't link is a mono voice, with a note that it's mixed down.
+  test("[UC-28] [Q-04] a stereo voice arrives linked automatically, and a mono voice says it's mixed down (#537)", async () => {
+    test.setTimeout(45000);
+    const card = await tempDir("romper-e2e-card-");
+    // A0: a stereo pad on voice 1, voice 2 empty. B1: a stereo pad on
+    // voice 2, with a mono hat on voice 3
+    await writeStereoWav(path.join(card, "A0", "1 PAD.wav"));
+    await writeWav(path.join(card, "A0", "3 KICK.wav"));
+    await writeStereoWav(path.join(card, "B1", "2 PAD.wav"));
+    await writeWav(path.join(card, "B1", "3 HAT.wav"));
+    const { guidance, store, window } = await setUpFrom(card);
+
+    await expect(
+      guidance.locator('[data-testid="stereo-summary"] li'),
+    ).toHaveText([
+      "Kit A0: voices 1 and 2 linked automatically as a stereo pair.",
+    ]);
+    expect(linkedVoices(store)).toEqual(["A0:1"]);
+    // Nothing was moved or left out
+    expect(
+      readStore(store).samples.map((s) => [
+        s.kit_name,
+        s.voice_number,
+        s.filename,
+      ]),
+    ).toEqual([
+      ["A0", 1, "1 PAD.wav"],
+      ["A0", 3, "3 KICK.wav"],
+      ["B1", 2, "2 PAD.wav"],
+      ["B1", 3, "3 HAT.wav"],
+    ]);
+
+    // The kit editor shows A0's pair, labelled as linked automatically
+    await guidance.locator('[data-testid="post-init-continue-btn"]').click();
+    await window.locator('[data-testid="kit-item-A0"]').click();
+    await expect(window.locator('[data-testid="kit-editor"]')).toBeVisible();
+    await expect(
+      window.locator('[data-testid="stereo-badge-1"]'),
+    ).toBeVisible();
+    await expect(
+      window.locator('[data-testid="auto-linked-label-1"]'),
+    ).toHaveText("Linked automatically");
+
+    // And notes that B1's voice 2 is mixed down
+    await window.keyboard.press("Escape");
+    await window.locator('[data-testid="kit-item-B1"]').click();
+    await expect(window.locator('[data-testid="stereo-note-2"]')).toHaveText(
+      "Mixed down to mono instead of playing across 2 voices",
+    );
   });
 
   test("the notice names the files it left out (#518)", async () => {

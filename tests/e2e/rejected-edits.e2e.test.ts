@@ -39,7 +39,7 @@ test.describe("[UC-36] Refused edits reach the user (RE-40)", () => {
     expectedMessages: {
       "a refused drop or link is a warning toast, mirrored to the console": {
         pattern:
-          /wasn't added|weren't added|weren't linked|Duplicate sample: .* already exists in voice/,
+          /wasn't added|weren't added|can't be linked|Duplicate sample: .* already exists in voice/,
       },
     },
   });
@@ -146,7 +146,8 @@ test.describe("[UC-36] Refused edits reach the user (RE-40)", () => {
     await window.locator('[data-testid="link-button-1-2"]').click();
 
     await expect(window.locator('[data-testid="message-warning"]')).toHaveText(
-      "Voices 1 and 2 weren't linked: voice 2 has samples. Delete or move them, then link again.",
+      // S8 of the final stereo rules on #537
+      "Voices 1 and 2 can't be linked: voice 2 has samples.",
     );
     await expect(window.locator('[data-testid="stereo-badge-1"]')).toHaveCount(
       0,

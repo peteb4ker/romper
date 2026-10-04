@@ -8,6 +8,7 @@ import type {
   Sample,
 } from "./db/schema.js";
 import type { SliceStep, VoiceSliceSettings } from "./sliceTypes.js";
+import type { WriteStereoSummary } from "./stereoLinkRules.js";
 import type { VoiceSnapshot } from "./undoTypes.js";
 
 /**
@@ -301,7 +302,12 @@ export interface SyncChangeSummary {
    * longer has it (paths relative to the card). Empty without a card path.
    */
   removals: string[];
-  /** Samples that can't be written (missing or unreadable source files) */
+  /**
+   * Stereo pairs linked automatically, mixdowns, and quarantined kits,
+   * which aren't written and whose copy on the card is kept (#537)
+   */
+  stereo: WriteStereoSummary;
+  /** Samples that can't be written (missing source files) */
   validationErrors: SyncValidationError[];
   warnings: string[];
 }

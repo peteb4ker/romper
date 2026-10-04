@@ -137,6 +137,19 @@ describe("[UC-34] sdCardSafety", () => {
       ).toEqual(["B3"]);
     });
 
+    it("[UC-34] keeps a quarantined kit's folder and everything in it (#537)", async () => {
+      write("A0/1-01 kick.wav");
+      write("A0/2-01 old snare.wav");
+      write("B3/1-01 old.wav");
+
+      expect(
+        await findStaleCardEntries(card, {
+          ...contents({}),
+          keepKits: ["a0"],
+        }),
+      ).toEqual(["B3"]);
+    });
+
     it("lists files and folders inside a kit that the store doesn't have", async () => {
       write("A0/1-01 kick.wav");
       write("A0/1-02 removed.wav");

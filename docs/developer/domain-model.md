@@ -439,42 +439,78 @@ voice number):
   Relationship: **writes**. The manual says nothing about voice 4, about a
   stereo file whose next voice has samples, or about a voice that mixes
   types: Romper's rules for those are unverified on hardware.
-- **Canonical owner:** `voices.stereo_mode` on the left-hand voice. Samples
-  carry no stereo flag (`samples.is_stereo` was dropped, RE-69). A file's
-  channel count (from its header at write time) only says whether there is
-  anything to mix down.
-- **Target meaning (signed off by Pete on #537, 2026-10-03).** Stereo stays
-  a voice setting, and is Romper's design, not Rample behaviour. When
-  importing a card or scanning a kit, for each voice that holds 2-channel
-  files:
-  1. voice 1 to 3 with the next voice empty: link the pair;
-  2. voice 1 to 3 with the next voice in use: don't link, never move or drop
-     a sample, and tell the user which voice and what to do;
-  3. voice 4: can't be linked; it stays mono, with a message;
-  4. stereo and mono layers in one voice: link if the next voice is empty,
-     and warn that the Rample expects one type per voice.
+- **Samples carry no stereo flag** (`samples.is_stereo` was dropped,
+  RE-69); a sample's channel count comes from its WAV header.
+- **Canonical owners:** `voices.stereo_mode` on the left-hand voice (the
+  link), and `voices.stereo_choice` (the user's own choice: `stereo` after
+  linking by hand or **Link** on a drop, `mono` after **Keep mono** or an
+  unlink, null when Romper may decide). Migration `0014_stereo_choice`
+  added it and recorded every existing link as `stereo`.
+- **Rules (Pete's "Final stereo rules v2" on #537, 2026-10-03).** Stereo
+  is a voice setting, Romper's design, not Rample behaviour. Terms: a
+  *stereo* or *mono sample* is a 2- or 1-channel WAV; a *mono voice* is an
+  unlinked voice (voice 4 always is); a *stereo pair* is voices N and N+1
+  linked, N 1 to 3. Romper says *link* and *unlink*, never "busy" or "in
+  use". All of it is in `shared/stereoLinkRules.ts` (`planKitStereo`,
+  `checkStereoLink` and the wording), which setup, scan, the write, main,
+  the link button, drops and the kit editor share.
 
-  Scan applies these only to voices whose setting the user hasn't set by
-  hand, so where a voice's setting came from must be recorded. #537 builds
-  this; #541 makes main refuse links to voice 4 and to a voice whose next
-  voice has samples.
-- **Writers:** the link button (`useStereoHandling.canLinkVoices` →
-  `KitVoicePanels.writeStereoMode` → `update-voice-stereo-mode`); after
-  #537, import and scan.
-- **Readers and copies:** `annotateMonoConversion` (write: an unlinked
-  voice's multi-channel files are mixed to mono);
-  `validateVoiceNotLinkedPartner` (refuses samples on the right-hand voice);
-  the renderer copies listed under [Voice](#voice).
-- **Invariants:** a linked pair is voices N and N+1 with N ≤ 3 and N+1
-  empty; nothing is ever copied onto N+1 because a file is stereo.
+  1. **A mono voice is always fine.** Any mix of samples is allowed on it;
+     at write its stereo samples are mixed down to mono. The voice carries
+     a note while that lasts, and the write summary lists it. That covers
+     stereo samples on voice 4, mixed samples on an unlinked voice, and
+     stereo samples whose next voice has samples.
+  2. **Linking automatically.** Setup from a card and the write link voice
+     N with N+1 when N is 1 to 3, every sample on N is stereo, N+1 has no
+     samples and isn't in a pair, and the user hasn't chosen mono for N.
+     The pair is labelled "Linked automatically" (a link with no choice by
+     hand), and the setup or write summary says so.
+  3. **Never undo links.** If N+1 is in a pair (even an empty one), N
+     isn't linked, and its note says "Voice 1 can't pair with voice 2
+     because voices 2 and 3 are linked. Unlink them to pair voices 1 and
+     2." Links come from Romper or the user, never from the card.
+  4. **Quarantine.** A kit with a linked pair holding a mono sample on its
+     voice, a linked pair whose right voice has samples, or a WAV Romper
+     can't read is quarantined: it isn't written, and its folder on the
+     card is left untouched, neither overwritten nor removed
+     (`CardContents.keepKits`). The kit editor and the write summary say
+     what's wrong and how to fix it; quarantine ends when it's fixed. The
+     other kits are written. A WAV that can't be read is found by reading
+     its header, so the write summary and a scan report it; the kit editor
+     shows the stereo pair problems.
+  5. **Scan and drop.** A scan never changes anything; it reports what
+     rules 1 to 4 will do. Dropping a stereo sample on a mono voice that
+     rule 2 would link asks "kick.wav is stereo. Link voices 1 and 2 as a
+     stereo pair?" with **Link** or **Keep mono**, and remembers the
+     answer. Dropping a mono sample on a stereo pair adds it with the
+     warning "kick.wav is a mono sample, but voices 1 and 2 are a stereo
+     pair and expect stereo samples." and quarantines the kit.
+  6. **Warn once.** Each message appears once, when its event happens;
+     persistent labels show the state while it lasts (mixed down, linked
+     automatically, quarantined), so nothing that matters is only a toast.
+
+  Linking by hand is refused, with "Voices 2 and 3 can't be linked: voice
+  3 has samples." and the like, for voice 4, a voice in a pair, and a voice
+  whose next voice has samples or is in a pair (#541, main and the link
+  button). Unlinking is always allowed and says "Voices 1 and 2 are
+  unlinked. Voice 1's stereo samples will be written to the card as
+  mono."
+- **Writers:** the link button and a drop's **Link** or **Keep mono**
+  (`update-voice-stereo-mode` → `updateVoiceStereoMode`, which refuses with
+  `checkStereoLink`, #541, and records `stereo_choice`); setup
+  (`importSetupKit` → `mergeKitScanTx` with `linkStereoVoices`); the write
+  (`startKitSync` → `linkVoicesAutomaticallyTx`, from `planWriteStereo`).
+- **Readers and copies:** `planWriteStereo` and `annotateMonoConversion`
+  (write: links, mixdowns, quarantine); `planKitScanMerge` (scan report);
+  `validateVoiceNotLinkedPartner` (refuses samples on the right-hand voice
+  of a pair); the voice panels' notes, labels and quarantine notice; the
+  renderer copies listed under [Voice](#voice).
+- **Invariants:** nothing is ever copied onto N+1 because a file is stereo;
+  a scan never changes a link; Romper never unlinks; a quarantined kit's
+  card folder is never written or removed.
 - **Disagreements on main:**
-  - Import and scan never link, so a card's stereo samples come back mono
-    (#537).
-  - Main accepts links the editor refuses (#541).
   - Preview plays a stereo file in stereo on an unlinked voice, though the
     card gets a mono mix (#569).
-  - A linked voice holding mono layers is written as mixed mono and stereo
-    layers with no warning (#574). Rule 4 above covers import only.
 
 ## Sample
 
@@ -608,18 +644,18 @@ voice and slot):
   - bank scan: `scan-banks` (see [Bank](#bank)).
   - setup: the wizard copies kit folders (`copy-dir`) or extracts the
     factory archive, then `setup-import-kit` → `importSetupKit`: `addKitTx`
-    (read-only kit, four mono voices), `mergeKitScanTx` and
-    `markKitsAsSyncedTx`, in one transaction per kit.
+    (read-only kit, four mono voices), `mergeKitScanTx` (which links voices
+    automatically by stereo rule 2) and `markKitsAsSyncedTx`, in one
+    transaction per kit.
   - the editor's Scan on an editable kit only names voices, in the renderer
     (`useKitScanning.handleInferVoiceNames`).
 - **Readers and copies:** `KitScanResult` drives the scan messages; Scan
   All runs `scanBanks` then every kit (`useKitScan.scanAllKits`), then one
   reload.
 - **Invariants:** a locked kit is untouched; a scan never deletes a row or
-  moves a sample; a user-set voice name and (after #537) a user-set stereo
-  link survive a scan.
+  moves a sample, and never changes a stereo link (it reports what the
+  stereo rules will do); a user-set voice name survives a scan.
 - **Disagreements on main:**
-  - Setup and scan don't link stereo voices (#537).
   - Setup from a card doesn't copy bank name files (#564).
   - `wav_*` columns are refreshed only when empty, so a file changed on disk
     keeps its old format on screen (#576).
@@ -826,7 +862,8 @@ the issues it names.
    - Bank names: `banks.artist` only. The store's RTF files become output,
      like the card's; `scanBanks` reads them only at setup and import
      (#564, #567).
-   - Stereo: `voices.stereo_mode` plus where it came from (#537).
+   - Stereo: `voices.stereo_mode`, plus the user's own choice in
+     `voices.stereo_choice` (#537).
    - Modified: one written definition, set in one place per intent
      (#566).
    - Settings: one function for the store path and its override.

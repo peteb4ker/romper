@@ -227,7 +227,15 @@ describe("[UC-34] SyncService", () => {
               voice_number: 2,
             } as Sample,
           ],
-          voices: [{ kit_name: "A01", stereo_mode: false, voice_number: 2 }],
+          // Kept mono by the user, so the write doesn't link it (#537)
+          voices: [
+            {
+              kit_name: "A01",
+              stereo_choice: "mono",
+              stereo_mode: false,
+              voice_number: 2,
+            },
+          ],
         }),
       );
 
@@ -241,7 +249,14 @@ describe("[UC-34] SyncService", () => {
         await import("../syncMonoAnnotation.js");
       expect(vi.mocked(annotateMonoConversion)).toHaveBeenCalledWith(
         [expect.objectContaining({ filename: "pad.wav" })],
-        [{ kit_name: "A01", stereo_mode: false, voice_number: 2 }],
+        [
+          {
+            kit_name: "A01",
+            stereo_choice: "mono",
+            stereo_mode: false,
+            voice_number: 2,
+          },
+        ],
       );
     });
   });

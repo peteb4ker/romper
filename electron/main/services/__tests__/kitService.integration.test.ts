@@ -254,7 +254,8 @@ describe("KitService Integration Tests", () => {
       expect(
         updateVoiceSampleMode(TEST_DB_PATH, "E1", 3, "random").success,
       ).toBe(true);
-      expect(updateVoiceStereoMode(TEST_DB_PATH, "E1", 4, true).success).toBe(
+      // Voice 3 takes voice 4, which is empty (#541)
+      expect(updateVoiceStereoMode(TEST_DB_PATH, "E1", 3, true).success).toBe(
         true,
       );
 
@@ -304,7 +305,7 @@ describe("KitService Integration Tests", () => {
       expect(destVoices.find((v) => v.voice_number === 3)?.sample_mode).toBe(
         "random",
       );
-      expect(destVoices.find((v) => v.voice_number === 4)?.stereo_mode).toBe(
+      expect(destVoices.find((v) => v.voice_number === 3)?.stereo_mode).toBe(
         true,
       );
 

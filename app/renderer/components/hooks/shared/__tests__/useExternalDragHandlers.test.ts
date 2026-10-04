@@ -226,6 +226,57 @@ describe("useExternalDragHandlers", () => {
       mockSampleProcessing.processAssignment.mockResolvedValue(true);
     });
 
+    // #537: once a drop's files are added, the voice panels hear which
+    // were added and their channel counts, to ask or warn about stereo
+    it("[UC-19] reports the added files with their channel counts, after adding them", async () => {
+      const order: string[] = [];
+      const stereoDrop = {
+        report: vi.fn(async () => {
+          order.push("report");
+        }),
+      };
+      mockSampleProcessing.processAssignment.mockImplementation(async () => {
+        order.push("add");
+        return true;
+      });
+      const channels = [1, 2];
+      mockFileValidation.validateDroppedFile.mockImplementation(async () => ({
+        validation: { metadata: { channels: channels.shift() } },
+      }));
+      const { result } = renderHook(() =>
+        useExternalDragHandlers({ ...defaultProps, stereoDrop }),
+      );
+
+      await result.current.handleDrop(
+        createMockEvent([
+          createMockFile("kick.wav"),
+          createMockFile("pad.wav"),
+        ]),
+        0,
+      );
+
+      expect(order).toEqual(["add", "add", "report"]);
+      expect(stereoDrop.report).toHaveBeenCalledWith(2, [
+        { channels: 1, fileName: "kick.wav" },
+        { channels: 2, fileName: "pad.wav" },
+      ]);
+    });
+
+    it("[UC-19] doesn't report a drop that added nothing", async () => {
+      const stereoDrop = { report: vi.fn() };
+      mockSampleProcessing.isDuplicateSample.mockResolvedValue(true);
+      const { result } = renderHook(() =>
+        useExternalDragHandlers({ ...defaultProps, stereoDrop }),
+      );
+
+      await result.current.handleDrop(
+        createMockEvent([createMockFile("kick.wav")]),
+        0,
+      );
+
+      expect(stereoDrop.report).not.toHaveBeenCalled();
+    });
+
     it("does nothing when not editable", async () => {
       const { result } = renderHook(() =>
         useExternalDragHandlers({ ...defaultProps, isEditable: false }),

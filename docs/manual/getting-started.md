@@ -40,7 +40,7 @@ If you already have a Rample SD card with kits on it:
 1. Insert your SD card and mount it on your computer
 2. Click **Rample SD Card** in the wizard and choose the mounted SD card volume
 3. Choose a target folder and click **Initialize Local Store**
-4. Romper copies the kit folders at the root of the card (`A0` to `Z99`) into your local store and imports them, naming each voice from its sample filenames. Other folders on the card are ignored.
+4. Romper copies the kit folders at the root of the card (`A0` to `Z99`) into your local store and imports them, naming each voice from its sample filenames. A voice whose samples are all stereo is linked with the next voice automatically when that voice is empty, so they're written back in stereo (see [Stereo and Mono Handling]({{ site.baseurl }}/manual/kit-editor#stereo-and-mono-handling)). Other folders on the card are ignored.
 
 Your kits then appear in the Kit Browser.
 
@@ -117,6 +117,8 @@ For full details on the sync process, see [Syncing](syncing).
 **"Didn't match the expected checksum"** -- Romper refuses an archive that isn't the exact file it expects, and doesn't download it again on its own. The download may have been damaged on the way, or Squarp changed the file on its server. Click **Initialize Local Store** to try once more; if it fails the same way, update Romper, or set up from an SD card instead.
 
 **Sample limit notice** -- Rample supports a maximum of 12 samples per voice. If a voice on your card has more, Romper keeps the first 12, and after setup it lists each kit and voice with how many samples were skipped. Click **Continue** to open the Kit Browser.
+
+**Stereo voices** -- After setup, Romper also lists each stereo pair it linked automatically, for example "Kit A0: voices 1 and 2 linked automatically as a stereo pair." Any other voice holding stereo samples stays a mono voice, and its stereo samples are mixed down to mono when you write to the card; the kit editor notes it on the voice. What the Rample does with stereo samples on a voice it can't pair is unverified on hardware.
 
 **Local store becomes invalid** -- If you move or delete your local store folder, or it's on a drive that isn't connected when Romper starts, Romper shows the **Invalid Local Store** dialog and keeps the store's location. Connect the drive (or put the folder back) and click **Try Again**, choose another store, or set up a new one. See [Troubleshooting]({{ site.baseurl }}/troubleshooting#local-store-became-invalid).
 

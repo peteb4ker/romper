@@ -20,8 +20,14 @@ export interface SyncPlanData {
   kitCount: number;
   /** Every sample, by kit, voice and slot */
   samples: Sample[];
-  /** Each voice's stereo setting, which decides mono conversion */
-  voices: Pick<Voice, "kit_name" | "stereo_mode" | "voice_number">[];
+  /**
+   * Each voice's stereo setting and the user's stereo choice, which decide
+   * links made at write, mono conversion and quarantine (#537)
+   */
+  voices: Pick<
+    Voice,
+    "kit_name" | "stereo_choice" | "stereo_mode" | "voice_number"
+  >[];
 }
 
 /**
@@ -66,6 +72,7 @@ export function getSyncPlanData(dbDir: string): DbResult<SyncPlanData> {
     voices: db
       .select({
         kit_name: voices.kit_name,
+        stereo_choice: voices.stereo_choice,
         stereo_mode: voices.stereo_mode,
         voice_number: voices.voice_number,
       })

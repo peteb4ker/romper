@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
 import {
+  addScanResultToTotals,
   describeScanTotals,
   EMPTY_SCAN_TOTALS,
   scanAllKits,
@@ -250,6 +251,48 @@ describe("describeScanTotals", () => {
     ).toBe(
       "1 sample added, 3 samples missing on disk, " +
         "2 files skipped (voice has 12 samples), 2 locked kits left unchanged",
+    );
+  });
+});
+
+// #537: a scan changes no stereo link; it reports what the rules will do
+describe("[UC-13] stereo in scan results", () => {
+  const result = {
+    addedSamples: 0,
+    locked: false,
+    metadataUpdated: 0,
+    missingSamples: [],
+    scannedSamples: 3,
+    skippedFiles: [],
+    stereo: {
+      autoLinks: [1],
+      links: [1, 3],
+      mixdowns: [{ reason: "mono_voice" as const, voiceNumber: 4 }],
+      quarantine: [
+        {
+          filename: "kick.wav",
+          kind: "mono_in_pair" as const,
+          voiceNumber: 3,
+        },
+      ],
+    },
+    updatedVoices: 0,
+  };
+
+  it("lists what the next write will do to the kit", () => {
+    const totals = addScanResultToTotals(EMPTY_SCAN_TOTALS, result, "A0");
+    expect(totals.stereoLines).toEqual([
+      "Kit A0: voices 1 and 2 will be linked automatically as a stereo pair.",
+      "Kit A0: voice 4's stereo samples will be mixed down to mono.",
+      "Kit A0 is quarantined, so it won't be written and its copy on the card stays as it is.",
+      "kick.wav is a mono sample in the stereo pair on voices 3 and 4. Unlink them, or replace kick.wav with a stereo sample.",
+    ]);
+  });
+
+  it("counts them for Scan All", () => {
+    const totals = addScanResultToTotals(EMPTY_SCAN_TOTALS, result, "A0");
+    expect(describeScanTotals(totals)).toBe(
+      "1 voice pair to link automatically at the next write, 1 voice to mix down to mono, 1 kit quarantined",
     );
   });
 });

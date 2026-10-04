@@ -1,3 +1,4 @@
+import { STEREO_LABELS } from "@romper/shared/stereoLinkRules";
 import React from "react";
 
 import type { SampleData } from "../../kitTypes";
@@ -129,6 +130,11 @@ export function useVoicePanelSlotRendering({
       const uiSlotNumber = slotNumber + 1;
       const sampleData = sampleMetadata?.[sampleKey];
       const isSelected = selectedIdx === slotNumber && isActive;
+      // A mono sample in a stereo pair quarantines the kit (#537, #574)
+      const monoInPair = Boolean(
+        isLinkedPrimary && sampleData?.wav_channels === 1,
+      );
+      const monoLabelId = `mono-in-pair-${kitName}-${voice}-${slotNumber}`;
 
       const className = slotRenderingHook.getSampleSlotClassName(
         slotNumber,
@@ -165,6 +171,7 @@ export function useVoicePanelSlotRendering({
 
       return (
         <li
+          aria-describedby={monoInPair ? monoLabelId : undefined}
           aria-label={`Sample ${sampleName} in slot ${uiSlotNumber}`}
           aria-selected={isSelected}
           className={className}
@@ -197,6 +204,15 @@ export function useVoicePanelSlotRendering({
             >
               {displayName}
             </span>
+            {monoInPair && (
+              <span
+                className="block truncate text-[10px] text-accent-warning"
+                data-testid={`mono-in-pair-label-${voice}-${slotNumber}`}
+                id={monoLabelId}
+              >
+                {STEREO_LABELS.monoInPair}
+              </span>
+            )}
           </div>
           {isEditable && (
             <GainKnob
@@ -259,6 +275,7 @@ export function useVoicePanelSlotRendering({
       handleCombinedDrop,
       onGainChange,
       slotRenderingHook,
+      isLinkedPrimary,
     ],
   );
 

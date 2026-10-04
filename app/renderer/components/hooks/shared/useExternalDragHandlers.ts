@@ -11,6 +11,25 @@ import { type DroppedFileCheck } from "./useFileValidation";
 
 const log = createLogger("ExternalDrag");
 
+/** A file a drop added, with its channel count when known */
+export interface AddedDropFile {
+  channels?: number;
+  fileName: string;
+}
+
+/**
+ * What a drop asks and says about stereo (#537, #574). The kit's voice
+ * panels answer: they know which voices are linked.
+ */
+export interface StereoDropHandlers {
+  /**
+   * Called once the drop's files are added: asks Link or Keep mono for a
+   * stereo sample on a mono voice that would be linked automatically, or
+   * warns about a mono sample on a stereo pair
+   */
+  report: (voice: number, added: AddedDropFile[]) => Promise<void>;
+}
+
 export interface UseExternalDragHandlersOptions {
   // Processing hooks
   fileValidation: {
@@ -36,6 +55,8 @@ export interface UseExternalDragHandlersOptions {
     ) => Promise<boolean>;
   };
   samples: string[];
+  /** Stereo questions and messages for the drop (#537) */
+  stereoDrop?: StereoDropHandlers;
   /** The voice files are dropped on, for messages */
   voice: number;
 }
@@ -51,6 +72,7 @@ export function useExternalDragHandlers({
   onMessage,
   sampleProcessing,
   samples,
+  stereoDrop,
   voice,
 }: UseExternalDragHandlersOptions) {
   const [dragOverSlot, setDragOverSlot] = useState<null | number>(null);
@@ -137,6 +159,7 @@ export function useExternalDragHandlers({
       // The file being handled, so a failure can name it and the rest
       let current = 0;
       let addedCount = 0;
+      const added: AddedDropFile[] = [];
       try {
         const allSamples = await sampleProcessing.getCurrentKitSamples();
         if (!allSamples) {
@@ -186,6 +209,7 @@ export function useExternalDragHandlers({
             break;
           }
 
+          const channels = check.validation.metadata?.channels;
           await sampleProcessing.processAssignment(
             filePath,
             check.validation,
@@ -196,12 +220,21 @@ export function useExternalDragHandlers({
 
           occupiedSlots.add(targetSlot);
           addedCount++;
+          added.push({ channels, fileName: file.name });
         }
       } catch (error) {
         log.error("Error handling drop:", error);
         reject(current, "checkFailed");
       } finally {
         reportRejections(rejections);
+      }
+
+      if (added.length > 0) {
+        try {
+          await stereoDrop?.report(voice, added);
+        } catch (error) {
+          log.error("Error reporting a stereo drop:", error);
+        }
       }
 
       if (addedCount > 0 && onBatchDropComplete) {
@@ -215,6 +248,8 @@ export function useExternalDragHandlers({
       reportRejections,
       sampleProcessing,
       samples,
+      stereoDrop,
+      voice,
     ],
   );
 

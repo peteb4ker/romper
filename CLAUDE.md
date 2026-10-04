@@ -206,9 +206,18 @@ Hooks in `.claude/hooks/` and `.husky/` enforce the first two.
   `voices.stereo_mode` drives stereo; samples have no stereo flag. Never
   copy samples onto the adjacent voice because a file is stereo; that
   created undeletable phantom samples. Don't infer a voice's setting from
-  a file's channel count, except as #537 decides: import and scan are to
-  link a voice holding stereo files with the next one, by the rules Pete
-  signed off there.
+  a file's channel count, except as Pete's "Final stereo rules v2" on
+  #537 decide (in the Stereo section of `docs/developer/domain-model.md`):
+  a mono voice is always fine and is mixed down at write; setup and the
+  write link a voice automatically when every sample on it is stereo and
+  the next voice is free, unless the user chose mono
+  (`voices.stereo_choice`); Romper never unlinks; a kit that breaks a
+  stereo pair, or holds a WAV Romper can't read, is quarantined: not
+  written, its card folder untouched; a scan changes nothing and reports.
+  The rules and their words live in `shared/stereoLinkRules.ts`, shared by
+  main, setup, scan, the write, the link button and drops. Use "stereo
+  pair", "link", "unlink", "mixed down to mono" and "quarantined", never
+  "busy" or "in use"; new wording needs Pete's sign-off.
 - **Renderer code reaches IPC through `globalThis.electronAPI`.** In tests,
   override the default mock (wired up in `vitest.setup.ts`) with
   `vi.mocked(globalThis.electronAPI.someMethod)`; don't reassign

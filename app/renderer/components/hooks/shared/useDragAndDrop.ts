@@ -1,5 +1,8 @@
 import { useSampleProcessing } from "../sample-management/useSampleProcessing";
-import { useExternalDragHandlers } from "./useExternalDragHandlers";
+import {
+  type StereoDropHandlers,
+  useExternalDragHandlers,
+} from "./useExternalDragHandlers";
 import { useFileValidation } from "./useFileValidation";
 import { useInternalDragHandlers } from "./useInternalDragHandlers";
 
@@ -40,6 +43,8 @@ export interface UseDragAndDropOptions {
     slot: number;
     voice: number;
   } | null;
+  /** Stereo questions and messages for a drop (#537) */
+  stereoDrop?: StereoDropHandlers;
   voice: number;
 }
 
@@ -60,6 +65,7 @@ export function useDragAndDrop({
   samples,
   setSharedDraggedSample,
   sharedDraggedSample,
+  stereoDrop,
   voice,
 }: UseDragAndDropOptions) {
   // File validation hook
@@ -85,6 +91,7 @@ export function useDragAndDrop({
     onMessage,
     sampleProcessing,
     samples,
+    stereoDrop,
     voice,
   });
 

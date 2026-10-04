@@ -28,12 +28,15 @@ import { ServicePathManager } from "../utils/fileSystemUtils.js";
  */
 export class ScanService {
   /**
-   * Check the files of a kit's samples that aren't known to be readable
-   * (#537): status unknown (older libraries), or last found missing or
-   * unreadable, so a file that's been put back or replaced is seen too.
-   * Files are read asynchronously, in one batch, and what's found is
-   * recorded in one transaction: missing, unreadable, or readable with its
-   * WAV details. Readable samples aren't read again.
+   * Check a kit's sample files when it opens (#537), in one batch:
+   * - every file is checked to still exist (an async stat), so a file
+   *   deleted since it was last read shows as missing straight away;
+   * - a file not known to be readable (status unknown, as in older
+   *   libraries, or last found missing or unreadable) has its header read
+   *   too, so a file that's been put back or replaced is seen.
+   * A known-readable file that still exists isn't read again. What's
+   * found is recorded in one transaction: missing, unreadable, or readable
+   * with its WAV details.
    */
   async checkKitSampleFiles(
     inMemorySettings: Record<string, unknown>,
@@ -46,9 +49,7 @@ export class ScanService {
     const dbDir = this.getDbPath(localStorePath);
     const loaded = getKitSamples(dbDir, kitName);
     if (!loaded.success) return { error: loaded.error, success: false };
-    const toCheck = (loaded.data ?? []).filter(
-      (sample) => sample.source_status !== "readable",
-    );
+    const toCheck = loaded.data ?? [];
     if (toCheck.length === 0) {
       return { data: { changed: 0, checked: 0 }, success: true };
     }
@@ -227,7 +228,10 @@ export function readWavMetadata(filePath: string): null | WavMetadataFields {
   return toWavMetadataFields(metadataResult.data);
 }
 
-/** What reading a sample's file finds, as the columns to store (#537) */
+/**
+ * What checking a sample's file finds, as the columns to store (#537).
+ * A known-readable file only needs to still exist; others are read.
+ */
 async function checkSampleFile(sample: Sample): Promise<{
   fields: Partial<WavMetadataFields>;
   sample: Sample;
@@ -237,6 +241,7 @@ async function checkSampleFile(sample: Sample): Promise<{
     .then(() => true)
     .catch(() => false);
   if (!exists) return { fields: { source_status: "missing" }, sample };
+  if (sample.source_status === "readable") return { fields: {}, sample };
   const header = await getAudioMetadataAsync(sample.source_path);
   if (!header.success || !header.data) {
     return { fields: { source_status: "unreadable" }, sample };

@@ -476,11 +476,11 @@ voice number):
      (`CardContents.keepKits`). The kit editor and the write summary say
      what's wrong and how to fix it; quarantine ends when it's fixed. The
      other kits are written. Whether a WAV can be read is recorded in
-     `samples.source_status` (see [Sample](#sample)) by add, scan and
-     the kit editor's check when a kit opens, and `isKitQuarantined`
-     reads it, so a kit with an unreadable file shows as quarantined in
-     the kit browser and the kit editor; the write reads every file
-     itself. A quarantined kit shows a `WarningOctagon` icon in
+     `samples.source_status` (see [Sample](#sample)) by add, scan, the
+     kit editor's check when a kit opens, and a completed write, and
+     `isKitQuarantined` reads it, so a kit with an unreadable file shows
+     as quarantined in the kit browser and the kit editor. The write
+     reads every file itself, then records the problems it found. A quarantined kit shows a `WarningOctagon` icon in
      `--accent-danger` on its kit card, with the accessible name and
      tooltip `QUARANTINE_ICON_LABEL`, and the icon and "Quarantined" in the
      kit editor's header. A missing file never quarantines.
@@ -544,18 +544,24 @@ voice and slot):
 | `filename` | The readable part of the card name | writes (`cardSampleFileName`) | add, replace, scan | `allKitSamples`; `kits[i].samples` |
 | `gain_db` | Trim from -24 to +12 dB, baked in at write | writes (no counterpart: the Rample's level is per voice) | `updateSampleGain` (`update-sample-gain`, flags the kit) | `sampleMetadata` only; `kits[i].samples[].gain_db` isn't refreshed after a save |
 | `wav_bit_depth`, `wav_channels`, `wav_sample_rate`, `wav_bitrate` | The file's format when it was added or last scanned | none (the write reads the header) | add and replace (from the validation read), scan only when null | `sampleMetadata` → tooltip and format badge (`wavMetadataFormatter`) |
-| `source_status` | What Romper found when it last read the file: `readable`, `missing`, `unreadable`, or null (never checked, as in older libraries) | none | add and replace (`readable`); scan (`mergeKitScanTx`); the kit editor's check when a kit opens (`check-kit-sample-files` → `checkKitSampleFiles`, #537) | `kits[i].quarantined` (`isKitQuarantined`, in main); `sampleMetadata` → the slot labels "File not found" and "Can't be read", the missing-files notice, and the quarantine notice |
+| `source_status` | What Romper found when it last read the file: `readable`, `missing`, `unreadable`, or null (never checked, as in older libraries) | none | add and replace (`readable`); scan (`mergeKitScanTx`); the kit editor's check when a kit opens (`check-kit-sample-files` → `checkKitSampleFiles`, #537); a completed write (`completeWrite`: `missing`, `unreadable`, or null once a problem file is fine) | `kits[i].quarantined` (`isKitQuarantined`, in main); `sampleMetadata` → the slot labels "File not found" and "Can't be read", the missing-files notice, and the quarantine notice |
 
 - **Canonical owner of the file's format:** the file itself, read at write
   time (`validateSampleFormatAsync`, `formatConverter`). The `wav_*`
   columns are a cache for display.
 - **File status (#537):** catch a problem early and say how to fix it.
-  When a kit opens, the kit editor asks main, once and in one batch, to
-  check the files of samples that aren't known to be readable (never
-  checked, or last found missing or unreadable, so a file that was put
-  back is seen too); readable samples aren't read again, so a file
-  deleted after it was last read shows as missing only after a scan (the
-  write finds it too, and skips it). If anything changed, the kit reloads. A missing file is labelled
+  When a kit opens, the kit editor asks main, once and in one batch
+  (`check-kit-sample-files`), to check every sample's file still exists
+  (an async stat), so a file deleted since it was last read shows as
+  missing straight away. Files not known to be readable (never checked,
+  or last found missing or unreadable, so a file that was put back is
+  seen too) also have their header read; a known-readable file that's
+  still there isn't read again. If anything changed, the kit reloads. A
+  completed write records what it found too, in the transaction that
+  records the write (`completeWrite`): missing and unreadable files, and
+  null for a file last found missing or unreadable that's now fine, so
+  the kit-open check reads it afresh. A cancelled or failed write records
+  nothing. A missing file is labelled
   "File not found" in its slot and listed above the voices with how to
   fix it (`describeMissingSampleFile`); it's skipped at write, and doesn't
   quarantine the kit. An unreadable file is labelled "Can't be read" and

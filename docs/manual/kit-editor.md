@@ -117,7 +117,7 @@ Romper checks a kit's sample files when you open it, so problems show before you
 - **File not found** -- The sample's file has been moved or deleted. The slot is labelled **File not found**, and a notice above the voices says which file and how to fix it, for example "kick.wav on voice 1 wasn't found: it was moved or deleted. Put it back, or replace or remove the sample. Until then it's skipped when you write to the card." A missing file doesn't quarantine the kit: the rest of the kit is written, and the write summary lists the skipped sample.
 - **Can't be read** -- The file is there, but it isn't a WAV Romper can read (it may be damaged, or in an unusual format). The slot is labelled **Can't be read**, the kit is **Quarantined**, and the quarantine notice says how to fix it, for example "Romper can't read kick.wav. Replace it with a WAV Romper can read, or remove it." The kit isn't written until you do.
 
-A file that was readable when Romper last read it isn't read again when you open the kit, so a file deleted since then shows as missing after the next **Scan Kit**; a write finds it too, and skips it.
+Every time you open a kit, Romper checks that each of its files is still there, so a file deleted since you last opened the kit shows as **File not found** straight away. A file it has already read and found fine isn't read again. Writing to the card checks every file too, and records what it finds, so a kit whose file can't be read shows as quarantined in the Kit Browser as soon as the write finishes.
 
 ### Voice Names and Kit Type
 

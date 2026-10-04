@@ -1,15 +1,20 @@
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import {
   _electron as electron,
   type ElectronApplication,
   type Page,
 } from "playwright";
 
+import { dropFiles } from "../utils/e2e-drop";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
   cleanupE2EFixture,
   type E2ETestEnvironment,
   extractE2EFixture,
 } from "../utils/e2e-fixture-extractor";
+import { encodeTestWav, sine } from "../validation/support/wav";
 
 interface AudioProbe {
   analysers: number;
@@ -179,5 +184,78 @@ test.describe("[UC-33] Slicer playback", () => {
       "the sequencer triggers 24 times",
     );
     expect(probe.analysers).toBeLessThanOrEqual(2);
+  });
+
+  test("loads the sample that moves up when the voice's first is deleted (#575)", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "romper-e2e-slice-"));
+    try {
+      // A quiet tone after voice 1's kick: it draws another waveform
+      const tone = path.join(dir, "2_tone.wav");
+      await fs.writeFile(
+        tone,
+        encodeTestWav([sine(220, 0.5, 44100, 0.2)], {
+          bitDepth: 16,
+          encoding: "pcm",
+          sampleRate: 44100,
+        }),
+      );
+      await window.getByTitle("Enable editable mode").click();
+      await window.waitForSelector('[data-testid="drop-zone-voice-1"]');
+      await dropFiles(window, 1, [tone]);
+      const sample = (name: string, uiSlot: number) =>
+        window.locator(
+          `[data-testid="voice-panel-1"] [aria-label="Sample ${name} in slot ${uiSlot}"]`,
+        );
+      await expect(sample("2_tone.wav", 2)).toBeVisible({ timeout: 10000 });
+
+      // Slice voice 1
+      await window.locator('[data-testid="slice-toggle-0"]').click();
+      const canvas = window.locator('[data-testid="slice-strip"] canvas');
+      // How tall the strip's waveform is drawn, as a fraction of the strip:
+      // the tone's peaks reach 0.2, the kick's much further
+      const height = () =>
+        canvas.evaluate((el: HTMLCanvasElement) => {
+          const { data } = el
+            .getContext("2d")!
+            .getImageData(0, 0, el.width, el.height);
+          const rows: number[] = [];
+          for (let y = 0; y < el.height; y++) {
+            for (let x = 0; x < el.width; x++) {
+              if (data[(y * el.width + x) * 4 + 3] > 0) {
+                rows.push(y);
+                break;
+              }
+            }
+          }
+          return rows.length / el.height;
+        });
+      const showsTone = async () => {
+        const h = await height();
+        return h > 0 && h < 0.3;
+      };
+      const showsKick = async () => (await height()) > 0.5;
+
+      // The strip shows the slot selected in the voice panel and caches
+      // each slot's waveform: select the tone, then the kick again
+      await sample("2_tone.wav", 2).getByText("2_tone.wav").click();
+      await expect.poll(showsTone, { timeout: 10000 }).toBe(true);
+      await sample("1_kick.wav", 1).getByText("1_kick.wav").click();
+      await expect.poll(showsKick, { timeout: 10000 }).toBe(true);
+
+      // Delete the kick beside the open strip: the tone moves up to slot 1
+      await sample("1_kick.wav", 1)
+        .getByRole("button", { name: "Delete sample" })
+        .click();
+      await window
+        .locator('[data-testid="confirm-delete-sample-button"]')
+        .click();
+      await expect(sample("2_tone.wav", 1)).toBeVisible();
+      await expect(
+        window.locator('[data-testid="slice-strip-sample"]'),
+      ).toHaveText("2_tone.wav (slot 1)");
+      await expect.poll(showsTone, { timeout: 10000 }).toBe(true);
+    } finally {
+      await fs.rm(dir, { force: true, recursive: true });
+    }
   });
 });

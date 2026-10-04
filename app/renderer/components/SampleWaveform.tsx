@@ -31,6 +31,11 @@ interface SampleWaveformProps {
    */
   playsStereo: boolean;
   playTrigger: number; // increment to trigger play externally
+  /**
+   * The file in the slot (`slotSampleSource`), or null until it's known.
+   * When another file takes the slot, the slot reloads (#575).
+   */
+  sampleSource?: null | string;
   slotNumber: number;
   stopTrigger?: number; // increment to trigger stop externally
   voiceColor?: string; // CSS color or var(--voice-N) reference
@@ -209,6 +214,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   playOptions,
   playsStereo,
   playTrigger,
+  sampleSource,
   slotNumber,
   stopTrigger,
   voiceColor,
@@ -221,6 +227,10 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null); // NOSONAR
   const [isPlaying, setIsPlaying] = useState(false);
   const [playhead, setPlayhead] = useState(0);
+  // Counts reloads for another file taking the slot (#575)
+  const [fileChanges, setFileChanges] = useState(0);
+  // The file the loaded audio is from, once known
+  const loadedSourceRef = useRef(sampleSource ?? null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   // Per-source envelope used for region (slice) playback anti-click fades
   const envelopeRef = useRef<GainNode | null>(null);
@@ -327,7 +337,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [kitName, voiceNumber, slotNumber]); // eslint-disable-line react-hooks/exhaustive-deps -- onError intentionally excluded to prevent infinite loops
+  }, [kitName, voiceNumber, slotNumber, fileChanges]); // eslint-disable-line react-hooks/exhaustive-deps -- onError intentionally excluded to prevent infinite loops
 
   // Draw waveform using an envelope (top/bottom outline with fill)
   const drawWaveform = useCallback(
@@ -396,6 +406,20 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     },
     [voiceNumber],
   );
+
+  // Another file in the slot: a delete or move shifted the samples after
+  // it up a slot, or a replace kept its row, so a same-named file can
+  // arrive with the slot and its key unchanged. Stop the file that left
+  // and load the one that came (#575). Learning which file is loaded isn't
+  // a change: a slot shows before the kit's sample rows arrive.
+  useEffect(() => {
+    if (sampleSource == null) return;
+    const loaded = loadedSourceRef.current;
+    loadedSourceRef.current = sampleSource;
+    if (loaded == null || loaded === sampleSource) return;
+    stopPlayback();
+    setFileChanges((n) => n + 1);
+  }, [sampleSource, stopPlayback]);
 
   // What the voice plays: the sample, or its mono mix on a mono voice
   // (#569). Mixed once per load or link change, not per trigger.

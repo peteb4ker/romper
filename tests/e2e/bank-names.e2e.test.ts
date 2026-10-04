@@ -42,15 +42,12 @@ test.describe("[UC-12] Bank names", () => {
     await input.press("Enter");
   };
 
-  // Bank A's name in the database, through a kit in the bank
   const bankAName = () =>
     window.evaluate(async () => {
       const res = await (
         globalThis as unknown as ApiWindow
-      ).electronAPI.getKits();
-      return (
-        res.data?.find((kit) => kit.bank_letter === "A")?.bank?.artist ?? null
-      );
+      ).electronAPI.getAllBanks();
+      return res.data?.find((bank) => bank.letter === "A")?.artist ?? null;
     });
 
   const cardRtfFiles = () =>

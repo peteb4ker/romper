@@ -245,6 +245,11 @@ const electronAPI = {
     return ipcRenderer.invoke("generateSyncChangeSummary", sdCardPath);
   },
   // Bank operations
+  // Bank operations
+  getAllBanks: () => {
+    isDev && console.debug("[IPC] getAllBanks invoked");
+    return ipcRenderer.invoke("get-all-banks");
+  },
   getAllSamplesForKit: (kitName: string) => {
     isDev && console.debug("[IPC] getAllSamplesForKit invoked", kitName);
     return ipcRenderer.invoke("get-all-samples-for-kit", kitName);

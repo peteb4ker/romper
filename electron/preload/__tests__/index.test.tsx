@@ -77,6 +77,7 @@ describe("preload/index.tsx", () => {
         deleteSampleFromSlot: expect.any(Function),
         downloadAndExtractArchive: expect.any(Function),
         ensureDir: expect.any(Function),
+        getAllBanks: expect.any(Function),
         getAllSamplesForKit: expect.any(Function),
         getKit: expect.any(Function),
         getKits: expect.any(Function),
@@ -110,7 +111,6 @@ describe("preload/index.tsx", () => {
     )?.[1];
     expect(api).toBeDefined();
     for (const removed of [
-      "getAllBanks",
       "getAllSamples",
       "getAudioMetadata",
       "getFavoriteKits",
@@ -547,6 +547,7 @@ describe("preload/index.tsx", () => {
         method: "generateSyncChangeSummary",
       },
       { args: [], ipcChannel: "cancelKitSync", method: "cancelKitSync" },
+      { args: [], ipcChannel: "get-all-banks", method: "getAllBanks" },
       { args: [], ipcChannel: "scan-banks", method: "scanBanks" },
       { args: [], ipcChannel: "get-all-kits", method: "getKits" },
 

@@ -158,6 +158,8 @@ describe("[UC-20] [Q-02] replacing a sample is one update (RE-26)", () => {
       ...before,
       filename: "new.wav",
       source_path: file,
+      // The new file was read (#537)
+      source_status: "readable",
       wav_bit_depth: 24,
       wav_bitrate: 48000 * 2 * 24,
       wav_channels: 2,

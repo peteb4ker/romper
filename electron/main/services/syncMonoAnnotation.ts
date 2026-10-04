@@ -26,7 +26,6 @@ export function annotateMonoConversion(
       fileOp.forceMonoConversion = true;
       if (fileOp.operation === "copy") {
         fileOp.operation = "convert";
-        // DRAFT wording (#537), awaiting Pete's sign-off
         fileOp.reason = `Stereo sample on voice ${fileOp.voiceNumber}, a mono voice: mixed down to mono`;
       }
     }

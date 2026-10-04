@@ -1,17 +1,23 @@
-import type { DbResult, KitScanResult } from "@romper/shared/db/schema.js";
+import type {
+  DbResult,
+  KitScanResult,
+  Sample,
+} from "@romper/shared/db/schema.js";
 
 import { groupSamplesByVoice } from "@romper/shared/kitUtilsShared.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import { getAudioMetadata } from "../audioUtils.js";
+import { getAudioMetadata, getAudioMetadataAsync } from "../audioUtils.js";
 import {
   toWavMetadataFields,
   type WavMetadataFields,
 } from "../db/operations/wavMetadataFields.js";
 import {
+  getKitSamples,
   mergeKitScan,
   updateBank,
+  updateSampleSourceStatusTx,
   withDbTransaction,
 } from "../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
@@ -21,6 +27,52 @@ import { ServicePathManager } from "../utils/fileSystemUtils.js";
  * Extracted from dbIpcHandlers.ts to separate business logic from IPC routing
  */
 export class ScanService {
+  /**
+   * Check the files of a kit's samples that aren't known to be readable
+   * (#537): status unknown (older libraries), or last found missing or
+   * unreadable, so a file that's been put back or replaced is seen too.
+   * Files are read asynchronously, in one batch, and what's found is
+   * recorded in one transaction: missing, unreadable, or readable with its
+   * WAV details. Readable samples aren't read again.
+   */
+  async checkKitSampleFiles(
+    inMemorySettings: Record<string, unknown>,
+    kitName: string,
+  ): Promise<DbResult<{ changed: number; checked: number }>> {
+    const localStorePath = this.getLocalStorePath(inMemorySettings);
+    if (!localStorePath) {
+      return { error: "No local store path configured", success: false };
+    }
+    const dbDir = this.getDbPath(localStorePath);
+    const loaded = getKitSamples(dbDir, kitName);
+    if (!loaded.success) return { error: loaded.error, success: false };
+    const toCheck = (loaded.data ?? []).filter(
+      (sample) => sample.source_status !== "readable",
+    );
+    if (toCheck.length === 0) {
+      return { data: { changed: 0, checked: 0 }, success: true };
+    }
+
+    const found = await Promise.all(toCheck.map(checkSampleFile));
+    const changes = found.filter(({ fields, sample }) =>
+      Object.entries(fields).some(
+        ([key, value]) => sample[key as keyof Sample] !== value,
+      ),
+    );
+    if (changes.length > 0) {
+      const saved = withDbTransaction(dbDir, (db) => {
+        for (const { fields, sample } of changes) {
+          updateSampleSourceStatusTx(db, sample.id, fields);
+        }
+      });
+      if (!saved.success) return { error: saved.error, success: false };
+    }
+    return {
+      data: { changed: changes.length, checked: toCheck.length },
+      success: true,
+    };
+  }
+
   /**
    * Scan a kit folder and merge its WAV files into the database (RE-04).
    *
@@ -173,6 +225,23 @@ export function readWavMetadata(filePath: string): null | WavMetadataFields {
   const metadataResult = getAudioMetadata(filePath);
   if (!metadataResult.success || !metadataResult.data) return null;
   return toWavMetadataFields(metadataResult.data);
+}
+
+/** What reading a sample's file finds, as the columns to store (#537) */
+async function checkSampleFile(sample: Sample): Promise<{
+  fields: Partial<WavMetadataFields>;
+  sample: Sample;
+}> {
+  const exists = await fs.promises
+    .access(sample.source_path)
+    .then(() => true)
+    .catch(() => false);
+  if (!exists) return { fields: { source_status: "missing" }, sample };
+  const header = await getAudioMetadataAsync(sample.source_path);
+  if (!header.success || !header.data) {
+    return { fields: { source_status: "unreadable" }, sample };
+  }
+  return { fields: toWavMetadataFields(header.data), sample };
 }
 
 // Export singleton instance

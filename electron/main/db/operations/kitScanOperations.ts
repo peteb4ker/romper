@@ -50,6 +50,8 @@ export interface KitScanPlan {
   inserts: NewSample[];
   metadataUpdates: Array<{ id: number; metadata: WavMetadataFields }>;
   result: KitScanResult;
+  /** Rows whose file is missing or can't be read, as the scan found (#537) */
+  statusUpdates: Array<{ id: number; status: "missing" | "unreadable" }>;
 }
 
 /**
@@ -105,6 +107,13 @@ export function mergeKitScanTx(
     kit,
     voices: kitVoices,
   });
+
+  for (const { id, status } of plan.statusUpdates) {
+    db.update(samples)
+      .set({ source_status: status })
+      .where(eq(samples.id, id))
+      .run();
+  }
 
   for (const { id, metadata } of plan.metadataUpdates) {
     db.update(samples).set(metadata).where(eq(samples.id, id)).run();
@@ -162,7 +171,8 @@ export function mergeKitScanTx(
  *   `missingSamples`, not deleted: user samples are referenced from outside
  *   the store and may just be on an unmounted drive.
  * - Existing rows with missing WAV metadata get it filled in when the file
- *   is readable.
+ *   is readable. Each row's `source_status` records what the scan found:
+ *   readable, a WAV it can't read, or missing (#537).
  * - A folder file is "already referenced" when any row in the kit (any
  *   voice, so in-app moves are respected) has that absolute source path.
  * - Unreferenced folder files are added to non-editable kits only, in the
@@ -208,6 +218,7 @@ export function planKitScanMerge({
     inserts: [],
     metadataUpdates: [],
     result,
+    statusUpdates: [],
   };
 
   if (kit.locked) {
@@ -215,24 +226,7 @@ export function planKitScanMerge({
   }
 
   // Files whose WAV header can't be read (#537 rule 4)
-  const unreadable = new Set<string>();
-  for (const row of existing) {
-    if (!io.fileExists(row.source_path)) {
-      result.missingSamples.push({
-        filename: row.filename,
-        slotNumber: row.slot_number,
-        sourcePath: row.source_path,
-        voiceNumber: row.voice_number,
-      });
-    } else if (hasMissingMetadata(row)) {
-      const metadata = io.readMetadata(row.source_path);
-      if (metadata) {
-        plan.metadataUpdates.push({ id: row.id, metadata });
-      } else {
-        unreadable.add(row.source_path);
-      }
-    }
-  }
+  const unreadable = checkExistingFiles(existing, io, plan);
   result.metadataUpdated = plan.metadataUpdates.length;
 
   const referenced = new Set(existing.map((row) => row.source_path));
@@ -278,7 +272,7 @@ export function planKitScanMerge({
         slot_number: slot,
         source_path: sourcePath,
         voice_number: voiceNumber,
-        ...(metadata ?? {}),
+        ...(metadata ?? { source_status: "unreadable" }),
       });
     }
   }
@@ -313,11 +307,52 @@ export function planKitScanMerge({
   return plan;
 }
 
+/**
+ * Check the files of a kit's existing rows: a missing file is reported
+ * and recorded as missing, and a file with no WAV details is read, its
+ * details recorded, or recorded as unreadable (#537). Returns the source
+ * paths of the files that couldn't be read.
+ */
+function checkExistingFiles(
+  existing: Sample[],
+  io: KitScanIo,
+  plan: KitScanPlan,
+): Set<string> {
+  const unreadable = new Set<string>();
+  for (const row of existing) {
+    if (!io.fileExists(row.source_path)) {
+      plan.result.missingSamples.push({
+        filename: row.filename,
+        slotNumber: row.slot_number,
+        sourcePath: row.source_path,
+        voiceNumber: row.voice_number,
+      });
+      if (row.source_status !== "missing") {
+        plan.statusUpdates.push({ id: row.id, status: "missing" });
+      }
+    } else if (hasMissingMetadata(row)) {
+      const metadata = io.readMetadata(row.source_path);
+      if (metadata) {
+        plan.metadataUpdates.push({ id: row.id, metadata });
+      } else {
+        unreadable.add(row.source_path);
+        if (row.source_status !== "unreadable") {
+          plan.statusUpdates.push({ id: row.id, status: "unreadable" });
+        }
+      }
+    }
+  }
+  return unreadable;
+}
+
+/** The row's header hasn't been read successfully: missing metadata, or
+ * a file last found missing or unreadable (#537) */
 function hasMissingMetadata(row: Sample): boolean {
   return (
     row.wav_sample_rate === null ||
     row.wav_bit_depth === null ||
-    row.wav_channels === null
+    row.wav_channels === null ||
+    row.source_status !== "readable"
   );
 }
 

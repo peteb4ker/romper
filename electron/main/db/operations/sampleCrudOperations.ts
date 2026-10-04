@@ -164,7 +164,11 @@ export function replaceSampleTx(
   replacement: Partial<
     Pick<
       NewSample,
-      "wav_bit_depth" | "wav_bitrate" | "wav_channels" | "wav_sample_rate"
+      | "source_status"
+      | "wav_bit_depth"
+      | "wav_bitrate"
+      | "wav_channels"
+      | "wav_sample_rate"
     >
   > &
     Pick<NewSample, "filename" | "source_path">,
@@ -184,6 +188,8 @@ export function replaceSampleTx(
     .set({
       filename: replacement.filename,
       source_path: replacement.source_path,
+      // What reading the new file found, not the old one's (#537)
+      source_status: replacement.source_status ?? null,
       wav_bit_depth: replacement.wav_bit_depth ?? null,
       wav_bitrate: replacement.wav_bitrate ?? null,
       wav_channels: replacement.wav_channels ?? null,
@@ -238,6 +244,7 @@ export function restoreVoicesTx(
             kit_name: kitName,
             slot_number: row.slot_number,
             source_path: row.source_path,
+            source_status: row.source_status ?? null,
             voice_number: voice,
             wav_bit_depth: row.wav_bit_depth,
             wav_bitrate: row.wav_bitrate,
@@ -327,6 +334,27 @@ export function updateSampleMetadata(
   });
 }
 
+/**
+ * Record what reading a sample's file found (#537): its source status,
+ * and its WAV details when it could be read. On the caller's transaction.
+ */
+export function updateSampleSourceStatusTx(
+  db: RomperDb,
+  sampleId: number,
+  fields: Partial<
+    Pick<
+      Sample,
+      | "source_status"
+      | "wav_bit_depth"
+      | "wav_bitrate"
+      | "wav_channels"
+      | "wav_sample_rate"
+    >
+  >,
+): void {
+  db.update(samples).set(fields).where(eq(samples.id, sampleId)).run();
+}
+
 function isRestorableRow(row: VoiceSnapshot["samples"][number]): boolean {
   const optionalInt = (v: unknown) => v === null || Number.isInteger(v);
   return (
@@ -336,6 +364,8 @@ function isRestorableRow(row: VoiceSnapshot["samples"][number]): boolean {
     row.slot_number >= 0 &&
     row.slot_number <= 11 &&
     Number.isFinite(row.gain_db) &&
+    (row.source_status == null ||
+      ["missing", "readable", "unreadable"].includes(row.source_status)) &&
     optionalInt(row.wav_bit_depth) &&
     optionalInt(row.wav_bitrate) &&
     optionalInt(row.wav_channels) &&

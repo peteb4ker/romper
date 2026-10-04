@@ -103,7 +103,6 @@ export function describeScanTotals(totals: ScanTotals): string {
     );
   if (totals.lockedKits > 0)
     parts.push(`${plural(totals.lockedKits, "locked kit")} left unchanged`);
-  // DRAFT wording (#537), awaiting Pete's sign-off
   if (totals.stereoAutoLinks > 0)
     parts.push(
       `${plural(totals.stereoAutoLinks, "voice pair")} to link automatically at the next write`,

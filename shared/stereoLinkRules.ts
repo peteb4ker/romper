@@ -76,6 +76,14 @@ export interface StereoVoiceState {
   voice_number: number;
 }
 
+/** A sample as the store records it */
+export interface StoredSample {
+  filename: string;
+  source_status?: null | string;
+  voice_number: number;
+  wav_channels?: null | number;
+}
+
 /** What a write does about stereo, by kit (#537): its summary lists it */
 export interface WriteStereoSummary {
   /** Pairs the write links automatically (rule 2) */
@@ -112,6 +120,20 @@ export function checkStereoLink(
     message: describeLinkRefusal(voiceNumber, reason),
     reason,
   };
+}
+
+/**
+ * Whether a kit is quarantined (rule 4), from what the store recorded: its
+ * voices' links, its samples' channel counts, and samples last found
+ * unreadable. The kit list and the kit editor show it.
+ */
+export function isKitQuarantined(
+  voices: readonly StereoVoiceState[],
+  samples: readonly StoredSample[],
+): boolean {
+  return (
+    planKitStereo(voices, samples.map(stereoSampleOf)).quarantine.length > 0
+  );
 }
 
 /** Linked, with no choice by hand: Romper linked it (rule 2's label) */
@@ -180,6 +202,16 @@ export function planKitStereo(
   };
 }
 
+/** A stored sample as the rules see it: last found unreadable or not */
+export function stereoSampleOf(sample: StoredSample): StereoSampleState {
+  return {
+    filename: sample.filename,
+    unreadable: sample.source_status === "unreadable",
+    voice_number: sample.voice_number,
+    wav_channels: sample.wav_channels,
+  };
+}
+
 function kitView(
   voices: readonly StereoVoiceState[],
   samples: readonly StereoSampleState[],
@@ -216,6 +248,9 @@ function linkAutomatically(kit: KitView): number[] {
   return autoLinks;
 }
 
+// --- Wording -------------------------------------------------------------
+// Approved by Pete (#537).
+
 /** Rule 4's problems with the pair on voices n and n+1 */
 function pairProblems(kit: KitView, n: number): QuarantineProblem[] {
   const problems: QuarantineProblem[] = kit
@@ -232,12 +267,7 @@ function pairProblems(kit: KitView, n: number): QuarantineProblem[] {
   return problems;
 }
 
-// --- Wording -------------------------------------------------------------
-// Approved by Pete: the drop prompt, the link refusal reasons, the unlink
-// message, the "can't pair" note and the mono-sample warning. Everything
-// marked DRAFT awaits his sign-off.
-
-/** Persistent labels (DRAFT) */
+/** Persistent labels */
 export const STEREO_LABELS = {
   /** On a pair Romper linked (rule 2) */
   linkedAutomatically: "Linked automatically",
@@ -263,7 +293,7 @@ export function describeLinkRefusal(
 
 /**
  * The persistent note on a mono voice whose stereo samples are mixed down
- * (rule 1, DRAFT from Pete's example), or rule 3's note (approved) when
+ * (rule 1), or rule 3's note when
  * its next voice is in a pair.
  */
 export function describeMixdownNote({
@@ -288,7 +318,7 @@ export function describeMonoOnStereoPair(
   return `${fileName} is a mono sample, but voices ${voiceNumber} and ${voiceNumber + 1} are a stereo pair and expect stereo samples.`;
 }
 
-/** What makes a kit quarantined, and how to fix it (DRAFT) */
+/** What makes a kit quarantined, and how to fix it */
 export function describeQuarantineProblem(problem: QuarantineProblem): string {
   const n = problem.voiceNumber;
   switch (problem.kind) {
@@ -301,16 +331,16 @@ export function describeQuarantineProblem(problem: QuarantineProblem): string {
   }
 }
 
-/** The kit editor's quarantine notice heading (DRAFT) */
+/** The kit editor's quarantine notice heading */
 export const QUARANTINE_NOTICE =
   "This kit is quarantined: it won't be written to the card until this is fixed.";
 
-/** The write summary's heading for a quarantined kit (DRAFT) */
+/** The write summary's heading for a quarantined kit */
 export function describeQuarantinedKit(kitName: string): string {
   return `Kit ${kitName} is quarantined, so it won't be written and its copy on the card stays as it is.`;
 }
 
-/** The setup summary's line for a pair it linked (DRAFT) */
+/** The setup summary's line for a pair it linked */
 export function describeSetupAutoLink(
   kitName: string,
   voiceNumber: number,
@@ -345,7 +375,7 @@ export function describeUnlink(
     : unlinked;
 }
 
-/** The write summary's and scan's line for a pair the write links (DRAFT) */
+/** The write summary's and scan's line for a pair the write links */
 export function describeWriteAutoLink(
   kitName: string,
   voiceNumber: number,
@@ -353,7 +383,7 @@ export function describeWriteAutoLink(
   return `Kit ${kitName}: voices ${voiceNumber} and ${voiceNumber + 1} will be linked automatically as a stereo pair.`;
 }
 
-/** The write summary's and scan's line for a mixdown (DRAFT) */
+/** The write summary's and scan's line for a mixdown */
 export function describeWriteMixdown(
   kitName: string,
   voiceNumber: number,

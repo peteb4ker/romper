@@ -12,6 +12,7 @@ import {
   describeUnlink,
   describeWriteAutoLink,
   describeWriteMixdown,
+  isKitQuarantined,
   isLinkedAutomatically,
   planKitStereo,
   QUARANTINE_NOTICE,
@@ -271,5 +272,32 @@ describe("[UC-01] [UC-19] [UC-28] [UC-34] the stereo wording (#537, #574)", () =
       describeQuarantinedKit("A0"),
     ].join(" ");
     expect(all).not.toMatch(/busy|in use/i);
+  });
+});
+
+describe("[UC-08] [UC-34] isKitQuarantined: from what the store recorded", () => {
+  const stored = (
+    voice_number: number,
+    wav_channels: null | number,
+    source_status: null | string = "readable",
+  ) => ({ filename: "x.wav", source_status, voice_number, wav_channels });
+
+  it("is quarantined by a sample last found unreadable", () => {
+    expect(isKitQuarantined(voices(), [stored(1, null, "unreadable")])).toBe(
+      true,
+    );
+  });
+
+  it("isn't quarantined by missing metadata or a missing file", () => {
+    expect(
+      isKitQuarantined(voices(), [
+        stored(1, null, null),
+        stored(2, null, "missing"),
+      ]),
+    ).toBe(false);
+  });
+
+  it("is quarantined by a mono sample in a stereo pair", () => {
+    expect(isKitQuarantined(voices([1]), [stored(1, 1)])).toBe(true);
   });
 });

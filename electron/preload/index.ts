@@ -145,6 +145,10 @@ const electronAPI = {
     isDev && console.debug("[IPC] checkExistingLocalStore invoked", targetPath);
     return ipcRenderer.invoke("check-existing-local-store", targetPath);
   },
+  checkKitSampleFiles: (kitName: string) => {
+    isDev && console.debug("[IPC] checkKitSampleFiles invoked", kitName);
+    return ipcRenderer.invoke("check-kit-sample-files", kitName);
+  },
   checkPathWritable: (targetPath: string) => {
     isDev && console.debug("[IPC] checkPathWritable invoked", targetPath);
     return ipcRenderer.invoke("check-path-writable", targetPath);

@@ -47,6 +47,7 @@ export {
   restoreVoicesTx,
   updateSampleGain,
   updateSampleMetadata,
+  updateSampleSourceStatusTx,
 } from "./sampleCrudOperations.js";
 
 export {

@@ -136,6 +136,7 @@ describe("SampleValidator", () => {
       expect(result).toEqual({
         isValid: true,
         metadata: {
+          source_status: "readable",
           wav_bit_depth: 24,
           wav_bitrate: 48000 * 2 * 24,
           wav_channels: 2,

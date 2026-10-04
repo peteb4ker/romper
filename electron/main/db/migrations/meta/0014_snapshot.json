@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "4f7f3540-35ca-43be-81ec-0cdc4b46609b",
+  "id": "ead00d5d-50ba-419f-91b2-3c75b94562b9",
   "prevId": "afbf1ea6-cf52-40ed-9d16-16031d2fabe2",
   "tables": {
     "banks": {
@@ -202,6 +202,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "source_status": {
+          "name": "source_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "voice_number": {
           "name": "voice_number",
           "type": "integer",
@@ -334,6 +341,13 @@
           "autoincrement": false,
           "default": false
         },
+        "stereo_choice": {
+          "name": "stereo_choice",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "stereo_mode": {
           "name": "stereo_mode",
           "type": "integer",
@@ -341,13 +355,6 @@
           "notNull": true,
           "autoincrement": false,
           "default": false
-        },
-        "stereo_choice": {
-          "name": "stereo_choice",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         },
         "voice_alias": {
           "name": "voice_alias",

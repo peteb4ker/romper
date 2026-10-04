@@ -361,6 +361,15 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     return scanService.rescanKit(inMemorySettings, kitName);
   });
 
+  // The kit editor checks files it doesn't know are readable, once per
+  // kit open, so missing and unreadable samples show early (#537)
+  ipcMain.handle("check-kit-sample-files", (_event, kitName: string) => {
+    if (typeof kitName !== "string" || kitName === "") {
+      return { error: "Kit name must be a string", success: false };
+    }
+    return scanService.checkKitSampleFiles(inMemorySettings, kitName);
+  });
+
   // Bank operations: the bank strip loads every bank's name, including
   // banks with no kits (#512)
   ipcMain.handle(

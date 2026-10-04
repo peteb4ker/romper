@@ -148,6 +148,7 @@ describe("ScanService", () => {
         success: true,
       });
       expect(io.readMetadata("/x.wav")).toEqual({
+        source_status: "readable",
         wav_bit_depth: 16,
         wav_bitrate: 44100 * 2 * 16,
         wav_channels: 2,
@@ -228,6 +229,7 @@ describe("ScanService", () => {
       });
 
       expect(readWavMetadata("/partial.wav")).toEqual({
+        source_status: "readable",
         wav_bit_depth: 16,
         wav_bitrate: null,
         wav_channels: null,

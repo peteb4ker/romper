@@ -82,6 +82,7 @@ export const samples = sqliteTable(
       .references(() => kits.name), // FK to kits.name
     slot_number: integer("slot_number").notNull(), // 0-11 ZERO-BASED, slot within voice (slot 1 = slot_number 0)
     source_path: text("source_path").notNull(), // NEW: Absolute path to original sample file for reference-only management
+    source_status: text("source_status").$type<SampleSourceStatus>(), // What Romper found when it last read the file (#537): "readable", "unreadable" (a WAV it can't read) or "missing"; null until it's read
     voice_number: integer("voice_number").notNull(), // 1-4, explicit voice assignment
     wav_bit_depth: integer("wav_bit_depth"), // Optional WAV metadata - bit depth (8, 16, 24, 32)
     wav_bitrate: integer("wav_bitrate"), // Optional WAV metadata
@@ -118,8 +119,8 @@ export interface DbResult<T = unknown> {
 export type DbSamplesResult = DbResult<Sample[]>;
 
 export type DbVoicesResult = DbResult<Voice[]>;
-export type Kit = typeof kits.$inferSelect;
 
+export type Kit = typeof kits.$inferSelect;
 export interface KitScanMissingSample {
   filename: string;
   slotNumber: number;
@@ -171,13 +172,19 @@ export interface KitValidationError {
   kitName: string;
   missingFiles: string[];
 }
+
 // Kit with relations as returned by database queries
 export type KitWithRelations = {
   bank?: Bank | null;
+  /**
+   * The kit breaks a stereo pair or holds a WAV Romper can't read, so it
+   * isn't written to the card until it's fixed (#537 rule 4). Main works
+   * it out from the stored samples and voices.
+   */
+  quarantined?: boolean;
   samples?: Sample[];
   voices?: Voice[];
 } & Kit;
-
 export interface LocalStoreValidationDetailedResult {
   error?: string;
   errors?: KitValidationError[];
@@ -193,10 +200,16 @@ export interface LocalStoreValidationDetailedResult {
 export type NewBank = typeof banks.$inferInsert;
 
 export type NewKit = typeof kits.$inferInsert;
+
 export type NewSample = typeof samples.$inferInsert;
 export type NewVoice = typeof voices.$inferInsert;
-
 export type Sample = typeof samples.$inferSelect;
+
+/**
+ * What Romper found when it last read a sample's source file (#537):
+ * readable, a WAV it can't read, or missing. Null until it's read.
+ */
+export type SampleSourceStatus = "missing" | "readable" | "unreadable";
 
 export type Voice = typeof voices.$inferSelect;
 

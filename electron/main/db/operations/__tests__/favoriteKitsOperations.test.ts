@@ -63,6 +63,7 @@ describe("Favorite Kits Operations - Unit Tests", () => {
         editable: false,
         is_favorite: true,
         name: "A0",
+        quarantined: false,
         samples: [],
         voices: [],
       });
@@ -73,6 +74,7 @@ describe("Favorite Kits Operations - Unit Tests", () => {
         editable: true,
         is_favorite: true,
         name: "B1",
+        quarantined: false,
         samples: [],
         voices: [],
       });

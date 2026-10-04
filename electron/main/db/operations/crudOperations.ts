@@ -20,6 +20,7 @@ export {
   getKitsMetadata,
   getSyncPlanData,
   markAllKitsAsSyncedExcept,
+  markAllKitsAsSyncedExceptTx,
   markKitAsModified,
   markKitAsSynced,
   markKitsAsSynced,

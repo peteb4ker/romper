@@ -91,19 +91,25 @@ export function markAllKitsAsSyncedExcept(
   dbDir: string,
   stillModified: string[],
 ): DbResult<number> {
-  return withDb(dbDir, (db) => {
-    const modified = eq(kits.modified_since_sync, true);
-    const result = db
-      .update(kits)
-      .set({ modified_since_sync: false })
-      .where(
-        stillModified.length > 0
-          ? and(modified, notInArray(kits.name, stillModified))
-          : modified,
-      )
-      .run();
-    return result.changes;
-  });
+  return withDb(dbDir, (db) => markAllKitsAsSyncedExceptTx(db, stillModified));
+}
+
+/** markAllKitsAsSyncedExcept on the caller's transaction */
+export function markAllKitsAsSyncedExceptTx(
+  db: RomperDb,
+  stillModified: string[],
+): number {
+  const modified = eq(kits.modified_since_sync, true);
+  const result = db
+    .update(kits)
+    .set({ modified_since_sync: false })
+    .where(
+      stillModified.length > 0
+        ? and(modified, notInArray(kits.name, stillModified))
+        : modified,
+    )
+    .run();
+  return result.changes;
 }
 
 /**

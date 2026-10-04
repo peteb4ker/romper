@@ -28,7 +28,13 @@ vi.mock("../../audioUtils.js", async (importOriginal) => ({
 
 vi.mock("../../db/romperDbCoreORM.js", () => ({
   getSyncPlanData: vi.fn(),
-  markAllKitsAsSyncedExcept: vi.fn(() => ({ data: 0, success: true })),
+  linkVoicesAutomaticallyTx: vi.fn(),
+  // A completed write is recorded in one transaction (#537)
+  markAllKitsAsSyncedExceptTx: vi.fn(() => 0),
+  withDbTransaction: vi.fn((_dbDir: string, fn: (db: unknown) => unknown) => ({
+    data: fn({}),
+    success: true,
+  })),
 }));
 
 vi.mock("../../formatConverter.js", () => ({
@@ -50,7 +56,7 @@ import type { SyncPlanData } from "../../db/operations/kitSyncOperations.js";
 import { validateSampleFormatAsync } from "../../audioUtils.js";
 import {
   getSyncPlanData,
-  markAllKitsAsSyncedExcept,
+  markAllKitsAsSyncedExceptTx,
 } from "../../db/romperDbCoreORM.js";
 import { convertToRampleDefault } from "../../formatConverter.js";
 import { rtfFileService } from "../rtfFileService.js";
@@ -69,7 +75,7 @@ const mockFs = vi.mocked(fs);
 const mockPath = vi.mocked(path);
 const mockValidateSampleFormat = vi.mocked(validateSampleFormatAsync);
 const mockGetSyncPlanData = vi.mocked(getSyncPlanData);
-const mockMarkKitsAsSynced = vi.mocked(markAllKitsAsSyncedExcept);
+const mockMarkKitsAsSynced = vi.mocked(markAllKitsAsSyncedExceptTx);
 const _mockConvertToRampleDefault = vi.mocked(convertToRampleDefault);
 const mockBrowserWindow = vi.mocked(BrowserWindow);
 const mockValidateSdCardTarget = vi.mocked(validateSdCardTarget);
@@ -344,7 +350,7 @@ describe("[UC-34] SyncService", () => {
 
     it("returns sync results with file count", async () => {
       // Mock successful sync
-      mockMarkKitsAsSynced.mockReturnValue({ data: 1, success: true });
+      mockMarkKitsAsSynced.mockReturnValue(1);
 
       const result = await syncService.startKitSync(mockSettings, mockOptions);
 
@@ -584,7 +590,7 @@ describe("[UC-34] SyncService", () => {
       vi.spyOn(syncFileOperationsService, "processAllFiles").mockResolvedValue(
         2,
       );
-      mockMarkKitsAsSynced.mockReturnValue({ data: 1, success: true });
+      mockMarkKitsAsSynced.mockReturnValue(1);
     });
 
     afterEach(() => {
@@ -694,10 +700,10 @@ describe("[UC-34] SyncService", () => {
 
       // Every other kit is in step with the card, including C3 and kits
       // with no files to write (RE-35)
-      expect(mockMarkKitsAsSynced).toHaveBeenCalledWith(
-        "/local/store/.romperdb",
-        ["A1", "B2"],
-      );
+      expect(mockMarkKitsAsSynced).toHaveBeenCalledWith(expect.anything(), [
+        "A1",
+        "B2",
+      ]);
     });
 
     it("[UC-11] clears the flag after a write with no files to write (RE-35)", async () => {
@@ -708,10 +714,7 @@ describe("[UC-34] SyncService", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(mockMarkKitsAsSynced).toHaveBeenCalledWith(
-        "/local/store/.romperdb",
-        [],
-      );
+      expect(mockMarkKitsAsSynced).toHaveBeenCalledWith(expect.anything(), []);
     });
   });
 

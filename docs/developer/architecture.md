@@ -244,7 +244,9 @@ mixdowns and quarantine problems, and `checkStereoLink` says when a voice
 can be linked by hand (main's `updateVoiceStereoMode` refuses any other
 link, #541). Setup (`mergeKitScanTx` with `linkStereoVoices`) and the write
 (`planWriteStereo` in `syncStereoPlan.ts`, then
-`linkVoicesAutomaticallyTx`) make the automatic links; a scan only
+`linkVoicesAutomaticallyTx`) make the automatic links; the write records
+its links only once every file is written, with the synced flags in one
+transaction, so a cancelled or failed write leaves none. A scan only
 reports. The write leaves a quarantined kit's files out and keeps its card
 folder (`CardContents.keepKits`), and lists links, mixdowns and quarantine
 in its summary (`SyncChangeSummary.stereo`). The user's own choice is

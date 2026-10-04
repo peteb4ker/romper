@@ -13,6 +13,7 @@ import { validateSampleFormat } from "./audioUtils.js";
 import { registerFavoritesIpcHandlers } from "./db/favoritesIpcHandlers.js";
 import { createDbHandler } from "./db/ipcHandlerUtils.js";
 import {
+  getAllBanks,
   getKit,
   getKits,
   getKitSamples,
@@ -357,6 +358,15 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   ipcMain.handle("rescan-kit", (_event, kitName: string) => {
     return scanService.rescanKit(inMemorySettings, kitName);
   });
+
+  // Bank operations: the bank strip loads every bank's name, including
+  // banks with no kits (#512)
+  ipcMain.handle(
+    "get-all-banks",
+    createDbHandler(inMemorySettings, (dbDir: string) => {
+      return getAllBanks(dbDir);
+    }),
+  );
 
   // Rename or clear a bank (RE-23). An empty or null artist clears the name
   // in the database as well as its RTF file, so it stays gone after a

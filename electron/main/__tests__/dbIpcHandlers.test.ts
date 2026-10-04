@@ -12,6 +12,7 @@ vi.mock("../db/romperDbCoreORM", () => ({
   addKit: vi.fn(),
   addSample: vi.fn(),
   createRomperDbFile: vi.fn(),
+  getAllBanks: vi.fn(),
   getKit: vi.fn(),
   getKits: vi.fn(),
   getKitSamples: vi.fn(),
@@ -128,6 +129,10 @@ describe("dbIpcHandlers - Routing Tests", () => {
     });
     vi.mocked(romperDbCore.addKit).mockReturnValue({ success: true });
     vi.mocked(romperDbCore.addSample).mockReturnValue({ success: true });
+    vi.mocked(romperDbCore.getAllBanks).mockReturnValue({
+      data: [],
+      success: true,
+    });
     vi.mocked(romperDbCore.getKits).mockReturnValue({
       data: [],
       success: true,
@@ -150,6 +155,8 @@ describe("dbIpcHandlers - Routing Tests", () => {
         "validate-local-store-basic",
         "get-all-samples-for-kit",
         "rescan-kit",
+        // The bank strip loads every bank's name (#512)
+        "get-all-banks",
         "scan-banks",
         "add-sample-to-slot",
         "replace-sample-in-slot",
@@ -165,7 +172,6 @@ describe("dbIpcHandlers - Routing Tests", () => {
 
     it("[Q-03] no longer registers channels the renderer stopped using", () => {
       for (const channel of [
-        "get-all-banks",
         "get-all-samples",
         "get-audio-metadata",
         "get-kits-metadata",

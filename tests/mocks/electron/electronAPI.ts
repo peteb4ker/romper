@@ -40,6 +40,7 @@ export const createElectronAPIMock = (
   generateSyncChangeSummary: vi
     .fn()
     .mockResolvedValue({ data: null, success: true }),
+  getAllBanks: vi.fn().mockResolvedValue({ data: [], success: true }),
   getAllSamplesForKit: vi.fn().mockImplementation((_: string) => {
     return Promise.resolve({
       data: [

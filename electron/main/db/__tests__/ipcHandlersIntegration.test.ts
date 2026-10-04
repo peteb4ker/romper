@@ -16,6 +16,7 @@ vi.mock("../romperDbCoreORM.js", () => ({
   addSample: vi.fn(),
   createRomperDbFile: vi.fn(),
   deleteSamples: vi.fn(),
+  getAllBanks: vi.fn(),
   getKit: vi.fn(),
   getKits: vi.fn(),
   getKitSamples: vi.fn(),

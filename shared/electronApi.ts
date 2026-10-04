@@ -1,5 +1,6 @@
 import type { FormatValidationResult } from "./audioTypes.js";
 import type {
+  Bank,
   DbResult,
   KitScanResult,
   KitWithRelations,
@@ -93,6 +94,7 @@ export interface ElectronAPI {
   generateSyncChangeSummary: (
     sdCardPath?: string,
   ) => Promise<DbResult<SyncChangeSummary>>;
+  getAllBanks: () => Promise<DbResult<Bank[]>>;
   getAllSamplesForKit: (kitName: string) => Promise<DbResult<Sample[]>>;
   getKit: (kitName: string) => Promise<DbResult<KitWithRelations>>;
   getKitDeleteSummary: (kitName: string) => Promise<

@@ -18,6 +18,7 @@ interface UseLocalStoreSetupFlowParams {
  * - C1-C6: local store configured but invalid — blocking error dialog
  * - critical environment-variable error — app must close
  * - D: environment override — dismissible test-mode banner
+ * - ready: the store is there and valid, so kits load and banks scan
  *
  * Also owns the wizard lifecycle around those flags (auto-trigger,
  * just-completed suppression, initialization-in-progress) and the
@@ -50,6 +51,16 @@ export function useLocalStoreSetupFlow({
   const hasCriticalEnvironmentError = Boolean(
     localStoreStatus?.isCriticalEnvironmentError,
   );
+
+  // The store is there and valid, so it can be read. Until its status is
+  // known (null) it is not: reading a store that's missing at launch
+  // reports errors (#553).
+  const isLocalStoreReady =
+    isInitialized &&
+    localStoreStatus !== null &&
+    Boolean(localStoreStatus.hasLocalStore) &&
+    localStoreStatus.isValid &&
+    !hasCriticalEnvironmentError;
 
   // D: Environment variable override - show test mode banner
   const [showEnvironmentBanner, setShowEnvironmentBanner] = useState(false);
@@ -104,6 +115,7 @@ export function useLocalStoreSetupFlow({
     hasCriticalEnvironmentError,
     hasInvalidLocalStore,
     isEnvironmentOverride,
+    isLocalStoreReady,
     isWizardInitializing,
     needsLocalStoreSetup,
     setIsWizardInitializing,

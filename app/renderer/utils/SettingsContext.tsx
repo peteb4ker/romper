@@ -84,6 +84,16 @@ function describeError(prefix: string, error: unknown): string {
   return `${prefix}: ${detail}`;
 }
 
+// Main's view of the local store, or null when it can't be read
+async function fetchLocalStoreStatus(): Promise<LocalStoreValidationDetailedResult | null> {
+  try {
+    return await globalThis.electronAPI.getLocalStoreStatus();
+  } catch (error) {
+    console.error("Failed to refresh local store status:", error);
+    return null;
+  }
+}
+
 // Helper function to detect system theme preference
 function getSystemThemePreference(): boolean {
   if (typeof globalThis !== "undefined" && globalThis.matchMedia) {
@@ -182,13 +192,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Refresh local store status
   const refreshLocalStoreStatus = useCallback(async () => {
-    try {
-      const status = await globalThis.electronAPI.getLocalStoreStatus();
-      dispatch({ payload: status, type: "UPDATE_LOCAL_STORE_STATUS" });
-    } catch (error) {
-      console.error("Failed to refresh local store status:", error);
-      dispatch({ payload: null, type: "UPDATE_LOCAL_STORE_STATUS" });
-    }
+    const status = await fetchLocalStoreStatus();
+    dispatch({ payload: status, type: "UPDATE_LOCAL_STORE_STATUS" });
   }, []);
 
   // Initialize settings on mount
@@ -222,24 +227,25 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [applyTheme, refreshLocalStoreStatus]);
 
   // Update local store path
-  const setLocalStorePath = useCallback(
-    async (path: null | string) => {
-      try {
-        await globalThis.electronAPI.setSetting("localStorePath", path);
-        dispatch({ payload: path, type: "UPDATE_LOCAL_STORE_PATH" });
-        await refreshLocalStoreStatus();
-        return true;
-      } catch (error) {
-        console.error("Failed to update local store path:", error);
-        dispatch({
-          payload: describeError("Failed to save local store path", error),
-          type: "SET_ERROR",
-        });
-        return false;
-      }
-    },
-    [refreshLocalStoreStatus],
-  );
+  const setLocalStorePath = useCallback(async (path: null | string) => {
+    try {
+      await globalThis.electronAPI.setSetting("localStorePath", path);
+      // The new path and its status land in the same render, so nothing
+      // reads the new store while the old store's status still says it's
+      // valid (#553)
+      const status = await fetchLocalStoreStatus();
+      dispatch({ payload: path, type: "UPDATE_LOCAL_STORE_PATH" });
+      dispatch({ payload: status, type: "UPDATE_LOCAL_STORE_STATUS" });
+      return true;
+    } catch (error) {
+      console.error("Failed to update local store path:", error);
+      dispatch({
+        payload: describeError("Failed to save local store path", error),
+        type: "SET_ERROR",
+      });
+      return false;
+    }
+  }, []);
 
   // Update theme mode setting
   const setThemeMode = useCallback(

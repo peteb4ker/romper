@@ -72,9 +72,8 @@ const KitsView: React.FC = () => {
     updateKitAlias,
   } = useKitDataManager({
     isInitialized,
+    isLocalStoreReady: setupFlow.isLocalStoreReady,
     localStorePath,
-    needsLocalStoreSetup:
-      setupFlow.needsLocalStoreSetup || setupFlow.hasInvalidLocalStore,
   });
 
   // Kit navigation
@@ -150,11 +149,10 @@ const KitsView: React.FC = () => {
     openPreferences: dialogState.openPreferences,
   });
 
-  // Startup actions
+  // Startup actions, once the store's status says it's valid (#553)
   useStartupActions({
+    isLocalStoreReady: setupFlow.isLocalStoreReady,
     localStorePath,
-    needsLocalStoreSetup:
-      setupFlow.needsLocalStoreSetup || setupFlow.hasInvalidLocalStore,
   });
 
   // HMR: Save selected kit state before hot reload
@@ -250,7 +248,10 @@ const KitsView: React.FC = () => {
             isSearching={search.isSearching}
             // Other props
             kits={kitFilters.filteredKits}
-            localStorePath={localStorePath}
+            // The browser reads the store's banks; give it the store only
+            // once it's valid, so a missing store isn't read and its bank
+            // names load when it comes back (#553)
+            localStorePath={setupFlow.isLocalStoreReady ? localStorePath : null}
             modifiedCount={kitFilters.modifiedCount}
             onAboutClick={() =>
               globalThis.dispatchEvent(new CustomEvent("menu-about"))

@@ -81,3 +81,6 @@ docs/developer/traceability.md
 # Test result JSON for the testing summary (CI)
 reports/
 docs/_data/testing.json
+
+# Playwright HTML report (written by CI-mode e2e runs)
+playwright-report/

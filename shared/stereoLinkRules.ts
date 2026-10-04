@@ -71,7 +71,7 @@ export interface StereoSampleState {
 /** The voice fields the rules read */
 export interface StereoVoiceState {
   /** The user's choice (Keep mono or unlink: "mono"; linking: "stereo") */
-  stereo_choice?: null | StereoChoice | string;
+  stereo_choice?: null | StereoChoice;
   stereo_mode: boolean;
   voice_number: number;
 }

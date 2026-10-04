@@ -21,6 +21,29 @@ export type ScanStatus =
   | { status: "idle" }
   | { status: "scanning" };
 
+/** What Scan Kit reports for a kit it scanned */
+function scanSuccessStatus(
+  kitName: string,
+  data: Parameters<typeof addScanResultToTotals>[1],
+): ScanStatus {
+  const totals = addScanResultToTotals(EMPTY_SCAN_TOTALS, data, kitName);
+  // The stereo lines say it per kit; the counts would repeat them
+  const detail = describeScanTotals({
+    ...totals,
+    stereoAutoLinks: 0,
+    stereoMixdowns: 0,
+    stereoQuarantined: 0,
+  });
+  return {
+    ...(detail ? { detail } : {}),
+    sampleCount: data?.scannedSamples || 0,
+    ...(totals.stereoLines.length > 0
+      ? { stereoLines: totals.stereoLines }
+      : {}),
+    status: "success",
+  };
+}
+
 const FLASH_DURATION_MS = 1200;
 
 const SCAN_SUCCESS_CLEAR_MS = 3000;
@@ -104,27 +127,7 @@ export function useKitScanning({
       const result = await globalThis.electronAPI.rescanKit(kitName);
 
       if (result.success) {
-        const sampleCount = result.data?.scannedSamples || 0;
-        const totals = addScanResultToTotals(
-          EMPTY_SCAN_TOTALS,
-          result.data,
-          kitName,
-        );
-        // The stereo lines say it per kit; the counts would repeat them
-        const detail = describeScanTotals({
-          ...totals,
-          stereoAutoLinks: 0,
-          stereoMixdowns: 0,
-          stereoQuarantined: 0,
-        });
-        setScanStatus({
-          ...(detail ? { detail } : {}),
-          sampleCount,
-          ...(totals.stereoLines.length > 0
-            ? { stereoLines: totals.stereoLines }
-            : {}),
-          status: "success",
-        });
+        setScanStatus(scanSuccessStatus(kitName, result.data));
 
         // Auto-clear success status after delay
         scheduleStatusClear();

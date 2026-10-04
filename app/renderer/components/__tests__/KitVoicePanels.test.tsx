@@ -1145,6 +1145,10 @@ describe("KitVoicePanels", () => {
         "pad.wav is stereo. Link voices 3 and 4 as a stereo pair?",
       );
       expect(prompt).toHaveTextContent("Keep mono");
+      // Link takes focus as the prompt opens
+      await waitFor(() =>
+        expect(screen.getByTestId("stereo-drop-link")).toHaveFocus(),
+      );
       await act(async () => {
         fireEvent.click(screen.getByTestId("stereo-drop-link"));
       });

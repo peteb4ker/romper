@@ -3,27 +3,29 @@ import type { Sample, Voice } from "@romper/shared/db/schema";
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createMockSample } from "../../../../../../tests/factories/sample.factory";
+import { createMockVoice } from "../../../../../../tests/factories/voice.factory";
 import { useStereoHandling } from "../useStereoHandling";
 
 describe("useStereoHandling", () => {
   // Mock voice data
   const mockVoices: Voice[] = [
-    { id: 1, kit_name: "A0", stereo_mode: false, voice_number: 1 },
-    { id: 2, kit_name: "A0", stereo_mode: false, voice_number: 2 },
-    { id: 3, kit_name: "A0", stereo_mode: false, voice_number: 3 },
-    { id: 4, kit_name: "A0", stereo_mode: false, voice_number: 4 },
+    createMockVoice({ id: 1, kit_name: "A0", voice_number: 1 }),
+    createMockVoice({ id: 2, kit_name: "A0", voice_number: 2 }),
+    createMockVoice({ id: 3, kit_name: "A0", voice_number: 3 }),
+    createMockVoice({ id: 4, kit_name: "A0", voice_number: 4 }),
   ];
 
   // Mock sample data
   const mockSamples: Sample[] = [
-    {
+    createMockSample({
       filename: "kick.wav",
       id: 1,
       kit_name: "A0",
       slot_number: 0,
       source_path: "/path/kick.wav",
       voice_number: 1,
-    },
+    }),
   ];
 
   beforeEach(() => {

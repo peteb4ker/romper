@@ -1,6 +1,14 @@
+import type { Sample } from "@romper/shared/db/schema";
+
 import { describe, expect, it } from "vitest";
 
+import { createMockSample } from "../../../../tests/factories/sample.factory";
 import { groupDbSamplesByVoice } from "../sampleGroupingUtils";
+
+/** Sample rows with the given filename, slot and voice */
+const rows = (
+  samples: Pick<Sample, "filename" | "slot_number" | "voice_number">[],
+): Sample[] => samples.map((sample) => createMockSample(sample));
 
 describe("sampleGroupingUtils", () => {
   describe("groupDbSamplesByVoice", () => {
@@ -17,7 +25,7 @@ describe("sampleGroupingUtils", () => {
         { filename: "sample4.wav", slot_number: 0, voice_number: 4 },
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
       expect(result[1]).toContain("sample1.wav");
       expect(result[2]).toContain("sample2.wav");
       expect(result[3]).toContain("sample3.wav");
@@ -31,7 +39,7 @@ describe("sampleGroupingUtils", () => {
         { filename: "slot2.wav", slot_number: 1, voice_number: 1 },
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
       expect(result[1][0]).toBe("slot1.wav"); // slot_number 0 -> index 0
       expect(result[1][1]).toBe("slot2.wav"); // slot_number 1 -> index 1
       expect(result[1][2]).toBe("slot3.wav"); // slot_number 2 -> index 2
@@ -46,7 +54,7 @@ describe("sampleGroupingUtils", () => {
         },
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
       expect(result[1][0]).toBe("stereo.wav");
       expect(result[2]).toEqual([]); // stereo is a voice config, not sample-driven
     });
@@ -58,7 +66,7 @@ describe("sampleGroupingUtils", () => {
         { filename: "valid.wav", slot_number: 0, voice_number: 1 },
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
       expect(result[1]).toContain("valid.wav");
       expect(result[1]).not.toContain("invalid0.wav");
       expect(result[1]).not.toContain("invalid5.wav");
@@ -75,7 +83,7 @@ describe("sampleGroupingUtils", () => {
         { filename: "valid-slot.wav", slot_number: 0, voice_number: 1 },
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
       expect(result[1]).toContain("valid-slot.wav");
       expect(result[1]).not.toContain("invalid-slot-negative.wav");
       expect(result[1]).not.toContain("invalid-slot13.wav");
@@ -87,7 +95,7 @@ describe("sampleGroupingUtils", () => {
         { filename: "third.wav", slot_number: 2, voice_number: 1 },
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
       expect(result[1][0]).toBe("first.wav");
       expect(result[1][1]).toBe(""); // empty slot 2
       expect(result[1][2]).toBe("third.wav");
@@ -98,7 +106,7 @@ describe("sampleGroupingUtils", () => {
         { filename: "second.wav", slot_number: 1, voice_number: 1 },
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
       // Should have empty string for slot 1, then second.wav, then truncated
       expect(result[1]).toEqual(["", "second.wav"]);
       expect(result[1]).toHaveLength(2); // No trailing empty slots
@@ -112,7 +120,7 @@ describe("sampleGroupingUtils", () => {
         { filename: "v1s1.wav", slot_number: 0, voice_number: 1 },
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
       expect(result[1][0]).toBe("v1s1.wav");
       expect(result[1][1]).toBe("v1s2.wav");
       expect(result[2][0]).toBe("v2s1.wav");
@@ -138,7 +146,7 @@ describe("sampleGroupingUtils", () => {
         },
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
       expect(result[1][0]).toBe("mono.wav");
       expect(result[2][0]).toBe("stereo.wav");
       expect(result[3]).toEqual([]); // no ghost entry from stereo sample

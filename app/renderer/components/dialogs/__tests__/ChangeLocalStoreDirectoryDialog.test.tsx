@@ -9,6 +9,7 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../../tests/mocks/electron/electronAPI";
+import { createMockSettings } from "../../../../../tests/mocks/settings";
 import { useSettings } from "../../../utils/SettingsContext";
 import ChangeLocalStoreDirectoryDialog from "../ChangeLocalStoreDirectoryDialog";
 
@@ -50,17 +51,18 @@ describe("[UC-06] ChangeLocalStoreDirectoryDialog", () => {
     onMessage: vi.fn(),
   };
 
-  const mockSettings = {
+  const mockSettings = createMockSettings({
     localStorePath: "/current/path",
     setLocalStorePath: vi.fn(),
-  };
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useSettings).mockReturnValue(mockSettings);
-    vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(null);
+    vi.mocked(window.electronAPI.selectLocalStorePath).mockResolvedValue(
+      undefined,
+    );
     vi.mocked(window.electronAPI.validateLocalStoreBasic).mockResolvedValue({
-      error: null,
       isValid: true,
     });
   });
@@ -270,7 +272,6 @@ describe("[UC-06] ChangeLocalStoreDirectoryDialog", () => {
         newPath,
       );
       vi.mocked(window.electronAPI.validateLocalStoreBasic).mockResolvedValue({
-        error: null,
         isValid: false,
       });
 
@@ -294,7 +295,6 @@ describe("[UC-06] ChangeLocalStoreDirectoryDialog", () => {
         newPath,
       );
       vi.mocked(window.electronAPI.validateLocalStoreBasic).mockResolvedValue({
-        error: null,
         isValid: true,
       });
 

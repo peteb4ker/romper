@@ -9,6 +9,7 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../../tests/mocks/electron/electronAPI";
+import { createMockSettings } from "../../../../../tests/mocks/settings";
 import { useSettings } from "../../../utils/SettingsContext";
 import InvalidLocalStoreDialog from "../InvalidLocalStoreDialog";
 
@@ -60,10 +61,12 @@ describe("[UC-05] InvalidLocalStoreDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSetLocalStorePath.mockResolvedValue(true);
-    (useSettings as unknown).mockReturnValue({
-      refreshLocalStoreStatus: mockRefreshLocalStoreStatus,
-      setLocalStorePath: mockSetLocalStorePath,
-    });
+    vi.mocked(useSettings).mockReturnValue(
+      createMockSettings({
+        refreshLocalStoreStatus: mockRefreshLocalStoreStatus,
+        setLocalStorePath: mockSetLocalStorePath,
+      }),
+    );
     Object.assign(window, { electronAPI: mockElectronAPI });
   });
 

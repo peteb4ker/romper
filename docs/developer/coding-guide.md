@@ -87,11 +87,16 @@ fill 2 mono voices."
 - `npm run typecheck` covers `app/`, `electron/` (minus the preload), and
   `shared/` through `tsconfig.json`, and test code through
   `tsconfig.test.json`: so far `tests/` (except `tests/e2e/`), the tests in
-  `shared/`, `electron/main/` and `electron/preload/`, and
-  `vitest.setup.ts`. The `app/` tests and the e2e specs aren't
-  type-checked yet (#466); add a folder to
+  `shared/`, `electron/main/` and `electron/preload/`, the `app/` test
+  folders listed there, and `vitest.setup.ts`. The other `app/` tests and
+  the e2e specs aren't type-checked yet (#466); add a folder to
   `tsconfig.test.json` once its errors are fixed. The preload is
   type-checked by its own build (`npm run build:preload`).
+- jest-dom's matchers (`toBeInTheDocument` and the rest) are typed through
+  `@testing-library/jest-dom/vitest`, which `vitest.setup.ts` imports. When
+  a test mocks `useSettings`, build its value with `createMockSettings`
+  (`tests/mocks/settings.ts`), and build rows with the factories in
+  `tests/factories/`, so the fixtures match the real types.
 
 ## Tests
 

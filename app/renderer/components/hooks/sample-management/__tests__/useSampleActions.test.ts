@@ -1,3 +1,5 @@
+import type { SampleData } from "@romper/app/renderer/components/kitTypes";
+
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -82,7 +84,8 @@ describe("useSampleActions", () => {
         preventDefault: vi.fn(),
       } as unknown as React.MouseEvent;
 
-      const sampleData = {
+      const sampleData: SampleData = {
+        filename: "sample.wav",
         source_path: "/path/to/sample.wav",
       };
 
@@ -99,8 +102,9 @@ describe("useSampleActions", () => {
         preventDefault: vi.fn(),
       } as unknown as React.MouseEvent;
 
-      const sampleData = {
-        source_path: undefined,
+      const sampleData: SampleData = {
+        filename: "sample.wav",
+        source_path: "",
       };
 
       result.current.handleSampleContextMenu(mockEvent, sampleData);
@@ -139,7 +143,8 @@ describe("useSampleActions", () => {
         preventDefault: vi.fn(),
       } as unknown as React.MouseEvent;
 
-      const sampleData = {
+      const sampleData: SampleData = {
+        filename: "sample.wav",
         source_path: "/path/to/sample.wav",
       };
 
@@ -158,7 +163,7 @@ describe("useSampleActions", () => {
       // Mock electronAPI without showItemInFolder method
       setupElectronAPIMock({
         // Explicitly omit showItemInFolder from the mock
-        showItemInFolder: undefined as unknown,
+        showItemInFolder: undefined,
       });
 
       const { result } = renderHook(() => useSampleActions(defaultProps));
@@ -167,7 +172,8 @@ describe("useSampleActions", () => {
         preventDefault: vi.fn(),
       } as unknown as React.MouseEvent;
 
-      const sampleData = {
+      const sampleData: SampleData = {
+        filename: "sample.wav",
         source_path: "/path/to/sample.wav",
       };
 

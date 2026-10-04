@@ -1,7 +1,11 @@
+import type { KitWithRelations } from "@romper/shared/db/schema";
+
 import { describe, expect, it } from "vitest";
 
 import type { BaseKitItemProps, KitItemRenderProps } from "../kitItemUtils";
 
+import { createMockKitWithRelations } from "../../../../../tests/factories/kit.factory";
+import { createMockVoice } from "../../../../../tests/factories/voice.factory";
 import { extractVoiceNames } from "../kitItemUtils";
 
 type MockKitWithRelations = {
@@ -13,6 +17,13 @@ type MockVoice = {
   voice_alias: null | string;
   voice_number: number;
 };
+
+// A real kit row with the given voices (or none)
+function toKit({ voices }: MockKitWithRelations): KitWithRelations {
+  return createMockKitWithRelations(
+    voices ? { voices: voices.map((voice) => createMockVoice(voice)) } : {},
+  );
+}
 
 describe("kitItemUtils", () => {
   describe("BaseKitItemProps interface", () => {
@@ -73,7 +84,7 @@ describe("kitItemUtils", () => {
 
     it("should return undefined for kitData without voices", () => {
       const kitData: MockKitWithRelations = {};
-      const result = extractVoiceNames(kitData as unknown);
+      const result = extractVoiceNames(toKit(kitData));
       expect(result).toBeUndefined();
     });
 
@@ -86,7 +97,7 @@ describe("kitItemUtils", () => {
           { voice_alias: "Cymbal", voice_number: 4 },
         ],
       };
-      const result = extractVoiceNames(kitData as unknown);
+      const result = extractVoiceNames(toKit(kitData));
       expect(result).toEqual({
         1: "Kick",
         2: "Snare",
@@ -104,7 +115,7 @@ describe("kitItemUtils", () => {
           { voice_alias: null, voice_number: 4 },
         ],
       };
-      const result = extractVoiceNames(kitData as unknown);
+      const result = extractVoiceNames(toKit(kitData));
       expect(result).toEqual({
         1: "Kick",
         3: "Hi-Hat",
@@ -120,7 +131,7 @@ describe("kitItemUtils", () => {
           { voice_alias: null, voice_number: 4 },
         ],
       };
-      const result = extractVoiceNames(kitData as unknown);
+      const result = extractVoiceNames(toKit(kitData));
       expect(result).toEqual({});
     });
 
@@ -128,7 +139,7 @@ describe("kitItemUtils", () => {
       const kitData: MockKitWithRelations = {
         voices: [],
       };
-      const result = extractVoiceNames(kitData as unknown);
+      const result = extractVoiceNames(toKit(kitData));
       expect(result).toEqual({});
     });
 
@@ -140,7 +151,7 @@ describe("kitItemUtils", () => {
           { voice_alias: "First", voice_number: 1 },
         ],
       };
-      const result = extractVoiceNames(kitData as unknown);
+      const result = extractVoiceNames(toKit(kitData));
       expect(result).toEqual({
         1: "First",
         2: "Second",

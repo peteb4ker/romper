@@ -13,12 +13,19 @@ const mockElectronAPI = {
 };
 
 // Mock matchMedia
-const mockMatchMedia = vi.fn((query: string) => ({
+const mediaQueryList = (query: string, matches: boolean): MediaQueryList => ({
   addEventListener: vi.fn(),
-  matches: query === "(prefers-color-scheme: dark)",
+  addListener: vi.fn(),
+  dispatchEvent: vi.fn(),
+  matches,
   media: query,
+  onchange: null,
   removeEventListener: vi.fn(),
-}));
+  removeListener: vi.fn(),
+});
+const mockMatchMedia = vi.fn((query: string) =>
+  mediaQueryList(query, query === "(prefers-color-scheme: dark)"),
+);
 
 describe("[UC-35] SettingsContext", () => {
   beforeEach(() => {
@@ -29,7 +36,7 @@ describe("[UC-35] SettingsContext", () => {
 
     // Setup window mocks using centralized mocks
     Object.assign(window.electronAPI, mockElectronAPI);
-    window.matchMedia = mockMatchMedia as unknown;
+    window.matchMedia = mockMatchMedia;
 
     // Mock document.documentElement.classList
     document.documentElement.classList.toggle = vi.fn();
@@ -166,12 +173,10 @@ describe("[UC-35] SettingsContext", () => {
     });
 
     it("handles system theme preference", async () => {
-      mockMatchMedia.mockReturnValue({
-        addEventListener: vi.fn(),
-        matches: true, // System prefers dark
-        media: "(prefers-color-scheme: dark)",
-        removeEventListener: vi.fn(),
-      });
+      // System prefers dark
+      mockMatchMedia.mockReturnValue(
+        mediaQueryList("(prefers-color-scheme: dark)", true),
+      );
 
       mockElectronAPI.readSettings.mockResolvedValue({
         themeMode: "system",

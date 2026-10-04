@@ -17,6 +17,7 @@ describe("[UC-34] SyncUpdateDialog", () => {
     fileCount: 15,
     kitCount: 8,
     removals: [],
+    stereo: { autoLinks: [], mixdowns: [], quarantined: [] },
     validationErrors: [],
     warnings: [],
   };
@@ -351,6 +352,10 @@ describe("[UC-34] SyncUpdateDialog", () => {
         banks: [],
         fileCount: 0,
         kitCount: 0,
+        removals: [],
+        stereo: { autoLinks: [], mixdowns: [], quarantined: [] },
+        validationErrors: [],
+        warnings: [],
       };
 
       render(
@@ -376,6 +381,9 @@ describe("[UC-34] SyncUpdateDialog", () => {
         fileCount: 0,
         kitCount: 0,
         removals: ["A0", "B - OLD.rtf"],
+        stereo: { autoLinks: [], mixdowns: [], quarantined: [] },
+        validationErrors: [],
+        warnings: [],
       };
 
       render(
@@ -556,6 +564,7 @@ describe("[UC-34] SyncUpdateDialog", () => {
         <SyncUpdateDialog
           isOpen={true}
           kitName="A0"
+          localChangeSummary={null}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
           onGenerateChangeSummary={onGenerate}
@@ -577,6 +586,7 @@ describe("[UC-34] SyncUpdateDialog", () => {
         <SyncUpdateDialog
           isOpen={true}
           kitName="A0"
+          localChangeSummary={null}
           onClose={mockOnClose}
           onConfirm={mockOnConfirm}
           onGenerateChangeSummary={onGenerate}

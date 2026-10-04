@@ -1,6 +1,6 @@
-import * as matchers from "@testing-library/jest-dom/matchers";
+import "@testing-library/jest-dom/vitest";
 import { TextEncoder } from "node:util";
-import { beforeAll, expect, vi } from "vitest";
+import { beforeAll, vi } from "vitest";
 
 import { setupAudioMocks } from "./tests/mocks/browser/audio";
 import { setupDOMMocks, setupWindowDOMMocks } from "./tests/mocks/browser/dom";
@@ -9,9 +9,6 @@ import { defaultElectronAPIMock } from "./tests/mocks/electron/electronAPI";
 import { defaultElectronFileAPIMock } from "./tests/mocks/electron/electronFileAPI";
 // Import error handling mocks
 import "./tests/mocks/errorHandling";
-
-// Extend expect with testing-library matchers
-expect.extend(matchers);
 
 // Polyfill TextEncoder for Node.js environment
 if (typeof globalThis.TextEncoder === "undefined") {

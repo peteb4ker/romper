@@ -122,7 +122,7 @@ describe("HMR State Manager Integration Tests", () => {
       // let's test the logic manually
       if (!wasRecentExplicitNavigation()) {
         const savedKit = getSavedSelectedKit();
-        if (savedKit && kits.length > 0 && !null) {
+        if (savedKit && kits.length > 0) {
           if (kitExists(savedKit, kits)) {
             mockSetSelectedKit(savedKit);
           }
@@ -223,7 +223,7 @@ describe("HMR State Manager Integration Tests", () => {
       // Test the logic manually due to HMR mocking issues
       if (!wasRecentExplicitNavigation()) {
         const savedKit = getSavedSelectedKit();
-        if (savedKit && kits.length > 0 && !null) {
+        if (savedKit && kits.length > 0) {
           if (kitExists(savedKit, kits)) {
             mockSetSelectedKit(savedKit);
           }
@@ -259,7 +259,7 @@ describe("HMR State Manager Integration Tests", () => {
       // Test the logic manually due to HMR mocking issues
       if (!wasRecentExplicitNavigation()) {
         const savedKit = getSavedSelectedKit();
-        if (savedKit && kits.length > 0 && !null) {
+        if (savedKit && kits.length > 0) {
           if (kitExists(savedKit, kits)) {
             mockSetSelectedKit(savedKit);
           }

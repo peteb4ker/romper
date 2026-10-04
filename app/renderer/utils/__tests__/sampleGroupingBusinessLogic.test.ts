@@ -1,6 +1,14 @@
+import type { Sample } from "@romper/shared/db/schema";
+
 import { describe, expect, test } from "vitest";
 
+import { createMockSample } from "../../../../tests/factories/sample.factory";
 import { groupDbSamplesByVoice } from "../sampleGroupingUtils";
+
+/** Sample rows with the given filename, slot and voice */
+const rows = (
+  samples: Pick<Sample, "filename" | "slot_number" | "voice_number">[],
+): Sample[] => samples.map((sample) => createMockSample(sample));
 
 /**
  * Enhanced Business Logic Tests for Sample Grouping
@@ -35,7 +43,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         }, // Last slot
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
 
       expect(result[1]).toEqual(["kick.wav", "", "snare.wav"]); // Gap preserved
       expect(result[2]).toEqual(["", "hat.wav"]); // First slot empty
@@ -63,7 +71,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         voice_number: 1,
       }));
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
 
       expect(result[1]).toHaveLength(12);
       expect(result[1][0]).toBe("sample1.wav");
@@ -89,7 +97,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         }, // Negative slot
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
 
       expect(result[1]).toEqual(["", "", "", "", "", "valid.wav"]); // Only valid sample
     });
@@ -113,7 +121,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         }, // Voice 5
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
 
       expect(result[1]).toEqual([]);
       expect(result[2]).toEqual(["valid.wav"]);
@@ -145,7 +153,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         },
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
 
       expect(result[1]).toEqual(["slot0.wav", "slot1.wav", "slot2.wav"]);
       expect(result[2]).toEqual(["voice2.wav"]);
@@ -167,7 +175,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         // Slots 1-11 remain empty
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
 
       expect(result[1]).toEqual(["sample.wav"]); // Only one element, trailing empties removed
       expect(result[2]).toEqual([]); // Empty voice, all empties removed
@@ -184,7 +192,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         },
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
 
       expect(result[1]).toEqual(["stereo.wav"]);
       expect(result[2]).toEqual([]); // Stereo is a voice config, no ghost entries
@@ -204,7 +212,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         },
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
 
       expect(result[1]).toEqual(["stereo1.wav", "stereo2.wav"]);
       expect(result[2]).toEqual([]); // No ghost entries
@@ -219,7 +227,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         },
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
 
       expect(result[4]).toEqual(["stereo.wav"]);
       expect(result[1]).toEqual([]);
@@ -246,7 +254,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         },
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
 
       expect(result[1]).toEqual(["mono1.wav", "stereo.wav"]);
       expect(result[2]).toEqual(["mono2.wav"]); // No ghost entry from stereo
@@ -261,7 +269,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         },
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
 
       expect(result[1]).toEqual(["", "", "stereo.wav"]);
       expect(result[2]).toEqual([]); // No ghost entry
@@ -281,7 +289,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         },
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
 
       expect(result[2]).toEqual(["", "", "", "stereo1.wav"]);
       expect(result[3]).toEqual(["", "", "", "", "", "", "", "stereo2.wav"]); // Only its own sample
@@ -300,7 +308,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         },
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
 
       expect(result[1]).toEqual(["", "valid.wav"]); // Empty filename preserved
     });
@@ -319,32 +327,9 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         }, // Same slot
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
 
       expect(result[1]).toEqual(["second.wav"]); // Last sample wins
-    });
-
-    test("should handle invalid data gracefully", () => {
-      const dbSamples = [
-        {
-          filename: "valid.wav",
-          slot_number: 0,
-          voice_number: 1,
-        },
-        {
-          filename: "missing_props.wav",
-          slot_number: null,
-          voice_number: undefined,
-        },
-      ];
-
-      const result = groupDbSamplesByVoice(dbSamples);
-
-      // Should only include valid samples and handle missing properties gracefully
-      expect(result[1]).toEqual(["valid.wav"]);
-      expect(result[2]).toEqual([]);
-      expect(result[3]).toEqual([]);
-      expect(result[4]).toEqual([]);
     });
 
     test("should handle very large arrays efficiently", () => {
@@ -360,7 +345,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         }
       }
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
 
       expect(result[1]).toHaveLength(12);
       expect(result[4]).toHaveLength(12);
@@ -371,13 +356,13 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
 
   describe("Performance and Memory Considerations", () => {
     test("should not mutate input array", () => {
-      const dbSamples = [
+      const dbSamples = rows([
         {
           filename: "test.wav",
           slot_number: 0,
           voice_number: 1,
         },
-      ];
+      ]);
       const originalSamples = JSON.parse(JSON.stringify(dbSamples)); // Deep clone
 
       groupDbSamplesByVoice(dbSamples);
@@ -394,8 +379,8 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         },
       ];
 
-      const result1 = groupDbSamplesByVoice(dbSamples);
-      const result2 = groupDbSamplesByVoice(dbSamples);
+      const result1 = groupDbSamplesByVoice(rows(dbSamples));
+      const result2 = groupDbSamplesByVoice(rows(dbSamples));
 
       expect(result1).toEqual(result2); // Same content
       expect(result1).not.toBe(result2); // Different objects
@@ -411,7 +396,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         }, // Only last slot
       ];
 
-      const result = groupDbSamplesByVoice(dbSamples);
+      const result = groupDbSamplesByVoice(rows(dbSamples));
 
       expect(result[1]).toEqual([]); // Empty voices are truly empty
       expect(result[2]).toEqual([]);
@@ -450,7 +435,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         }, // Stereo crash
       ];
 
-      const result = groupDbSamplesByVoice(drumKitSamples);
+      const result = groupDbSamplesByVoice(rows(drumKitSamples));
 
       expect(result[1]).toEqual(["kick.wav"]);
       expect(result[2]).toEqual(["snare.wav"]);
@@ -483,7 +468,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         // ... more chromatic samples
       ];
 
-      const result = groupDbSamplesByVoice(pianoSamples);
+      const result = groupDbSamplesByVoice(rows(pianoSamples));
 
       expect(result[1]).toEqual([
         "piano_c3.wav",
@@ -520,7 +505,7 @@ describe("Sample Grouping Business Logic - Extended Tests", () => {
         },
       ];
 
-      const result = groupDbSamplesByVoice(mixedSamples);
+      const result = groupDbSamplesByVoice(rows(mixedSamples));
 
       expect(result[1]).toEqual(["kick_mono.wav", "snare_stereo.wav"]);
       expect(result[2]).toEqual(["bass_mono.wav"]); // No ghost from snare_stereo

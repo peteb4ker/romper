@@ -280,6 +280,7 @@ describe("[UC-35] PreferencesDialog", () => {
     it("handles successful local store path selection", async () => {
       // Override the centralized mock for this test
       vi.mocked(window.electronAPI.selectExistingLocalStore).mockResolvedValue({
+        error: null,
         path: "/new/test/path",
         success: true,
       });
@@ -317,6 +318,8 @@ describe("[UC-35] PreferencesDialog", () => {
     it("handles failed local store path selection", async () => {
       // Override the centralized mock for this test
       vi.mocked(window.electronAPI.selectExistingLocalStore).mockResolvedValue({
+        error: null,
+        path: null,
         success: false,
       });
 

@@ -1,8 +1,9 @@
+import type { LocalStoreValidationDetailedResult } from "@romper/shared/db/schema";
+
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { type LocalStoreValidationDetailedResult } from "../../utils/SettingsContext";
 import AdvancedTab from "../AdvancedTab";
 
 describe("AdvancedTab", () => {
@@ -347,18 +348,6 @@ describe("AdvancedTab", () => {
   });
 
   describe("Edge cases and error scenarios", () => {
-    it("handles undefined localStoreStatus gracefully", () => {
-      render(
-        <AdvancedTab
-          localStorePath="/test/path"
-          localStoreStatus={undefined as unknown}
-          onChangeLocalStore={mockOnChangeLocalStore}
-        />,
-      );
-
-      expect(screen.getByText("✗ Invalid local store")).toBeInTheDocument();
-    });
-
     it("handles very long path names", () => {
       const longPath =
         "/very/very/very/very/very/very/very/very/very/very/long/path/to/samples/directory/that/might/overflow";

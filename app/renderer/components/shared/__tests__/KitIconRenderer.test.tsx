@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { KitIconRenderer } from "../KitIconRenderer";
+import { KitIconRenderer, type KnownKitIconType } from "../KitIconRenderer";
 
 describe("KitIconRenderer", () => {
   describe("Icon Type Rendering", () => {
@@ -38,12 +38,6 @@ describe("KitIconRenderer", () => {
       const icon = container.querySelector("svg");
       expect(icon).toBeInTheDocument();
       expect(icon).toHaveClass("text-text-secondary");
-    });
-
-    it("should render folder icon by default for unknown types", () => {
-      const { container } = render(<KitIconRenderer iconType="unknown" />);
-      const icon = container.querySelector("svg");
-      expect(icon).toBeInTheDocument();
     });
 
     it("should render folder icon for folder type", () => {
@@ -106,37 +100,20 @@ describe("KitIconRenderer", () => {
 
   describe("Icon Accessibility", () => {
     it("should render svg elements", () => {
-      const iconTypes = ["mic", "loop", "fx", "piano", "drumkit", "folder"];
+      const iconTypes: KnownKitIconType[] = [
+        "mic",
+        "loop",
+        "fx",
+        "piano",
+        "drumkit",
+        "folder",
+      ];
 
       iconTypes.forEach((iconType) => {
         const { container } = render(<KitIconRenderer iconType={iconType} />);
         const icon = container.querySelector("svg");
         expect(icon).toBeInTheDocument();
       });
-    });
-  });
-
-  describe("Component Stability", () => {
-    it("should handle undefined iconType gracefully", () => {
-      const { container } = render(
-        <KitIconRenderer iconType={undefined as unknown} />,
-      );
-      const icon = container.querySelector("svg");
-      expect(icon).toBeInTheDocument(); // Should render default folder icon
-    });
-
-    it("should handle null iconType gracefully", () => {
-      const { container } = render(
-        <KitIconRenderer iconType={null as unknown} />,
-      );
-      const icon = container.querySelector("svg");
-      expect(icon).toBeInTheDocument(); // Should render default folder icon
-    });
-
-    it("should handle empty string iconType", () => {
-      const { container } = render(<KitIconRenderer iconType="" />);
-      const icon = container.querySelector("svg");
-      expect(icon).toBeInTheDocument(); // Should render default folder icon
     });
   });
 

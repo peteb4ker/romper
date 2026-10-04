@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { SampleData } from "../components/kitTypes";
+import type { SampleData } from "../../components/kitTypes";
 
 import {
   formatEnhancedTooltip,

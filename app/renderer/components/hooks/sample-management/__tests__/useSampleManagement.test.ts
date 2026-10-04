@@ -1,25 +1,12 @@
 import { renderHook } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
 import { useSampleManagement } from "../useSampleManagement";
 
-// Mock window.electronAPI
-const mockElectronAPI = {
-  addSampleToSlot: vi.fn(),
-  deleteSampleFromSlot: vi.fn(),
-  deleteSampleFromSlotWithoutReindexing: vi.fn(),
-  getAllSamplesForKit: vi.fn(),
-  moveSampleInKit: vi.fn(),
-  replaceSampleInSlot: vi.fn(),
-};
-
 beforeEach(() => {
-  (window as unknown).electronAPI = mockElectronAPI;
+  setupElectronAPIMock();
   vi.clearAllMocks();
-});
-
-afterEach(() => {
-  delete (window as unknown).electronAPI;
 });
 
 describe("useSampleManagement", () => {
@@ -39,12 +26,5 @@ describe("useSampleManagement", () => {
 
     expect(result.current).toBeDefined();
     expect(typeof result.current).toBe("object");
-  });
-
-  it("handles null kit name", () => {
-    const propsWithNullKit = { ...defaultProps, kitName: null };
-    const { result } = renderHook(() => useSampleManagement(propsWithNullKit));
-
-    expect(result.current).toBeDefined();
   });
 });

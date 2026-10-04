@@ -1,14 +1,13 @@
+import type {
+  MoveSampleAction,
+  MoveSampleBetweenKitsAction,
+} from "@romper/shared/undoTypes";
+
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
 import { useSampleManagementMoveOps } from "../useSampleManagementMoveOps";
-
-// Extend Window interface
-declare global {
-  interface Window {
-    electronAPI: unknown;
-  }
-}
 
 // Mock dependencies
 vi.mock("../useSampleManagementUndoActions", () => ({
@@ -20,6 +19,9 @@ import * as undoActions from "../useSampleManagementUndoActions";
 const mockUseSampleManagementUndoActions = vi.mocked(
   undoActions.useSampleManagementUndoActions,
 );
+type UndoActions = ReturnType<
+  typeof undoActions.useSampleManagementUndoActions
+>;
 
 // Mock window.electronAPI
 const mockElectronAPI = {
@@ -28,8 +30,7 @@ const mockElectronAPI = {
   moveSampleInKit: vi.fn(),
 };
 
-// Ensure window is properly typed and electronAPI is available
-(window as unknown).electronAPI = mockElectronAPI;
+setupElectronAPIMock(mockElectronAPI);
 
 describe("useSampleManagementMoveOps", () => {
   const mockOptions = {
@@ -41,19 +42,30 @@ describe("useSampleManagementMoveOps", () => {
   };
 
   const mockUndoActions = {
-    createCrossKitMoveAction: vi.fn(() => ({
-      data: {},
-      type: "MOVE_SAMPLE_BETWEEN_KITS",
-    })),
-    createSameKitMoveAction: vi.fn(() => ({ data: {}, type: "MOVE_SAMPLE" })),
-  };
+    createAddSampleAction: vi.fn<UndoActions["createAddSampleAction"]>(),
+    createCrossKitMoveAction: vi.fn<UndoActions["createCrossKitMoveAction"]>(
+      () =>
+        ({
+          data: {},
+          type: "MOVE_SAMPLE_BETWEEN_KITS",
+        }) as MoveSampleBetweenKitsAction,
+    ),
+    createReindexSamplesAction:
+      vi.fn<UndoActions["createReindexSamplesAction"]>(),
+    createReplaceSampleAction:
+      vi.fn<UndoActions["createReplaceSampleAction"]>(),
+    createSameKitMoveAction: vi.fn<UndoActions["createSameKitMoveAction"]>(
+      () => ({ data: {}, type: "MOVE_SAMPLE" }) as MoveSampleAction,
+    ),
+    snapshotForUndo: vi.fn<UndoActions["snapshotForUndo"]>(),
+  } satisfies UndoActions;
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetAllMocks();
     mockUseSampleManagementUndoActions.mockReturnValue(mockUndoActions);
     // Ensure electronAPI is always available
-    (window as unknown).electronAPI = mockElectronAPI;
+    setupElectronAPIMock(mockElectronAPI);
   });
 
   describe("[UC-21] handleSampleMove - within kit", () => {
@@ -191,8 +203,7 @@ describe("useSampleManagementMoveOps", () => {
     });
 
     it("should handle same-kit move API unavailable", async () => {
-      const originalAPI = (window as unknown).electronAPI;
-      (window as unknown).electronAPI = {}; // Missing moveSampleInKit
+      setupElectronAPIMock({ moveSampleInKit: undefined });
 
       const { result } = renderHook(() =>
         useSampleManagementMoveOps(mockOptions),
@@ -206,7 +217,7 @@ describe("useSampleManagementMoveOps", () => {
       );
 
       // Restore
-      (window as unknown).electronAPI = originalAPI;
+      setupElectronAPIMock(mockElectronAPI);
     });
 
     it("should handle same-kit move exception", async () => {
@@ -321,8 +332,10 @@ describe("useSampleManagementMoveOps", () => {
     });
 
     it("should handle cross-kit move API unavailable", async () => {
-      const originalAPI = (window as unknown).electronAPI;
-      (window as unknown).electronAPI = { moveSampleInKit: vi.fn() }; // Missing moveSampleBetweenKits
+      setupElectronAPIMock({
+        moveSampleBetweenKits: undefined,
+        moveSampleInKit: vi.fn(),
+      });
 
       const { result } = renderHook(() =>
         useSampleManagementMoveOps(mockOptions),
@@ -336,7 +349,7 @@ describe("useSampleManagementMoveOps", () => {
       );
 
       // Restore
-      (window as unknown).electronAPI = originalAPI;
+      setupElectronAPIMock(mockElectronAPI);
     });
 
     it("should handle cross-kit move exception", async () => {

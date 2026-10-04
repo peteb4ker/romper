@@ -73,7 +73,7 @@ describe("ValidationResultsDialog", () => {
   });
 
   test("should not render when isOpen is false", () => {
-    (useValidationResults as jest.Mock).mockReturnValue({
+    vi.mocked(useValidationResults).mockReturnValue({
       ...mockValidResults,
       isOpen: false,
     });
@@ -93,7 +93,7 @@ describe("ValidationResultsDialog", () => {
   });
 
   test("should render loading state", () => {
-    (useValidationResults as jest.Mock).mockReturnValue({
+    vi.mocked(useValidationResults).mockReturnValue({
       ...mockValidResults,
       isLoading: true,
     });
@@ -114,7 +114,7 @@ describe("ValidationResultsDialog", () => {
   });
 
   test("should render valid results", () => {
-    (useValidationResults as jest.Mock).mockReturnValue(mockValidResults);
+    vi.mocked(useValidationResults).mockReturnValue(mockValidResults);
 
     render(
       <ValidationResultsDialog
@@ -136,7 +136,7 @@ describe("ValidationResultsDialog", () => {
   });
 
   test("should render invalid results with error groups", () => {
-    (useValidationResults as jest.Mock).mockReturnValue(mockInvalidResults);
+    vi.mocked(useValidationResults).mockReturnValue(mockInvalidResults);
 
     render(
       <ValidationResultsDialog
@@ -172,7 +172,7 @@ describe("ValidationResultsDialog", () => {
   test("should handle kit selection", () => {
     const toggleKitSelectionMock = vi.fn();
 
-    (useValidationResults as jest.Mock).mockReturnValue({
+    vi.mocked(useValidationResults).mockReturnValue({
       ...mockInvalidResults,
       toggleKitSelection: toggleKitSelectionMock,
     });
@@ -200,7 +200,7 @@ describe("ValidationResultsDialog", () => {
   test("should handle select all", () => {
     const selectAllMock = vi.fn();
 
-    (useValidationResults as jest.Mock).mockReturnValue({
+    vi.mocked(useValidationResults).mockReturnValue({
       ...mockInvalidResults,
       selectAllKits: selectAllMock,
     });
@@ -224,7 +224,7 @@ describe("ValidationResultsDialog", () => {
   test("should handle rescan button click", () => {
     const rescanSelectedKitsMock = vi.fn();
 
-    (useValidationResults as jest.Mock).mockReturnValue({
+    vi.mocked(useValidationResults).mockReturnValue({
       ...mockInvalidResults,
       rescanSelectedKits: rescanSelectedKitsMock,
       selectedKits: ["A1", "B2"],
@@ -251,7 +251,7 @@ describe("ValidationResultsDialog", () => {
   });
 
   test("should handle close button click", () => {
-    (useValidationResults as jest.Mock).mockReturnValue(mockInvalidResults);
+    vi.mocked(useValidationResults).mockReturnValue(mockInvalidResults);
 
     render(
       <ValidationResultsDialog
@@ -271,7 +271,7 @@ describe("ValidationResultsDialog", () => {
   });
 
   test("should handle cancel button click", () => {
-    (useValidationResults as jest.Mock).mockReturnValue(mockInvalidResults);
+    vi.mocked(useValidationResults).mockReturnValue(mockInvalidResults);
 
     render(
       <ValidationResultsDialog
@@ -293,7 +293,7 @@ describe("ValidationResultsDialog", () => {
   });
 
   test("should disable rescan button when no kits are selected", () => {
-    (useValidationResults as jest.Mock).mockReturnValue({
+    vi.mocked(useValidationResults).mockReturnValue({
       ...mockInvalidResults,
       selectedKits: [],
     });
@@ -318,7 +318,7 @@ describe("ValidationResultsDialog", () => {
   });
 
   test("should show rescanning state", () => {
-    (useValidationResults as jest.Mock).mockReturnValue({
+    vi.mocked(useValidationResults).mockReturnValue({
       ...mockInvalidResults,
       isRescanning: true,
       selectedKits: ["A1"],

@@ -60,9 +60,12 @@ function BulkScanStatus({
   }
 
   if (progress.status === "complete") {
+    // Some kits failed: a warning, as the kit editor's message is (#540)
+    const tone =
+      progress.failedCount > 0 ? "text-accent-warning" : "text-accent-success";
     return (
       <span
-        className="px-2 py-1 text-xs text-accent-success"
+        className={`px-2 py-1 text-xs ${tone}`}
         data-testid="bulk-scan-complete"
       >
         {progress.message}

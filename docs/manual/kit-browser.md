@@ -47,6 +47,7 @@ Each kit appears as a card in the grid showing:
 - **Kit type icon** -- Drum, Loop, Vocal, FX, or Synth/Bass, inferred from the voice names (a folder icon if no voice has a name)
 - **Stereo icon** -- Appears if any voices in the kit are linked as a stereo pair
 - **Lock icon** -- Appears on read-only kits (see [Kit Status Indicators](#kit-status-indicators))
+- **Quarantine icon** (red warning octagon) -- Appears on a quarantined kit, which won't be written to the card until it's fixed; hover over it to see why (see [Kit Status Indicators](#kit-status-indicators))
 - **Amber border** -- The kit has changed since it was last written to the SD card
 - **Favorite** -- Click the favorite icon to add a kit you use often to your favorites, or remove it; or press `;` on the focused kit
 - **Duplicate** and **Delete** buttons -- See [Duplicating Kits](#duplicating-kits) and [Deleting Kits](#deleting-kits)
@@ -106,6 +107,7 @@ Click the **Modified** toggle to show only kits marked as changed since they wer
 
 - **Read-only** (lock icon) -- Kits imported during setup open read-only, so they can't be changed by accident. To edit one, open it in the Kit Editor and turn on the switch in the header; it reads **Editable** when on and **Locked** when off. Kits you create or duplicate start editable.
 - **Modified** (amber border) -- The kit has changed since it was last written to the SD card. The Kit Editor header shows **Modified** for these kits too.
+- **Quarantined** (red warning octagon) -- The kit breaks a stereo pair, or holds a WAV file Romper can't read, so it isn't written to the card and its copy on the card is left as it is. The icon's tooltip reads "Quarantined: this kit won't be written to the card until it's fixed". Open the kit to see what's wrong and how to fix it; the Kit Editor header shows **Quarantined** too. Romper finds a file it can't read when it opens the kit, scans it, or writes it, so a kit you haven't opened since its file was damaged shows the icon only after that. See [Stereo and Mono Handling]({{ site.baseurl }}/manual/kit-editor#stereo-and-mono-handling) and [Missing and Unreadable Files]({{ site.baseurl }}/manual/kit-editor#missing-and-unreadable-files).
 
 ## Scanning Your Library
 

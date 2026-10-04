@@ -275,10 +275,27 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
         releaseMeters();
         const ctx = getSharedAudioContext();
         audioCtxRef.current = ctx;
-        void ctx.decodeAudioData(arrayBuffer.slice(0), (buf) => {
-          setAudioBuffer(buf);
-          drawWaveform(buf);
-        });
+        const decoding = ctx.decodeAudioData(
+          arrayBuffer.slice(0),
+          (buf) => {
+            if (cancelled) return;
+            setAudioBuffer(buf);
+            drawWaveform(buf);
+          },
+          (err) => {
+            // A file Romper can't read: its slot is labelled and the kit
+            // quarantined (#537), so this isn't a background failure
+            if (!cancelled) {
+              console.warn(
+                `[SampleWaveform] Can't decode sample: kit=${kitName}, voice=${voiceNumber}, slot=${slotNumber}:`,
+                err,
+              );
+            }
+            setAudioBuffer(null);
+          },
+        );
+        // The error callback handles a failure; the promise rejects too
+        void Promise.resolve(decoding).catch(() => {});
       })
       .catch((err) => {
         if (!cancelled) {

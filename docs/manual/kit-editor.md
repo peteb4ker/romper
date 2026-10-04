@@ -22,6 +22,7 @@ Click any kit card in the Kit Browser to open it. The header shows:
 - **Kit ID and name** -- The bank/slot and editable name field
 - **Favorite** -- Click the favorite icon to add the kit to your favorites or remove it (or press `;`, the same key as in the Kit Browser)
 - **Modified** -- Shown when the kit has changed since it was last written to the SD card: samples added, moved or deleted, a gain or voice name changed, or a stereo link changed
+- **Quarantined** -- A red warning octagon and **Quarantined**, shown when the kit won't be written to the card until it's fixed. The notice above the voices says what's wrong and how to fix it (see [Stereo and Mono Handling](#stereo-and-mono-handling) and [Missing and Unreadable Files](#missing-and-unreadable-files))
 - **Locked / Editable switch** -- Turns editing on and off (see below)
 - **Scan Kit button** -- Re-analyze samples and refresh voice name detection
 
@@ -55,6 +56,7 @@ Each voice has up to **12 sample slots**, matching the Rample's 12-layer-per-voi
 - **Gain knob** -- Per-sample volume trim (see [Gain Control](#gain-control) below); editable kits only
 - **Delete button** -- Remove the sample from this slot; the samples below it move up. Romper asks first unless **Confirm destructive actions** is off in Preferences. Editable kits only
 - **Waveform display** -- Visual representation of the audio
+- **File not found** or **Can't be read** -- Shown under the filename when the sample's file is missing or isn't a WAV Romper can read (see [Missing and Unreadable Files](#missing-and-unreadable-files))
 
 Right-click a sample to show its file in Finder or Explorer.
 
@@ -94,7 +96,7 @@ How Romper handles stereo:
 1. **A mono voice is always fine.** It can hold any mix of stereo and mono samples. When you write to the card, its stereo samples are mixed down to mono, and the voice shows a note while that's so: **Mixed down to mono instead of playing across 2 voices**. The write summary lists it too.
 2. **Linking automatically.** When you set up from an SD card, and when you write to the card, Romper links a voice with the next one if every sample on it is stereo, the next voice is empty and not in a pair, and you haven't chosen mono for that voice. The pair shows **Linked automatically**, and the setup or write summary says so. You choose mono for a voice by clicking **Keep mono** when you drop a sample, or by unlinking it; Romper remembers.
 3. **Your links stay.** Romper never unlinks a pair. If the next voice is already in a pair, even an empty one, the voice stays mono and its note says why, for example "Voice 1 can't pair with voice 2 because voices 2 and 3 are linked. Unlink them to pair voices 1 and 2."
-4. **A stereo pair must be clean, or the kit is quarantined.** A kit is **Quarantined** when a stereo pair holds a mono sample, when the right-hand voice of a pair has samples, or when one of its WAV files can't be read. A quarantined kit isn't written to the card, and its copy already on the card is left exactly as it is: not overwritten and not removed. The kit editor shows the **Quarantined** notice with what's wrong and how to fix it, and the write summary lists it. When you fix it, for example by unlinking the pair or replacing the sample, the next write writes the kit. A WAV that can't be read is found when Romper reads it, so the write summary and **Scan Kit** report it.
+4. **A stereo pair must be clean, or the kit is quarantined.** A kit is **Quarantined** when a stereo pair holds a mono sample, when the right-hand voice of a pair has samples, or when one of its WAV files can't be read. A quarantined kit isn't written to the card, and its copy already on the card is left exactly as it is: not overwritten and not removed. The kit editor shows the **Quarantined** notice with what's wrong and how to fix it, and the write summary lists it. When you fix it, for example by unlinking the pair or replacing the sample, the next write writes the kit. A WAV that can't be read is found when Romper reads it: when you open the kit, scan it, or write it (see [Missing and Unreadable Files](#missing-and-unreadable-files)).
 5. **Scanning changes nothing.** A scan reports what the next write will do: pairs it will link automatically, voices it will mix down to mono, and quarantined kits.
 6. **Dropping samples.** If you drop a stereo sample on a mono voice that Romper would link automatically, it asks: "kick.wav is stereo. Link voices 1 and 2 as a stereo pair?" Click **Link**, or **Keep mono** to keep the voice mono. If you drop a mono sample on a stereo pair, it's added with a warning, "kick.wav is a mono sample, but voices 1 and 2 are a stereo pair and expect stereo samples.", the sample is labelled **Mono sample in a stereo pair**, and the kit is quarantined until you fix it.
 
@@ -107,6 +109,15 @@ When you write to the card:
 - A stereo sample on a stereo pair is written as it is.
 - A stereo sample on a mono voice is mixed down to mono (the average of its two channels), because a mono voice plays one channel. The write summary lists the voice and marks the bank as needing conversion.
 - A mono sample on a mono voice is written as it is. On a stereo pair it quarantines the kit, which isn't written until it's fixed.
+
+### Missing and Unreadable Files
+
+Romper checks a kit's sample files when you open it, so problems show before you write to the card. It reads the files it hasn't read yet, and the ones it last found missing or unreadable, so a file you've put back or replaced is seen too.
+
+- **File not found** -- The sample's file has been moved or deleted. The slot is labelled **File not found**, and a notice above the voices says which file and how to fix it, for example "kick.wav on voice 1 wasn't found: it was moved or deleted. Put it back, or replace or remove the sample. Until then it's skipped when you write to the card." A missing file doesn't quarantine the kit: the rest of the kit is written, and the write summary lists the skipped sample.
+- **Can't be read** -- The file is there, but it isn't a WAV Romper can read (it may be damaged, or in an unusual format). The slot is labelled **Can't be read**, the kit is **Quarantined**, and the quarantine notice says how to fix it, for example "Romper can't read kick.wav. Replace it with a WAV Romper can read, or remove it." The kit isn't written until you do.
+
+A file that was readable when Romper last read it isn't read again when you open the kit, so a file deleted since then shows as missing after the next **Scan Kit**; a write finds it too, and skips it.
 
 ### Voice Names and Kit Type
 

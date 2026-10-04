@@ -27,6 +27,8 @@ Before any files are written, Romper checks every sample in your library:
 
 A sample that fails is listed in the write summary under "can't be written", with the reason. **Start Write** stays disabled until you tick **Write the other samples and skip these** (or fix the files and open the panel again). If the card already holds an earlier copy of a skipped sample, that copy stays, and the sample's kit stays marked as modified.
 
+You can catch most of these before you write. A quarantined kit shows a red warning octagon on its card in the [Kit Browser]({{ site.baseurl }}/manual/kit-browser#kit-status-indicators) and **Quarantined** in the Kit Editor header, and the Kit Editor labels a sample whose file is missing (**File not found**) or can't be read (**Can't be read**), with how to fix it. A missing file is skipped at write; a file that can't be read quarantines its kit. See [Missing and Unreadable Files]({{ site.baseurl }}/manual/kit-editor#missing-and-unreadable-files).
+
 ## The Sync Process
 
 1. Click the **Write** button in the Kit Browser header. The **Write to SD Card** panel opens

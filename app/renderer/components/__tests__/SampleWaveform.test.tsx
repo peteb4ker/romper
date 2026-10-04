@@ -276,6 +276,51 @@ describe("SampleWaveform", () => {
     consoleSpy.mockRestore();
   });
 
+  it("handles a file that can't be decoded without a background failure (#537)", async () => {
+    const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const decodeError = new Error("Unable to decode audio data");
+    let decoding: Promise<unknown> | undefined;
+    global.AudioContext = vi.fn(function () {
+      return createMockAudioContext({
+        decodeAudioData: vi.fn(
+          (_buf: ArrayBuffer, _ok: unknown, fail: (err: Error) => void) => {
+            fail(decodeError);
+            decoding = Promise.reject(decodeError);
+            return decoding;
+          },
+        ),
+      });
+    });
+    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
+      data: new ArrayBuffer(16),
+      success: true,
+    });
+    const onError = vi.fn();
+
+    await act(async () => {
+      render(
+        <SampleWaveform
+          kitName="A1"
+          onError={onError}
+          playTrigger={0}
+          slotNumber={1}
+          voiceNumber={1}
+        />,
+      );
+    });
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "[SampleWaveform] Can't decode sample: kit=A1, voice=1, slot=1:",
+        decodeError,
+      );
+    });
+    // The rejected promise is handled, so it isn't reported as unhandled
+    await expect(decoding).rejects.toBe(decodeError);
+    expect(onError).not.toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+
   it("cleans up resources on unmount", async () => {
     const { container, unmount } = render(
       <SampleWaveform

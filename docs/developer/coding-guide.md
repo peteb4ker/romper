@@ -43,6 +43,7 @@ fill 2 mono voices."
   favorite in both the browser and the editor.
 - Standard Cmd/Ctrl menu shortcuts are exempt, Shift included: for
   example Cmd/Ctrl+Shift+S for Scan All and Cmd/Ctrl+Shift+Z for Redo.
+  The bank jump ignores presses with Cmd or Ctrl held, so they don't clash.
 - Match on `KeyboardEvent.key`, not `code`, so the shortcut follows the
   keyboard layout, and keep shared matchers in
   `app/renderer/utils/keyboardShortcuts.ts` (`isFavoriteKey`).

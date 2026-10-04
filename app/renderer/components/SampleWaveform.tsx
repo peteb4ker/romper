@@ -1,9 +1,16 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import type { PlayOptions, PlayRegion } from "./kitTypes";
 
 import { getSharedAudioContext } from "../utils/sharedAudioContext";
 import { clearVoiceLevel, setVoiceLevel } from "./led-icon/audioLevels";
+import { bufferForVoice } from "./monoMixdown";
 import { claimVoice } from "./voiceChoke";
 
 // Short gain ramp at slice edges and on choke, so slices don't click
@@ -17,6 +24,12 @@ interface SampleWaveformProps {
   onPlayingChange?: (playing: boolean) => void;
 
   playOptions?: PlayOptions; // region and start time (sequencer); whole sample, now, if unset
+  /**
+   * Whether the voice plays stereo: it's in a stereo pair, as the write
+   * makes it. Off, a stereo sample plays mixed down to mono, as the card
+   * gets it (#569).
+   */
+  playsStereo: boolean;
   playTrigger: number; // increment to trigger play externally
   slotNumber: number;
   stopTrigger?: number; // increment to trigger stop externally
@@ -194,6 +207,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   onError,
   onPlayingChange,
   playOptions,
+  playsStereo,
   playTrigger,
   slotNumber,
   stopTrigger,
@@ -219,6 +233,8 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   const analyserRRef = useRef<AnalyserNode | null>(null);
   const analyserDataLRef = useRef<null | Uint8Array<ArrayBuffer>>(null);
   const analyserDataRRef = useRef<null | Uint8Array<ArrayBuffer>>(null);
+  // Whether the meters were built for two channels
+  const metersStereoRef = useRef(false);
   // Track stopTrigger value at the time of last play to prevent a batched
   // stop from killing a freshly started source in the same render cycle.
   const stopTriggerAtPlayRef = useRef(0);
@@ -242,6 +258,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     analyserRRef.current = null;
     analyserDataLRef.current = null;
     analyserDataRRef.current = null;
+    metersStereoRef.current = false;
   }, []);
 
   // Load audio file and decode
@@ -380,9 +397,19 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     [voiceNumber],
   );
 
+  // What the voice plays: the sample, or its mono mix on a mono voice
+  // (#569). Mixed once per load or link change, not per trigger.
+  const playBuffer = useMemo(
+    () =>
+      audioBuffer && audioCtxRef.current
+        ? bufferForVoice(audioCtxRef.current, audioBuffer, playsStereo)
+        : null,
+    [audioBuffer, playsStereo],
+  );
+
   // Play sample and animate playhead (triggered by playTrigger prop)
   useEffect(() => {
-    if (!audioBuffer || !audioCtxRef.current) return;
+    if (!playBuffer || !audioCtxRef.current) return;
     // Play only on a new trigger: not on mount, and not again when the
     // buffer reloads
     if (playTrigger === handledPlayTriggerRef.current) return;
@@ -402,12 +429,17 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       });
     }
     const source = ctx.createBufferSource();
-    source.buffer = audioBuffer;
+    source.buffer = playBuffer;
     // Volume gain and VU meters are created once per context and reused.
     // Creating meters per trigger leaked thousands of connected nodes a
-    // minute under the sequencer (RE-14).
-    const isStereo = audioBuffer.numberOfChannels >= 2;
+    // minute under the sequencer (RE-14). Meters show what plays, so
+    // linking or unlinking the voice rebuilds them.
+    const isStereo = playBuffer.numberOfChannels >= 2;
+    if (gainNodeRef.current && metersStereoRef.current !== isStereo) {
+      releaseMeters();
+    }
     if (!gainNodeRef.current) {
+      metersStereoRef.current = isStereo;
       const gain = ctx.createGain();
       gain.connect(ctx.destination);
       gainNodeRef.current = gain;
@@ -436,7 +468,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
 
     // Region (slice) playback: offset + duration, with an anti-click envelope
     const playRegion = playOptions?.region;
-    const { offset, playLength } = playWindow(audioBuffer.duration, playRegion);
+    const { offset, playLength } = playWindow(playBuffer.duration, playRegion);
     if (playRegion) {
       const envelope = createSliceEnvelope(ctx, startTime, playLength);
       source.connect(envelope);
@@ -471,9 +503,9 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     releaseVoiceRef.current = releaseVoice;
     setIsPlaying(true);
     function animate() {
-      if (!audioBuffer) return;
+      if (!playBuffer) return;
       const elapsed = Math.max(0, ctx.currentTime - startTime);
-      setPlayhead(Math.min((offset + elapsed) / audioBuffer.duration, 1));
+      setPlayhead(Math.min((offset + elapsed) / playBuffer.duration, 1));
 
       // Report RMS levels for VU meter
       const leftRms =
@@ -510,7 +542,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       clearVoiceLevel(voiceNumber);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [playTrigger, audioBuffer]); // eslint-disable-line react-hooks/exhaustive-deps -- stopTrigger read for snapshot only, not as a dependency
+  }, [playTrigger, playBuffer]); // eslint-disable-line react-hooks/exhaustive-deps -- stopTrigger read for snapshot only, not as a dependency
 
   // Stop playback when stopTrigger changes (voice choke or manual stop)
   useEffect(() => {

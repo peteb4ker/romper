@@ -208,6 +208,12 @@ to skip them (RE-09).
   from main by kit / voice / slot. Channels that take a sample's path
   (`validateSampleFormat`, add and replace) are scoped by main; see "The
   renderer is untrusted".
+- Playback follows the voice's stereo setting, as the write does (#569). A
+  voice that isn't in a stereo pair once the write's automatic links are
+  made (`planKitStereo(...).links`) plays a sample with more than one
+  channel mixed down to mono: the channel average, as `formatConverter.ts`
+  writes it (`bufferForVoice` in `monoMixdown.ts`, once per load or link
+  change). The meters show what plays, and are rebuilt when that changes.
 - Each voice picks a sample by `sample_mode`: `first`, `random`, or
   `round-robin`. A voice in slice mode then plays only a region of that
   sample (`PlayOptions.region`, offset + duration with ~2 ms anti-click

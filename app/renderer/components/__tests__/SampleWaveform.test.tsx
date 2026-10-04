@@ -1,9 +1,10 @@
 // Test suite for SampleWaveform component
 import { act, render, waitFor } from "@testing-library/react";
 import React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
+import { clearAllLevels, getVoiceLevel } from "../led-icon/audioLevels";
 import SampleWaveform from "../SampleWaveform";
 
 // Each test installs its own AudioContext mock; build the "shared" context
@@ -1165,6 +1166,182 @@ describe("SampleWaveform", () => {
       });
       expect(gainNode.disconnect).toHaveBeenCalled();
       expect(ctx.close).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("[UC-29] [UC-28] a stereo sample plays as the card gets it (#569)", () => {
+    const left = [1, 0.5, 0, -1];
+    const right = [0, 0.5, 1, -1];
+
+    function stereoBuffer() {
+      return {
+        duration: 1,
+        getChannelData: vi.fn(
+          (ch: number) => new Float32Array(ch === 0 ? left : right),
+        ),
+        length: left.length,
+        numberOfChannels: 2,
+        sampleRate: 44100,
+      };
+    }
+
+    // An AudioBuffer as createBuffer makes one: zeroed channels
+    function createBuffer(channels: number, length: number, rate: number) {
+      const data = Array.from(
+        { length: channels },
+        () => new Float32Array(length),
+      );
+      return {
+        duration: 1,
+        getChannelData: (ch: number) => data[ch],
+        length,
+        numberOfChannels: channels,
+        sampleRate: rate,
+      };
+    }
+
+    function setup() {
+      const sources: Array<{
+        buffer: {
+          getChannelData: (ch: number) => Float32Array;
+          numberOfChannels: number;
+        } | null;
+        connect: ReturnType<typeof vi.fn>;
+        disconnect: ReturnType<typeof vi.fn>;
+        onended: null;
+        start: ReturnType<typeof vi.fn>;
+        stop: ReturnType<typeof vi.fn>;
+      }> = [];
+      const ctx = createMockAudioContext({
+        createBuffer: vi.fn(createBuffer),
+        createBufferSource: vi.fn(() => {
+          const source = {
+            buffer: null,
+            connect: vi.fn(),
+            disconnect: vi.fn(),
+            onended: null,
+            start: vi.fn(),
+            stop: vi.fn(),
+          };
+          sources.push(source);
+          return source;
+        }),
+        createGain: vi.fn(() => ({
+          connect: vi.fn(),
+          disconnect: vi.fn(),
+          gain: { setValueAtTime: vi.fn() },
+        })),
+        decodeAudioData: vi.fn(async () => stereoBuffer()),
+      });
+      global.AudioContext = vi.fn(function () {
+        return ctx;
+      });
+      vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
+        data: new ArrayBuffer(1024),
+        success: true,
+      });
+      return { ctx, sources };
+    }
+
+    const waveform = (
+      playsStereo: boolean,
+      playTrigger: number,
+      slotNumber = 1,
+    ) => (
+      <SampleWaveform
+        kitName="A1"
+        playsStereo={playsStereo}
+        playTrigger={playTrigger}
+        slotNumber={slotNumber}
+        voiceNumber={1}
+      />
+    );
+
+    const loaded = () =>
+      act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      });
+
+    beforeEach(() => {
+      // Meter one frame per play, so no loop outlives its test
+      global.requestAnimationFrame = vi.fn(() => 1);
+    });
+
+    afterEach(() => {
+      clearAllLevels();
+    });
+
+    it("mixes it down to mono on a mono voice, as the write does", async () => {
+      const { ctx, sources } = setup();
+      const view = render(waveform(false, 0));
+      await loaded();
+      await act(async () => {
+        view.rerender(waveform(false, 1));
+      });
+
+      const played = sources[0].buffer;
+      expect(played?.numberOfChannels).toBe(1);
+      // The average of the channels, the same on both sides
+      expect(Array.from(played?.getChannelData(0) ?? [])).toEqual([
+        0.5, 0.5, 0.5, -1,
+      ]);
+      // The meters show what plays: one channel
+      expect(ctx.createChannelSplitter).not.toHaveBeenCalled();
+      expect(getVoiceLevel(1)?.isStereo).toBe(false);
+    });
+
+    it("plays it as it is on a linked voice", async () => {
+      const { ctx, sources } = setup();
+      const view = render(waveform(true, 0));
+      await loaded();
+      await act(async () => {
+        view.rerender(waveform(true, 1));
+      });
+
+      expect(sources[0].buffer?.numberOfChannels).toBe(2);
+      expect(ctx.createBuffer).not.toHaveBeenCalled();
+      expect(ctx.createChannelSplitter).toHaveBeenCalledTimes(1);
+      expect(getVoiceLevel(1)?.isStereo).toBe(true);
+    });
+
+    it("rebuilds the meters when the voice is linked between plays", async () => {
+      const { ctx, sources } = setup();
+      const view = render(waveform(false, 0));
+      await loaded();
+      await act(async () => {
+        view.rerender(waveform(false, 1));
+      });
+      expect(getVoiceLevel(1)?.isStereo).toBe(false);
+
+      await act(async () => {
+        view.rerender(waveform(true, 1));
+      });
+      await act(async () => {
+        view.rerender(waveform(true, 2));
+      });
+
+      expect(sources[1].buffer?.numberOfChannels).toBe(2);
+      expect(ctx.createGain).toHaveBeenCalledTimes(2);
+      expect(ctx.createChannelSplitter).toHaveBeenCalledTimes(1);
+      expect(getVoiceLevel(1)?.isStereo).toBe(true);
+    });
+
+    it("still chokes the voice: the mono mix stops what else plays on it", async () => {
+      const { sources } = setup();
+      const first = render(waveform(false, 0, 1));
+      const second = render(waveform(false, 0, 2));
+      await loaded();
+
+      await act(async () => {
+        first.rerender(waveform(false, 1, 1));
+      });
+      expect(sources[0].stop).not.toHaveBeenCalled();
+      await act(async () => {
+        second.rerender(waveform(false, 1, 2));
+      });
+
+      expect(sources[0].stop).toHaveBeenCalled();
+      expect(sources[1].stop).not.toHaveBeenCalled();
     });
   });
 });

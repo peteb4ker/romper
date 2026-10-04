@@ -27,6 +27,8 @@ export interface BaseVoicePanelOptions {
     playing: boolean,
   ) => void;
   playOptions?: { [key: string]: PlayOptions | undefined };
+  /** The voice is in a stereo pair, as the write makes it (#569) */
+  playsStereo: boolean;
   playTriggers: { [key: string]: number };
   playVolumes?: { [key: string]: number };
   renderDeleteButton: (

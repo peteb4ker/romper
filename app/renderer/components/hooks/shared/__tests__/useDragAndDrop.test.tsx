@@ -389,27 +389,22 @@ describe("useDragAndDrop", () => {
     });
   });
 
-  describe("return value consistency", () => {
-    it("always returns the same structure", () => {
+  describe("[Q-07] return value consistency", () => {
+    it("always returns the same structure, without the sample processing internals", () => {
       const { rerender, result } = renderHookWithSettings(() =>
         useDragAndDrop(defaultProps),
       );
 
       const expectedKeys = [
-        "calculateTargetSlot",
         "draggedSample",
         "dragOverSlot",
         "dropZone",
-        "executeAssignment",
-        "getCurrentKitSamples",
         "getSampleDragHandlers",
         "handleDragLeave",
         "handleDragOver",
         "handleDrop",
         "handleInternalDragOver",
         "handleInternalDrop",
-        "isDuplicateSample",
-        "processAssignment",
       ];
 
       expect(Object.keys(result.current).sort()).toEqual(expectedKeys.sort());

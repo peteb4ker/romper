@@ -1127,7 +1127,7 @@ describe("KitVoicePanels", () => {
     });
 
     it("asks Link or Keep mono for a stereo sample rule 2 would link, and Link links", async () => {
-      const onSampleAdd = vi.fn().mockResolvedValue(undefined);
+      const onSampleAdd = vi.fn().mockResolvedValue(true);
       const onMessage = vi.fn();
       render(
         <MultiVoicePanelsTestWrapper
@@ -1169,7 +1169,7 @@ describe("KitVoicePanels", () => {
         <MultiVoicePanelsTestWrapper
           isEditable={true}
           onKitUpdated={vi.fn().mockResolvedValue(undefined)}
-          onSampleAdd={vi.fn().mockResolvedValue(undefined)}
+          onSampleAdd={vi.fn().mockResolvedValue(true)}
           voices={kitVoices()}
         />,
       );
@@ -1195,7 +1195,7 @@ describe("KitVoicePanels", () => {
       render(
         <MultiVoicePanelsTestWrapper
           isEditable={true}
-          onSampleAdd={vi.fn().mockResolvedValue(undefined)}
+          onSampleAdd={vi.fn().mockResolvedValue(true)}
           voices={kitVoices({ choice3: "mono" })}
         />,
       );
@@ -1212,7 +1212,7 @@ describe("KitVoicePanels", () => {
         <MultiVoicePanelsTestWrapper
           isEditable={true}
           onMessage={onMessage}
-          onSampleAdd={vi.fn().mockResolvedValue(undefined)}
+          onSampleAdd={vi.fn().mockResolvedValue(true)}
           voices={kitVoices()}
         />,
       );
@@ -1230,7 +1230,7 @@ describe("KitVoicePanels", () => {
         <MultiVoicePanelsTestWrapper
           isEditable={true}
           onMessage={onMessage}
-          onSampleAdd={vi.fn().mockResolvedValue(undefined)}
+          onSampleAdd={vi.fn().mockResolvedValue(true)}
           voices={kitVoices({ stereo1: true })}
         />,
       );

@@ -35,7 +35,7 @@ interface KitVoicePanelProps {
     voice: number,
     slotNumber: number,
     filePath: string,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   onSampleDelete?: (voice: number, slotNumber: number) => Promise<void>;
   // Dead prop: keyboard nav moved to the parent (see line 114). Retained
   // for API stability; removing would cascade through KitVoicePanels,
@@ -52,7 +52,7 @@ interface KitVoicePanelProps {
     voice: number,
     slotNumber: number,
     filePath: string,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   onSampleSelect?: (voice: number, idx: number) => void;
   onSaveVoiceName: (voice: number, newName: string) => Promise<boolean> | void;
 

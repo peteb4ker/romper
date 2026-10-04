@@ -33,13 +33,20 @@ export function useSampleManagementOperations({
     skipUndoRecording,
   });
 
+  // Resolves true when the sample was added. A refused or failed add
+  // tells the user why and resolves false, so a drop doesn't count it (#542).
   const handleSampleAdd = useCallback(
-    async (voice: number, slotNumber: number, filePath: string) => {
+    async (
+      voice: number,
+      slotNumber: number,
+      filePath: string,
+    ): Promise<boolean> => {
       if (!globalThis.electronAPI?.addSampleToSlot) {
         onMessage?.("Sample management not available", "error");
-        return;
+        return false;
       }
 
+      let added = false;
       try {
         const result = await globalThis.electronAPI.addSampleToSlot(
           kitName,
@@ -49,6 +56,7 @@ export function useSampleManagementOperations({
         );
 
         if (result.success) {
+          added = true;
           onMessage?.(
             `Sample added to voice ${voice}, slot ${slotNumber + 1}`,
             "success",
@@ -87,6 +95,7 @@ export function useSampleManagementOperations({
           "error",
         );
       }
+      return added;
     },
     [
       kitName,
@@ -98,13 +107,19 @@ export function useSampleManagementOperations({
     ],
   );
 
+  // Resolves true when the sample was replaced, like handleSampleAdd
   const handleSampleReplace = useCallback(
-    async (voice: number, slotNumber: number, filePath: string) => {
+    async (
+      voice: number,
+      slotNumber: number,
+      filePath: string,
+    ): Promise<boolean> => {
       if (!globalThis.electronAPI?.replaceSampleInSlot) {
         onMessage?.("Sample management not available", "error");
-        return;
+        return false;
       }
 
+      let replaced = false;
       try {
         const before = await undoActions.snapshotForUndo(voice, slotNumber);
 
@@ -116,6 +131,7 @@ export function useSampleManagementOperations({
         );
 
         if (result.success) {
+          replaced = true;
           onMessage?.(
             `Sample replaced in voice ${voice}, slot ${slotNumber + 1}`,
             "success",
@@ -147,6 +163,7 @@ export function useSampleManagementOperations({
           "error",
         );
       }
+      return replaced;
     },
     [kitName, onSamplesChanged, onMessage, undoActions, onAddUndoAction],
   );

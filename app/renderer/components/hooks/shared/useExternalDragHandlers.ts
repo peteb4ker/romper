@@ -170,6 +170,7 @@ export function useExternalDragHandlers({
           if (s) occupiedSlots.add(i);
         });
 
+        const { processAssignment } = sampleProcessing;
         for (; current < files.length; current++) {
           const file = files[current];
           const filePath = await fileValidation.getFilePathFromDrop(file);
@@ -206,10 +207,9 @@ export function useExternalDragHandlers({
             break;
           }
 
-          const wasAdded = await sampleProcessing.processAssignment(
-            filePath,
-            targetSlot,
-          );
+          // Adds run one at a time: the next file's slot depends on whether
+          // this one was added. NOSONAR suppresses S9382 for that reason.
+          const wasAdded = await processAssignment(filePath, targetSlot); // NOSONAR
           // A refused add has told the user why; count only real
           // additions, so the slot stays free for the next file (#542)
           if (!wasAdded) continue;

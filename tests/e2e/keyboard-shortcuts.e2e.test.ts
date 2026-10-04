@@ -66,6 +66,10 @@ test.describe("[UC-07] [UC-10] [Q-06] Keyboard shortcuts", () => {
       .click();
     await window.getByTestId("add-kit-F").click();
     await expect(card("F0")).toBeVisible({ timeout: 10000 });
+    // A new kit is scrolled to and focused shortly after it appears
+    // (KitBrowser's SCROLL_DELAY_MS). Wait for that, or it can take focus
+    // from A0 after the keys below, as it did on CI's Linux runner.
+    await expect(card("F0")).toBeFocused({ timeout: 10000 });
 
     await window.keyboard.press("a");
     await expect(card("A0")).toBeFocused();

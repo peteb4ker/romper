@@ -254,59 +254,59 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       return;
     }
 
-    globalThis.electronAPI
-      .getSampleAudioBuffer(kitName, voiceNumber, slotNumber)
-      .then(async (result) => {
-        if (cancelled) return;
+    const api = globalThis.electronAPI;
+    const where = `kit=${kitName}, voice=${voiceNumber}, slot=${slotNumber}`;
 
+    /** The slot's file, or null for an empty slot or one that can't load */
+    const fetchAudio = async (): Promise<ArrayBuffer | null> => {
+      try {
+        const result = await api.getSampleAudioBuffer(
+          kitName,
+          voiceNumber,
+          slotNumber,
+        );
         if (!result.success) {
           throw new Error(result.error || "Failed to load sample audio");
         }
-
-        // Handle null data for missing samples (empty slots)
-        const arrayBuffer = result.data;
-        if (!arrayBuffer) {
-          setAudioBuffer(null);
-          return;
+        // Null data for missing samples (empty slots)
+        return result.data ?? null;
+      } catch (err) {
+        if (!cancelled) {
+          // Logged for debugging, without a user-facing error for missing samples
+          console.warn(`[SampleWaveform] Sample not found: ${where}:`, err);
         }
+        return null;
+      }
+    };
 
+    const load = async () => {
+      const arrayBuffer = await fetchAudio();
+      if (cancelled) return;
+      if (!arrayBuffer) {
+        setAudioBuffer(null);
+        return;
+      }
+
+      try {
         // The new sample may have another channel count, so its meters are
         // rebuilt on first play
         releaseMeters();
         const ctx = getSharedAudioContext();
         audioCtxRef.current = ctx;
-        const decoding = ctx.decodeAudioData(
-          arrayBuffer.slice(0),
-          (buf) => {
-            if (cancelled) return;
-            setAudioBuffer(buf);
-            drawWaveform(buf);
-          },
-          (err) => {
-            // A file Romper can't read: its slot is labelled and the kit
-            // quarantined (#537), so this isn't a background failure
-            if (!cancelled) {
-              console.warn(
-                `[SampleWaveform] Can't decode sample: kit=${kitName}, voice=${voiceNumber}, slot=${slotNumber}:`,
-                err,
-              );
-            }
-            setAudioBuffer(null);
-          },
-        );
-        // The error callback handles a failure; the promise rejects too
-        void Promise.resolve(decoding).catch(() => {});
-      })
-      .catch((err) => {
+        const buf = await ctx.decodeAudioData(arrayBuffer.slice(0));
+        if (cancelled) return;
+        setAudioBuffer(buf);
+        drawWaveform(buf);
+      } catch (err) {
+        // A file Romper can't read: its slot is labelled and the kit
+        // quarantined (#537), so this isn't a background failure
         if (!cancelled) {
-          // Log the error for debugging but don't show user-facing error for missing samples
-          console.warn(
-            `[SampleWaveform] Sample not found: kit=${kitName}, voice=${voiceNumber}, slot=${slotNumber}:`,
-            err,
-          );
+          console.warn(`[SampleWaveform] Can't decode sample: ${where}:`, err);
         }
         setAudioBuffer(null);
-      });
+      }
+    };
+    void load();
     return () => {
       cancelled = true;
     };

@@ -345,6 +345,12 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   const stereoPromptRef = React.useRef(stereoPrompt);
   stereoPromptRef.current = stereoPrompt;
   React.useEffect(() => () => stereoPromptRef.current?.resolve(false), []);
+  // Link takes focus when the prompt opens, after the dialog's own focus
+  // (a parent's effect runs after its children's)
+  const stereoLinkButtonRef = React.useRef<HTMLButtonElement>(null);
+  React.useEffect(() => {
+    if (stereoPrompt) stereoLinkButtonRef.current?.focus();
+  }, [stereoPrompt]);
 
   const { onKitUpdated, onMessage: showMessage } = props;
   const stereoDrop = React.useMemo<StereoDropHandlers>(
@@ -765,10 +771,10 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                 Keep mono
               </button>
               <button
-                autoFocus
                 className="bg-accent-primary text-white px-4 py-2 rounded"
                 data-testid="stereo-drop-link"
                 onClick={() => answerStereoPrompt(true)}
+                ref={stereoLinkButtonRef}
                 type="button"
               >
                 Link

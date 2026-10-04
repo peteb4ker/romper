@@ -40,7 +40,8 @@ function createMockAudioContext(overrides?: Record<string, unknown>) {
       gain: { setValueAtTime: vi.fn() },
     })),
     currentTime: 0,
-    decodeAudioData: vi.fn(),
+    // Pending until a test resolves it
+    decodeAudioData: vi.fn(() => new Promise(() => {})),
     destination: {},
     state: "running",
     ...overrides,
@@ -279,16 +280,9 @@ describe("SampleWaveform", () => {
   it("handles a file that can't be decoded without a background failure (#537)", async () => {
     const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const decodeError = new Error("Unable to decode audio data");
-    let decoding: Promise<unknown> | undefined;
     global.AudioContext = vi.fn(function () {
       return createMockAudioContext({
-        decodeAudioData: vi.fn(
-          (_buf: ArrayBuffer, _ok: unknown, fail: (err: Error) => void) => {
-            fail(decodeError);
-            decoding = Promise.reject(decodeError);
-            return decoding;
-          },
-        ),
+        decodeAudioData: vi.fn(() => Promise.reject(decodeError)),
       });
     });
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
@@ -315,8 +309,6 @@ describe("SampleWaveform", () => {
         decodeError,
       );
     });
-    // The rejected promise is handled, so it isn't reported as unhandled
-    await expect(decoding).rejects.toBe(decodeError);
     expect(onError).not.toHaveBeenCalled();
     consoleSpy.mockRestore();
   });
@@ -363,7 +355,7 @@ describe("SampleWaveform", () => {
     const mockAudioContext = createMockAudioContext({
       createBufferSource: vi.fn(() => mockSource),
       createGain: vi.fn(() => mockGainNode),
-      decodeAudioData: vi.fn((_buf, cb) => cb(mockAudioBuffer)),
+      decodeAudioData: vi.fn(async () => mockAudioBuffer),
     });
 
     global.AudioContext = vi.fn(function () {
@@ -464,7 +456,7 @@ describe("SampleWaveform", () => {
           return node;
         }),
         currentTime: 5,
-        decodeAudioData: vi.fn((_buf, cb) => cb(mockAudioBuffer)),
+        decodeAudioData: vi.fn(async () => mockAudioBuffer),
       });
       global.AudioContext = vi.fn(function () {
         return mockAudioContext;
@@ -841,8 +833,7 @@ describe("SampleWaveform", () => {
       }),
       createGain: vi.fn(() => mockGainNode),
       decodeAudioData: vi.fn(
-        (_buf: ArrayBuffer, cb: (buf: AudioBuffer) => void) =>
-          cb(mockAudioBuffer as unknown as AudioBuffer),
+        async () => mockAudioBuffer as unknown as AudioBuffer,
       ),
     });
 
@@ -929,8 +920,7 @@ describe("SampleWaveform", () => {
       createBufferSource: vi.fn(() => mockSource),
       createGain: vi.fn(() => mockGainNode),
       decodeAudioData: vi.fn(
-        (_buf: ArrayBuffer, cb: (buf: AudioBuffer) => void) =>
-          cb(mockAudioBuffer as unknown as AudioBuffer),
+        async () => mockAudioBuffer as unknown as AudioBuffer,
       ),
     });
 
@@ -1026,8 +1016,7 @@ describe("SampleWaveform", () => {
       createBufferSource: vi.fn(() => mockSource),
       createGain: vi.fn(() => mockGainNode),
       decodeAudioData: vi.fn(
-        (_buf: ArrayBuffer, cb: (buf: AudioBuffer) => void) =>
-          cb(mockAudioBuffer as unknown as AudioBuffer),
+        async () => mockAudioBuffer as unknown as AudioBuffer,
       ),
     });
 
@@ -1105,15 +1094,13 @@ describe("SampleWaveform", () => {
       };
       const ctx = createMockAudioContext({
         createGain: vi.fn(() => gainNode),
-        decodeAudioData: vi.fn((_buf, cb) =>
-          cb({
-            duration: 1,
-            getChannelData: vi.fn(() => new Float32Array(100)),
-            length: 44100,
-            numberOfChannels: 1,
-            sampleRate: 44100,
-          }),
-        ),
+        decodeAudioData: vi.fn(async () => ({
+          duration: 1,
+          getChannelData: vi.fn(() => new Float32Array(100)),
+          length: 44100,
+          numberOfChannels: 1,
+          sampleRate: 44100,
+        })),
       });
       global.AudioContext = vi.fn(function () {
         return ctx;

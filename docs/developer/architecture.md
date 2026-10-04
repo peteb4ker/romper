@@ -5,6 +5,10 @@ title: Romper Architecture
 
 # Romper Architecture
 
+Which place owns each concept (bank, kit, voice, sample, setting, the
+card, undo, the IPC contract), every copy of it and where they disagree is
+in [domain-model.md](domain-model.md).
+
 ## Layout
 
 | Path | What lives there |

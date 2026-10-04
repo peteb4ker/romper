@@ -1,17 +1,13 @@
 import { renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useSampleProcessing } from "../useSampleProcessing";
 
-vi.mock("../useStereoHandling", () => ({
-  useStereoHandling: vi.fn(),
-}));
-
 describe("useSampleProcessing", () => {
-  const mockOptions = {
+  const makeOptions = () => ({
     kitName: "Test Kit",
-    onSampleAdd: vi.fn(),
-    onSampleReplace: vi.fn(),
+    onSampleAdd: vi.fn().mockResolvedValue(true),
+    onSampleReplace: vi.fn().mockResolvedValue(true),
     samples: [
       "sample1.wav",
       "",
@@ -27,38 +23,36 @@ describe("useSampleProcessing", () => {
       "",
     ],
     voice: 1,
-  };
+  });
 
-  const mockStereoHandling = {
-    analyzeStereoAssignment: vi.fn(),
-    applyStereoAssignment: vi.fn(),
-    handleStereoConflict: vi.fn(),
-  };
+  let consoleError: ReturnType<typeof vi.spyOn>;
+  let consoleWarn: ReturnType<typeof vi.spyOn>;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
-    vi.resetAllMocks();
-
-    // Import and mock the modules
-    const { useStereoHandling } = await import("../useStereoHandling");
-
-    vi.mocked(useStereoHandling).mockReturnValue(mockStereoHandling);
-    vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+    consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.mocked(globalThis.electronAPI.getAllSamplesForKit).mockResolvedValue({
       data: [
         { source_path: "/path/sample1.wav", voice_number: 1 },
         { source_path: "/path/sample3.wav", voice_number: 1 },
       ],
       success: true,
-    });
+    } as never);
   });
 
-  describe("getCurrentKitSamples", () => {
-    it("should fetch and return kit samples", async () => {
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
+  afterEach(() => {
+    consoleError.mockRestore();
+    consoleWarn.mockRestore();
+  });
+
+  describe("[Q-07] getCurrentKitSamples", () => {
+    it("returns the kit's samples", async () => {
+      const { result } = renderHook(() => useSampleProcessing(makeOptions()));
 
       const samples = await result.current.getCurrentKitSamples();
 
-      expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
+      expect(globalThis.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
         "Test Kit",
       );
       expect(samples).toEqual([
@@ -67,106 +61,79 @@ describe("useSampleProcessing", () => {
       ]);
     });
 
-    it("should handle missing electronAPI", async () => {
-      const originalAPI = (window as unknown).electronAPI;
-      (window as unknown).electronAPI = undefined;
+    it("returns null without an error when the API is missing", async () => {
+      const original = globalThis.electronAPI.getAllSamplesForKit;
+      (
+        globalThis.electronAPI as { getAllSamplesForKit?: unknown }
+      ).getAllSamplesForKit = undefined;
+      try {
+        const { result } = renderHook(() => useSampleProcessing(makeOptions()));
 
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
-
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      const samples = await result.current.getCurrentKitSamples();
-
-      expect(samples).toBeNull();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Sample management not available",
-      );
-
-      consoleErrorSpy.mockRestore();
-      (window as unknown).electronAPI = originalAPI;
+        expect(await result.current.getCurrentKitSamples()).toBeNull();
+        expect(consoleError).not.toHaveBeenCalled();
+      } finally {
+        globalThis.electronAPI.getAllSamplesForKit = original;
+      }
     });
 
-    it("should handle API call failure", async () => {
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+    it("returns null when main can't read the kit, logging the reason as a warning", async () => {
+      vi.mocked(globalThis.electronAPI.getAllSamplesForKit).mockResolvedValue({
         error: "API Error",
         success: false,
       });
+      const { result } = renderHook(() => useSampleProcessing(makeOptions()));
 
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
-
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      const samples = await result.current.getCurrentKitSamples();
-
-      expect(samples).toBeNull();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Failed to get samples"),
+      expect(await result.current.getCurrentKitSamples()).toBeNull();
+      expect(consoleError).not.toHaveBeenCalled();
+      expect(consoleWarn).toHaveBeenCalledWith(
+        expect.stringContaining("[SampleProcessing]"),
+        "API Error",
       );
-
-      consoleErrorSpy.mockRestore();
     });
 
-    it("should return empty array when no data", async () => {
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+    it("returns an empty array when main returns no data", async () => {
+      vi.mocked(globalThis.electronAPI.getAllSamplesForKit).mockResolvedValue({
         data: null,
         success: true,
-      });
+      } as never);
+      const { result } = renderHook(() => useSampleProcessing(makeOptions()));
 
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      const samples = await result.current.getCurrentKitSamples();
-
-      expect(samples).toEqual([]);
+      expect(await result.current.getCurrentKitSamples()).toEqual([]);
     });
   });
 
-  describe("isDuplicateSample", () => {
-    it("should detect duplicate sample and log warning", async () => {
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation();
-
-      const allSamples = [
-        { source_path: "/path/existing.wav", voice_number: 1 },
-        { source_path: "/path/other.wav", voice_number: 2 },
-      ];
+  describe("[Q-07] isDuplicateSample", () => {
+    it("finds a file already in this voice, without logging", async () => {
+      const { result } = renderHook(() => useSampleProcessing(makeOptions()));
 
       const isDupe = await result.current.isDuplicateSample(
-        allSamples,
+        [
+          { source_path: "/path/existing.wav", voice_number: 1 },
+          { source_path: "/path/other.wav", voice_number: 2 },
+        ],
         "/path/existing.wav",
       );
 
       expect(isDupe).toBe(true);
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Duplicate sample"),
-      );
-
-      consoleWarnSpy.mockRestore();
+      expect(consoleWarn).not.toHaveBeenCalled();
     });
 
-    it("should return false for non-duplicate sample", async () => {
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      const allSamples = [
-        { source_path: "/path/existing.wav", voice_number: 1 },
-      ];
+    it("returns false for a new file", async () => {
+      const { result } = renderHook(() => useSampleProcessing(makeOptions()));
 
       const isDupe = await result.current.isDuplicateSample(
-        allSamples,
+        [{ source_path: "/path/existing.wav", voice_number: 1 }],
         "/path/new.wav",
       );
 
       expect(isDupe).toBe(false);
     });
 
-    it("should only check samples for current voice", async () => {
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      const allSamples = [
-        { source_path: "/path/sample.wav", voice_number: 2 }, // Different voice
-      ];
+    it("ignores the same file in another voice", async () => {
+      const { result } = renderHook(() => useSampleProcessing(makeOptions()));
 
       const isDupe = await result.current.isDuplicateSample(
-        allSamples,
+        [{ source_path: "/path/sample.wav", voice_number: 2 }],
         "/path/sample.wav",
       );
 
@@ -174,272 +141,68 @@ describe("useSampleProcessing", () => {
     });
   });
 
-  describe("calculateTargetSlot", () => {
-    it("should use slotNumber when provided and >= 0", () => {
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
+  describe("[UC-19] [Q-07] processAssignment", () => {
+    it("adds the file to the slot and resolves true when it was added", async () => {
+      const options = makeOptions();
+      const { result } = renderHook(() => useSampleProcessing(options));
 
-      const targetSlot = result.current.calculateTargetSlot(
-        "/path/sample.wav",
-        2,
-        5,
-      );
+      const added = await result.current.processAssignment("/path/new.wav", 1);
 
-      expect(targetSlot).toBe(2);
+      expect(added).toBe(true);
+      expect(options.onSampleAdd).toHaveBeenCalledWith(1, 1, "/path/new.wav");
+      expect(options.onSampleReplace).not.toHaveBeenCalled();
     });
 
-    it("should use droppedSlotNumber when slotNumber < 0", () => {
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
+    it("resolves false when the add is refused", async () => {
+      const options = makeOptions();
+      options.onSampleAdd.mockResolvedValue(false);
+      const { result } = renderHook(() => useSampleProcessing(options));
 
-      const targetSlot = result.current.calculateTargetSlot(
-        "/path/Test Kit/sample.wav",
-        -1,
-        3,
-      );
+      const added = await result.current.processAssignment("/path/new.wav", 1);
 
-      expect(targetSlot).toBe(3);
+      expect(added).toBe(false);
+      expect(consoleError).not.toHaveBeenCalled();
     });
 
-    it("should find first available slot for external files when slotNumber < 0", () => {
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      const targetSlot = result.current.calculateTargetSlot(
-        "/external/path/sample.wav", // Not from local store
-        -1,
-        0, // droppedSlotNumber, but sample[0] is occupied
-      );
-
-      expect(targetSlot).toBe(1); // First available slot
-    });
-
-    it("should return -1 when no slots available for external files", () => {
-      const fullSamples = Array(12).fill("occupied.wav");
-      const optionsWithFullSamples = { ...mockOptions, samples: fullSamples };
-
+    it("resolves false when nothing can add samples", async () => {
       const { result } = renderHook(() =>
-        useSampleProcessing(optionsWithFullSamples),
+        useSampleProcessing({ ...makeOptions(), onSampleAdd: undefined }),
       );
 
-      const targetSlot = result.current.calculateTargetSlot(
-        "/external/path/sample.wav",
-        -1,
-        5,
+      expect(await result.current.processAssignment("/path/new.wav", 1)).toBe(
+        false,
       );
-
-      expect(targetSlot).toBe(-1);
     });
 
-    it("should treat local store samples differently", () => {
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
+    it("adds rather than replaces when the slot is filled", async () => {
+      const options = makeOptions();
+      const { result } = renderHook(() => useSampleProcessing(options));
 
-      const targetSlot = result.current.calculateTargetSlot(
-        "/path/Test Kit/sample.wav", // From local store (contains kitName)
-        -1,
-        5,
-      );
+      await result.current.processAssignment("/path/new.wav", 0);
 
-      expect(targetSlot).toBe(5); // Use droppedSlotNumber for local store
-    });
-  });
-
-  describe("executeAssignment", () => {
-    it("should log warning when no available slots", async () => {
-      const fullSamplesOptions = {
-        ...mockOptions,
-        samples: Array(12).fill("occupied.wav"), // All slots filled
-      };
-      const { result } = renderHook(() =>
-        useSampleProcessing(fullSamplesOptions),
-      );
-      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation();
-
-      await result.current.executeAssignment("/external/sample.wav", [], 0, {
-        replaceExisting: false,
-      });
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        "No available slots - all slots are filled",
-      );
-
-      consoleWarnSpy.mockRestore();
+      expect(options.onSampleAdd).toHaveBeenCalledWith(1, 0, "/path/new.wav");
+      expect(options.onSampleReplace).not.toHaveBeenCalled();
     });
 
-    it("should call onSampleReplace when replacing existing sample", async () => {
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
+    it("lets an unexpected failure reach the drop, which reports it", async () => {
+      const options = makeOptions();
+      options.onSampleAdd.mockRejectedValue(new Error("boom"));
+      const { result } = renderHook(() => useSampleProcessing(options));
 
-      await result.current.executeAssignment(
-        "/path/Test Kit/new.wav",
-        [],
-        0, // Slot with existing sample
-        { replaceExisting: true },
-      );
-
-      expect(mockOptions.onSampleReplace).toHaveBeenCalledWith(
-        1,
-        0,
-        "/path/Test Kit/new.wav",
-      );
-      expect(mockOptions.onSampleAdd).not.toHaveBeenCalled();
-    });
-
-    it("should call onSampleAdd when adding new sample", async () => {
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      await result.current.executeAssignment(
-        "/path/new.wav",
-        [],
-        1, // Empty slot
-        { replaceExisting: false },
-      );
-
-      expect(mockOptions.onSampleAdd).toHaveBeenCalledWith(
-        1,
-        1,
-        "/path/new.wav",
-      );
-      expect(mockOptions.onSampleReplace).not.toHaveBeenCalled();
-    });
-
-    it("should handle assignment errors", async () => {
-      const mockError = new Error("Assignment failed");
-      mockOptions.onSampleAdd.mockRejectedValue(mockError);
-
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      await result.current.executeAssignment("/path/new.wav", [], 1, {
-        replaceExisting: false,
-      });
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Failed to assign sample:",
-        expect.any(Error),
-      );
-
-      consoleErrorSpy.mockRestore();
-      mockOptions.onSampleAdd.mockReset();
-    });
-
-    it("should handle non-Error exceptions", async () => {
-      mockOptions.onSampleAdd.mockRejectedValue("String error");
-
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      await result.current.executeAssignment("/path/new.wav", [], 1, {
-        replaceExisting: false,
-      });
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Failed to assign sample:",
-        "String error",
-      );
-
-      consoleErrorSpy.mockRestore();
-      mockOptions.onSampleAdd.mockReset();
+      await expect(
+        result.current.processAssignment("/path/new.wav", 1),
+      ).rejects.toThrow("boom");
+      expect(consoleError).not.toHaveBeenCalled();
     });
   });
 
-  describe("[UC-19] processAssignment", () => {
-    const mockFormatValidation = {
-      metadata: { channels: 2 },
-    };
+  it("[Q-07] returns only what the drop uses", () => {
+    const { result } = renderHook(() => useSampleProcessing(makeOptions()));
 
-    const mockAllSamples = [
-      { source_path: "/path/sample1.wav", voice_number: 1 },
-    ];
-
-    beforeEach(() => {
-      mockStereoHandling.analyzeStereoAssignment.mockReturnValue({
-        assignAsMono: true,
-        canAssign: true,
-        requiresConfirmation: false,
-        targetVoice: 1,
-      });
-
-      mockStereoHandling.handleStereoConflict.mockResolvedValue({
-        cancel: false,
-        forceMono: true,
-        replaceExisting: false,
-      });
-
-      mockStereoHandling.applyStereoAssignment.mockResolvedValue(true);
-    });
-
-    it("should execute assignment successfully", async () => {
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      const success = await result.current.processAssignment(
-        "/path/sample.wav",
-        mockFormatValidation,
-        mockAllSamples,
-        1,
-      );
-
-      expect(success).toBe(true);
-      expect(mockOptions.onSampleAdd).toHaveBeenCalled();
-    });
-
-    it("should not apply stereo assignment for mono samples", async () => {
-      const monoFormatValidation = {
-        metadata: { channels: 1 },
-      };
-
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      await result.current.processAssignment(
-        "/path/sample.wav",
-        monoFormatValidation,
-        mockAllSamples,
-        1,
-      );
-
-      expect(mockStereoHandling.applyStereoAssignment).not.toHaveBeenCalled();
-    });
-
-    it("should not apply stereo assignment when forced mono", async () => {
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      await result.current.processAssignment(
-        "/path/sample.wav",
-        mockFormatValidation,
-        mockAllSamples,
-        1,
-      );
-
-      // mockStereoHandling.analyzeStereoAssignment returns assignAsMono: true by default
-      expect(mockStereoHandling.applyStereoAssignment).not.toHaveBeenCalled();
-    });
-
-    it("should handle missing metadata channels", async () => {
-      const noChannelsValidation = {
-        metadata: {},
-      };
-
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      const success = await result.current.processAssignment(
-        "/path/sample.wav",
-        noChannelsValidation,
-        mockAllSamples,
-        1,
-      );
-
-      expect(success).toBe(true);
-      expect(mockOptions.onSampleAdd).toHaveBeenCalled();
-    });
-  });
-
-  describe("return values", () => {
-    it("should return all expected functions", () => {
-      const { result } = renderHook(() => useSampleProcessing(mockOptions));
-
-      expect(result.current).toEqual({
-        calculateTargetSlot: expect.any(Function),
-        executeAssignment: expect.any(Function),
-        getCurrentKitSamples: expect.any(Function),
-        isDuplicateSample: expect.any(Function),
-        processAssignment: expect.any(Function),
-      });
-    });
+    expect(Object.keys(result.current).sort()).toEqual([
+      "getCurrentKitSamples",
+      "isDuplicateSample",
+      "processAssignment",
+    ]);
   });
 });

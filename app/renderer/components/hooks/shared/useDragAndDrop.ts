@@ -13,22 +13,24 @@ export interface UseDragAndDropOptions {
   onBatchDropComplete?: () => void;
   /** Tells the user about files a drop didn't add */
   onMessage?: (text: string, type?: string, duration?: number) => void;
+  /** Resolves true when the sample was added */
   onSampleAdd?: (
     voice: number,
     slotNumber: number,
     filePath: string,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   onSampleMove?: (
     fromVoice: number,
     fromSlot: number,
     toVoice: number,
     toSlot: number,
   ) => Promise<void>;
+  /** Resolves true when the sample was replaced */
   onSampleReplace?: (
     voice: number,
     slotNumber: number,
     filePath: string,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   samples: string[];
   setSharedDraggedSample?: (
     sample: {
@@ -113,13 +115,9 @@ export function useDragAndDrop({
     externalDragHandlers.dropZone ?? internalDragHandlers.internalDropZone;
 
   return {
-    // Expose sample processing functions
-    calculateTargetSlot: sampleProcessing.calculateTargetSlot,
     draggedSample: internalDragHandlers.draggedSample,
     dragOverSlot: combinedDragOverSlot,
     dropZone: combinedDropZone,
-    executeAssignment: sampleProcessing.executeAssignment,
-    getCurrentKitSamples: sampleProcessing.getCurrentKitSamples,
     getSampleDragHandlers: internalDragHandlers.getSampleDragHandlers,
     handleDragLeave: externalDragHandlers.handleDragLeave,
     handleDragOver: externalDragHandlers.handleDragOver,
@@ -127,7 +125,5 @@ export function useDragAndDrop({
     // Expose internal handlers for drop targets
     handleInternalDragOver: internalDragHandlers.handleSampleDragOver,
     handleInternalDrop: internalDragHandlers.handleSampleDrop,
-    isDuplicateSample: sampleProcessing.isDuplicateSample,
-    processAssignment: sampleProcessing.processAssignment,
   };
 }

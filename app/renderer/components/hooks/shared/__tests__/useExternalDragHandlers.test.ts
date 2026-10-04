@@ -345,9 +345,6 @@ describe("useExternalDragHandlers", () => {
       );
       expect(mockSampleProcessing.processAssignment).toHaveBeenCalledWith(
         "/path/to/file.wav",
-        { valid: true },
-        [],
-        3,
         3,
       );
     });
@@ -873,6 +870,81 @@ describe("useExternalDragHandlers", () => {
       );
       // The raw reason stays in the log
       expect(onMessage.mock.calls[0][0]).not.toContain("IPC channel closed");
+    });
+  });
+
+  // #542: an add main refuses tells the user itself (handleSampleAdd), so
+  // the drop must not count it as added
+  describe("[UC-19] [Q-07] counting only the files that were added", () => {
+    const files = (...names: string[]) => names.map(createMockFile);
+
+    beforeEach(() => {
+      mockFileValidation.getFilePathFromDrop.mockImplementation(
+        async (file: { name: string }) => `/src/${file.name}`,
+      );
+      mockFileValidation.validateDroppedFile.mockImplementation(
+        async (path: string) => ({
+          validation: { metadata: { channels: path.includes("pad") ? 2 : 1 } },
+        }),
+      );
+      mockSampleProcessing.getCurrentKitSamples.mockResolvedValue([]);
+      mockSampleProcessing.isDuplicateSample.mockResolvedValue(false);
+    });
+
+    it("doesn't count a refused add as added", async () => {
+      mockSampleProcessing.processAssignment.mockImplementation(
+        async (filePath: string) => !filePath.includes("refused"),
+      );
+      const onBatchDropComplete = vi.fn();
+      const stereoDrop = { report: vi.fn().mockResolvedValue(undefined) };
+      const { result } = renderHook(() =>
+        useExternalDragHandlers({
+          ...defaultProps,
+          onBatchDropComplete,
+          stereoDrop,
+        }),
+      );
+
+      await result.current.handleDrop(
+        createMockEvent(files("refused.wav", "pad.wav")),
+        0,
+      );
+
+      // Only the file that was added is reported as added
+      expect(stereoDrop.report).toHaveBeenCalledWith(2, [
+        { channels: 2, fileName: "pad.wav" },
+      ]);
+      expect(onBatchDropComplete).toHaveBeenCalledTimes(1);
+      // The refused file's slot stays free for the next file
+      expect(mockSampleProcessing.processAssignment.mock.calls).toEqual([
+        ["/src/refused.wav", 0],
+        ["/src/pad.wav", 0],
+      ]);
+      // The add already said why; the drop doesn't add a second message
+      expect(onMessage).not.toHaveBeenCalled();
+    });
+
+    it("reports nothing as added when every add is refused", async () => {
+      mockSampleProcessing.processAssignment.mockResolvedValue(false);
+      const onBatchDropComplete = vi.fn();
+      const stereoDrop = { report: vi.fn().mockResolvedValue(undefined) };
+      const { result } = renderHook(() =>
+        useExternalDragHandlers({
+          ...defaultProps,
+          onBatchDropComplete,
+          stereoDrop,
+        }),
+      );
+
+      await result.current.handleDrop(
+        createMockEvent(files("kick.wav", "pad.wav")),
+        0,
+      );
+
+      expect(mockSampleProcessing.processAssignment).toHaveBeenCalledTimes(2);
+      expect(stereoDrop.report).not.toHaveBeenCalled();
+      expect(onBatchDropComplete).not.toHaveBeenCalled();
+      expect(onMessage).not.toHaveBeenCalled();
     });
   });
 });

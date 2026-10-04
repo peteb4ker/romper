@@ -53,7 +53,7 @@ describe("useSampleManagementOperations", () => {
     (window as unknown).electronAPI = mockElectronAPI;
   });
 
-  describe("handleSampleAdd", () => {
+  describe("[UC-19] [Q-07] handleSampleAdd", () => {
     it("should add sample successfully", async () => {
       mockElectronAPI.addSampleToSlot.mockResolvedValue({
         data: { sampleId: 123 },
@@ -64,7 +64,12 @@ describe("useSampleManagementOperations", () => {
         useSampleManagementOperations(mockOptions),
       );
 
-      await result.current.handleSampleAdd(1, 0, "/path/to/sample.wav");
+      const added = await result.current.handleSampleAdd(
+        1,
+        0,
+        "/path/to/sample.wav",
+      );
+      expect(added).toBe(true);
 
       expect(mockElectronAPI.addSampleToSlot).toHaveBeenCalledWith(
         "Test Kit",
@@ -90,7 +95,12 @@ describe("useSampleManagementOperations", () => {
         useSampleManagementOperations(mockOptions),
       );
 
-      await result.current.handleSampleAdd(1, 0, "/path/to/sample.wav");
+      const added = await result.current.handleSampleAdd(
+        1,
+        0,
+        "/path/to/sample.wav",
+      );
+      expect(added).toBe(false);
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Failed to add sample",
@@ -109,12 +119,38 @@ describe("useSampleManagementOperations", () => {
         useSampleManagementOperations(mockOptions),
       );
 
-      await result.current.handleSampleAdd(1, 0, "/path/to/sample.wav");
+      const added = await result.current.handleSampleAdd(
+        1,
+        0,
+        "/path/to/sample.wav",
+      );
+      expect(added).toBe(false);
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Failed to add sample: Network error",
         "error",
       );
+    });
+
+    it("resolves true once main has added the sample, even if the reload fails", async () => {
+      mockElectronAPI.addSampleToSlot.mockResolvedValue({
+        data: { sampleId: 123 },
+        success: true,
+      });
+      const onSamplesChanged = vi
+        .fn()
+        .mockRejectedValue(new Error("reload failed"));
+
+      const { result } = renderHook(() =>
+        useSampleManagementOperations({ ...mockOptions, onSamplesChanged }),
+      );
+
+      const added = await result.current.handleSampleAdd(
+        1,
+        0,
+        "/path/to/sample.wav",
+      );
+      expect(added).toBe(true);
     });
 
     it("should skip undo recording when skipUndoRecording is true", async () => {
@@ -128,7 +164,12 @@ describe("useSampleManagementOperations", () => {
         useSampleManagementOperations(optionsWithSkip),
       );
 
-      await result.current.handleSampleAdd(1, 0, "/path/to/sample.wav");
+      const added = await result.current.handleSampleAdd(
+        1,
+        0,
+        "/path/to/sample.wav",
+      );
+      expect(added).toBe(true);
 
       expect(mockOptions.onAddUndoAction).not.toHaveBeenCalled();
     });
@@ -141,7 +182,12 @@ describe("useSampleManagementOperations", () => {
         useSampleManagementOperations(mockOptions),
       );
 
-      await result.current.handleSampleAdd(1, 0, "/path/to/sample.wav");
+      const added = await result.current.handleSampleAdd(
+        1,
+        0,
+        "/path/to/sample.wav",
+      );
+      expect(added).toBe(false);
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Sample management not available",
@@ -153,7 +199,7 @@ describe("useSampleManagementOperations", () => {
     });
   });
 
-  describe("[UC-20] handleSampleReplace", () => {
+  describe("[UC-20] [Q-07] handleSampleReplace", () => {
     it("should replace sample successfully", async () => {
       const mockOldSample = {
         source_path: "/path/to/old.wav",
@@ -182,7 +228,12 @@ describe("useSampleManagementOperations", () => {
         useSampleManagementOperations(mockOptions),
       );
 
-      await result.current.handleSampleReplace(1, 0, "/path/to/new.wav");
+      const replaced = await result.current.handleSampleReplace(
+        1,
+        0,
+        "/path/to/new.wav",
+      );
+      expect(replaced).toBe(true);
 
       expect(mockUndoActions.snapshotForUndo).toHaveBeenCalledWith(1, 0);
       expect(mockUndoActions.createReplaceSampleAction).toHaveBeenCalledWith(
@@ -216,7 +267,12 @@ describe("useSampleManagementOperations", () => {
         useSampleManagementOperations(mockOptions),
       );
 
-      await result.current.handleSampleReplace(1, 0, "/path/to/new.wav");
+      const replaced = await result.current.handleSampleReplace(
+        1,
+        0,
+        "/path/to/new.wav",
+      );
+      expect(replaced).toBe(false);
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Replace failed",
@@ -233,7 +289,12 @@ describe("useSampleManagementOperations", () => {
         useSampleManagementOperations(mockOptions),
       );
 
-      await result.current.handleSampleReplace(1, 0, "/path/to/new.wav");
+      const replaced = await result.current.handleSampleReplace(
+        1,
+        0,
+        "/path/to/new.wav",
+      );
+      expect(replaced).toBe(false);
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
         "Sample management not available",

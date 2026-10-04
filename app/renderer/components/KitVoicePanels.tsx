@@ -47,7 +47,7 @@ interface KitVoicePanelsProps {
     voice: number,
     slotNumber: number,
     filePath: string,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   onSampleDelete?: (voice: number, slotNumber: number) => Promise<void>;
   onSampleKeyNav: (direction: "down" | "up") => void; // Used directly in KitVoicePanel
   // Task 22.2: Sample move operations with contiguity
@@ -61,7 +61,7 @@ interface KitVoicePanelsProps {
     voice: number,
     slotNumber: number,
     filePath: string,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   onSampleSelect: (voice: number, idx: number) => void; // Used by useKitVoicePanels hook
   onSaveVoiceName: (voice: number, newName: string) => Promise<boolean> | void; // Used by useKitVoicePanels hook
   onStop: (voice: number, slot: number) => void; // Used by useKitVoicePanels hook

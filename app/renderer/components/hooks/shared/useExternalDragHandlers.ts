@@ -46,12 +46,10 @@ export interface UseExternalDragHandlersOptions {
       allSamples: unknown[],
       filePath: string,
     ) => Promise<boolean>;
+    /** Adds a file to a slot; resolves true when it was added */
     processAssignment: (
       filePath: string,
-      formatValidation: unknown,
-      allSamples: unknown[],
-      droppedSlotNumber: number,
-      explicitSlot?: number,
+      slotNumber: number,
     ) => Promise<boolean>;
   };
   samples: string[];
@@ -158,7 +156,6 @@ export function useExternalDragHandlers({
 
       // The file being handled, so a failure can name it and the rest
       let current = 0;
-      let addedCount = 0;
       const added: AddedDropFile[] = [];
       try {
         const allSamples = await sampleProcessing.getCurrentKitSamples();
@@ -209,18 +206,19 @@ export function useExternalDragHandlers({
             break;
           }
 
-          const channels = check.validation.metadata?.channels;
-          await sampleProcessing.processAssignment(
+          const wasAdded = await sampleProcessing.processAssignment(
             filePath,
-            check.validation,
-            allSamples,
-            slotNumber,
             targetSlot,
           );
+          // A refused add has told the user why; count only real
+          // additions, so the slot stays free for the next file (#542)
+          if (!wasAdded) continue;
 
           occupiedSlots.add(targetSlot);
-          addedCount++;
-          added.push({ channels, fileName: file.name });
+          added.push({
+            channels: check.validation.metadata?.channels,
+            fileName: file.name,
+          });
         }
       } catch (error) {
         log.error("Error handling drop:", error);
@@ -237,8 +235,8 @@ export function useExternalDragHandlers({
         }
       }
 
-      if (addedCount > 0 && onBatchDropComplete) {
-        onBatchDropComplete();
+      if (added.length > 0) {
+        onBatchDropComplete?.();
       }
     },
     [

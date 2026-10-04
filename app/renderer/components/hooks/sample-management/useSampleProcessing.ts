@@ -2,18 +2,24 @@ import type { Sample } from "@romper/shared/db/schema.js";
 
 import { useCallback } from "react";
 
+import { createLogger } from "../../../utils/logger";
+
+const log = createLogger("SampleProcessing");
+
 export interface UseSampleProcessingOptions {
   kitName: string;
+  /** Adds a file to a slot; resolves true when the sample was added */
   onSampleAdd?: (
     voice: number,
     slotNumber: number,
     filePath: string,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
+  /** Replaces a slot's file; resolves true when it was replaced */
   onSampleReplace?: (
     voice: number,
     slotNumber: number,
     filePath: string,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   samples: string[];
   voice: number;
 }
@@ -29,15 +35,15 @@ export function useSampleProcessing({
   samples,
   voice,
 }: UseSampleProcessingOptions) {
+  // Null when the kit's samples can't be read; the drop reports it (RE-40)
   const getCurrentKitSamples = useCallback(async () => {
     if (!globalThis.electronAPI?.getAllSamplesForKit) {
-      console.error("Sample management not available");
       return null;
     }
 
     const result = await globalThis.electronAPI.getAllSamplesForKit(kitName);
     if (!result.success) {
-      console.error(`Failed to get samples: ${result.error}`);
+      log.warn("Couldn't read the kit's samples:", result.error);
       return null;
     }
 
@@ -47,97 +53,36 @@ export function useSampleProcessing({
   const isDuplicateSample = useCallback(
     async (allSamples: unknown[], filePath: string): Promise<boolean> => {
       const samples = allSamples as Sample[];
-      const voiceSamples = samples.filter(
-        (s: Sample) => s.voice_number === voice,
+      return samples.some(
+        (s: Sample) => s.voice_number === voice && s.source_path === filePath,
       );
-      const isDuplicate = voiceSamples.some(
-        (s: Sample) => s.source_path === filePath,
-      );
-
-      if (isDuplicate) {
-        console.warn(
-          `Duplicate sample: ${filePath} already exists in voice ${voice}`,
-        );
-      }
-
-      return isDuplicate;
     },
     [voice],
   );
 
-  const calculateTargetSlot = useCallback(
-    (path: string, slotNumber: number, droppedSlotNumber: number): number => {
-      const isFromLocalStore = path.includes(kitName);
-      const targetSlot = slotNumber >= 0 ? slotNumber : droppedSlotNumber;
-
-      if (!isFromLocalStore && slotNumber < 0) {
-        for (let i = 0; i < 12; i++) {
-          if (!samples[i]) {
-            return i;
-          }
-        }
-        return -1;
-      }
-
-      return targetSlot;
-    },
-    [kitName, samples],
-  );
-
+  // Resolves true only when the sample was added or replaced (#542)
   const executeAssignment = useCallback(
     async (
       filePath: string,
-      allSamples: unknown[],
-      droppedSlotNumber: number,
-      options: { explicitSlot?: number; replaceExisting: boolean },
-    ) => {
-      const targetSlot =
-        options.explicitSlot ??
-        calculateTargetSlot(filePath, -1, droppedSlotNumber);
-
-      if (targetSlot < 0) {
-        console.warn("No available slots - all slots are filled");
-        return;
+      slotNumber: number,
+      options: { replaceExisting: boolean },
+    ): Promise<boolean> => {
+      if (samples[slotNumber] && options.replaceExisting && onSampleReplace) {
+        return onSampleReplace(voice, slotNumber, filePath);
       }
-
-      const existingSample = samples[targetSlot];
-
-      try {
-        if (existingSample && options.replaceExisting && onSampleReplace) {
-          await onSampleReplace(voice, targetSlot, filePath);
-        } else if (onSampleAdd) {
-          await onSampleAdd(voice, targetSlot, filePath);
-        }
-      } catch (error) {
-        console.error("Failed to assign sample:", error);
-      }
+      return (await onSampleAdd?.(voice, slotNumber, filePath)) ?? false;
     },
-    [samples, calculateTargetSlot, voice, onSampleAdd, onSampleReplace],
+    [samples, voice, onSampleAdd, onSampleReplace],
   );
 
+  // Adds a dropped file to a slot; resolves true when it was added
   const processAssignment = useCallback(
-    async (
-      filePath: string,
-      formatValidation: unknown,
-      allSamples: unknown[],
-      droppedSlotNumber: number,
-      explicitSlot?: number,
-    ): Promise<boolean> => {
-      const samples = allSamples as Sample[];
-
-      await executeAssignment(filePath, samples, droppedSlotNumber, {
-        explicitSlot,
-        replaceExisting: false,
-      });
-
-      return true;
-    },
+    (filePath: string, slotNumber: number): Promise<boolean> =>
+      executeAssignment(filePath, slotNumber, { replaceExisting: false }),
     [executeAssignment],
   );
 
   return {
-    calculateTargetSlot,
-    executeAssignment,
     getCurrentKitSamples,
     isDuplicateSample,
     processAssignment,

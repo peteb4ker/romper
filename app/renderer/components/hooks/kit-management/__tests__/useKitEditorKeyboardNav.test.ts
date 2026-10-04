@@ -111,14 +111,16 @@ describe("useKitEditorKeyboardNav", () => {
 
   // #500: keys pressed in a dialog are the dialog's
   it("[UC-07] ignores its keys while a modal dialog is open", () => {
-    const { fire, props } = setup();
+    const onToggleFavorite = vi.fn();
+    const { fire, props } = setup({ onToggleFavorite });
     const modal = document.createElement("div");
     modal.setAttribute("role", "dialog");
     modal.setAttribute("aria-modal", "true");
     document.body.appendChild(modal);
 
-    for (const key of [",", ".", "/", "s", "ArrowDown", " "]) fire(key);
+    for (const key of [",", ".", "/", "s", "f", "ArrowDown", " "]) fire(key);
 
+    expect(onToggleFavorite).not.toHaveBeenCalled();
     expect(props.onPrevKit).not.toHaveBeenCalled();
     expect(props.onNextKit).not.toHaveBeenCalled();
     expect(props.onScanKit).not.toHaveBeenCalled();

@@ -229,7 +229,12 @@ export function useVoicePanelSlotRendering({
             )}
             {fileLabel && (
               <span
-                className="block truncate text-[10px] text-accent-danger"
+                className={`block truncate text-[10px] ${
+                  // Missing is skipped at write; unreadable quarantines
+                  fileStatus === "missing"
+                    ? "text-accent-warning"
+                    : "text-accent-danger"
+                }`}
                 data-testid={`sample-file-label-${voice}-${slotNumber}`}
                 id={fileLabelId}
               >

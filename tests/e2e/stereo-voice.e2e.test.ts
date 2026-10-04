@@ -296,4 +296,21 @@ test.describe("Stereo voice linking", () => {
       "Mixed down to mono instead of playing across 2 voices",
     );
   });
+
+  test("[UC-28] a voice next to a pair notes why it can't pair, and the pair stays (#537 rule 3)", async () => {
+    // An empty pair on voices 3 and 4, then a stereo sample on voice 2
+    await window.locator('[data-testid="link-button-3-4"]').click();
+    await expect(
+      window.locator('[data-testid="stereo-badge-3"]'),
+    ).toBeVisible();
+    await dropOn(2, [await writeStereo("pad.wav")]);
+
+    await expect(window.locator('[data-testid="stereo-note-2"]')).toHaveText(
+      "Voice 2 can't pair with voice 3 because voices 3 and 4 are linked. Unlink them to pair voices 2 and 3.",
+    );
+    await expect(
+      window.locator('[data-testid="stereo-badge-3"]'),
+    ).toBeVisible();
+    await expect(window.getByRole("dialog")).toHaveCount(0);
+  });
 });

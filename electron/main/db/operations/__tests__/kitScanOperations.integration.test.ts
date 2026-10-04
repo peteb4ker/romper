@@ -2,7 +2,7 @@ import BetterSqlite3 from "better-sqlite3";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
-import type { KitScanIo } from "../kitScanOperations.js";
+import type { KitScanIo, WavMetadataFields } from "../kitScanOperations.js";
 
 import {
   createTempStore,
@@ -14,7 +14,8 @@ import { mergeKitScan } from "../kitScanOperations.js";
 import { addSample, getKitSamples } from "../sampleCrudOperations.js";
 import { updateVoiceAlias } from "../voiceCrudOperations.js";
 
-const METADATA = {
+const METADATA: WavMetadataFields = {
+  source_status: "readable",
   wav_bit_depth: 16,
   wav_bitrate: 705600,
   wav_channels: 1,
@@ -140,7 +141,10 @@ describe("[UC-13] mergeKitScan - Integration Tests", () => {
   });
 
   test("leaves a locked kit untouched", () => {
-    updateKit(dbDir, "A0", { locked: true });
+    // updateKit doesn't accept `locked`, so set it directly
+    const sqlite = new BetterSqlite3(join(dbDir, DB_FILENAME));
+    sqlite.prepare("UPDATE kits SET locked = 1 WHERE name = ?").run("A0");
+    sqlite.close();
     addSample(dbDir, {
       filename: "1 kick.wav",
       kit_name: "A0",

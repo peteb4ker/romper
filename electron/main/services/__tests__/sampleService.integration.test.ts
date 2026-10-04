@@ -112,7 +112,7 @@ describe("SampleService Integration Tests", () => {
       locked: false,
       modified_since_sync: false,
       name: "A1",
-      step_pattern: "1010101010101010",
+      step_pattern: [[1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]],
     };
     addKit(TEST_DB_PATH, kitRecord);
   });
@@ -883,10 +883,12 @@ describe("SampleService Integration Tests", () => {
       const samples = [
         {
           filename: "s0.wav",
+          gain_db: 0,
           id: 1,
           kit_name: "A1",
           slot_number: 0,
           source_path: "/path/s0.wav",
+          source_status: null,
           voice_number: 1,
           wav_bit_depth: null,
           wav_bitrate: null,
@@ -895,10 +897,12 @@ describe("SampleService Integration Tests", () => {
         },
         {
           filename: "s1.wav",
+          gain_db: 0,
           id: 2,
           kit_name: "A1",
           slot_number: 1,
           source_path: "/path/s1.wav",
+          source_status: null,
           voice_number: 1,
           wav_bit_depth: null,
           wav_bitrate: null,
@@ -915,10 +919,12 @@ describe("SampleService Integration Tests", () => {
       const samples = [
         {
           filename: "s0.wav",
+          gain_db: 0,
           id: 1,
           kit_name: "A1",
           slot_number: 0,
           source_path: "/path/s0.wav",
+          source_status: null,
           voice_number: 2, // Different voice
           wav_bit_depth: null,
           wav_bitrate: null,
@@ -937,10 +943,12 @@ describe("SampleService Integration Tests", () => {
       const samples = [
         {
           filename: "s0.wav",
+          gain_db: 0,
           id: 1,
           kit_name: "A1",
           slot_number: 0,
           source_path: "/path/s0.wav",
+          source_status: null,
           voice_number: 1,
           wav_bit_depth: null,
           wav_bitrate: null,
@@ -957,10 +965,12 @@ describe("SampleService Integration Tests", () => {
       const samples = [
         {
           filename: "s0.wav",
+          gain_db: 0,
           id: 1,
           kit_name: "A1",
           slot_number: 0,
           source_path: "/path/s0.wav",
+          source_status: null,
           voice_number: 1,
           wav_bit_depth: null,
           wav_bitrate: null,

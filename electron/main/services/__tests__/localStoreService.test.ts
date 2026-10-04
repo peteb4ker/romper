@@ -45,7 +45,7 @@ describe("LocalStoreService", () => {
 
     mockPath.join.mockImplementation((...args) => args.join("/"));
     mockFs.existsSync.mockReturnValue(true);
-    mockFs.lstatSync.mockReturnValue({ isDirectory: () => true } as unknown);
+    mockFs.lstatSync.mockReturnValue({ isDirectory: () => true } as fs.Stats);
 
     // Silence console.error for tests
     vi.spyOn(console, "error").mockImplementation(() => {});
@@ -54,8 +54,6 @@ describe("LocalStoreService", () => {
   describe("[UC-05] getLocalStoreStatus", () => {
     beforeEach(() => {
       mockValidateAndDb.mockReturnValue({
-        details: { dbVersion: "1.0", hasDb: true },
-        error: null,
         isValid: true,
       });
     });
@@ -135,7 +133,6 @@ describe("LocalStoreService", () => {
 
     it("returns invalid status when validation fails", () => {
       mockValidateAndDb.mockReturnValue({
-        details: { hasDb: false },
         error: "Database not found",
         isValid: false,
       });
@@ -212,8 +209,6 @@ describe("LocalStoreService", () => {
   describe("validateLocalStore", () => {
     it("delegates to validateLocalStoreAgainstDb", () => {
       const mockResult = {
-        details: { hasDb: true },
-        error: null,
         isValid: true,
       };
       mockValidateAgainstDb.mockReturnValue(mockResult);
@@ -228,8 +223,6 @@ describe("LocalStoreService", () => {
   describe("validateLocalStoreBasic", () => {
     it("delegates to validateLocalStoreBasic", () => {
       const mockResult = {
-        details: { hasPath: true },
-        error: null,
         isValid: true,
       };
       mockValidateBasic.mockReturnValue(mockResult);
@@ -244,8 +237,6 @@ describe("LocalStoreService", () => {
   describe("[UC-04] validateExistingLocalStore", () => {
     it("returns success for valid local store", () => {
       mockValidateAndDb.mockReturnValue({
-        details: { hasDb: true },
-        error: null,
         isValid: true,
       });
 
@@ -261,7 +252,6 @@ describe("LocalStoreService", () => {
 
     it("returns failure for invalid local store", () => {
       mockValidateAndDb.mockReturnValue({
-        details: { hasDb: false },
         error: "No database found",
         isValid: false,
       });
@@ -278,8 +268,6 @@ describe("LocalStoreService", () => {
 
     it("provides default error message when validation error is missing", () => {
       mockValidateAndDb.mockReturnValue({
-        details: { hasDb: false },
-        error: null,
         isValid: false,
       });
 
@@ -297,7 +285,10 @@ describe("LocalStoreService", () => {
   describe("listFilesInRoot", () => {
     it("returns list of files in directory", () => {
       const mockFiles = ["file1.txt", "file2.wav", "subdirectory"];
-      mockFs.readdirSync.mockReturnValue(mockFiles as unknown);
+      // The service calls the overload that returns file names
+      vi.mocked<(path: fs.PathLike) => string[]>(
+        mockFs.readdirSync,
+      ).mockReturnValue(mockFiles);
 
       const result = localStoreService.listFilesInRoot("/test/path");
 
@@ -415,7 +406,7 @@ describe("LocalStoreService", () => {
   describe("isLocalStoreAccessible", () => {
     it("returns true when directory exists and is accessible", () => {
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.lstatSync.mockReturnValue({ isDirectory: () => true } as unknown);
+      mockFs.lstatSync.mockReturnValue({ isDirectory: () => true } as fs.Stats);
 
       const result = localStoreService.isLocalStoreAccessible("/valid/path");
 
@@ -434,7 +425,9 @@ describe("LocalStoreService", () => {
 
     it("returns false when path is not a directory", () => {
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.lstatSync.mockReturnValue({ isDirectory: () => false } as unknown);
+      mockFs.lstatSync.mockReturnValue({
+        isDirectory: () => false,
+      } as fs.Stats);
 
       const result = localStoreService.isLocalStoreAccessible("/file/path");
 
@@ -455,7 +448,7 @@ describe("LocalStoreService", () => {
   describe("hasRomperDb", () => {
     it("returns true when database directory exists", () => {
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.lstatSync.mockReturnValue({ isDirectory: () => true } as unknown);
+      mockFs.lstatSync.mockReturnValue({ isDirectory: () => true } as fs.Stats);
 
       const result = localStoreService.hasRomperDb("/local/store");
 
@@ -474,7 +467,9 @@ describe("LocalStoreService", () => {
 
     it("returns false when database path is not a directory", () => {
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.lstatSync.mockReturnValue({ isDirectory: () => false } as unknown);
+      mockFs.lstatSync.mockReturnValue({
+        isDirectory: () => false,
+      } as fs.Stats);
 
       const result = localStoreService.hasRomperDb("/db/is/file");
 

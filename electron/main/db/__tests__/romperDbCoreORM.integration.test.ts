@@ -1,4 +1,4 @@
-import type { Kit, Sample } from "@romper/shared/db/schema.js";
+import type { NewKit, NewSample } from "@romper/shared/db/schema.js";
 
 // Unit tests for Drizzle ORM implementation
 import * as fs from "node:fs";
@@ -75,7 +75,7 @@ describe("Drizzle ORM Database Operations", () => {
     });
 
     it("should insert kit record with editable mode mapping", async () => {
-      const testKit: Kit = {
+      const testKit: NewKit = {
         alias: "Test Kit",
         editable: true, // This should map to editable=true in new architecture
         locked: false,
@@ -91,7 +91,7 @@ describe("Drizzle ORM Database Operations", () => {
     });
 
     it("should create 4 voice records when inserting kit", async () => {
-      const testKit: Kit = {
+      const testKit: NewKit = {
         editable: true, // Use the correct schema field name
         name: "A1",
       };
@@ -117,7 +117,7 @@ describe("Drizzle ORM Database Operations", () => {
         [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
       ];
 
-      const testKit: Kit = {
+      const testKit: NewKit = {
         editable: true,
         name: "A2",
         step_pattern: stepPattern,
@@ -140,7 +140,7 @@ describe("Drizzle ORM Database Operations", () => {
       await createRomperDbFile(TEST_DB_DIR);
 
       // Insert a test kit first
-      const testKit: Kit = {
+      const testKit: NewKit = {
         editable: true,
         name: "A0",
       };
@@ -148,7 +148,7 @@ describe("Drizzle ORM Database Operations", () => {
     });
 
     it("should insert sample record with source_path support", async () => {
-      const testSample: Sample = {
+      const testSample: NewSample = {
         filename: "kick.wav",
         kit_name: "A0",
         slot_number: 0,
@@ -164,7 +164,7 @@ describe("Drizzle ORM Database Operations", () => {
     });
 
     it("should fetch samples for kit using ORM", async () => {
-      const testSamples: Sample[] = [
+      const testSamples: NewSample[] = [
         {
           filename: "kick.wav",
           kit_name: "A0",
@@ -199,7 +199,7 @@ describe("Drizzle ORM Database Operations", () => {
 
     it("should delete all samples for kit using ORM", async () => {
       // Insert test samples
-      const testSamples: Sample[] = [
+      const testSamples: NewSample[] = [
         {
           filename: "kick.wav",
           kit_name: "A0",
@@ -245,7 +245,7 @@ describe("Drizzle ORM Database Operations", () => {
     beforeEach(async () => {
       await createRomperDbFile(TEST_DB_DIR);
 
-      const testKit: Kit = { editable: true, name: "A0" };
+      const testKit: NewKit = { editable: true, name: "A0" };
       await addKit(TEST_DB_DIR, testKit);
     });
 
@@ -259,7 +259,7 @@ describe("Drizzle ORM Database Operations", () => {
 
       const kit = kitsResult.data?.find((k) => k.name === "A0");
       expect(kit).toBeDefined();
-      const kickVoice = kit?.voices.find((v) => v.voice_number === 1);
+      const kickVoice = kit?.voices?.find((v) => v.voice_number === 1);
       expect(kickVoice?.voice_alias).toBe("Kick");
     });
 
@@ -283,10 +283,10 @@ describe("Drizzle ORM Database Operations", () => {
 
       const kit = kitsResult.data?.find((k) => k.name === "A0");
       expect(kit).toBeDefined();
-      const kickVoice = kit?.voices.find((v) => v.voice_number === 1);
-      const snareVoice = kit?.voices.find((v) => v.voice_number === 2);
-      const hiHatVoice = kit?.voices.find((v) => v.voice_number === 3);
-      const percVoice = kit?.voices.find((v) => v.voice_number === 4);
+      const kickVoice = kit?.voices?.find((v) => v.voice_number === 1);
+      const snareVoice = kit?.voices?.find((v) => v.voice_number === 2);
+      const hiHatVoice = kit?.voices?.find((v) => v.voice_number === 3);
+      const percVoice = kit?.voices?.find((v) => v.voice_number === 4);
       expect(kickVoice?.voice_alias).toBe("Kick");
       expect(snareVoice?.voice_alias).toBe("Snare");
       expect(hiHatVoice?.voice_alias).toBe("Hi-Hat");
@@ -298,7 +298,7 @@ describe("Drizzle ORM Database Operations", () => {
     beforeEach(async () => {
       await createRomperDbFile(TEST_DB_DIR);
 
-      const testKit: Kit = { editable: true, name: "A0" };
+      const testKit: NewKit = { editable: true, name: "A0" };
       await addKit(TEST_DB_DIR, testKit);
     });
 
@@ -362,7 +362,7 @@ describe("Drizzle ORM Database Operations", () => {
     it("should handle constraint violations gracefully", async () => {
       await createRomperDbFile(TEST_DB_DIR);
 
-      const testKit: Kit = { editable: true, name: "A0" };
+      const testKit: NewKit = { editable: true, name: "A0" };
 
       // Insert kit once
       const result1 = await addKit(TEST_DB_DIR, testKit);

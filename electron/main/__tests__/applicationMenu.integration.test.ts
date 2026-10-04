@@ -74,30 +74,34 @@ describe("Menu IPC Integration Tests", () => {
 
     // Find the File menu
     const fileMenu = menuTemplate.find(
-      (item: unknown) => item.label === "File",
+      (item: { label?: string }) => item.label === "File",
     );
     expect(fileMenu).toBeDefined();
     expect(fileMenu.submenu).toBeDefined();
 
     // Verify File submenu contains scan items and change local store
     const fileSubmenu = fileMenu.submenu;
-    const fileMenuLabels = fileSubmenu.map((item: unknown) => item.label);
+    const fileMenuLabels = fileSubmenu.map(
+      (item: { label?: string }) => item.label,
+    );
     expect(fileMenuLabels).toContain("Scan All");
     expect(fileMenuLabels).toContain("Change Local Store...");
 
     // Verify no Tools menu exists
     const toolsMenu = menuTemplate.find(
-      (item: unknown) => item.label === "Tools",
+      (item: { label?: string }) => item.label === "Tools",
     );
     expect(toolsMenu).toBeUndefined();
 
     // Find the Help menu and verify manual links
     const helpMenu = menuTemplate.find(
-      (item: unknown) => item.label === "Help",
+      (item: { label?: string }) => item.label === "Help",
     );
     expect(helpMenu).toBeDefined();
     const helpSubmenu = helpMenu.submenu;
-    const helpMenuLabels = helpSubmenu.map((item: unknown) => item.label);
+    const helpMenuLabels = helpSubmenu.map(
+      (item: { label?: string }) => item.label,
+    );
     expect(helpMenuLabels).toContain("Romper Manual");
     expect(helpMenuLabels).toContain("Rample Manual");
 
@@ -133,13 +137,13 @@ describe("Menu IPC Integration Tests", () => {
 
     const menuTemplate = mockMenu.buildFromTemplate.mock.calls[0][0];
     const fileMenu = menuTemplate.find(
-      (item: unknown) => item.label === "File",
+      (item: { label?: string }) => item.label === "File",
     );
     const submenu = fileMenu.submenu;
 
     // Find and trigger the "Scan All" menu item
     const scanMenuItem = submenu.find(
-      (item: unknown) => item.label === "Scan All",
+      (item: { label?: string }) => item.label === "Scan All",
     );
     expect(scanMenuItem).toBeDefined();
     expect(scanMenuItem.click).toBeDefined();
@@ -178,10 +182,12 @@ describe("Menu IPC Integration Tests", () => {
 
     menuItems.forEach(({ event, label, menu }) => {
       const targetMenu = menuTemplate.find(
-        (item: unknown) => item.label === menu,
+        (item: { label?: string }) => item.label === menu,
       );
       const submenu = targetMenu.submenu;
-      const menuItem = submenu.find((item: unknown) => item.label === label);
+      const menuItem = submenu.find(
+        (item: { label?: string }) => item.label === label,
+      );
       expect(menuItem).toBeDefined();
       expect(menuItem.click).toBeDefined();
 
@@ -251,13 +257,13 @@ describe("Menu IPC Integration Tests", () => {
 
     const menuTemplate = mockMenu.buildFromTemplate.mock.calls[0][0];
     const helpMenu = menuTemplate.find(
-      (item: unknown) => item.label === "Help",
+      (item: { label?: string }) => item.label === "Help",
     );
     const submenu = helpMenu.submenu;
 
     // Test Romper Manual
     const romperManual = submenu.find(
-      (item: unknown) => item.label === "Romper Manual",
+      (item: { label?: string }) => item.label === "Romper Manual",
     );
     expect(romperManual).toBeDefined();
     romperManual.click();
@@ -267,7 +273,7 @@ describe("Menu IPC Integration Tests", () => {
 
     // Test Rample Manual
     const rampleManual = submenu.find(
-      (item: unknown) => item.label === "Rample Manual",
+      (item: { label?: string }) => item.label === "Rample Manual",
     );
     expect(rampleManual).toBeDefined();
     rampleManual.click();
@@ -283,14 +289,14 @@ describe("Menu IPC Integration Tests", () => {
 
     const menuTemplate = mockMenu.buildFromTemplate.mock.calls[0][0];
     const viewMenu = menuTemplate.find(
-      (item: unknown) => item.label === "View",
+      (item: { label?: string }) => item.label === "View",
     );
     expect(viewMenu).toBeDefined();
 
     const viewSubmenu = viewMenu.submenu;
     const viewRoles = viewSubmenu
-      .filter((item: unknown) => item.role)
-      .map((item: unknown) => item.role);
+      .filter((item: { role?: string }) => item.role)
+      .map((item: { role?: string }) => item.role);
 
     // Dev items should be present (app.isPackaged is false in tests)
     expect(viewRoles).toContain("reload");
@@ -316,12 +322,12 @@ describe("Menu IPC Integration Tests", () => {
 
       const menuTemplate = mockMenu.buildFromTemplate.mock.calls[0][0];
       const appMenu = menuTemplate.find(
-        (item: unknown) => item.label === "Romper",
+        (item: { label?: string }) => item.label === "Romper",
       );
       expect(appMenu).toBeDefined();
 
       const aboutItem = appMenu.submenu.find(
-        (item: unknown) => item.label === "About Romper",
+        (item: { label?: string }) => item.label === "About Romper",
       );
       expect(aboutItem).toBeDefined();
       // It must be a click handler, not the generic native { role: "about" }
@@ -333,10 +339,10 @@ describe("Menu IPC Integration Tests", () => {
 
       // No duplicate About entry should leak into the Help menu on macOS
       const helpMenu = menuTemplate.find(
-        (item: unknown) => item.label === "Help",
+        (item: { label?: string }) => item.label === "Help",
       );
       const helpAbout = helpMenu.submenu.find(
-        (item: unknown) => item.label === "About Romper",
+        (item: { label?: string }) => item.label === "About Romper",
       );
       expect(helpAbout).toBeUndefined();
     } finally {
@@ -357,11 +363,11 @@ describe("Menu IPC Integration Tests", () => {
 
       const menuTemplate = mockMenu.buildFromTemplate.mock.calls.at(-1)?.[0];
       const viewMenu = menuTemplate.find(
-        (item: unknown) => item.label === "View",
+        (item: { label?: string }) => item.label === "View",
       );
       const viewRoles = viewMenu.submenu
-        .filter((item: unknown) => item.role)
-        .map((item: unknown) => item.role);
+        .filter((item: { role?: string }) => item.role)
+        .map((item: { role?: string }) => item.role);
 
       expect(viewRoles).not.toContain("reload");
       expect(viewRoles).not.toContain("forceReload");
@@ -385,11 +391,11 @@ describe("Menu IPC Integration Tests", () => {
 
       const menuTemplate = mockMenu.buildFromTemplate.mock.calls.at(-1)?.[0];
       const viewMenu = menuTemplate.find(
-        (item: unknown) => item.label === "View",
+        (item: { label?: string }) => item.label === "View",
       );
       const viewRoles = viewMenu.submenu
-        .filter((item: unknown) => item.role)
-        .map((item: unknown) => item.role);
+        .filter((item: { role?: string }) => item.role)
+        .map((item: { role?: string }) => item.role);
 
       expect(viewRoles).toContain("reload");
       expect(viewRoles).toContain("forceReload");
@@ -410,12 +416,12 @@ describe("Menu IPC Integration Tests", () => {
 
     const menuTemplate = mockMenu.buildFromTemplate.mock.calls[0][0];
     const fileMenu = menuTemplate.find(
-      (item: unknown) => item.label === "File",
+      (item: { label?: string }) => item.label === "File",
     );
     const submenu = fileMenu.submenu;
 
     const scanMenuItem = submenu.find(
-      (item: unknown) => item.label === "Scan All",
+      (item: { label?: string }) => item.label === "Scan All",
     );
 
     expect(() => {

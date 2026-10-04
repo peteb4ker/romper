@@ -8,13 +8,18 @@ describe("SampleSlotService", () => {
   let service: SampleSlotService;
 
   const createSample = (voiceNumber: number, slotNumber: number): Sample => ({
-    created_at: "2023-01-01",
     filename: `sample_${voiceNumber}_${slotNumber}.wav`,
+    gain_db: 0,
     id: voiceNumber * 100 + slotNumber,
     kit_name: "TestKit",
     slot_number: slotNumber,
     source_path: `/path/to/sample_${voiceNumber}_${slotNumber}.wav`,
+    source_status: null,
     voice_number: voiceNumber,
+    wav_bit_depth: null,
+    wav_bitrate: null,
+    wav_channels: null,
+    wav_sample_rate: null,
   });
 
   beforeEach(() => {

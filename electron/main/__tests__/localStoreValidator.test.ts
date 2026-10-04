@@ -2,6 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createMockKitWithRelations } from "../../../tests/factories/kit.factory";
+import { createMockSample } from "../../../tests/factories/sample.factory";
 import * as romperDbCore from "../db/romperDbCoreORM.js";
 import {
   getRomperDbPath,
@@ -133,8 +135,8 @@ describe("localStoreValidator", () => {
       // Mock DB functions
       vi.mocked(romperDbCore.getKits).mockReturnValue({
         data: [
-          { editable: false, name: "A0" },
-          { editable: false, name: "B1" },
+          createMockKitWithRelations({ editable: false, name: "A0" }),
+          createMockKitWithRelations({ editable: false, name: "B1" }),
         ],
         success: true,
       });
@@ -144,27 +146,27 @@ describe("localStoreValidator", () => {
           if (kitName === "A0") {
             return {
               data: [
-                {
+                createMockSample({
                   filename: "1 Kick.wav",
                   kit_name: "A0",
                   slot_number: 100,
                   source_path: path.join(localStorePath, "A0", "1 Kick.wav"),
                   voice_number: 1,
-                },
-                {
+                }),
+                createMockSample({
                   filename: "2 Snare.wav",
                   kit_name: "A0",
                   slot_number: 200,
                   source_path: path.join(localStorePath, "A0", "2 Snare.wav"),
                   voice_number: 1,
-                },
-                {
+                }),
+                createMockSample({
                   filename: "missing.wav",
                   kit_name: "A0",
                   slot_number: 300,
                   source_path: path.join(localStorePath, "A0", "missing.wav"),
                   voice_number: 1,
-                },
+                }),
               ],
               success: true,
             };
@@ -172,13 +174,13 @@ describe("localStoreValidator", () => {
           if (kitName === "B1") {
             return {
               data: [
-                {
+                createMockSample({
                   filename: "3 Hat.wav",
                   kit_name: "B1",
                   slot_number: 100,
                   source_path: path.join(localStorePath, "B1", "3 Hat.wav"),
                   voice_number: 1,
-                },
+                }),
               ],
               success: true,
             };
@@ -205,7 +207,7 @@ describe("localStoreValidator", () => {
     it("should return valid when all files match DB records", () => {
       // Mock B1 correctly (no missing or extra files)
       vi.mocked(romperDbCore.getKits).mockReturnValue({
-        data: [{ editable: false, name: "B1" }],
+        data: [createMockKitWithRelations({ editable: false, name: "B1" })],
         success: true,
       });
 

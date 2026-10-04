@@ -15,6 +15,9 @@ vi.mock("../../db/romperDbCoreORM.js", () => ({
   getKitDeleteSummary: vi.fn(),
 }));
 
+import type { InMemorySettings } from "../../types/settings.js";
+
+import { createMockKit } from "../../../../tests/factories/kit.factory";
 import {
   addKit,
   copyKit,
@@ -33,9 +36,10 @@ const mockGetKitDeleteSummary = vi.mocked(getKitDeleteSummary);
 
 describe("KitService", () => {
   let kitService: KitService;
-  const mockInMemorySettings = {
+  const mockInMemorySettings: InMemorySettings = {
     localStorePath: "/test/path",
   };
+  const noStoreSettings: InMemorySettings = { localStorePath: null };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -77,7 +81,7 @@ describe("KitService", () => {
 
     it("rejects if kit already exists", () => {
       mockGetKit.mockReturnValue({
-        data: { bank_letter: "A", name: "A5" },
+        data: createMockKit({ bank_letter: "A", name: "A5" }),
         success: true,
       });
 
@@ -89,7 +93,7 @@ describe("KitService", () => {
     });
 
     it("returns error when no local store path configured", () => {
-      const result = kitService.createKit({}, "A5");
+      const result = kitService.createKit(noStoreSettings, "A5");
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("No local store path configured");
@@ -102,7 +106,7 @@ describe("KitService", () => {
       validSlots.forEach((slot) => {
         mockGetKit.mockReturnValue({ success: false }); // Reset to "doesn't exist"
         const result = kitService.createKit(mockInMemorySettings, slot);
-        expect(result.success).toBe(true, `${slot} should be valid`);
+        expect(result.success, `${slot} should be valid`).toBe(true);
       });
 
       invalidSlots.forEach((slot) => {
@@ -152,7 +156,7 @@ describe("KitService", () => {
     });
 
     it("returns error when no local store path configured", () => {
-      const result = kitService.copyKit({}, "A1", "B2");
+      const result = kitService.copyKit(noStoreSettings, "A1", "B2");
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("No local store path configured");
@@ -187,7 +191,7 @@ describe("KitService", () => {
   describe("[UC-16] deleteKit", () => {
     it("successfully deletes an unlocked, editable kit", () => {
       mockGetKit.mockReturnValue({
-        data: { editable: true, locked: false, name: "A0" },
+        data: createMockKit({ editable: true, locked: false, name: "A0" }),
         success: true,
       });
       mockDeleteKit.mockReturnValue({ success: true });
@@ -200,7 +204,7 @@ describe("KitService", () => {
 
     it("rejects deletion of locked kit", () => {
       mockGetKit.mockReturnValue({
-        data: { locked: true, name: "A0" },
+        data: createMockKit({ locked: true, name: "A0" }),
         success: true,
       });
 
@@ -214,7 +218,7 @@ describe("KitService", () => {
     // #572: the kit card offers delete only on an editable kit
     it("[UC-17] refuses to delete a kit that isn't editable", () => {
       mockGetKit.mockReturnValue({
-        data: { editable: false, locked: false, name: "A0" },
+        data: createMockKit({ editable: false, locked: false, name: "A0" }),
         success: true,
       });
 
@@ -238,7 +242,7 @@ describe("KitService", () => {
     });
 
     it("returns error when no local store path configured", () => {
-      const result = kitService.deleteKit({}, "A0");
+      const result = kitService.deleteKit(noStoreSettings, "A0");
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("No local store path configured");
@@ -270,7 +274,7 @@ describe("KitService", () => {
     });
 
     it("returns error when no local store path configured", () => {
-      const result = kitService.getKitDeleteSummary({}, "A0");
+      const result = kitService.getKitDeleteSummary(noStoreSettings, "A0");
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("No local store path configured");

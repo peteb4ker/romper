@@ -1,17 +1,21 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, type Mock, test, vi } from "vitest";
 
 // Mock the database utilities
 vi.mock("../../utils/dbUtilities.js", () => ({
   withDb: vi.fn(),
 }));
 
-import { withDb } from "../../utils/dbUtilities.js";
+import { type RomperDb, withDb } from "../../utils/dbUtilities.js";
 import { getFavoriteKits, getFavoriteKitsCount } from "../crudOperations.js";
-import {
-  createBatchQueryMock,
-  createSingleQueryMock,
-  createWithDbMock,
-} from "./testUtils.js";
+import { createBatchQueryMock, createSingleQueryMock } from "./testUtils.js";
+
+/** Runs the operation's query on a mock db and wraps it as withDb does */
+function mockWithDb(select: Mock) {
+  vi.mocked(withDb).mockImplementation((_dbDir, fn) => ({
+    data: fn({ select } as unknown as RomperDb),
+    success: true,
+  }));
+}
 
 describe("Favorite Kits Operations - Unit Tests", () => {
   const mockDbDir = "/test/db";
@@ -23,11 +27,11 @@ describe("Favorite Kits Operations - Unit Tests", () => {
   describe("getFavoriteKits", () => {
     test("should return empty array when no favorite kits exist", () => {
       const mockSelect = createSingleQueryMock([]);
-      vi.mocked(withDb).mockImplementation(createWithDbMock(mockSelect));
+      mockWithDb(mockSelect);
 
       const result = getFavoriteKits(mockDbDir);
 
-      expect(result).toEqual([]);
+      expect(result.data).toEqual([]);
       expect(mockSelect).toHaveBeenCalled();
     });
 
@@ -51,12 +55,12 @@ describe("Favorite Kits Operations - Unit Tests", () => {
 
       // Setup batch query mock: [favorite kits, all banks, voices, samples]
       const mockSelect = createBatchQueryMock([mockKits, [], [], []]);
-      vi.mocked(withDb).mockImplementation(createWithDbMock(mockSelect));
+      mockWithDb(mockSelect);
 
       const result = getFavoriteKits(mockDbDir);
 
-      expect(result).toHaveLength(2);
-      expect(result[0]).toEqual({
+      expect(result.data).toHaveLength(2);
+      expect(result.data?.[0]).toEqual({
         bank: null,
         bank_letter: "A",
         bpm: 120,
@@ -67,7 +71,7 @@ describe("Favorite Kits Operations - Unit Tests", () => {
         samples: [],
         voices: [],
       });
-      expect(result[1]).toEqual({
+      expect(result.data?.[1]).toEqual({
         bank: null,
         bank_letter: "B",
         bpm: 140,
@@ -89,12 +93,7 @@ describe("Favorite Kits Operations - Unit Tests", () => {
         }),
       });
 
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          select: mockSelect,
-        };
-        return fn(mockDb);
-      });
+      mockWithDb(mockSelect);
 
       getFavoriteKits(mockDbDir);
 
@@ -118,7 +117,7 @@ describe("Favorite Kits Operations - Unit Tests", () => {
 
     test("should call withDb with correct parameters", () => {
       const mockSelect = createSingleQueryMock([]);
-      vi.mocked(withDb).mockImplementation(createWithDbMock(mockSelect));
+      mockWithDb(mockSelect);
 
       getFavoriteKits(mockDbDir);
 
@@ -136,16 +135,11 @@ describe("Favorite Kits Operations - Unit Tests", () => {
         }),
       });
 
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          select: mockSelect,
-        };
-        return fn(mockDb);
-      });
+      mockWithDb(mockSelect);
 
       const result = getFavoriteKitsCount(mockDbDir);
 
-      expect(result).toBe(0);
+      expect(result.data).toBe(0);
     });
 
     test("should return correct count of favorite kits", () => {
@@ -157,16 +151,11 @@ describe("Favorite Kits Operations - Unit Tests", () => {
         }),
       });
 
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          select: mockSelect,
-        };
-        return fn(mockDb);
-      });
+      mockWithDb(mockSelect);
 
       const result = getFavoriteKitsCount(mockDbDir);
 
-      expect(result).toBe(5);
+      expect(result.data).toBe(5);
     });
 
     test("should handle null result gracefully", () => {
@@ -178,16 +167,11 @@ describe("Favorite Kits Operations - Unit Tests", () => {
         }),
       });
 
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          select: mockSelect,
-        };
-        return fn(mockDb);
-      });
+      mockWithDb(mockSelect);
 
       const result = getFavoriteKitsCount(mockDbDir);
 
-      expect(result).toBe(0);
+      expect(result.data).toBe(0);
     });
 
     test("should handle undefined count gracefully", () => {
@@ -199,16 +183,11 @@ describe("Favorite Kits Operations - Unit Tests", () => {
         }),
       });
 
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          select: mockSelect,
-        };
-        return fn(mockDb);
-      });
+      mockWithDb(mockSelect);
 
       const result = getFavoriteKitsCount(mockDbDir);
 
-      expect(result).toBe(0);
+      expect(result.data).toBe(0);
     });
 
     test("should use count function in select", () => {
@@ -220,12 +199,7 @@ describe("Favorite Kits Operations - Unit Tests", () => {
         }),
       });
 
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          select: mockSelect,
-        };
-        return fn(mockDb);
-      });
+      mockWithDb(mockSelect);
 
       getFavoriteKitsCount(mockDbDir);
 
@@ -242,12 +216,7 @@ describe("Favorite Kits Operations - Unit Tests", () => {
         }),
       });
 
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          select: mockSelect,
-        };
-        return fn(mockDb);
-      });
+      mockWithDb(mockSelect);
 
       getFavoriteKitsCount(mockDbDir);
 
@@ -270,18 +239,15 @@ describe("Favorite Kits Operations - Unit Tests", () => {
     });
 
     test("should call withDb with correct parameters", () => {
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          select: vi.fn().mockReturnValue({
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                get: vi.fn().mockReturnValue({ count: 1 }),
-              }),
+      mockWithDb(
+        vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              get: vi.fn().mockReturnValue({ count: 1 }),
             }),
           }),
-        };
-        return fn(mockDb);
-      });
+        }),
+      );
 
       getFavoriteKitsCount(mockDbDir);
 

@@ -21,6 +21,8 @@ vi.mock("node:path", () => ({
 
 import { app } from "electron";
 
+import type { InMemorySettings } from "../../types/settings.js";
+
 import { writeSettingsFile } from "../../settingsFile.js";
 import { SettingsService } from "../settingsService.js";
 
@@ -30,7 +32,7 @@ const mockPath = vi.mocked(path);
 
 describe("SettingsService", () => {
   let settingsService: SettingsService;
-  let mockInMemorySettings: Record<string, unknown>;
+  let mockInMemorySettings: InMemorySettings;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -60,7 +62,7 @@ describe("SettingsService", () => {
     });
 
     it("returns new object for empty settings", () => {
-      const emptySettings = {};
+      const emptySettings = {} as InMemorySettings;
       const result = settingsService.readSettings(emptySettings);
 
       // Should return a new object (not the same reference due to spread syntax)
@@ -138,7 +140,7 @@ describe("SettingsService", () => {
     });
 
     it("keeps every other setting when writing one (RE-21)", () => {
-      const settings = {
+      const settings: InMemorySettings = {
         confirmDestructiveActions: false,
         futureSetting: { kept: true },
         localStorePath: "/store",
@@ -203,7 +205,7 @@ describe("SettingsService", () => {
     });
 
     it("returns null when no path is configured", () => {
-      const emptySettings = {};
+      const emptySettings = {} as InMemorySettings;
       const result = settingsService.getLocalStorePath(emptySettings);
 
       expect(result).toBeNull();
@@ -232,7 +234,10 @@ describe("SettingsService", () => {
 
   describe("validateLocalStorePath", () => {
     it("returns success when path is configured via environment", () => {
-      const result = settingsService.validateLocalStorePath({}, "/env/path");
+      const result = settingsService.validateLocalStorePath(
+        {} as InMemorySettings,
+        "/env/path",
+      );
 
       expect(result).toEqual({
         path: "/env/path",
@@ -251,7 +256,7 @@ describe("SettingsService", () => {
     });
 
     it("returns failure when no path is configured", () => {
-      const emptySettings = {};
+      const emptySettings = {} as InMemorySettings;
       const result = settingsService.validateLocalStorePath(emptySettings);
 
       expect(result).toEqual({
@@ -273,7 +278,7 @@ describe("SettingsService", () => {
     });
 
     it("fails validation with empty environment override and no memory setting", () => {
-      const emptySettings = {};
+      const emptySettings = {} as InMemorySettings;
       const result = settingsService.validateLocalStorePath(emptySettings, "");
 
       expect(result).toEqual({

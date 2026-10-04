@@ -143,13 +143,17 @@ describe.sequential("main/index.ts", () => {
       const win = vi.mocked(BrowserWindow).mock.results[0].value;
       const closeHandler = vi
         .mocked(win.on)
-        .mock.calls.find(([event]) => event === "close")?.[1];
+        .mock.calls.find(([event]: unknown[]) => event === "close")?.[1];
       writeSpy.mockClear();
       closeHandler?.();
 
+      const options = vi.mocked(BrowserWindow).mock.calls[0][0];
+      if (!options)
+        throw new Error("BrowserWindow was created without options");
+
       return {
         app,
-        options: vi.mocked(BrowserWindow).mock.calls[0][0],
+        options,
         savedWindowState: writeSpy.mock.calls.length > 0,
         win,
       };
@@ -169,8 +173,8 @@ describe.sequential("main/index.ts", () => {
       const { app, options, savedWindowState, win } = await launch();
 
       expect(options.show).toBe(false);
-      expect(options.webPreferences.backgroundThrottling).toBe(false);
-      expect(options.webPreferences.offscreen).toBe(true);
+      expect(options.webPreferences?.backgroundThrottling).toBe(false);
+      expect(options.webPreferences?.offscreen).toBe(true);
       // e2e runs play real audio; they shouldn't be heard
       expect(win.webContents.setAudioMuted).toHaveBeenCalledWith(true);
       expect(app.setActivationPolicy).toHaveBeenCalledWith("accessory");
@@ -182,8 +186,8 @@ describe.sequential("main/index.ts", () => {
       const { app, options, savedWindowState, win } = await launch();
 
       expect(options.show).toBe(true);
-      expect(options.webPreferences.backgroundThrottling).toBe(true);
-      expect(options.webPreferences.offscreen).toBe(false);
+      expect(options.webPreferences?.backgroundThrottling).toBe(true);
+      expect(options.webPreferences?.offscreen).toBe(false);
       expect(win.webContents.setAudioMuted).not.toHaveBeenCalled();
       expect(app.setActivationPolicy).not.toHaveBeenCalled();
       expect(win.maximize).toHaveBeenCalled();
@@ -210,7 +214,9 @@ describe.sequential("main/index.ts", () => {
 
     const onQuit = vi
       .mocked(app.on)
-      .mock.calls.find(([event]) => event === "will-quit")?.[1] as () => void;
+      .mock.calls.find(
+        ([event]: unknown[]) => event === "will-quit",
+      )?.[1] as () => void;
     onQuit();
 
     expect(localStoreSetupService.cleanupUnfinishedSetups).toHaveBeenCalledWith(

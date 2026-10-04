@@ -1,16 +1,24 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, type Mock, test, vi } from "vitest";
 
 // Mock the database utilities
 vi.mock("../../utils/dbUtilities.js", () => ({
   withDb: vi.fn(),
 }));
 
-import { withDb } from "../../utils/dbUtilities.js";
+import { type RomperDb, withDb } from "../../utils/dbUtilities.js";
 import {
   markKitAsModified,
   markKitAsSynced,
   markKitsAsSynced,
 } from "../kitCrudOperations.js";
+
+/** Runs the operation on a mock db and wraps the result as withDb does */
+function mockWithDb(mockDb: Record<string, Mock>) {
+  vi.mocked(withDb).mockImplementation((_dbDir, fn) => ({
+    data: fn(mockDb as unknown as RomperDb),
+    success: true,
+  }));
+}
 
 describe("Kit Sync Status Operations - Unit Tests", () => {
   const mockDbDir = "/test/db";
@@ -32,11 +40,8 @@ describe("Kit Sync Status Operations - Unit Tests", () => {
         set: mockSet,
       });
 
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          update: mockUpdate,
-        };
-        return fn(mockDb);
+      mockWithDb({
+        update: mockUpdate,
       });
 
       markKitAsModified(mockDbDir, "A0");
@@ -48,17 +53,14 @@ describe("Kit Sync Status Operations - Unit Tests", () => {
     });
 
     test("should call withDb with correct parameters", () => {
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          update: vi.fn().mockReturnValue({
-            set: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                run: vi.fn(),
-              }),
+      mockWithDb({
+        update: vi.fn().mockReturnValue({
+          set: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              run: vi.fn(),
             }),
           }),
-        };
-        return fn(mockDb);
+        }),
       });
 
       markKitAsModified(mockDbDir, "A0");
@@ -90,11 +92,8 @@ describe("Kit Sync Status Operations - Unit Tests", () => {
         set: mockSet,
       });
 
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          update: mockUpdate,
-        };
-        return fn(mockDb);
+      mockWithDb({
+        update: mockUpdate,
       });
 
       markKitAsModified(mockDbDir, "A0");
@@ -118,11 +117,8 @@ describe("Kit Sync Status Operations - Unit Tests", () => {
         set: mockSet,
       });
 
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          update: mockUpdate,
-        };
-        return fn(mockDb);
+      mockWithDb({
+        update: mockUpdate,
       });
 
       markKitAsSynced(mockDbDir, "A0");
@@ -134,17 +130,14 @@ describe("Kit Sync Status Operations - Unit Tests", () => {
     });
 
     test("should call withDb with correct parameters", () => {
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          update: vi.fn().mockReturnValue({
-            set: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                run: vi.fn(),
-              }),
+      mockWithDb({
+        update: vi.fn().mockReturnValue({
+          set: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              run: vi.fn(),
             }),
           }),
-        };
-        return fn(mockDb);
+        }),
       });
 
       markKitAsSynced(mockDbDir, "A0");
@@ -183,11 +176,8 @@ describe("Kit Sync Status Operations - Unit Tests", () => {
         set: mockSet,
       });
 
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          update: mockUpdate,
-        };
-        return fn(mockDb);
+      mockWithDb({
+        update: mockUpdate,
       });
 
       const kitNames = ["A0", "A1"];
@@ -225,11 +215,8 @@ describe("Kit Sync Status Operations - Unit Tests", () => {
         set: mockSet,
       });
 
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          update: mockUpdate,
-        };
-        return fn(mockDb);
+      mockWithDb({
+        update: mockUpdate,
       });
 
       const kitNames = ["A0", "A1"];
@@ -265,11 +252,8 @@ describe("Kit Sync Status Operations - Unit Tests", () => {
         set: mockSet,
       });
 
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          update: mockUpdate,
-        };
-        return fn(mockDb);
+      mockWithDb({
+        update: mockUpdate,
       });
 
       // The error reaches withDb, which logs it and returns a failed result
@@ -298,11 +282,8 @@ describe("Kit Sync Status Operations - Unit Tests", () => {
         set: mockSet,
       });
 
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          update: mockUpdate,
-        };
-        return fn(mockDb);
+      mockWithDb({
+        update: mockUpdate,
       });
 
       markKitsAsSynced(mockDbDir, []);
@@ -324,17 +305,14 @@ describe("Kit Sync Status Operations - Unit Tests", () => {
         .spyOn(console, "log")
         .mockImplementation(() => {});
 
-      vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-        const mockDb = {
-          update: vi.fn().mockReturnValue({
-            set: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                run: vi.fn().mockReturnValue(mockResult),
-              }),
+      mockWithDb({
+        update: vi.fn().mockReturnValue({
+          set: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              run: vi.fn().mockReturnValue(mockResult),
             }),
           }),
-        };
-        return fn(mockDb);
+        }),
       });
 
       markKitsAsSynced(mockDbDir, ["A0"]);

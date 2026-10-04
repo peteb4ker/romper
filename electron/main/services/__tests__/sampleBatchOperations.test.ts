@@ -13,8 +13,8 @@ vi.mock("../../utils/fileSystemUtils.js");
 vi.mock("../sampleValidation.js");
 
 const mockORM = vi.mocked(romperDbCoreORM);
-const mockFileSystem = vi.mocked(fileSystemUtils);
-const mockSampleValidation = vi.mocked(sampleValidation);
+const mockFileSystem = vi.mocked(fileSystemUtils, { deep: true });
+const mockSampleValidation = vi.mocked(sampleValidation, { deep: true });
 
 describe("SampleBatchOperationsService", () => {
   let service: SampleBatchOperationsService;
@@ -23,14 +23,14 @@ describe("SampleBatchOperationsService", () => {
   const mockDb = { handle: "transaction" } as never;
   const mockSqlite = {} as never;
 
-  const mockSample: Sample = {
+  const mockSample = {
     filename: "test.wav",
     id: 1,
     kit_name: "TestKit",
     slot_number: 2,
     source_path: "/path/test.wav",
     voice_number: 1,
-  };
+  } as Sample;
 
   beforeEach(() => {
     service = new SampleBatchOperationsService();

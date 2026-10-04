@@ -15,10 +15,12 @@ describe("Sample Fixtures", () => {
     it("should have correct default properties", () => {
       expect(baseMockSample).toEqual({
         filename: "test.wav",
+        gain_db: 0,
         id: 1,
         kit_name: "A0",
         slot_number: 0,
         source_path: "/path/to/test.wav",
+        source_status: null,
         voice_number: 1,
         wav_bit_depth: 16,
         wav_bitrate: 16,

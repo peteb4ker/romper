@@ -1,6 +1,8 @@
 import { BrowserWindow } from "electron";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { SyncFileOperation } from "../syncFileOperations.js";
+
 vi.mock("electron", () => ({
   BrowserWindow: {
     getAllWindows: vi.fn(),
@@ -25,7 +27,9 @@ describe("SyncProgressManager", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockBrowserWindow.getAllWindows.mockReturnValue([mockWindow as unknown]);
+    mockBrowserWindow.getAllWindows.mockReturnValue([
+      mockWindow as unknown as BrowserWindow,
+    ]);
   });
 
   describe("initializeSyncJob", () => {
@@ -33,7 +37,7 @@ describe("SyncProgressManager", () => {
       const mockFiles = [
         { filename: "test1.wav", kitName: "kit1" },
         { filename: "test2.wav", kitName: "kit1" },
-      ] as unknown[];
+      ] as SyncFileOperation[];
 
       syncProgressManager.initializeSyncJob(mockFiles);
 
@@ -59,7 +63,7 @@ describe("SyncProgressManager", () => {
     it("should mark current sync job as cancelled", () => {
       const mockFiles = [
         { filename: "test.wav", kitName: "kit1" },
-      ] as unknown[];
+      ] as SyncFileOperation[];
       syncProgressManager.initializeSyncJob(mockFiles);
 
       syncProgressManager.cancelCurrentSync();
@@ -82,7 +86,7 @@ describe("SyncProgressManager", () => {
     it("should return cancelled status and clear job", () => {
       const mockFiles = [
         { filename: "test.wav", kitName: "kit1" },
-      ] as unknown[];
+      ] as SyncFileOperation[];
       syncProgressManager.initializeSyncJob(mockFiles);
       syncProgressManager.cancelCurrentSync();
 
@@ -95,7 +99,7 @@ describe("SyncProgressManager", () => {
     it("should return false when job was not cancelled", () => {
       const mockFiles = [
         { filename: "test.wav", kitName: "kit1" },
-      ] as unknown[];
+      ] as SyncFileOperation[];
       syncProgressManager.initializeSyncJob(mockFiles);
 
       const wasCancelled = syncProgressManager.finalizeSyncJob();
@@ -116,7 +120,7 @@ describe("SyncProgressManager", () => {
       const mockFiles = [
         { filename: "test1.wav", kitName: "kit1" },
         { filename: "test2.wav", kitName: "kit1" },
-      ] as unknown[];
+      ] as SyncFileOperation[];
 
       syncProgressManager.initializeSyncJob(mockFiles);
 
@@ -138,7 +142,7 @@ describe("SyncProgressManager", () => {
     it("should return 0 when no progress made", () => {
       const mockFiles = [
         { filename: "test.wav", kitName: "kit1" },
-      ] as unknown[];
+      ] as SyncFileOperation[];
       syncProgressManager.initializeSyncJob(mockFiles);
 
       const timeRemaining = syncProgressManager.calculateTimeRemaining();
@@ -187,10 +191,13 @@ describe("SyncProgressManager", () => {
     it("should emit file start progress", () => {
       const mockFiles = [
         { filename: "test.wav", kitName: "kit1" },
-      ] as unknown[];
+      ] as SyncFileOperation[];
       syncProgressManager.initializeSyncJob(mockFiles);
 
-      const fileOp = { filename: "test.wav", operation: "copy" } as unknown;
+      const fileOp = {
+        filename: "test.wav",
+        operation: "copy",
+      } as SyncFileOperation;
       syncProgressManager.emitFileStartProgress(fileOp);
 
       expect(mockWebContents.send).toHaveBeenCalledWith(
@@ -210,10 +217,13 @@ describe("SyncProgressManager", () => {
     it("should emit file completion progress and increment completed files", () => {
       const mockFiles = [
         { filename: "test.wav", kitName: "kit1" },
-      ] as unknown[];
+      ] as SyncFileOperation[];
       syncProgressManager.initializeSyncJob(mockFiles);
 
-      const fileOp = { filename: "test.wav", operation: "convert" } as unknown;
+      const fileOp = {
+        filename: "test.wav",
+        operation: "convert",
+      } as SyncFileOperation;
       syncProgressManager.emitFileCompletionProgress(fileOp);
 
       expect(mockWebContents.send).toHaveBeenCalledWith(
@@ -236,7 +246,7 @@ describe("SyncProgressManager", () => {
     it("should emit completion progress", () => {
       const mockFiles = [
         { filename: "test.wav", kitName: "kit1" },
-      ] as unknown[];
+      ] as SyncFileOperation[];
       syncProgressManager.initializeSyncJob(mockFiles);
 
       syncProgressManager.emitCompletionProgress(5, 5);
@@ -259,10 +269,13 @@ describe("SyncProgressManager", () => {
     it("should emit error progress with retry information", () => {
       const mockFiles = [
         { filename: "test.wav", kitName: "kit1" },
-      ] as unknown[];
+      ] as SyncFileOperation[];
       syncProgressManager.initializeSyncJob(mockFiles);
 
-      const fileOp = { filename: "test.wav", operation: "copy" } as unknown;
+      const fileOp = {
+        filename: "test.wav",
+        operation: "copy",
+      } as SyncFileOperation;
       const errorDetails = { canRetry: true, error: "Test error" };
 
       syncProgressManager.emitErrorProgress(fileOp, errorDetails);
@@ -290,7 +303,7 @@ describe("SyncProgressManager", () => {
         filename: `s${i}.wav`,
         kitName: "A0",
         operation: "copy",
-      })) as unknown[];
+      })) as SyncFileOperation[];
 
     const sentProgress = () =>
       mockWebContents.send.mock.calls.map(
@@ -298,7 +311,7 @@ describe("SyncProgressManager", () => {
           progress as { filesCompleted: number; status: string },
       );
 
-    const syncFile = (fileOp: unknown) => {
+    const syncFile = (fileOp: SyncFileOperation) => {
       syncProgressManager.emitFileStartProgress(fileOp);
       syncProgressManager.emitFileCompletionProgress(fileOp);
     };

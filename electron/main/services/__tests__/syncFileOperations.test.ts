@@ -50,7 +50,10 @@ vi.mock("../syncValidationService.js", () => ({
 }));
 
 import { convertToRampleDefault } from "../../formatConverter.js";
-import { syncFileOperationsService } from "../syncFileOperations.js";
+import {
+  type SyncFileOperation,
+  syncFileOperationsService,
+} from "../syncFileOperations.js";
 import { syncProgressManager } from "../syncProgressManager.js";
 import { syncValidationService } from "../syncValidationService.js";
 
@@ -87,7 +90,7 @@ describe("[UC-34] SyncFileOperationsService", () => {
       kitName: "TestKit",
       operation: "copy" as const,
       sourcePath: "/source/file.wav",
-    };
+    } as SyncFileOperation;
 
     it("should copy file for copy operation", async () => {
       await syncFileOperationsService.executeFileOperation(fileOp, {});
@@ -138,7 +141,7 @@ describe("[UC-34] SyncFileOperationsService", () => {
       kitName: "TestKit",
       operation: "convert" as const,
       sourcePath: "/source/file.wav",
-    };
+    } as SyncFileOperation;
 
     it("should successfully convert file", async () => {
       mockConvertToRampleDefault.mockResolvedValue({ success: true });
@@ -181,7 +184,7 @@ describe("[UC-34] SyncFileOperationsService", () => {
       kitName: "TestKit",
       operation: "copy" as const,
       sourcePath: "/source/file.wav",
-    };
+    } as SyncFileOperation;
 
     it("should handle file processing errors without throwing", () => {
       const error = new Error("Test error");
@@ -200,7 +203,7 @@ describe("[UC-34] SyncFileOperationsService", () => {
       kitName: "TestKit",
       operation: "copy" as const,
       sourcePath: "/source/file.wav",
-    };
+    } as SyncFileOperation;
 
     it("should handle file processing", async () => {
       mockPath.dirname.mockReturnValue("/dest");
@@ -221,7 +224,7 @@ describe("[UC-34] SyncFileOperationsService", () => {
         operation: "copy" as const,
         sourcePath: "/source/file1.wav",
       },
-    ];
+    ] as SyncFileOperation[];
 
     it("should handle file processing", async () => {
       mockPath.dirname.mockReturnValue("/dest");

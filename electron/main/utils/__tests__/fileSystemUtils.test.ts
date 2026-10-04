@@ -228,7 +228,7 @@ describe("fileSystemUtils", () => {
       const mockStats = { size: 1024 };
 
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue(mockStats as unknown);
+      mockFs.statSync.mockReturnValue(mockStats as unknown as fs.Stats);
 
       const result = getFileSize(filePath);
 
@@ -284,7 +284,7 @@ describe("fileSystemUtils", () => {
       const mockStats = { size: 2147483648 }; // 2GB
 
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue(mockStats as unknown);
+      mockFs.statSync.mockReturnValue(mockStats as unknown as fs.Stats);
 
       const result = getFileSize(filePath);
 
@@ -296,7 +296,7 @@ describe("fileSystemUtils", () => {
       const mockStats = { size: 0 };
 
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue(mockStats as unknown);
+      mockFs.statSync.mockReturnValue(mockStats as unknown as fs.Stats);
 
       const result = getFileSize(filePath);
 
@@ -314,7 +314,7 @@ describe("fileSystemUtils", () => {
       const mockStats = { isFile: () => true };
 
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue(mockStats as unknown);
+      mockFs.statSync.mockReturnValue(mockStats as unknown as fs.Stats);
 
       const result = validateFileExists(filePath);
 
@@ -341,7 +341,7 @@ describe("fileSystemUtils", () => {
       const mockStats = { isFile: () => false };
 
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue(mockStats as unknown);
+      mockFs.statSync.mockReturnValue(mockStats as unknown as fs.Stats);
 
       const result = validateFileExists(filePath);
 
@@ -393,7 +393,7 @@ describe("fileSystemUtils", () => {
       const mockStats = { isFile: () => true };
 
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue(mockStats as unknown);
+      mockFs.statSync.mockReturnValue(mockStats as unknown as fs.Stats);
 
       const result = validateFileExists(filePath);
 

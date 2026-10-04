@@ -1,3 +1,5 @@
+import type { KitWithRelations } from "@romper/shared/db/schema.js";
+
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 // Mock electron ipcMain
@@ -47,7 +49,7 @@ describe("IPC Handlers Integration Tests", () => {
     });
 
     test("should handle toggle-kit-favorite successfully", async () => {
-      const mockResult = { isFavorite: true };
+      const mockResult = { data: { isFavorite: true }, success: true };
       vi.mocked(romperDbCoreORM.toggleKitFavorite).mockReturnValue(mockResult);
 
       const handler = mockIpcHandlers.get("toggle-kit-favorite");
@@ -86,7 +88,7 @@ describe("IPC Handlers Integration Tests", () => {
 
   describe("updateKit IPC Handler", () => {
     test("should handle update-kit-metadata successfully", async () => {
-      vi.mocked(romperDbCoreORM.updateKit).mockReturnValue(undefined);
+      vi.mocked(romperDbCoreORM.updateKit).mockReturnValue({ success: true });
 
       registerDbIpcHandlers(mockInMemorySettings);
       const handler = mockIpcHandlers.get("update-kit-metadata");
@@ -100,7 +102,7 @@ describe("IPC Handlers Integration Tests", () => {
         "A0",
         updates,
       );
-      expect(result).toEqual(undefined);
+      expect(result).toEqual({ success: true });
     });
 
     test("[Q-02] refuses fields other than alias and editable (RE-22)", async () => {
@@ -185,7 +187,10 @@ describe("IPC Handlers Integration Tests", () => {
         },
       ];
 
-      vi.mocked(romperDbCoreORM.getKits).mockReturnValue(mockKitsData);
+      vi.mocked(romperDbCoreORM.getKits).mockReturnValue({
+        data: mockKitsData as unknown as KitWithRelations[],
+        success: true,
+      });
 
       registerDbIpcHandlers(mockInMemorySettings);
       const handler = mockIpcHandlers.get("get-all-kits");
@@ -198,7 +203,7 @@ describe("IPC Handlers Integration Tests", () => {
       // Verify the serialized data can be parsed back
       const serialized = JSON.stringify(result);
       const parsed = JSON.parse(serialized);
-      expect(parsed).toEqual(mockKitsData);
+      expect(parsed).toEqual({ data: mockKitsData, success: true });
     });
 
     test("should handle complex data structures without circular references", async () => {
@@ -217,7 +222,10 @@ describe("IPC Handlers Integration Tests", () => {
         },
       ];
 
-      vi.mocked(romperDbCoreORM.getKits).mockReturnValue(mockKits);
+      vi.mocked(romperDbCoreORM.getKits).mockReturnValue({
+        data: mockKits as unknown as KitWithRelations[],
+        success: true,
+      });
 
       registerDbIpcHandlers(mockInMemorySettings);
       const handler = mockIpcHandlers.get("get-all-kits");
@@ -226,9 +234,9 @@ describe("IPC Handlers Integration Tests", () => {
 
       // Verify serialization works with complex nested structures
       expect(() => JSON.stringify(result)).not.toThrow();
-      expect(result[0].bank).toBeNull();
-      expect(result[0].samples).toEqual([]);
-      expect(result[0].voices).toEqual([]);
+      expect(result.data[0].bank).toBeNull();
+      expect(result.data[0].samples).toEqual([]);
+      expect(result.data[0].voices).toEqual([]);
     });
   });
 });

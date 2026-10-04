@@ -13,9 +13,9 @@ vi.mock("../../sampleBatchOperations.js");
 vi.mock("../../sampleValidation.js");
 
 const mockORM = vi.mocked(romperDbCoreORM);
-const mockFileSystem = vi.mocked(fileSystemUtils);
-const mockBatchOps = vi.mocked(sampleBatchOperations);
-const mockValidation = vi.mocked(sampleValidation);
+const mockFileSystem = vi.mocked(fileSystemUtils, true);
+const mockBatchOps = vi.mocked(sampleBatchOperations, true);
+const mockValidation = vi.mocked(sampleValidation, true);
 
 describe("SampleCrudService", () => {
   let service: SampleCrudService;

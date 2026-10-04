@@ -72,7 +72,7 @@ describe("KitService Extended Integration Tests", () => {
 
       // Verify 4 voices were created
       expect(kit.data!.voices).toHaveLength(4);
-      const voiceNumbers = kit.data!.voices.map((v) => v.voice_number).sort();
+      const voiceNumbers = kit.data!.voices!.map((v) => v.voice_number).sort();
       expect(voiceNumbers).toEqual([1, 2, 3, 4]);
     });
 
@@ -431,7 +431,7 @@ describe("KitService Extended Integration Tests", () => {
     });
 
     it("should preserve step_pattern during copy", () => {
-      const stepPattern = "1010101010101010";
+      const stepPattern = [[1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]];
       addKit(TEST_DB_PATH, {
         alias: "Patterned Kit",
         bank_letter: "A",
@@ -445,7 +445,7 @@ describe("KitService Extended Integration Tests", () => {
       kitService.copyKit(mockInMemorySettings, "A1", "B1");
 
       const copiedKit = getKit(TEST_DB_PATH, "B1");
-      expect(copiedKit.data!.step_pattern).toBe(stepPattern);
+      expect(copiedKit.data!.step_pattern).toEqual(stepPattern);
     });
 
     it("should set copied kit as editable and unlocked", () => {

@@ -24,6 +24,7 @@ const createSample = (
   kit_name: "TestKit",
   slot_number: slotNumber,
   source_path: `/path/to/sample_v${voiceNumber}_s${slotNumber}.wav`,
+  source_status: null,
   voice_number: voiceNumber,
   wav_bit_depth: null,
   wav_bitrate: null,

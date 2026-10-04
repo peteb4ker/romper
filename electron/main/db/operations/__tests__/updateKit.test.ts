@@ -1,12 +1,20 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, type Mock, test, vi } from "vitest";
 
 // Mock the database utilities
 vi.mock("../../utils/dbUtilities.js", () => ({
   withDb: vi.fn(),
 }));
 
-import { withDb } from "../../utils/dbUtilities.js";
+import { type RomperDb, withDb } from "../../utils/dbUtilities.js";
 import { updateKit } from "../kitCrudOperations.js";
+
+/** Runs the operation on a mock db and wraps the result as withDb does */
+function mockWithDb(mockDb: Record<string, Mock>) {
+  vi.mocked(withDb).mockImplementation((_dbDir, fn) => ({
+    data: fn(mockDb as unknown as RomperDb),
+    success: true,
+  }));
+}
 
 describe("updateKit - Unit Tests", () => {
   const mockDbDir = "/test/db";
@@ -30,11 +38,8 @@ describe("updateKit - Unit Tests", () => {
       set: mockSet,
     });
 
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        update: mockUpdate,
-      };
-      return fn(mockDb);
+    mockWithDb({
+      update: mockUpdate,
     });
 
     const updates = { bpm: 120 };
@@ -60,11 +65,8 @@ describe("updateKit - Unit Tests", () => {
       set: mockSet,
     });
 
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        update: mockUpdate,
-      };
-      return fn(mockDb);
+    mockWithDb({
+      update: mockUpdate,
     });
 
     const updates = {
@@ -98,11 +100,8 @@ describe("updateKit - Unit Tests", () => {
       set: mockSet,
     });
 
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        update: mockUpdate,
-      };
-      return fn(mockDb);
+    mockWithDb({
+      update: mockUpdate,
     });
 
     const stepPattern = [
@@ -132,11 +131,8 @@ describe("updateKit - Unit Tests", () => {
       set: mockSet,
     });
 
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        update: mockUpdate,
-      };
-      return fn(mockDb);
+    mockWithDb({
+      update: mockUpdate,
     });
 
     const updates = { step_pattern: null };
@@ -162,11 +158,8 @@ describe("updateKit - Unit Tests", () => {
       set: mockSet,
     });
 
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        update: mockUpdate,
-      };
-      return fn(mockDb);
+    mockWithDb({
+      update: mockUpdate,
     });
 
     expect(() => updateKit(mockDbDir, "NonExistent", { bpm: 120 })).toThrow(
@@ -188,11 +181,8 @@ describe("updateKit - Unit Tests", () => {
       set: mockSet,
     });
 
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        update: mockUpdate,
-      };
-      return fn(mockDb);
+    mockWithDb({
+      update: mockUpdate,
     });
 
     const updates = { bank_letter: "B" };
@@ -218,11 +208,8 @@ describe("updateKit - Unit Tests", () => {
       set: mockSet,
     });
 
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        update: mockUpdate,
-      };
-      return fn(mockDb);
+    mockWithDb({
+      update: mockUpdate,
     });
 
     const updates = { name: "A1" };
@@ -249,17 +236,14 @@ describe("updateKit - Unit Tests", () => {
   test("should call withDb with correct parameters", () => {
     const mockResult = { changes: 1 };
 
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        update: vi.fn().mockReturnValue({
-          set: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              run: vi.fn().mockReturnValue(mockResult),
-            }),
+    mockWithDb({
+      update: vi.fn().mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            run: vi.fn().mockReturnValue(mockResult),
           }),
         }),
-      };
-      return fn(mockDb);
+      }),
     });
 
     updateKit(mockDbDir, mockKitName, { bpm: 120 });
@@ -281,11 +265,8 @@ describe("updateKit - Unit Tests", () => {
       set: mockSet,
     });
 
-    vi.mocked(withDb).mockImplementation((dbDir, fn) => {
-      const mockDb = {
-        update: mockUpdate,
-      };
-      return fn(mockDb);
+    mockWithDb({
+      update: mockUpdate,
     });
 
     updateKit(mockDbDir, mockKitName, { bpm: 120 });

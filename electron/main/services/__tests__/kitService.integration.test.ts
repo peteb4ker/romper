@@ -65,7 +65,7 @@ describe("KitService Integration Tests", () => {
         locked: false,
         modified_since_sync: false,
         name: "A1",
-        step_pattern: "1010101010101010",
+        step_pattern: [[1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]],
       };
 
       const addKitResult = addKit(TEST_DB_PATH, sourceKitRecord);
@@ -130,7 +130,9 @@ describe("KitService Integration Tests", () => {
         expect(destKitResult.data.bank_letter).toBe("B");
         expect(destKitResult.data.editable).toBe(true);
         expect(destKitResult.data.locked).toBe(false);
-        expect(destKitResult.data.step_pattern).toBe("1010101010101010");
+        expect(destKitResult.data.step_pattern).toEqual([
+          [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+        ]);
       }
 
       // Verification: Check all samples were copied
@@ -333,7 +335,7 @@ describe("KitService Integration Tests", () => {
         locked: false,
         modified_since_sync: false,
         name: "A1",
-        step_pattern: "1010101010101010",
+        step_pattern: [[1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]],
       };
 
       const addKitResult = addKit(TEST_DB_PATH, sourceKitRecord);

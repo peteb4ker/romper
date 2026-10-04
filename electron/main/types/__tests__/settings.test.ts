@@ -64,7 +64,7 @@ describe("InMemorySettings Interface", () => {
     const typedSettings = unknownData as InMemorySettings;
 
     expect(typedSettings.localStorePath).toBe("/test/path");
-    expect((typedSettings as unknown).randomField).toBe("should be preserved");
+    expect(typedSettings.randomField).toBe("should be preserved");
   });
 
   test("should handle additional properties via Record extension", () => {

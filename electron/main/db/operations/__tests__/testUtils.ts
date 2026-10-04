@@ -49,18 +49,3 @@ export function createSingleQueryMock(result: unknown) {
     }),
   });
 }
-
-/**
- * Creates a withDb mock implementation for testing
- *
- * @param mockSelect The mock select function (from createBatchQueryMock or createSingleQueryMock)
- * @returns Mock implementation function for withDb
- */
-export function createWithDbMock(mockSelect: ReturnType<typeof vi.fn>) {
-  return (dbDir: string, fn: (db: unknown) => unknown) => {
-    const mockDb = {
-      select: mockSelect,
-    };
-    return fn(mockDb);
-  };
-}

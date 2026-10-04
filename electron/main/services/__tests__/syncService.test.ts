@@ -3,7 +3,15 @@ import type { Sample } from "@romper/shared/db/schema.js";
 import { BrowserWindow } from "electron";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type Mock,
+  vi,
+} from "vitest";
 
 // Mock modules
 vi.mock("electron", () => ({
@@ -72,7 +80,7 @@ import { syncSampleProcessingService } from "../syncSampleProcessing.js";
 import { syncService } from "../syncService.js";
 import { syncValidationService } from "../syncValidationService.js";
 
-const mockFs = vi.mocked(fs);
+const mockFs = vi.mocked(fs, true);
 const mockPath = vi.mocked(path);
 const mockValidateSampleFormat = vi.mocked(validateSampleFormatAsync);
 const mockGetSyncPlanData = vi.mocked(getSyncPlanData);
@@ -92,7 +100,7 @@ function planData(data: Partial<SyncPlanData> = {}) {
 }
 
 describe("[UC-34] SyncService", () => {
-  let mockWindow: unknown;
+  let mockWindow: { webContents: { send: Mock } };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -102,7 +110,9 @@ describe("[UC-34] SyncService", () => {
         send: vi.fn(),
       },
     };
-    mockBrowserWindow.getAllWindows.mockReturnValue([mockWindow]);
+    mockBrowserWindow.getAllWindows.mockReturnValue([
+      mockWindow as unknown as BrowserWindow,
+    ]);
 
     // Default mock implementations
     mockPath.join.mockImplementation((...args) => args.join("/"));
@@ -357,7 +367,7 @@ describe("[UC-34] SyncService", () => {
 
       if (result.success) {
         expect(result.data).toHaveProperty("syncedFiles");
-        expect(typeof result.data.syncedFiles).toBe("number");
+        expect(typeof result.data?.syncedFiles).toBe("number");
       }
     });
   });
@@ -586,6 +596,7 @@ describe("[UC-34] SyncService", () => {
           kitName: s.kit_name,
           operation: "copy",
           sourcePath: `/src/${s.filename}`,
+          voiceNumber: s.voice_number,
         });
       });
       vi.spyOn(syncFileOperationsService, "processAllFiles").mockResolvedValue(
@@ -765,7 +776,11 @@ describe("[UC-34] SyncService", () => {
 
   describe("private methods", () => {
     it("estimates sync time", () => {
-      const estimatedTime = (syncService as unknown).estimateSyncTime(
+      const estimatedTime = (
+        syncService as unknown as {
+          estimateSyncTime(totalFiles: number, conversions: number): number;
+        }
+      ).estimateSyncTime(
         5, // totalFiles
         2, // conversions
       );
@@ -806,6 +821,7 @@ describe("[UC-34] SyncService", () => {
           kitName: "kit1",
           operation: "copy" as const,
           sourcePath: "/test1.wav",
+          voiceNumber: 1,
         },
         {
           destinationPath: "/out2.wav",
@@ -813,6 +829,7 @@ describe("[UC-34] SyncService", () => {
           kitName: "kit1",
           operation: "convert" as const,
           sourcePath: "/test2.wav",
+          voiceNumber: 1,
         },
       ];
       syncProgressManager.initializeSyncJob(mockFiles);

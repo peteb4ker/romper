@@ -2,6 +2,8 @@ import { EventEmitter } from "node:events";
 import * as fs from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { InMemorySettings } from "../../types/settings.js";
+
 // EventEmitter-based stream mock
 class MockStream extends EventEmitter {
   emitUnzipEvents?: () => void;
@@ -13,7 +15,7 @@ class MockStream extends EventEmitter {
   destroy() {
     setImmediate(() => this.emit("close"));
   }
-  pipe(dest: unknown) {
+  pipe(dest: MockStream) {
     if (dest && typeof dest.emitUnzipEvents === "function") {
       dest.emitUnzipEvents();
       return dest;
@@ -23,7 +25,7 @@ class MockStream extends EventEmitter {
 }
 
 // Track unzipper streams for event emission
-const unzipperStreams: unknown[] = [];
+const unzipperStreams: MockStream[] = [];
 let lastWriteStream: MockStream | null = null;
 
 vi.mock("node:fs", () => ({
@@ -155,7 +157,7 @@ beforeEach(async () => {
   const { downloadArchive } = await import("../../archiveUtils");
   vi.mocked(downloadArchive).mockImplementation(fakeDownload);
   const { registerIpcHandlers } = await import("../../ipcHandlers");
-  registerIpcHandlers({}, {});
+  registerIpcHandlers({} as InMemorySettings);
 });
 
 describe("[UC-02] download-and-extract-archive handler", () => {
@@ -173,10 +175,10 @@ describe("[UC-02] download-and-extract-archive handler", () => {
   }, 15000);
 
   it("handles extraction errors and emits archive-error", async () => {
-    (fs.createReadStream as unknown).mockImplementationOnce(
-      () => new MockStream(),
+    vi.mocked(fs.createReadStream).mockImplementationOnce(
+      () => new MockStream() as unknown as fs.ReadStream,
     );
-    (fs.createReadStream as unknown).mockImplementationOnce(() => {
+    vi.mocked(fs.createReadStream).mockImplementationOnce(() => {
       throw new Error("fail");
     });
     const handler = ipcMainHandlers["download-and-extract-archive"];
@@ -226,7 +228,9 @@ describe("[UC-02] download-and-extract-archive handler", () => {
         stream.emit("close");
       }, 10);
     };
-    (fs.createReadStream as unknown).mockImplementation(() => new MockStream());
+    vi.mocked(fs.createReadStream).mockImplementation(
+      () => new MockStream() as unknown as fs.ReadStream,
+    );
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await invokeWithArchiveUrl(
       handler,
@@ -245,7 +249,9 @@ describe("[UC-02] download-and-extract-archive handler", () => {
         stream.emit("close");
       }, 10);
     };
-    (fs.createReadStream as unknown).mockImplementation(() => new MockStream());
+    vi.mocked(fs.createReadStream).mockImplementation(
+      () => new MockStream() as unknown as fs.ReadStream,
+    );
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await invokeWithArchiveUrl(
       handler,
@@ -259,11 +265,13 @@ describe("[UC-02] download-and-extract-archive handler", () => {
   }, 15000);
 
   it("fails extraction when a folder can't be created (RE-24)", async () => {
-    (fs.mkdir as unknown).mockImplementation(
-      (dir: unknown, opts: unknown, cb: unknown) =>
-        cb && cb(new Error("mkdir fail")),
+    vi.mocked(fs.mkdir).mockImplementation(
+      ((_dir: unknown, _opts: unknown, cb?: (err: Error | null) => void) =>
+        cb && cb(new Error("mkdir fail"))) as unknown as typeof fs.mkdir,
     );
-    (fs.createReadStream as unknown).mockImplementation(() => new MockStream());
+    vi.mocked(fs.createReadStream).mockImplementation(
+      () => new MockStream() as unknown as fs.ReadStream,
+    );
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await invokeWithArchiveUrl(
       handler,
@@ -297,13 +305,13 @@ describe("[UC-02] download-and-extract-archive handler", () => {
         setTimeout(() => stream.emit("close"), 20);
       }, 1);
     };
-    (fs.createReadStream as unknown).mockImplementation(() => {
+    vi.mocked(fs.createReadStream).mockImplementation(() => {
       const s = new MockStream();
       setTimeout(() => {
         // Trigger unzipper events
         unzipperStreams.forEach((z) => z.emitUnzipEvents?.());
       }, 1);
-      return s;
+      return s as unknown as fs.ReadStream;
     });
     const handler = ipcMainHandlers["download-and-extract-archive"];
     const result = await invokeWithArchiveUrl(

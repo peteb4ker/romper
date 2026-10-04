@@ -11,6 +11,8 @@ import {
 
 const KIT_PATH = path.join("/store", "A0");
 const METADATA = {
+  // A header read records that the file was readable (#537)
+  source_status: "readable" as const,
   wav_bit_depth: 16,
   wav_bitrate: 1411200,
   wav_channels: 2,
@@ -295,5 +297,61 @@ describe("[UC-13] planKitScanMerge", () => {
       { alias: "Snare", voiceNumber: 2 },
     ]);
     expect(plan.result.updatedVoices).toBe(2);
+  });
+
+  describe("[UC-13] recording what the scan found about each file (#537)", () => {
+    it("records missing and unreadable files, and re-reads them next time", () => {
+      const scanIo: KitScanIo = {
+        fileExists: vi.fn((p: string) => !p.endsWith("gone.wav")),
+        readMetadata: vi.fn((p: string) =>
+          p.endsWith("bad.wav") ? null : METADATA,
+        ),
+      };
+      const plan = planKitScanMerge({
+        existing: [
+          row({ filename: "gone.wav", id: 1 }),
+          // Never read: status unknown, no WAV details
+          row({
+            filename: "bad.wav",
+            id: 2,
+            slot_number: 1,
+            source_status: null,
+            wav_bit_depth: null,
+            wav_channels: null,
+            wav_sample_rate: null,
+          }),
+          row({
+            filename: "fixed.wav",
+            id: 3,
+            slot_number: 2,
+            source_status: "unreadable",
+          }),
+        ],
+        folder: {
+          filesByVoice: { 1: [], 2: ["2 new bad.wav"], 3: [], 4: [] },
+          kitPath: KIT_PATH,
+        },
+        io: scanIo,
+        kit: factoryKit,
+        voices: [],
+      });
+
+      expect(plan.statusUpdates).toEqual([
+        { id: 1, status: "missing" },
+        { id: 2, status: "unreadable" },
+      ]);
+      // Readable again: re-read, and recorded as readable
+      expect(plan.metadataUpdates).toEqual([{ id: 3, metadata: METADATA }]);
+      expect(plan.inserts).toEqual([
+        expect.objectContaining({
+          filename: "2 new bad.wav",
+          source_status: "unreadable",
+        }),
+      ]);
+      expect(plan.result.stereo?.quarantine).toEqual([
+        { filename: "bad.wav", kind: "unreadable", voiceNumber: 1 },
+        { filename: "2 new bad.wav", kind: "unreadable", voiceNumber: 2 },
+      ]);
+    });
   });
 });

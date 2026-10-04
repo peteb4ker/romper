@@ -1,6 +1,7 @@
 import type { Kit, KitWithRelations } from "@romper/shared/db/schema.js";
 
 import * as schema from "@romper/shared/db/schema.js";
+import { isKitQuarantined } from "@romper/shared/stereoLinkRules.js";
 import { inArray } from "drizzle-orm";
 
 import type { RomperDb } from "../utils/dbConnections.js";
@@ -34,12 +35,15 @@ export function combineKitWithRelations(
   lookups: KitLookups,
 ): KitWithRelations {
   const { bankLookup, samplesLookup, voicesLookup } = lookups;
+  const kitSamples = samplesLookup.get(kit.name) || [];
+  const kitVoices = voicesLookup.get(kit.name) || [];
 
   return {
     ...kit,
     bank: kit.bank_letter ? bankLookup.get(kit.bank_letter) || null : null,
-    samples: samplesLookup.get(kit.name) || [],
-    voices: voicesLookup.get(kit.name) || [],
+    quarantined: isKitQuarantined(kitVoices, kitSamples),
+    samples: kitSamples,
+    voices: kitVoices,
   };
 }
 

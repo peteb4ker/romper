@@ -7,6 +7,7 @@ import type {
 import type { SliceStep } from "@romper/shared/sliceTypes.js";
 
 import * as schema from "@romper/shared/db/schema.js";
+import { isKitQuarantined } from "@romper/shared/stereoLinkRules.js";
 import { eq } from "drizzle-orm";
 
 import {
@@ -196,6 +197,8 @@ export function getKit(
     const result: KitWithRelations = {
       ...kit,
       bank,
+      // Rule 4 (#537): the kit editor shows it
+      quarantined: isKitQuarantined(kitVoices, kitSamples),
       samples: kitSamples,
       voices: kitVoices,
     };

@@ -285,7 +285,7 @@ describe("[Q-02] Upgrading a library is all or nothing (RE-33)", () => {
   describe("[UC-28] recording existing links as the user's choice (#537)", () => {
     it("marks linked voices as linked by hand, and leaves the rest unset", () => {
       const dbDir = libraryAt(
-        CURRENT.slice(0, CURRENT.indexOf("0014_stereo_choice")),
+        CURRENT.slice(0, CURRENT.indexOf("0014_stereo_choice_source_status")),
       );
       withLibrary(dbDir, (sqlite) =>
         sqlite.exec(
@@ -307,6 +307,33 @@ describe("[Q-02] Upgrading a library is all or nothing (RE-33)", () => {
           { stereo_choice: null, stereo_mode: 0, voice_number: 2 },
           { stereo_choice: null, stereo_mode: 0, voice_number: 3 },
           { stereo_choice: null, stereo_mode: 0, voice_number: 4 },
+        ]);
+      });
+    });
+
+    it("marks samples with WAV metadata as readable, and leaves the rest unset", () => {
+      const dbDir = libraryAt(
+        CURRENT.slice(0, CURRENT.indexOf("0014_stereo_choice_source_status")),
+      );
+      withLibrary(dbDir, (sqlite) =>
+        sqlite.exec(`
+          INSERT INTO samples (kit_name, filename, voice_number, slot_number, source_path, wav_channels)
+            VALUES ('A0', 'snare.wav', 1, 1, '/samples/snare.wav', 2);
+        `),
+      );
+
+      expect(upgrade(dbDir).success).toBe(true);
+
+      withLibrary(dbDir, (sqlite) => {
+        expect(
+          sqlite
+            .prepare(
+              "SELECT filename, source_status FROM samples ORDER BY slot_number",
+            )
+            .all(),
+        ).toEqual([
+          { filename: "kick.wav", source_status: null },
+          { filename: "snare.wav", source_status: "readable" },
         ]);
       });
     });

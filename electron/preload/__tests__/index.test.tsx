@@ -571,6 +571,11 @@ describe("preload/index.tsx", () => {
       },
       { args: ["TestKit"], ipcChannel: "rescan-kit", method: "rescanKit" },
       {
+        args: ["TestKit"],
+        ipcChannel: "check-kit-sample-files",
+        method: "checkKitSampleFiles",
+      },
+      {
         args: ["/path/to/audio.wav"],
         ipcChannel: "validate-sample-format",
         method: "validateSampleFormat",

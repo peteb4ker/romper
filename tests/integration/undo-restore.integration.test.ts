@@ -147,6 +147,10 @@ describe("[UC-26] [Q-02] undo restores voices in one transaction (RE-86)", () =>
         .filter((r) => r.voice_number === 1)
         .map((r) => r.gain_db),
     ).toEqual([-2, -4, -6]);
+    // What Romper knew about each file comes back too (#537)
+    expect(rows().map((r) => r.source_status)).toEqual(
+      Array(4).fill("readable"),
+    );
     // The restore is itself an edit since the last write
     expect(getKit(dbDir, "A0").data?.modified_since_sync).toBe(true);
   });
@@ -182,6 +186,27 @@ describe("[UC-26] [Q-02] undo restores voices in one transaction (RE-86)", () =>
 
     expect(restored.success).toBe(false);
     expect(rows()).toEqual(afterDelete);
+  });
+
+  it("[UC-08] brings back a sample's missing or unreadable status (#537)", () => {
+    seed();
+    withDbTransaction(dbDir, (_db, sqlite) =>
+      sqlite.exec(
+        "UPDATE samples SET source_status = 'unreadable' WHERE filename = 'b.wav'",
+      ),
+    );
+    const voicesBefore = snapshot([1]);
+    expect(
+      sampleService.deleteSampleFromSlot(settings, "A0", 1, 1).success,
+    ).toBe(true);
+
+    expect(
+      sampleService.restoreVoices(settings, "A0", voicesBefore).success,
+    ).toBe(true);
+
+    expect(rows().find((r) => r.filename === "b.wav")?.source_status).toBe(
+      "unreadable",
+    );
   });
 
   it("refuses a snapshot it can't trust, and changes nothing", () => {

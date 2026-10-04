@@ -172,6 +172,8 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
           kit_name: hookProps.kitName || "",
           slot_number: data.slot_number ?? 0,
           source_path: data.source_path,
+          // Not needed to decide what a drop links (#537)
+          source_status: null,
           voice_number: data.voice_number ?? 1,
           wav_bit_depth: data.wav_bit_depth || null,
           wav_bitrate: data.wav_bitrate || null,

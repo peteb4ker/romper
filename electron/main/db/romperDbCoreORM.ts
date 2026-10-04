@@ -41,6 +41,7 @@ export {
   updateKit,
   updateSampleGain,
   updateSampleMetadata,
+  updateSampleSourceStatusTx,
   updateVoiceAlias,
   updateVoiceSampleMode,
   updateVoiceSliceSettings,

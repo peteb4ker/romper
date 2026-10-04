@@ -49,6 +49,15 @@ export interface ElectronAPI {
   checkExistingLocalStore: (
     targetPath: string,
   ) => Promise<{ error?: string; exists: boolean }>;
+  /**
+   * Check the files of a kit's samples that aren't known to be readable
+   * (status unknown, missing or unreadable), in one batch, and record what
+   * was found (#537). `changed` counts samples whose status or WAV details
+   * changed. The kit editor calls it once when a kit opens.
+   */
+  checkKitSampleFiles: (
+    kitName: string,
+  ) => Promise<DbResult<{ changed: number; checked: number }>>;
   checkPathWritable: (
     targetPath: string,
   ) => Promise<{ error?: string; writable: boolean }>;

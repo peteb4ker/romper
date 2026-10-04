@@ -18,24 +18,27 @@ export const createElectronAPIMock = (
     sufficient: true,
   }),
   checkExistingLocalStore: vi.fn().mockResolvedValue({ exists: false }),
+  checkKitSampleFiles: vi
+    .fn()
+    .mockResolvedValue({ data: { changed: 0, checked: 0 }, success: true }),
   checkPathWritable: vi.fn().mockResolvedValue({ writable: true }),
   cleanupPartialInit: vi.fn().mockResolvedValue({ removed: true }),
   // Application operations
   closeApp: vi.fn().mockResolvedValue(undefined),
   copyDir: vi.fn().mockResolvedValue(undefined),
+
   copyKit: vi.fn().mockResolvedValue({ success: true }),
 
   // Kit operations
   createKit: vi.fn().mockResolvedValue({ success: true }),
-
   // Database setup
   createRomperDb: vi.fn().mockResolvedValue(undefined),
   deleteSampleFromSlot: vi.fn().mockResolvedValue(undefined),
+
   // Archive operations
   downloadAndExtractArchive: vi.fn().mockResolvedValue(undefined),
 
   ensureDir: vi.fn().mockResolvedValue(undefined),
-
   // Sync operations
   generateSyncChangeSummary: vi
     .fn()
@@ -56,6 +59,7 @@ export const createElectronAPIMock = (
   getAudioBuffer: vi
     .fn()
     .mockResolvedValue({ slice: () => new ArrayBuffer(8) }),
+
   getKit: vi.fn().mockResolvedValue({
     data: {
       alias: "A0",
@@ -73,7 +77,6 @@ export const createElectronAPIMock = (
     },
     success: true,
   }),
-
   // Database operations
   getKits: vi.fn().mockResolvedValue({
     data: [
@@ -128,8 +131,8 @@ export const createElectronAPIMock = (
   // Move operations
   moveSampleInKit: vi.fn().mockResolvedValue({ success: true }),
   onSyncProgress: vi.fn(),
-  openExternal: vi.fn().mockResolvedValue(undefined),
 
+  openExternal: vi.fn().mockResolvedValue(undefined),
   readSettings: vi.fn().mockResolvedValue({
     darkMode: false,
     localStorePath: "/mock/local/store",

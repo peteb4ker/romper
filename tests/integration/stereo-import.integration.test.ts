@@ -11,6 +11,7 @@ vi.mock("electron", () => ({
 import {
   addSample,
   getKit,
+  getKits,
   markKitAsModified,
   updateVoiceStereoMode,
 } from "../../electron/main/db/romperDbCoreORM.js";
@@ -124,6 +125,7 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     if (savedEnvPath === undefined) delete process.env.ROMPER_LOCAL_PATH;
     else process.env.ROMPER_LOCAL_PATH = savedEnvPath;
     removeTempStore(tempDir);
@@ -320,5 +322,97 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
 
     await write();
     expect(snapshot(path.join(card, "A3"))).toEqual(before);
+  });
+
+  // #537: missing and unreadable files show in the kit editor, recorded
+  // when Romper reads them and checked once per kit open when unknown
+  describe("[UC-08] [UC-13] [UC-19] what Romper knows about each sample's file", () => {
+    const status = (kit: string, filename: string) =>
+      getKit(dbDir, kit).data!.samples!.find((s) => s.filename === filename)
+        ?.source_status;
+
+    it("setup records every file it read as readable", () => {
+      importCard();
+      for (const [kit, files] of Object.entries(CARD)) {
+        for (const file of Object.keys(files)) {
+          expect(status(kit, file), `${kit} ${file}`).toBe("readable");
+        }
+      }
+    });
+
+    it("the kit-open check records missing, unreadable and readable files, in one batch", async () => {
+      importCard();
+      const kick = path.join(tempDir, "kick.wav");
+      fs.writeFileSync(kick, wav(1));
+      // Added outside the app's add path: nothing known about them yet
+      for (const [filename, source, slot] of [
+        ["kick.wav", kick, 1],
+        ["gone.wav", path.join(tempDir, "gone.wav"), 2],
+        ["bad.wav", path.join(tempDir, "bad.wav"), 3],
+      ] as const) {
+        expect(
+          addSample(dbDir, {
+            filename,
+            kit_name: "A1",
+            slot_number: slot,
+            source_path: source,
+            voice_number: 3,
+          }).success,
+        ).toBe(true);
+      }
+      fs.writeFileSync(path.join(tempDir, "bad.wav"), "not a wav file");
+
+      const checked = await scanService.checkKitSampleFiles(settings(), "A1");
+
+      expect(checked.data).toEqual({ changed: 3, checked: 3 });
+      expect(status("A1", "kick.wav")).toBe("readable");
+      expect(
+        getKit(dbDir, "A1").data!.samples!.find(
+          (s) => s.filename === "kick.wav",
+        )?.wav_channels,
+      ).toBe(1);
+      expect(status("A1", "gone.wav")).toBe("missing");
+      expect(status("A1", "bad.wav")).toBe("unreadable");
+      // An unreadable WAV quarantines the kit; a missing file doesn't
+      expect(getKit(dbDir, "A1").data!.quarantined).toBe(true);
+
+      // Put back and fixed: the next open's check sees it
+      fs.writeFileSync(path.join(tempDir, "gone.wav"), wav(1));
+      fs.writeFileSync(path.join(tempDir, "bad.wav"), wav(1));
+      expect(
+        (await scanService.checkKitSampleFiles(settings(), "A1")).data,
+      ).toEqual({ changed: 2, checked: 2 });
+      expect(getKit(dbDir, "A1").data!.quarantined).toBe(false);
+      // Nothing left to check
+      expect(
+        (await scanService.checkKitSampleFiles(settings(), "A1")).data,
+      ).toEqual({ changed: 0, checked: 0 });
+    });
+
+    it("a missing file doesn't quarantine its kit", async () => {
+      importCard();
+      fs.rmSync(path.join(store, "A1", "3 HAT.wav"));
+      expect(scanService.rescanKit(settings(), "A1").success).toBe(true);
+      expect(status("A1", "3 HAT.wav")).toBe("missing");
+      expect(getKit(dbDir, "A1").data!.quarantined).toBe(false);
+    });
+
+    it("the kit list says which kits are quarantined", () => {
+      importCard();
+      // A3's voice 1 holds a mono kick beside its stereo pad: linking it
+      // makes a pair with a mono sample
+      expect(updateVoiceStereoMode(dbDir, "A3", 1, true).success).toBe(true);
+
+      const quarantined = Object.fromEntries(
+        (getKits(dbDir).data ?? []).map((kit) => [kit.name, kit.quarantined]),
+      );
+      expect(quarantined).toEqual({
+        A0: false,
+        A1: false,
+        A2: false,
+        A3: true,
+      });
+      expect(getKit(dbDir, "A3").data!.quarantined).toBe(true);
+    });
   });
 });

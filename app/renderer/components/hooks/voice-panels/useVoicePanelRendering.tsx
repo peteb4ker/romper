@@ -44,6 +44,8 @@ export interface UseVoicePanelRenderingOptions {
     playing: boolean,
   ) => void;
   playOptions?: { [key: string]: PlayOptions | undefined };
+  /** The voice is in a stereo pair, as the write makes it (#569) */
+  playsStereo: boolean;
   playTriggers: { [key: string]: number };
   playVolumes?: { [key: string]: number };
   sampleActionsHook: {
@@ -121,6 +123,7 @@ export function useVoicePanelRendering({
   onVoiceUnlink,
   onWaveformPlayingChange,
   playOptions,
+  playsStereo,
   playTriggers,
   playVolumes,
   sampleActionsHook,
@@ -155,6 +158,7 @@ export function useVoicePanelRendering({
     onSampleSelect,
     onWaveformPlayingChange,
     playOptions,
+    playsStereo,
     playTriggers,
     playVolumes,
     renderDeleteButton: buttons.renderDeleteButton,

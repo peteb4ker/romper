@@ -244,7 +244,9 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     [sampleMetadata],
   );
 
-  // What the rules make of the kit: mixdowns, quarantine (#537)
+  // What the rules make of the kit: mixdowns, quarantine (#537), and the
+  // pairs the write plays in stereo, links it makes included, so preview
+  // plays what the card gets (#569)
   const stereoPlan = React.useMemo(
     () => planKitStereo(voiceData, stereoSamples),
     [voiceData, stereoSamples],
@@ -703,6 +705,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                     onVoiceUnlink={handleVoiceUnlink}
                     onWaveformPlayingChange={hookProps.onWaveformPlayingChange}
                     playOptions={hookProps.playOptions}
+                    playsStereo={stereoPlan.links.includes(voice)}
                     playTriggers={hookProps.playTriggers}
                     playVolumes={hookProps.playVolumes}
                     sampleMetadata={sampleMetadata}

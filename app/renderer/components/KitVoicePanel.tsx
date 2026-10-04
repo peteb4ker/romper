@@ -64,6 +64,8 @@ interface KitVoicePanelProps {
     playing: boolean,
   ) => void;
   playOptions?: { [key: string]: PlayOptions | undefined };
+  /** The voice is in a stereo pair, as the write makes it (#569) */
+  playsStereo: boolean;
   playTriggers: { [key: string]: number };
   playVolumes?: { [key: string]: number };
   sampleMetadata?: { [slotKey: string]: SampleData }; // Keyed by slotKey(voice, slot)
@@ -123,6 +125,7 @@ const KitVoicePanel: React.FC<
   onVoiceUnlink,
   onWaveformPlayingChange,
   playOptions,
+  playsStereo,
   playTriggers,
   playVolumes,
   sampleMetadata,
@@ -207,6 +210,7 @@ const KitVoicePanel: React.FC<
     onVoiceUnlink,
     onWaveformPlayingChange,
     playOptions,
+    playsStereo,
     playTriggers,
     playVolumes,
     sampleActionsHook: sampleActions,

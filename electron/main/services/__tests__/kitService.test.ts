@@ -185,9 +185,9 @@ describe("KitService", () => {
   });
 
   describe("[UC-16] deleteKit", () => {
-    it("successfully deletes an unlocked kit", () => {
+    it("successfully deletes an unlocked, editable kit", () => {
       mockGetKit.mockReturnValue({
-        data: { locked: false, name: "A0" },
+        data: { editable: true, locked: false, name: "A0" },
         success: true,
       });
       mockDeleteKit.mockReturnValue({ success: true });
@@ -208,6 +208,22 @@ describe("KitService", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Kit is locked. Unlock it before deleting.");
+      expect(mockDeleteKit).not.toHaveBeenCalled();
+    });
+
+    // #572: the kit card offers delete only on an editable kit
+    it("[UC-17] refuses to delete a kit that isn't editable", () => {
+      mockGetKit.mockReturnValue({
+        data: { editable: false, locked: false, name: "A0" },
+        success: true,
+      });
+
+      const result = kitService.deleteKit(mockInMemorySettings, "A0");
+
+      expect(result).toEqual({
+        error: "Kit A0 isn't editable.",
+        success: false,
+      });
       expect(mockDeleteKit).not.toHaveBeenCalled();
     });
 
@@ -300,7 +316,7 @@ describe("KitService", () => {
 
     it("deletes from the override's database", () => {
       mockGetKit.mockReturnValue({
-        data: { locked: false, name: "A0" },
+        data: { editable: true, locked: false, name: "A0" },
         success: true,
       } as unknown as ReturnType<typeof getKit>);
       mockDeleteKit.mockReturnValue({ success: true });

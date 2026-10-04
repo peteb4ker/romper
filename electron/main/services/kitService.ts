@@ -2,6 +2,7 @@ import type { DbResult, NewKit } from "@romper/shared/db/schema.js";
 
 import type { InMemorySettings } from "../types/settings.js";
 
+import { kitNotEditableError } from "../db/operations/kitEditableGuard.js";
 import {
   addKit,
   copyKit as copyKitDb,
@@ -110,6 +111,12 @@ export class KitService {
         error: "Kit is locked. Unlock it before deleting.",
         success: false,
       };
+    }
+
+    // Deleting is an edit the kit editor offers only on an editable kit
+    // (#572). Locked is a separate flag.
+    if (!kitResult.data.editable) {
+      return { error: kitNotEditableError(kitName), success: false };
     }
 
     return deleteKitDb(dbPath, kitName);

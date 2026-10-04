@@ -8,6 +8,7 @@ import {
   flagKitModified,
   getKitSamples,
   moveSampleTx,
+  requireEditableKitTx,
   withDbTransaction,
 } from "../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
@@ -45,8 +46,9 @@ export class SampleBatchOperationsService {
 
     try {
       // The delete, the reindex that closes its gap and the kit's modified
-      // flag commit together (RE-28)
+      // flag commit together (RE-28), and only on an editable kit (#572)
       return withDbTransaction(dbPath, (db) => {
+        requireEditableKitTx(db, kitName);
         const result = deleteSamplesTx(db, kitName, {
           slotNumber: slotNumber, // Database stores 0-11 directly
           voiceNumber,
@@ -95,8 +97,10 @@ export class SampleBatchOperationsService {
 
     try {
       // Delete WITHOUT automatic contiguity maintenance (for undo
-      // operations), flagging the kit in the same transaction
+      // operations), flagging the kit in the same transaction, and only on
+      // an editable kit (#572)
       const deleteResult = withDbTransaction(dbPath, (db) => {
+        requireEditableKitTx(db, kitName);
         const result = deleteSamplesWithoutReindexingTx(db, kitName, {
           slotNumber: slotNumber, // Database stores 0-11 directly
           voiceNumber,
@@ -184,8 +188,10 @@ export class SampleBatchOperationsService {
         return { error: linkValidation.error, success: false };
       }
 
-      // The move and the kit's modified flag commit together (RE-28)
+      // The move and the kit's modified flag commit together (RE-28), and
+      // only on an editable kit (#572)
       return withDbTransaction(dbPath, (db) => {
+        requireEditableKitTx(db, kitName);
         const moved = moveSampleTx(
           db,
           kitName,

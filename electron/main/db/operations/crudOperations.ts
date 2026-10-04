@@ -29,6 +29,8 @@ export {
   updateKit,
 } from "./kitCrudOperations.js";
 
+export { requireEditableKitTx } from "./kitEditableGuard.js";
+
 export { mergeKitScan, mergeKitScanTx } from "./kitScanOperations.js";
 
 export { flagKitModified } from "./kitSyncOperations.js";

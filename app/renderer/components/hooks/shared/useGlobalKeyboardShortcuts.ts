@@ -78,8 +78,8 @@ export function useGlobalKeyboardShortcuts({
 
   // Undoes or redoes the next action if the current kit allows it, for
   // the keyboard and the Edit menu alike. Sample edits undo only in edit
-  // mode; sequencer edits always do, since the sequencer works on locked
-  // kits too. Returns false when there's no kit or the kit doesn't allow it.
+  // mode; sequencer edits always do, since the sequencer works on
+  // read-only kits too (main refuses sample edits on them, #572). Returns false when there's no kit or the kit doesn't allow it.
   const applyUndoRedo = useCallback(
     (isRedo: boolean): boolean => {
       if (!currentKitName) return false;

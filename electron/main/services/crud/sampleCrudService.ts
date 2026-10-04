@@ -9,6 +9,7 @@ import {
   flagKitModified,
   moveSampleBetweenKitsTx,
   replaceSampleTx,
+  requireEditableKitTx,
   restoreVoicesTx,
   withDbTransaction,
 } from "../../db/romperDbCoreORM.js";
@@ -79,8 +80,10 @@ export class SampleCrudService {
         ...fileValidation.metadata,
       };
 
-      // The row and the kit's modified flag commit together (RE-28)
+      // The row and the kit's modified flag commit together (RE-28), and
+      // only to an editable kit (#572)
       return withDbTransaction(dbPath, (db) => {
+        requireEditableKitTx(db, kitName);
         const added = addSampleTx(db, sampleRecord);
         flagKitModified(db, kitName);
         return added;
@@ -184,17 +187,18 @@ export class SampleCrudService {
     }
 
     // The row moves with its gain and WAV metadata, and both voices are
-    // renumbered, in one transaction (RE-27)
-    const moved = withDbTransaction(dbPath, (db) =>
-      moveSampleBetweenKitsTx(db, {
+    // renumbered, in one transaction (RE-27), between editable kits (#572)
+    const moved = withDbTransaction(dbPath, (db) => {
+      requireEditableKitTx(db, fromKit, toKit);
+      return moveSampleBetweenKitsTx(db, {
         fromKit,
         fromSlot,
         fromVoice,
         toKit,
         toSlot,
         toVoice,
-      }),
-    );
+      });
+    });
     if (!moved.success || !moved.data) {
       return {
         error: `Failed to move sample between kits: ${moved.error}`,
@@ -267,18 +271,20 @@ export class SampleCrudService {
       return { error: fileValidation.error, success: false };
     }
 
-    return withDbTransaction(dbPath, (db) =>
-      replaceSampleTx(db, kitName, voiceNumber, slotNumber, {
+    return withDbTransaction(dbPath, (db) => {
+      requireEditableKitTx(db, kitName);
+      return replaceSampleTx(db, kitName, voiceNumber, slotNumber, {
         filename: path.basename(filePath),
         source_path: filePath,
         ...fileValidation.metadata,
-      }),
-    );
+      });
+    });
   }
 
   /**
    * Put a kit's voices back as an undo snapshot had them, in one
-   * transaction (RE-86)
+   * transaction (RE-86). Undo changes the kit's samples, so a kit made
+   * read-only since the edit keeps them (#572).
    */
   restoreVoices(
     inMemorySettings: Record<string, unknown>,
@@ -289,9 +295,10 @@ export class SampleCrudService {
     if (!localStorePath) {
       return { error: "No local store path configured", success: false };
     }
-    return withDbTransaction(this.getDbPath(localStorePath), (db) =>
-      restoreVoicesTx(db, kitName, voices),
-    );
+    return withDbTransaction(this.getDbPath(localStorePath), (db) => {
+      requireEditableKitTx(db, kitName);
+      return restoreVoicesTx(db, kitName, voices);
+    });
   }
 
   private getDbPath(localStorePath: string): string {

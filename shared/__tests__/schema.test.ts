@@ -1,19 +1,19 @@
 import { describe, expect, it } from "vitest";
 
-import type { Kit, Sample, Voice } from "../schema";
+import type { Kit, Sample, Voice } from "../db/schema";
 
 import {
   DbResult,
   KitValidationError,
   LocalStoreValidationDetailedResult,
-} from "../schema";
+} from "../db/schema";
 
 describe("schema types", () => {
   it("should export all required interfaces", () => {
     // This test simply verifies that all interfaces are exported correctly
     // by checking that they can be imported and used to create objects
 
-    const sampleRecord: Sample = {
+    const sampleRecord: Partial<Sample> = {
       filename: "test.wav",
       id: 1,
       kit_name: "test-kit",
@@ -26,7 +26,7 @@ describe("schema types", () => {
     expect(sampleRecord).toBeDefined();
     expect(sampleRecord.kit_name).toBe("test-kit");
 
-    const kitRecord: Kit = {
+    const kitRecord: Partial<Kit> = {
       alias: null,
       editable: false,
       locked: false,
@@ -35,7 +35,7 @@ describe("schema types", () => {
     };
     expect(kitRecord).toBeDefined();
 
-    const voiceRecord: Voice = {
+    const voiceRecord: Partial<Voice> = {
       id: 1,
       kit_name: "test-kit",
       voice_alias: "Kicks",
@@ -57,7 +57,7 @@ describe("schema types", () => {
     };
     expect(validationDetailedResult).toBeDefined();
 
-    const dbResult: DbResult<Sample[]> = {
+    const dbResult: DbResult<Partial<Sample>[]> = {
       data: [sampleRecord],
       success: true,
     };

@@ -2,7 +2,7 @@
  * Integration test to verify that unsaved state is cleared after sync completion
  */
 
-import type { Kit } from "@romper/shared/db/schema";
+import type { NewKit } from "@romper/shared/db/schema";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -39,10 +39,7 @@ describe("[UC-11] [UC-34] Sync Unsaved State Integration", () => {
 
   it("should clear modified_since_sync flag when kit is marked as synced", () => {
     // Create a test kit
-    const testKit: Omit<
-      Kit,
-      "created_at" | "id" | "scanned_at" | "updated_at"
-    > = {
+    const testKit: NewKit = {
       alias: null,
       bank_letter: "A",
       editable: true,
@@ -68,11 +65,10 @@ describe("[UC-11] [UC-34] Sync Unsaved State Integration", () => {
     const sampleResult = addSample(TEST_DB_DIR, {
       filename: "test.wav",
       kit_name: "TestKit",
-      mono: false,
-      sample_rate: 44100,
       slot_number: 0,
       source_path: "/test/path/test.wav",
       voice_number: 1,
+      wav_sample_rate: 44100,
     });
     expect(sampleResult.success).toBe(true);
 
@@ -97,7 +93,7 @@ describe("[UC-11] [UC-34] Sync Unsaved State Integration", () => {
 
   it("should handle multiple kits being marked as synced", () => {
     // Create multiple test kits
-    const kit1: Omit<Kit, "created_at" | "id" | "scanned_at" | "updated_at"> = {
+    const kit1: NewKit = {
       alias: null,
       bank_letter: "A",
       editable: true,
@@ -108,7 +104,7 @@ describe("[UC-11] [UC-34] Sync Unsaved State Integration", () => {
       step_pattern: null,
     };
 
-    const kit2: Omit<Kit, "created_at" | "id" | "scanned_at" | "updated_at"> = {
+    const kit2: NewKit = {
       alias: null,
       bank_letter: "A",
       editable: true,
@@ -151,10 +147,7 @@ describe("[UC-11] [UC-34] Sync Unsaved State Integration", () => {
     expect(syncResult.success).toBe(true); // Should not fail the entire operation
 
     // Create one real kit and one fake kit name
-    const testKit: Omit<
-      Kit,
-      "created_at" | "id" | "scanned_at" | "updated_at"
-    > = {
+    const testKit: NewKit = {
       alias: null,
       bank_letter: "A",
       editable: true,

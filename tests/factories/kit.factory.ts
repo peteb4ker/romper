@@ -7,15 +7,16 @@ import type { Kit, KitWithRelations, NewKit } from "@romper/shared/db/schema";
 export const createMockKit = (overrides: Partial<Kit> = {}): Kit => ({
   alias: null,
   bank_letter: "A",
-  created_at: new Date().toISOString(),
+  bpm: 120,
   editable: false,
-  id: 1,
+  is_favorite: false,
   locked: false,
   modified_since_sync: false,
   name: "A0",
-  scanned_at: new Date().toISOString(),
+  slice_steps: null,
+  slicer_division: 16,
   step_pattern: null,
-  updated_at: new Date().toISOString(),
+  trigger_conditions: null,
   ...overrides,
 });
 
@@ -32,7 +33,7 @@ export const createMockKitWithRelations = (
       artist: "Test Artist A",
       letter: overrides.bank_letter || baseKit.bank_letter || "A",
       rtf_filename: null,
-      scanned_at: new Date().toISOString(),
+      scanned_at: new Date(),
     },
     samples: [],
     ...overrides,
@@ -62,7 +63,6 @@ export const createMockKitList = (
 ): Kit[] =>
   Array.from({ length: count }, (_, i) =>
     createMockKit({
-      id: i + 1,
       name: `A${i}`,
       ...baseOverrides,
     }),
@@ -77,7 +77,6 @@ export const createMockKitWithRelationsList = (
 ): KitWithRelations[] =>
   Array.from({ length: count }, (_, i) =>
     createMockKitWithRelations({
-      id: i + 1,
       name: `A${i}`,
       ...baseOverrides,
     }),
@@ -93,7 +92,6 @@ export const createMockBankKits = (
   Array.from({ length: count }, (_, i) =>
     createMockKit({
       bank_letter: bankLetter,
-      id: i + 1,
       name: `${bankLetter}${i}`,
     }),
   );
@@ -115,7 +113,5 @@ export const createMockLockedKits = (count: number = 3): Kit[] =>
  */
 export const createMockKitsWithStepPatterns = (count: number = 3): Kit[] =>
   createMockKitList(count, {
-    step_pattern: JSON.stringify(
-      Array.from({ length: 4 }, () => Array(16).fill(0)),
-    ),
+    step_pattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
   });

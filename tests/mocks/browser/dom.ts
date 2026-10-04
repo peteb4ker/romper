@@ -89,14 +89,14 @@ export const createCanvasContextMock = () => ({
  */
 export const createWorkerMock = () => {
   return class MockWorker {
-    onmessage = null;
+    onmessage: ((event: { data: unknown }) => void) | null = null;
     constructor() {}
-    postMessage(msg: unknown) {
+    postMessage(msg: { type?: string }) {
       // Simulate immediate step event for sequencer tests
       if (msg.type === "START" && this.onmessage) {
         // Simulate a STEP event
         setTimeout(() => {
-          this.onmessage({
+          this.onmessage?.({
             data: { payload: { currentStep: 0 }, type: "STEP" },
           });
         }, 1);
@@ -121,12 +121,12 @@ export const setupDOMMocks = () => {
 
   // Document
   if (typeof global.document === "undefined") {
-    global.document = createDocumentMock() as unknown;
+    global.document = createDocumentMock() as unknown as Document;
   }
 
   // Worker
   if (typeof globalThis.Worker === "undefined") {
-    globalThis.Worker = createWorkerMock() as unknown;
+    globalThis.Worker = createWorkerMock() as unknown as typeof Worker;
   }
 
   // HTMLCanvasElement.getContext

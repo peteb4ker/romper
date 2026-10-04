@@ -108,6 +108,7 @@ describe("undoTypes", () => {
             oldSample: mockSample,
             slot: 3,
             voice: 2,
+            voicesBefore: [],
           },
           description: "Test action",
           id: "test-id",
@@ -152,6 +153,7 @@ describe("undoTypes", () => {
             movedSample: mockSample,
             toSlot: 3,
             toVoice: 2,
+            voicesBefore: [],
           },
           description: "Test action",
           id: "test-id",
@@ -176,6 +178,7 @@ describe("undoTypes", () => {
             movedSample: mockSample,
             toSlot: 2,
             toVoice: 1,
+            voicesBefore: [],
           },
           description: "Test action",
           id: "test-id",
@@ -253,6 +256,7 @@ describe("undoTypes", () => {
             deletedSample: mockSample,
             deletedSlot: 1,
             voice: 2,
+            voicesBefore: [],
           },
           description: "Test action",
           id: "test-id",
@@ -274,6 +278,7 @@ describe("undoTypes", () => {
             deletedSample: mockSample,
             deletedSlot: 9,
             voice: 4,
+            voicesBefore: [],
           },
           description: "Test action",
           id: "test-id",
@@ -341,6 +346,7 @@ describe("undoTypes", () => {
           },
           slot: 1,
           voice: 2,
+          voicesBefore: [],
         },
         description: "Replace sample test",
         id: "test-id",
@@ -369,15 +375,9 @@ describe("undoTypes", () => {
           mode: "overwrite",
           movedSample: mockSample,
           replacedSample: mockSample,
-          stateSnapshot: [
-            {
-              sample: mockSample,
-              slot: 1,
-              voice: 2,
-            },
-          ],
           toSlot: 1,
           toVoice: 2,
+          voicesBefore: [{ samples: [], voice: 2 }],
         },
         description: "Move sample test",
         id: "test-id",
@@ -386,7 +386,7 @@ describe("undoTypes", () => {
       };
 
       expect(action.data.replacedSample).toBeDefined();
-      expect(action.data.stateSnapshot).toBeDefined();
+      expect(action.data.voicesBefore).toBeDefined();
       expect(action.data.affectedSamples).toHaveLength(1);
     });
 
@@ -412,6 +412,7 @@ describe("undoTypes", () => {
             deletedSample: mockSample,
             deletedSlot: 0,
             voice: 1,
+            voicesBefore: [],
           },
           description: "test",
           id: "3",
@@ -457,6 +458,7 @@ describe("undoTypes", () => {
           movedSample: mockSample,
           toSlot: 7, // 0-based
           toVoice: 2,
+          voicesBefore: [],
         },
         description: "Test",
         id: "test-id",

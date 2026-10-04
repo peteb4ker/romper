@@ -5,20 +5,18 @@ import type { NewSample, Sample } from "@romper/shared/db/schema";
  * Reduces test data duplication for sample-related tests
  */
 export const createMockSample = (overrides: Partial<Sample> = {}): Sample => ({
-  bit_depth: 16,
-  channels: 1,
-  created_at: new Date().toISOString(),
-  duration_seconds: 1.0,
-  file_path: "/mock/local/store/A0/1 Kick.wav",
-  file_size: 44100,
   filename: "1 Kick.wav",
-  format: "wav",
+  gain_db: 0,
   id: 1,
   kit_name: "A0",
-  sample_rate: 44100,
   slot_number: 0,
-  updated_at: new Date().toISOString(),
+  source_path: "/mock/local/store/A0/1 Kick.wav",
+  source_status: null,
   voice_number: 1,
+  wav_bit_depth: 16,
+  wav_bitrate: null,
+  wav_channels: 1,
+  wav_sample_rate: 44100,
   ...overrides,
 });
 
@@ -28,17 +26,14 @@ export const createMockSample = (overrides: Partial<Sample> = {}): Sample => ({
 export const createMockNewSample = (
   overrides: Partial<NewSample> = {},
 ): NewSample => ({
-  bit_depth: 16,
-  channels: 1,
-  duration_seconds: 1.0,
-  file_path: "/mock/local/store/A0/1 Kick.wav",
-  file_size: 44100,
   filename: "1 Kick.wav",
-  format: "wav",
   kit_name: "A0",
-  sample_rate: 44100,
   slot_number: 0,
+  source_path: "/mock/local/store/A0/1 Kick.wav",
   voice_number: 1,
+  wav_bit_depth: 16,
+  wav_channels: 1,
+  wav_sample_rate: 44100,
   ...overrides,
 });
 
@@ -95,56 +90,29 @@ export const createMockVoiceSamples = (
   );
 
 /**
- * Creates samples with different audio formats
- */
-export const createMockSamplesWithFormats = (): Sample[] => [
-  createMockSample({
-    file_size: 44100,
-    filename: "kick.wav",
-    format: "wav",
-    id: 1,
-  }),
-  createMockSample({
-    file_size: 88200,
-    filename: "snare.aiff",
-    format: "aiff",
-    id: 2,
-  }),
-  createMockSample({
-    file_size: 22050,
-    filename: "hat.flac",
-    format: "flac",
-    id: 3,
-  }),
-];
-
-/**
- * Creates samples with different audio characteristics
+ * Creates samples with different WAV formats
  */
 export const createMockSamplesWithVariedAudio = (): Sample[] => [
   createMockSample({
-    bit_depth: 16,
-    channels: 1,
-    duration_seconds: 1.0,
     filename: "mono_kick.wav",
     id: 1,
-    sample_rate: 44100,
+    wav_bit_depth: 16,
+    wav_channels: 1,
+    wav_sample_rate: 44100,
   }),
   createMockSample({
-    bit_depth: 24,
-    channels: 2,
-    duration_seconds: 2.5,
     filename: "stereo_snare.wav",
     id: 2,
-    sample_rate: 48000,
+    wav_bit_depth: 24,
+    wav_channels: 2,
+    wav_sample_rate: 48000,
   }),
   createMockSample({
-    bit_depth: 32,
-    channels: 1,
-    duration_seconds: 0.5,
     filename: "hq_hat.wav",
     id: 3,
-    sample_rate: 96000,
+    wav_bit_depth: 32,
+    wav_channels: 1,
+    wav_sample_rate: 96000,
   }),
 ];
 

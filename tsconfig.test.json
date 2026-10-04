@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": ".test.tsbuildinfo"
+  },
+  "include": [
+    "app/renderer/*.d.ts",
+    "electron/types/*.d.ts",
+    "shared/**/__tests__/**/*",
+    "tests/**/*",
+    "vitest.setup.ts"
+  ],
+  "exclude": ["node_modules", "dist", "coverage", "tests/e2e"]
+}

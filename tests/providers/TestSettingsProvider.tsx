@@ -10,22 +10,28 @@ export const TestSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   // Provide default settings for tests
-  const [localStorePath, setLocalStorePath] = useState("/mock/local/store");
+  const [localStorePath, setLocalStorePath] = useState<null | string>(
+    "/mock/local/store",
+  );
   const [themeMode, setThemeMode] = useState<ThemeMode>("light");
   const [confirmDestructiveActions, setConfirmDestructiveActions] =
     useState(true);
 
-  const setLocalStorePathAsync = useCallback(async (path: string) => {
+  const setLocalStorePathAsync = useCallback(async (path: null | string) => {
     setLocalStorePath(path);
+    return true;
   }, []);
 
-  const setThemeModeFunc = useCallback((mode: ThemeMode) => {
+  const setThemeModeFunc = useCallback(async (mode: ThemeMode) => {
     setThemeMode(mode);
   }, []);
 
-  const setConfirmDestructiveActionsFunc = useCallback((enabled: boolean) => {
-    setConfirmDestructiveActions(enabled);
-  }, []);
+  const setConfirmDestructiveActionsFunc = useCallback(
+    async (enabled: boolean) => {
+      setConfirmDestructiveActions(enabled);
+    },
+    [],
+  );
 
   const refreshLocalStoreStatus = useCallback(async () => {
     // Mock implementation - no-op for tests
@@ -33,10 +39,13 @@ export const TestSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const contextValue = useMemo(
     () => ({
+      clearError: () => {},
       confirmDestructiveActions,
+      error: null,
       isDarkMode: themeMode === "dark",
       // State
       isInitialized: true,
+      isLoading: false,
       // Current settings
       localStorePath,
       localStoreStatus: {

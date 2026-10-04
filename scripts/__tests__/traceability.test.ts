@@ -722,6 +722,24 @@ describe("run: pull requests warn, the release fails", () => {
 });
 
 describe("run without GitHub", () => {
+  // A small tree, not the repository: scanning every test file in the repo
+  // under CI's coverage instrumentation could time out (#556)
+  let root: string;
+  beforeEach(() => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), "romper-trace-"));
+    fs.mkdirSync(path.join(root, "docs/developer"), { recursive: true });
+    fs.mkdirSync(path.join(root, "tests/e2e"), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, "docs/developer/use-cases.md"),
+      "# Use cases\n\n## Samples\n\n### UC-19 Drop WAVs onto a voice\n",
+    );
+    fs.writeFileSync(
+      path.join(root, "tests/e2e/a.e2e.test.ts"),
+      `test("[UC-19] a", async () => {});`,
+    );
+  });
+  afterEach(() => fs.rmSync(root, { force: true, recursive: true }));
+
   const unavailable = () => {
     throw Object.assign(new Error("gh failed"), {
       stderr: "gh: To get started with GitHub CLI, please run: gh auth login\n",
@@ -740,7 +758,9 @@ describe("run without GitHub", () => {
 
   it("skips the issue checks locally, with a notice", () => {
     const { log, out } = quiet();
-    run({ check: true, env: {}, github: unavailable, log });
+    expect(run({ check: true, env: {}, github: unavailable, log, root })).toBe(
+      0,
+    );
     expect(out[0]).toBe(
       "Skipping the issue checks and showing statuses as unknown: can't read GitHub issues with gh (gh: To get started with GitHub CLI, please run: gh auth login).",
     );
@@ -754,6 +774,7 @@ describe("run without GitHub", () => {
         env: { GITHUB_ACTIONS: "true" },
         github: unavailable,
         log,
+        root,
         summaryFile: undefined,
       }),
     ).toBe(0);
@@ -770,6 +791,7 @@ describe("run without GitHub", () => {
         env: {},
         github: unavailable,
         log,
+        root,
         strictIssues: true,
         summaryFile: undefined,
       }),

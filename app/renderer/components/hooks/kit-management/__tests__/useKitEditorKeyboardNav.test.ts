@@ -258,6 +258,13 @@ describe("useKitEditorKeyboardNav", () => {
       expect(props.onPlaySample).toHaveBeenCalledWith(1, 0);
     });
 
+    it("[UC-29] leaves a Space the focused sample list already played (#505)", () => {
+      const { fire, props } = setup();
+      const e = fire(" ", { defaultPrevented: true });
+      expect(props.onPlaySample).not.toHaveBeenCalled();
+      expect(e.preventDefault).not.toHaveBeenCalled();
+    });
+
     it("Space is a no-op when the slot is empty", () => {
       const { fire, props } = setup({ samples: { 1: [] } });
       fire(" ");

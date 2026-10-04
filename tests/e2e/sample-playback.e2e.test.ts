@@ -233,10 +233,8 @@ test.describe("[UC-29] Play a sample", () => {
   });
 
   test("Space starts the selected sample once (#505)", async () => {
-    // A focused row's list and the kit editor's window listener both play
-    // on Space, so one press starts the sample, cuts it off and starts it
-    // again. Remove this line when #505 is fixed.
-    test.fail();
+    // A focused row's list and the kit editor's window listener both see
+    // Space; only the list plays it, so one press starts one sound
     const snare = slot(2, "2_snare.wav", 1);
     await waitForAudio(snare, 2, 1);
 

@@ -14,6 +14,10 @@ function runHook(command: string) {
     // A directory outside any repo, so the on-main check stays out of it.
     input: JSON.stringify({ cwd: os.tmpdir(), tool_input: { command } }),
   });
+  // A hook that never ran has no status; say why instead of "null" (#597).
+  if (result.error) {
+    throw new Error(`Couldn't run guard-git.sh: ${result.error.message}`);
+  }
   return result.status;
 }
 

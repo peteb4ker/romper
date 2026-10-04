@@ -164,6 +164,7 @@ Romper can be configured using environment variables for advanced use cases:
 - **`ROMPER_LOCAL_PATH`** - Local store folder, used instead of the saved one (while it's set, changing the local store in the app has no effect)
 - **`ROMPER_SQUARP_ARCHIVE_URL`** - Factory samples archive to use instead of Squarp's (`https://` or `file://`; only Squarp's own archive is checked against its SHA-256)
 - **`ROMPER_ENABLE_DEVTOOLS`** - Set to `1` to expose Reload / Toggle Developer Tools in the View menu of a packaged build (off by default; intended for diagnosing issues in installed releases)
+- **`ROMPER_USER_DATA_DIR`** - Folder for settings, window state and Chromium's profile, used instead of the app's usual one. `npm run dev` sets it to the worktree's `.romper-dev/user-data`, and the e2e tests to a temporary folder, so neither changes the installed app's settings
 
 ## 🛠️ Development
 

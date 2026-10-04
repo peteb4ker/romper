@@ -5,6 +5,8 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
+import { prepareDevUserDataDir } from "./dev-user-data.mjs";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..");
@@ -34,6 +36,9 @@ const inspectPort = envLocal.ELECTRON_INSPECT_PORT || "5858";
 const debugPort = envLocal.REMOTE_DEBUG_PORT || "9229";
 
 console.log(`[dev] Ports: vite=${vitePort}, inspector=${inspectPort}, debug=${debugPort}`);
+
+// This worktree's own settings, so a dev run never changes the installed app's
+const userDataDir = prepareDevUserDataDir({ projectRoot });
 
 // Step 1: Build all (main, preload, renderer)
 console.log("[dev] Building...");
@@ -67,6 +72,7 @@ setTimeout(() => {
     env: {
       ...process.env,
       NODE_ENV: "development",
+      ROMPER_USER_DATA_DIR: userDataDir,
       VITE_DEV_SERVER_PORT: vitePort,
     },
   });

@@ -35,9 +35,15 @@ node scripts/dev-screenshot.mjs --selector '[data-testid="kit-grid"]' --out test
 node scripts/dev-screenshot.mjs --eval "location.hash"   # prints the JSON result, then screenshots
 ```
 
-Read the PNG to check the change. The app uses your real local store
-(`romper-settings.json` in Electron userData), so what you see is the user's
-actual kits.
+Read the PNG to check the change. The dev app keeps its own settings, window
+state and Chromium profile in this worktree's `.romper-dev/user-data`
+(ignored by git), never the installed app's userData folder. `scripts/dev.js`
+sets `ROMPER_USER_DATA_DIR` to it unless you set it yourself. The first run
+copies the installed app's `romper-settings.json` there, so the dev app opens
+the user's real local store and what you see is their actual kits; after that,
+settings changes in the dev app (store, theme, setup wizard) stay in the
+worktree. Delete `.romper-dev` to start again from the installed app's
+settings.
 
 To click or type before capturing, use `--eval` with DOM calls, dispatching
 events on the element; Playwright's `mouse.move()` does not reliably trigger

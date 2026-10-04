@@ -36,8 +36,10 @@ Playwright (e2e).
   noise" in the coding guide. PRs that touch the app or e2e run e2e on
   macOS and Windows too, not just Linux.
 - `npm run dev` -- builds everything, then runs Vite + Electron. Long-running;
-  start it with `run_in_background`. The `run-app` skill covers ports,
-  restarts, and screenshotting the live app.
+  start it with `run_in_background`. Its settings live in the worktree's
+  `.romper-dev/user-data`, seeded from the installed app's on first run, so
+  it never changes the installed app's settings. The `run-app` skill covers
+  ports, restarts, and screenshotting the live app.
 - `npm run build` -- production build of all three layers.
 
 The pre-commit hook runs typecheck, lint, unit + integration tests, and the

@@ -18,6 +18,10 @@
  * steps to reach the view, an optional element selector to crop to, and the
  * output path under docs/images/.
  *
+ * Targets marked `store: "broken-kits"` are captured from a generated store
+ * with deliberately broken kits (tests/utils/broken-kit-store.ts), not the
+ * user's.
+ *
  * Examples:
  *   npm run screenshots -- --all          # capture everything
  *   npm run screenshots -- --target kit-browser
@@ -41,6 +45,13 @@ import { fileURLToPath } from "node:url";
 import { inflateSync } from "node:zlib";
 import { _electron as electron } from "playwright";
 
+import {
+  createBrokenKitStore,
+  MISSING_FILE_KIT,
+  removeBrokenKitStore,
+  UNREADABLE_FILE_KIT,
+} from "../tests/utils/broken-kit-store";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const DOCS_IMAGES = path.join(ROOT, "docs", "images");
@@ -62,6 +73,29 @@ interface PngHeader {
   channels: number;
   height: number;
   width: number;
+}
+
+/**
+ * Capture a kit editor notice and the top of the voice panels below it,
+ * where the affected slot's label shows.
+ */
+async function clipFromNotice(
+  window: Page,
+  testId: string,
+  outputPath: string,
+) {
+  const notice = await window
+    .locator(`[data-testid="${testId}"]`)
+    .boundingBox();
+  const row = await window
+    .locator('[data-testid="voice-panels-row"]')
+    .boundingBox();
+  if (!notice || !row) throw new Error(`${testId} not visible`);
+  const top = Math.max(0, notice.y - 8);
+  await window.screenshot({
+    clip: { height: row.y + 86 - top, width: 1280, x: 0, y: top },
+    path: outputPath,
+  });
 }
 
 /**
@@ -92,6 +126,18 @@ function decodePng(
     );
   }
   return { height, pixels, width };
+}
+
+/** Open a kit in the broken-kit store and wait for its file check. */
+async function openBrokenKit(window: Page, kit: string) {
+  await window.waitForSelector('[data-testid="kit-grid"]', { timeout: 10000 });
+  await window.locator(`[data-testid="kit-item-${kit}"]`).click();
+  await window.waitForSelector('[data-testid="kit-editor"]', {
+    timeout: 10000,
+  });
+  await window.locator('[data-testid^="sample-file-label-"]').first().waitFor();
+  await window.evaluate(() => (document.activeElement as HTMLElement)?.blur());
+  await window.waitForTimeout(300);
 }
 
 function paeth(left: number, up: number, upLeft: number): number {
@@ -143,6 +189,7 @@ function restoreIfUnchanged(output: string): boolean {
     committed = execFileSync("git", ["show", `HEAD:docs/images/${output}`], {
       cwd: ROOT,
       maxBuffer: 64 * 1024 * 1024,
+      stdio: ["ignore", "pipe", "ignore"],
     });
   } catch {
     return false; // a new image
@@ -526,6 +573,69 @@ const SCREENSHOT_TARGETS = [
     output: "manual/status-bar.png",
     selector: '[data-testid="status-bar"]',
   },
+
+  // -- Broken kits (#537), from a generated store (tests/utils/broken-kit-store.ts) --
+  {
+    description: "Kit card of a quarantined kit, with the quarantine icon",
+    name: "manual-kit-card-quarantined",
+    navigate: async (window) => {
+      // The kit's files are checked when it opens
+      await openBrokenKit(window, UNREADABLE_FILE_KIT);
+      await window
+        .locator('[data-testid="kit-header"]')
+        .getByTitle("Back")
+        .click();
+      await window
+        .locator(
+          `[data-testid="kit-item-${UNREADABLE_FILE_KIT}"] [data-testid="quarantine-indicator"]`,
+        )
+        .waitFor();
+      await window.evaluate(() =>
+        (document.activeElement as HTMLElement)?.blur(),
+      );
+      await window.waitForTimeout(300);
+    },
+    output: "manual/kit-card-quarantined.png",
+    selector: `[data-testid="kit-item-${UNREADABLE_FILE_KIT}"]`,
+    store: "broken-kits",
+  },
+  {
+    description: "Kit Editor header of a quarantined kit",
+    name: "manual-kit-editor-header-quarantined",
+    navigate: async (window) => {
+      await openBrokenKit(window, UNREADABLE_FILE_KIT);
+    },
+    output: "manual/kit-editor-header-quarantined.png",
+    selector: '[data-testid="kit-header"]',
+    store: "broken-kits",
+  },
+  {
+    captureOverride: async (window, outputPath) => {
+      await clipFromNotice(window, "kit-quarantine-notice", outputPath);
+    },
+    description:
+      "Kit Editor: a file Romper can't read, its label and the quarantine notice",
+    name: "manual-unreadable-file",
+    navigate: async (window) => {
+      await openBrokenKit(window, UNREADABLE_FILE_KIT);
+    },
+    output: "manual/unreadable-file.png",
+    store: "broken-kits",
+  },
+  {
+    captureOverride: async (window, outputPath) => {
+      await clipFromNotice(window, "kit-missing-files-notice", outputPath);
+    },
+    description:
+      "Kit Editor: a missing file, its label and the missing-files notice",
+    name: "manual-missing-file",
+    navigate: async (window) => {
+      await openBrokenKit(window, MISSING_FILE_KIT);
+      await window.locator('[data-testid="sample-file-label-2-0"]').waitFor();
+    },
+    output: "manual/missing-file.png",
+    store: "broken-kits",
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -596,8 +706,13 @@ function resolveStore(): string {
   return store;
 }
 
-const store = resolveStore();
-if (!existsSync(path.join(store, ".romperdb"))) {
+// Targets marked `store: "broken-kits"` use a generated store with broken
+// kits (#537); the rest use --store or the installed app's
+const userTargets = targets.filter((t) => !("store" in t));
+const brokenKitTargets = targets.filter((t) => "store" in t);
+
+const store = userTargets.length > 0 ? resolveStore() : null;
+if (store && !existsSync(path.join(store, ".romperdb"))) {
   console.error(`Not a Romper local store (no .romperdb): ${store}`);
   process.exit(1);
 }
@@ -606,13 +721,11 @@ if (!existsSync(path.join(store, ".romperdb"))) {
 // Main
 // ---------------------------------------------------------------------------
 
-async function main() {
-  console.log(`\nCapturing ${targets.length} screenshot(s)...\n`);
-
-  // Ensure manual images directory exists
-  const { mkdirSync } = await import("node:fs");
-  mkdirSync(path.join(DOCS_IMAGES, "manual"), { recursive: true });
-
+/** Launch the app on one store and capture its targets */
+async function capture(
+  store: string,
+  targets: (typeof SCREENSHOT_TARGETS)[number][],
+) {
   // Settings of its own, so the installed app's are never read or written
   // by the app. Saved settings rather than ROMPER_LOCAL_PATH, so there's no
   // Test Mode banner in the screenshots.
@@ -629,11 +742,6 @@ async function main() {
 
   let electronApp;
   try {
-    // Build the app first
-    console.log("Building app...");
-    const { execSync } = await import("node:child_process");
-    execSync("npm run build", { cwd: ROOT, stdio: "inherit" });
-
     console.log(`Launching Electron with local store ${store} ...`);
     electronApp = await electron.launch({
       args: [
@@ -720,12 +828,34 @@ async function main() {
         console.error(`    FAIL: ${target.name} - ${err.message}`);
       }
     }
-
-    console.log("\nDone.\n");
   } finally {
     if (electronApp) await electronApp.close();
     rmSync(userData, { force: true, recursive: true });
   }
+}
+
+async function main() {
+  console.log(`\nCapturing ${targets.length} screenshot(s)...\n`);
+
+  // Ensure manual images directory exists
+  const { mkdirSync } = await import("node:fs");
+  mkdirSync(path.join(DOCS_IMAGES, "manual"), { recursive: true });
+
+  // Build the app first
+  console.log("Building app...");
+  const { execSync } = await import("node:child_process");
+  execSync("npm run build", { cwd: ROOT, stdio: "inherit" });
+
+  if (store && userTargets.length > 0) await capture(store, userTargets);
+  if (brokenKitTargets.length > 0) {
+    const brokenKits = await createBrokenKitStore();
+    try {
+      await capture(brokenKits.localStorePath, brokenKitTargets);
+    } finally {
+      await removeBrokenKitStore(brokenKits);
+    }
+  }
+  console.log("\nDone.\n");
 }
 
 main().catch((err) => {

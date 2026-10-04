@@ -23,6 +23,8 @@ Click any kit card in the Kit Browser to open it. The header shows:
 - **Favorite** -- Click the favorite icon to add the kit to your favorites or remove it (or press `;`, the same key as in the Kit Browser)
 - **Modified** -- Shown when the kit has changed since it was last written to the SD card: samples added, moved or deleted, a gain or voice name changed, or a stereo link changed
 - **Quarantined** -- A red warning octagon and **Quarantined**, shown when the kit won't be written to the card until it's fixed. The notice above the voices says what's wrong and how to fix it (see [Stereo and Mono Handling](#stereo-and-mono-handling) and [Missing and Unreadable Files](#missing-and-unreadable-files))
+
+  ![Kit Editor header of a quarantined kit]({{ site.baseurl }}/images/manual/kit-editor-header-quarantined.png)
 - **Locked / Editable switch** -- Turns editing on and off (see below)
 - **Scan Kit button** -- Re-analyze samples and refresh voice name detection
 
@@ -115,7 +117,12 @@ When you write to the card:
 Romper checks a kit's sample files when you open it, so problems show before you write to the card. It reads the files it hasn't read yet, and the ones it last found missing or unreadable, so a file you've put back or replaced is seen too.
 
 - **File not found** -- The sample's file has been moved or deleted. The slot is labelled **File not found**, and a notice above the voices says which file and how to fix it, for example "kick.wav on voice 1 wasn't found: it was moved or deleted. Put it back, or replace or remove the sample. Until then it's skipped when you write to the card." A missing file doesn't quarantine the kit: the rest of the kit is written, and the write summary lists the skipped sample.
+
+  ![A missing file: the notice above the voices, and File not found under the sample]({{ site.baseurl }}/images/manual/missing-file.png)
+
 - **Can't be read** -- The file is there, but it isn't a WAV Romper can read (it may be damaged, or in an unusual format). The slot is labelled **Can't be read**, the kit is **Quarantined**, and the quarantine notice says how to fix it, for example "Romper can't read kick.wav. Replace it with a WAV Romper can read, or remove it." The kit isn't written until you do.
+
+  ![A file Romper can't read: the quarantine notice, and Can't be read under the sample]({{ site.baseurl }}/images/manual/unreadable-file.png)
 
 Every time you open a kit, Romper checks that each of its files is still there, so a file deleted since you last opened the kit shows as **File not found** straight away. A file it has already read and found fine isn't read again. Writing to the card checks every file too, and records what it finds, so a kit whose file can't be read shows as quarantined in the Kit Browser as soon as the write finishes.
 

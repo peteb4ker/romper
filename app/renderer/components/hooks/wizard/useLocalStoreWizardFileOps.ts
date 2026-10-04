@@ -12,7 +12,11 @@ import type {
   TruncationWarning,
 } from "./useLocalStoreWizardState";
 
-import { createRomperDb, importSetupKit } from "../../utils/romperDb";
+import {
+  createRomperDb,
+  importSetupBankNames,
+  importSetupKit,
+} from "../../utils/romperDb";
 import { SetupCancelledError } from "./setupCancelled";
 
 export interface UseLocalStoreWizardFileOpsOptions {
@@ -164,8 +168,13 @@ export function useLocalStoreWizardFileOps({
     [throwIfCancelled, api, reportProgress, setError],
   );
 
+  /**
+   * Create the store's database and import its kit folders. Set up from a
+   * card, `sdCardSourcePath` is that card: its bank names are imported in
+   * the same step (#564), since only kit folders were copied.
+   */
   const createAndPopulateDb = useCallback(
-    async (targetPath: string) => {
+    async (targetPath: string, sdCardSourcePath?: string) => {
       const dbDir = `${targetPath}/.romperdb`;
       if (api.ensureDir) await api.ensureDir(dbDir);
       await createRomperDb(dbDir);
@@ -186,6 +195,9 @@ export function useLocalStoreWizardFileOps({
           },
           phase: "Writing to database",
         });
+      }
+      if (sdCardSourcePath) {
+        await importSetupBankNames(dbDir, sdCardSourcePath);
       }
       return { dbDir, stereoNotices, truncationWarnings, validKits };
     },

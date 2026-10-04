@@ -1,3 +1,4 @@
+import { BANK_NAME_FILE_PATTERN } from "@romper/shared/rampleCardLayout.js";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -7,9 +8,6 @@ import * as path from "node:path";
  * a slot number (A0 to Z99).
  */
 const KIT_FOLDER_PATTERN = /^[A-Z]\d{1,2}$/i;
-
-/** Bank name files the Rample reads at the card root: "{L} - {Artist}.rtf". */
-const BANK_RTF_PATTERN = /^[A-Z] - .+\.rtf$/i;
 
 /**
  * What a sync leaves on the card: for each kit folder the file names it
@@ -78,7 +76,7 @@ export async function findStaleCardEntries(
       }
     } else if (
       entry.isFile() &&
-      BANK_RTF_PATTERN.test(entry.name) &&
+      BANK_NAME_FILE_PATTERN.test(entry.name) &&
       !bankFiles.has(entry.name.toLowerCase())
     ) {
       stale.push(entry.name);

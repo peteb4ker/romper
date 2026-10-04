@@ -73,7 +73,8 @@ export interface ElectronAPI {
   copyKit: (sourceKit: string, destKit: string) => Promise<DbResult>;
   createKit: (kitSlot: string) => Promise<DbResult>;
   /**
-   * Setup-wizard channels (createRomperDb, setupImportKit) name the
+   * Setup-wizard channels (createRomperDb, setupImportKit,
+   * setupImportBankNames) name the
    * new store's `.romperdb` folder because it isn't configured yet; main
    * rejects any folder outside the roots it has granted (RE-03).
    */
@@ -189,6 +190,14 @@ export interface ElectronAPI {
   selectLocalStorePath: () => Promise<string | undefined>;
   selectSdCard: () => Promise<null | string>;
   setSetting: (key: SettingsKey, value: unknown) => Promise<void>;
+  /**
+   * Import the bank names at the root of the card setup is copying from
+   * into the store setup is creating, in main (#564).
+   */
+  setupImportBankNames: (
+    dbDir: string,
+    cardPath: string,
+  ) => Promise<DbResult<{ importedBanks: number }>>;
   /**
    * Import one kit folder into the store setup is creating, in main: the
    * kit, its samples (12 per voice), WAV metadata and voice names. Files

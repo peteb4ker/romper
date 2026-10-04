@@ -40,7 +40,7 @@ If you already have a Rample SD card with kits on it:
 1. Insert your SD card and mount it on your computer
 2. Click **Rample SD Card** in the wizard and choose the mounted SD card volume
 3. Choose a target folder and click **Initialize Local Store**
-4. Romper copies the kit folders at the root of the card (`A0` to `Z99`) into your local store and imports them, naming each voice from its sample filenames. A voice whose samples are all stereo is linked with the next voice automatically when that voice is empty, so they're written back in stereo (see [Stereo and Mono Handling]({{ site.baseurl }}/manual/kit-editor#stereo-and-mono-handling)). Other folders on the card are ignored.
+4. Romper copies the kit folders at the root of the card (`A0` to `Z99`) into your local store and imports them, naming each voice from its sample filenames. A voice whose samples are all stereo is linked with the next voice automatically when that voice is empty, so they're written back in stereo (see [Stereo and Mono Handling]({{ site.baseurl }}/manual/kit-editor#stereo-and-mono-handling)). The card's bank names (its `A - Name.rtf` files) become your banks' names, so writing back to the card keeps them. Other folders on the card are ignored.
 
 Your kits then appear in the Kit Browser.
 

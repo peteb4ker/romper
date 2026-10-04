@@ -267,6 +267,11 @@ names) and an optional name (the "artist").
   - `scan-banks` (`scanService.scanBanks`) reads `<store>/*.rtf` and calls
     `updateBank` with `source: "scan"`, which flags nothing. Run at startup
     (`useStartupActions`) and by Scan All (`useBankScanning`).
+  - setup from a card: `setup-import-bank-names`
+    (`localStoreSetupService.importSetupBankNames`) reads the card root's
+    `<L> - <name>.rtf` files (`parseBankNameFile`) and calls `updateBank`
+    with `source: "scan"`, in the step that imports the kits. The files
+    aren't copied into the store (#564).
   - the write puts `<L> - <name>.rtf` on the card root and removes bank
     files the store doesn't name (`findStaleCardEntries`).
 - **Readers and copies:**
@@ -292,13 +297,10 @@ names) and an optional name (the "artist").
     and its pattern (`/^\p{Lu} - .+\.rtf$/iu`) matches lowercase and
     non-ASCII letters. After Scan All, a bank with no visible kits keeps its
     old name until the browser remounts (#567).
-  - Setup from an SD card copies only kit folders, so the card's bank names
-    never reach the store, and the first write deletes them from the card
-    (#564).
   - `update-bank` writes the store's file before the database; if
     `updateBank` then fails, the file and the table disagree.
-  - Comments in `rtfFileService` and `sdCardSafety` state that the Rample
-    reads and shows these files, which the manual doesn't say (#571).
+  - Comments in `rtfFileService` state that the Rample shows these files,
+    which the manual doesn't say (#571).
 
 ## Kit
 
@@ -641,8 +643,6 @@ voice and slot):
   - A file is never copied unconverted when its conversion fails.
   - Names are compared ignoring case (FAT32).
 - **Disagreements on main:**
-  - The card's bank names are deleted by the first write after SD-card
-    setup (#564).
   - `SyncProgress` is defined four times with different status values, and
     `useSyncUpdate` casts `"complete"` to `"completed"` (#472).
   - Without a card path the plan names files under `<store>/sync_output`
@@ -676,7 +676,8 @@ voice and slot):
     factory archive, then `setup-import-kit` → `importSetupKit`: `addKitTx`
     (read-only kit, four mono voices), `mergeKitScanTx` (which links voices
     automatically by stereo rule 2) and `markKitsAsSyncedTx`, in one
-    transaction per kit.
+    transaction per kit. From a card, `setup-import-bank-names` then
+    imports the card's bank names (see [Bank](#bank)).
   - the editor's Scan on an editable kit only names voices, in the renderer
     (`useKitScanning.handleInferVoiceNames`).
 - **Readers and copies:** `KitScanResult` drives the scan messages; Scan
@@ -686,7 +687,6 @@ voice and slot):
   moves a sample, and never changes a stereo link (it reports what the
   stereo rules will do); a user-set voice name survives a scan.
 - **Disagreements on main:**
-  - Setup from a card doesn't copy bank name files (#564).
   - `wav_*` columns are refreshed only when empty, so a file changed on disk
     keeps its old format on screen (#576).
   - `planKitScanMerge`'s comment still lists a "stereo flag" on rows.

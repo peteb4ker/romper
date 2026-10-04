@@ -64,6 +64,24 @@ async function writeWav(file: string, hz = 220) {
 
 const kickName = (i: number) => `1 KICK ${String(i).padStart(2, "0")}.wav`;
 
+/** Each named bank's name, from the store's database */
+function bankNames(storePath: string): Record<string, string> {
+  const db = new DatabaseSync(
+    path.join(storePath, ".romperdb", "romper.sqlite"),
+    { readOnly: true },
+  );
+  try {
+    const rows = db
+      .prepare(
+        "SELECT letter, artist FROM banks WHERE artist IS NOT NULL ORDER BY letter",
+      )
+      .all() as { artist: string; letter: string }[];
+    return Object.fromEntries(rows.map((b) => [b.letter, b.artist]));
+  } finally {
+    db.close();
+  }
+}
+
 /**
  * A Rample SD card with three kits, one voice over the 12-sample limit, and
  * things that aren't kits:
@@ -153,8 +171,10 @@ test.describe("[UC-01] Set up from an SD card", () => {
   /**
    * Launch with no store, set up from `card` into a new folder, and wait
    * for the wizard's closing notice. Returns the window and the store path.
+   * A card with nothing to report has no notice: with `notice: false`, wait
+   * for the wizard to close instead.
    */
-  async function setUpFrom(card: string) {
+  async function setUpFrom(card: string, { notice = true } = {}) {
     // The store goes in a new folder that doesn't exist yet
     const store = path.join(await tempDir("romper-e2e-setup-"), "Romper");
     electronApp = await electron.launch({
@@ -184,7 +204,13 @@ test.describe("[UC-01] Set up from an SD card", () => {
     const guidance = window.locator(
       '[data-testid="wizard-post-init-guidance"]',
     );
-    await expect(guidance).toBeVisible({ timeout: 20000 });
+    if (notice) {
+      await expect(guidance).toBeVisible({ timeout: 20000 });
+    } else {
+      await expect(
+        window.locator('[data-testid="local-store-wizard"]'),
+      ).toHaveCount(0, { timeout: 20000 });
+    }
     return { guidance, store, window };
   }
 
@@ -339,6 +365,44 @@ test.describe("[UC-01] Set up from an SD card", () => {
     await expect(window.locator('[data-testid="stereo-note-2"]')).toHaveText(
       "Mixed down to mono instead of playing across 2 voices",
     );
+  });
+
+  // #564: setup copied only the card's kit folders, so its bank names never
+  // reached the store, and the first write back to the card removed them.
+  // Setup now imports them, and the write puts them back unchanged.
+  test("[UC-12] [UC-34] the card's bank names arrive, and a write back to the card keeps them (#564)", async () => {
+    test.setTimeout(60000);
+    const card = await tempDir("romper-e2e-card-");
+    await writeWav(path.join(card, "A0", "1 KICK.wav"));
+    // A bank with kits, and one without
+    await fs.outputFile(path.join(card, "A - ALWIS.rtf"), String.raw`{\rtf1}`);
+    await fs.outputFile(path.join(card, "D - Night Shift.rtf"), "");
+    const { store, window } = await setUpFrom(card, { notice: false });
+
+    // The names are in the store's database, not copied into it as files
+    expect(bankNames(store)).toEqual({ A: "ALWIS", D: "Night Shift" });
+    expect((await fs.readdir(store)).filter((f) => f.endsWith(".rtf"))).toEqual(
+      [],
+    );
+
+    await expect(
+      window.locator('[data-testid="bank-name-display-A"]'),
+    ).toHaveText("ALWIS");
+
+    // Write back to the card setup came from
+    await window.locator('[data-testid="sync-to-sd-card"]').click();
+    await window
+      .locator('[data-testid="bank-summary"]')
+      .waitFor({ state: "visible", timeout: 10000 });
+    await window.locator('[data-testid="confirm-sync"]').click();
+    await window
+      .locator("text=Write Complete")
+      .waitFor({ state: "visible", timeout: 15000 });
+
+    const rtfFiles = (await fs.readdir(card))
+      .filter((f) => f.endsWith(".rtf"))
+      .sort((a, b) => a.localeCompare(b));
+    expect(rtfFiles).toEqual(["A - ALWIS.rtf", "D - Night Shift.rtf"]);
   });
 
   test("the notice names the files it left out (#518)", async () => {

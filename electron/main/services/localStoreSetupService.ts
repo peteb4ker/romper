@@ -4,6 +4,7 @@ import {
   groupSamplesByVoice,
   isValidKit,
 } from "@romper/shared/kitUtilsShared.js";
+import { parseBankNameFile } from "@romper/shared/rampleCardLayout.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -13,9 +14,11 @@ import {
   createRomperDbFile,
   markKitsAsSyncedTx,
   mergeKitScanTx,
+  updateBank,
   withDbTransaction,
 } from "../db/romperDbCoreORM.js";
 import { logger } from "../utils/logger.js";
+import { bankRtfFileName } from "./rtfFileService.js";
 import { readWavMetadata } from "./scanService.js";
 
 const ROMPER_DB_DIR = ".romperdb";
@@ -196,6 +199,75 @@ export class LocalStoreSetupService {
       return { exists: false };
     }
     return { error: EXISTING_LOCAL_STORE_MESSAGE, exists: true };
+  }
+
+  /**
+   * Import the bank names on the card setup is copying from into the store
+   * it is creating (#564): each `<letter> - <name>.rtf` file at the card
+   * root names its bank in `banks.artist`, the names' only owner. The files
+   * themselves aren't copied into the store. Without this, the first write
+   * back to the card removed them, as names the store didn't have.
+   *
+   * Saved as a scan (`source: "scan"`), so no kit is flagged as changed:
+   * the card already has these names. All the names go in together, or
+   * none. Should a card hold two files for one letter, the first by file
+   * name is kept, so the result doesn't depend on the order the folder
+   * lists them in.
+   *
+   * Refuses any store this process's setup didn't create.
+   */
+  importSetupBankNames(
+    dbDir: string,
+    cardPath: string,
+  ): DbResult<{ importedBanks: number }> {
+    const resolved = path.resolve(dbDir);
+    if (!this.createdDbDirs.has(resolved)) {
+      return {
+        error: "Setup can only import bank names into the store it is creating",
+        success: false,
+      };
+    }
+
+    let fileNames: string[];
+    try {
+      fileNames = fs
+        .readdirSync(cardPath, { withFileTypes: true })
+        .filter((entry) => entry.isFile())
+        .map((entry) => entry.name)
+        .sort((a, b) => a.localeCompare(b));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return {
+        error: `Can't read the bank names in ${cardPath}: ${message}`,
+        success: false,
+      };
+    }
+
+    const names = new Map<string, string>();
+    for (const fileName of fileNames) {
+      const bankName = parseBankNameFile(fileName);
+      if (bankName && !names.has(bankName.letter)) {
+        names.set(bankName.letter, bankName.name);
+      }
+    }
+
+    const scannedAt = new Date();
+    return withDbTransaction(resolved, () => {
+      for (const [letter, artist] of names) {
+        const updated = updateBank(
+          resolved,
+          letter,
+          {
+            artist,
+            rtf_filename: bankRtfFileName(letter, artist),
+            scanned_at: scannedAt,
+          },
+          { source: "scan" },
+        );
+        if (!updated.success) throw new Error(updated.error);
+      }
+      return { importedBanks: names.size };
+    });
   }
 
   /**

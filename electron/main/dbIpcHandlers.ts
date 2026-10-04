@@ -67,8 +67,9 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   // Setup-wizard database operations. They run before the new store is
   // configured, so they name its .romperdb folder; it must sit inside a
   // writable root (RE-03). create-romper-db also refuses a folder that
-  // already holds a store (RE-10), and setup-import-kit only imports into
-  // a store this setup created (RE-34).
+  // already holds a store (RE-10), and setup-import-kit and
+  // setup-import-bank-names only import into a store this setup created
+  // (RE-34).
   ipcMain.handle("create-romper-db", (_event, dbDir: string) => {
     const access = checkDatabaseDirAccess(dbDir);
     if (!access.ok) return { error: access.error, success: false };
@@ -81,6 +82,18 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
       const access = checkDatabaseDirAccess(dbDir);
       if (!access.ok) return { error: access.error, success: false };
       return localStoreSetupService.importSetupKit(dbDir, kitName);
+    },
+  );
+
+  // The card's bank names, in the same import step as its kits (#564). The
+  // card folder is one the user picked, so main has granted it
+  ipcMain.handle(
+    "setup-import-bank-names",
+    (_event, dbDir: string, cardPath: string) => {
+      const access = checkDatabaseDirAccess(dbDir);
+      const cardAccess = access.ok ? checkPathAccess(cardPath) : access;
+      if (!cardAccess.ok) return { error: cardAccess.error, success: false };
+      return localStoreSetupService.importSetupBankNames(dbDir, cardPath);
     },
   );
 

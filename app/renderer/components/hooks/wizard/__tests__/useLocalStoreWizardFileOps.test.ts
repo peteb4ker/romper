@@ -1,7 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { importSetupKit } from "../../../utils/romperDb";
+import { importSetupBankNames, importSetupKit } from "../../../utils/romperDb";
 import { useLocalStoreWizardFileOps } from "../useLocalStoreWizardFileOps";
 
 vi.mock("../../../../config", () => ({
@@ -13,6 +13,7 @@ vi.mock("../../../../config", () => ({
 
 vi.mock("../../../utils/romperDb", () => ({
   createRomperDb: vi.fn().mockResolvedValue(undefined),
+  importSetupBankNames: vi.fn().mockResolvedValue(0),
   importSetupKit: vi.fn(),
 }));
 
@@ -467,6 +468,51 @@ describe("useLocalStoreWizardFileOps", () => {
         onStep: expect.any(Function),
         phase: "Writing to database",
       });
+    });
+
+    // #564: the card's bank names arrive with its kits
+    it("[UC-12] imports the card's bank names when set up from a card", async () => {
+      mockApi.listFilesInRoot = vi.fn().mockResolvedValue(["A0"]);
+      const { result } = renderHook(() =>
+        useLocalStoreWizardFileOps({
+          api: mockApi,
+          reportProgress: mockReportProgress,
+          reportStepProgress: mockReportStepProgress,
+          setError: mockSetError,
+          setWizardState: mockSetWizardState,
+        }),
+      );
+
+      await result.current.createAndPopulateDb("/target/path", "/Volumes/SD");
+      expect(importSetupBankNames).toHaveBeenCalledWith(
+        "/target/path/.romperdb",
+        "/Volumes/SD",
+      );
+
+      // The factory archive's names are files in the store: nothing to import
+      vi.mocked(importSetupBankNames).mockClear();
+      await result.current.createAndPopulateDb("/target/path");
+      expect(importSetupBankNames).not.toHaveBeenCalled();
+    });
+
+    it("stops setup when the card's bank names can't be imported", async () => {
+      mockApi.listFilesInRoot = vi.fn().mockResolvedValue(["A0"]);
+      vi.mocked(importSetupBankNames).mockRejectedValueOnce(
+        new Error("Can't read the bank names in /Volumes/SD: EIO"),
+      );
+      const { result } = renderHook(() =>
+        useLocalStoreWizardFileOps({
+          api: mockApi,
+          reportProgress: mockReportProgress,
+          reportStepProgress: mockReportStepProgress,
+          setError: mockSetError,
+          setWizardState: mockSetWizardState,
+        }),
+      );
+
+      await expect(
+        result.current.createAndPopulateDb("/target/path", "/Volumes/SD"),
+      ).rejects.toThrow("Can't read the bank names in /Volumes/SD: EIO");
     });
 
     it("should handle empty kit folders", async () => {

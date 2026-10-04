@@ -89,15 +89,18 @@ pair it linked (#537, stereo rule 2). See
 - **IPC:** `select-sd-card`, `select-local-store-path`,
   `check-existing-local-store`, `check-path-writable`, `check-disk-space`,
   `list-files-in-root`, `copy-dir`, `create-romper-db`, `setup-import-kit`
-  (one call per kit), `cleanup-partial-init`, `write-settings`.
+  (one call per kit), `setup-import-bank-names` (the card's bank names),
+  `cleanup-partial-init`, `write-settings`.
 - **Main:** `electron/main/services/archiveService.ts` (`copyDirectory`);
   `electron/main/services/localStoreSetupService.ts` (`createSetupDatabase`,
-  `hasExistingLocalStore`, `importSetupKit`, `cleanupFailedSetup`,
-  `cleanupUnfinishedSetups` on quit), which imports each kit with
-  `electron/main/db/operations/kitScanOperations.ts` (`mergeKitScan`): up
-  to 12 samples per voice, WAV metadata, voice names and stereo links
-  (`planKitStereo` in `shared/stereoLinkRules.ts`), in one
-  transaction per kit.
+  `hasExistingLocalStore`, `importSetupKit`, `importSetupBankNames`,
+  `cleanupFailedSetup`, `cleanupUnfinishedSetups` on quit), which imports
+  each kit with `electron/main/db/operations/kitScanOperations.ts`
+  (`mergeKitScan`): up to 12 samples per voice, WAV metadata, voice names
+  and stereo links (`planKitStereo` in `shared/stereoLinkRules.ts`), in one
+  transaction per kit; and the card's `<letter> - <name>.rtf` files
+  (`parseBankNameFile` in `shared/rampleCardLayout.ts`) into
+  `banks.artist`, in one transaction.
 
 ### UC-02 Set up from the factory archive
 

@@ -416,6 +416,53 @@ describe("dbIpcHandlers - Routing Tests", () => {
       importSetupKit.mockRestore();
     });
 
+    it("[UC-01] setup-import-bank-names routes to the setup service (#564)", async () => {
+      const { localStoreSetupService } =
+        await import("../services/localStoreSetupService.js");
+      const importSetupBankNames = vi
+        .spyOn(localStoreSetupService, "importSetupBankNames")
+        .mockReturnValue({ data: { importedBanks: 1 }, success: true });
+      const result = await handlerRegistry["setup-import-bank-names"](
+        {},
+        "/test/path/.romperdb",
+        "/Volumes/RAMPLE",
+      );
+      expect(result).toEqual({ data: { importedBanks: 1 }, success: true });
+      expect(importSetupBankNames).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        "/Volumes/RAMPLE",
+      );
+      importSetupBankNames.mockRestore();
+    });
+
+    it("setup-import-bank-names refuses a denied database folder or card", async () => {
+      const { localStoreSetupService } =
+        await import("../services/localStoreSetupService.js");
+      const importSetupBankNames = vi.spyOn(
+        localStoreSetupService,
+        "importSetupBankNames",
+      );
+      vi.mocked(checkDatabaseDirAccess).mockReturnValueOnce(DENIED);
+      expect(
+        await handlerRegistry["setup-import-bank-names"](
+          {},
+          "/Users/me/Library/.romperdb",
+          "/Volumes/RAMPLE",
+        ),
+      ).toEqual({ error: DENIED.error, success: false });
+      vi.mocked(checkPathAccess).mockReturnValueOnce(DENIED);
+      expect(
+        await handlerRegistry["setup-import-bank-names"](
+          {},
+          "/test/path/.romperdb",
+          "/Users/me/Library",
+        ),
+      ).toEqual({ error: DENIED.error, success: false });
+      expect(checkPathAccess).toHaveBeenCalledWith("/Users/me/Library");
+      expect(importSetupBankNames).not.toHaveBeenCalled();
+      importSetupBankNames.mockRestore();
+    });
+
     it("[Q-03] get-all-kits reads the configured store, not a renderer path", async () => {
       await handlerRegistry["get-all-kits"]({}, "/attacker/.romperdb");
       expect(romperDbCore.getKits).toHaveBeenCalledWith("/test/path/.romperdb");

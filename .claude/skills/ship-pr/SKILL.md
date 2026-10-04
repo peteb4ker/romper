@@ -45,13 +45,17 @@ is already green, skip auto-merge and merge it directly (rebase method).
    code paths could have the same bug, and what happened to each: fixed
    here, or filed as an issue (link it). "None found" is an answer; a
    missing check isn't.
-8. **Decisions are recorded.** A UX or product choice the PR makes
+8. **Removals are re-checked at merge time.** If the PR deletes an API,
+   IPC channel or exported function, re-check its callers on current main
+   after the rebase in step 1 (`git grep <name> origin/main`), not only
+   when it was written. Another PR may have started using it since.
+9. **Decisions are recorded.** A UX or product choice the PR makes
    (shortcut, wording, behaviour) has Pete's sign-off on the issue. If it
    doesn't, stop and ask the coordinator before merging.
-9. **UI changes carry their screenshots.** If the PR changes how a captured
-   view looks, it must include the regenerated screenshots and manual text
-   (`capture-screenshots` command). If it merged without them, raise a
-   `docs/` PR with them before moving on.
+10. **UI changes carry their screenshots.** If the PR changes how a
+    captured view looks, it must include the regenerated screenshots and
+    manual text (`capture-screenshots` command). If it merged without
+    them, raise a `docs/` PR with them before moving on.
 
 ## Queue mechanics (no merge queue on free GitHub)
 

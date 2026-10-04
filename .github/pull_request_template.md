@@ -6,7 +6,7 @@
 
 ## Siblings
 
-<!-- Other callers or code paths with the same bug, and what happened to each: fixed here, or filed as an issue (link it). "None found" is an answer. -->
+<!-- Other callers or code paths with the same bug, and what happened to each: fixed here, or filed as an issue (link it). "None found" is an answer. If this PR deletes an API, IPC channel or exported function, re-check its callers on current main when rebasing to merge (`git grep <name> origin/main`). -->
 
 ## Decisions
 

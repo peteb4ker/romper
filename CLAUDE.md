@@ -141,6 +141,11 @@ the repo or on GitHub.
   `git worktree list`, and `ListAgents` for live local sessions. Don't edit
   another session's worktree or push to its branch; message it or comment on
   its PR.
+- **Shared interfaces are shared work.** When splitting work across
+  sessions or agents, treat the IPC contract (`shared/electronApi.ts`,
+  preload, `ipcMain` handlers) and the database layer like shared files: a
+  change that removes or changes them runs alone, or after the work that
+  might use them. See the coding guide.
 - **Messages:** `SendMessage` reaches local, Remote Control, and cloud
   sessions, but cloud sessions can't reply, so their results come back
   through the PR. To wait on a local session, use `notify_when_idle` rather

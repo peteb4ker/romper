@@ -155,6 +155,18 @@ fill 2 mono voices."
   description either way.
 - Cite code by symbol and file, not line number, in issues, PRs and docs.
 
+## Parallel work and shared interfaces
+
+- When work is split across parallel sessions or agents, shared interfaces
+  count as shared work, like files: the IPC contract
+  (`shared/electronApi.ts`, the preload, the `ipcMain` handlers) and the
+  database layer. A change that removes or changes them runs alone, or
+  after the work that might use them. (#514 removed `getAllBanks` as
+  unused while #512, in a parallel batch split by files, started using it.)
+- A PR that deletes an API, IPC channel or exported function re-checks its
+  callers against current main when it's rebased to merge
+  (`git grep <name> origin/main`), not only when it was written.
+
 ## Performance budgets
 
 Performance is held in place by budgets in

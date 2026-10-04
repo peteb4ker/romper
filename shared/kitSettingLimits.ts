@@ -1,7 +1,13 @@
 /**
- * The values the Rample accepts for kit and voice settings. Main refuses
+ * The values Romper accepts for kit and voice settings. Main refuses
  * anything outside them (RE-25), so a glitch in the renderer can't save a
- * setting the card can't use.
+ * setting outside them.
+ *
+ * The BPM, voice volume, sample gain and sample mode ranges are Romper's
+ * design, not the Rample's. The Rample manual describes no step sequencer
+ * or BPM, voice volume isn't written to the card, and the module's layer
+ * modes (Settings) are "MANUAL, RANDOM, CYCLIC, REVERSE CYCLIC, VELOCITY",
+ * not Romper's sample modes.
  */
 
 export const VOICE_COUNT = 4;

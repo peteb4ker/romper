@@ -166,8 +166,8 @@ export function mergeKitScanTx(
  * Decide what a kit scan changes. Pure apart from the injected io.
  *
  * - Locked kits: no changes at all.
- * - Existing rows are always kept with their slot, voice, gain, stereo flag
- *   and source path. A row whose file is gone is reported in
+ * - Existing rows are always kept with their slot, voice, gain and source
+ *   path. A row whose file is gone is reported in
  *   `missingSamples`, not deleted: user samples are referenced from outside
  *   the store and may just be on an unmounted drive.
  * - Existing rows with missing WAV metadata get it filled in when the file

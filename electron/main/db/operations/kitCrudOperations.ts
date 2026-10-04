@@ -31,6 +31,7 @@ export {
 export {
   getSyncPlanData,
   markAllKitsAsSyncedExcept,
+  markAllKitsAsSyncedExceptTx,
   markKitAsModified,
   markKitAsSynced,
   markKitsAsSynced,

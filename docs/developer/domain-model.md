@@ -499,7 +499,10 @@ voice number):
   (`update-voice-stereo-mode` → `updateVoiceStereoMode`, which refuses with
   `checkStereoLink`, #541, and records `stereo_choice`); setup
   (`importSetupKit` → `mergeKitScanTx` with `linkStereoVoices`); the write
-  (`startKitSync` → `linkVoicesAutomaticallyTx`, from `planWriteStereo`).
+  (`startKitSync` → `completeWrite` → `linkVoicesAutomaticallyTx`, from
+  `planWriteStereo`). The write's links are part of the write: they're
+  recorded only once every file is written, in the transaction that
+  clears the modified flags, so a cancelled or failed write leaves none.
 - **Readers and copies:** `planWriteStereo` and `annotateMonoConversion`
   (write: links, mixdowns, quarantine); `planKitScanMerge` (scan report);
   `validateVoiceNotLinkedPartner` (refuses samples on the right-hand voice
@@ -596,7 +599,10 @@ voice and slot):
   4. **bank files** (`writeBankRtfFiles`) and **removal** of what the store
      no longer has (`findStaleCardEntries`, `removeCardEntries`), only
      after a complete, uncancelled write;
-  5. **clear** the modified flag (`markAllKitsAsSyncedExcept`).
+  5. **record** the write in one transaction (`completeWrite`): the links
+     made automatically (`linkVoicesAutomaticallyTx`) and the cleared
+     modified flags (`markAllKitsAsSyncedExceptTx`). A cancelled or failed
+     write records neither.
 
   The summary (`generateSyncChangeSummary` → `generateChangeSummary`) runs
   the same plan.

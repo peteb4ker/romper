@@ -9,7 +9,7 @@ import { setImmediate as yieldToEventLoop } from "node:timers/promises";
 import {
   getSyncPlanData,
   linkVoicesAutomaticallyTx,
-  markAllKitsAsSyncedExcept,
+  markAllKitsAsSyncedExceptTx,
   withDbTransaction,
 } from "../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
@@ -244,10 +244,6 @@ class SyncService {
         };
       }
 
-      // Link what rule 2 links before writing, so the store matches the
-      // stereo files this write puts on the card (#537)
-      this.linkVoicesAutomatically(dbDir, stereo);
-
       syncProgressManager.initializeSyncJob(allFiles);
 
       const syncedFiles = await syncFileOperationsService.processAllFiles(
@@ -287,7 +283,10 @@ class SyncService {
       for (const error of validationErrors) {
         if (error.kitName) incompleteKits.add(error.kitName);
       }
-      this.markKitsAsSynced(dbDir, [...incompleteKits]);
+      // The links the write made automatically (#537 rule 2) are recorded
+      // only now the write has completed, with the synced flags, in one
+      // transaction: a cancelled or failed write leaves no links behind
+      this.completeWrite(dbDir, stereo, [...incompleteKits]);
 
       return {
         data: {
@@ -305,6 +304,34 @@ class SyncService {
         success: false,
       };
     }
+  }
+
+  /**
+   * Record a completed write in one transaction (#537): the links its plan
+   * made automatically (rule 2), whose stereo files are now on the card,
+   * and every kit but the ones the write left incomplete marked as synced,
+   * including kits with no files to write (RE-35). A failure here fails
+   * the write, so the store never claims links or a sync it didn't make.
+   */
+  private completeWrite(
+    dbDir: string,
+    stereo: WriteStereoSummary,
+    incompleteKits: string[],
+  ): void {
+    const byKit = new Map<string, number[]>();
+    for (const { kitName, voiceNumber } of stereo.autoLinks) {
+      byKit.set(kitName, [...(byKit.get(kitName) ?? []), voiceNumber]);
+    }
+    const recorded = withDbTransaction(dbDir, (db) => {
+      for (const [kitName, voiceNumbers] of byKit) {
+        linkVoicesAutomaticallyTx(db, kitName, voiceNumbers);
+      }
+      return markAllKitsAsSyncedExceptTx(db, incompleteKits);
+    });
+    if (!recorded.success) {
+      throw new Error(`Couldn't record the write: ${recorded.error}`);
+    }
+    logger.log(`Marked ${recorded.data} kits as synced`);
   }
 
   /**
@@ -347,43 +374,6 @@ class SyncService {
     }
 
     // Cleanup handled by progress manager
-  }
-
-  /**
-   * Make the links the write's plan made automatically (#537 rule 2), in
-   * one transaction, before any file is written
-   */
-  private linkVoicesAutomatically(
-    dbDir: string,
-    stereo: WriteStereoSummary,
-  ): void {
-    if (stereo.autoLinks.length === 0) return;
-    const byKit = new Map<string, number[]>();
-    for (const { kitName, voiceNumber } of stereo.autoLinks) {
-      byKit.set(kitName, [...(byKit.get(kitName) ?? []), voiceNumber]);
-    }
-    const linked = withDbTransaction(dbDir, (db) => {
-      for (const [kitName, voiceNumbers] of byKit) {
-        linkVoicesAutomaticallyTx(db, kitName, voiceNumbers);
-      }
-    });
-    if (!linked.success) {
-      throw new Error(`Couldn't link stereo pairs: ${linked.error}`);
-    }
-  }
-
-  /**
-   * Mark kits as synced after a completed write: every kit but the ones
-   * the write left incomplete, including kits with no files to write
-   * (RE-35)
-   */
-  private markKitsAsSynced(dbDir: string, incompleteKits: string[]): void {
-    const result = markAllKitsAsSyncedExcept(dbDir, incompleteKits);
-    if (result.success) {
-      logger.log(`Marked ${result.data} kits as synced`);
-    } else {
-      console.warn("Failed to mark kits as synced:", result.error);
-    }
   }
 
   /**

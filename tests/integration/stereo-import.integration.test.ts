@@ -14,9 +14,12 @@ import {
   getKits,
   markKitAsModified,
   updateVoiceStereoMode,
+  withDbTransaction,
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { LocalStoreSetupService } from "../../electron/main/services/localStoreSetupService.js";
 import { scanService } from "../../electron/main/services/scanService.js";
+import { syncFileOperationsService } from "../../electron/main/services/syncFileOperations.js";
+import { syncProgressManager } from "../../electron/main/services/syncProgressManager.js";
 import { syncService } from "../../electron/main/services/syncService.js";
 import { encodeTestWav, sine } from "../validation/support/wav.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
@@ -322,6 +325,92 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
 
     await write();
     expect(snapshot(path.join(card, "A3"))).toEqual(before);
+  });
+
+  // Automatic links are atomic with the write (#537): recorded only once
+  // the write completes, so a cancelled or failed write leaves none
+  describe("[Q-02] automatic links and an incomplete write", () => {
+    /** A2 gains a stereo file on voice 2, which the write would link */
+    function withAutoLink() {
+      importCard();
+      fs.writeFileSync(path.join(store, "A2", "2 PAD.wav"), wav(2));
+      expect(scanService.rescanKit(settings(), "A2").success).toBe(true);
+      expect(voice("A2", 2).stereo_mode).toBe(false);
+    }
+
+    it("a cancelled write leaves no automatic link", async () => {
+      withAutoLink();
+      const emit =
+        syncProgressManager.emitFileCompletionProgress.bind(
+          syncProgressManager,
+        );
+      vi.spyOn(
+        syncProgressManager,
+        "emitFileCompletionProgress",
+      ).mockImplementation((fileOp) => {
+        emit(fileOp);
+        syncService.cancelSync();
+      });
+
+      const result = await syncService.startKitSync(settings(), {
+        sdCardPath: card,
+      });
+
+      expect(result.data?.cancelled).toBe(true);
+      expect(voice("A2", 2)).toMatchObject({
+        stereo_choice: null,
+        stereo_mode: false,
+      });
+    });
+
+    it("a failed write leaves no automatic link", async () => {
+      withAutoLink();
+      vi.spyOn(syncFileOperationsService, "processAllFiles").mockRejectedValue(
+        new Error("ENOSPC: no space left on device"),
+      );
+
+      const result = await syncService.startKitSync(settings(), {
+        sdCardPath: card,
+      });
+
+      expect(result.success).toBe(false);
+      expect(voice("A2", 2)).toMatchObject({
+        stereo_choice: null,
+        stereo_mode: false,
+      });
+    });
+
+    it("a write that fails while recording itself rolls its automatic links back", async () => {
+      withAutoLink();
+      // The links are recorded first, then the synced flags, in one
+      // transaction: failing the flags must take the links with them
+      expect(markKitAsModified(dbDir, "A2").success).toBe(true);
+      withDbTransaction(dbDir, (_db, sqlite) =>
+        sqlite.exec(`
+          CREATE TRIGGER fail_marking_synced
+          BEFORE UPDATE OF modified_since_sync ON kits
+          WHEN NEW.modified_since_sync = 0
+          BEGIN SELECT RAISE(ABORT, 'simulated failure'); END;
+        `),
+      );
+
+      const result = await syncService.startKitSync(settings(), {
+        sdCardPath: card,
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("simulated failure");
+      expect(voice("A2", 2)).toMatchObject({
+        stereo_choice: null,
+        stereo_mode: false,
+      });
+    });
+
+    it("a completed write records the link", async () => {
+      withAutoLink();
+      await write();
+      expect(voice("A2", 2).stereo_mode).toBe(true);
+    });
   });
 
   // #537: missing and unreadable files show in the kit editor, recorded

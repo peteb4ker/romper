@@ -28,6 +28,7 @@ export {
   getSyncPlanData,
   linkVoicesAutomaticallyTx,
   markAllKitsAsSyncedExcept,
+  markAllKitsAsSyncedExceptTx,
   markKitAsModified,
   markKitAsSynced,
   markKitsAsSynced,

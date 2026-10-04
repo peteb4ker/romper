@@ -12,6 +12,7 @@ import type { InMemorySettings } from "./types/settings.js";
 import { validateSampleFormat } from "./audioUtils.js";
 import { registerFavoritesIpcHandlers } from "./db/favoritesIpcHandlers.js";
 import { createDbHandler } from "./db/ipcHandlerUtils.js";
+import { kitNotEditableError } from "./db/operations/kitEditableGuard.js";
 import {
   getAllBanks,
   getKit,
@@ -221,7 +222,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
         }
         if (!kit.data.editable) {
           return {
-            error: `Kit ${kitName} isn't editable. Make it editable to link or unlink voices.`,
+            error: `${kitNotEditableError(kitName)} Make it editable to link or unlink voices.`,
             success: false,
           };
         }

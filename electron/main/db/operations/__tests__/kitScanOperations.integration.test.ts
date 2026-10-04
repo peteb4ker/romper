@@ -188,7 +188,10 @@ describe("[UC-13] mergeKitScan - Integration Tests", () => {
   });
 
   test("[UC-13] [UC-27] infers names only for unnamed voices", () => {
+    // Named while the kit was editable (#572)
+    updateKit(dbDir, "A0", { editable: true });
     updateVoiceAlias(dbDir, "A0", 2, "My Snares");
+    updateKit(dbDir, "A0", { editable: false });
 
     mergeKitScan(dbDir, "A0", folder(["1 kick.wav"], ["2 snare.wav"]), io);
 

@@ -15,6 +15,7 @@ import {
   createRomperDbFile,
   getKit,
   getKitSamples,
+  updateKit,
   updateVoiceAlias,
   updateVoiceSampleMode,
   updateVoiceStereoMode,
@@ -234,7 +235,8 @@ describe("KitService Integration Tests", () => {
         alias: "Full Kit",
         bank_letter: "E",
         bpm: 140,
-        editable: false,
+        // Editable while it's customized; made read-only before the copy
+        editable: true,
         locked: true,
         modified_since_sync: true,
         name: "E1",
@@ -273,6 +275,9 @@ describe("KitService Integration Tests", () => {
         wav_sample_rate: 48000,
       };
       expect(addSample(TEST_DB_PATH, sample).success).toBe(true);
+      expect(updateKit(TEST_DB_PATH, "E1", { editable: false }).success).toBe(
+        true,
+      );
 
       const copyResult = kitService.copyKit(mockInMemorySettings, "E1", "F2");
       expect(copyResult.success).toBe(true);

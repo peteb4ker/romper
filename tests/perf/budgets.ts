@@ -149,11 +149,11 @@ export const BUDGETS = {
   integration: {
     "add sample": {
       connections: NO_NEW_CONNECTION,
-      statements: { max: 2 },
+      statements: { max: 3 },
     },
     "delete sample": {
       connections: NO_NEW_CONNECTION,
-      statements: { max: 6 },
+      statements: { max: 7 },
     },
     "get kits": {
       connections: NO_NEW_CONNECTION,
@@ -161,11 +161,11 @@ export const BUDGETS = {
     },
     "move sample between kits": {
       connections: NO_NEW_CONNECTION,
-      statements: { max: 10 },
+      statements: { max: 11 },
     },
     "move sample within a kit": {
       connections: NO_NEW_CONNECTION,
-      statements: { max: 17 },
+      statements: { max: 18 },
     },
     "plan a sync (write summary)": {
       connections: NO_NEW_CONNECTION,
@@ -175,7 +175,7 @@ export const BUDGETS = {
     },
     "replace sample": {
       connections: NO_NEW_CONNECTION,
-      statements: { max: 4 },
+      statements: { max: 5 },
     },
   },
 

@@ -9,6 +9,7 @@ import {
   withDb,
   withDbTransaction,
 } from "../utils/dbUtilities.js";
+import { requireEditableKitTx } from "./kitEditableGuard.js";
 import { flagKitModified } from "./kitSyncOperations.js";
 import { performVoiceReindexing } from "./sampleManagementOps.js";
 
@@ -260,7 +261,8 @@ export function restoreVoicesTx(
 
 /**
  * Update per-sample gain (dB trim). Gain is applied when the sample is
- * written, so the kit is marked modified in the same transaction (RE-35).
+ * written, so the kit is marked modified in the same transaction (RE-35),
+ * and only an editable kit's gain changes (#572).
  */
 export function updateSampleGain(
   dbDir: string,
@@ -270,6 +272,7 @@ export function updateSampleGain(
   gainDb: number,
 ): DbResult<void> {
   return withDbTransaction(dbDir, (db) => {
+    requireEditableKitTx(db, kitName);
     const result = db
       .update(samples)
       .set({ gain_db: gainDb })

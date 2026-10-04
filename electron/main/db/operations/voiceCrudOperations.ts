@@ -6,6 +6,7 @@ import { checkStereoLink } from "@romper/shared/stereoLinkRules.js";
 import { and, eq } from "drizzle-orm";
 
 import { type RomperDb, withDbTransaction } from "../utils/dbUtilities.js";
+import { requireEditableKitTx } from "./kitEditableGuard.js";
 import { flagKitModified } from "./kitSyncOperations.js";
 
 const { samples, voices } = schema;
@@ -39,7 +40,7 @@ export function linkVoicesAutomaticallyTx(
 /**
  * Update voice alias. Renaming a voice is an edit to the kit, so a name
  * that actually changes marks the kit modified (RE-35); saving the same
- * name again doesn't.
+ * name again doesn't. Only an editable kit's voices are renamed (#572).
  */
 export function updateVoiceAlias(
   dbDir: string,
@@ -48,6 +49,7 @@ export function updateVoiceAlias(
   alias: string,
 ): DbResult<void> {
   return withDbTransaction(dbDir, (db) => {
+    requireEditableKitTx(db, kitName);
     const voice = and(
       eq(voices.kit_name, kitName),
       eq(voices.voice_number, voiceNumber),

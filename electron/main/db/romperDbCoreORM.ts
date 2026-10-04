@@ -36,6 +36,7 @@ export {
   mergeKitScan,
   mergeKitScanTx,
   replaceSampleTx,
+  requireEditableKitTx,
   restoreVoicesTx,
   toggleKitFavorite,
   updateBank,

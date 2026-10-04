@@ -59,14 +59,35 @@ async function installAudioProbe(window: Page) {
   });
 }
 
-async function playFor(window: Page, ms: number): Promise<AudioProbe> {
+/**
+ * Plays the sequencer until what the probe recorded satisfies `done`, then
+ * stops it. It waits on what played rather than a fixed time, so a slow
+ * machine plays for longer instead of failing on a count (#579).
+ */
+async function playUntil(
+  window: Page,
+  done: (probe: AudioProbe) => boolean,
+  message: string,
+): Promise<AudioProbe> {
   await window.evaluate(() => {
     (globalThis as ProbeWindow).__probe.starts = [];
   });
   await window.getByRole("button", { name: "Play sequencer" }).click();
-  await window.waitForTimeout(ms);
+  await expect
+    .poll(async () => done(await readProbe(window)), {
+      message,
+      timeout: 10000,
+    })
+    .toBe(true);
   await window.getByRole("button", { name: "Stop sequencer" }).click();
-  return window.evaluate(() => ({ ...(globalThis as ProbeWindow).__probe }));
+  return readProbe(window);
+}
+
+function readProbe(window: Page): Promise<AudioProbe> {
+  return window.evaluate(() => {
+    const probe = (globalThis as ProbeWindow).__probe;
+    return { analysers: probe.analysers, starts: [...probe.starts] };
+  });
 }
 
 /** Starts that played part of the sample, counted by buffer length (ms). */
@@ -131,11 +152,15 @@ test.describe("[UC-33] Slicer playback", () => {
       ).toHaveAttribute("aria-pressed", "true");
     }
 
-    const probe = await playFor(window, 2000);
-    const slices = sliceStartsByBuffer(probe.starts);
-    // Both the kick (150 ms) and the snare (100 ms) played slices
-    expect(slices.get(150) ?? 0).toBeGreaterThan(0);
-    expect(slices.get(100) ?? 0).toBeGreaterThan(0);
+    // Both the kick (150 ms) and the snare (100 ms) play slices
+    const probe = await playUntil(
+      window,
+      ({ starts }) => {
+        const slices = sliceStartsByBuffer(starts);
+        return (slices.get(150) ?? 0) > 0 && (slices.get(100) ?? 0) > 0;
+      },
+      "both sliced voices play a slice",
+    );
     // No voice fell back to playing its whole sample
     expect(probe.starts.every((s) => s.durationMs != null)).toBe(true);
   });
@@ -146,11 +171,13 @@ test.describe("[UC-33] Slicer playback", () => {
       await window.locator(`[data-testid="seq-step-0-${step}"]`).click();
     }
 
-    const probe = await playFor(window, 3000);
-
-    // About 24 triggers at 120 BPM. Meters are made once per slot, not per
-    // trigger; they used to pile up in the audio graph (RE-14).
-    expect(probe.starts.length).toBeGreaterThan(15);
+    // A bar and a half of triggers at 120 BPM. Meters are made once per
+    // slot, not per trigger; they used to pile up in the audio graph (RE-14).
+    const probe = await playUntil(
+      window,
+      ({ starts }) => starts.length >= 24,
+      "the sequencer triggers 24 times",
+    );
     expect(probe.analysers).toBeLessThanOrEqual(2);
   });
 });

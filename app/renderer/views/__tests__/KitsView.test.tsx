@@ -16,6 +16,7 @@ class MockIntersectionObserver implements IntersectionObserver {
   observe = vi.fn();
   root = null;
   rootMargin = "0px";
+  scrollMargin = "0px";
   takeRecords = vi.fn((): IntersectionObserverEntry[] => []);
   thresholds: number[] = [0];
   unobserve = vi.fn();

@@ -273,17 +273,8 @@ class SyncService {
         warnings,
       } = planResult.data;
 
-      // Samples that can't be written must not be dropped silently. Refuse
-      // before touching the card unless the user has
-      // reviewed them in the summary and chosen to skip them.
-      if (validationErrors.length > 0 && !options.skipInvalidFiles) {
-        const count = validationErrors.length;
-        const samples = count === 1 ? "1 sample" : `${count} samples`;
-        return {
-          error: `${samples} can't be written to the card. Nothing was written. Confirm skipping them in the write summary to continue.`,
-          success: false,
-        };
-      }
+      const refusal = unconfirmedSkipRefusal(validationErrors, options);
+      if (refusal) return { error: refusal, success: false };
 
       syncProgressManager.initializeSyncJob(allFiles);
 
@@ -295,15 +286,7 @@ class SyncService {
 
       if (syncProgressManager.getCurrentSyncJob()?.cancelled) {
         syncProgressManager.finalizeSyncJob();
-        return {
-          data: {
-            cancelled: true,
-            skippedFiles: validationErrors,
-            syncedFiles,
-            warnings,
-          },
-          success: true,
-        };
+        return writeOutcome(true, validationErrors, syncedFiles, warnings);
       }
       syncProgressManager.emitFinalizingProgress();
 
@@ -318,28 +301,20 @@ class SyncService {
       await this.removeStaleEntries(options.sdCardPath, cardContents);
       if (syncProgressManager.getCurrentSyncJob()?.cancelled) {
         syncProgressManager.finalizeSyncJob();
-        return {
-          data: {
-            cancelled: true,
-            skippedFiles: validationErrors,
-            syncedFiles,
-            warnings,
-          },
-          success: true,
-        };
+        return writeOutcome(true, validationErrors, syncedFiles, warnings);
       }
 
       // The card now mirrors the store, so every kit is in step with it,
       // except a kit with a skipped sample or a quarantined kit: each keeps
       // its "modified since sync" flag.
-      const incompleteKits = new Set<string>(quarantinedKits);
-      for (const error of validationErrors) {
-        if (error.kitName) incompleteKits.add(error.kitName);
-      }
+      const incompleteKits = kitsLeftIncomplete(
+        quarantinedKits,
+        validationErrors,
+      );
       // The links the write made automatically (#537 rule 2) are recorded
       // only now the write has completed, with the synced flags, in one
       // transaction: a cancelled or failed write leaves no links behind
-      this.completeWrite(dbDir, stereo, [...incompleteKits], fileStatuses);
+      this.completeWrite(dbDir, stereo, incompleteKits, fileStatuses);
 
       // Only now is the write complete. The dialog says "Write Complete" on
       // this event, so it must not go out while the card is still being
@@ -347,15 +322,7 @@ class SyncService {
       syncProgressManager.emitCompletionProgress(syncedFiles, allFiles.length);
       syncProgressManager.finalizeSyncJob();
 
-      return {
-        data: {
-          cancelled: false,
-          skippedFiles: validationErrors,
-          syncedFiles,
-          warnings,
-        },
-        success: true,
-      };
+      return writeOutcome(false, validationErrors, syncedFiles, warnings);
     } catch (error) {
       await this.handleSyncFailure(inMemorySettings, error);
       syncProgressManager.finalizeSyncJob();
@@ -649,5 +616,49 @@ function emptySyncResults(): SyncResults {
     hasFormatWarnings: false,
     validationErrors: [],
     warnings: [],
+  };
+}
+
+/**
+ * Kits a completed write leaves flagged "modified since sync": quarantined
+ * kits, and kits with a sample the write skipped
+ */
+function kitsLeftIncomplete(
+  quarantinedKits: ReadonlySet<string>,
+  validationErrors: readonly SyncValidationError[],
+): string[] {
+  const incompleteKits = new Set<string>(quarantinedKits);
+  for (const error of validationErrors) {
+    if (error.kitName) incompleteKits.add(error.kitName);
+  }
+  return [...incompleteKits];
+}
+
+/**
+ * Why a write refuses to start: samples that can't be written must not be
+ * dropped silently, so it refuses before touching the card unless the user
+ * has reviewed them in the summary and chosen to skip them. Null when it
+ * can go ahead.
+ */
+function unconfirmedSkipRefusal(
+  validationErrors: readonly SyncValidationError[],
+  options: SyncOptions,
+): null | string {
+  if (validationErrors.length === 0 || options.skipInvalidFiles) return null;
+  const count = validationErrors.length;
+  const samples = count === 1 ? "1 sample" : `${count} samples`;
+  return `${samples} can't be written to the card. Nothing was written. Confirm skipping them in the write summary to continue.`;
+}
+
+/** A write's result, completed or cancelled */
+function writeOutcome(
+  cancelled: boolean,
+  skippedFiles: SyncValidationError[],
+  syncedFiles: number,
+  warnings: string[],
+): DbResult<SyncOutcome> {
+  return {
+    data: { cancelled, skippedFiles, syncedFiles, warnings },
+    success: true,
   };
 }

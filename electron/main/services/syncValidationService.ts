@@ -93,7 +93,19 @@ export class SyncValidationService {
       };
     }
 
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    return this.categorizeErrorMessage(
+      error instanceof Error ? error.message : String(error),
+      filePath,
+    );
+  }
+
+  /**
+   * {@link categorizeError} for any other error, by what its message says
+   */
+  categorizeErrorMessage(
+    errorMessage: string,
+    filePath?: string,
+  ): ErrorCategorizationResult {
     const lowerErrorMessage = errorMessage.toLowerCase();
 
     // Network-related errors

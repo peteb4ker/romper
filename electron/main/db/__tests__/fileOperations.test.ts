@@ -105,10 +105,10 @@ describe("fileOperations unit tests", () => {
 
       const promise = deleteDbFileWithRetry(testDbPath, 1);
       let settled = false;
-      promise.then(
-        () => (settled = true),
-        () => (settled = true),
-      );
+      const markSettled = () => {
+        settled = true;
+      };
+      promise.then(markSettled, markSettled);
       const rejected = expect(promise).rejects.toThrow("File in use");
 
       // Still waiting on the retry delay

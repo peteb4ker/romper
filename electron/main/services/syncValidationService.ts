@@ -6,10 +6,12 @@ import {
   type FormatValidationResult,
   validateSampleFormatAsync,
 } from "../audioUtils.js";
+import { CardNotRespondingError } from "./cardWatchdog.js";
 
 export interface ErrorCategorizationResult {
   canRetry: boolean;
   type:
+    | "card_not_responding"
     | "disk_space"
     | "file_access"
     | "format_error"
@@ -82,6 +84,15 @@ export class SyncValidationService {
     error: unknown,
     filePath?: string,
   ): ErrorCategorizationResult {
+    // The card's driver hung (#653); the message says what to do
+    if (error instanceof CardNotRespondingError) {
+      return {
+        canRetry: true,
+        type: "card_not_responding",
+        userMessage: error.message,
+      };
+    }
+
     const errorMessage = error instanceof Error ? error.message : String(error);
     const lowerErrorMessage = errorMessage.toLowerCase();
 

@@ -308,6 +308,17 @@ Sync doesn't block the main process (RE-07): file I/O is asynchronous and
 `syncFileOperations.processAllFiles` yields to the event loop after every
 file, so progress events and `cancelKitSync` are handled while it runs.
 Cancel stops after the file in progress and returns a `cancelled` outcome.
+Removing what the store no longer has is asynchronous too, one entry at a
+time with a yield between entries (#653, `sdCardSafety.removeCardEntries`):
+a synchronous recursive delete of kit folders froze the window on a slow
+card. Once every file is written, the write sends a `finalizing` progress
+event, so the dialog leaves the last file's count; Cancel stops between
+removals, and the next write removes the rest. Each card operation (a file
+written, an entry removed) has a watchdog (`cardWatchdog.ts`, 60 s): a card
+whose driver stops responding fails the write with a message saying so,
+instead of leaving it waiting. The pending operation can't be cancelled:
+its thread pool thread returns only when the driver does, and until then
+quitting may wait on it too.
 Converting a file is synchronous CPU work, but short (about 0.1 s for a
 3-minute stereo 24-bit file), so it runs in the main process.
 

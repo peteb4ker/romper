@@ -16,7 +16,13 @@ export interface SyncProgress {
   };
   estimatedTimeRemaining: number;
   filesCompleted: number;
-  status: "complete" | "converting" | "copying" | "error" | "preparing";
+  status:
+    | "complete"
+    | "converting"
+    | "copying"
+    | "error"
+    | "finalizing"
+    | "preparing";
   totalFiles: number;
 }
 
@@ -159,6 +165,27 @@ export class SyncProgressManager {
       estimatedTimeRemaining: this.calculateTimeRemaining(),
       filesCompleted: this.currentSyncJob.completedFiles,
       status: fileOp.operation === "convert" ? "converting" : "copying",
+      totalFiles: this.currentSyncJob.totalFiles,
+    });
+  }
+
+  /**
+   * Every file is written; the write is finishing (bank name files, removing
+   * what the store no longer has, recording the write). Sent at once, so
+   * the dialog moves on from the last file's count while the card is still
+   * being changed (#653).
+   */
+  emitFinalizingProgress(): void {
+    if (!this.currentSyncJob) return;
+
+    this.cancelPendingProgress();
+    this.lastEmitTime = Date.now();
+    this.emitProgress({
+      currentFile: "",
+      elapsedTime: Date.now() - this.currentSyncJob.startTime,
+      estimatedTimeRemaining: 0,
+      filesCompleted: this.currentSyncJob.completedFiles,
+      status: "finalizing",
       totalFiles: this.currentSyncJob.totalFiles,
     });
   }

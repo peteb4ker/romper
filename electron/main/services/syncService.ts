@@ -77,7 +77,9 @@ export interface SyncOptions {
 export interface SyncOutcome {
   /**
    * The user cancelled: writing stopped after the file in progress, and
-   * nothing was removed from the card or marked as synced.
+   * nothing was removed from the card or marked as synced. Cancel during
+   * the removal of what the store no longer has stops after the entry in
+   * progress (#653); the next write removes the rest.
    */
   cancelled: boolean;
   /** Samples that were not written because they failed validation */
@@ -303,14 +305,29 @@ class SyncService {
           success: true,
         };
       }
+      syncProgressManager.emitFinalizingProgress();
+
       // Write bank RTF files to SD card root, from the banks the plan used,
       // so the stale-entry check below keeps exactly these
       this.writeBankRtfFiles(banks, options.sdCardPath);
 
       // The card mirrors the store: delete what the store no longer has.
       // Only after every file is written, so a cancelled or failed sync
-      // never leaves a kit with less than it had.
+      // never leaves a kit with less than it had. Cancel stops between
+      // removals (#653); the next write removes the rest.
       await this.removeStaleEntries(options.sdCardPath, cardContents);
+      if (syncProgressManager.getCurrentSyncJob()?.cancelled) {
+        syncProgressManager.finalizeSyncJob();
+        return {
+          data: {
+            cancelled: true,
+            skippedFiles: validationErrors,
+            syncedFiles,
+            warnings,
+          },
+          success: true,
+        };
+      }
 
       // The card now mirrors the store, so every kit is in step with it,
       // except a kit with a skipped sample or a quarantined kit: each keeps
@@ -340,7 +357,7 @@ class SyncService {
         success: true,
       };
     } catch (error) {
-      this.handleSyncFailure(inMemorySettings, error);
+      await this.handleSyncFailure(inMemorySettings, error);
       syncProgressManager.finalizeSyncJob();
       return {
         error: `Failed to sync kit: ${error instanceof Error ? error.message : String(error)}`,
@@ -398,12 +415,14 @@ class SyncService {
   }
 
   /**
-   * Handle sync failure and cleanup
+   * Handle sync failure and cleanup. The partial output is removed
+   * asynchronously, so a large folder doesn't block the main process
+   * (#653).
    */
-  private handleSyncFailure(
+  private async handleSyncFailure(
     inMemorySettings: Record<string, unknown>,
     _error: unknown,
-  ): void {
+  ): Promise<void> {
     if (syncProgressManager.getCurrentSyncJob()) {
       console.error("Sync failed, attempting cleanup...");
 
@@ -412,10 +431,10 @@ class SyncService {
           ServicePathManager.getLocalStorePath(inMemorySettings);
         if (localStorePath) {
           const syncOutputDir = path.join(localStorePath, "sync_output");
-          if (fs.existsSync(syncOutputDir)) {
-            fs.rmSync(syncOutputDir, { force: true, recursive: true });
-            logger.log("Cleaned up partial sync files");
-          }
+          await fs.promises.rm(syncOutputDir, {
+            force: true,
+            recursive: true,
+          });
         }
       } catch (cleanupError) {
         console.warn("Failed to cleanup partial sync files:", cleanupError);
@@ -578,18 +597,22 @@ class SyncService {
   }
 
   /**
-   * Delete the Rample content on the card that the store no longer has.
+   * Delete the Rample content on the card that the store no longer has,
+   * stopping between entries if the write is cancelled.
    */
   private async removeStaleEntries(
     sdCardPath: string,
     cardContents: CardContents,
   ): Promise<void> {
     const stale = await findStaleCardEntries(sdCardPath, cardContents);
-    removeCardEntries(sdCardPath, stale);
-    if (stale.length > 0) {
+    const removed = await removeCardEntries(sdCardPath, stale, {
+      shouldStop: () =>
+        Boolean(syncProgressManager.getCurrentSyncJob()?.cancelled),
+    });
+    if (removed > 0) {
       logger.log(
-        `Removed ${stale.length} stale entries from the SD card:`,
-        stale,
+        `Removed ${removed} of ${stale.length} stale entries from the SD card:`,
+        stale.slice(0, removed),
       );
     }
   }

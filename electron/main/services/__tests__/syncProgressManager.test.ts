@@ -265,6 +265,30 @@ describe("SyncProgressManager", () => {
     });
   });
 
+  describe("emitFinalizingProgress", () => {
+    it("[UC-34] says the write is finishing, with every file counted (#653)", () => {
+      const mockFiles = [
+        { filename: "a.wav", kitName: "kit1" },
+        { filename: "b.wav", kitName: "kit1" },
+      ] as SyncFileOperation[];
+      syncProgressManager.initializeSyncJob(mockFiles);
+      syncProgressManager.emitFileCompletionProgress(mockFiles[0]);
+      syncProgressManager.emitFileCompletionProgress(mockFiles[1]);
+      mockWebContents.send.mockClear();
+
+      syncProgressManager.emitFinalizingProgress();
+
+      expect(mockWebContents.send).toHaveBeenCalledWith(
+        "sync-progress",
+        expect.objectContaining({
+          filesCompleted: 2,
+          status: "finalizing",
+          totalFiles: 2,
+        }),
+      );
+    });
+  });
+
   describe("emitErrorProgress", () => {
     it("should emit error progress with retry information", () => {
       const mockFiles = [

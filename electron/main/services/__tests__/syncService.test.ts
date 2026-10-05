@@ -433,8 +433,9 @@ describe("[UC-34] SyncService", () => {
         return 0;
       });
       mockFindStaleCardEntries.mockResolvedValueOnce(["B3", "A0/1-02 old.wav"]);
-      mockRemoveCardEntries.mockImplementationOnce(() => {
+      mockRemoveCardEntries.mockImplementationOnce(async () => {
         order.push("remove");
+        return 2;
       });
 
       const result = await syncService.startKitSync(mockSettings, {
@@ -443,10 +444,34 @@ describe("[UC-34] SyncService", () => {
 
       expect(result.success).toBe(true);
       expect(order).toEqual(["write", "remove"]);
-      expect(mockRemoveCardEntries).toHaveBeenCalledWith("/sd/card", [
-        "B3",
-        "A0/1-02 old.wav",
-      ]);
+      expect(mockRemoveCardEntries).toHaveBeenCalledWith(
+        "/sd/card",
+        ["B3", "A0/1-02 old.wav"],
+        { shouldStop: expect.any(Function) },
+      );
+    });
+
+    it("[UC-34] stops removing when the write is cancelled, and records nothing (#653)", async () => {
+      vi.spyOn(syncProgressManager, "emitFinalizingProgress");
+      mockFindStaleCardEntries.mockResolvedValueOnce(["B3", "C4"]);
+      mockRemoveCardEntries.mockImplementationOnce(
+        async (_card, _entries, options) => {
+          // Cancel arrives while the first entry is removed
+          syncService.cancelSync();
+          expect(options?.shouldStop?.()).toBe(true);
+          return 1;
+        },
+      );
+
+      const result = await syncService.startKitSync(mockSettings, {
+        sdCardPath: "/sd/card",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data?.cancelled).toBe(true);
+      // The dialog left the copy count before the card was changed
+      expect(syncProgressManager.emitFinalizingProgress).toHaveBeenCalled();
+      expect(mockMarkKitsAsSynced).not.toHaveBeenCalled();
     });
 
     it("reports a cancelled sync, and removes and marks nothing (RE-07)", async () => {

@@ -1,8 +1,13 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  CARD_OPERATION_TIMEOUT_MS,
+  CardNotRespondingError,
+  cardWatchdogSettings,
+} from "../cardWatchdog";
 import {
   findStaleCardEntries,
   getSdCardDialogDefaultPath,
@@ -217,34 +222,71 @@ describe("[UC-34] sdCardSafety", () => {
   });
 
   describe("removeCardEntries", () => {
-    it("removes the listed files and folders, and nothing else", () => {
+    it("removes the listed files and folders, and nothing else", async () => {
       fs.mkdirSync(path.join(card, "A0", "2"), { recursive: true });
       fs.writeFileSync(path.join(card, "A0", "2", "old.wav"), "x");
       fs.writeFileSync(path.join(card, "A0", "1-01 kick.wav"), "x");
       fs.mkdirSync(path.join(card, "B3"));
       fs.writeFileSync(path.join(card, "B - OLD.rtf"), "x");
 
-      removeCardEntries(card, [path.join("A0", "2"), "B3", "B - OLD.rtf"]);
+      const removed = await removeCardEntries(card, [
+        path.join("A0", "2"),
+        "B3",
+        "B - OLD.rtf",
+      ]);
 
+      expect(removed).toBe(3);
       expect(fs.readdirSync(card)).toEqual(["A0"]);
       expect(fs.readdirSync(path.join(card, "A0"))).toEqual(["1-01 kick.wav"]);
     });
 
     it.skipIf(isWindows)(
       "removes a symlink inside a kit without touching its target",
-      () => {
+      async () => {
         const outside = path.join(root, "outside");
         fs.mkdirSync(outside);
         fs.writeFileSync(path.join(outside, "precious.wav"), "x");
         fs.mkdirSync(path.join(card, "A0"));
         fs.symlinkSync(outside, path.join(card, "A0", "linked"));
 
-        removeCardEntries(card, [path.join("A0", "linked")]);
+        await removeCardEntries(card, [path.join("A0", "linked")]);
 
         expect(fs.existsSync(path.join(card, "A0", "linked"))).toBe(false);
         expect(fs.existsSync(path.join(outside, "precious.wav"))).toBe(true);
       },
     );
+
+    it("reports each removal and stops between entries when told to (#653)", async () => {
+      for (const kit of ["B1", "B2", "B3"]) fs.mkdirSync(path.join(card, kit));
+      const reported: string[] = [];
+
+      const removed = await removeCardEntries(card, ["B1", "B2", "B3"], {
+        onRemoved: (count, total) => reported.push(`${count}/${total}`),
+        shouldStop: () => reported.length === 2,
+      });
+
+      expect(removed).toBe(2);
+      expect(reported).toEqual(["1/3", "2/3"]);
+      expect(fs.readdirSync(card)).toEqual(["B3"]);
+    });
+
+    it("says the card stopped responding when a removal never finishes (#653)", async () => {
+      fs.mkdirSync(path.join(card, "B1"));
+      const rm = vi
+        .spyOn(fs.promises, "rm")
+        .mockReturnValue(new Promise<void>(() => undefined));
+      cardWatchdogSettings.timeoutMs = 20;
+      try {
+        await expect(removeCardEntries(card, ["B1", "B2"])).rejects.toThrow(
+          CardNotRespondingError,
+        );
+        // It gave up on the first entry and didn't start the next
+        expect(rm).toHaveBeenCalledTimes(1);
+      } finally {
+        cardWatchdogSettings.timeoutMs = CARD_OPERATION_TIMEOUT_MS;
+        rm.mockRestore();
+      }
+    });
   });
 
   describe("getSdCardDialogDefaultPath", () => {

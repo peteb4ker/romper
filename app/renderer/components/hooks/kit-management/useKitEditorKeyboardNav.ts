@@ -5,6 +5,7 @@ import React from "react";
 import {
   hasCommandModifier,
   isFavoriteKey,
+  usesSpaceItself,
 } from "../../../utils/keyboardShortcuts";
 import { isModalDialogOpen } from "../../../utils/modalDialog";
 
@@ -36,7 +37,8 @@ interface UseKitEditorKeyboardNavParams {
 /**
  * Global keyboard shortcuts for the kit editor: kit navigation (, .),
  * scanning (/), sequencer toggle (s), favorite (;), and sample navigation/preview
- * (arrows + space) while the sequencer is closed.
+ * (arrows + space) while the sequencer is closed. Space on a focused button
+ * or field is the control's, not the preview's.
  */
 export function useKitEditorKeyboardNav({
   isEditable,
@@ -106,14 +108,7 @@ export function useKitEditorKeyboardNav({
       }
       // Only handle navigation keys for sample nav if sequencer is closed
       // Enter key removed to prevent conflicts with kit name editing.
-      // A key something else already handled is left alone: Space on a
-      // focused sample row is the voice panel list's, and playing it here
-      // too started the sample twice (#505)
-      if (
-        !sequencerOpen &&
-        !e.defaultPrevented &&
-        [" ", "ArrowDown", "ArrowUp"].includes(e.key)
-      ) {
+      if (!sequencerOpen && isSampleNavKey(e)) {
         e.preventDefault();
         handleSampleNavKey(e.key, {
           onPlaySample,
@@ -160,6 +155,23 @@ function handleSampleNavKey(key: string, params: SampleNavParams): void {
   if (sample) {
     params.onPlaySample(params.selectedVoice, params.selectedSampleIdx);
   }
+}
+
+/**
+ * Whether the arrows or Space drive the sample list. A key something else
+ * already handled is left alone: Space on a focused sample row is the voice
+ * panel list's, and playing it here too started the sample twice (#505).
+ * Space on a focused button, checkbox or field presses that control instead
+ * of playing the selected sample (#613).
+ */
+function isSampleNavKey(e: KeyboardEvent): boolean {
+  if (e.defaultPrevented) {
+    return false;
+  }
+  if (e.key === " ") {
+    return !usesSpaceItself(e.target);
+  }
+  return e.key === "ArrowDown" || e.key === "ArrowUp";
 }
 
 /** True when focus is in a text-entry field, where shortcuts must not fire. */

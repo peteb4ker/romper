@@ -265,6 +265,57 @@ describe("useKitEditorKeyboardNav", () => {
       expect(e.preventDefault).not.toHaveBeenCalled();
     });
 
+    // #613: Space on a focused control is the control's
+    describe("[UC-29] Space on a focused control", () => {
+      const make = (tag: string, attrs: Record<string, string> = {}) => {
+        const el = document.createElement(tag);
+        for (const [name, value] of Object.entries(attrs)) {
+          el.setAttribute(name, value);
+        }
+        return el;
+      };
+
+      it.each([
+        ["a button", () => make("button")],
+        ["a checkbox", () => make("input", { type: "checkbox" })],
+        ["a select", () => make("select")],
+        ["a role=button element", () => make("div", { role: "button" })],
+        ["a role=switch element", () => make("div", { role: "switch" })],
+      ])("leaves Space on %s to it", (_label, target) => {
+        const { fire, props } = setup();
+        const e = fire(" ", { target: target() });
+        expect(props.onPlaySample).not.toHaveBeenCalled();
+        expect(e.preventDefault).not.toHaveBeenCalled();
+      });
+
+      it("leaves Space typed in a contenteditable element to it", () => {
+        const { fire, props } = setup();
+        const div = make("div");
+        Object.defineProperty(div, "isContentEditable", {
+          configurable: true,
+          value: true,
+        });
+        fire(" ", { target: div });
+        expect(props.onPlaySample).not.toHaveBeenCalled();
+      });
+
+      it.each([
+        ["the page", () => document.body],
+        ["a sample row", () => make("li", { role: "option" })],
+      ])("plays the selected sample for Space on %s", (_label, target) => {
+        const { fire, props } = setup();
+        const e = fire(" ", { target: target() });
+        expect(props.onPlaySample).toHaveBeenCalledWith(1, 0);
+        expect(e.preventDefault).toHaveBeenCalled();
+      });
+
+      it("still moves the selection with the arrows from a button", () => {
+        const { fire, props } = setup();
+        fire("ArrowDown", { target: make("button") });
+        expect(props.onSampleKeyNav).toHaveBeenCalledWith("down");
+      });
+    });
+
     it("Space is a no-op when the slot is empty", () => {
       const { fire, props } = setup({ samples: { 1: [] } });
       fire(" ");

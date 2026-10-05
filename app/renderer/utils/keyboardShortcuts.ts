@@ -25,3 +25,33 @@ export function isFavoriteKey(
 ): boolean {
   return !hasCommandModifier(e) && e.key === ";";
 }
+
+/** ARIA roles whose widgets take Space themselves, as a native button does. */
+const SPACE_ROLES = new Set([
+  "button",
+  "checkbox",
+  "menuitem",
+  "radio",
+  "switch",
+  "tab",
+]);
+
+/**
+ * True when Space on this element does something of its own: presses a
+ * button, ticks a box, opens a select or types a space. A window-level
+ * Space shortcut, such as the kit editor's "play the selected sample",
+ * leaves these presses to the control (#613).
+ */
+export function usesSpaceItself(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el?.tagName) {
+    return false;
+  }
+  if (["BUTTON", "INPUT", "SELECT", "TEXTAREA"].includes(el.tagName)) {
+    return true;
+  }
+  if (el.isContentEditable) {
+    return true;
+  }
+  return SPACE_ROLES.has(el.getAttribute("role") ?? "");
+}

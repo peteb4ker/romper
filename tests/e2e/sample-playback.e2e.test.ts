@@ -265,6 +265,21 @@ test.describe("[UC-29] Play a sample", () => {
     expect((await readProbe(window)).sounds).toHaveLength(0);
   });
 
+  test("Space on a focused button presses it and plays nothing (#613)", async () => {
+    const snare = slot(2, "2_snare.wav", 1);
+    await waitForAudio(snare, 2, 1);
+    await snare.click();
+    await expect(snare).toHaveAttribute("aria-selected", "true");
+
+    await window.getByTitle("Enable editable mode").focus();
+    await window.keyboard.press("Space");
+
+    await expect(window.getByTitle("Disable editable mode")).toBeVisible();
+    // Give a stray start time to show up
+    await window.waitForTimeout(500);
+    expect((await readProbe(window)).sounds).toHaveLength(0);
+  });
+
   test("starting a second sample on a voice stops the first (voice choke)", async () => {
     await window.getByTitle("Enable editable mode").click();
     await window.waitForSelector('[data-testid="drop-zone-voice-3"]');

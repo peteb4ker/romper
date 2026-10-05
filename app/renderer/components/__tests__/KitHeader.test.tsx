@@ -3,6 +3,7 @@ import type { Kit } from "@romper/shared/db/schema";
 // Test suite for KitHeader component
 import { fireEvent, render, screen } from "@testing-library/react";
 import { cleanup } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -120,6 +121,84 @@ describe("KitHeader", () => {
       const { onPlaySample } = setup();
       fireEvent.keyDown(document.body, { key: " " });
       expect(onPlaySample).toHaveBeenCalledWith(1, 0);
+    });
+  });
+
+  // #613: Space on any focused header button played the selected sample and
+  // cancelled the button's own Space press
+  describe("[UC-29] Space on the header's buttons", () => {
+    const HeaderWithShortcuts = (
+      props: Readonly<{
+        handlers: Pick<
+          typeof baseProps,
+          | "onBack"
+          | "onNextKit"
+          | "onPrevKit"
+          | "onScanKit"
+          | "onToggleEditableMode"
+        >;
+        onPlaySample: (voice: number, slot: number) => void;
+      }>,
+    ) => {
+      useKitEditorKeyboardNav({
+        isEditable: false,
+        onInferVoiceNames: vi.fn(),
+        onPlaySample: props.onPlaySample,
+        onSampleKeyNav: vi.fn(),
+        onScanKit: vi.fn(),
+        samples: { 1: ["kick.wav"] },
+        selectedSampleIdx: 0,
+        selectedVoice: 1,
+        sequencerOpen: false,
+        setSequencerOpen: vi.fn(),
+      });
+      return <KitHeader {...baseProps} {...props.handlers} />;
+    };
+
+    const setup = () => {
+      const handlers = {
+        onBack: vi.fn(),
+        onNextKit: vi.fn(),
+        onPrevKit: vi.fn(),
+        onScanKit: vi.fn(),
+        onToggleEditableMode: vi.fn(),
+      };
+      const onPlaySample = vi.fn();
+      render(
+        <HeaderWithShortcuts handlers={handlers} onPlaySample={onPlaySample} />,
+      );
+      return { handlers, onPlaySample, user: userEvent.setup() };
+    };
+
+    it.each([
+      ["the editable toggle", /^Enable editable mode$/, "onToggleEditableMode"],
+      ["Scan Kit", /^Perform comprehensive kit scan/, "onScanKit"],
+      ["Back", /^Back$/, "onBack"],
+      ["the previous kit button", /^Previous Kit/, "onPrevKit"],
+      ["the next kit button", /^Next Kit/, "onNextKit"],
+    ] as const)(
+      "Space presses %s and plays nothing",
+      async (_label, title, handler) => {
+        const { handlers, onPlaySample, user } = setup();
+        screen.getByTitle(title).focus();
+
+        await user.keyboard(" ");
+
+        expect(handlers[handler]).toHaveBeenCalledTimes(1);
+        expect(onPlaySample).not.toHaveBeenCalled();
+      },
+    );
+
+    it("Space with nothing focused still plays the selected sample", async () => {
+      const { handlers, onPlaySample, user } = setup();
+      (document.activeElement as HTMLElement | null)?.blur();
+
+      await user.keyboard(" ");
+
+      expect(onPlaySample).toHaveBeenCalledWith(1, 0);
+      for (const handler of Object.values(handlers)) {
+        expect(handler).not.toHaveBeenCalled();
+      }
     });
   });
 

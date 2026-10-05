@@ -11,6 +11,7 @@ import {
 import { cardFileMatches } from "../cardFileMatch.js";
 import { convertToRampleDefault } from "../formatConverter.js";
 import { withCardWatchdog } from "./cardWatchdog.js";
+import { removeAppleDoubleCompanion } from "./sdCardSafety.js";
 import { syncProgressManager } from "./syncProgressManager.js";
 import {
   type SyncValidationError,
@@ -177,6 +178,7 @@ export class SyncFileOperationsService {
       (async () => {
         await this.ensureDestinationDirectory(fileOp.destinationPath);
         await this.executeFileOperation(fileOp, inMemorySettings);
+        await removeAppleDoubleCompanion(fileOp.destinationPath);
       })(),
     );
 

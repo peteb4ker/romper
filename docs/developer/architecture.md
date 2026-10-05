@@ -319,6 +319,15 @@ whose driver stops responding fails the write with a message saying so,
 instead of leaving it waiting. The pending operation can't be cancelled:
 its thread pool thread returns only when the driver does, and until then
 quitting may wait on it too.
+
+On a FAT or exFAT card, macOS keeps extended attributes in an AppleDouble
+file (`._<name>`) beside each file. It tags every file a downloaded app
+creates with `com.apple.provenance`, which can't be removed, so every
+sample written gets a `._` file whatever the copy method. The write
+removes it as each file is written (`removeAppleDoubleCompanion`), and the
+stale-entry check still lists any other `._` file in a kit folder. macOS's
+own folders at the card root (`.fseventsd`, `.Spotlight-V100`, `.Trashes`)
+aren't Rample content and are left alone.
 Converting a file is synchronous CPU work, but short (about 0.1 s for a
 3-minute stereo 24-bit file), so it runs in the main process.
 

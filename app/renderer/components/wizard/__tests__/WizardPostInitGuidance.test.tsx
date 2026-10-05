@@ -27,10 +27,24 @@ describe("WizardPostInitGuidance", () => {
     );
   });
 
-  it("renders truncation warnings when provided", () => {
+  it("[UC-01] lists each voice over 12 with the files it left out (#518)", () => {
     const warnings = [
-      { kept: 12, kitName: "A0", skipped: 3, total: 15, voiceNumber: 1 },
-      { kept: 12, kitName: "B1", skipped: 5, total: 17, voiceNumber: 2 },
+      {
+        kept: 12,
+        kitName: "A0",
+        skipped: 1,
+        skippedFiles: ["1 Kick 13.wav"],
+        total: 13,
+        voiceNumber: 1,
+      },
+      {
+        kept: 12,
+        kitName: "B1",
+        skipped: 2,
+        skippedFiles: ["2 Snare 13.wav", "2 Snare 14.wav"],
+        total: 14,
+        voiceNumber: 2,
+      },
     ];
     render(
       <WizardPostInitGuidance
@@ -40,10 +54,23 @@ describe("WizardPostInitGuidance", () => {
       />,
     );
     expect(screen.getByTestId("truncation-warnings")).toBeInTheDocument();
-    const items = screen.getAllByRole("listitem");
-    expect(items).toHaveLength(2);
-    expect(items[0].textContent).toContain("A0");
-    expect(items[1].textContent).toContain("B1");
+    const voices = screen.getAllByTestId("truncation-warning");
+    expect(voices).toHaveLength(2);
+    expect(
+      voices.map(
+        (v) => within(v).getByTestId("truncation-warning-summary").textContent,
+      ),
+    ).toEqual([
+      "Kit A0, Voice 1: 1 of 13 samples skipped (kept first 12):",
+      "Kit B1, Voice 2: 2 of 14 samples skipped (kept first 12):",
+    ]);
+    expect(
+      voices.map((v) =>
+        within(within(v).getByTestId("truncation-warning-files"))
+          .getAllByRole("listitem")
+          .map((li) => li.textContent),
+      ),
+    ).toEqual([["1 Kick 13.wav"], ["2 Snare 13.wav", "2 Snare 14.wav"]]);
   });
 
   it("does not render truncation warnings when empty", () => {
@@ -102,7 +129,14 @@ describe("WizardPostInitGuidance", () => {
 
   it("renders both blank folder guidance and warnings together", () => {
     const warnings = [
-      { kept: 12, kitName: "C2", skipped: 1, total: 13, voiceNumber: 3 },
+      {
+        kept: 12,
+        kitName: "C2",
+        skipped: 1,
+        skippedFiles: ["3 Hat 13.wav"],
+        total: 13,
+        voiceNumber: 3,
+      },
     ];
     render(
       <WizardPostInitGuidance

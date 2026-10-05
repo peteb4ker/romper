@@ -225,10 +225,11 @@ test.describe("[UC-01] Set up from an SD card", () => {
     await expect(notice).toContainText(
       "Some samples were skipped (max 12 per voice)",
     );
-    await expect(notice.locator("li")).toHaveCount(1);
-    await expect(notice.locator("li")).toHaveText(
-      "Kit A0, Voice 1: 1 of 13 samples skipped (kept first 12)",
-    );
+    const voices = notice.locator('[data-testid="truncation-warning"]');
+    await expect(voices).toHaveCount(1);
+    await expect(
+      voices.locator('[data-testid="truncation-warning-summary"]'),
+    ).toHaveText("Kit A0, Voice 1: 1 of 13 samples skipped (kept first 12):");
     await expect(
       guidance.locator('[data-testid="blank-folder-guidance"]'),
     ).toHaveCount(0);
@@ -406,9 +407,6 @@ test.describe("[UC-01] Set up from an SD card", () => {
   });
 
   test("the notice names the files it left out (#518)", async () => {
-    // UC-01 says the wizard names the files it left out; the notice gives
-    // counts only. Remove this line when #518 is fixed.
-    test.fail();
     test.setTimeout(45000);
     const card = await tempDir("romper-e2e-card-");
     for (let i = 1; i <= 14; i++) {
@@ -418,7 +416,8 @@ test.describe("[UC-01] Set up from an SD card", () => {
 
     const notice = guidance.locator('[data-testid="truncation-warnings"]');
     await expect(notice).toContainText("2 of 14 samples skipped");
-    await expect(notice).toContainText(kickName(13));
-    await expect(notice).toContainText(kickName(14));
+    await expect(
+      notice.locator('[data-testid="truncation-warning-files"] li'),
+    ).toHaveText([kickName(13), kickName(14)]);
   });
 });

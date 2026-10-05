@@ -178,13 +178,23 @@ describe("LocalStoreWizardUI", () => {
         },
       });
 
-    it("names the samples left out when a voice had more than 12", async () => {
+    it("[UC-01] names the samples left out when a voice had more than 12 (#518)", async () => {
       vi.resetModules();
       const onSuccess = vi.fn();
       const mockHook = readyToInitialize(async () => ({
         success: true,
         truncationWarnings: [
-          { kept: 12, kitName: "S62", skipped: 6, total: 18, voiceNumber: 2 },
+          {
+            kept: 12,
+            kitName: "S62",
+            skipped: 6,
+            skippedFiles: Array.from(
+              { length: 6 },
+              (_, i) => `2 tom ${i + 13}.wav`,
+            ),
+            total: 18,
+            voiceNumber: 2,
+          },
         ],
       }));
       vi.doMock("../hooks/wizard/useLocalStoreWizard", () => ({
@@ -199,6 +209,8 @@ describe("LocalStoreWizardUI", () => {
       const notice = await screen.findByTestId("truncation-warnings");
       expect(notice).toHaveTextContent("S62");
       expect(notice).toHaveTextContent("6 of 18 samples skipped");
+      expect(notice).toHaveTextContent("2 tom 13.wav");
+      expect(notice).toHaveTextContent("2 tom 18.wav");
       expect(onSuccess).not.toHaveBeenCalled();
     });
 

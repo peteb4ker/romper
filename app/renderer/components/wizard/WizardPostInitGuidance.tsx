@@ -37,10 +37,23 @@ const WizardPostInitGuidance: React.FC<WizardPostInitGuidanceProps> =
               </p>
               <ul className="text-sm space-y-1">
                 {truncationWarnings.map((w) => (
-                  <li key={`${w.kitName}-${w.voiceNumber}`}>
-                    Kit <strong>{w.kitName}</strong>, Voice {w.voiceNumber}:{" "}
-                    {w.skipped} of {w.total} samples skipped (kept first{" "}
-                    {w.kept})
+                  <li
+                    data-testid="truncation-warning"
+                    key={`${w.kitName}-${w.voiceNumber}`}
+                  >
+                    <span data-testid="truncation-warning-summary">
+                      Kit <strong>{w.kitName}</strong>, Voice {w.voiceNumber}:{" "}
+                      {w.skipped} of {w.total} samples skipped (kept first{" "}
+                      {w.kept}):
+                    </span>
+                    <ul
+                      className="list-disc pl-5 break-all"
+                      data-testid="truncation-warning-files"
+                    >
+                      {w.skippedFiles.map((filename) => (
+                        <li key={filename}>{filename}</li>
+                      ))}
+                    </ul>
                   </li>
                 ))}
               </ul>

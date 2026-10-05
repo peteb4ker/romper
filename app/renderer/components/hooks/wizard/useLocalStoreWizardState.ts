@@ -38,6 +38,8 @@ export interface TruncationWarning {
   kept: number;
   kitName: string;
   skipped: number;
+  /** The files left out, in the order the scan met them (#518) */
+  skippedFiles: string[];
   total: number;
   voiceNumber: number;
 }

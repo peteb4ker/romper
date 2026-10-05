@@ -206,6 +206,7 @@ describe("useLocalStoreWizard", () => {
           kept: 12,
           kitName: "A0",
           skipped: 1,
+          skippedFiles: ["1 kick 13.wav"],
           total: 13,
           voiceNumber: 1,
         }),

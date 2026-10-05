@@ -569,7 +569,7 @@ describe("useLocalStoreWizardFileOps", () => {
     });
     // RE-34: main imports each kit; its "voice full" skips become the
     // wizard's notice, one line per voice
-    it("[UC-02] turns main's voice-full skips into one warning per voice", async () => {
+    it("[UC-01] [UC-02] turns main's voice-full skips into one warning per voice, naming the files (#518)", async () => {
       mockApi.listFilesInRoot = vi.fn().mockResolvedValue(["S62"]);
       const runSteps = vi.fn(
         async ({
@@ -616,7 +616,17 @@ describe("useLocalStoreWizardFileOps", () => {
         "S62",
       );
       expect(dbResult.truncationWarnings).toEqual([
-        { kept: 12, kitName: "S62", skipped: 6, total: 18, voiceNumber: 2 },
+        {
+          kept: 12,
+          kitName: "S62",
+          skipped: 6,
+          skippedFiles: Array.from(
+            { length: 6 },
+            (_, i) => `2 tom ${i + 13}.wav`,
+          ),
+          total: 18,
+          voiceNumber: 2,
+        },
       ]);
     });
   });

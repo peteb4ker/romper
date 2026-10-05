@@ -258,26 +258,29 @@ function stereoImportNotices(
   }));
 }
 
-/** One warning per voice that had more files than its 12 slots */
+/**
+ * One warning per voice that had more files than its 12 slots, naming the
+ * files it left out (#518)
+ */
 function voiceFullWarnings(
   kitName: string,
   result: KitScanResult,
 ): TruncationWarning[] {
-  const skippedByVoice = new Map<number, number>();
+  const skippedByVoice = new Map<number, string[]>();
   for (const file of result.skippedFiles) {
     if (file.reason !== "voice_full") continue;
-    skippedByVoice.set(
-      file.voiceNumber,
-      (skippedByVoice.get(file.voiceNumber) ?? 0) + 1,
-    );
+    const names = skippedByVoice.get(file.voiceNumber) ?? [];
+    names.push(file.filename);
+    skippedByVoice.set(file.voiceNumber, names);
   }
   return [...skippedByVoice]
     .sort(([a], [b]) => a - b)
-    .map(([voiceNumber, skipped]) => ({
+    .map(([voiceNumber, skippedFiles]) => ({
       kept: 12,
       kitName,
-      skipped,
-      total: 12 + skipped,
+      skipped: skippedFiles.length,
+      skippedFiles,
+      total: 12 + skippedFiles.length,
       voiceNumber,
     }));
 }

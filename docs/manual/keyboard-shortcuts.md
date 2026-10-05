@@ -31,7 +31,7 @@ When you press a bank letter, focus jumps to the first kit in that bank. Letters
 | Next kit | `.` (period) |
 | Scan/rescan kit | `/` (slash) |
 | Navigate sample slots | Up / Down arrows |
-| Play selected sample (sequencer hidden) | `Space` |
+| Play selected sample (sequencer hidden), unless a button or field has focus | `Space` |
 | Toggle step sequencer | `S` |
 | Add the open kit to favorites, or remove it | `;` (semicolon) |
 | Undo / redo the last edit | `Cmd+Z` / `Cmd+Shift+Z` (macOS), `Ctrl+Z` / `Ctrl+Y` or `Ctrl+Shift+Z` (Windows/Linux) |

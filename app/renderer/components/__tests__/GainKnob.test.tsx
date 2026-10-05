@@ -175,6 +175,58 @@ describe("[UC-24] GainKnob", () => {
     });
   });
 
+  describe("[UC-07] an unknown gain (#628)", () => {
+    it("shows – instead of a gain, and is disabled", () => {
+      render(<GainKnob onChange={vi.fn()} value={null} />);
+
+      const slider = screen.getByRole("slider");
+      expect(slider).toHaveAttribute("aria-label", "Gain: –");
+      expect(slider).toHaveAttribute("aria-valuetext", "–");
+      expect(slider).not.toHaveAttribute("aria-valuenow");
+      expect(slider).toHaveAttribute("aria-disabled", "true");
+      expect(slider).toHaveAttribute("tabindex", "-1");
+      // No value arc or dot to read as 0 dB
+      expect(slider.querySelector("circle")).toBeNull();
+      expect(slider.querySelectorAll("path")).toHaveLength(1);
+    });
+
+    it("shows – on hover", () => {
+      render(<GainKnob onChange={vi.fn()} value={null} />);
+
+      fireEvent.mouseEnter(screen.getByRole("presentation"));
+
+      expect(screen.getByText("–")).toBeInTheDocument();
+      expect(screen.queryByText("0 dB")).not.toBeInTheDocument();
+    });
+
+    it("can't be turned", () => {
+      const onChange = vi.fn();
+      render(<GainKnob onChange={onChange} value={null} />);
+      const slider = screen.getByRole("slider");
+
+      fireEvent.wheel(slider, { deltaY: -100 });
+      fireEvent.keyDown(slider, { key: "ArrowUp" });
+      fireEvent.click(slider);
+      fireEvent.mouseDown(slider, { clientY: 100 });
+      fireEvent.mouseMove(globalThis.window, { clientY: 50 });
+      fireEvent.mouseUp(globalThis.window);
+
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it("shows the gain again once it's known", () => {
+      const { rerender } = render(<GainKnob onChange={vi.fn()} value={null} />);
+
+      rerender(<GainKnob onChange={vi.fn()} value={-3} />);
+
+      const slider = screen.getByRole("slider");
+      expect(slider).toHaveAttribute("aria-label", "Gain: -3 dB");
+      expect(slider).toHaveAttribute("aria-valuenow", "-3");
+      expect(slider).not.toHaveAttribute("aria-disabled");
+      expect(slider).toHaveAttribute("tabindex", "0");
+    });
+  });
+
   describe("SVG dimensions", () => {
     it("renders SVG with correct width and height", () => {
       render(<GainKnob {...defaultProps} />);

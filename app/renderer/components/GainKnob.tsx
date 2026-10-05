@@ -11,7 +11,8 @@ const PAGE_STEP_DB = 6; // Page Up / Page Down
 interface GainKnobProps {
   disabled?: boolean;
   onChange: (db: number) => void;
-  value: number;
+  /** The gain in dB, or null if it isn't known: the knob shows "–" and is disabled (#628) */
+  value: null | number;
 }
 
 /** Gain change for a key on the focused knob, or null if it isn't one. */
@@ -83,8 +84,14 @@ function polarToCart(
   return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) };
 }
 
-const GainKnob: React.FC<GainKnobProps> = ({ disabled, onChange, value }) => {
-  const [localDb, setLocalDb] = useState(value);
+const GainKnob: React.FC<GainKnobProps> = ({
+  disabled: disabledProp,
+  onChange,
+  value,
+}) => {
+  const unknown = value === null;
+  const disabled = disabledProp || unknown;
+  const [localDb, setLocalDb] = useState(value ?? 0);
   const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -94,7 +101,7 @@ const GainKnob: React.FC<GainKnobProps> = ({ disabled, onChange, value }) => {
 
   // Sync local state when prop changes (e.g. kit reload)
   useEffect(() => {
-    setLocalDb(value);
+    setLocalDb(value ?? 0);
   }, [value]);
 
   const clampDb = (db: number) => Math.max(MIN_DB, Math.min(MAX_DB, db));
@@ -198,6 +205,7 @@ const GainKnob: React.FC<GainKnobProps> = ({ disabled, onChange, value }) => {
   const dotY = cy - r * Math.sin(dotRad);
 
   const color = "var(--text-secondary)";
+  const shownDb = unknown ? "–" : formatDb(localDb);
 
   return (
     <div
@@ -209,11 +217,11 @@ const GainKnob: React.FC<GainKnobProps> = ({ disabled, onChange, value }) => {
     >
       <svg
         aria-disabled={disabled || undefined}
-        aria-label={`Gain: ${formatDb(localDb)}`}
+        aria-label={`Gain: ${shownDb}`}
         aria-valuemax={MAX_DB}
         aria-valuemin={MIN_DB}
-        aria-valuenow={localDb}
-        aria-valuetext={formatDb(localDb)}
+        aria-valuenow={unknown ? undefined : localDb}
+        aria-valuetext={shownDb}
         className="transition-transform duration-150 ease-out rounded-full focus:outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-accent-primary"
         height={20}
         onBlur={() => setIsFocused(false)}
@@ -242,8 +250,8 @@ const GainKnob: React.FC<GainKnobProps> = ({ disabled, onChange, value }) => {
           strokeLinecap="round"
           strokeWidth={2}
         />
-        {/* Value arc */}
-        {valArc && (
+        {/* Value arc; an unknown gain has none, and no dot */}
+        {valArc && !unknown && (
           <path
             d={valArc}
             fill="none"
@@ -253,7 +261,7 @@ const GainKnob: React.FC<GainKnobProps> = ({ disabled, onChange, value }) => {
           />
         )}
         {/* Dot indicator */}
-        <circle cx={dotX} cy={dotY} fill={color} r={1.5} />
+        {!unknown && <circle cx={dotX} cy={dotY} fill={color} r={1.5} />}
         {/* Unity mark (tiny tick at 12 o'clock for 0 dB reference) */}
         {!active && (
           <line
@@ -272,7 +280,7 @@ const GainKnob: React.FC<GainKnobProps> = ({ disabled, onChange, value }) => {
           className="absolute left-full ml-2 top-1/2 -translate-y-1/2 text-text-primary font-mono font-medium leading-none pointer-events-none select-none whitespace-nowrap bg-surface-2 border border-border-default rounded px-1.5 py-0.5"
           style={{ fontSize: 11 }}
         >
-          {formatDb(localDb)}
+          {shownDb}
         </span>
       )}
     </div>

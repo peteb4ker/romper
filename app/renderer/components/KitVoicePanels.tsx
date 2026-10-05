@@ -21,6 +21,7 @@ import React, { useId, useState } from "react";
 
 import type { PlayOptions, SampleData, VoiceSamples } from "./kitTypes";
 
+import { samplesFailedMessage } from "../utils/kitLoadMessages";
 import { slotKey } from "../utils/slotKey";
 import { useKitVoicePanels } from "./hooks/kit-management/useKitVoicePanels";
 import { useStereoHandling } from "./hooks/sample-management/useStereoHandling";
@@ -85,8 +86,24 @@ interface KitVoicePanelsProps {
   stopTriggers: { [key: string]: number }; // Used by useKitVoicePanels hook
 }
 
+/**
+ * A kit's sample details (gain, WAV header) per slot, keyed by slotKey(voice,
+ * slot), as last read from main. Not by file name: two slots can hold files
+ * with the same name, and each has its own gain (RE-45). They belong to one
+ * kit, so they never show on another (#628).
+ */
+type SampleDetails =
+  | {
+      kitName: string;
+      metadata: { [slotKey: string]: SampleData };
+      status: "loaded";
+    }
+  | { kitName: string; status: "failed" };
+
 /** Main refused a link or unlink; its message says why (#541, RE-71) */
 class StereoRefusal extends Error {}
+
+const NO_METADATA: { [slotKey: string]: SampleData } = {};
 
 /** A gain as the knob shows it: "+3 dB", "0 dB", "-6 dB" */
 function formatGain(db: number): string {
@@ -105,12 +122,16 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   // Stereo handling hook for voice linking
   const stereoHandling = useStereoHandling();
 
-  // Sample metadata (gain, WAV header) per slot, keyed by slotKey(voice,
-  // slot). Not by file name: two slots can hold files with the same name,
-  // and each has its own gain (RE-45).
-  const [sampleMetadata, setSampleMetadata] = useState<{
-    [slotKey: string]: SampleData;
-  }>({});
+  // The details on screen are this kit's, once they're read. Until then,
+  // or if they can't be, the gains are unknown (#628).
+  const [sampleDetails, setSampleDetails] = useState<null | SampleDetails>(
+    null,
+  );
+  const kitDetails =
+    sampleDetails?.kitName === hookProps.kitName ? sampleDetails : null;
+  const sampleMetadata =
+    kitDetails?.status === "loaded" ? kitDetails.metadata : NO_METADATA;
+  const gainsUnknown = kitDetails?.status !== "loaded";
   // Gain saves; reset when the metadata is reloaded from main (RE-91)
   const { reset: resetGainSaves, save: saveGain } = useSettingSave<
     string,
@@ -447,19 +468,32 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     [hookProps.kitName, reloadKitAfterCheck],
   );
 
-  // Load sample metadata when kit changes
+  // Load sample metadata when kit changes. If it can't be read, the kit's
+  // gains are unknown and the user is told; reopening the kit reads it
+  // again (#628).
+  const reportLoadFailure = React.useRef(props.onMessage);
+  reportLoadFailure.current = props.onMessage;
   React.useEffect(() => {
+    const kitName = hookProps.kitName;
+    // A read for a kit that's no longer on screen is dropped
+    let current = true;
+    const loadFailed = () => {
+      if (!current) return;
+      setSampleDetails({ kitName, status: "failed" });
+      resetGainSaves();
+      reportLoadFailure.current?.(samplesFailedMessage(kitName), "error");
+    };
     const loadSampleMetadata = async () => {
-      if (!hookProps.kitName || !globalThis.electronAPI?.getAllSamplesForKit) {
-        setSampleMetadata({});
+      if (!kitName) {
+        setSampleDetails({ kitName, metadata: {}, status: "loaded" });
         return;
       }
 
       try {
-        const samplesResult = await globalThis.electronAPI.getAllSamplesForKit(
-          hookProps.kitName,
-        );
+        const samplesResult =
+          await globalThis.electronAPI?.getAllSamplesForKit?.(kitName);
         if (samplesResult?.success && samplesResult.data) {
+          if (!current) return;
           const metadata: { [slotKey: string]: SampleData } = {};
           samplesResult.data.forEach((sample: Sample) => {
             metadata[slotKey(sample.voice_number, sample.slot_number)] = {
@@ -475,17 +509,28 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
               wav_sample_rate: sample.wav_sample_rate ?? undefined,
             };
           });
-          setSampleMetadata(metadata);
+          setSampleDetails({ kitName, metadata, status: "loaded" });
           resetGainSaves();
           void checkSampleFilesOnce(samplesResult.data);
+        } else {
+          // A failure result clears the last kit's details too, as a
+          // throw does, and so does no answer at all
+          console.error(
+            "Failed to load sample metadata:",
+            samplesResult?.error ?? "no answer",
+          );
+          loadFailed();
         }
       } catch (error) {
         console.error("Failed to load sample metadata:", error);
-        setSampleMetadata({});
+        loadFailed();
       }
     };
 
     void loadSampleMetadata();
+    return () => {
+      current = false;
+    };
   }, [hookProps.kitName, props.kit, resetGainSaves, checkSampleFilesOnce]);
 
   // Optimistic update for gain changes so SampleWaveform gets the new
@@ -498,10 +543,13 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   const kitRef = React.useRef(hookProps.kitName);
   kitRef.current = hookProps.kitName;
   const setSlotGain = React.useCallback((key: string, gainDb: number) => {
-    setSampleMetadata((prev) => {
-      const existing = prev[key];
-      if (!existing) return prev;
-      return { ...prev, [key]: { ...existing, gain_db: gainDb } };
+    setSampleDetails((prev) => {
+      const existing = prev?.status === "loaded" ? prev.metadata[key] : null;
+      if (prev?.status !== "loaded" || !existing) return prev;
+      return {
+        ...prev,
+        metadata: { ...prev.metadata, [key]: { ...existing, gain_db: gainDb } },
+      };
     });
   }, []);
   const handleGainChange = React.useCallback(
@@ -683,6 +731,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                 {!deferredSecondaries.has(voice) && (
                   <KitVoicePanel
                     dataTestIdVoiceName={`voice-name-${voice}`}
+                    gainsUnknown={gainsUnknown}
                     isActive={voice === hookProps.selectedVoice}
                     isDisabled={isSecondary}
                     isEditable={props.isEditable ?? false}

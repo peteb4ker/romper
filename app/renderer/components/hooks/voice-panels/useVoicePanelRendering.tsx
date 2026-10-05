@@ -21,6 +21,8 @@ export interface UseVoicePanelRenderingOptions {
     handleInternalDragOver: (e: React.DragEvent, slotNumber: number) => void;
     handleInternalDrop: (e: React.DragEvent, slotNumber: number) => void;
   };
+  /** The kit's sample details couldn't be read, or not yet: gains are unknown (#628) */
+  gainsUnknown?: boolean;
   isActive: boolean;
   isEditable: boolean;
   isLinkedPrimary?: boolean;
@@ -110,6 +112,7 @@ export interface UseVoicePanelRenderingOptions {
  */
 export function useVoicePanelRendering({
   dragAndDropHook,
+  gainsUnknown,
   isActive,
   isEditable,
   isLinkedPrimary,
@@ -149,6 +152,7 @@ export function useVoicePanelRendering({
   // Slot rendering functions hook
   const slots = useVoicePanelSlots({
     dragAndDropHook,
+    gainsUnknown,
     isActive,
     isEditable,
     isLinkedPrimary,

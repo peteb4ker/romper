@@ -27,6 +27,7 @@ export interface UseVoicePanelSlotsOptions extends BaseVoicePanelOptions {
  */
 export function useVoicePanelSlots({
   dragAndDropHook,
+  gainsUnknown,
   isActive,
   isEditable,
   isLinkedPrimary,
@@ -63,6 +64,7 @@ export function useVoicePanelSlots({
   // Use extracted slot rendering hook
   const { renderSampleSlot, renderSampleSlots } = useVoicePanelSlotRendering({
     dragAndDropHook,
+    gainsUnknown,
     handleCombinedDragLeave,
     handleCombinedDragOver,
     handleCombinedDrop,

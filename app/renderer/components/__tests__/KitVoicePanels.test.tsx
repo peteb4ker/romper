@@ -576,6 +576,13 @@ describe("KitVoicePanels", () => {
           onKitModified={onKitModified}
         />,
       );
+      // The knob turns once the kit's gains are read (#628)
+      await waitFor(() =>
+        expect(screen.getAllByRole("slider")[0]).toHaveAttribute(
+          "aria-valuenow",
+          "0",
+        ),
+      );
 
       fireEvent.wheel(screen.getAllByRole("slider")[0], { deltaY: -100 });
 

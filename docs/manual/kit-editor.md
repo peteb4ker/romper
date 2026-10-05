@@ -153,6 +153,8 @@ In an editable kit, each sample slot has a small **gain knob** that lets you tri
 
 The knob scales up on hover so you can see the arc position clearly, even though it's compact in the sample row.
 
+If Romper can't read a kit's sample details, it says so, and the gain knobs show **–** instead of a value and can't be turned. Reopen the kit to try again.
+
 Gain changes can't be undone with **Undo**; click the knob to go back to 0 dB.
 
 If a gain change can't be saved, the knob goes back to the saved gain and a message says so; try again.

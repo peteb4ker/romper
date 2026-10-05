@@ -16,4 +16,14 @@
 
 <!-- Tests added or run (tagged [UC-NN] / [Q-NN]), and anything checked by hand. Claims about Rample behaviour quote the manual or say "unverified on hardware". -->
 
+## Before handover
+
+<!-- The author ticks these before handing the PR to the shepherd. How to check each: the ship-pr skill, "Before handover" (.claude/skills/ship-pr/SKILL.md). -->
+
+- [ ] Rebased on current `origin/main`
+- [ ] `npm run typecheck` passes (both configs)
+- [ ] `npm run test:e2e` passes, or the PR doesn't touch `electron/main`, app startup or the write path
+- [ ] SonarCloud shows 0 new issues on this PR, not just a passing quality gate (`npm run sonar:pr -- <N>`)
+- [ ] The removal grep shows nothing this PR removes is still used on main (or it removes nothing)
+
 Fixes #

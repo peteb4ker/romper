@@ -8,6 +8,7 @@ import {
   addScanResultToTotals,
   describeScanTotals,
   EMPTY_SCAN_TOTALS,
+  isScanFailure,
   scanAllKits,
   scanSingleKit,
   useKitScan,
@@ -251,7 +252,8 @@ describe("useKitScan", () => {
   });
 });
 
-// #586: a result with failed kits stays until dismissed or the next scan
+// #586: a result with failed kits stays until dismissed or the next scan;
+// #620: so does a scan that fails outright
 describe("[UC-13] useKitScan result lifetime", () => {
   const RESULT_CLEAR_MS = 5000;
 
@@ -272,8 +274,13 @@ describe("[UC-13] useKitScan result lifetime", () => {
   });
 
   /** Runs Scan All over `kits` and returns the hook */
-  const scanAll = async (kits: string[]) => {
-    const hook = renderHook(() => useKitScan({ kits: kits.map(kit) }));
+  const scanAll = async (
+    kits: string[],
+    onRefreshKits?: () => Promise<void>,
+  ) => {
+    const hook = renderHook(() =>
+      useKitScan({ kits: kits.map(kit), onRefreshKits }),
+    );
     await act(async () => {
       await hook.result.current.handleScanAllKits();
     });
@@ -331,6 +338,80 @@ describe("[UC-13] useKitScan result lifetime", () => {
       vi.advanceTimersByTime(RESULT_CLEAR_MS);
     });
     expect(result.current.bulkScanProgress).toEqual({ status: "idle" });
+  });
+  describe("when the whole scan fails (#620)", () => {
+    it("keeps 'No kits to scan' past five seconds", async () => {
+      const { result } = await scanAll([]);
+
+      act(() => {
+        vi.advanceTimersByTime(RESULT_CLEAR_MS * 4);
+      });
+      expect(result.current.bulkScanProgress).toEqual({
+        message: "No kits to scan",
+        status: "error",
+      });
+    });
+
+    it("keeps a scan error past five seconds", async () => {
+      const { result } = await scanAll(["A1"], () =>
+        Promise.reject(new Error("database is locked")),
+      );
+
+      act(() => {
+        vi.advanceTimersByTime(RESULT_CLEAR_MS * 4);
+      });
+      expect(result.current.bulkScanProgress).toEqual({
+        message: "Scan error: database is locked",
+        status: "error",
+      });
+    });
+
+    it("clears the error when dismissed", async () => {
+      const { result } = await scanAll([]);
+
+      act(() => {
+        result.current.dismissBulkScanResult();
+      });
+      expect(result.current.bulkScanProgress).toEqual({ status: "idle" });
+    });
+
+    it("replaces the error when another scan starts", async () => {
+      const { rerender, result } = renderHook(
+        ({ kits }: { kits: string[] }) => useKitScan({ kits: kits.map(kit) }),
+        { initialProps: { kits: [] as string[] } },
+      );
+      await act(async () => {
+        await result.current.handleScanAllKits();
+      });
+      expect(result.current.bulkScanProgress.status).toBe("error");
+
+      rerender({ kits: ["A1"] });
+      await act(async () => {
+        await result.current.handleScanAllKits();
+      });
+      expect(result.current.bulkScanProgress).toMatchObject({
+        failedCount: 0,
+        status: "complete",
+      });
+    });
+  });
+});
+
+describe("[UC-13] isScanFailure", () => {
+  it.each([
+    [{ message: "No kits to scan", status: "error" }, true],
+    [
+      { failedCount: 1, message: "", status: "complete", successCount: 1 },
+      true,
+    ],
+    [
+      { failedCount: 0, message: "", status: "complete", successCount: 2 },
+      false,
+    ],
+    [{ current: 1, currentKit: "A1", status: "scanning", total: 2 }, false],
+    [{ status: "idle" }, false],
+  ] as const)("%o is a failure: %s", (progress, expected) => {
+    expect(isScanFailure(progress)).toBe(expected);
   });
 });
 

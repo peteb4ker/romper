@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import {
   _electron as electron,
   type ElectronApplication,
@@ -45,14 +46,7 @@ test.describe("[UC-13] Scan All", () => {
     });
   };
 
-  test.beforeEach(async () => {
-    testEnv = await extractE2EFixture();
-    // A new WAV in each fixture kit's folder, for the scan to find
-    const wav = path.join(process.cwd(), "tests", "fixtures", "kick.wav");
-    for (const kit of ["A0", "B1"]) {
-      fs.copyFileSync(wav, path.join(testEnv.localStorePath, kit, NEW_FILE));
-    }
-
+  const launch = async () => {
     electronApp = await electron.launch({
       args: ["dist/electron/main/index.js"],
       env: { ...process.env, ...testEnv.environment },
@@ -62,6 +56,17 @@ test.describe("[UC-13] Scan All", () => {
     await window.waitForSelector('[data-testid="kit-grid"]', {
       timeout: 10000,
     });
+  };
+
+  test.beforeEach(async () => {
+    testEnv = await extractE2EFixture();
+    // A new WAV in each fixture kit's folder, for the scan to find
+    const wav = path.join(process.cwd(), "tests", "fixtures", "kick.wav");
+    for (const kit of ["A0", "B1"]) {
+      fs.copyFileSync(wav, path.join(testEnv.localStorePath, kit, NEW_FILE));
+    }
+
+    await launch();
     expect(await sampleFiles("A0")).not.toContain(NEW_FILE);
     expect(await sampleFiles("B1")).not.toContain(NEW_FILE);
   });
@@ -106,6 +111,47 @@ test.describe("[UC-13] Scan All", () => {
       .getByRole("button", { name: "Dismiss message" })
       .click();
     await expect(result).toHaveCount(0);
+  });
+
+  // #620: a scan that failed outright still cleared after five seconds
+  test.describe("in a store with no kits", () => {
+    test.use({
+      expectedMessages: {
+        "the test scans a store with no kits, which fails on purpose": {
+          pattern: /^No kits to scan$/,
+          sources: ["ui"],
+        },
+      },
+    });
+
+    test("keeps a scan that fails outright on screen until dismissed", async () => {
+      // A store with no kits: there's nothing to scan
+      await electronApp.close();
+      const db = new DatabaseSync(
+        path.join(testEnv.localStorePath, ".romperdb", "romper.sqlite"),
+      );
+      try {
+        db.exec("DELETE FROM samples; DELETE FROM voices; DELETE FROM kits;");
+      } finally {
+        db.close();
+      }
+      await launch();
+      await expect(window.locator('[data-testid^="kit-item-"]')).toHaveCount(0);
+
+      await scanAllFromMenu();
+
+      const result = window.locator('[data-testid="bulk-scan-error"]');
+      await expect(result).toHaveText("No kits to scan", { timeout: 10000 });
+      // Past the five seconds a clean result shows for
+      await window.waitForTimeout(6000);
+      await expect(result).toHaveText("No kits to scan");
+
+      await window
+        .locator('[data-testid="kit-browser-header"]')
+        .getByRole("button", { name: "Dismiss message" })
+        .click();
+      await expect(result).toHaveCount(0);
+    });
   });
 
   test("scans every kit from the kit editor", async () => {

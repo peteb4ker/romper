@@ -24,7 +24,10 @@ export type BulkScanProgress =
   | { message: string; status: "error" }
   | { status: "idle" };
 
-/** How long a scan result shows; one with failed kits stays until dismissed (#586) */
+/**
+ * How long a successful scan's result shows. One with failed kits (#586), or
+ * a scan that failed outright (#620), stays until dismissed.
+ */
 const BULK_SCAN_COMPLETE_CLEAR_MS = 5000;
 
 /** Scan outcomes summed over one or more kits. */
@@ -132,6 +135,15 @@ export const SCAN_ALL_CONFIRM_MESSAGE =
   "added to non-editable kits; existing samples, gain and slot order are " +
   "kept, and locked kits are skipped. Continue?";
 
+/**
+ * Whether a finished Scan All went wrong: some kits failed (#586), or the
+ * whole scan did (#620). These results stay until the user dismisses them.
+ */
+export function isScanFailure(progress: BulkScanProgress): boolean {
+  if (progress.status === "error") return true;
+  return progress.status === "complete" && progress.failedCount > 0;
+}
+
 export async function scanAllKits({
   kits,
   onProgress,
@@ -223,8 +235,9 @@ export async function scanSingleKit({ kitName }: { kitName: string }) {
  * not the kits a search or filter shows (RE-43). `onFinished` hears the
  * final result, for views that don't show the progress.
  *
- * A result with failed kits stays until `dismissBulkScanResult` or the next
- * scan replaces it, so the user can read which kits failed (#586).
+ * A result with failed kits, or a scan that failed outright, stays until
+ * `dismissBulkScanResult` or the next scan replaces it, so the user can read
+ * what went wrong (#586, #620).
  */
 export function useKitScan({
   kits,
@@ -270,10 +283,11 @@ export function useKitScan({
 
           if (progress.status === "complete" || progress.status === "error") {
             onFinished?.(progress);
-            // Failed kits stay listed until dismissed or the next scan (#586)
-            const keep =
-              progress.status === "complete" && progress.failedCount > 0;
-            if (!keep) {
+            // A refresh that fails after the result replaces it with an
+            // error, which the result's timer mustn't clear
+            clearTimer();
+            // Failures stay until dismissed or the next scan (#586, #620)
+            if (!isScanFailure(progress)) {
               clearTimerRef.current = setTimeout(
                 () => setBulkScanProgress({ status: "idle" }),
                 BULK_SCAN_COMPLETE_CLEAR_MS,

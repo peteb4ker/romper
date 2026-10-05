@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "ES2022",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "outDir": "dist",
     "rootDir": ".",
@@ -12,11 +12,10 @@
     "tsBuildInfoFile": ".tsbuildinfo",
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
     "paths": {
-      "@romper/app/*": ["app/*"],
-      "@romper/electron/*": ["electron/*"],
-      "@romper/shared/*": ["shared/*"]
+      "@romper/app/*": ["./app/*"],
+      "@romper/electron/*": ["./electron/*"],
+      "@romper/shared/*": ["./shared/*"]
     },
     "jsx": "react-jsx",
     "types": ["node", "react", "react-dom"]

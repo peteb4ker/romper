@@ -116,7 +116,11 @@ export default defineConfig([
     rules: {
       ...TS_RECOMMENDED_RULES,
       ...prettierConfig.rules,
-      ...reactHooks.configs.recommended.rules,
+      // The two rules eslint-plugin-react-hooks 5 recommended. Version 7's
+      // preset adds the React Compiler rules; adopting those is a separate
+      // decision (#469).
+      "react-hooks/exhaustive-deps": "warn",
+      "react-hooks/rules-of-hooks": "error",
       ...perfectionist.configs["recommended-alphabetical"].rules,
       // SonarJS rules - focused on critical issues only
       "sonarjs/cognitive-complexity": ["error", 25], // More reasonable threshold

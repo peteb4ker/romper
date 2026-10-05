@@ -14,6 +14,9 @@ import {
  * test unless the spec expects it. The failing cases are marked
  * `test.fail()`, so they pass only if the guard fails them.
  */
+/* eslint-disable sonarjs/assertions-in-tests -- the guard's own check is
+   the assertion in these tests: test.fail() passes only if the guard fails
+   them, so they deliberately call no expect(). */
 test.describe("E2E error guard", () => {
   let electronApp: ElectronApplication;
   let window: Page;

@@ -776,4 +776,127 @@ describe("useLocalStoreWizard", () => {
     });
     expect(checkDiskSpaceMock).not.toHaveBeenCalled();
   });
+
+  // #528: setup built the store but couldn't save it as the setting
+  describe("[UC-01] when the local store setting can't be saved (#528)", () => {
+    const root = "/mock/home/Documents/romper";
+    const notSaved = "Couldn't save the local store setting. Try again.";
+
+    async function setUpWith(
+      setLocalStorePath?: (p: string) => Promise<boolean>,
+    ) {
+      // Earlier tests leave these refusing
+      vi.mocked(window.electronAPI.checkPathWritable).mockResolvedValue({
+        writable: true,
+      });
+      vi.mocked(window.electronAPI.checkDiskSpace).mockResolvedValue({
+        availableBytes: 10 * 1024 * 1024 * 1024,
+        requiredBytes: 1024 * 1024 * 1024,
+        sufficient: true,
+      });
+      vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
+        async (dir) => (dir === root ? ["A0"] : []),
+      );
+      vi.mocked(window.electronAPI.setupImportKit).mockImplementation(
+        async () => ({
+          data: importResult([
+            { filename: "1 kick 13.wav", reason: "voice_full", voiceNumber: 1 },
+          ]),
+          success: true,
+        }),
+      );
+      const hook = renderHook(() =>
+        useLocalStoreWizard(undefined, setLocalStorePath),
+      );
+      await waitForAsync(() => hook.result.current.defaultPath !== "");
+      act(() => {
+        hook.result.current.setTargetPath(root);
+        hook.result.current.setSource("squarp");
+      });
+      return hook;
+    }
+
+    async function initialize(
+      result: Awaited<ReturnType<typeof setUpWith>>["result"],
+    ) {
+      let outcome: Awaited<ReturnType<typeof result.current.initialize>>;
+      await act(async () => {
+        outcome = await result.current.initialize();
+      });
+      return outcome!;
+    }
+
+    it("keeps the finished store and says the setting wasn't saved", async () => {
+      const save = vi.fn().mockResolvedValue(false);
+      const { result } = await setUpWith(save);
+
+      const outcome = await initialize(result);
+
+      expect(save).toHaveBeenCalledWith(root);
+      expect(outcome).toEqual({ error: notSaved, success: false });
+      expect(result.current.state.error).toBe(notSaved);
+      expect(result.current.state.isInitializing).toBe(false);
+      expect(window.electronAPI.cleanupPartialInit).not.toHaveBeenCalled();
+    });
+
+    it("tries only the save again, then reports what setup did", async () => {
+      const save = vi
+        .fn()
+        .mockResolvedValueOnce(false)
+        .mockResolvedValueOnce(true);
+      const { result } = await setUpWith(save);
+      await initialize(result);
+      vi.mocked(window.electronAPI.downloadAndExtractArchive).mockClear();
+      vi.mocked(window.electronAPI.createRomperDb).mockClear();
+      vi.mocked(window.electronAPI.setupImportKit).mockClear();
+      vi.mocked(window.electronAPI.ensureDir).mockClear();
+
+      const outcome = await initialize(result);
+
+      expect(save).toHaveBeenCalledTimes(2);
+      expect(save).toHaveBeenLastCalledWith(root);
+      expect(window.electronAPI.ensureDir).not.toHaveBeenCalled();
+      expect(
+        window.electronAPI.downloadAndExtractArchive,
+      ).not.toHaveBeenCalled();
+      expect(window.electronAPI.createRomperDb).not.toHaveBeenCalled();
+      expect(window.electronAPI.setupImportKit).not.toHaveBeenCalled();
+      expect(window.electronAPI.cleanupPartialInit).not.toHaveBeenCalled();
+      expect(outcome).toEqual({
+        stereoNotices: [],
+        success: true,
+        truncationWarnings: [
+          expect.objectContaining({ kitName: "A0", voiceNumber: 1 }),
+        ],
+      });
+      expect(result.current.state.error).toBeNull();
+    });
+
+    it("keeps the store when saving the setting throws", async () => {
+      const { result } = await setUpWith(
+        vi.fn().mockRejectedValue(new Error("disk full")),
+      );
+
+      const outcome = await initialize(result);
+
+      expect(outcome).toEqual({ error: notSaved, success: false });
+      expect(window.electronAPI.cleanupPartialInit).not.toHaveBeenCalled();
+    });
+
+    it("keeps the store when the setSetting fallback fails", async () => {
+      vi.mocked(window.electronAPI.setSetting).mockRejectedValue(
+        new Error("disk full"),
+      );
+      const { result } = await setUpWith();
+
+      const outcome = await initialize(result);
+
+      expect(window.electronAPI.setSetting).toHaveBeenCalledWith(
+        "localStorePath",
+        root,
+      );
+      expect(outcome).toEqual({ error: notSaved, success: false });
+      expect(window.electronAPI.cleanupPartialInit).not.toHaveBeenCalled();
+    });
+  });
 });

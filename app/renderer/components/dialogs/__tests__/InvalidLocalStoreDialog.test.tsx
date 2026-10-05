@@ -226,7 +226,7 @@ describe("[UC-05] InvalidLocalStoreDialog", () => {
   });
 
   it("offers to set up a new store when given a way to", () => {
-    const onRerunWizard = vi.fn();
+    const onRerunWizard = vi.fn().mockResolvedValue(true);
     render(
       <InvalidLocalStoreDialog
         {...defaultProps}
@@ -292,7 +292,7 @@ describe("[UC-05] InvalidLocalStoreDialog", () => {
   });
 
   it("should render re-run wizard button when onRerunWizard is provided", () => {
-    const onRerunWizard = vi.fn();
+    const onRerunWizard = vi.fn().mockResolvedValue(true);
     render(
       <InvalidLocalStoreDialog
         {...defaultProps}
@@ -303,6 +303,33 @@ describe("[UC-05] InvalidLocalStoreDialog", () => {
     expect(rerunBtn).toBeInTheDocument();
     fireEvent.click(rerunBtn);
     expect(onRerunWizard).toHaveBeenCalledOnce();
+  });
+
+  it("[UC-05] says so when the saved store can't be forgotten (#528)", async () => {
+    const onRerunWizard = vi.fn().mockResolvedValue(false);
+    render(
+      <InvalidLocalStoreDialog
+        {...defaultProps}
+        onRerunWizard={onRerunWizard}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("rerun-wizard-btn"));
+
+    expect(await screen.findByTestId("rerun-wizard-error")).toHaveTextContent(
+      "Couldn't save the local store setting. Try again.",
+    );
+    expect(
+      screen.getByTestId("invalid-local-store-dialog"),
+    ).toBeInTheDocument();
+
+    // Trying again clears the message while it saves
+    onRerunWizard.mockResolvedValue(true);
+    fireEvent.click(screen.getByTestId("rerun-wizard-btn"));
+    await waitFor(() =>
+      expect(screen.queryByTestId("rerun-wizard-error")).toBeNull(),
+    );
+    expect(onRerunWizard).toHaveBeenCalledTimes(2);
   });
 
   it("should not render re-run wizard button when onRerunWizard is not provided", () => {

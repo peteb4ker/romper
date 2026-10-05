@@ -19,6 +19,11 @@ vi.mock("node:path", () => ({
   join: vi.fn(),
 }));
 
+// What the card already holds has its own tests (cardFileMatch)
+vi.mock("../../cardFileMatch.js", () => ({
+  cardFileMatches: vi.fn().mockResolvedValue(false),
+}));
+
 vi.mock("../../formatConverter.js", () => ({
   convertToRampleDefault: vi.fn().mockResolvedValue({ success: true }),
 }));
@@ -49,6 +54,7 @@ vi.mock("../syncValidationService.js", () => ({
   },
 }));
 
+import { cardFileMatches } from "../../cardFileMatch.js";
 import { convertToRampleDefault } from "../../formatConverter.js";
 import {
   type SyncFileOperation,
@@ -60,6 +66,7 @@ import { syncValidationService } from "../syncValidationService.js";
 const mockFs = vi.mocked(fs);
 const mockPath = vi.mocked(path);
 const mockConvertToRampleDefault = vi.mocked(convertToRampleDefault);
+const mockCardFileMatches = vi.mocked(cardFileMatches);
 const _mockSyncProgressManager = vi.mocked(syncProgressManager);
 const _mockSyncValidationService = vi.mocked(syncValidationService);
 
@@ -99,6 +106,18 @@ describe("[UC-34] SyncFileOperationsService", () => {
         "/source/file.wav",
         "/dest/file.wav",
       );
+    });
+
+    it("doesn't copy a file the card already holds byte for byte (#650)", async () => {
+      mockCardFileMatches.mockResolvedValueOnce(true);
+
+      await syncFileOperationsService.executeFileOperation(fileOp, {});
+
+      expect(mockCardFileMatches).toHaveBeenCalledWith(
+        "/source/file.wav",
+        "/dest/file.wav",
+      );
+      expect(mockFs.promises.copyFile).not.toHaveBeenCalled();
     });
 
     it("should handle file conversion for convert operation", async () => {

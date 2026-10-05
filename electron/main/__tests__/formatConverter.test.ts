@@ -2,7 +2,11 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getAudioMetadata, RAMPLE_FORMAT_REQUIREMENTS } from "../audioUtils";
+import {
+  getAudioMetadataAsync,
+  RAMPLE_FORMAT_REQUIREMENTS,
+} from "../audioUtils";
+import { cardFileHolds } from "../cardFileMatch";
 import {
   type ConversionOptions,
   convertSampleToRampleFormat,
@@ -19,6 +23,8 @@ vi.mock("node:path", async (importOriginal) =>
   vi.mockObject(await importOriginal<typeof import("node:path")>()),
 );
 vi.mock("../audioUtils");
+// What the card already holds has its own tests (cardFileMatch)
+vi.mock("../cardFileMatch", () => ({ cardFileHolds: vi.fn() }));
 // Decoding and encoding have their own tests (wavCodec.test.ts); these
 // cover conversion
 vi.mock("../wavCodec");
@@ -27,11 +33,13 @@ const mockFs = vi.mocked(fs, true);
 const mockDecodeWav = vi.mocked(decodeWav);
 const mockEncodeWav = vi.mocked(encodeWav);
 const mockPath = vi.mocked(path);
-const mockGetAudioMetadata = vi.mocked(getAudioMetadata);
+const mockGetAudioMetadata = vi.mocked(getAudioMetadataAsync);
+const mockCardFileHolds = vi.mocked(cardFileHolds);
 
 describe("formatConverter", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCardFileHolds.mockResolvedValue(false);
 
     // Mock RAMPLE_FORMAT_REQUIREMENTS
     Object.assign(vi.mocked(RAMPLE_FORMAT_REQUIREMENTS), {
@@ -56,7 +64,7 @@ describe("formatConverter", () => {
 
     it("returns error when audio metadata cannot be read", async () => {
       mockFs.promises.access.mockResolvedValue(undefined);
-      mockGetAudioMetadata.mockReturnValue({
+      mockGetAudioMetadata.mockResolvedValue({
         error: "Invalid audio file",
         success: false,
       });
@@ -72,7 +80,7 @@ describe("formatConverter", () => {
 
     it("returns error when target bit depth is not supported", async () => {
       mockFs.promises.access.mockResolvedValue(undefined);
-      mockGetAudioMetadata.mockReturnValue({
+      mockGetAudioMetadata.mockResolvedValue({
         data: { bitDepth: 16, channels: 2, sampleRate: 44100 },
         success: true,
       });
@@ -90,7 +98,7 @@ describe("formatConverter", () => {
 
     it("returns error when target sample rate is not supported", async () => {
       mockFs.promises.access.mockResolvedValue(undefined);
-      mockGetAudioMetadata.mockReturnValue({
+      mockGetAudioMetadata.mockResolvedValue({
         data: { bitDepth: 16, channels: 2, sampleRate: 44100 },
         success: true,
       });
@@ -108,7 +116,7 @@ describe("formatConverter", () => {
 
     it("successfully converts stereo to mono with forceMonoConversion", async () => {
       mockFs.promises.access.mockResolvedValue(undefined);
-      mockGetAudioMetadata.mockReturnValue({
+      mockGetAudioMetadata.mockResolvedValue({
         data: { bitDepth: 16, channels: 2, sampleRate: 44100 },
         success: true,
       });
@@ -146,9 +154,35 @@ describe("formatConverter", () => {
       expect(mockEncodeWav).toHaveBeenCalledWith(expect.any(Array), 44100, 16);
     });
 
+    it("[UC-34] doesn't write output the file already holds (#650)", async () => {
+      mockFs.promises.access.mockResolvedValue(undefined);
+      mockGetAudioMetadata.mockResolvedValue({
+        data: { bitDepth: 24, channels: 1, sampleRate: 44100 },
+        success: true,
+      });
+      mockDecodeWav.mockReturnValue({
+        channelData: [new Float32Array([0.5, -0.5])],
+        sampleRate: 44100,
+      });
+      const encoded = Buffer.from("encoded wav data");
+      mockEncodeWav.mockReturnValue(encoded);
+      mockFs.promises.readFile.mockResolvedValue(Buffer.from("input wav data"));
+      mockFs.promises.stat.mockResolvedValue({ size: 1024 } as fs.Stats);
+      mockCardFileHolds.mockResolvedValue(true);
+
+      const result = await convertSampleToRampleFormat(
+        "input.wav",
+        "output.wav",
+      );
+
+      expect(result.success).toBe(true);
+      expect(mockCardFileHolds).toHaveBeenCalledWith("output.wav", encoded);
+      expect(mockFs.promises.writeFile).not.toHaveBeenCalled();
+    });
+
     it("converts mono to stereo when target channels is 2", async () => {
       mockFs.promises.access.mockResolvedValue(undefined);
-      mockGetAudioMetadata.mockReturnValue({
+      mockGetAudioMetadata.mockResolvedValue({
         data: { bitDepth: 16, channels: 1, sampleRate: 44100 },
         success: true,
       });
@@ -179,7 +213,7 @@ describe("formatConverter", () => {
 
     it("handles sample rate conversion", async () => {
       mockFs.promises.access.mockResolvedValue(undefined);
-      mockGetAudioMetadata.mockReturnValue({
+      mockGetAudioMetadata.mockResolvedValue({
         data: { bitDepth: 16, channels: 1, sampleRate: 22050 },
         success: true,
       });
@@ -210,7 +244,7 @@ describe("formatConverter", () => {
 
     it("creates the output directory", async () => {
       mockFs.promises.access.mockResolvedValue(undefined);
-      mockGetAudioMetadata.mockReturnValue({
+      mockGetAudioMetadata.mockResolvedValue({
         data: { bitDepth: 16, channels: 1, sampleRate: 44100 },
         success: true,
       });
@@ -240,7 +274,7 @@ describe("formatConverter", () => {
 
     it("handles WAV decode failure", async () => {
       mockFs.promises.access.mockResolvedValue(undefined);
-      mockGetAudioMetadata.mockReturnValue({
+      mockGetAudioMetadata.mockResolvedValue({
         data: { bitDepth: 16, channels: 1, sampleRate: 44100 },
         success: true,
       });
@@ -261,7 +295,7 @@ describe("formatConverter", () => {
 
     it("handles empty channel data", async () => {
       mockFs.promises.access.mockResolvedValue(undefined);
-      mockGetAudioMetadata.mockReturnValue({
+      mockGetAudioMetadata.mockResolvedValue({
         data: { bitDepth: 16, channels: 1, sampleRate: 44100 },
         success: true,
       });
@@ -280,7 +314,7 @@ describe("formatConverter", () => {
 
     it("handles unexpected errors gracefully", async () => {
       mockFs.promises.access.mockResolvedValue(undefined);
-      mockGetAudioMetadata.mockReturnValue({
+      mockGetAudioMetadata.mockResolvedValue({
         data: { bitDepth: 16, channels: 1, sampleRate: 44100 },
         success: true,
       });
@@ -299,7 +333,7 @@ describe("formatConverter", () => {
 
     it("pads with silence for missing channels", async () => {
       mockFs.promises.access.mockResolvedValue(undefined);
-      mockGetAudioMetadata.mockReturnValue({
+      mockGetAudioMetadata.mockResolvedValue({
         data: { bitDepth: 16, channels: 1, sampleRate: 44100 },
         success: true,
       });
@@ -332,7 +366,7 @@ describe("formatConverter", () => {
   describe("convertToRampleDefault", () => {
     it("calls convertSampleToRampleFormat with default options", async () => {
       mockFs.promises.access.mockResolvedValue(undefined);
-      mockGetAudioMetadata.mockReturnValue({
+      mockGetAudioMetadata.mockResolvedValue({
         data: { bitDepth: 24, channels: 1, sampleRate: 48000 },
         success: true,
       });

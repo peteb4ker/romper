@@ -8,6 +8,7 @@ import {
   type FormatValidationResult,
   isFormatIssueCritical,
 } from "../audioUtils.js";
+import { cardFileMatches } from "../cardFileMatch.js";
 import { convertToRampleDefault } from "../formatConverter.js";
 import { syncProgressManager } from "./syncProgressManager.js";
 import {
@@ -85,7 +86,9 @@ export class SyncFileOperationsService {
   }
 
   /**
-   * Execute the actual file operation (copy or convert)
+   * Execute the actual file operation (copy or convert). A file the card
+   * already holds byte for byte isn't written again (#650); a conversion
+   * checks its output the same way (formatConverter).
    */
   async executeFileOperation(
     fileOp: SyncFileOperation,
@@ -94,6 +97,9 @@ export class SyncFileOperationsService {
     // Non-zero gain requires decode/re-encode even for "copy" operations
     const needsGainConversion = fileOp.gainDb != null && fileOp.gainDb !== 0;
     if (fileOp.operation === "copy" && !needsGainConversion) {
+      if (await cardFileMatches(fileOp.sourcePath, fileOp.destinationPath)) {
+        return;
+      }
       await fs.promises.copyFile(fileOp.sourcePath, fileOp.destinationPath);
     } else {
       await this.handleFileConversion(fileOp, inMemorySettings);

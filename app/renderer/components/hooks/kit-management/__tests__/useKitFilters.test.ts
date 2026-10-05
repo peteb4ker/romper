@@ -226,7 +226,8 @@ describe("useKitFilters", () => {
       expect(onMessage).not.toHaveBeenCalled();
     });
 
-    it("reports a failed toggle", async () => {
+    // #607: the editor's approved wording, not the raw error
+    it("reports an add to favorites that couldn't save", async () => {
       onToggleFavorite.mockResolvedValueOnce({
         error: "Database error",
         success: false,
@@ -238,21 +239,81 @@ describe("useKitFilters", () => {
       });
 
       expect(onMessage).toHaveBeenCalledWith(
-        "Failed to toggle favorite: Database error",
+        "Couldn't add kit A0 to favorites. Try again.",
         "error",
       );
     });
 
-    it("reports a thrown error", async () => {
+    it("reports a remove from favorites that couldn't save", async () => {
+      onToggleFavorite.mockResolvedValueOnce({
+        error: "Database error",
+        success: false,
+      });
+      const { result } = renderHook(() => useKitFilters(props()));
+
+      await act(async () => {
+        await result.current.handleToggleFavorite("A1");
+      });
+
+      expect(onMessage).toHaveBeenCalledWith(
+        "Couldn't remove kit A1 from favorites. Try again.",
+        "error",
+      );
+    });
+
+    it("reports a thrown error without its text", async () => {
       onToggleFavorite.mockRejectedValueOnce(new Error("Network error"));
       const { result } = renderHook(() => useKitFilters(props()));
+
+      await act(async () => {
+        await result.current.handleToggleFavorite("B0");
+      });
+
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      expect(onMessage).toHaveBeenCalledWith(
+        "Couldn't remove kit B0 from favorites. Try again.",
+        "error",
+      );
+    });
+
+    it("reads the favorite from the whole library, not the search results", async () => {
+      onToggleFavorite.mockResolvedValueOnce({
+        error: "Database error",
+        success: false,
+      });
+      // A1 is a favorite, but the search shows only A0
+      const { result } = renderHook(() =>
+        useKitFilters(props({ kits: [kits[1]] })),
+      );
+
+      await act(async () => {
+        await result.current.handleToggleFavorite("A1");
+      });
+
+      expect(onMessage).toHaveBeenCalledWith(
+        "Couldn't remove kit A1 from favorites. Try again.",
+        "error",
+      );
+    });
+
+    it("reads the favorite from the kit list at the time of the toggle", async () => {
+      onToggleFavorite.mockResolvedValueOnce({
+        error: "Database error",
+        success: false,
+      });
+      const { rerender, result } = renderHook((p) => useKitFilters(p), {
+        initialProps: props(),
+      });
+      // A0 became a favorite elsewhere (the editor's star)
+      const updated = [kit("A0", true, true)];
+      rerender(props({ allKits: updated, kits: updated }));
 
       await act(async () => {
         await result.current.handleToggleFavorite("A0");
       });
 
       expect(onMessage).toHaveBeenCalledWith(
-        "Failed to toggle favorite: Network error",
+        "Couldn't remove kit A0 from favorites. Try again.",
         "error",
       );
     });

@@ -1,0 +1,88 @@
+name: Install dependencies
+description: >-
+  Node from .nvmrc, then node_modules: restored from the cache main saved
+  for this lockfile, or installed with npm ci. Optionally the Electron
+  binary too, from its own cache.
+
+# Measured in #660: npm ci takes about 15s on Linux, 25-45s on macOS and
+# 60-120s on Windows even with npm's download cache, because unpacking
+# 46,000 files is the slow part. Restoring node_modules skips that.
+#
+# Only pushes to main save the caches. A pull request reads main's (or
+# installs, when it changes the lockfile) but never writes its own: caches a
+# PR saves are scoped to that PR, and every Dependabot PR would add a copy
+# per platform to a repo already at GitHub's 10 GB cache limit.
+
+inputs:
+  electron:
+    description: Also install the Electron binary (integration and e2e tests)
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      id: node
+      uses: actions/setup-node@v7
+      with:
+        node-version-file: .nvmrc
+        cache: npm
+        cache-dependency-path: package-lock.json
+
+    - name: Restore node_modules
+      id: modules
+      uses: actions/cache/restore@v4
+      with:
+        path: node_modules
+        key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
+
+    - name: Install dependencies
+      if: steps.modules.outputs.cache-hit != 'true'
+      shell: bash
+      run: npm ci --prefer-offline --no-audit
+
+    # Saved straight after npm ci, before anything else touches node_modules
+    # (the Electron binary below, the Linux e2e job's chrome-sandbox chown).
+    - name: Save node_modules
+      if: >-
+        steps.modules.outputs.cache-hit != 'true' &&
+        github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: actions/cache/save@v4
+      with:
+        path: node_modules
+        key: ${{ steps.modules.outputs.cache-primary-key }}
+
+    # Electron 42+ downloads its binary on first use, not at install.
+    # Download it here, through a cache keyed on its version.
+    - name: Find the Electron version
+      if: inputs.electron == 'true'
+      id: electron
+      shell: bash
+      env:
+        CACHE_DIR: ${{ runner.temp }}/electron-cache
+      run: |
+        echo "version=$(node -p "require('./node_modules/electron/package.json').version")" >> "$GITHUB_OUTPUT"
+        echo "electron_config_cache=$CACHE_DIR" >> "$GITHUB_ENV"
+
+    - name: Restore the Electron binary
+      if: inputs.electron == 'true'
+      id: electron-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ runner.temp }}/electron-cache
+        key: electron-${{ runner.os }}-${{ runner.arch }}-${{ steps.electron.outputs.version }}
+
+    - name: Install the Electron binary
+      if: inputs.electron == 'true'
+      shell: bash
+      run: node node_modules/electron/install.js
+
+    - name: Save the Electron binary
+      if: >-
+        inputs.electron == 'true' &&
+        steps.electron-cache.outputs.cache-hit != 'true' &&
+        github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ runner.temp }}/electron-cache
+        key: ${{ steps.electron-cache.outputs.cache-primary-key }}

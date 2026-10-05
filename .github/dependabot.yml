@@ -21,7 +21,10 @@ updates:
           - patch
 
   - package-ecosystem: github-actions
-    directory: /
+    # The workflows, and the composite action they share (#660)
+    directories:
+      - /
+      - /.github/actions/install-dependencies
     schedule:
       interval: weekly
       day: monday

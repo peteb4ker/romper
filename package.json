@@ -140,7 +140,7 @@
     "prebuildify": "^6.0.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "react-dropzone": "^14.3.8",
+    "react-dropzone": "^20.1.2",
     "react-router-dom": "^7.18.4",
     "react-window": "^1.8.11",
     "unzipper": "^0.12.5",

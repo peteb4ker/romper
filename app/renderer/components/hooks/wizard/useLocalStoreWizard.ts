@@ -4,6 +4,7 @@ import type { ElectronAPI } from "../../../electron.d";
 
 import { config } from "../../../config";
 import { createLogger } from "../../../utils/logger";
+import { LOCAL_STORE_SETTING_NOT_SAVED } from "../shared/useChooseExistingLocalStore";
 import { SetupCancelledError } from "./setupCancelled";
 import {
   bankNamesSourcePath,
@@ -12,6 +13,8 @@ import {
 import {
   type LocalStoreSource,
   type ProgressEvent,
+  type StereoImportNotice,
+  type TruncationWarning,
   useLocalStoreWizardState,
 } from "./useLocalStoreWizardState";
 import {
@@ -36,10 +39,16 @@ declare global {
 
 const log = createLogger("LocalStoreWizard");
 
+/** What a finished setup tells the user about the store it built */
+interface SetupSummary {
+  stereoNotices: StereoImportNotice[];
+  truncationWarnings: TruncationWarning[];
+}
+
 // --- Main Hook ---
 export function useLocalStoreWizard(
   onProgress?: (p: ProgressEvent) => void,
-  setLocalStorePath?: (path: string) => Promise<boolean> | void,
+  setLocalStorePath?: (path: string) => Promise<boolean>,
 ) {
   const api = useElectronAPI();
 
@@ -85,21 +94,68 @@ export function useLocalStoreWizard(
     throwIfCancelled,
   });
 
-  // Helper function to set the local store path
-  const setLocalStorePathHelper = useCallback(async () => {
+  // Save the new store as the local store setting; resolves false if the
+  // setting couldn't be saved (#528)
+  const setLocalStorePathHelper = useCallback(async (): Promise<boolean> => {
     log.debug(
       `setLocalStorePath callback available: ${!!setLocalStorePath}, targetPath: ${state.targetPath}`,
     );
 
-    if (setLocalStorePath) {
-      await setLocalStorePath(state.targetPath);
-    } else if (api.setSetting) {
-      log.debug("Falling back to api.setSetting");
-      await api.setSetting("localStorePath", state.targetPath);
-    } else {
+    try {
+      if (setLocalStorePath) {
+        return await setLocalStorePath(state.targetPath);
+      }
+      if (api.setSetting) {
+        log.debug("Falling back to api.setSetting");
+        await api.setSetting("localStorePath", state.targetPath);
+        return true;
+      }
       log.debug("No method available to set local store path!");
+      return false;
+    } catch (error) {
+      log.error("Couldn't save the local store setting:", error);
+      return false;
     }
   }, [state.targetPath, setLocalStorePath, api]);
+
+  // A store setup built but couldn't save as the setting (#528). It's kept,
+  // and the next Initialize only tries the save again.
+  const unsavedStore = useRef<{
+    summary: SetupSummary;
+    targetPath: string;
+  } | null>(null);
+
+  // The last step of setup: save the finished store as the setting. If
+  // that fails the store is kept, not cleaned up, and the wizard says so.
+  const saveFinishedStore = useCallback(
+    async (summary: SetupSummary) => {
+      if (await setLocalStorePathHelper()) {
+        unsavedStore.current = null;
+        log.debug("initialize completed successfully");
+        // Returned, not stored: the caller decides what to show from this
+        // run's result, never from state captured before it ran (RE-42)
+        return { ...summary, success: true as const };
+      }
+      unsavedStore.current = { summary, targetPath: state.targetPath };
+      stateHook.setError(LOCAL_STORE_SETTING_NOT_SAVED);
+      return { error: LOCAL_STORE_SETTING_NOT_SAVED, success: false as const };
+    },
+    [setLocalStorePathHelper, state.targetPath, stateHook],
+  );
+
+  // Try again after the setting wasn't saved: the store is already built
+  const retrySavingStore = useCallback(
+    async (summary: SetupSummary) => {
+      stateHook.setIsInitializing(true);
+      stateHook.setError(null);
+      try {
+        return await saveFinishedStore(summary);
+      } finally {
+        stateHook.setIsInitializing(false);
+      }
+    },
+    [saveFinishedStore, stateHook],
+  );
 
   // Helper function to handle source-specific operations
   const processSource = useCallback(async () => {
@@ -120,7 +176,7 @@ export function useLocalStoreWizard(
     }
   }, [state.source, state.sdCardSourcePath, state.targetPath, fileOpsHook]);
 
-  const initialize = useCallback(async () => {
+  const runSetup = useCallback(async () => {
     log.debug("initialize starting");
     stateHook.setIsInitializing(true);
     stateHook.setError(null);
@@ -156,16 +212,10 @@ export function useLocalStoreWizard(
       throwIfCancelled();
 
       // Set the local store path only after everything is ready
-      await setLocalStorePathHelper();
-
-      log.debug("initialize completed successfully");
-      // Returned, not stored: the caller decides what to show from this
-      // run's result, never from state captured before it ran (RE-42)
-      return {
+      return await saveFinishedStore({
         stereoNotices: stereoNotices ?? [],
-        success: true,
         truncationWarnings: truncationWarnings ?? [],
-      };
+      });
     } catch (e: unknown) {
       const cancelled =
         e instanceof SetupCancelledError || cancelRequested.current;
@@ -197,8 +247,8 @@ export function useLocalStoreWizard(
         stateHook.setWizardState({ source: null });
       }
       return cancelled
-        ? { cancelled: true, success: false }
-        : { error: errorMessage, success: false };
+        ? { cancelled: true, success: false as const }
+        : { error: errorMessage, success: false as const };
     } finally {
       stateHook.setIsInitializing(false);
       stateHook.setProgress(null);
@@ -208,10 +258,21 @@ export function useLocalStoreWizard(
     api,
     fileOpsHook,
     stateHook,
-    setLocalStorePathHelper,
+    saveFinishedStore,
     processSource,
     throwIfCancelled,
   ]);
+
+  // Set up the store, or, when the last run built it but couldn't save the
+  // setting, only try the save again (#528)
+  const initialize = useCallback(async () => {
+    const unsaved = unsavedStore.current;
+    if (unsaved?.targetPath === state.targetPath) {
+      log.debug("initialize - saving the finished store's setting again");
+      return retrySavingStore(unsaved.summary);
+    }
+    return runSetup();
+  }, [state.targetPath, retrySavingStore, runSetup]);
 
   // --- Source selection handler ---
   const handleSourceSelect = useCallback(

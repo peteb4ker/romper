@@ -1,6 +1,14 @@
 import { useCallback, useState } from "react";
 
 /**
+ * Said when the local store setting can't be saved: by Choose Existing
+ * Store, by setup once the store is built (#528), and by Set Up a New Local
+ * Store when the saved store can't be cleared
+ */
+export const LOCAL_STORE_SETTING_NOT_SAVED =
+  "Couldn't save the local store setting. Try again.";
+
+/**
  * Choose Existing Store, shared by the setup wizard and Preferences: main
  * shows a folder picker and checks the folder holds a local store, then the
  * path is saved. A folder that isn't a store, or a save that fails, leaves
@@ -25,7 +33,7 @@ export function useChooseExistingLocalStore(
         return false;
       }
       if (!(await saveLocalStorePath(result.path))) {
-        setError("Couldn't save the local store setting. Try again.");
+        setError(LOCAL_STORE_SETTING_NOT_SAVED);
         return false;
       }
       return true;

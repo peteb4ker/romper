@@ -6,6 +6,7 @@ import {
 import React, { useEffect, useRef, useState } from "react";
 
 import { useSettings } from "../../utils/SettingsContext";
+import { LOCAL_STORE_SETTING_NOT_SAVED } from "../hooks/shared/useChooseExistingLocalStore";
 import ModalDialog from "../shared/ModalDialog";
 import FilePickerButton from "../utils/FilePickerButton";
 
@@ -14,7 +15,8 @@ interface InvalidLocalStoreDialogProps {
   isOpen: boolean;
   localStorePath: null | string;
   onMessage?: (text: string, type?: string, duration?: number) => void;
-  onRerunWizard?: () => void;
+  /** Forgets the saved store; resolves false if that couldn't be saved */
+  onRerunWizard?: () => Promise<boolean>;
 }
 
 /**
@@ -73,6 +75,7 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
   const [isUpdating, setIsUpdating] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryError, setRetryError] = useState<null | string>(null);
+  const [rerunError, setRerunError] = useState<null | string>(null);
 
   // Track component mount status to prevent state updates after unmount
   const isMountedRef = useRef(true);
@@ -173,6 +176,17 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
       if (isMountedRef.current) {
         setIsRetrying(false);
       }
+    }
+  };
+
+  // Set Up a New Local Store forgets the saved store, which opens the setup
+  // wizard. If the setting can't be saved, the dialog stays and says so
+  // (#528).
+  const handleRerunWizard = async () => {
+    if (!onRerunWizard) return;
+    setRerunError(null);
+    if (!(await onRerunWizard()) && isMountedRef.current) {
+      setRerunError(LOCAL_STORE_SETTING_NOT_SAVED);
     }
   };
 
@@ -336,11 +350,19 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
             className="w-full rounded bg-surface-4 px-4 py-2 text-text-primary hover:bg-surface-3 disabled:opacity-50"
             data-testid="rerun-wizard-btn"
             disabled={isUpdating || isSelecting || isRetrying}
-            onClick={onRerunWizard}
+            onClick={handleRerunWizard}
             type="button"
           >
             Set Up a New Local Store
           </button>
+        )}
+        {rerunError && (
+          <p
+            className="text-sm text-accent-danger"
+            data-testid="rerun-wizard-error"
+          >
+            {rerunError}
+          </p>
         )}
       </div>
     </ModalDialog>

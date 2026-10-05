@@ -43,7 +43,7 @@ export function useWizardProgress(
             phase,
             totalKits: items.length,
           });
-          await onStep(item, idx);
+          await onStep(item, idx); // NOSONAR - steps run in order so progress is reported per item
         }
         if (items.length > 0) reportProgress({ percent: 100, phase });
       })();

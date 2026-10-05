@@ -42,6 +42,12 @@ export function useVoicePanelUI({
   voiceName,
   voiceNameEditorHook,
 }: UseVoicePanelUIOptions) {
+  // The voice-name field takes focus as it opens
+  const voiceNameInputRef = React.useRef<HTMLInputElement>(null);
+  React.useEffect(() => {
+    if (voiceNameEditorHook.editing) voiceNameInputRef.current?.focus();
+  }, [voiceNameEditorHook.editing]);
+
   // Render voice name section
   const renderVoiceName = React.useCallback(
     (dataTestIdVoiceName?: string) => (
@@ -54,12 +60,12 @@ export function useVoicePanelUI({
             <>
               <input
                 aria-label={`Name of voice ${voice}`}
-                autoFocus
                 className="ml-1 px-2 py-0.5 rounded border border-accent-primary text-sm font-semibold bg-surface-2 text-text-primary w-32"
                 onChange={(e) =>
                   voiceNameEditorHook.setEditValue(e.target.value)
                 }
                 onKeyDown={voiceNameEditorHook.handleKeyDown}
+                ref={voiceNameInputRef}
                 value={voiceNameEditorHook.editValue}
               />
               <button

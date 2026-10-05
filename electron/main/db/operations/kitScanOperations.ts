@@ -229,53 +229,7 @@ export function planKitScanMerge({
   const unreadable = checkExistingFiles(existing, io, plan);
   result.metadataUpdated = plan.metadataUpdates.length;
 
-  const referenced = new Set(existing.map((row) => row.source_path));
-
-  for (const [voiceKey, files] of Object.entries(folder.filesByVoice)) {
-    const voiceNumber = Number.parseInt(voiceKey, 10);
-    const usedSlots = new Set(
-      existing
-        .filter((row) => row.voice_number === voiceNumber)
-        .map((row) => row.slot_number),
-    );
-
-    for (const filename of files) {
-      const sourcePath = path.join(folder.kitPath, filename);
-      if (referenced.has(sourcePath)) continue;
-
-      if (kit.editable) {
-        result.skippedFiles.push({
-          filename,
-          reason: "kit_editable",
-          voiceNumber,
-        });
-        continue;
-      }
-
-      const slot = lowestFreeSlot(usedSlots);
-      if (slot === null) {
-        result.skippedFiles.push({
-          filename,
-          reason: "voice_full",
-          voiceNumber,
-        });
-        continue;
-      }
-
-      usedSlots.add(slot);
-      referenced.add(sourcePath);
-      const metadata = io.readMetadata(sourcePath);
-      if (!metadata) unreadable.add(sourcePath);
-      plan.inserts.push({
-        filename,
-        kit_name: kit.name,
-        slot_number: slot,
-        source_path: sourcePath,
-        voice_number: voiceNumber,
-        ...(metadata ?? { source_status: "unreadable" }),
-      });
-    }
-  }
+  addUnreferencedFolderFiles({ existing, folder, io, kit, plan, unreadable });
   result.addedSamples = plan.inserts.length;
 
   plan.aliasUpdates = inferMissingVoiceAliases(
@@ -305,6 +259,76 @@ export function planKitScanMerge({
   result.stereo = planKitStereo(kitVoices, merged);
 
   return plan;
+}
+
+/**
+ * planKitScanMerge's folder pass: each folder file no row references is
+ * planned as an insert in the lowest free slot of its voice, or reported
+ * as skipped (editable kit, or voice full). A new file that can't be read
+ * is added to `unreadable`.
+ */
+function addUnreferencedFolderFiles({
+  existing,
+  folder,
+  io,
+  kit,
+  plan,
+  unreadable,
+}: {
+  existing: Sample[];
+  folder: KitFolderScan;
+  io: KitScanIo;
+  kit: Pick<Kit, "editable" | "name">;
+  plan: KitScanPlan;
+  unreadable: Set<string>;
+}): void {
+  const referenced = new Set(existing.map((row) => row.source_path));
+
+  for (const [voiceKey, files] of Object.entries(folder.filesByVoice)) {
+    const voiceNumber = Number.parseInt(voiceKey, 10);
+    const usedSlots = new Set(
+      existing
+        .filter((row) => row.voice_number === voiceNumber)
+        .map((row) => row.slot_number),
+    );
+
+    for (const filename of files) {
+      const sourcePath = path.join(folder.kitPath, filename);
+      if (referenced.has(sourcePath)) continue;
+
+      if (kit.editable) {
+        plan.result.skippedFiles.push({
+          filename,
+          reason: "kit_editable",
+          voiceNumber,
+        });
+        continue;
+      }
+
+      const slot = lowestFreeSlot(usedSlots);
+      if (slot === null) {
+        plan.result.skippedFiles.push({
+          filename,
+          reason: "voice_full",
+          voiceNumber,
+        });
+        continue;
+      }
+
+      usedSlots.add(slot);
+      referenced.add(sourcePath);
+      const metadata = io.readMetadata(sourcePath);
+      if (!metadata) unreadable.add(sourcePath);
+      plan.inserts.push({
+        filename,
+        kit_name: kit.name,
+        slot_number: slot,
+        source_path: sourcePath,
+        voice_number: voiceNumber,
+        ...(metadata ?? { source_status: "unreadable" }),
+      });
+    }
+  }
 }
 
 /**

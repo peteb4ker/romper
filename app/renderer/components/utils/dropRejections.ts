@@ -64,7 +64,7 @@ export function formatDropRejections(
 export function listFileNames(names: string[]): string {
   if (names.length === 1) return names[0];
   if (names.length <= MAX_NAMES) {
-    return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+    return `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
   }
   const rest = names.length - MAX_NAMES;
   return `${names.slice(0, MAX_NAMES).join(", ")} and ${rest} more ${

@@ -230,6 +230,9 @@ const RollOptions: React.FC<{
   const menuRef = React.useRef<HTMLDivElement>(null);
   const close = React.useCallback(() => setOpen(false), []);
   usePopoverDismiss(menuRef, close, open);
+  const lengthNote = settings.varyLength
+    ? `, lengths up to ${settings.maxLength}`
+    : "";
 
   return (
     <div className="relative" ref={menuRef}>
@@ -239,7 +242,7 @@ const RollOptions: React.FC<{
         className={`${buttonClass} px-1.5`}
         data-testid="slice-roll-options"
         onClick={() => setOpen((o) => !o)}
-        title={`Roll options: ${settings.rollAmount}% of steps${settings.varyLength ? `, lengths up to ${settings.maxLength}` : ""}`}
+        title={`Roll options: ${settings.rollAmount}% of steps${lengthNote}`}
         type="button"
       >
         <CaretDownIcon size={12} weight="bold" />

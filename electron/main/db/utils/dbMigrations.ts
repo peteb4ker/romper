@@ -35,8 +35,10 @@ export function checkMigrationState(sqlite: BetterSqlite3.Database): void {
   );
 
   // Check if __drizzle_migrations table exists
-  const migrationTable = tables.find((t) => t.name === "__drizzle_migrations");
-  if (migrationTable) {
+  const hasMigrationTable = tables.some(
+    (t) => t.name === "__drizzle_migrations",
+  );
+  if (hasMigrationTable) {
     const migrations = sqlite
       .prepare("SELECT hash, created_at FROM __drizzle_migrations ORDER BY id")
       .all();

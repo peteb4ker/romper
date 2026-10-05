@@ -141,14 +141,15 @@ export class SyncFileOperationsService {
       }
 
       try {
-        await this.processSingleFile(
+        // prettier-ignore
+        await this.processSingleFile( // NOSONAR - one file at a time so progress and Cancel stay accurate (RE-07)
           fileOp,
           syncedFiles,
           totalFiles,
           inMemorySettings,
         );
         syncedFiles++;
-        await yieldToEventLoop();
+        await yieldToEventLoop(); // NOSONAR - yields to the event loop between files on purpose (RE-07)
       } catch (error) {
         this.handleFileProcessingError(fileOp, error);
         throw error;

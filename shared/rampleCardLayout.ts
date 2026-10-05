@@ -9,6 +9,8 @@
 // firmware orders a voice's layers by sorting the names. See
 // docs/developer/sd-card-layout.md.
 
+import { trimTrailing } from "./trimTrailing.js";
+
 /** Longest file name sync writes, extension included. */
 export const MAX_CARD_FILE_NAME_LENGTH = 64;
 
@@ -90,5 +92,5 @@ export function voiceOfCardFile(fileName: string): null | number {
 
 /** Strip leading and trailing spaces and dots, which FAT32 rejects or drops. */
 function trimName(name: string): string {
-  return name.replace(/^[ .]+/, "").replace(/[ .]+$/, "");
+  return trimTrailing(name.replace(/^[ .]+/, ""), " .");
 }

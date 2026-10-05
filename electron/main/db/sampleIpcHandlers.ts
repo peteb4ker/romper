@@ -32,12 +32,7 @@ export function registerSampleIpcHandlers(
 
   ipcMain.handle(
     "delete-sample-from-slot-without-reindexing",
-    async (
-      _event,
-      kitName: string,
-      voiceNumber: number,
-      slotNumber: number,
-    ) => {
+    (_event, kitName: string, voiceNumber: number, slotNumber: number) => {
       rememberKitSampleSources(inMemorySettings, kitName);
       return sampleService.deleteSampleFromSlotWithoutReindexing(
         inMemorySettings,
@@ -50,7 +45,7 @@ export function registerSampleIpcHandlers(
 
   ipcMain.handle(
     "move-sample-in-kit",
-    async (
+    (
       _event,
       kitName: string,
       fromVoice: number,
@@ -83,7 +78,7 @@ export function registerSampleIpcHandlers(
 
   ipcMain.handle(
     "move-sample-between-kits",
-    async (
+    (
       _event,
       params: {
         fromKit: string;

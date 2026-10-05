@@ -52,4 +52,42 @@ describe("KitDialogs", () => {
     fireEvent.click(screen.getByText("Cancel"));
     expect(onCancelDuplicateKit).toHaveBeenCalled();
   });
+
+  describe("[UC-15] [Q-06] focus", () => {
+    it("focuses the destination field as it appears", () => {
+      const { rerender } = render(<KitDialogs {...defaultProps} />);
+      expect(document.body).toHaveFocus();
+
+      rerender(
+        <KitDialogs
+          {...defaultProps}
+          duplicateKitSource="A1"
+          showDuplicateKit={true}
+        />,
+      );
+      expect(screen.getByLabelText("Duplicate A1 to:")).toHaveFocus();
+    });
+
+    it("leaves focus alone while the field stays open", () => {
+      const { rerender } = render(
+        <KitDialogs
+          {...defaultProps}
+          duplicateKitSource="A1"
+          showDuplicateKit={true}
+        />,
+      );
+      const duplicate = screen.getByText("Duplicate");
+      duplicate.focus();
+
+      rerender(
+        <KitDialogs
+          {...defaultProps}
+          duplicateKitDest="B2"
+          duplicateKitSource="A1"
+          showDuplicateKit={true}
+        />,
+      );
+      expect(duplicate).toHaveFocus();
+    });
+  });
 });

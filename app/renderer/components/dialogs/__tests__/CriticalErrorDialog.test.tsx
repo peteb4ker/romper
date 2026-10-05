@@ -115,4 +115,33 @@ describe("CriticalErrorDialog", () => {
     expect(backdrop).toHaveClass("z-50");
     expect(backdrop).toHaveClass("bg-black/90"); // More opaque than regular modals
   });
+
+  describe("[Q-06] focus", () => {
+    it("focuses the OK button as the dialog opens", () => {
+      render(<CriticalErrorDialog {...defaultProps} />);
+
+      const okButton = screen.getByRole("button", {
+        name: "OK - Exit Application",
+      });
+      expect(okButton).toHaveFocus();
+      expect(screen.getByRole("dialog")).toContainElement(okButton);
+    });
+
+    it("focuses nothing while closed, and the OK button once open", () => {
+      const opener = document.createElement("button");
+      document.body.appendChild(opener);
+      opener.focus();
+
+      const { rerender } = render(
+        <CriticalErrorDialog {...defaultProps} isOpen={false} />,
+      );
+      expect(opener).toHaveFocus();
+
+      rerender(<CriticalErrorDialog {...defaultProps} />);
+      expect(
+        screen.getByRole("button", { name: "OK - Exit Application" }),
+      ).toHaveFocus();
+      opener.remove();
+    });
+  });
 });

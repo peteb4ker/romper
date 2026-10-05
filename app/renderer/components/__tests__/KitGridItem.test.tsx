@@ -1109,6 +1109,13 @@ describe("KitGridItem", () => {
       expect(screen.getByText("Duplicate A0 to:")).toBeInTheDocument();
     });
 
+    it("[Q-06] focuses the destination field as the popover opens", () => {
+      render(<KitGridItem {...duplicateProps} />);
+      fireEvent.click(screen.getByTitle("Duplicate kit"));
+
+      expect(screen.getByTestId("duplicate-dest-input")).toHaveFocus();
+    });
+
     it("calls onDuplicate (legacy) when onDuplicateKit not provided", () => {
       const mockOnDuplicate = vi.fn();
       render(<KitGridItem {...defaultProps} onDuplicate={mockOnDuplicate} />);

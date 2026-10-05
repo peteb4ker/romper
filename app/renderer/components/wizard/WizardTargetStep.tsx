@@ -1,4 +1,5 @@
 import { FolderOpenIcon } from "@phosphor-icons/react";
+import { trimTrailing } from "@romper/shared/trimTrailing";
 import React, { useState } from "react";
 
 import FilePickerButton from "../utils/FilePickerButton";
@@ -28,7 +29,10 @@ const WizardTargetStep: React.FC<WizardTargetStepProps> = ({
       let path = await safeSelectLocalStorePath();
       if (path) {
         if (!/romper\/?$/.test(path)) {
-          path = path.replace(/\/+$|\\+$/, "") + "/romper";
+          // Drop the trailing run of whichever separator the path ends in
+          const last = path.at(-1);
+          if (last === "/" || last === "\\") path = trimTrailing(path, last);
+          path += "/romper";
         }
         setTargetPath(path);
       }

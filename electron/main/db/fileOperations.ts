@@ -100,7 +100,7 @@ async function handleDeleteAttempt(
     }
 
     // Try to delete the file
-    return await tryDelete(dbPath, attempt);
+    return tryDelete(dbPath, attempt);
   } catch (error) {
     const err = error as Error;
     log.info(`Delete attempt ${attempt + 1} failed:`, err.message);
@@ -120,7 +120,7 @@ async function handleDeleteAttempt(
 }
 
 // Helper to attempt deletion and verify
-async function tryDelete(dbPath: string, attempt: number): Promise<boolean> {
+function tryDelete(dbPath: string, attempt: number): boolean {
   fs.unlinkSync(dbPath);
   log.info(`Successfully deleted DB file on attempt ${attempt + 1}`);
 
@@ -134,11 +134,11 @@ async function tryDelete(dbPath: string, attempt: number): Promise<boolean> {
 }
 
 // Helper to attempt rename and verify
-async function tryRename(
+function tryRename(
   dbPath: string,
   attempt: number,
   suffix: string = "corrupted",
-): Promise<boolean> {
+): boolean {
   const backupPath = `${dbPath}.${suffix}.${Date.now()}.${attempt}`;
   fs.renameSync(dbPath, backupPath);
   log.info(`Successfully renamed DB file to backup on attempt ${attempt + 1}`);
@@ -158,7 +158,7 @@ async function tryWindowsRenameFallback(
   attempt: number,
 ): Promise<boolean> {
   try {
-    return await tryRename(dbPath, attempt);
+    return tryRename(dbPath, attempt);
   } catch {
     log.info(`Rename attempt ${attempt + 1} failed, waiting...`);
     await waitForRetry(attempt, true, true);

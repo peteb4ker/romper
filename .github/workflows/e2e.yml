@@ -229,6 +229,14 @@ jobs:
           ROMPER_BUDGET_REPORT: reports/budgets-e2e.jsonl
           CI: true
 
+      # TEMPORARY (#632): repeat the store-setting-save spec; revert before review
+      - name: Repeat store-setting-save (Windows, #632)
+        if: matrix.os == 'windows-latest'
+        run: npx playwright test tests/e2e/store-setting-save.e2e.test.ts --repeat-each=10
+        env:
+          ROMPER_SDCARD_PATH: C:\temp\e2e-sdcard
+          CI: true
+
       - name: Upload results for the testing summary
         if: always()
         uses: actions/upload-artifact@v5

@@ -303,9 +303,6 @@ class SyncService {
           success: true,
         };
       }
-      syncProgressManager.emitCompletionProgress(syncedFiles, allFiles.length);
-      syncProgressManager.finalizeSyncJob();
-
       // Write bank RTF files to SD card root, from the banks the plan used,
       // so the stale-entry check below keeps exactly these
       this.writeBankRtfFiles(banks, options.sdCardPath);
@@ -327,6 +324,12 @@ class SyncService {
       // transaction: a cancelled or failed write leaves no links behind
       this.completeWrite(dbDir, stereo, [...incompleteKits], fileStatuses);
 
+      // Only now is the write complete. The dialog says "Write Complete" on
+      // this event, so it must not go out while the card is still being
+      // changed or the store could still fail to record the write (#634).
+      syncProgressManager.emitCompletionProgress(syncedFiles, allFiles.length);
+      syncProgressManager.finalizeSyncJob();
+
       return {
         data: {
           cancelled: false,
@@ -338,6 +341,7 @@ class SyncService {
       };
     } catch (error) {
       this.handleSyncFailure(inMemorySettings, error);
+      syncProgressManager.finalizeSyncJob();
       return {
         error: `Failed to sync kit: ${error instanceof Error ? error.message : String(error)}`,
         success: false,

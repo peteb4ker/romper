@@ -1,6 +1,6 @@
 ---
 name: ship-pr
-description: Merge discipline for Romper PRs — rebase onto origin/main, arm auto-merge before CI finishes, rebase-merge method. Use when merging a PR, draining the PR queue, or a green PR is stuck waiting.
+description: Merge discipline for Romper PRs — the author's pre-handover checklist, rebase onto origin/main, arm auto-merge before CI finishes, rebase-merge method. Use when handing a PR to the shepherd, merging a PR, draining the PR queue, or a green PR is stuck waiting.
 argument-hint: "[pr-number ...]"
 ---
 
@@ -12,6 +12,57 @@ Merge PR(s) `$ARGUMENTS` following the repo's merge discipline.
 Auto-merge fires on a check-completion event; arming it after all checks are
 already green means no further event arrives and the PR sits forever. If a PR
 is already green, skip auto-merge and merge it directly (rebase method).
+
+## Before handover (the PR author)
+
+Run this before handing a PR to the shepherd, and tick the matching boxes
+in the PR description. Each item has sent PRs back after handover (#658).
+
+1. **Rebased on current origin/main**, and the push's CI is the one you
+   check below:
+
+   ```sh
+   git fetch origin main && git rebase origin/main && git push --force-with-lease
+   ```
+
+2. **Typecheck passes** with both configs (app and tests):
+   `npm run typecheck`.
+3. **End-to-end passes** if the PR touches `electron/main`, app startup or
+   the write path (writing kits to the card): `npm run test:e2e`. Unit and
+   integration tests can't see a startup failure.
+4. **SonarCloud shows 0 new issues** on the PR, not just a passing quality
+   gate (the gate lets new code smells through). After CI's `analysis` job
+   has run on your latest push:
+
+   ```sh
+   npm run sonar:pr -- <N>
+   ```
+
+   It exits 0 for no open issues, 1 with each issue listed, and 2 if
+   SonarCloud hasn't analyzed the head commit yet. By hand:
+   `curl -s "https://sonarcloud.io/api/issues/search?componentKeys=peteb4ker_romper&pullRequest=<N>&resolved=false" | jq .total`.
+
+5. **Nothing the PR removes is still used.** After the rebase, list the
+   exports, `ElectronAPI` members and IPC channels the diff removes (and
+   doesn't re-add elsewhere), and grep the rebased tree for each:
+
+   ```sh
+   removed() {  # names one side of the diff defines; $1 is - or '\+'
+     git diff -U0 origin/main...HEAD -- '*.ts' '*.tsx' '*.js' '*.mjs' | sed -nE \
+       -e "s/^$1[[:space:]]*export (default )?(async )?(function|const|let|class|interface|type|enum) ([A-Za-z0-9_]+).*/\4/p" \
+       -e "s/^$1  ([A-Za-z0-9_]+)\??: .*/\1/p" \
+       -e "s/^$1.*(invoke|handle|on)\(\"([^\"]+)\".*/\2/p" \
+       -e "s/^$1[[:space:]]+\"([a-z0-9]+(-[a-z0-9]+)+)\",?\$/\1/p" | sort -u
+   }
+   comm -23 <(removed -) <(removed '\+') | while read -r name; do
+     git grep -nwF "$name" -- . ':!*.md' ':!*__tests__*' ':!tests/*'
+   done
+   ```
+
+   No output means nothing outside tests and docs still names them. Read
+   each hit: a caller (like `globalThis.electronAPI.getAllBanks` in #514)
+   blocks handover. A same-named function elsewhere, such as main's DB
+   function behind a removed preload method, is fine.
 
 ## Per-PR procedure
 
@@ -48,7 +99,8 @@ is already green, skip auto-merge and merge it directly (rebase method).
 8. **Removals are re-checked at merge time.** If the PR deletes an API,
    IPC channel or exported function, re-check its callers on current main
    after the rebase in step 1 (`git grep <name> origin/main`), not only
-   when it was written. Another PR may have started using it since.
+   when it was written. Another PR may have started using it since. The
+   grep in "Before handover" lists them.
 9. **Decisions are recorded.** A UX or product choice the PR makes
    (shortcut, wording, behaviour) has Pete's sign-off on the issue. If it
    doesn't, stop and ask the coordinator before merging.

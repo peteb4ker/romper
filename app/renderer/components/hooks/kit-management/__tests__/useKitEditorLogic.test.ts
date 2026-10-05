@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createMockKitWithRelations } from "../../../../../../tests/factories/kit.factory";
 import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
 import { useKitEditorLogic } from "../useKitEditorLogic";
 import { useKitPlayback } from "../useKitPlayback";
@@ -55,24 +56,53 @@ vi.mock("../../shared/useStepPattern", () => ({
   })),
 }));
 
+type Playback = ReturnType<typeof useKitPlayback>;
+type VoicePanels = ReturnType<typeof useKitVoicePanels>;
+
+const mockPlayback = (overrides: Partial<Playback> = {}): Playback => ({
+  handlePlay: vi.fn(),
+  handleStop: vi.fn(),
+  handleWaveformPlayingChange: vi.fn(),
+  playbackError: null,
+  playOptions: {},
+  playTriggers: {},
+  playVolumes: {},
+  samplePlaying: {},
+  stopTriggers: {},
+  ...overrides,
+});
+
+const mockVoicePanels = (
+  overrides: Partial<VoicePanels> = {},
+): VoicePanels => ({
+  kit: null,
+  kitName: "TestKit",
+  onPlay: vi.fn(),
+  onSampleKeyNav: vi.fn(),
+  onSampleSelect: vi.fn(),
+  onSaveVoiceName: vi.fn(),
+  onStop: vi.fn(),
+  onWaveformPlayingChange: vi.fn(),
+  playOptions: {},
+  playTriggers: {},
+  playVolumes: {},
+  samplePlaying: {},
+  samples: { 1: [], 2: [], 3: [], 4: [] },
+  selectedSampleIdx: 0,
+  selectedVoice: 1,
+  stopTriggers: {},
+  ...overrides,
+});
+
 describe("useKitEditorLogic", () => {
-  const mockKit = {
+  const mockKit = createMockKitWithRelations({
     alias: "Test Kit",
-    artist: "Test Artist",
     bank_letter: "T",
-    bpm: null,
-    editable: false,
-    id: "test-kit-id",
-    is_favorite: false,
-    locked: false,
-    modified_since_sync: false,
     name: "TestKit",
-    step_pattern: null,
-    voices: [],
-  };
+  });
 
   const mockProps = {
-    kit: mockKit as unknown,
+    kit: mockKit,
     kitIndex: 0,
     kitName: "TestKit",
     kits: [],
@@ -96,7 +126,15 @@ describe("useKitEditorLogic", () => {
 
     // Setup default mock for electronAPI methods used in this hook using centralized mocks
     vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
-      data: { scannedSamples: 5 },
+      data: {
+        addedSamples: 0,
+        locked: false,
+        metadataUpdated: 0,
+        missingSamples: [],
+        scannedSamples: 5,
+        skippedFiles: [],
+        updatedVoices: 0,
+      },
       success: true,
     });
   });
@@ -172,7 +210,7 @@ describe("useKitEditorLogic", () => {
 
   it("handles missing rescan API", async () => {
     // Remove the rescanKit method to simulate missing API
-    delete (window.electronAPI as unknown).rescanKit;
+    setupElectronAPIMock({ rescanKit: undefined });
 
     const { result } = renderHook(() => useKitEditorLogic(mockProps));
 
@@ -215,16 +253,9 @@ describe("useKitEditorLogic", () => {
   });
 
   it("triggers error reporting useEffect when playback errors occur", () => {
-    vi.mocked(useKitPlayback).mockReturnValue({
-      handlePlay: vi.fn(),
-      handleStop: vi.fn(),
-      handleWaveformPlayingChange: vi.fn(),
-      playbackError: "Playback failed",
-      playbackState: "stopped",
-      playTriggers: {},
-      samplePlaying: null,
-      stopTriggers: {},
-    });
+    vi.mocked(useKitPlayback).mockReturnValue(
+      mockPlayback({ playbackError: "Playback failed" }),
+    );
 
     renderHook(() => useKitEditorLogic(mockProps));
 
@@ -275,9 +306,8 @@ describe("useKitEditorLogic", () => {
     const { result } = renderHook(() => useKitEditorLogic(mockProps));
 
     // Mock the sequencer grid ref
-    const mockGridElement = {
-      focus: vi.fn(),
-    } as unknown;
+    const mockGridElement = document.createElement("div");
+    vi.spyOn(mockGridElement, "focus");
 
     // Set the ref before opening the sequencer
     act(() => {
@@ -391,14 +421,9 @@ describe("useKitEditorLogic", () => {
 
   it("handles sample navigation keyboard events when sequencer is closed", () => {
     const mockOnSampleKeyNav = vi.fn();
-    vi.mocked(useKitVoicePanels).mockReturnValue({
-      handleVoiceChange: vi.fn(),
-      onSampleKeyNav: mockOnSampleKeyNav,
-      selectedSlot: 0,
-      selectedVoice: 1,
-      setSelectedSlot: vi.fn(),
-      setSelectedVoice: vi.fn(),
-    });
+    vi.mocked(useKitVoicePanels).mockReturnValue(
+      mockVoicePanels({ onSampleKeyNav: mockOnSampleKeyNav }),
+    );
 
     renderHook(() => useKitEditorLogic(mockProps));
 
@@ -421,29 +446,14 @@ describe("useKitEditorLogic", () => {
 
   it("handles sample playback keyboard events when sequencer is closed", () => {
     const mockHandlePlay = vi.fn();
-    vi.mocked(useKitPlayback).mockReturnValue({
-      handlePlay: mockHandlePlay,
-      handleStop: vi.fn(),
-      handleWaveformPlayingChange: vi.fn(),
-      playbackError: null,
-      playbackState: "stopped",
-      playTriggers: {},
-      samplePlaying: null,
-      stopTriggers: {},
-    });
+    vi.mocked(useKitPlayback).mockReturnValue(
+      mockPlayback({ handlePlay: mockHandlePlay }),
+    );
 
     const sampleProps = {
       ...mockProps,
       samples: {
-        1: [
-          {
-            filePath: "/test.wav",
-            id: "sample1",
-            name: "test.wav",
-            slot: 0,
-            voice: 1,
-          },
-        ],
+        1: ["test.wav"],
         2: [],
         3: [],
         4: [],
@@ -473,14 +483,9 @@ describe("useKitEditorLogic", () => {
 
   it("ignores keyboard events when sequencer is open", () => {
     const mockOnSampleKeyNav = vi.fn();
-    vi.mocked(useKitVoicePanels).mockReturnValue({
-      handleVoiceChange: vi.fn(),
-      onSampleKeyNav: mockOnSampleKeyNav,
-      selectedSlot: 0,
-      selectedVoice: 1,
-      setSelectedSlot: vi.fn(),
-      setSelectedVoice: vi.fn(),
-    });
+    vi.mocked(useKitVoicePanels).mockReturnValue(
+      mockVoicePanels({ onSampleKeyNav: mockOnSampleKeyNav }),
+    );
 
     const { rerender, result } = renderHook(() => useKitEditorLogic(mockProps));
 
@@ -501,14 +506,9 @@ describe("useKitEditorLogic", () => {
 
   it("ignores keyboard events when input fields are focused", () => {
     const mockOnSampleKeyNav = vi.fn();
-    vi.mocked(useKitVoicePanels).mockReturnValue({
-      handleVoiceChange: vi.fn(),
-      onSampleKeyNav: mockOnSampleKeyNav,
-      selectedSlot: 0,
-      selectedVoice: 1,
-      setSelectedSlot: vi.fn(),
-      setSelectedVoice: vi.fn(),
-    });
+    vi.mocked(useKitVoicePanels).mockReturnValue(
+      mockVoicePanels({ onSampleKeyNav: mockOnSampleKeyNav }),
+    );
 
     renderHook(() => useKitEditorLogic(mockProps));
 
@@ -531,14 +531,9 @@ describe("useKitEditorLogic", () => {
 
   it("ignores keyboard events when textarea is focused", () => {
     const mockOnSampleKeyNav = vi.fn();
-    vi.mocked(useKitVoicePanels).mockReturnValue({
-      handleVoiceChange: vi.fn(),
-      onSampleKeyNav: mockOnSampleKeyNav,
-      selectedSlot: 0,
-      selectedVoice: 1,
-      setSelectedSlot: vi.fn(),
-      setSelectedVoice: vi.fn(),
-    });
+    vi.mocked(useKitVoicePanels).mockReturnValue(
+      mockVoicePanels({ onSampleKeyNav: mockOnSampleKeyNav }),
+    );
 
     renderHook(() => useKitEditorLogic(mockProps));
 
@@ -560,14 +555,9 @@ describe("useKitEditorLogic", () => {
 
   it("allows keyboard events when checkbox input is focused", () => {
     const mockOnSampleKeyNav = vi.fn();
-    vi.mocked(useKitVoicePanels).mockReturnValue({
-      handleVoiceChange: vi.fn(),
-      onSampleKeyNav: mockOnSampleKeyNav,
-      selectedSlot: 0,
-      selectedVoice: 1,
-      setSelectedSlot: vi.fn(),
-      setSelectedVoice: vi.fn(),
-    });
+    vi.mocked(useKitVoicePanels).mockReturnValue(
+      mockVoicePanels({ onSampleKeyNav: mockOnSampleKeyNav }),
+    );
 
     renderHook(() => useKitEditorLogic(mockProps));
 
@@ -628,7 +618,7 @@ describe("useKitEditorLogic", () => {
       const { result } = renderHook(() =>
         useKitEditorLogic({
           ...mockProps,
-          kit: { ...mockKit, editable: true } as unknown,
+          kit: { ...mockKit, editable: true },
           onMessage,
           onToggleEditableMode: vi.fn().mockRejectedValue(new Error("x")),
         }),

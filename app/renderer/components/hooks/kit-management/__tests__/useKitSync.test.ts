@@ -95,11 +95,13 @@ describe("useKitSync", () => {
       await act(async () => {
         await result.current.handleConfirmSync({
           sdCardPath: "/path/to/sd",
+          skipInvalidFiles: false,
         });
       });
 
       expect(mockStartSync).toHaveBeenCalledWith({
         sdCardPath: "/path/to/sd",
+        skipInvalidFiles: false,
       });
       // Dialog stays open so user sees "Write Complete" state
       expect(result.current.showSyncDialog).toBe(true);
@@ -121,11 +123,13 @@ describe("useKitSync", () => {
       await act(async () => {
         await result.current.handleConfirmSync({
           sdCardPath: "/path/to/sd",
+          skipInvalidFiles: false,
         });
       });
 
       expect(mockStartSync).toHaveBeenCalledWith({
         sdCardPath: "/path/to/sd",
+        skipInvalidFiles: false,
       });
       expect(mockOnMessage).toHaveBeenCalledWith(
         "The write to the SD card didn't finish. The write panel says why; fix that, then write again.",
@@ -139,6 +143,7 @@ describe("useKitSync", () => {
       await act(async () => {
         await result.current.handleConfirmSync({
           sdCardPath: null,
+          skipInvalidFiles: false,
         });
       });
 
@@ -160,6 +165,7 @@ describe("useKitSync", () => {
       await act(async () => {
         await result.current.handleConfirmSync({
           sdCardPath: "/path/to/sd",
+          skipInvalidFiles: false,
         });
       });
 
@@ -181,6 +187,7 @@ describe("useKitSync", () => {
       await act(async () => {
         await result.current.handleConfirmSync({
           sdCardPath: "/path/to/sd",
+          skipInvalidFiles: false,
         });
       });
 
@@ -205,6 +212,7 @@ describe("useKitSync", () => {
       await act(async () => {
         await result.current.handleConfirmSync({
           sdCardPath: "/path/to/sd",
+          skipInvalidFiles: false,
         });
       });
 

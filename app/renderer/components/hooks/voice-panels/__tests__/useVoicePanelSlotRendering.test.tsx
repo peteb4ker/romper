@@ -1,12 +1,15 @@
 import { SAMPLE_FILE_LABELS } from "@romper/shared/stereoLinkRules";
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { slotKey } from "../../../../utils/slotKey";
-import { useVoicePanelSlotRendering } from "../useVoicePanelSlotRendering";
+import {
+  useVoicePanelSlotRendering,
+  type UseVoicePanelSlotRenderingOptions,
+} from "../useVoicePanelSlotRendering";
 
 describe("useVoicePanelSlotRendering", () => {
-  const mockProps = {
+  const mockProps: UseVoicePanelSlotRenderingOptions = {
     dragAndDropHook: {
       getSampleDragHandlers: vi.fn(() => ({
         onDragEnd: vi.fn(),
@@ -28,6 +31,7 @@ describe("useVoicePanelSlotRendering", () => {
     kitName: "TestKit",
     onSampleSelect: vi.fn(),
     onWaveformPlayingChange: vi.fn(),
+    playsStereo: false,
     playTriggers: {},
     renderDeleteButton: vi.fn(() => <button>Delete</button>),
     renderPlayButton: vi.fn(() => <button>Play</button>),
@@ -67,14 +71,8 @@ describe("useVoicePanelSlotRendering", () => {
   }
 
   it("returns rendering functions", () => {
-    let result: unknown;
-
-    function TestHook() {
-      result = useVoicePanelSlotRendering(mockProps);
-      return null;
-    }
-
-    render(<TestHook />);
+    const result = renderHook(() => useVoicePanelSlotRendering(mockProps))
+      .result.current;
 
     expect(result.renderSampleSlot).toBeDefined();
     expect(result.renderSampleSlots).toBeDefined();
@@ -148,7 +146,7 @@ describe("useVoicePanelSlotRendering", () => {
     afterEach(cleanup);
 
     function renderWithStatus(status: null | string) {
-      const props = {
+      const props: UseVoicePanelSlotRenderingOptions = {
         ...mockProps,
         sampleMetadata: {
           [slotKey(1, 0)]: {

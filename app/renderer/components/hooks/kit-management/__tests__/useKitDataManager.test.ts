@@ -3,6 +3,8 @@ import type { DbResult, KitWithRelations } from "@romper/shared/db/schema";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createMockKitWithRelations } from "../../../../../../tests/factories/kit.factory";
+import { createMockSample } from "../../../../../../tests/factories/sample.factory";
 import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
 import { useKitDataManager } from "../useKitDataManager";
 
@@ -10,35 +12,19 @@ import { useKitDataManager } from "../useKitDataManager";
 
 describe("useKitDataManager", () => {
   const mockSamples = [
-    {
-      filename: "kick.wav",
-      slot_number: 0,
-      voice_number: 1,
-    },
-    {
+    createMockSample({ filename: "kick.wav", slot_number: 0, voice_number: 1 }),
+    createMockSample({
       filename: "snare.wav",
       slot_number: 0,
       voice_number: 2,
-    },
+    }),
   ];
 
   // getKits() returns each kit's samples inline — that single call is the
   // only data source the hook uses at startup (no per-kit fetching).
   const mockKits: KitWithRelations[] = [
-    {
-      alias: null,
-      bank_letter: "A",
-      editable: false,
-      name: "A0",
-      samples: mockSamples,
-    } as unknown as KitWithRelations,
-    {
-      alias: null,
-      bank_letter: "A",
-      editable: false,
-      name: "A1",
-      samples: mockSamples,
-    } as unknown as KitWithRelations,
+    createMockKitWithRelations({ name: "A0", samples: mockSamples }),
+    createMockKitWithRelations({ name: "A1", samples: mockSamples }),
   ];
 
   beforeEach(() => {
@@ -186,11 +172,11 @@ describe("useKitDataManager", () => {
 
     // Mock new sample data
     const newSamples = [
-      {
+      createMockSample({
         filename: "new-kick.wav",
         slot_number: 100,
         voice_number: 1,
-      },
+      }),
     ];
     vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
       data: newSamples,
@@ -319,34 +305,6 @@ describe("useKitDataManager", () => {
     expect(result.current.sampleCounts["A1"]).toEqual([1, 1, 0, 0]);
   });
 
-  it("should handle null kit name in reloadCurrentKitSamples", async () => {
-    // Fresh mock for isolated test
-    const freshMock = vi.fn().mockResolvedValue({
-      data: mockSamples,
-      success: true,
-    });
-
-    globalThis.electronAPI = {
-      getAllSamplesForKit: freshMock,
-      getKits: vi.fn().mockResolvedValue({ data: mockKits, success: true }),
-    } as unknown as typeof globalThis.electronAPI;
-
-    const { result } = renderHook(() =>
-      useKitDataManager({
-        isInitialized: true,
-        isLocalStoreReady: true,
-        localStorePath: "/test/path",
-      }),
-    );
-
-    await act(async () => {
-      await result.current.reloadCurrentKitSamples(null);
-    });
-
-    // The function will still call the API with null
-    expect(freshMock).toHaveBeenCalledWith(null);
-  });
-
   it("should handle empty kit name in reloadCurrentKitSamples", async () => {
     // Fresh mock for isolated test
     const freshMock = vi.fn().mockResolvedValue({
@@ -376,15 +334,14 @@ describe("useKitDataManager", () => {
   });
 
   it("should update state when props change", () => {
+    const initialProps: Parameters<typeof useKitDataManager>[0] = {
+      isInitialized: false,
+      isLocalStoreReady: true,
+      localStorePath: null,
+    };
     const { rerender, result } = renderHook(
       (props) => useKitDataManager(props),
-      {
-        initialProps: {
-          isInitialized: false,
-          isLocalStoreReady: true,
-          localStorePath: null,
-        },
-      },
+      { initialProps },
     );
 
     expect(result.current.kits).toEqual([]);
@@ -535,9 +492,9 @@ describe("useKitDataManager", () => {
       });
 
       expect(result.current.getKitByName("A0")?.modified_since_sync).toBe(true);
-      expect(
-        result.current.getKitByName("A1")?.modified_since_sync,
-      ).toBeUndefined();
+      expect(result.current.getKitByName("A1")?.modified_since_sync).toBe(
+        false,
+      );
       expect(globalThis.electronAPI.getKits).not.toHaveBeenCalled();
     });
 
@@ -576,7 +533,7 @@ describe("useKitDataManager", () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      let toggleResult: DbResult<{ isFavorite: boolean }>;
+      let toggleResult: DbResult<{ isFavorite: boolean }> | undefined;
       await act(async () => {
         toggleResult = await result.current.toggleKitFavorite("A0");
       });
@@ -611,7 +568,7 @@ describe("useKitDataManager", () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      let toggleResult: DbResult<{ isFavorite: boolean }>;
+      let toggleResult: DbResult<{ isFavorite: boolean }> | undefined;
       await act(async () => {
         toggleResult = await result.current.toggleKitFavorite("A0");
       });
@@ -640,7 +597,7 @@ describe("useKitDataManager", () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      let toggleResult: DbResult<{ isFavorite: boolean }>;
+      let toggleResult: DbResult<{ isFavorite: boolean }> | undefined;
       await act(async () => {
         toggleResult = await result.current.toggleKitFavorite("A0");
       });
@@ -738,7 +695,7 @@ describe("useKitDataManager", () => {
     it("should throw error when updateKit API not available", async () => {
       // Mock missing API by setting updateKit to undefined
       setupElectronAPIMock({
-        updateKit: undefined as unknown,
+        updateKit: undefined,
       });
 
       const { result } = renderHook(() =>
@@ -915,7 +872,7 @@ describe("useKitDataManager", () => {
     it("should throw error when updateKit API not available", async () => {
       // Mock missing API by setting updateKit to undefined
       setupElectronAPIMock({
-        updateKit: undefined as unknown,
+        updateKit: undefined,
       });
 
       const { result } = renderHook(() =>

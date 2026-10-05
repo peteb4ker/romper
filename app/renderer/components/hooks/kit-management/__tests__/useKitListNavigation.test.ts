@@ -3,20 +3,12 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { createMockKitWithRelations } from "../../../../../../tests/factories/kit.factory";
 import { useKitListNavigation } from "../useKitListNavigation";
 
 // Mock kit data
-const createMockKit = (name: string): KitWithRelations => ({
-  alias: null,
-  artist: null,
-  bank_letter: "A",
-  editable: false,
-  locked: false,
-  modified_since_sync: false,
-  name,
-  step_pattern: null,
-  voices: [],
-});
+const createMockKit = (name: string): KitWithRelations =>
+  createMockKitWithRelations({ name });
 
 const mockKits: KitWithRelations[] = [
   createMockKit("Kit1"),

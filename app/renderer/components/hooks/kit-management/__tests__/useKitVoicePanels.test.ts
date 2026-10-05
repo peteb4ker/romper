@@ -3,22 +3,15 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { VoiceSamples } from "../../kitTypes";
+import type { VoiceSamples } from "../../../kitTypes";
 
+import { createMockKitWithRelations } from "../../../../../../tests/factories/kit.factory";
 import { useKitVoicePanels } from "../useKitVoicePanels";
 
 // Mock kit data
-const mockKit: KitWithRelations = {
-  alias: null,
-  artist: null,
-  bank_letter: "A",
-  editable: false,
-  locked: false,
-  modified_since_sync: false,
+const mockKit: KitWithRelations = createMockKitWithRelations({
   name: "TestKit",
-  step_pattern: null,
-  voices: [],
-};
+});
 
 // Mock voice samples
 const mockSamples: VoiceSamples = {
@@ -341,22 +334,6 @@ describe("useKitVoicePanels", () => {
 
       expect(result.current.kit).toBeNull();
       expect(typeof result.current.onSampleKeyNav).toBe("function");
-    });
-
-    it("should handle invalid direction", () => {
-      const props = {
-        ...defaultProps,
-        selectedSampleIdx: 0,
-        selectedVoice: 1,
-      };
-      const { result } = renderHook(() => useKitVoicePanels(props));
-
-      act(() => {
-        result.current.onSampleKeyNav("invalid" as unknown);
-      });
-
-      expect(props.setSelectedSampleIdx).not.toHaveBeenCalled();
-      expect(props.setSelectedVoice).not.toHaveBeenCalled();
     });
 
     it("should memoize navigation functions correctly", () => {

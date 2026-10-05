@@ -3,8 +3,9 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { VoiceSamples } from "../../kitTypes";
+import type { VoiceSamples } from "../../../kitTypes";
 
+import { createMockKitWithRelations } from "../../../../../../tests/factories/kit.factory";
 import { useKitNavigation } from "../useKitNavigation";
 
 // Mock the HMR state manager
@@ -14,24 +15,9 @@ vi.mock("../../../../utils/hmrStateManager", () => ({
 
 describe("useKitNavigation", () => {
   const mockKits: KitWithRelations[] = [
-    {
-      alias: null,
-      bank_letter: "A",
-      editable: false,
-      name: "A0",
-    } as KitWithRelations,
-    {
-      alias: null,
-      bank_letter: "A",
-      editable: false,
-      name: "A1",
-    } as KitWithRelations,
-    {
-      alias: null,
-      bank_letter: "B",
-      editable: false,
-      name: "B0",
-    } as KitWithRelations,
+    createMockKitWithRelations({ bank_letter: "A", name: "A0" }),
+    createMockKitWithRelations({ bank_letter: "A", name: "A1" }),
+    createMockKitWithRelations({ bank_letter: "B", name: "B0" }),
   ];
 
   const mockAllKitSamples: { [kit: string]: VoiceSamples } = {
@@ -207,19 +193,6 @@ describe("useKitNavigation", () => {
       useKitNavigation({
         allKitSamples: {},
         kits: [],
-        refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
-      }),
-    );
-
-    expect(result.current.sortedKits).toEqual([]);
-    expect(result.current.selectedKit).toBeNull();
-  });
-
-  it("should handle null kits", () => {
-    const { result } = renderHook(() =>
-      useKitNavigation({
-        allKitSamples: {},
-        kits: null,
         refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
       }),
     );

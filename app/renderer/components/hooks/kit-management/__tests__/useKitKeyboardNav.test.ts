@@ -158,10 +158,11 @@ describe("useKitKeyboardNav", () => {
     );
 
     it("ignores ; when no kit is focused", () => {
+      const initialProps: { focused: null | string } = { focused: "Kit1" };
       const { rerender } = renderHook(
         ({ focused }) =>
           useKitKeyboardNav({ ...defaultProps, focusedKit: focused }),
-        { initialProps: { focused: "Kit1" } },
+        { initialProps },
       );
 
       rerender({ focused: null });

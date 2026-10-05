@@ -3,6 +3,7 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { createMockKitWithRelations } from "../../../../../../tests/factories/kit.factory";
 import { useKitBrowser } from "../useKitBrowser";
 
 const mockRenameBank = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
@@ -47,17 +48,7 @@ vi.mock("../useKitBankNavigation", () => ({
 
 describe("useKitBrowser", () => {
   const mockKits: KitWithRelations[] = [
-    {
-      alias: null,
-      artist: null,
-      bank_letter: "A",
-      editable: false,
-      locked: false,
-      modified_since_sync: false,
-      name: "A0",
-      step_pattern: null,
-      voices: [],
-    },
+    createMockKitWithRelations({ name: "A0" }),
   ];
 
   const defaultProps = {

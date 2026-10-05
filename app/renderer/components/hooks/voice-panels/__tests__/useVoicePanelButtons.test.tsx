@@ -58,7 +58,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container, getByTestId } = render(
-        <div>{result.current.renderPlayButton(false, "test.wav")}</div>,
+        <div>{result.current.renderPlayButton(false, 2)}</div>,
       );
 
       const button = container.querySelector("button");
@@ -70,7 +70,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { getByLabelText, getByTestId } = render(
-        <div>{result.current.renderPlayButton(true, "test.wav")}</div>,
+        <div>{result.current.renderPlayButton(true, 2)}</div>,
       );
 
       const button = getByLabelText("Stop");
@@ -82,7 +82,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(false, "test.wav")}</div>,
+        <div>{result.current.renderPlayButton(false, 2)}</div>,
       );
 
       const button = container.querySelector('button[aria-label="Play"]');
@@ -98,7 +98,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(true, "test.wav")}</div>,
+        <div>{result.current.renderPlayButton(true, 2)}</div>,
       );
 
       const button = container.querySelector('button[aria-label="Stop"]');
@@ -115,7 +115,7 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(false, "test.wav")}</div>,
+        <div>{result.current.renderPlayButton(false, 2)}</div>,
       );
 
       const button = container.querySelector('button[aria-label="Play"]');
@@ -132,26 +132,30 @@ describe("useVoicePanelButtons", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(false, "sample.wav")}</div>,
+        <div>{result.current.renderPlayButton(false, 1)}</div>,
       );
 
-      const button = container.querySelector('button[aria-label="Play"]');
+      const button = container.querySelector<HTMLButtonElement>(
+        'button[aria-label="Play"]',
+      );
       button?.click();
 
-      expect(mockOnPlay).toHaveBeenCalledWith(3, "sample.wav");
+      expect(mockOnPlay).toHaveBeenCalledWith(3, 1);
     });
 
     it("calls onStop when stop button is clicked", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(true, "sample.wav")}</div>,
+        <div>{result.current.renderPlayButton(true, 1)}</div>,
       );
 
-      const button = container.querySelector('button[aria-label="Stop"]');
+      const button = container.querySelector<HTMLButtonElement>(
+        'button[aria-label="Stop"]',
+      );
       button?.click();
 
-      expect(mockOnStop).toHaveBeenCalledWith(3, "sample.wav");
+      expect(mockOnStop).toHaveBeenCalledWith(3, 1);
     });
 
     it("handles different voice numbers correctly", () => {
@@ -160,41 +164,43 @@ describe("useVoicePanelButtons", () => {
       );
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(false, "test.wav")}</div>,
+        <div>{result.current.renderPlayButton(false, 2)}</div>,
       );
 
-      const button = container.querySelector('button[aria-label="Play"]');
+      const button = container.querySelector<HTMLButtonElement>(
+        'button[aria-label="Play"]',
+      );
       button?.click();
 
-      expect(mockOnPlay).toHaveBeenCalledWith(7, "test.wav");
+      expect(mockOnPlay).toHaveBeenCalledWith(7, 2);
     });
 
-    it("handles different sample names correctly", () => {
+    it("handles different slot numbers correctly", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>
-          {result.current.renderPlayButton(false, "different-sample.wav")}
-        </div>,
+        <div>{result.current.renderPlayButton(false, 5)}</div>,
       );
 
-      const button = container.querySelector('button[aria-label="Play"]');
+      const button = container.querySelector<HTMLButtonElement>(
+        'button[aria-label="Play"]',
+      );
       button?.click();
 
-      expect(mockOnPlay).toHaveBeenCalledWith(3, "different-sample.wav");
+      expect(mockOnPlay).toHaveBeenCalledWith(3, 5);
     });
 
-    it("handles empty sample name", () => {
+    it("handles slot 0", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(false, "")}</div>,
+        <div>{result.current.renderPlayButton(false, 0)}</div>,
       );
 
       const button = container.querySelector("button");
       button?.click();
 
-      expect(mockOnPlay).toHaveBeenCalledWith(3, "");
+      expect(mockOnPlay).toHaveBeenCalledWith(3, 0);
     });
 
     it("memoizes correctly based on dependencies", () => {
@@ -297,18 +303,16 @@ describe("useVoicePanelButtons", () => {
     it("stops event propagation when clicked", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
-      const { container } = render(
-        <div>{result.current.renderDeleteButton(0)}</div>,
+      // The slot row around the button selects the sample on click
+      const onRowClick = vi.fn();
+      const { getByRole } = render(
+        <div onClick={onRowClick}>{result.current.renderDeleteButton(0)}</div>,
       );
 
-      const button = container.querySelector("button");
+      fireEvent.click(getByRole("button", { name: "Delete sample" }));
 
-      // Simulate click with mock event
-      button.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-
-      // Note: Testing stopPropagation requires more complex setup
-      // This test verifies the button renders and is clickable
       expect(mockHandleDeleteSample).toHaveBeenCalled();
+      expect(onRowClick).not.toHaveBeenCalled();
     });
 
     it("handles different slot indices correctly", () => {
@@ -422,7 +426,7 @@ describe("useVoicePanelButtons", () => {
 
       const { container } = render(
         <div>
-          {result.current.renderPlayButton(false, "test.wav")}
+          {result.current.renderPlayButton(false, 2)}
           {result.current.renderDeleteButton(1)}
         </div>,
       );
@@ -432,7 +436,7 @@ describe("useVoicePanelButtons", () => {
 
       // Click play button
       buttons[0].click();
-      expect(mockOnPlay).toHaveBeenCalledWith(3, "test.wav");
+      expect(mockOnPlay).toHaveBeenCalledWith(3, 2);
 
       // Click delete button
       buttons[1].click();
@@ -442,8 +446,8 @@ describe("useVoicePanelButtons", () => {
     it("handles multiple renders with different parameters", () => {
       const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
 
-      const playButton1 = result.current.renderPlayButton(false, "sample1.wav");
-      const playButton2 = result.current.renderPlayButton(true, "sample2.wav");
+      const playButton1 = result.current.renderPlayButton(false, 4);
+      const playButton2 = result.current.renderPlayButton(true, 6);
       const deleteButton1 = result.current.renderDeleteButton(0);
       const deleteButton2 = result.current.renderDeleteButton(1);
 
@@ -460,11 +464,11 @@ describe("useVoicePanelButtons", () => {
       expect(buttons).toHaveLength(4);
 
       // Test each button
-      buttons[0].click(); // Play sample1
-      expect(mockOnPlay).toHaveBeenCalledWith(3, "sample1.wav");
+      buttons[0].click(); // Play slot 4
+      expect(mockOnPlay).toHaveBeenCalledWith(3, 4);
 
-      buttons[1].click(); // Stop sample2
-      expect(mockOnStop).toHaveBeenCalledWith(3, "sample2.wav");
+      buttons[1].click(); // Stop slot 6
+      expect(mockOnStop).toHaveBeenCalledWith(3, 6);
 
       buttons[2].click(); // Delete slot 0
       expect(mockHandleDeleteSample).toHaveBeenCalledWith(0);
@@ -481,13 +485,13 @@ describe("useVoicePanelButtons", () => {
       );
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(false, "test.wav")}</div>,
+        <div>{result.current.renderPlayButton(false, 2)}</div>,
       );
 
       const button = container.querySelector("button");
       button?.click();
 
-      expect(mockOnPlay).toHaveBeenCalledWith(0, "test.wav");
+      expect(mockOnPlay).toHaveBeenCalledWith(0, 2);
     });
 
     it("handles voice number 16", () => {
@@ -496,41 +500,13 @@ describe("useVoicePanelButtons", () => {
       );
 
       const { container } = render(
-        <div>{result.current.renderPlayButton(false, "test.wav")}</div>,
+        <div>{result.current.renderPlayButton(false, 2)}</div>,
       );
 
       const button = container.querySelector("button");
       button?.click();
 
-      expect(mockOnPlay).toHaveBeenCalledWith(16, "test.wav");
-    });
-
-    it("handles undefined sample name", () => {
-      const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
-
-      const { container } = render(
-        <div>
-          {result.current.renderPlayButton(false, undefined as unknown)}
-        </div>,
-      );
-
-      const button = container.querySelector("button");
-      button?.click();
-
-      expect(mockOnPlay).toHaveBeenCalledWith(3, undefined);
-    });
-
-    it("handles null sample name", () => {
-      const { result } = renderHook(() => useVoicePanelButtons(defaultProps));
-
-      const { container } = render(
-        <div>{result.current.renderPlayButton(false, null as unknown)}</div>,
-      );
-
-      const button = container.querySelector("button");
-      button?.click();
-
-      expect(mockOnPlay).toHaveBeenCalledWith(3, null);
+      expect(mockOnPlay).toHaveBeenCalledWith(16, 2);
     });
 
     it("handles async delete operation", async () => {
@@ -565,7 +541,7 @@ describe("useVoicePanelButtons", () => {
       const button = container.querySelector("button");
 
       // Should not throw - error should be handled by the delete handler
-      expect(() => button.click()).not.toThrow();
+      expect(() => button?.click()).not.toThrow();
       expect(mockErrorDelete).toHaveBeenCalledWith(1);
     });
 
@@ -574,8 +550,8 @@ describe("useVoicePanelButtons", () => {
 
       // Render same button multiple times
       const buttons = [
-        result.current.renderPlayButton(false, "test.wav"),
-        result.current.renderPlayButton(false, "test.wav"),
+        result.current.renderPlayButton(false, 2),
+        result.current.renderPlayButton(false, 2),
         result.current.renderDeleteButton(0),
         result.current.renderDeleteButton(0),
       ];

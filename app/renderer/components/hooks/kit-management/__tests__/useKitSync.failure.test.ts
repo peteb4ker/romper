@@ -59,7 +59,12 @@ describe("[UC-34] [UC-36] a failed write tells the user (RE-40)", () => {
 
   it("says nothing when the write works", async () => {
     vi.mocked(globalThis.electronAPI.startKitSync).mockResolvedValue({
-      data: { syncedFiles: 3 },
+      data: {
+        cancelled: false,
+        skippedFiles: [],
+        syncedFiles: 3,
+        warnings: [],
+      },
       success: true,
     });
     const onMessage = vi.fn();

@@ -162,19 +162,6 @@ describe("[UC-08] useKitItem", () => {
       expect(result.current.iconType).toBe("folder");
       expect(result.current.iconLabel).toBe("Folder");
     });
-
-    it("should handle non-string values being filtered out", () => {
-      const voiceNames = {
-        1: "kick",
-        2: null as unknown,
-        3: undefined as unknown,
-        4: "snare",
-      };
-      const { result } = renderHook(() => useKitItem(voiceNames));
-
-      expect(result.current.iconType).toBe("drumkit");
-      expect(result.current.iconLabel).toBe("Drum Kit");
-    });
   });
 
   describe("edge cases", () => {

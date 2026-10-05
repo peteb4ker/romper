@@ -44,7 +44,7 @@ describe("useVoicePanelDragHandlers", () => {
         dataTransfer: {
           types: [DRAG_TYPES.ROMPER_SAMPLE],
         },
-      } as React.DragEvent;
+      } as unknown as React.DragEvent;
 
       result.current.handleCombinedDragOver(internalDragEvent, 5);
       result.current.handleCombinedDrop(internalDragEvent, 5);
@@ -73,7 +73,7 @@ describe("useVoicePanelDragHandlers", () => {
         dataTransfer: {
           types: ["text/plain"],
         },
-      } as React.DragEvent;
+      } as unknown as React.DragEvent;
 
       result.current.handleCombinedDragOver(externalDragEvent, 3);
       result.current.handleCombinedDrop(externalDragEvent, 3);
@@ -117,7 +117,7 @@ describe("useVoicePanelDragHandlers", () => {
         dataTransfer: {
           types: [DRAG_TYPES.ROMPER_SAMPLE],
         },
-      } as React.DragEvent;
+      } as unknown as React.DragEvent;
 
       result.current.handleCombinedDragOver(dragEvent, 1);
       result.current.handleCombinedDrop(dragEvent, 1);

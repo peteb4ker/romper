@@ -1,63 +1,32 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { createMockKitWithRelations } from "../../../../../../tests/factories/kit.factory";
 import { useKitListLogic } from "../useKitListLogic";
 
 describe("useKitListLogic", () => {
   it("sorts kits and provides helpers", () => {
     const kits = [
-      {
-        alias: null,
-        artist: null,
+      createMockKitWithRelations({
         bank: null,
         bank_letter: "B",
-        editable: false,
-        locked: false,
-        modified_since_sync: false,
         name: "B2",
-        samples: [],
-        step_pattern: null,
-        voices: [],
-      },
-      {
-        alias: null,
-        artist: null,
+      }),
+      createMockKitWithRelations({
         bank: null,
         bank_letter: "A",
-        editable: false,
-        locked: false,
-        modified_since_sync: false,
         name: "A1",
-        samples: [],
-        step_pattern: null,
-        voices: [],
-      },
-      {
-        alias: null,
-        artist: null,
+      }),
+      createMockKitWithRelations({
         bank: null,
         bank_letter: "C",
-        editable: false,
-        locked: false,
-        modified_since_sync: false,
         name: "C3",
-        samples: [],
-        step_pattern: null,
-        voices: [],
-      },
-      {
-        alias: null,
-        artist: null,
+      }),
+      createMockKitWithRelations({
         bank: null,
         bank_letter: "A",
-        editable: false,
-        locked: false,
-        modified_since_sync: false,
         name: "A2",
-        samples: [],
-        step_pattern: null,
-        voices: [],
-      },
+      }),
     ];
     const { result } = renderHook(() => useKitListLogic(kits));
 

@@ -147,6 +147,13 @@ jobs:
   # Coverage merge + SonarCloud. Runs on main pushes and on same-repo PRs
   # (fork and Dependabot PRs don't get SONAR_TOKEN), not when the release
   # workflow runs the tests on a tag.
+  #
+  # This job is the required check that enforces SonarCloud's quality gate
+  # on PRs (#468): on a PR the scan waits for the gate and fails the job
+  # when it's red. Require `analysis`, not the SonarCloud app's "SonarCloud
+  # Code Analysis" check: fork and Dependabot PRs never get the app's check,
+  # so requiring it would block them forever, whereas a job skipped by its
+  # `if:` reports success to branch protection.
   analysis:
     needs: [unit-tests, integration-tests]
     if: >-
@@ -214,13 +221,27 @@ jobs:
           files: ./coverage/merged/coverage-final.json
           disable_search: true
 
+      # A same-repo PR without the token would skip the scan and pass the
+      # required check without a gate, so fail closed instead.
+      - name: Require SONAR_TOKEN on pull requests
+        if: env.SONAR_TOKEN == '' && github.event_name == 'pull_request'
+        run: |
+          echo "::error::SONAR_TOKEN is not available, so the SonarCloud quality gate can't be checked."
+          exit 1
+
       # sonarcloud-github-action was deprecated and its bundled scanner
       # stopped working (no analysis landed after 2026-07-21).
+      # On PRs, wait for the quality gate so a red gate fails this job
+      # (#468). On main the step below files an issue for a red gate instead.
       - name: SonarCloud Scan
         if: env.SONAR_TOKEN != ''
         uses: SonarSource/sonarqube-scan-action@v8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: >-
+            -Dsonar.qualitygate.wait=${{ github.event_name == 'pull_request' }}
+            -Dsonar.qualitygate.timeout=600
 
       # Risk-informed quality gate check with deduplication
       - name: Check quality gate and manage issues

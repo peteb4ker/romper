@@ -179,9 +179,6 @@ export interface ElectronAPI {
     kitName: string,
     voices: VoiceSnapshot[],
   ) => Promise<DbResult<void>>;
-  scanBanks: () => Promise<
-    DbResult<{ scannedAt: Date; scannedFiles: number; updatedBanks: number }>
-  >;
   selectExistingLocalStore: () => Promise<{
     error: null | string;
     path: null | string;
@@ -191,12 +188,13 @@ export interface ElectronAPI {
   selectSdCard: () => Promise<null | string>;
   setSetting: (key: SettingsKey, value: unknown) => Promise<void>;
   /**
-   * Import the bank names at the root of the card setup is copying from
-   * into the store setup is creating, in main (#564).
+   * Import the bank names in `sourcePath`'s name files into the store setup
+   * is creating, in main: the card setup is copying from (#564), or the
+   * store the factory archive was extracted into (#567).
    */
   setupImportBankNames: (
     dbDir: string,
-    cardPath: string,
+    sourcePath: string,
   ) => Promise<DbResult<{ importedBanks: number }>>;
   /**
    * Import one kit folder into the store setup is creating, in main: the

@@ -2,7 +2,10 @@ import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { importSetupBankNames, importSetupKit } from "../../../utils/romperDb";
-import { useLocalStoreWizardFileOps } from "../useLocalStoreWizardFileOps";
+import {
+  bankNamesSourcePath,
+  useLocalStoreWizardFileOps,
+} from "../useLocalStoreWizardFileOps";
 
 vi.mock("../../../../config", () => ({
   config: {
@@ -470,8 +473,9 @@ describe("useLocalStoreWizardFileOps", () => {
       });
     });
 
-    // #564: the card's bank names arrive with its kits
-    it("[UC-12] imports the card's bank names when set up from a card", async () => {
+    // #564, #567: the card's or the factory archive's bank names arrive
+    // with the kits
+    it("[UC-12] imports the bank names in the folder it's given", async () => {
       mockApi.listFilesInRoot = vi.fn().mockResolvedValue(["A0"]);
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
@@ -489,7 +493,15 @@ describe("useLocalStoreWizardFileOps", () => {
         "/Volumes/SD",
       );
 
-      // The factory archive's names are files in the store: nothing to import
+      // The factory archive's names, extracted into the store
+      vi.mocked(importSetupBankNames).mockClear();
+      await result.current.createAndPopulateDb("/target/path", "/target/path");
+      expect(importSetupBankNames).toHaveBeenCalledWith(
+        "/target/path/.romperdb",
+        "/target/path",
+      );
+
+      // A blank store has none
       vi.mocked(importSetupBankNames).mockClear();
       await result.current.createAndPopulateDb("/target/path");
       expect(importSetupBankNames).not.toHaveBeenCalled();
@@ -606,6 +618,30 @@ describe("useLocalStoreWizardFileOps", () => {
       expect(dbResult.truncationWarnings).toEqual([
         { kept: 12, kitName: "S62", skipped: 6, total: 18, voiceNumber: 2 },
       ]);
+    });
+  });
+
+  // #567: setup reads the bank name files once, from where the kits came
+  describe("[UC-01] [UC-02] [UC-12] bankNamesSourcePath", () => {
+    const state = { sdCardSourcePath: "/Volumes/SD", targetPath: "/store" };
+
+    it("is the card for a card setup", () => {
+      expect(bankNamesSourcePath({ ...state, source: "sdcard" })).toBe(
+        "/Volumes/SD",
+      );
+    });
+
+    it("is the store for the factory archive, which was extracted into it", () => {
+      expect(bankNamesSourcePath({ ...state, source: "squarp" })).toBe(
+        "/store",
+      );
+    });
+
+    it("is nothing for a blank store", () => {
+      expect(
+        bankNamesSourcePath({ ...state, source: "blank" }),
+      ).toBeUndefined();
+      expect(bankNamesSourcePath({ ...state, source: null })).toBeUndefined();
     });
   });
 });

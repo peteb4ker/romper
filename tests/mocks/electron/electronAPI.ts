@@ -160,11 +160,6 @@ export const createElectronAPIMock = (
     success: true,
   }),
   restoreKitVoices: vi.fn().mockResolvedValue({ success: true }),
-
-  scanBanks: vi.fn().mockResolvedValue({
-    data: { scannedAt: new Date(), scannedFiles: 0, updatedBanks: 2 },
-    success: true,
-  }),
   selectExistingLocalStore: vi.fn().mockResolvedValue("/mock/existing/path"),
   selectLocalStorePath: vi.fn().mockResolvedValue("/mock/custom/path"),
 

@@ -90,10 +90,8 @@ describe("useKitBankNavigation", () => {
 
       expect(result.current.selectedBank).toBe("A");
       expect(result.current.focusedKit).toBe("A0"); // First kit
-      expect(result.current.bankNames).toEqual({
-        A: "Artist A",
-        B: "Artist B",
-      });
+      // Names come from the banks, which load once a store is open
+      expect(result.current.bankNames).toEqual({});
     });
 
     it("should handle empty kits array", () => {
@@ -106,29 +104,12 @@ describe("useKitBankNavigation", () => {
     });
   });
 
-  describe("bank name generation", () => {
-    it("should generate bank names from kit data", () => {
-      const { result } = renderHook(() => useKitBankNavigation(defaultProps));
+  // #567: bank names have one owner, the banks table. The browser reads
+  // them only from get-all-banks, never from the kits' copies, and reads
+  // them again after anything that changes them.
+  describe("[UC-12] bank names come only from the banks (RE-90, #567)", () => {
+    let storedNames: Record<string, null | string>;
 
-      expect(result.current.bankNames).toEqual({
-        A: "Artist A",
-        B: "Artist B",
-      });
-    });
-
-    it("should handle kits without bank artists", () => {
-      const kitsWithoutArtists = [
-        { ...mockKits[0], bank: null },
-        { ...mockKits[1], bank: bankOf("A", null) },
-      ];
-      const props = { ...defaultProps, kits: kitsWithoutArtists };
-      const { result } = renderHook(() => useKitBankNavigation(props));
-
-      expect(result.current.bankNames).toEqual({});
-    });
-  });
-
-  describe("[UC-12] names of banks without loaded kits (RE-90)", () => {
     const bankRow = (letter: string, artist: null | string) => ({
       artist,
       letter,
@@ -137,21 +118,31 @@ describe("useKitBankNavigation", () => {
     });
 
     beforeEach(() => {
-      vi.mocked(globalThis.electronAPI.getAllBanks).mockResolvedValue({
-        data: [
-          bankRow("A", "Artist A"),
-          bankRow("B", "Artist B"),
-          bankRow("C", "Empty Bank"),
-          bankRow("D", null),
-        ],
-        success: true,
-      });
+      // Main's banks table: get-all-banks reads it, update-bank changes it
+      storedNames = { A: "Artist A", B: "Artist B", C: "Empty Bank", D: null };
+      vi.mocked(globalThis.electronAPI.getAllBanks).mockImplementation(
+        async () => ({
+          data: Object.entries(storedNames).map(([letter, artist]) =>
+            bankRow(letter, artist),
+          ),
+          success: true,
+        }),
+      );
+      vi.mocked(globalThis.electronAPI.updateBank).mockImplementation(
+        async (letter, { artist }) => {
+          storedNames[letter] = artist ?? null;
+          return { success: true };
+        },
+      );
     });
 
+    const renderInStore = (localStorePath: null | string = "/store") =>
+      renderHook((props) => useKitBankNavigation(props), {
+        initialProps: { ...defaultProps, localStorePath },
+      });
+
     it("loads every bank's name from the banks, not the kits", async () => {
-      const { result } = renderHook(() =>
-        useKitBankNavigation({ ...defaultProps, localStorePath: "/store" }),
-      );
+      const { result } = renderInStore();
 
       await waitFor(() =>
         expect(result.current.bankNames).toEqual({
@@ -163,10 +154,7 @@ describe("useKitBankNavigation", () => {
     });
 
     it("keeps a bank's name when its kits are filtered out", async () => {
-      const { rerender, result } = renderHook(
-        (props) => useKitBankNavigation(props),
-        { initialProps: { ...defaultProps, localStorePath: "/store" } },
-      );
+      const { rerender, result } = renderInStore();
       await waitFor(() =>
         expect(result.current.bankNames.C).toBe("Empty Bank"),
       );
@@ -184,47 +172,76 @@ describe("useKitBankNavigation", () => {
       });
     });
 
-    it("keeps a name given to an empty bank when the kits reload", async () => {
-      vi.mocked(globalThis.electronAPI.updateBank).mockResolvedValue({
-        success: true,
-      });
-      const { rerender, result } = renderHook(
-        (props) => useKitBankNavigation(props),
-        { initialProps: { ...defaultProps, localStorePath: "/store" } },
-      );
+    it("shows a name given to an empty bank without a relaunch", async () => {
+      const { result } = renderInStore();
       await waitFor(() =>
         expect(result.current.bankNames.C).toBe("Empty Bank"),
       );
 
       await act(() => result.current.handleBankNameChange("D", "New Name"));
-      rerender({
-        ...defaultProps,
-        kits: [...mockKits],
-        localStorePath: "/store",
-      });
 
       expect(result.current.bankNames.D).toBe("New Name");
+      // Read back from the banks, as main stored it
+      expect(globalThis.electronAPI.getAllBanks).toHaveBeenCalledTimes(2);
     });
 
-    it("takes a reloaded kit's bank name over the loaded one", async () => {
-      const { rerender, result } = renderHook(
-        (props) => useKitBankNavigation(props),
-        { initialProps: { ...defaultProps, localStorePath: "/store" } },
+    it("shows the names setup imported once the new store opens", async () => {
+      // Setup imported the card's or the factory archive's names into the
+      // new store before it was opened, D's for a bank with no kits
+      storedNames = { A: "ALWIS", D: "RICHARD DEVINE" };
+      const { rerender, result } = renderInStore(null);
+      expect(result.current.bankNames).toEqual({});
+
+      rerender({ ...defaultProps, kits: [], localStorePath: "/new-store" });
+
+      await waitFor(() =>
+        expect(result.current.bankNames).toEqual({
+          A: "ALWIS",
+          D: "RICHARD DEVINE",
+        }),
       );
+    });
+
+    it("ignores the bank names reloaded kits carry", async () => {
+      const { rerender, result } = renderInStore();
       await waitFor(() =>
         expect(result.current.bankNames.C).toBe("Empty Bank"),
       );
 
       rerender({
         ...defaultProps,
-        kits: [{ ...mockKits[2], bank: bankOf("B", null) }],
+        kits: [
+          { ...mockKits[0], bank: bankOf("A", "Stale A") },
+          { ...mockKits[2], bank: bankOf("B", null) },
+        ],
         localStorePath: "/store",
       });
 
       expect(result.current.bankNames).toEqual({
         A: "Artist A",
+        B: "Artist B",
         C: "Empty Bank",
       });
+    });
+
+    it("drops a store's names that arrive after it was switched", async () => {
+      let answerOldStore: () => void = () => {};
+      vi.mocked(globalThis.electronAPI.getAllBanks).mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            answerOldStore = () =>
+              resolve({ data: [bankRow("A", "Old Store")], success: true });
+          }),
+      );
+      const { rerender, result } = renderInStore("/old-store");
+
+      rerender({ ...defaultProps, localStorePath: "/store" });
+      await waitFor(() =>
+        expect(result.current.bankNames.C).toBe("Empty Bank"),
+      );
+      await act(async () => answerOldStore());
+
+      expect(result.current.bankNames.A).toBe("Artist A");
     });
 
     it("doesn't load names without a store", () => {
@@ -753,8 +770,48 @@ describe("useKitBankNavigation", () => {
     });
   });
   describe("[UC-12] handleBankNameChange", () => {
+    const props = { ...defaultProps, localStorePath: "/store" };
+
+    beforeEach(() => {
+      // Main's names before and after the save
+      vi.mocked(globalThis.electronAPI.getAllBanks)
+        .mockReset()
+        .mockResolvedValueOnce({
+          data: [
+            {
+              artist: "Artist A",
+              letter: "A",
+              rtf_filename: null,
+              scanned_at: null,
+            },
+          ],
+          success: true,
+        })
+        .mockResolvedValueOnce({
+          data: [
+            {
+              artist: "New Artist",
+              letter: "A",
+              rtf_filename: null,
+              scanned_at: null,
+            },
+          ],
+          success: true,
+        });
+    });
+
+    const renderLoaded = async (onMessage?: () => void) => {
+      const hook = renderHook(() =>
+        useKitBankNavigation({ ...props, onMessage }),
+      );
+      await waitFor(() =>
+        expect(hook.result.current.bankNames.A).toBe("Artist A"),
+      );
+      return hook;
+    };
+
     it("saves a new name and shows it", async () => {
-      const { result } = renderHook(() => useKitBankNavigation(defaultProps));
+      const { result } = await renderLoaded();
 
       await act(async () => {
         await result.current.handleBankNameChange("A", "New Artist");
@@ -767,7 +824,26 @@ describe("useKitBankNavigation", () => {
     });
 
     it("clears the name with null (RE-23)", async () => {
-      const { result } = renderHook(() => useKitBankNavigation(defaultProps));
+      vi.mocked(globalThis.electronAPI.getAllBanks)
+        .mockReset()
+        .mockResolvedValueOnce({
+          data: [
+            {
+              artist: "Artist A",
+              letter: "A",
+              rtf_filename: null,
+              scanned_at: null,
+            },
+          ],
+          success: true,
+        })
+        .mockResolvedValueOnce({
+          data: [
+            { artist: null, letter: "A", rtf_filename: null, scanned_at: null },
+          ],
+          success: true,
+        });
+      const { result } = await renderLoaded();
 
       await act(async () => {
         await result.current.handleBankNameChange("A", "");
@@ -785,9 +861,7 @@ describe("useKitBankNavigation", () => {
         success: false,
       });
       const onMessage = vi.fn();
-      const { result } = renderHook(() =>
-        useKitBankNavigation({ ...defaultProps, onMessage }),
-      );
+      const { result } = await renderLoaded(onMessage);
 
       await act(async () => {
         await result.current.handleBankNameChange("A", "AC/DC");
@@ -806,9 +880,7 @@ describe("useKitBankNavigation", () => {
         undefined as never,
       );
       const onMessage = vi.fn();
-      const { result } = renderHook(() =>
-        useKitBankNavigation({ ...defaultProps, onMessage }),
-      );
+      const { result } = await renderLoaded(onMessage);
 
       await act(async () => {
         await result.current.handleBankNameChange("A", "New Artist");

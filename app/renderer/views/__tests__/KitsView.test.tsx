@@ -37,14 +37,12 @@ import React from "react";
 import { setupAudioMocks } from "../../../../tests/mocks/browser/audio";
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
 import { TestSettingsProvider } from "../../../../tests/providers/TestSettingsProvider";
-import { useBankScanning } from "../../components/hooks/shared/useBankScanning";
 import { useDialogState } from "../../components/hooks/shared/useDialogState";
 import { useValidationResults } from "../../components/hooks/shared/useValidationResults";
 import { SettingsContext } from "../../utils/SettingsContext";
 import KitsView from "../KitsView";
 
 // Mock the hooks used by KitsView
-const mockScanBanks = vi.fn(() => Promise.resolve());
 const mockOpenValidationDialog = vi.fn(async () => {});
 const mockOpenWizard = vi.fn();
 const mockOpenChangeDirectory = vi.fn();
@@ -52,12 +50,6 @@ const mockOpenPreferences = vi.fn();
 const mockHandleScanAllKits = vi.fn();
 
 // Removed unused search mocks since search is now handled by useKitSearch hook
-
-vi.mock("../../components/hooks/shared/useBankScanning", () => ({
-  useBankScanning: vi.fn(() => ({
-    scanBanks: mockScanBanks,
-  })),
-}));
 
 // Store the menu callbacks globally for testing
 let globalMenuCallbacks: unknown = null;
@@ -80,10 +72,6 @@ vi.mock("../../components/hooks/shared/useMenuEvents", () => ({
       window.addEventListener("menu-about", () => callbacks.onAbout?.());
     }
   }),
-}));
-
-vi.mock("../../components/hooks/shared/useStartupActions", () => ({
-  useStartupActions: vi.fn(),
 }));
 
 vi.mock("../../components/hooks/shared/useValidationResults", () => ({
@@ -130,7 +118,6 @@ vi.mock("../../components/hooks/shared/useDialogState", () => ({
 // This way it will call the actual functions we pass in (which we can spy on)
 
 // We need to get the actual mocked functions for verification
-const _mockUseBankScanning = vi.mocked(useBankScanning);
 const _mockUseValidationResults = vi.mocked(useValidationResults);
 const _mockUseDialogState = vi.mocked(useDialogState);
 
@@ -315,7 +302,6 @@ describe("KitsView", () => {
   describe("Menu event handlers", () => {
     beforeEach(() => {
       // Reset all mock functions before each test
-      mockScanBanks.mockClear();
       mockOpenChangeDirectory.mockClear();
       mockOpenPreferences.mockClear();
       mockHandleScanAllKits.mockClear();
@@ -337,10 +323,7 @@ describe("KitsView", () => {
       // Trigger the unified scan all callback
       globalMenuCallbacks.onScanAll();
 
-      // Bank scan first, then every kit
-      await waitFor(() => {
-        expect(mockScanBanks).toHaveBeenCalled();
-      });
+      // Every kit
       await waitFor(() => {
         expect(window.electronAPI.rescanKit).toHaveBeenCalledTimes(3);
       });
@@ -477,7 +460,7 @@ describe("KitsView", () => {
       globalMenuCallbacks.onScanAll();
 
       expect(confirm).toHaveBeenCalledTimes(1);
-      expect(mockScanBanks).not.toHaveBeenCalled();
+      expect(window.electronAPI.rescanKit).not.toHaveBeenCalled();
       confirm.mockRestore();
     });
 

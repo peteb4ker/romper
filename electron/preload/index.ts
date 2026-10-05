@@ -400,10 +400,6 @@ const electronAPI = {
     isDev && console.debug("[IPC] restoreKitVoices invoked", kitName);
     return ipcRenderer.invoke("restore-kit-voices", kitName, voices);
   },
-  scanBanks: () => {
-    isDev && console.debug("[IPC] scanBanks invoked");
-    return ipcRenderer.invoke("scan-banks");
-  },
   selectExistingLocalStore: () => {
     isDev && console.debug("[IPC] selectExistingLocalStore invoked");
     return ipcRenderer.invoke("select-existing-local-store");
@@ -419,10 +415,10 @@ const electronAPI = {
   setSetting: async (key: SettingsKey, value: unknown): Promise<void> => {
     return await settingsManager.setSetting(key, value as SettingsValue);
   },
-  setupImportBankNames: (dbDir: string, cardPath: string) => {
+  setupImportBankNames: (dbDir: string, sourcePath: string) => {
     isDev &&
-      console.debug("[IPC] setupImportBankNames invoked", dbDir, cardPath);
-    return ipcRenderer.invoke("setup-import-bank-names", dbDir, cardPath);
+      console.debug("[IPC] setupImportBankNames invoked", dbDir, sourcePath);
+    return ipcRenderer.invoke("setup-import-bank-names", dbDir, sourcePath);
   },
   setupImportKit: (dbDir: string, kitName: string) => {
     isDev && console.debug("[IPC] setupImportKit invoked", dbDir, kitName);

@@ -73,7 +73,6 @@ export const BUDGETS = {
       "get-all-kits": { max: 1 },
       "get-local-store-status": { max: 1 },
       "read-settings": { max: 2 },
-      "scan-banks": { max: 1 },
     },
     "delete a sample": {
       "delete-sample-from-slot": { max: 1 },

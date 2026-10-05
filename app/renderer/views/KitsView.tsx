@@ -18,7 +18,6 @@ import { useSampleRefreshListener } from "../components/hooks/kit-management/use
 import { useDialogState } from "../components/hooks/shared/useDialogState";
 import { useGlobalKeyboardShortcuts } from "../components/hooks/shared/useGlobalKeyboardShortcuts";
 import { useMessageApi } from "../components/hooks/shared/useMessageApi";
-import { useStartupActions } from "../components/hooks/shared/useStartupActions";
 import KitBrowserContainer from "../components/KitBrowserContainer";
 import KitEditorContainer from "../components/KitEditorContainer";
 import KitViewDialogs from "../components/KitViewDialogs";
@@ -141,18 +140,11 @@ const KitsView: React.FC = () => {
 
   // Menu handlers
   useKitViewMenuHandlers({
-    onMessage: showMessage,
     onRedo: keyboardShortcuts.redoIfAllowed,
     onScanAllKits: handleScanAllKits,
     onUndo: keyboardShortcuts.undoIfAllowed,
     openChangeDirectory: dialogState.openChangeDirectory,
     openPreferences: dialogState.openPreferences,
-  });
-
-  // Startup actions, once the store's status says it's valid (#553)
-  useStartupActions({
-    isLocalStoreReady: setupFlow.isLocalStoreReady,
-    localStorePath,
   });
 
   // HMR: Save selected kit state before hot reload

@@ -202,15 +202,18 @@ export class LocalStoreSetupService {
   }
 
   /**
-   * Import the bank names on the card setup is copying from into the store
-   * it is creating (#564): each `<letter> - <name>.rtf` file at the card
-   * root names its bank in `banks.artist`, the names' only owner. The files
-   * themselves aren't copied into the store. Without this, the first write
-   * back to the card removed them, as names the store didn't have.
+   * Import the bank names in `sourcePath` into the store setup is creating:
+   * each `<letter> - <name>.rtf` file there (`parseBankNameFile`) names its
+   * bank in `banks.artist`, the names' only owner. `sourcePath` is the card
+   * setup is copying from (#564), whose files aren't copied into the store
+   * (without this, the first write back to the card removed them, as names
+   * the store didn't have), or the store itself, where the factory archive
+   * was extracted (#567). This is the only time Romper reads these files;
+   * afterwards they're only written from `banks.artist`.
    *
    * Saved as a scan (`source: "scan"`), so no kit is flagged as changed:
    * the card already has these names. All the names go in together, or
-   * none. Should a card hold two files for one letter, the first by file
+   * none. Should a folder hold two files for one letter, the first by file
    * name is kept, so the result doesn't depend on the order the folder
    * lists them in.
    *
@@ -218,7 +221,7 @@ export class LocalStoreSetupService {
    */
   importSetupBankNames(
     dbDir: string,
-    cardPath: string,
+    sourcePath: string,
   ): DbResult<{ importedBanks: number }> {
     const resolved = path.resolve(dbDir);
     if (!this.createdDbDirs.has(resolved)) {
@@ -231,14 +234,14 @@ export class LocalStoreSetupService {
     let fileNames: string[];
     try {
       fileNames = fs
-        .readdirSync(cardPath, { withFileTypes: true })
+        .readdirSync(sourcePath, { withFileTypes: true })
         .filter((entry) => entry.isFile())
         .map((entry) => entry.name)
         .sort((a, b) => a.localeCompare(b));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       return {
-        error: `Can't read the bank names in ${cardPath}: ${message}`,
+        error: `Can't read the bank names in ${sourcePath}: ${message}`,
         success: false,
       };
     }

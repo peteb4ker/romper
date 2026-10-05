@@ -42,6 +42,10 @@ test.describe("[UC-36] Messages", () => {
     });
     // Nothing is announced on a normal launch
     await expect(window.locator('[data-testid^="message-"]')).toHaveCount(0);
+    // The kit editor reports Scan All as a toast; the browser shows it in
+    // its scan panel
+    await window.locator('[data-testid="kit-item-A0"]').click();
+    await window.waitForSelector('[data-testid="kit-editor"]');
 
     // Scan All asks for confirmation first
     await window.evaluate(() => {
@@ -55,7 +59,7 @@ test.describe("[UC-36] Messages", () => {
 
     await expect(
       window.locator('[data-testid="message-success"]').first(),
-    ).toContainText("Bank scanning complete", { timeout: 10000 });
+    ).toContainText("kits scanned", { timeout: 10000 });
   });
 
   // RE-92: a promise that rejects outside a render, such as an IPC call

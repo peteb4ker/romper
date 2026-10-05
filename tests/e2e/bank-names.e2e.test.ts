@@ -1,4 +1,5 @@
 import * as fs from "node:fs";
+import * as path from "node:path";
 import {
   _electron as electron,
   type ElectronApplication,
@@ -88,7 +89,7 @@ test.describe("[UC-12] Bank names", () => {
     await expect(display).toHaveCount(0);
     expect(await bankAName()).toBeNull();
 
-    // Relaunch: startup scans the bank names again
+    // Relaunch: the names load from the database again
     await electronApp.close();
     await launch();
     await expect(
@@ -104,20 +105,30 @@ test.describe("[UC-12] Bank names", () => {
   });
 
   // RE-90: the browser read bank names from the kits, so a bank with no
-  // kits lost its name on reload
-  test("a bank with no kits keeps its name after a relaunch", async () => {
+  // kits lost its name on reload. #567: the name shows without a relaunch
+  // too, read back from the banks, and the store's name files are never
+  // read.
+  test("a bank with no kits shows its new name, and keeps it after a relaunch", async () => {
     const bankC = () => window.getByRole("button", { name: "Jump to bank C" });
+    const bankD = () => window.getByRole("button", { name: "Jump to bank D" });
 
     await bankC().click();
     await setBankName("Empty Bank", "C");
     await expect(
       window.locator('[data-testid="bank-name-display-C"]'),
     ).toHaveText("Empty Bank");
+    await expect(bankC()).toHaveAttribute("title", "Empty Bank");
 
+    // A name file made by hand in the store isn't a bank name
+    fs.writeFileSync(
+      path.join(testEnv.localStorePath, "D - Hand Made.rtf"),
+      String.raw`{\rtf1}`,
+    );
     await electronApp.close();
     await launch();
 
     await expect(bankC()).toHaveAttribute("title", "Empty Bank");
+    await expect(bankD()).not.toHaveAttribute("title", "Hand Made");
     await bankC().click();
     await expect(
       window.locator('[data-testid="bank-name-display-C"]'),

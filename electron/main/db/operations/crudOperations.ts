@@ -78,9 +78,9 @@ export function getAllBanks(dbDir: string): DbResult<Bank[]> {
  *
  * A bank's name is written to the card as an RTF file beside its kits, so
  * renaming or clearing it marks every kit in the bank modified (RE-35).
- * A bank scan passes `source: "scan"`: it reads names back from the
- * store's own RTF files, which already match the card, so it changes
- * nothing the next write would.
+ * Setup's import of a card's or the factory archive's names passes
+ * `source: "scan"`: they already match the card, so it changes nothing the
+ * next write would.
  */
 export function updateBank(
   dbDir: string,

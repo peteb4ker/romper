@@ -149,7 +149,7 @@ describe("[UC-12] [UC-34] rtfFileService", () => {
       expect(mockFs.unlinkSync).not.toHaveBeenCalled();
     });
 
-    it("matches the letter as text, not as a pattern", () => {
+    it("matches files by the shared bank name file pattern, either case", () => {
       mockFs.readdirSync.mockReturnValue([
         "a - lower.rtf" as unknown as fs.Dirent<NonSharedBuffer>,
         "AB - Other.rtf" as unknown as fs.Dirent<NonSharedBuffer>,

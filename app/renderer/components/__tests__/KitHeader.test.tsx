@@ -267,7 +267,7 @@ describe("KitHeader", () => {
       expect(icon).not.toHaveClass("opacity-30");
     });
 
-    it("calls onToggleFavorite with kit name when clicked", () => {
+    it("calls onToggleFavorite when clicked", () => {
       const onToggleFavorite = vi.fn();
       const kit = { alias: "My Kit", is_favorite: false } as Kit;
       render(
@@ -281,7 +281,7 @@ describe("KitHeader", () => {
 
       const favoriteButton = screen.getByTitle("Add to favorites");
       fireEvent.click(favoriteButton);
-      expect(onToggleFavorite).toHaveBeenCalledWith("A1");
+      expect(onToggleFavorite).toHaveBeenCalledTimes(1);
     });
 
     it("does not show favorite button when onToggleFavorite is not provided", () => {

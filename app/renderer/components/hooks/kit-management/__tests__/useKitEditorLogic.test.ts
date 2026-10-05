@@ -371,12 +371,13 @@ describe("useKitEditorLogic", () => {
 
     expect(onToggleFavorite).toHaveBeenCalledWith("TestKit");
     expect(mockProps.onMessage).not.toHaveBeenCalledWith(
-      expect.stringContaining("star"),
+      expect.stringContaining("favorites"),
       "error",
     );
   });
 
-  it("[UC-10] reports a favorite ; couldn't save", async () => {
+  // #554: the approved wording, for both directions
+  it("[UC-10] reports an add to favorites that couldn't save", async () => {
     const onToggleFavorite = vi
       .fn()
       .mockResolvedValue({ error: "db locked", success: false });
@@ -387,7 +388,31 @@ describe("useKitEditorLogic", () => {
     });
 
     expect(mockProps.onMessage).toHaveBeenCalledWith(
-      "Couldn't star kit TestKit. Try again.",
+      "Couldn't add kit TestKit to favorites. Try again.",
+      "error",
+    );
+  });
+
+  it("[UC-10] reports a remove from favorites that couldn't save", async () => {
+    const onToggleFavorite = vi
+      .fn()
+      .mockResolvedValue({ error: "db locked", success: false });
+    const { result } = renderHook(() =>
+      useKitEditorLogic({
+        ...mockProps,
+        kit: { ...mockKit, is_favorite: true } as unknown,
+        onToggleFavorite,
+      }),
+    );
+
+    // The header's star button calls the same toggleFavorite as ;
+    await act(async () => {
+      await result.current.toggleFavorite?.();
+    });
+
+    expect(onToggleFavorite).toHaveBeenCalledWith("TestKit");
+    expect(mockProps.onMessage).toHaveBeenCalledWith(
+      "Couldn't remove kit TestKit from favorites. Try again.",
       "error",
     );
   });

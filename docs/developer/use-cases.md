@@ -259,8 +259,10 @@ favorite; the Favorites filter shows only those. See
 - **Renderer:** `app/renderer/components/KitGridItem.tsx` →
   `app/renderer/components/hooks/kit-management/useKitFilters.ts` (`handleToggleFavorite`,
   `handleToggleFavoritesFilter`, the count from the kit list); `app/renderer/components/hooks/kit-management/useKitKeyboardNav.ts` (`;`);
-  `app/renderer/components/hooks/kit-management/useKitEditorKeyboardNav.ts` (`;`);
-  `app/renderer/components/KitHeader.tsx`; both toggle through
+  `app/renderer/components/KitHeader.tsx` and
+  `app/renderer/components/hooks/kit-management/useKitEditorKeyboardNav.ts` (`;`) →
+  `app/renderer/components/hooks/kit-management/useKitEditorLogic.ts` (`toggleFavorite`,
+  which reports a failure); both toggle through
   `app/renderer/components/hooks/kit-management/useKitDataManager.ts` (`toggleKitFavorite`), which
   updates the kit list.
 - **IPC:** `toggle-kit-favorite`

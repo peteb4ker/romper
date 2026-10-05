@@ -82,14 +82,17 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     }
   }, [onToggleEditableMode, kitName, isEditable, onMessage]);
 
-  // Star or unstar the open kit from the keyboard (F). There's no click to
-  // show a failure on, so it's reported here.
+  // Add the open kit to favorites or remove it, from the header's star
+  // button or the ; key. Neither can show a failure, so it's reported here
+  // (#554).
   const isFavorite = Boolean(kit?.is_favorite);
   const toggleFavorite = React.useMemo(() => {
     if (!onToggleFavorite || !kitName) return undefined;
     const failed = () =>
       onMessage?.(
-        `Couldn't ${isFavorite ? "unstar" : "star"} kit ${kitName}. Try again.`,
+        isFavorite
+          ? `Couldn't remove kit ${kitName} from favorites. Try again.`
+          : `Couldn't add kit ${kitName} to favorites. Try again.`,
         "error",
       );
     return async () => {
@@ -97,7 +100,7 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
         const result = await onToggleFavorite(kitName);
         if (result?.success === false) failed();
       } catch (error) {
-        log.warn("Toggling the favourite failed:", error);
+        log.warn("Toggling the favorite failed:", error);
         failed();
       }
     };
@@ -300,6 +303,7 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     setTriggerConditions,
     stepPattern,
     toggleEditableMode,
+    toggleFavorite,
     triggerConditions,
     updateKitAlias,
 

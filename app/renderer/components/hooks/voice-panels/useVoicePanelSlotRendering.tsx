@@ -61,6 +61,7 @@ export interface UseVoicePanelSlotRenderingOptions extends BaseVoicePanelOptions
  */
 export function useVoicePanelSlotRendering({
   dragAndDropHook,
+  gainsUnknown,
   handleCombinedDragLeave,
   handleCombinedDragOver,
   handleCombinedDrop,
@@ -249,7 +250,7 @@ export function useVoicePanelSlotRendering({
                 // The parent saves it and reports a failure (RE-91)
                 onGainChange?.(voice, slotNumber, sampleName, db)
               }
-              value={sampleData?.gain_db ?? 0}
+              value={gainsUnknown ? null : (sampleData?.gain_db ?? 0)}
             />
           )}
           {isEditable && renderDeleteButton(slotNumber, sampleName)}
@@ -308,6 +309,7 @@ export function useVoicePanelSlotRendering({
       onGainChange,
       slotRenderingHook,
       isLinkedPrimary,
+      gainsUnknown,
     ],
   );
 

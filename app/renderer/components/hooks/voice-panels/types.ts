@@ -11,6 +11,8 @@ import { SlotRenderingHook } from "./useVoicePanelSlotRendering";
  */
 export interface BaseVoicePanelOptions {
   dragAndDropHook: DragAndDropHook;
+  /** The kit's sample details couldn't be read, or not yet: gains are unknown (#628) */
+  gainsUnknown?: boolean;
   isActive: boolean;
   isEditable: boolean;
   kitName: string;

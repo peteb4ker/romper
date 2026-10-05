@@ -289,6 +289,16 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                     )}
                   </span>
                 )}
+                {syncProgress.status === "removing" && (
+                  <span
+                    className="flex items-center gap-1"
+                    data-testid="write-removing"
+                  >
+                    <SpinnerIcon className="animate-spin" size={12} />
+                    Removing old kits… {syncProgress.removal?.completed ?? 0}/
+                    {syncProgress.removal?.total ?? 0}
+                  </span>
+                )}
                 {syncProgress.status === "finalizing" && "Finalizing..."}
                 {syncProgress.status === "cancelled" && (
                   <span

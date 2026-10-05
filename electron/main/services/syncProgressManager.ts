@@ -16,13 +16,19 @@ export interface SyncProgress {
   };
   estimatedTimeRemaining: number;
   filesCompleted: number;
+  /**
+   * While status is "removing": entries removed from the card so far, of
+   * those the store no longer has (#653)
+   */
+  removal?: { completed: number; total: number };
   status:
     | "complete"
     | "converting"
     | "copying"
     | "error"
     | "finalizing"
-    | "preparing";
+    | "preparing"
+    | "removing";
   totalFiles: number;
 }
 
@@ -201,6 +207,25 @@ export class SyncProgressManager {
   }
 
   /**
+   * Every file is written and the write is removing what the store no
+   * longer has from the card: `completed` of `total` entries (#653).
+   * Throttled like per-file progress; the first and last go out at once.
+   */
+  emitRemovalProgress(completed: number, total: number): void {
+    if (!this.currentSyncJob) return;
+
+    this.emitThrottledProgress({
+      currentFile: "",
+      elapsedTime: Date.now() - this.currentSyncJob.startTime,
+      estimatedTimeRemaining: 0,
+      filesCompleted: this.currentSyncJob.completedFiles,
+      removal: { completed, total },
+      status: "removing",
+      totalFiles: this.currentSyncJob.totalFiles,
+    });
+  }
+
+  /**
    * Emit per-file progress at most once per PROGRESS_THROTTLE_MS. The first
    * event and the one that completes the last file go out immediately; an
    * event that arrives too soon is held, replaced by any newer one, and sent
@@ -209,8 +234,11 @@ export class SyncProgressManager {
    */
   emitThrottledProgress(progress: SyncProgress): void {
     const now = Date.now();
-    const isFinalFile =
-      progress.totalFiles > 0 && progress.filesCompleted >= progress.totalFiles;
+    const isFinalFile = progress.removal
+      ? progress.removal.completed === 0 ||
+        progress.removal.completed >= progress.removal.total
+      : progress.totalFiles > 0 &&
+        progress.filesCompleted >= progress.totalFiles;
     const sinceLast =
       this.lastEmitTime === null ? Infinity : now - this.lastEmitTime;
 

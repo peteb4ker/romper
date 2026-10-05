@@ -31,6 +31,11 @@ export interface SyncProgress {
   error?: string;
   errorDetails?: SyncErrorDetails;
   filesCompleted: number;
+  /**
+   * While status is "removing": entries removed from the card so far, of
+   * those the store no longer has (#653)
+   */
+  removal?: { completed: number; total: number };
   status:
     | "cancelled"
     | "completed"
@@ -38,7 +43,8 @@ export interface SyncProgress {
     | "copying"
     | "error"
     | "finalizing"
-    | "preparing";
+    | "preparing"
+    | "removing";
   totalBytes: number;
   totalFiles: number;
 }

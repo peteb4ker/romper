@@ -11,6 +11,7 @@ vi.mock("electron", () => ({
 
 import {
   PROGRESS_THROTTLE_MS,
+  type SyncProgress,
   syncProgressManager,
 } from "../syncProgressManager.js";
 
@@ -286,6 +287,38 @@ describe("SyncProgressManager", () => {
           totalFiles: 2,
         }),
       );
+    });
+  });
+
+  describe("emitRemovalProgress", () => {
+    it("[UC-34] counts removals, sending the first and last at once (#653)", () => {
+      vi.useFakeTimers();
+      try {
+        syncProgressManager.initializeSyncJob([
+          { filename: "a.wav", kitName: "kit1" },
+        ] as SyncFileOperation[]);
+        mockWebContents.send.mockClear();
+
+        syncProgressManager.emitRemovalProgress(0, 3);
+        syncProgressManager.emitRemovalProgress(1, 3);
+        syncProgressManager.emitRemovalProgress(2, 3);
+        syncProgressManager.emitRemovalProgress(3, 3);
+
+        const sent = mockWebContents.send.mock.calls.map(
+          ([, progress]) => (progress as SyncProgress).removal,
+        );
+        // 1 and 2 arrive within the throttle; 2 is held, then replaced by 3
+        expect(sent).toEqual([
+          { completed: 0, total: 3 },
+          { completed: 3, total: 3 },
+        ]);
+        expect(mockWebContents.send).toHaveBeenLastCalledWith(
+          "sync-progress",
+          expect.objectContaining({ filesCompleted: 0, status: "removing" }),
+        );
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 

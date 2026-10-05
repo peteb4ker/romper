@@ -312,7 +312,10 @@ Removing what the store no longer has is asynchronous too, one entry at a
 time with a yield between entries (#653, `sdCardSafety.removeCardEntries`):
 a synchronous recursive delete of kit folders froze the window on a slow
 card. Once every file is written, the write sends a `finalizing` progress
-event, so the dialog leaves the last file's count; Cancel stops between
+event, so the dialog leaves the last file's count, then `removing` events
+with a count (`removal`, throttled like file progress) that the panel
+shows as "Removing old kits… 3/40", and `finalizing` again while it
+records the write; Cancel stops between
 removals, and the next write removes the rest. Each card operation (a file
 written, an entry removed) has a watchdog (`cardWatchdog.ts`, 60 s): a card
 whose driver stops responding fails the write with a message saying so,

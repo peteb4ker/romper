@@ -85,6 +85,29 @@ test.describe("[UC-13] Scan All", () => {
     expect(await sampleFiles("B1")).toContain(NEW_FILE);
   });
 
+  // #586: the result used to clear after five seconds, failed kits and all
+  test("keeps the failed kits on screen until dismissed", async () => {
+    fs.rmSync(path.join(testEnv.localStorePath, "B1"), {
+      force: true,
+      recursive: true,
+    });
+
+    await scanAllFromMenu();
+
+    const result = window.locator('[data-testid="bulk-scan-complete"]');
+    await expect(result).toContainText("1 failed", { timeout: 10000 });
+    await expect(result).toContainText("B1");
+    // Past the five seconds a clean result shows for
+    await window.waitForTimeout(6000);
+    await expect(result).toContainText("1 failed");
+
+    await window
+      .locator('[data-testid="kit-browser-header"]')
+      .getByRole("button", { name: "Dismiss message" })
+      .click();
+    await expect(result).toHaveCount(0);
+  });
+
   test("scans every kit from the kit editor", async () => {
     await window.locator('[data-testid="kit-item-B1"]').click();
     await window.waitForSelector('[data-testid="kit-editor"]');

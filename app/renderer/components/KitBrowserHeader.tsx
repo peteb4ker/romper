@@ -2,6 +2,7 @@ import {
   BookmarkSimpleIcon,
   DownloadSimpleIcon,
   GearSixIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 import React from "react";
 
@@ -21,6 +22,8 @@ interface KitBrowserHeaderProps {
   isSearching?: boolean;
   modifiedCount?: number;
   onAboutClick?: () => void; // NOSONAR
+  /** Clears a Scan All result that stays because kits failed (#586) */
+  onDismissBulkScan?: () => void;
   onSearchChange?: (query: string) => void;
   onSearchClear?: () => void;
   onShowLocalStoreWizard: () => void; // NOSONAR
@@ -35,8 +38,9 @@ interface KitBrowserHeaderProps {
 }
 
 function BulkScanStatus({
+  onDismiss,
   progress,
-}: Readonly<{ progress: BulkScanProgress }>) {
+}: Readonly<{ onDismiss?: () => void; progress: BulkScanProgress }>) {
   if (progress.status === "idle") return null;
 
   if (progress.status === "scanning") {
@@ -61,15 +65,30 @@ function BulkScanStatus({
 
   if (progress.status === "complete") {
     // Some kits failed: a warning, as the kit editor's message is (#540)
-    const tone =
-      progress.failedCount > 0 ? "text-accent-warning" : "text-accent-success";
-    return (
+    const failed = progress.failedCount > 0;
+    const tone = failed ? "text-accent-warning" : "text-accent-success";
+    // Failed kits stay listed until dismissed or the next scan (#586)
+    const dismissible = failed && onDismiss;
+    const message = (
       <span
-        className={`px-2 py-1 text-xs ${tone}`}
+        className={`px-2 py-1 text-xs ${tone}${dismissible ? " flex-1 min-w-0 break-words" : ""}`}
         data-testid="bulk-scan-complete"
       >
         {progress.message}
       </span>
+    );
+    if (!dismissible) return message;
+    return (
+      <div className="flex items-start">
+        {message}
+        <button
+          aria-label="Dismiss message"
+          className={`flex-shrink-0 px-2 py-1 opacity-60 hover:opacity-100 transition-opacity ${tone}`}
+          onClick={onDismiss}
+        >
+          <XIcon size={14} />
+        </button>
+      </div>
     );
   }
 
@@ -212,7 +231,10 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
 
       {/* Bulk scan progress bar */}
       {props.bulkScanProgress && props.bulkScanProgress.status !== "idle" && (
-        <BulkScanStatus progress={props.bulkScanProgress} />
+        <BulkScanStatus
+          onDismiss={props.onDismissBulkScan}
+          progress={props.bulkScanProgress}
+        />
       )}
     </div>
   );

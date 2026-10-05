@@ -33,6 +33,8 @@ interface KitBrowserProps {
   modifiedCount?: number;
   onAboutClick?: () => void;
   // Core actions
+  /** Clears a Scan All result that stays because kits failed (#586) */
+  onDismissBulkScan?: () => void;
   onMessage?: (text: string, type?: string, duration?: number) => void;
   onRefreshKits?: () => Promise<void>;
 
@@ -202,6 +204,7 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
         isSearching={props.isSearching}
         modifiedCount={modifiedCount}
         onAboutClick={props.onAboutClick}
+        onDismissBulkScan={props.onDismissBulkScan}
         onSearchChange={props.onSearchChange}
         onSearchClear={props.onSearchClear}
         onShowLocalStoreWizard={handleShowLocalStoreWizard}

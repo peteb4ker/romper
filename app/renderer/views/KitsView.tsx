@@ -132,11 +132,12 @@ const KitsView: React.FC = () => {
     },
     [showMessage],
   );
-  const { bulkScanProgress, handleScanAllKits } = useKitScan({
-    kits,
-    onFinished: handleScanAllFinished,
-    onRefreshKits: refreshAllKitsAndSamples,
-  });
+  const { bulkScanProgress, dismissBulkScanResult, handleScanAllKits } =
+    useKitScan({
+      kits,
+      onFinished: handleScanAllFinished,
+      onRefreshKits: refreshAllKitsAndSamples,
+    });
 
   // Menu handlers
   useKitViewMenuHandlers({
@@ -248,6 +249,7 @@ const KitsView: React.FC = () => {
             onAboutClick={() =>
               globalThis.dispatchEvent(new CustomEvent("menu-about"))
             }
+            onDismissBulkScan={dismissBulkScanResult}
             onMessage={showMessage}
             onRefreshKits={refreshAllKitsAndSamples}
             onSearchChange={search.searchChange}

@@ -125,5 +125,43 @@ describe("KitBrowserHeader", () => {
       expect(status).toHaveClass("text-accent-warning");
       expect(status).not.toHaveClass("text-accent-success");
     });
+
+    // #586: a result with failed kits stays until the user dismisses it
+    it("dismisses a scan where some kits failed with its ✕", () => {
+      const onDismissBulkScan = vi.fn();
+      render(
+        <KitBrowserHeader
+          {...defaultProps}
+          bulkScanProgress={{
+            failedCount: 1,
+            message: "Scan completed: 1 successful, 1 failed.",
+            status: "complete",
+            successCount: 1,
+          }}
+          onDismissBulkScan={onDismissBulkScan}
+        />,
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Dismiss message" }));
+      expect(onDismissBulkScan).toHaveBeenCalledTimes(1);
+    });
+
+    it("has no ✕ on a scan with no failures, which clears itself", () => {
+      render(
+        <KitBrowserHeader
+          {...defaultProps}
+          bulkScanProgress={{
+            failedCount: 0,
+            message: "All 2 kits scanned successfully (comprehensive).",
+            status: "complete",
+            successCount: 2,
+          }}
+          onDismissBulkScan={vi.fn()}
+        />,
+      );
+      expect(screen.getByTestId("bulk-scan-complete")).toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Dismiss message" }),
+      ).not.toBeInTheDocument();
+    });
   });
 });

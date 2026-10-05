@@ -24,6 +24,7 @@ export type BulkScanProgress =
   | { message: string; status: "error" }
   | { status: "idle" };
 
+/** How long a scan result shows; one with failed kits stays until dismissed (#586) */
 const BULK_SCAN_COMPLETE_CLEAR_MS = 5000;
 
 /** Scan outcomes summed over one or more kits. */
@@ -221,6 +222,9 @@ export async function scanSingleKit({ kitName }: { kitName: string }) {
  * Scan All for the whole library. `kits` must be every kit in the store,
  * not the kits a search or filter shows (RE-43). `onFinished` hears the
  * final result, for views that don't show the progress.
+ *
+ * A result with failed kits stays until `dismissBulkScanResult` or the next
+ * scan replaces it, so the user can read which kits failed (#586).
  */
 export function useKitScan({
   kits,
@@ -244,33 +248,47 @@ export function useKitScan({
     };
   }, []);
 
+  const clearTimer = useCallback(() => {
+    if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
+    clearTimerRef.current = null;
+  }, []);
+
+  const dismissBulkScanResult = useCallback(() => {
+    clearTimer();
+    setBulkScanProgress({ status: "idle" });
+  }, [clearTimer]);
+
   const handleScanAllKits = useCallback(
     (operations?: string[]) => {
       // Clear any existing completion timer
-      if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
+      clearTimer();
 
       return scanAllKits({
         kits,
         onProgress: (progress) => {
           setBulkScanProgress(progress);
 
-          // Auto-clear completion/error status after delay
           if (progress.status === "complete" || progress.status === "error") {
             onFinished?.(progress);
-            clearTimerRef.current = setTimeout(
-              () => setBulkScanProgress({ status: "idle" }),
-              BULK_SCAN_COMPLETE_CLEAR_MS,
-            );
+            // Failed kits stay listed until dismissed or the next scan (#586)
+            const keep =
+              progress.status === "complete" && progress.failedCount > 0;
+            if (!keep) {
+              clearTimerRef.current = setTimeout(
+                () => setBulkScanProgress({ status: "idle" }),
+                BULK_SCAN_COMPLETE_CLEAR_MS,
+              );
+            }
           }
         },
         onRefreshKits,
         operations,
       });
     },
-    [kits, onFinished, onRefreshKits],
+    [clearTimer, kits, onFinished, onRefreshKits],
   );
 
-  return { bulkScanProgress, handleScanAllKits };
+  return { bulkScanProgress, dismissBulkScanResult, handleScanAllKits };
 }
 
 // Helper function to generate completion message

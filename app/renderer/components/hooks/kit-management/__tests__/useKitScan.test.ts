@@ -1,7 +1,7 @@
 import type { KitScanResult } from "@romper/shared/db/schema";
 
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
 import {
@@ -248,6 +248,89 @@ describe("useKitScan", () => {
     expect(onFinished).toHaveBeenCalledWith(
       expect.objectContaining({ status: "complete", successCount: 2 }),
     );
+  });
+});
+
+// #586: a result with failed kits stays until dismissed or the next scan
+describe("[UC-13] useKitScan result lifetime", () => {
+  const RESULT_CLEAR_MS = 5000;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    setupElectronAPIMock();
+    vi.mocked(globalThis.electronAPI.rescanKit).mockImplementation(
+      async (kitName: string) =>
+        kitName === "B2"
+          ? { error: "Kit directory not found", success: false }
+          : { data: scanResult({}), success: true },
+    );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** Runs Scan All over `kits` and returns the hook */
+  const scanAll = async (kits: string[]) => {
+    const hook = renderHook(() => useKitScan({ kits: kits.map(kit) }));
+    await act(async () => {
+      await hook.result.current.handleScanAllKits();
+    });
+    return hook;
+  };
+
+  it("clears a result with no failures after five seconds", async () => {
+    const { result } = await scanAll(["A1"]);
+    expect(result.current.bulkScanProgress.status).toBe("complete");
+
+    act(() => {
+      vi.advanceTimersByTime(RESULT_CLEAR_MS);
+    });
+    expect(result.current.bulkScanProgress).toEqual({ status: "idle" });
+  });
+
+  it("keeps a result with failed kits past five seconds", async () => {
+    const { result } = await scanAll(["A1", "B2"]);
+
+    act(() => {
+      vi.advanceTimersByTime(RESULT_CLEAR_MS * 4);
+    });
+    expect(result.current.bulkScanProgress).toMatchObject({
+      failedCount: 1,
+      message: expect.stringContaining("B2: Kit directory not found"),
+      status: "complete",
+    });
+  });
+
+  it("clears a result with failed kits when dismissed", async () => {
+    const { result } = await scanAll(["A1", "B2"]);
+
+    act(() => {
+      result.current.dismissBulkScanResult();
+    });
+    expect(result.current.bulkScanProgress).toEqual({ status: "idle" });
+  });
+
+  it("replaces a result with failed kits when another scan starts", async () => {
+    const { result } = await scanAll(["A1", "B2"]);
+    vi.mocked(globalThis.electronAPI.rescanKit).mockResolvedValue({
+      data: scanResult({}),
+      success: true,
+    });
+
+    await act(async () => {
+      await result.current.handleScanAllKits();
+    });
+    expect(result.current.bulkScanProgress).toMatchObject({
+      failedCount: 0,
+      status: "complete",
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(RESULT_CLEAR_MS);
+    });
+    expect(result.current.bulkScanProgress).toEqual({ status: "idle" });
   });
 });
 

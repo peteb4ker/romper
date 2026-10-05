@@ -123,7 +123,12 @@ const renderKitAliasButton = (
     className="font-semibold text-base text-accent-primary cursor-pointer hover:underline bg-transparent border-none p-0 text-center"
     onClick={() => setEditingKitAlias(true)}
     onKeyDown={(e) => {
-      if (e.key === "Enter" || e.key === " ") {
+      if (e.key === "Enter") {
+        setEditingKitAlias(true);
+      } else if (e.key === " ") {
+        // Space only renames: marking it handled stops the editor's Space
+        // shortcut from also playing the selected sample (#587)
+        e.preventDefault();
         setEditingKitAlias(true);
       }
     }}

@@ -20,6 +20,8 @@ type KitBrowserContainerProps = Readonly<{
   localStorePath: null | string;
   modifiedCount?: number;
   onAboutClick?: () => void;
+  /** Clears a Scan All result that stays because kits failed (#586) */
+  onDismissBulkScan?: () => void;
   onMessage: (text: string, type?: string, duration?: number) => void;
   onRefreshKits: () => Promise<void>;
   onSearchChange?: (query: string) => void;
@@ -53,6 +55,7 @@ const KitBrowserContainer: React.FC<KitBrowserContainerProps> = (props) => {
     localStorePath,
     modifiedCount,
     onAboutClick,
+    onDismissBulkScan,
     onMessage,
     onRefreshKits,
     onSearchChange,
@@ -106,6 +109,7 @@ const KitBrowserContainer: React.FC<KitBrowserContainerProps> = (props) => {
       localStorePath={localStorePath}
       modifiedCount={modifiedCount}
       onAboutClick={onAboutClick}
+      onDismissBulkScan={onDismissBulkScan}
       onMessage={handleMessage}
       onRefreshKits={handleRefreshKits}
       onSearchChange={onSearchChange}

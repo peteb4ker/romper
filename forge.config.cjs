@@ -20,6 +20,9 @@ const config = {
       "^/\\.github",
       "^/\\.vscode",
       "^/\\.agent",
+      // Forge 8's packager copies a symlink's target, not the link, so the
+      // worktree's linked .claude/settings.local.json would ship in the app.
+      "^/\\.claude",
       "^/tasks",
       "^/scripts",
       "^/vite\\.",

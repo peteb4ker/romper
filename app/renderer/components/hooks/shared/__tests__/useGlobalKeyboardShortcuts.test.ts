@@ -587,6 +587,20 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     });
   });
 
+  describe("[UC-06] [UC-26] undo per store and kit (#568)", () => {
+    it("keys undo by the local store as well as the kit", () => {
+      renderHook(() =>
+        useGlobalKeyboardShortcuts({
+          currentKitName: "A0",
+          isEditMode: true,
+          localStorePath: "/stores/two",
+        }),
+      );
+
+      expect(useUndoRedo).toHaveBeenCalledWith("A0", undefined, "/stores/two");
+    });
+  });
+
   describe("cleanup", () => {
     it("should remove event listeners on unmount", () => {
       const removeEventListenerSpy = vi.spyOn(document, "removeEventListener");

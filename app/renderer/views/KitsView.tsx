@@ -80,6 +80,7 @@ const KitsView: React.FC = () => {
   const navigation = useKitNavigation({
     allKitSamples,
     kits,
+    localStorePath,
     refreshAllKitsAndSamples,
   });
 
@@ -107,6 +108,7 @@ const KitsView: React.FC = () => {
   const keyboardShortcuts = useGlobalKeyboardShortcuts({
     currentKitName: navigation.selectedKit ?? undefined,
     isEditMode: currentKit?.editable ?? false,
+    localStorePath,
     onBackNavigation: navigation.selectedKit
       ? () => {
           void navigation.handleBack();

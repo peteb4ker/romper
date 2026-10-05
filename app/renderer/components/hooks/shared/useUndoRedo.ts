@@ -32,12 +32,17 @@ export function undoFailureMessage(
 }
 
 /**
- * Undo and redo for the open kit. `onMessage` tells the user when one
- * fails; the hook's `error` keeps the reason.
+ * Undo and redo for the open kit in the local store at `storePath`.
+ * `onMessage` tells the user when one fails; the hook's `error` keeps the
+ * reason.
  */
-export function useUndoRedo(kitName: string, onMessage?: MessageFn) {
+export function useUndoRedo(
+  kitName: string,
+  onMessage?: MessageFn,
+  storePath?: null | string,
+) {
   // State management hook
-  const state = useUndoRedoState({ kitName });
+  const state = useUndoRedoState({ kitName, storePath });
 
   // Action handlers hooks
   const undoHandlers = useUndoActionHandlers({ kitName });

@@ -160,6 +160,8 @@ Renderer paths are under `app/renderer/components/` unless they start with
   - renderer: `SettingsContext` `state.settings.localStorePath`, seeded
     from `config.localStorePath || settings.localStorePath` and then updated
     by its own setter; `localStoreStatus` from `get-local-store-status`.
+    When it changes, `useKitNavigation` closes the open kit and the undo
+    stack clears (#568).
   - the database path is built by `ServicePathManager.getDbPath` (six
     services wrap it in a private `getDbPath`), by `localStoreValidator`,
     `localStoreSetupService` and `pathAccess` with their own literals, and
@@ -180,8 +182,6 @@ Renderer paths are under `app/renderer/components/` unless they start with
     `getLocalStoreStatus` ignore a blank override; `readSettings`, the
     preload and the `validate-*` handlers don't. Test-only today; part of
     the precedence that should live in one function.
-  - Changing the store doesn't reset the open kit or the undo stack
-    (#568).
   - `LocalStoreService.getDbPath`, `getRomperDbPath` and
     `SettingsService.getLocalStorePath` are unused second definitions
     (#471).
@@ -694,8 +694,9 @@ voice and slot):
 - **Use cases:** [UC-06](use-cases.md#uc-06-change-the-local-store), [UC-26](use-cases.md#uc-26-undo-and-redo), [Q-02](use-cases.md#q-02-your-changes-are-saved-completely-or-not-at-all).
 - **Rample manual:** none.
 - **Canonical owner:** renderer state, `useUndoRedoState`, held by
-  `useUndoRedo(currentKitName)` inside `useGlobalKeyboardShortcuts` in
-  `KitsView`. Not persisted.
+  `useUndoRedo(currentKitName, onMessage, localStorePath)` inside
+  `useGlobalKeyboardShortcuts` in `KitsView`, and cleared when the kit name
+  or the store changes. Not persisted.
 - **Writers:** `addAction` after a successful edit (sample add, delete,
   move, replace; `SEQUENCE_EDIT` from `useSequenceHistory`, merged by
   `mergeSequenceEdit`). Sample actions keep full voice rows fetched from
@@ -710,8 +711,6 @@ voice and slot):
 - **Invariants:** the stack belongs to one kit in one store; it clears when
   that changes; an undo either restores everything it touched or nothing.
 - **Disagreements on main:**
-  - The stack clears on a kit name change only, so it survives a store
-    change (#568).
   - `writeSequenceSnapshot` sends the pattern, conditions and slices as
     three parallel saves; if one fails, the others have committed and the
     kit is left half undone (#570).

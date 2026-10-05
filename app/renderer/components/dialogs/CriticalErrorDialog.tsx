@@ -15,7 +15,9 @@ interface CriticalErrorDialogProps {
  * dialog: a child's effect runs before ModalDialog's, so ModalDialog finds
  * focus already inside and leaves it there.
  */
-const ExitButton: React.FC<{ onConfirm: () => void }> = ({ onConfirm }) => {
+const ExitButton: React.FC<Readonly<{ onConfirm: () => void }>> = ({
+  onConfirm,
+}) => {
   const buttonRef = React.useRef<HTMLButtonElement>(null);
   React.useEffect(() => {
     buttonRef.current?.focus();

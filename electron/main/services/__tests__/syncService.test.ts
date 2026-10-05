@@ -447,7 +447,7 @@ describe("[UC-34] SyncService", () => {
       expect(mockRemoveCardEntries).toHaveBeenCalledWith(
         "/sd/card",
         ["B3", "A0/1-02 old.wav"],
-        { shouldStop: expect.any(Function) },
+        { onRemoved: expect.any(Function), shouldStop: expect.any(Function) },
       );
     });
 

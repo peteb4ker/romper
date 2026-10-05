@@ -495,6 +495,49 @@ describe("[UC-34] SyncUpdateDialog", () => {
       expect(screen.getByText("1/2")).toBeInTheDocument();
     });
 
+    it("counts the removals while old kits are removed from the card (#653)", () => {
+      const removing = {
+        bytesCompleted: 0,
+        currentFile: "",
+        filesCompleted: 15,
+        removal: { completed: 3, total: 40 },
+        status: "removing" as const,
+        totalBytes: 0,
+        totalFiles: 15,
+      };
+      const props = {
+        isOpen: true,
+        kitName: "A0",
+        localChangeSummary: mockChangeSummary,
+        onClose: mockOnClose,
+        onConfirm: mockOnConfirm,
+        sdCardPath: "/path/to/sd",
+      };
+
+      const { rerender } = render(
+        <SyncUpdateDialog {...props} syncProgress={removing} />,
+      );
+
+      expect(screen.getByTestId("write-removing")).toHaveTextContent(
+        "Removing old kits\u2026 3/40",
+      );
+      expect(screen.queryByText("Finalizing...")).not.toBeInTheDocument();
+
+      // Recording the write, after the removals, is finishing work again
+      rerender(
+        <SyncUpdateDialog
+          {...props}
+          syncProgress={{
+            ...removing,
+            removal: undefined,
+            status: "finalizing",
+          }}
+        />,
+      );
+      expect(screen.getByText("Finalizing...")).toBeInTheDocument();
+      expect(screen.queryByTestId("write-removing")).not.toBeInTheDocument();
+    });
+
     it("should show success message when write completes", () => {
       const mockSyncProgress = {
         bytesCompleted: 2048,

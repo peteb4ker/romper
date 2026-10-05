@@ -598,17 +598,27 @@ class SyncService {
 
   /**
    * Delete the Rample content on the card that the store no longer has,
-   * stopping between entries if the write is cancelled.
+   * reporting each removal and stopping between entries if the write is
+   * cancelled.
    */
   private async removeStaleEntries(
     sdCardPath: string,
     cardContents: CardContents,
   ): Promise<void> {
     const stale = await findStaleCardEntries(sdCardPath, cardContents);
+    if (stale.length === 0) return;
+    // The panel counts the removals: "Removing old kits… 3/40" (#653)
+    syncProgressManager.emitRemovalProgress(0, stale.length);
     const removed = await removeCardEntries(sdCardPath, stale, {
+      onRemoved: (count, total) =>
+        syncProgressManager.emitRemovalProgress(count, total),
       shouldStop: () =>
         Boolean(syncProgressManager.getCurrentSyncJob()?.cancelled),
     });
+    // What's left (recording the write) is finishing work again
+    if (!syncProgressManager.getCurrentSyncJob()?.cancelled) {
+      syncProgressManager.emitFinalizingProgress();
+    }
     if (removed > 0) {
       logger.log(
         `Removed ${removed} of ${stale.length} stale entries from the SD card:`,

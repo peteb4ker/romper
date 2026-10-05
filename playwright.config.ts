@@ -74,6 +74,12 @@ export default defineConfig({
         ["json", { outputFile: "reports/results-e2e.json" }],
       ]
     : "list",
+  // On CI, retry a failed test once, so one flaky test doesn't fail the
+  // run (#659). A test that passes only on retry is "flaky" in the JSON
+  // report; scripts/e2e-flaky-summary.mjs lists it in the job summary, to
+  // be filed as an issue. The error guard still fails a test whose first
+  // attempt reported unexpected errors. Locally, a failure fails.
+  retries: process.env.CI ? 1 : 0,
   testDir: ".",
   // Nested worktrees (worktrees/, and Claude Code's .claude/worktrees/) carry
   // their own copies of the e2e suite. Match relative to this checkout, since

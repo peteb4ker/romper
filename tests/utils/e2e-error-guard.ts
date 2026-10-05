@@ -24,6 +24,10 @@
  *
  * (An object, not an array: `test.use` reads a two-element array as a
  * `[value, options]` fixture tuple.)
+ *
+ * On CI a failed test is retried once (#659). Retries don't soften the
+ * guard: an attempt that reported unexpected errors fails the test, so its
+ * retry fails straight away, listing them (e2e-attempt-errors.ts).
  */
 import {
   _electron,
@@ -39,6 +43,10 @@ import {
   type Expectation,
   MessageCollector,
 } from "../validation/support/collector";
+import {
+  earlierAttemptErrors,
+  recordAttemptErrors,
+} from "./e2e-attempt-errors";
 
 export { expect } from "@playwright/test";
 
@@ -54,6 +62,7 @@ interface ErrorGuardFixtures {
 export const test = base.extend<ErrorGuardFixtures>({
   errorGuard: [
     async ({ expectedMessages }, use, testInfo) => {
+      failIfAnEarlierAttemptReportedErrors(testInfo);
       const collector = new MessageCollector();
       collector.step = testInfo.title;
       const apps: ElectronApplication[] = [];
@@ -108,13 +117,33 @@ async function check(messages: ClassifiedMessage[], testInfo: TestInfo) {
     });
   }
   if (errors.length > 0) {
+    const lines = errors.map((m) => `[${m.source}] ${m.text}`);
+    recordAttemptErrors(testInfo.project.outputDir, testInfo.testId, lines);
     throw new Error(
       [
         `The app reported ${errors.length} unexpected error(s). Fix them, or ` +
           "declare them in the spec's expectedMessages with a reason. " +
           "Main-process stderr from Chromium or the OS, not Romper, goes " +
           "in tests/validation/support/known-noise.ts instead:",
-        ...errors.map((m) => `  [${m.source}] ${m.text}`),
+        ...lines.map((line) => `  ${line}`),
+      ].join("\n"),
+    );
+  }
+}
+
+function failIfAnEarlierAttemptReportedErrors(testInfo: TestInfo) {
+  if (testInfo.retry === 0) return;
+  const errors = earlierAttemptErrors(
+    testInfo.project.outputDir,
+    testInfo.testId,
+  );
+  if (errors.length > 0) {
+    throw new Error(
+      [
+        `An earlier attempt of this test reported ${errors.length} unexpected ` +
+          "error(s), so the test fails even though CI retried it. Fix them, " +
+          "or declare them in the spec's expectedMessages with a reason:",
+        ...errors.map((error) => `  ${error}`),
       ].join("\n"),
     );
   }

@@ -153,6 +153,16 @@ fill 2 mono voices."
   `tests/validation/support/`, the e2e workflow, the Playwright config,
   `package.json` or the lockfile) run e2e on Linux, macOS and Windows;
   other PRs run Linux only. Pushes to `main` run all three.
+- On CI, Playwright retries a failed e2e test once (`retries` in
+  `playwright.config.ts`), so one flaky test doesn't fail the run; locally
+  it doesn't retry. A test that passed only on retry is flaky, not
+  passing: the e2e job's summary lists it under "E2E retries", with the
+  first attempt's failure, and annotates the spec. **File each one as an
+  issue**, labelled as [`BACKLOG.md`](../../BACKLOG.md) says (the spec's
+  use case, kind `test`, or `bug` if the app is at fault), with the
+  failure and a link to the run; then fix the cause. The error
+  guard isn't retried away: if a test's first attempt reported an
+  unexpected error, its retry fails too.
 - The full-pipeline validation (`tests/validation/*.validation.ts`) is not
   part of any suite. `npm run validate:full` builds the app, then sets up a
   store from the factory archive, adds a kit with stereo samples, writes it

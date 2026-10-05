@@ -229,6 +229,15 @@ jobs:
           ROMPER_BUDGET_REPORT: reports/budgets-e2e.jsonl
           CI: true
 
+      # Playwright retries a failed test once on CI; a test that passed only
+      # on retry doesn't fail the job, so list it here to be filed (#659)
+      - name: List tests that passed only on retry
+        if: always()
+        run: node scripts/e2e-flaky-summary.mjs reports/results-e2e.json --platform "$PLATFORM"
+        env:
+          PLATFORM: ${{ matrix.os }}
+        shell: bash
+
       - name: Upload results for the testing summary
         if: always()
         uses: actions/upload-artifact@v5

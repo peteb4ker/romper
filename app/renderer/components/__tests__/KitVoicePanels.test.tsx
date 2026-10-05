@@ -720,6 +720,67 @@ describe("KitVoicePanels", () => {
     });
   });
 
+  describe("[UC-18] [UC-24] a gain that fails after you step to another kit (#565)", () => {
+    const voices = [{ samples: ["kick.wav"], voice: 1, voiceName: "Kick" }];
+    const knob = () =>
+      within(screen.getByTestId("voice-panel-1")).getAllByRole("slider")[0];
+    const gain = () => knob().getAttribute("aria-valuenow");
+
+    it("isn't put back on the next kit's slot", async () => {
+      vi.mocked(window.electronAPI.getAllSamplesForKit).mockImplementation(
+        async (kitName: string) => ({
+          data: [
+            {
+              filename: "kick.wav",
+              gain_db: kitName === "Kit1" ? -3 : 2,
+              kit_name: kitName,
+              slot_number: 0,
+              source_path: "/src/kick.wav",
+              voice_number: 1,
+            },
+          ],
+          success: true,
+        }),
+      );
+      let answer: (result: {
+        error: string;
+        success: false;
+      }) => void = () => {};
+      vi.mocked(window.electronAPI.updateSampleGain).mockReturnValue(
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+      );
+      const onMessage = vi.fn();
+      const { rerender } = render(
+        <MultiVoicePanelsTestWrapper
+          isEditable
+          kitName="Kit1"
+          onMessage={onMessage}
+          voices={voices}
+        />,
+      );
+      await waitFor(() => expect(gain()).toBe("-3"));
+      fireEvent.wheel(knob(), { deltaY: -100 });
+
+      rerender(
+        <MultiVoicePanelsTestWrapper
+          isEditable
+          kitName="Kit2"
+          onMessage={onMessage}
+          voices={voices}
+        />,
+      );
+      await waitFor(() => expect(gain()).toBe("2"));
+      await act(async () => {
+        answer({ error: "disk full", success: false });
+      });
+
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      expect(gain()).toBe("2");
+    });
+  });
+
   describe("[UC-28] Voice linking layout", () => {
     it("should hide secondary voice panel when linked", () => {
       const voices = [

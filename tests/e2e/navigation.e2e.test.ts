@@ -6,6 +6,7 @@ import {
   type E2ETestEnvironment,
   extractE2EFixture,
 } from "../utils/e2e-fixture-extractor";
+import { openSequencer } from "../utils/e2e-sequencer";
 
 test.describe("[UC-07] Back Navigation E2E Tests", () => {
   let electronApp: unknown;
@@ -354,6 +355,31 @@ test.describe("[UC-07] Back Navigation E2E Tests", () => {
 
     await header.locator('button[title="Previous Kit: A0"]').click();
     await expect(header).toContainText("A0");
+  });
+
+  test("[UC-18] [UC-30] [UC-32] the next kit shows its own BPM and starts unmuted (#565)", async () => {
+    // The fixture's kits, A0 and B1, both load at the default BPM
+    await window.locator('[data-testid="kit-item-A0"]').click();
+    const header = window.locator('[data-testid="kit-header"]');
+    await expect(header).toContainText("A0");
+    await openSequencer(window);
+    const bpm = window.getByTestId("bpm-input");
+    const mute = window.getByTestId("voice-mute-0");
+    await expect(bpm).toHaveValue("120");
+
+    await bpm.fill("130");
+    await mute.click();
+    await expect(mute).toHaveAttribute("aria-pressed", "true");
+    await header.locator('button[title="Next Kit: B1"]').click();
+
+    await expect(header).toContainText("B1");
+    await expect(bpm).toHaveValue("120");
+    await expect(mute).toHaveAttribute("aria-pressed", "false");
+
+    // Back on A0, the BPM it was given, not the one it loaded with
+    await header.locator('button[title="Previous Kit: A0"]').click();
+    await expect(header).toContainText("A0");
+    await expect(bpm).toHaveValue("130");
   });
 
   test("should handle consistent navigation through multiple cycles", async () => {

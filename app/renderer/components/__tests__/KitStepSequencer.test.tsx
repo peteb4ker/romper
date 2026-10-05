@@ -654,6 +654,157 @@ describe("KitStepSequencer", () => {
     });
   });
 
+  describe("[UC-18] [UC-30] [UC-32] stepping to another kit (#565)", () => {
+    const voicesAt = (volume: number) =>
+      [1, 2, 3, 4].map((voice_number) => ({
+        sample_mode: "first",
+        voice_number,
+        voice_volume: volume,
+      }));
+    const renderKit = (
+      kitName: string,
+      extra: Partial<React.ComponentProps<typeof KitStepSequencer>> = {},
+    ) => (
+      <KitStepSequencer
+        bpm={120}
+        kitName={kitName}
+        onPlaySample={onPlaySample}
+        samples={defaultSamples}
+        sequencerOpen={true}
+        setSequencerOpen={setSequencerOpen}
+        setStepPattern={setStepPattern}
+        setTriggerConditions={vi.fn()}
+        stepPattern={stepPattern}
+        triggerConditions={Array.from({ length: 4 }, () =>
+          Array(16).fill(null),
+        )}
+        voices={voicesAt(100)}
+        {...extra}
+      />
+    );
+    const lastLogicCall = () =>
+      mockUseKitStepSequencerLogic.mock.calls.at(-1)![0];
+    const bpmInput = () => screen.getByTestId("bpm-input") as HTMLInputElement;
+
+    it("shows and plays the next kit's own BPM after you change this kit's", async () => {
+      // Both kits load at 120; A0 is changed to 130
+      const { rerender } = render(renderKit("A0"));
+      fireEvent.change(bpmInput(), { target: { value: "130" } });
+      await waitFor(() =>
+        expect(window.electronAPI.updateKitBpm).toHaveBeenCalledWith("A0", 130),
+      );
+      expect(lastLogicCall().bpm).toBe(130);
+
+      rerender(renderKit("A1"));
+
+      expect(bpmInput().value).toBe("120");
+      expect(lastLogicCall().bpm).toBe(120);
+    });
+
+    it("reports a saved BPM with its kit, so the loaded kit can be patched", async () => {
+      const onBpmSaved = vi.fn();
+      render(renderKit("A0", { onBpmSaved }));
+
+      fireEvent.change(bpmInput(), { target: { value: "130" } });
+
+      await waitFor(() => expect(onBpmSaved).toHaveBeenCalledWith("A0", 130));
+    });
+
+    it("doesn't report a BPM main didn't save", async () => {
+      vi.mocked(window.electronAPI.updateKitBpm).mockResolvedValue({
+        error: "disk full",
+        success: false,
+      });
+      const onBpmSaved = vi.fn();
+      render(renderKit("A0", { onBpmSaved }));
+
+      fireEvent.change(bpmInput(), { target: { value: "130" } });
+
+      await waitFor(() => expect(bpmInput().value).toBe("120"));
+      expect(onBpmSaved).not.toHaveBeenCalled();
+    });
+
+    it("starts the next kit with no voice muted", () => {
+      const { rerender } = render(renderKit("A0"));
+      fireEvent.click(screen.getByTestId("voice-mute-0"));
+      expect(lastLogicCall().voiceMutes[1]).toBe(true);
+
+      rerender(renderKit("A1"));
+
+      expect(
+        screen.getByTestId("voice-mute-0").getAttribute("aria-pressed"),
+      ).toBe("false");
+      expect(lastLogicCall().voiceMutes).toEqual({
+        1: false,
+        2: false,
+        3: false,
+        4: false,
+      });
+    });
+
+    it("doesn't put a level that fails after the step onto the next kit", async () => {
+      let answer: (result: {
+        error: string;
+        success: false;
+      }) => void = () => {};
+      vi.mocked(window.electronAPI.updateVoiceVolume).mockReturnValue(
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+      );
+      const onMessage = vi.fn();
+      const { rerender } = render(
+        renderKit("A0", { onMessage, voices: voicesAt(80) }),
+      );
+      fireEvent.change(screen.getByTestId("voice-volume-0"), {
+        target: { value: "40" },
+      });
+
+      rerender(renderKit("A1", { onMessage, voices: voicesAt(60) }));
+      await act(async () => {
+        answer({ error: "disk full", success: false });
+      });
+
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      expect(
+        (screen.getByTestId("voice-volume-0") as HTMLInputElement).value,
+      ).toBe("60");
+      expect(lastLogicCall().voiceVolumes[1]).toBe(60);
+    });
+
+    it("doesn't put a sample mode that fails after the step onto the next kit", async () => {
+      let answer: (result: {
+        error: string;
+        success: false;
+      }) => void = () => {};
+      vi.mocked(window.electronAPI.updateVoiceSampleMode).mockReturnValue(
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+      );
+      const onMessage = vi.fn();
+      const { rerender } = render(renderKit("A0", { onMessage }));
+      fireEvent.click(screen.getByTestId("sample-mode-0-random"));
+
+      const nextKitVoices = voicesAt(100).map((voice) => ({
+        ...voice,
+        sample_mode: "round-robin",
+      }));
+      rerender(renderKit("A1", { onMessage, voices: nextKitVoices }));
+      await act(async () => {
+        answer({ error: "disk full", success: false });
+      });
+
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      expect(
+        screen
+          .getByTestId("sample-mode-0-round-robin")
+          .getAttribute("aria-pressed"),
+      ).toBe("true");
+      expect(lastLogicCall().sampleModes[1]).toBe("round-robin");
+    });
+  });
+
   describe("Stereo linking", () => {
     it("hides secondary voice row when voices are stereo-linked", () => {
       render(

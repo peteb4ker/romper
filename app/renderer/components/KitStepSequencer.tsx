@@ -52,6 +52,8 @@ interface KitStepSequencerProps {
   kitSamples?: Sample[];
   /** Records sequencer edits on the kit's undo stack. */
   onAddUndoAction?: (action: AnyUndoAction) => void;
+  /** Called once main has saved a kit's BPM, to patch the loaded kit (#565) */
+  onBpmSaved?: (kitName: string, bpm: number) => void;
   /** Tells the user a sequencer edit wasn't saved (RE-91, #511) */
   onMessage?: (text: string, type?: string, duration?: number) => void;
   onPlaySample: (
@@ -84,25 +86,45 @@ interface VoiceData extends SlicerVoiceData {
   voice_volume?: number;
 }
 
+function unmutedVoices(): Record<number, boolean> {
+  const mutes: Record<number, boolean> = {};
+  for (let i = 1; i <= NUM_VOICES; i++) {
+    mutes[i] = false;
+  }
+  return mutes;
+}
+
 const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
   // Destructure props used inside useCallback to satisfy exhaustive-deps
   // without depending on the whole `props` object.
-  const { kitName, onMessage, onVoiceSettingChanged, triggerConditions } =
-    props;
+  const {
+    kitName,
+    onBpmSaved,
+    onMessage,
+    onVoiceSettingChanged,
+    triggerConditions,
+  } = props;
+
+  // The kit on screen, so a save that fails after you step to another kit
+  // doesn't put its value back on the new kit's voice (#565)
+  const kitRef = React.useRef(kitName);
+  kitRef.current = kitName;
 
   // Manage BPM state at this level to ensure sequencer logic gets live updates
-  const bpmLogic = useBpm({ initialBpm: props.bpm, kitName, onMessage });
+  const bpmLogic = useBpm({
+    initialBpm: props.bpm,
+    kitName,
+    onMessage,
+    onSaved: onBpmSaved,
+  });
 
-  // Voice mute state — session only, not persisted
-  const [voiceMutes, setVoiceMutes] = React.useState<Record<number, boolean>>(
-    () => {
-      const mutes: Record<number, boolean> = {};
-      for (let i = 1; i <= NUM_VOICES; i++) {
-        mutes[i] = false;
-      }
-      return mutes;
-    },
-  );
+  // Voice mute state — session only, not persisted, and each kit starts
+  // unmuted: the editor isn't remounted when you step to another kit (#565)
+  const [voiceMutes, setVoiceMutes] =
+    React.useState<Record<number, boolean>>(unmutedVoices);
+  React.useEffect(() => {
+    setVoiceMutes(unmutedVoices());
+  }, [kitName]);
 
   const handleMuteToggle = React.useCallback((voiceNumber: number) => {
     setVoiceMutes((prev) => ({ ...prev, [voiceNumber]: !prev[voiceNumber] }));
@@ -181,7 +203,9 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
             `Couldn't save the level for voice ${voiceNumber}, so it's back to ${saved}. Try again.`,
             "error",
           ),
-        restore: setVolume,
+        restore: (saved) => {
+          if (kitRef.current === kitName) setVolume(saved);
+        },
         send: () =>
           globalThis.electronAPI?.updateVoiceVolume?.(
             kitName,
@@ -211,7 +235,9 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
             `Couldn't save the sample mode for voice ${voiceNumber}, so it's back to ${SAMPLE_MODE_LABELS[saved]}. Try again.`,
             "error",
           ),
-        restore: setMode,
+        restore: (saved) => {
+          if (kitRef.current === kitName) setMode(saved);
+        },
         send: () =>
           globalThis.electronAPI?.updateVoiceSampleMode?.(
             kitName,

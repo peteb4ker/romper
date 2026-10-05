@@ -5,7 +5,6 @@ import React from "react";
 
 import { createLogger } from "../../../utils/logger";
 import { useSampleManagement } from "../sample-management/useSampleManagement";
-import { useBpm } from "../shared/useBpm";
 import { useStepPattern } from "../shared/useStepPattern";
 import { useTriggerConditions } from "../shared/useTriggerConditions";
 import { useVoiceAlias } from "../voice-panels/useVoiceAlias";
@@ -163,13 +162,6 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     onSaved: reloadKit,
   });
 
-  // BPM management
-  const { bpm, setBpm } = useBpm({
-    initialBpm: kit?.bpm,
-    kitName,
-    onMessage,
-  });
-
   // Playback logic
   const playback = useKitPlayback();
 
@@ -265,8 +257,6 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   });
 
   return {
-    // BPM management
-    bpm,
     // Flash feedback for voice name updates
     flashVoices,
     // Handlers
@@ -293,7 +283,6 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     selectedVoice,
     sequencerGridRef,
     sequencerOpen,
-    setBpm,
     setSelectedSampleIdx,
     // State setters
     setSelectedVoice,

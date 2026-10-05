@@ -68,6 +68,7 @@ const KitsView: React.FC = () => {
     sampleCounts,
     toggleKitEditable,
     toggleKitFavorite,
+    updateKit,
     updateKitAlias,
   } = useKitDataManager({
     isInitialized,
@@ -180,6 +181,13 @@ const KitsView: React.FC = () => {
     }
   }, [navigation.selectedKit, reloadCurrentKitSamples]);
 
+  // A BPM save doesn't reload the kit, so patch the loaded copy; otherwise
+  // stepping back to the kit shows its old BPM (#565)
+  const handleBpmSaved = useCallback(
+    (kitName: string, bpm: number) => updateKit(kitName, { bpm }),
+    [updateKit],
+  );
+
   // Handle targeted kit metadata refresh (voice aliases only, no sample reload)
   const handleRefreshKitMetadata = useCallback(async () => {
     if (navigation.selectedKit) {
@@ -215,6 +223,7 @@ const KitsView: React.FC = () => {
             kits={navigation.sortedKits}
             onAddUndoAction={keyboardShortcuts.addUndoAction}
             onBack={navigation.handleBack}
+            onBpmSaved={handleBpmSaved}
             onKitModified={markKitModified}
             onKitUpdated={refreshAllKitsAndSamples}
             onMessage={showMessage}

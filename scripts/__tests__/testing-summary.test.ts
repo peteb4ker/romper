@@ -132,6 +132,32 @@ describe("summarise", () => {
   });
 });
 
+describe("summarise e2e shards", () => {
+  it("adds up each platform's shards and lists the platforms where all passed", () => {
+    const shard = (os: string, i: number, n: number) =>
+      `test-results-e2e-${os}-latest-shard-${i}-of-${n}/results-e2e.json`;
+    const summary = summarise({
+      commit: "abc",
+      date: "2026-10-04",
+      files: [
+        { content: playwright(70), path: shard("ubuntu", 1, 2) },
+        { content: playwright(68, 0, 1), path: shard("ubuntu", 2, 2) },
+        { content: playwright(46), path: shard("macos", 1, 3) },
+        { content: playwright(46), path: shard("macos", 2, 3) },
+        { content: playwright(46, 1), path: shard("macos", 3, 3) },
+      ],
+      version: "v1.3.2",
+    });
+
+    // Each platform runs the whole suite: one platform's count, not the sum
+    expect(summary.layers.e2e).toEqual({
+      passed: 139,
+      platforms: ["Linux"],
+      tests: 139,
+    });
+  });
+});
+
 describe("countStatuses", () => {
   it("refuses an entry with no status, which means the issues weren't read", () => {
     expect(() =>

@@ -21,11 +21,15 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # Which runners to use (RE-52, #467). Pushes (main, and the release's
-  # tag) run all three. A pull request runs Linux, plus macOS and Windows
-  # when it changes something that can behave differently there: the app,
-  # the e2e specs and their support, or how they're built and run. Other
-  # PRs (docs, unit tests, scripts) run Linux only.
+  # Which runners to use, and how many shards each runs (#660). Pushes
+  # (main, and the release's tag) run all three platforms. A pull request
+  # that changes only tests or docs runs Linux only (#660, extending
+  # RE-52/#467); any other change (the app, electron, shared code, scripts,
+  # package files, workflows, the Playwright config) runs all three.
+  #
+  # Shards per platform: the suite takes about 8 minutes on macOS, 6 on
+  # Windows and 4 on Linux on one runner (workers: 1), so macOS gets three
+  # shards and the others two, bringing each to about 3 minutes of tests.
   plan:
     runs-on: ubuntu-latest
     permissions:
@@ -33,6 +37,7 @@ jobs:
       pull-requests: read
     outputs:
       os: ${{ steps.plan.outputs.os }}
+      matrix: ${{ steps.plan.outputs.matrix }}
     steps:
       - name: Choose the runners
         id: plan
@@ -42,53 +47,69 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
         run: |
-          all='["ubuntu-latest","macos-latest","windows-latest"]'
+          # plan <os>:<shards>...  writes the os list and the job matrix
+          plan() {
+            local spec os n i oses=() jobs=()
+            for spec in "$@"; do
+              os=${spec%%:*}
+              n=${spec##*:}
+              oses+=("\"$os\"")
+              for ((i = 1; i <= n; i++)); do
+                jobs+=("{\"os\":\"$os\",\"shard\":$i,\"shards\":$n}")
+              done
+            done
+            local IFS=,
+            echo "os=[${oses[*]}]" >> "$GITHUB_OUTPUT"
+            echo "matrix={\"include\":[${jobs[*]}]}" >> "$GITHUB_OUTPUT"
+          }
+          all() { plan ubuntu-latest:2 macos-latest:3 windows-latest:2; }
+          linux() { plan ubuntu-latest:2; }
+
           if [ "$EVENT" = "push" ]; then
-            echo "os=$all" >> "$GITHUB_OUTPUT"
+            all
             exit 0
           fi
           if [ "$EVENT" != "pull_request" ]; then
-            echo 'os=["ubuntu-latest"]' >> "$GITHUB_OUTPUT"
+            linux
             exit 0
           fi
           # If the file list can't be read, run every platform
           if ! files=$(gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[].filename'); then
             echo "Couldn't list the PR's files; running every platform"
-            echo "os=$all" >> "$GITHUB_OUTPUT"
+            all
             exit 0
           fi
-          platform_paths='^(electron/|app/|shared/|tests/e2e/|tests/utils/|tests/validation/support/|\.github/workflows/e2e\.yml$|playwright\.config\.ts$|package\.json$|package-lock\.json$)'
-          matched=$(printf '%s\n' "$files" | grep -E "$platform_paths" || true)
-          if [ -n "$matched" ]; then
-            echo "These files can behave differently per platform, so e2e runs on all three:"
-            printf '%s\n' "$matched" | sed 's/^/  /'
-            echo "os=$all" >> "$GITHUB_OUTPUT"
+          # Tests (tests/, __tests__/, *.test.* and *.spec.* files) and docs
+          # (docs/, aidlc-docs/, Markdown). Everything else can behave
+          # differently per platform.
+          tests_or_docs='^(tests/|docs/|aidlc-docs/)|(^|/)__tests__/|\.(test|spec)\.[cm]?[jt]sx?$|\.md$'
+          others=$(printf '%s\n' "$files" | grep -Ev "$tests_or_docs" | grep -v '^$' || true)
+          if [ -n "$others" ]; then
+            echo "These files aren't tests or docs, so e2e runs on all three platforms:"
+            printf '%s\n' "$others" | sed 's/^/  /'
+            all
           else
-            echo "No app, e2e or build files changed; e2e runs on Linux only"
-            echo 'os=["ubuntu-latest"]' >> "$GITHUB_OUTPUT"
+            echo "Only tests and docs changed; e2e runs on Linux only"
+            linux
           fi
 
   e2e-tests:
     needs: plan
+    name: e2e-tests (${{ matrix.os }}, ${{ matrix.shard }}/${{ matrix.shards }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
-      matrix:
-        os: ${{ fromJSON(needs.plan.outputs.os) }}
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
-          cache: "npm"
-
       - name: Install dependencies
-        run: npm ci
+        uses: ./.github/actions/install-dependencies
+        with:
+          electron: "true"
 
       - name: Show system info (debugging)
         run: |
@@ -113,14 +134,13 @@ jobs:
             libxss1 \
             libasound2-dev \
             libgtk-3-0 \
-            x11-utils
+            x11-utils \
+            xvfb
 
       - name: Configure Electron sandbox (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          # Electron 42+ downloads its binary on first use, not at install;
-          # fetch it now so chrome-sandbox exists to be configured
-          node node_modules/electron/install.js
+          # The binary came with Install dependencies (electron: "true").
           # Configure chrome-sandbox for proper sandboxing in CI
           CHROME_SANDBOX_PATH="node_modules/electron/dist/chrome-sandbox"
           if [ -f "$CHROME_SANDBOX_PATH" ]; then
@@ -192,7 +212,6 @@ jobs:
       - name: Setup virtual display (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          sudo apt-get install -y xvfb
           export DISPLAY=:99
           Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
           # Validate Xvfb is ready with retry (up to 10 attempts, 1s apart)
@@ -213,7 +232,7 @@ jobs:
         if: matrix.os != 'windows-latest'
         # test:play (not test:e2e) — the build already ran above; test:e2e
         # would rebuild a second time.
-        run: npm run test:play
+        run: npm run test:play -- --shard=${{ matrix.shard }}/${{ matrix.shards }}
         env:
           ROMPER_SDCARD_PATH: /tmp/e2e-sdcard
           # Performance budget results, for the testing summary
@@ -223,7 +242,7 @@ jobs:
 
       - name: Run end-to-end tests (Windows)
         if: matrix.os == 'windows-latest'
-        run: npm run test:play
+        run: npm run test:play -- --shard=${{ matrix.shard }}/${{ matrix.shards }}
         env:
           ROMPER_SDCARD_PATH: C:\temp\e2e-sdcard
           ROMPER_BUDGET_REPORT: reports/budgets-e2e.jsonl
@@ -235,14 +254,16 @@ jobs:
         if: always()
         run: node scripts/e2e-flaky-summary.mjs reports/results-e2e.json --platform "$PLATFORM"
         env:
-          PLATFORM: ${{ matrix.os }}
+          PLATFORM: ${{ matrix.os }}, shard ${{ matrix.shard }}/${{ matrix.shards }}
         shell: bash
 
+      # One per shard; testing-summary.mjs adds a platform's shards up, and
+      # e2e-tests-check below shows the totals in its job summary
       - name: Upload results for the testing summary
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: test-results-e2e-${{ matrix.os }}
+          name: test-results-e2e-${{ matrix.os }}-shard-${{ matrix.shard }}-of-${{ matrix.shards }}
           path: reports/
           retention-days: 7
 
@@ -250,7 +271,7 @@ jobs:
         uses: actions/upload-artifact@v5
         if: failure()
         with:
-          name: e2e-test-results-${{ matrix.os }}
+          name: e2e-test-results-${{ matrix.os }}-shard-${{ matrix.shard }}-of-${{ matrix.shards }}
           path: |
             test-results/
             playwright-report/
@@ -260,18 +281,57 @@ jobs:
         uses: actions/upload-artifact@v5
         if: failure()
         with:
-          name: e2e-screenshots-${{ matrix.os }}
+          name: e2e-screenshots-${{ matrix.os }}-shard-${{ matrix.shard }}-of-${{ matrix.shards }}
           path: test-results/**/*.png
           retention-days: 7
 
   # The required check: reports on every run, whichever runners ran, and
-  # fails if choosing them failed or any of them did
+  # fails if choosing them failed or any shard on any platform did. A
+  # matrix job's result is "success" only when every one of its jobs passed.
   e2e-tests-check:
     runs-on: ubuntu-latest
     needs: [plan, e2e-tests]
     if: always()
     steps:
+      - name: Download the shards' results
+        if: needs.plan.result == 'success'
+        continue-on-error: true
+        uses: actions/download-artifact@v5
+        with:
+          pattern: test-results-e2e-*
+          path: shards
+
+      # Informational: the gate is the next step
+      - name: Add up the shards
+        if: needs.plan.result == 'success'
+        continue-on-error: true
+        env:
+          MATRIX: ${{ needs.plan.outputs.matrix }}
+        run: |
+          {
+            echo "### End-to-end tests"
+            echo
+            echo "| Platform | Shards reported | Passed | Flaky | Failed | Skipped |"
+            echo "| --- | --- | --- | --- | --- | --- |"
+            for os in $(jq -r '[.include[].os] | unique | .[]' <<< "$MATRIX"); do
+              planned=$(jq --arg os "$os" '[.include[] | select(.os == $os)] | length' <<< "$MATRIX")
+              shopt -s nullglob
+              reports=(shards/test-results-e2e-"$os"-shard-*/results-e2e.json)
+              shopt -u nullglob
+              if [ "${#reports[@]}" -eq 0 ]; then
+                echo "| $os | 0 of $planned | | | | |"
+                continue
+              fi
+              jq -rs --arg os "$os" --arg shards "${#reports[@]} of $planned" '
+                map(.stats) as $s
+                | def total(k): $s | map(.[k] // 0) | add;
+                "| \($os) | \($shards) | \(total("expected")) | \(total("flaky")) | \(total("unexpected")) | \(total("skipped")) |"
+              ' "${reports[@]}"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Check e2e test results
+        if: always()
         env:
           OS: ${{ needs.plan.outputs.os }}
           PLAN: ${{ needs.plan.result }}

@@ -7,7 +7,7 @@
  *
  * Reads what the release run's checks produced, as downloaded artifacts:
  * - `results-unit.json`, `results-integration.json`: Vitest JSON reports;
- * - `results-e2e.json`: Playwright's JSON report;
+ * - `results-e2e.json`: Playwright's JSON report, one per shard (#660);
  * - `validation-report/report.json`: the full-pipeline rehearsal;
  * - `*.jsonl` performance budget rows (`tests/perf/budgets.ts`).
  * An artifact folder named `...-<os>-latest` says which platform ran it.
@@ -87,6 +87,9 @@ export function summarise({ commit, date, entries = [], files, version }) {
     unit: layer(),
   };
   const budgets = [];
+  // CI runs the e2e suite in shards, each with its own report: a platform's
+  // results are the sum of its shards'
+  const e2eShards = new Map();
 
   const add = (target, file, tests, passed) => {
     // Each platform runs the same tests: report one platform's count
@@ -111,7 +114,11 @@ export function summarise({ commit, date, entries = [], files, version }) {
       add(target, file, json.numTotalTests, json.numPassedTests);
     } else if (name === "results-e2e.json") {
       const { expected = 0, flaky = 0, unexpected = 0 } = json.stats ?? {};
-      add(layers.e2e, file, expected + flaky + unexpected, expected + flaky);
+      const key = platformOf(file) ?? file;
+      const shards = e2eShards.get(key) ?? { file, passed: 0, tests: 0 };
+      shards.tests += expected + flaky + unexpected;
+      shards.passed += expected + flaky;
+      e2eShards.set(key, shards);
     } else if (name === "report.json" && file.includes("validation-report")) {
       if (file.includes("performance")) continue;
       // A "known" check is a failure tied to an open finding (knownBug)
@@ -131,6 +138,10 @@ export function summarise({ commit, date, entries = [], files, version }) {
         layers.rehearsal.facts = json.facts ?? {};
       }
     }
+  }
+
+  for (const { file, passed, tests } of e2eShards.values()) {
+    add(layers.e2e, file, tests, passed);
   }
 
   const facts = layers.rehearsal.facts;

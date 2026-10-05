@@ -302,7 +302,7 @@ jobs:
 
       - name: Sign Romper.app — macOS
         if: matrix.os == 'macos-latest' && needs.preflight.outputs.mac-signing == 'true'
-        uses: indygreg/apple-code-sign-action@44d0985b7f4363198e80b6fea63ac3e9dd3e9957 # v1.1
+        uses: indygreg/apple-code-sign-action@5e7a4a01fe4dffe948ef3bcf1f4538d963cb0c72 # v1.2
         with:
           input_path: out/Romper-darwin-arm64/Romper.app
           p12_file: ${{ runner.temp }}/cert.p12
@@ -403,7 +403,7 @@ jobs:
 
       - name: Sign DMG — macOS
         if: matrix.os == 'macos-latest' && needs.preflight.outputs.mac-signing == 'true'
-        uses: indygreg/apple-code-sign-action@44d0985b7f4363198e80b6fea63ac3e9dd3e9957 # v1.1
+        uses: indygreg/apple-code-sign-action@5e7a4a01fe4dffe948ef3bcf1f4538d963cb0c72 # v1.2
         with:
           input_path: ${{ steps.dmg_path.outputs.path }}
           p12_file: ${{ runner.temp }}/cert.p12

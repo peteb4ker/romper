@@ -37,8 +37,8 @@ export function useChooseExistingLocalStore(
         return false;
       }
       return true;
-    } catch (caught) {
-      console.error("Failed to choose a local store:", caught);
+    } catch (error_) {
+      console.error("Failed to choose a local store:", error_);
       setError("Couldn't open the folder picker. Try again.");
       return false;
     } finally {

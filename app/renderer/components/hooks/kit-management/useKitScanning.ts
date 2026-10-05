@@ -173,7 +173,7 @@ export function useKitScanning({
     setScanStatus({ status: "scanning" });
 
     try {
-      const updatedVoices: number[] = [];
+      const toName: { alias: string; voice: number }[] = [];
 
       for (const voice of [1, 2, 3, 4] as const) {
         const voiceSamples = samples[voice];
@@ -183,15 +183,18 @@ export function useKitScanning({
         if (voiceNames?.[voice]?.trim()) continue;
 
         const inferredType = inferVoiceTypeFromFilename(voiceSamples[0]);
-        if (inferredType && globalThis.electronAPI?.updateVoiceAlias) {
-          await globalThis.electronAPI.updateVoiceAlias(
-            kitName,
-            voice,
-            inferredType,
-          );
-          updatedVoices.push(voice);
-        }
+        if (!inferredType || !globalThis.electronAPI?.updateVoiceAlias)
+          continue;
+        toName.push({ alias: inferredType, voice });
       }
+
+      // Each call names a different voice, so they don't depend on each other
+      await Promise.all(
+        toName.map(({ alias, voice }) =>
+          globalThis.electronAPI.updateVoiceAlias(kitName, voice, alias),
+        ),
+      );
+      const updatedVoices = toName.map(({ voice }) => voice);
 
       setScanStatus({ sampleCount: updatedVoices.length, status: "success" });
 

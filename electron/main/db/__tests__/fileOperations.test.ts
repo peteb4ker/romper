@@ -94,32 +94,31 @@ describe("fileOperations unit tests", () => {
       Object.defineProperty(process, "platform", { value: originalPlatform });
     });
 
-    it("should use different retry patterns based on platform", async () => {
+    it("waits between retries on non-Windows before giving up", async () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, "platform", { value: "linux" });
       vi.useFakeTimers();
 
       mockFs.unlinkSync.mockImplementation(() => {
         throw new Error("File in use");
       });
 
-      // Test will timeout if delays aren't working
       const promise = deleteDbFileWithRetry(testDbPath, 1);
+      let settled = false;
+      promise.then(
+        () => (settled = true),
+        () => (settled = true),
+      );
+      const rejected = expect(promise).rejects.toThrow("File in use");
 
-      // Should not resolve immediately due to delays
-      let resolved = false;
-      promise
-        .then(() => {
-          resolved = true;
-        })
-        .catch(() => {
-          resolved = true;
-        });
+      // Still waiting on the retry delay
+      await vi.advanceTimersByTimeAsync(99);
+      expect(settled).toBe(false);
 
-      expect(resolved).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      await rejected;
 
-      vi.useRealTimers();
-
-      // Let it complete (will throw, but that's expected)
-      await expect(promise).rejects.toThrow();
+      Object.defineProperty(process, "platform", { value: originalPlatform });
     });
   });
 });

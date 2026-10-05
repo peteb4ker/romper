@@ -31,7 +31,8 @@ export function claimVoice(
     sounds = new Set();
     sounding.set(voice, sounds);
   }
-  for (const other of [...sounds]) {
+  // prettier-ignore
+  for (const other of [...sounds]) { // NOSONAR - snapshot: stop callbacks may re-enter and change the set
     sounds.delete(other);
     other(atMs);
   }

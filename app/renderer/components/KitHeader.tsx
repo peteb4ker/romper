@@ -15,7 +15,7 @@ import {
   QUARANTINE_ICON_LABEL,
   STEREO_LABELS,
 } from "@romper/shared/stereoLinkRules";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 
 import LedIconGrid from "./led-icon/LedIconGrid";
 
@@ -93,7 +93,6 @@ const renderKitAliasInput = (
 ) => (
   <input
     aria-label="Kit name"
-    autoFocus
     className="border-b border-accent-primary bg-transparent text-base font-semibold text-text-primary focus:outline-none px-1 w-48 text-center"
     onBlur={() => {
       setEditingKitAlias(false);
@@ -157,6 +156,11 @@ const KitHeader: React.FC<KitHeaderProps> = ({
   setEditingKitAlias,
   setKitAliasInput,
 }) => {
+  // The name field takes focus as it opens
+  useEffect(() => {
+    if (editingKitAlias) kitAliasInputRef.current?.focus();
+  }, [editingKitAlias, kitAliasInputRef]);
+
   // Simple back handler without artificial guards
   const handleBack = useCallback(() => {
     if (!onBack) return;

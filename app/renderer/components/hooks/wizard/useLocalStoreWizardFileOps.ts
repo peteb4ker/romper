@@ -177,7 +177,7 @@ export function useLocalStoreWizardFileOps({
             percent: 0,
             phase: `Download failed, retrying (attempt ${attempt + 1} of ${maxRetries})...`,
           });
-          await new Promise((resolve) => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay)); // NOSONAR - retry backoff delay; attempts must be sequential
         } else {
           throw new Error(
             `Factory samples download failed after ${maxRetries} attempts. ${reason}`,

@@ -127,7 +127,10 @@ export function useExternalDragHandlers({
   );
 
   const handleDrop = useCallback(
-    async (e: React.DragEvent, slotNumber: number) => {
+    async (
+      e: React.DragEvent,
+      slotNumber: number,
+    ) => /* NOSONAR - S3776 accepted: each dropped file's checks share the batch's slots and rejections */ {
       e.preventDefault();
       e.stopPropagation();
 

@@ -69,7 +69,7 @@ const KitGridItem = React.memo(
         ...rest
       },
       ref,
-    ) => {
+    ) => /* NOSONAR - S3776 accepted: the item renders a branch for each kit state */ {
       const voiceNames = extractVoiceNames(kitData);
       const { iconLabel, iconType } = useKitItem(voiceNames);
       const icon = <KitIconRenderer iconType={iconType} size="md" />;

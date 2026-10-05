@@ -18,7 +18,7 @@ export const Kbd: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 interface Shortcut {
   does: string;
-  keys: React.ReactNode[];
+  keys: string[];
 }
 
 /** Every sequencer shortcut, grouped. */
@@ -125,7 +125,7 @@ export const SequencerKeysOverlay: React.FC<{ onClose: () => void }> = ({
                 <li className="flex items-start gap-2" key={s.does}>
                   <span className="flex gap-0.5 shrink-0">
                     {s.keys.map((k) => (
-                      <Kbd key={String(k)}>{k}</Kbd>
+                      <Kbd key={k}>{k}</Kbd>
                     ))}
                   </span>
                   <span className="text-text-secondary">{s.does}</span>

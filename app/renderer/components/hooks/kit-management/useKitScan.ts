@@ -172,7 +172,7 @@ export async function scanAllKits({
         total: kits.length,
       });
 
-      const result = await processSingleKitScan(kitName);
+      const result = await processSingleKitScan(kitName); // NOSONAR - kits are scanned one at a time for per-kit progress and errors
 
       if (result.success) {
         successCount++;

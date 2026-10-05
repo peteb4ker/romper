@@ -213,29 +213,15 @@ export class PathAccessPolicy {
  * dangling link would create its target, wherever that is).
  */
 export function canonicalizePath(p: unknown): string {
-  if (typeof p !== "string" || p.trim() === "") {
-    throw new PathAccessError("A path is required");
-  }
-  if (p.includes("\0")) {
-    throw new PathAccessError("Path contains a NUL byte");
-  }
-  if (!path.isAbsolute(p)) {
-    throw new PathAccessError(`Path must be absolute: ${p}`);
-  }
+  assertAbsolutePathInput(p);
 
   let current = path.resolve(p);
+  // The not-yet-existing components below `current`, outermost first
   const tail: string[] = [];
   for (;;) {
-    try {
-      const real = fs.realpathSync.native(current);
-      return tail.length > 0 ? path.join(real, ...tail.reverse()) : real;
-    } catch (error) {
-      const code = (error as NodeJS.ErrnoException).code;
-      if (code !== "ENOENT" && code !== "ENOTDIR") {
-        throw new PathAccessError(
-          `Cannot resolve ${p}: ${code ?? String(error)}`,
-        );
-      }
+    const real = realpathIfExists(current, p);
+    if (real !== null) {
+      return tail.length > 0 ? path.join(real, ...tail) : real;
     }
 
     if (isSymlink(current)) {
@@ -247,7 +233,7 @@ export function canonicalizePath(p: unknown): string {
       // Nothing on the way up exists (not even the filesystem root).
       return path.resolve(p);
     }
-    tail.push(path.basename(current));
+    tail.unshift(path.basename(current));
     current = parent;
   }
 }
@@ -268,6 +254,19 @@ export function isSameOrInside(child: string, parent: string): boolean {
   );
 }
 
+/** canonicalizePath's input checks: a non-empty absolute path, no NUL byte. */
+function assertAbsolutePathInput(p: unknown): asserts p is string {
+  if (typeof p !== "string" || p.trim() === "") {
+    throw new PathAccessError("A path is required");
+  }
+  if (p.includes("\0")) {
+    throw new PathAccessError("Path contains a NUL byte");
+  }
+  if (!path.isAbsolute(p)) {
+    throw new PathAccessError(`Path must be absolute: ${p}`);
+  }
+}
+
 /** A path as the filesystem compares it: case-folded where it ignores case */
 function foldCase(p: string): string {
   return CASE_INSENSITIVE ? p.toLowerCase() : p;
@@ -283,6 +282,24 @@ function isSymlink(p: string): boolean {
 
 function nonEmptyString(value: unknown): null | string {
   return typeof value === "string" && value.trim() !== "" ? value : null;
+}
+
+/**
+ * The realpath of `current`, or null when it doesn't exist (ENOENT,
+ * ENOTDIR). Any other failure throws, naming the original path `p`.
+ */
+function realpathIfExists(current: string, p: string): null | string {
+  try {
+    return fs.realpathSync.native(current);
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code !== "ENOENT" && code !== "ENOTDIR") {
+      throw new PathAccessError(
+        `Cannot resolve ${p}: ${code ?? String(error)}`,
+      );
+    }
+    return null;
+  }
 }
 
 export const pathAccess = new PathAccessPolicy();

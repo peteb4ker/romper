@@ -384,4 +384,45 @@ describe("KitHeader", () => {
       expect(screen.queryByTestId("kit-header-quarantined")).toBeNull();
     });
   });
+
+  describe("[UC-17] [Q-06] kit name field focus", () => {
+    it("focuses the name field when editing opens", () => {
+      const kitAliasInputRef = React.createRef<HTMLInputElement>();
+      const { rerender } = render(
+        <KitHeader {...baseProps} kitAliasInputRef={kitAliasInputRef} />,
+      );
+      rerender(
+        <KitHeader
+          {...baseProps}
+          editingKitAlias={true}
+          kitAliasInputRef={kitAliasInputRef}
+        />,
+      );
+      expect(screen.getByRole("textbox", { name: "Kit name" })).toHaveFocus();
+    });
+
+    it("leaves focus alone while the field stays open", () => {
+      const kitAliasInputRef = React.createRef<HTMLInputElement>();
+      const { rerender } = render(
+        <KitHeader
+          {...baseProps}
+          editingKitAlias={true}
+          kitAliasInputRef={kitAliasInputRef}
+        />,
+      );
+      expect(screen.getByRole("textbox", { name: "Kit name" })).toHaveFocus();
+      const scan = screen.getByText("Scan Kit");
+      scan.focus();
+
+      rerender(
+        <KitHeader
+          {...baseProps}
+          editingKitAlias={true}
+          kitAliasInput="My Kit 2"
+          kitAliasInputRef={kitAliasInputRef}
+        />,
+      );
+      expect(scan).toHaveFocus();
+    });
+  });
 });

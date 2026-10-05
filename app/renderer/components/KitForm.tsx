@@ -25,6 +25,13 @@ const KitForm: React.FC<KitFormProps> = ({
     setTags([]); // Tags not currently in schema
   }, [kit]);
 
+  // The new-tag field takes focus as it appears
+  const tagInputRef = React.useRef<HTMLInputElement>(null);
+  const tagInputShown = !loading && !error && !!tagsEditable && editingTags;
+  React.useEffect(() => {
+    if (tagInputShown) tagInputRef.current?.focus();
+  }, [tagInputShown]);
+
   if (loading)
     return (
       <div className="text-xs text-text-tertiary">Loading kit metadata...</div>
@@ -56,7 +63,6 @@ const KitForm: React.FC<KitFormProps> = ({
               ))}
               <input
                 aria-label="New tag"
-                autoFocus
                 className="border-b border-accent-primary bg-transparent text-xs text-accent-primary focus:outline-none px-1 w-20"
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -69,6 +75,7 @@ const KitForm: React.FC<KitFormProps> = ({
                   }
                 }}
                 placeholder="Add tag"
+                ref={tagInputRef}
                 value={tagInput}
               />
               <button

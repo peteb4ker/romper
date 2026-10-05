@@ -65,8 +65,7 @@ export function useKitViewMenuHandlers({
  */
 function runEditCommand(command: "redo" | "undo", romperCommand?: () => void) {
   if (isTypingTarget(document.activeElement)) {
-    // The page's only way to reach the browser's own text undo stack
-    document.execCommand(command);
+    document.execCommand(command); // NOSONAR - execCommand is the only way to reach the field's native undo stack (RE-65)
     return;
   }
   romperCommand?.();

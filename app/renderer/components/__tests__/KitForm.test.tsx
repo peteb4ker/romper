@@ -55,4 +55,48 @@ describe("KitForm", () => {
     );
     expect(screen.getByText("No tags")).toBeInTheDocument();
   });
+
+  describe("[Q-06] focus", () => {
+    it("focuses the new-tag field when tag editing opens", () => {
+      render(<KitForm kit={baseKit} onSave={vi.fn()} tagsEditable={true} />);
+      const edit = screen.getByText("Edit Tags");
+      edit.focus();
+
+      fireEvent.click(edit);
+      expect(screen.getByPlaceholderText("Add tag")).toHaveFocus();
+    });
+
+    it("leaves focus alone while tag editing stays open", () => {
+      render(<KitForm kit={baseKit} onSave={vi.fn()} tagsEditable={true} />);
+      fireEvent.click(screen.getByText("Edit Tags"));
+      const input = screen.getByPlaceholderText("Add tag");
+      fireEvent.change(input, { target: { value: "kick" } });
+      fireEvent.keyDown(input, { key: "Enter" });
+      const remove = screen.getByTitle("Remove tag");
+      remove.focus();
+
+      fireEvent.change(input, { target: { value: "snare" } });
+      expect(remove).toHaveFocus();
+    });
+
+    it("focuses the field again when it reappears after loading", () => {
+      const onSave = vi.fn();
+      const { rerender } = render(
+        <KitForm kit={baseKit} onSave={onSave} tagsEditable={true} />,
+      );
+      fireEvent.click(screen.getByText("Edit Tags"));
+      rerender(
+        <KitForm
+          kit={baseKit}
+          loading={true}
+          onSave={onSave}
+          tagsEditable={true}
+        />,
+      );
+      expect(screen.queryByPlaceholderText("Add tag")).toBeNull();
+
+      rerender(<KitForm kit={baseKit} onSave={onSave} tagsEditable={true} />);
+      expect(screen.getByPlaceholderText("Add tag")).toHaveFocus();
+    });
+  });
 });

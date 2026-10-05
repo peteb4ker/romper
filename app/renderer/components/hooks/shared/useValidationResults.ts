@@ -162,7 +162,7 @@ export function useValidationResults({
 
       // Process each kit
       for (const kitName of selectedKits) {
-        const result = await rescanSingleKit(kitName);
+        const result = await rescanSingleKit(kitName); // NOSONAR - kits are rescanned one at a time; each writes the DB
 
         if (result.success) {
           totalScannedSamples += result.scannedSamples || 0;

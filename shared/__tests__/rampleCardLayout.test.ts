@@ -52,6 +52,22 @@ describe("[UC-34] rampleCardLayout", () => {
       );
     });
 
+    it("keeps spaces and dots inside the name", () => {
+      expect(cardSampleFileName(1, 0, ". snap. .wbl. .wav")).toBe(
+        "1-01 snap. .wbl.wav",
+      );
+    });
+
+    it("writes only the prefix for a name of nothing but spaces and dots", () => {
+      expect(cardSampleFileName(1, 0, " . .. .wav")).toBe("1-01.wav");
+      expect(cardSampleFileName(1, 0, "....wav")).toBe("1-01.wav");
+    });
+
+    it("writes only the prefix for an empty name", () => {
+      expect(cardSampleFileName(1, 0, ".wav")).toBe("1-01.wav");
+      expect(cardSampleFileName(1, 0, "")).toBe("1-01.wav");
+    });
+
     it("shortens long names to the length limit", () => {
       const name = cardSampleFileName(1, 0, `${"x".repeat(200)}.wav`);
       expect(name).toHaveLength(MAX_CARD_FILE_NAME_LENGTH);

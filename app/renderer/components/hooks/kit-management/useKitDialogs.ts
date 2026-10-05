@@ -56,7 +56,7 @@ export function useKitDialogs({
     localStoreWizardProps: {
       onClose: handleCloseLocalStoreWizard,
       onSuccess: handleLocalStoreSuccess,
-      setLocalStorePath: setLocalStorePath || (async () => false),
+      setLocalStorePath: setLocalStorePath || (() => Promise.resolve(false)),
     },
     // State
     showLocalStoreWizard,

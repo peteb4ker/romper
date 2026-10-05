@@ -51,10 +51,12 @@ export function useSampleProcessing({
   }, [kitName]);
 
   const isDuplicateSample = useCallback(
-    async (allSamples: unknown[], filePath: string): Promise<boolean> => {
+    (allSamples: unknown[], filePath: string): Promise<boolean> => {
       const samples = allSamples as Sample[];
-      return samples.some(
-        (s: Sample) => s.voice_number === voice && s.source_path === filePath,
+      return Promise.resolve(
+        samples.some(
+          (s: Sample) => s.voice_number === voice && s.source_path === filePath,
+        ),
       );
     },
     [voice],

@@ -393,4 +393,40 @@ describe("useVoicePanelUI", () => {
       );
     });
   });
+
+  describe("[UC-27] [Q-06] voice name field focus", () => {
+    /** A panel that calls the hook and renders its voice name, as KitVoicePanel does */
+    const Panel = ({ editing }: Readonly<{ editing: boolean }>) => {
+      const ui = useVoicePanelUI({
+        ...defaultProps,
+        voiceNameEditorHook: { ...mockVoiceNameEditorHook, editing },
+      });
+      return (
+        <>
+          <button type="button">elsewhere</button>
+          {ui.renderVoiceName()}
+        </>
+      );
+    };
+
+    it("focuses the name field when editing starts", () => {
+      const { getByLabelText, rerender } = render(<Panel editing={false} />);
+      rerender(<Panel editing={true} />);
+      expect(getByLabelText("Name of voice 2")).toHaveFocus();
+    });
+
+    it("focuses the name field of a panel that mounts while editing", () => {
+      const { getByLabelText } = render(<Panel editing={true} />);
+      expect(getByLabelText("Name of voice 2")).toHaveFocus();
+    });
+
+    it("leaves focus alone while editing continues", () => {
+      const { getByText, rerender } = render(<Panel editing={true} />);
+      const elsewhere = getByText("elsewhere");
+      elsewhere.focus();
+
+      rerender(<Panel editing={true} />);
+      expect(elsewhere).toHaveFocus();
+    });
+  });
 });

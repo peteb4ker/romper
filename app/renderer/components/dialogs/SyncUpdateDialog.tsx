@@ -90,7 +90,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   onSdCardPathChange,
   sdCardPath,
   syncProgress,
-}) => {
+}) => /* NOSONAR - S3776 accepted: the dialog renders a branch for each sync state */ {
   const [skipInvalidFiles, setSkipInvalidFiles] = useState(false);
   const [localSdCardPath, setLocalSdCardPath] = useState<null | string>(
     sdCardPath || null,

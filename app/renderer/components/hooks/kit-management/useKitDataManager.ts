@@ -65,7 +65,7 @@ export function useKitDataManager({
   localStorePath,
   onMessage,
 }: UseKitDataManagerProps): UseKitDataManagerReturn {
-  const [dbKits, setKits] = useState<KitWithRelations[]>([]);
+  const [dbKits, setDbKits] = useState<KitWithRelations[]>([]);
   const [allKitSamples, setAllKitSamples] = useState<{
     [kit: string]: VoiceSamples;
   }>({});
@@ -145,19 +145,19 @@ export function useKitDataManager({
         const kitsResult = await globalThis.electronAPI?.getKits?.();
         if (kitsResult?.success && kitsResult.data) {
           const kitsWithBanks = kitsResult.data;
-          setKits(kitsWithBanks);
+          setDbKits(kitsWithBanks);
           loadedKits = kitsWithBanks;
         } else {
           console.error(
             "Failed to load kits from database:",
             kitsResult?.error,
           );
-          setKits([]);
+          setDbKits([]);
           loadedKits = [];
         }
       } catch (error) {
         console.error("Error loading kits from database:", error);
-        setKits([]);
+        setDbKits([]);
         loadedKits = [];
       }
 
@@ -255,7 +255,7 @@ export function useKitDataManager({
       const kitResult = await globalThis.electronAPI?.getKit?.(kitName);
       if (kitResult?.success && kitResult.data) {
         const updatedKit = kitResult.data;
-        setKits((prevKits) =>
+        setDbKits((prevKits) =>
           prevKits.map((kit) => (kit.name === kitName ? updatedKit : kit)),
         );
       }
@@ -270,16 +270,16 @@ export function useKitDataManager({
       const kitsResult = await globalThis.electronAPI?.getKits?.();
       if (kitsResult?.success && kitsResult.data) {
         const kitsWithBanks = kitsResult.data;
-        setKits(kitsWithBanks);
+        setDbKits(kitsWithBanks);
         setAllKitSamples(groupLoadedKitSamples(kitsWithBanks));
       } else {
         console.error("Failed to load kits from database:", kitsResult?.error);
-        setKits([]);
+        setDbKits([]);
         setAllKitSamples({});
       }
     } catch (error) {
       console.error("Error loading data from database:", error);
-      setKits([]);
+      setDbKits([]);
       setAllKitSamples({});
     }
     clearFailedKits();
@@ -296,7 +296,7 @@ export function useKitDataManager({
   // Update kit data in local state (optimistic update)
   const updateKit = useCallback(
     (kitName: string, updates: Partial<KitWithRelations>) => {
-      setKits((prevKits) =>
+      setDbKits((prevKits) =>
         prevKits.map((kit) =>
           kit.name === kitName ? { ...kit, ...updates } : kit,
         ),
@@ -309,7 +309,7 @@ export function useKitDataManager({
   // already flagged (RE-35). Leaves state alone when it's already flagged,
   // so a gain knob turned step by step re-renders once.
   const markKitModified = useCallback((kitName: string) => {
-    setKits((prevKits) =>
+    setDbKits((prevKits) =>
       prevKits.some((kit) => kit.name === kitName && !kit.modified_since_sync)
         ? prevKits.map((kit) =>
             kit.name === kitName ? { ...kit, modified_since_sync: true } : kit,

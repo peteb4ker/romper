@@ -593,6 +593,59 @@ describe("useKitStepSequencerLogic", () => {
     });
   });
 
+  describe("[UC-18] [UC-30] stepping to another kit (#565)", () => {
+    const step = (currentStep: number) =>
+      act(() => {
+        mockWorker.onmessage?.({
+          data: { payload: { currentStep }, type: "STEP" },
+        } as MessageEvent);
+      });
+
+    it("stops playing, and starts the next kit's round-robin from its first layer", () => {
+      const { rerender, result } = renderHook(
+        ({ kitName }) =>
+          useKitStepSequencerLogic({
+            ...getDefaultParams(),
+            kitName,
+            sampleModes: { 1: "round-robin" },
+          }),
+        { initialProps: { kitName: "A0" } },
+      );
+      act(() => result.current.setIsSeqPlaying(true));
+      step(0);
+      expect(mockOnPlaySample).toHaveBeenLastCalledWith(1, 0, 100, scheduled);
+
+      rerender({ kitName: "A1" });
+
+      expect(result.current.isSeqPlaying).toBe(false);
+      expect(mockWorker.postMessage).toHaveBeenLastCalledWith({
+        type: "STOP",
+      });
+
+      mockOnPlaySample.mockClear();
+      act(() => result.current.setIsSeqPlaying(true));
+      step(4);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, 0, 100, scheduled);
+    });
+
+    it("keeps playing while the kit stays the same", () => {
+      const { rerender, result } = renderHook(
+        ({ bpm }) =>
+          useKitStepSequencerLogic({
+            ...getDefaultParams(),
+            bpm,
+            kitName: "A0",
+          }),
+        { initialProps: { bpm: 120 } },
+      );
+      act(() => result.current.setIsSeqPlaying(true));
+
+      rerender({ bpm: 130 });
+
+      expect(result.current.isSeqPlaying).toBe(true);
+    });
+  });
+
   describe("[UC-30] Step Pattern Management", () => {
     it("should toggle step from 0 to 127", () => {
       const { result } = renderHook(() =>

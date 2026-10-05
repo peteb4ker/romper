@@ -493,6 +493,10 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   // so the kit's card shows it too, without reloading every kit. If main
   // doesn't save it, the knob goes back and a message says so (RE-91).
   const { onKitModified, onMessage } = props;
+  // The kit on screen, so a gain that fails after you step to another kit
+  // isn't put back on the new kit's slot (#565)
+  const kitRef = React.useRef(hookProps.kitName);
+  kitRef.current = hookProps.kitName;
   const setSlotGain = React.useCallback((key: string, gainDb: number) => {
     setSampleMetadata((prev) => {
       const existing = prev[key];
@@ -502,21 +506,24 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   }, []);
   const handleGainChange = React.useCallback(
     (voice: number, slotNumber: number, sampleName: string, gainDb: number) => {
+      const kitName = hookProps.kitName;
       const key = slotKey(voice, slotNumber);
       setSlotGain(key, gainDb);
       void saveGain({
         current: sampleMetadata[key]?.gain_db ?? 0,
         key,
-        onSaved: () => onKitModified?.(hookProps.kitName),
+        onSaved: () => onKitModified?.(kitName),
         report: (saved) =>
           onMessage?.(
             `Couldn't save the gain for ${sampleName}, so it's back to ${formatGain(saved)}. Try again.`,
             "error",
           ),
-        restore: (saved) => setSlotGain(key, saved),
+        restore: (saved) => {
+          if (kitRef.current === kitName) setSlotGain(key, saved);
+        },
         send: () =>
           globalThis.electronAPI?.updateSampleGain?.(
-            hookProps.kitName,
+            kitName,
             voice,
             slotNumber,
             gainDb,

@@ -77,6 +77,7 @@ export function useKitStepSequencerLogic(
   const {
     bpm = 120,
     gridRef,
+    kitName,
     onGridKeyDown,
     onPlaySample,
     onSliceTriggered,
@@ -231,6 +232,13 @@ export function useKitStepSequencerLogic(
   // Sample triggering on step advance
   const lastStepRef = React.useRef<null | number>(null);
   const roundRobinIndexRef = React.useRef<Record<number, number>>({});
+
+  // The editor isn't remounted when you step to another kit, so the next kit
+  // starts stopped, from its first layer (#565)
+  React.useEffect(() => {
+    setIsSeqPlaying(false);
+    roundRobinIndexRef.current = {};
+  }, [kitName]);
 
   /**
    * Select a sample slot based on the voice's sample mode. Returns the slot,

@@ -13,6 +13,7 @@ import KitVoicePanels from "./KitVoicePanels";
 interface KitEditorAllProps extends KitEditorProps {
   kit?: KitWithRelations; // Kit data passed from parent - used via useKitEditorLogic hook
   kitError?: null | string; // Error from parent kit loading - used via useKitEditorLogic hook
+  onBpmSaved?: (kitName: string, bpm: number) => void; // Patches the loaded kit after a BPM save (#565)
   onCreateKit?: () => void; // Used by useKitEditorLogic hook
   onKitModified?: (kitName: string) => void; // Shows an edit main flagged without a reload (RE-35)
   onKitUpdated?: () => Promise<void>; // Called when kit metadata is updated
@@ -161,6 +162,7 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
         kitName={props.kitName}
         kitSamples={logic.kit?.samples}
         onAddUndoAction={props.onAddUndoAction}
+        onBpmSaved={props.onBpmSaved}
         onMessage={props.onMessage}
         onPlaySample={logic.playback.handlePlay}
         onVoiceSettingChanged={logic.reloadKit}

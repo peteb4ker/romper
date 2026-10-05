@@ -7,6 +7,11 @@ interface UseBpmParams {
   kitName: string;
   /** Tells the user the BPM wasn't saved */
   onMessage?: (text: string, type?: string, duration?: number) => void;
+  /**
+   * Called once main has saved a kit's BPM, so the kit's loaded copy can be
+   * patched: a save doesn't reload the kit (#565)
+   */
+  onSaved?: (kitName: string, bpm: number) => void;
 }
 
 export function bpmNotSaved(bpm: number): string {
@@ -17,7 +22,12 @@ export function bpmNotSaved(bpm: number): string {
  * Hook for managing BPM state and persistence
  * Provides BPM state, validation, and persistence functionality
  */
-export function useBpm({ initialBpm = 120, kitName, onMessage }: UseBpmParams) {
+export function useBpm({
+  initialBpm = 120,
+  kitName,
+  onMessage,
+  onSaved,
+}: UseBpmParams) {
   // S6754 NOSONAR suppressions: both useState calls below are already
   // destructured as [value, setter] -- the rule fires as a false positive.
   const [bpmState, setBpmState] = React.useState(initialBpm); // NOSONAR
@@ -31,14 +41,16 @@ export function useBpm({ initialBpm = 120, kitName, onMessage }: UseBpmParams) {
 
   // updateKitBpm resolves with success: false on a database failure rather
   // than rejecting. Either way the last saved BPM goes back and the user is
-  // told (#511); a save doesn't reload the kit, so initialBpm can be stale.
+  // told (#511). A save doesn't reload the kit, so onSaved patches its copy.
   const { reset, save } = useSettingSave<string, number>();
 
-  // Update local state when initial BPM changes (kit switching)
+  // Show the kit's own BPM when it's reloaded or patched, and when you step
+  // to another kit: two kits can have the same BPM, so a kit change alone
+  // must reset it too (#565)
   React.useEffect(() => {
     setBpmState(initialBpm);
     reset();
-  }, [initialBpm, reset]);
+  }, [initialBpm, kitName, reset]);
 
   const setBpm = React.useCallback(
     async (newBpm: number) => {
@@ -54,6 +66,7 @@ export function useBpm({ initialBpm = 120, kitName, onMessage }: UseBpmParams) {
       await save({
         current,
         key: kitName,
+        onSaved: () => onSaved?.(kitName, clampedBpm),
         report: (saved) => onMessage?.(bpmNotSaved(saved), "error"),
         restore: (saved) => {
           // The kit changed while this was saving; its BPM is on screen
@@ -66,7 +79,7 @@ export function useBpm({ initialBpm = 120, kitName, onMessage }: UseBpmParams) {
         what: `the BPM for kit ${kitName}`,
       });
     },
-    [kitName, onMessage, save],
+    [kitName, onMessage, onSaved, save],
   );
 
   const validateBpm = React.useCallback((value: number): boolean => {

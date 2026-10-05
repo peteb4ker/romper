@@ -121,9 +121,10 @@ Renderer paths are under `app/renderer/components/` unless they start with
 1. **One kits array, many mirrors.** `useKitDataManager` holds `kits`
    (from `get-all-kits`) and `allKitSamples`. Everything else is derived
    from them and re-syncs only when an object's identity changes. Most edits
-   end in a full `getKits` reload (`refreshAllKitsAndSamples`, #452); some
-   don't reload at all (BPM, gain), and nothing sequences concurrent
-   reloads, so an older response can land last.
+   end in a full `getKits` reload (`refreshAllKitsAndSamples`, #452); a
+   BPM save patches its kit in `kits` instead, a gain save doesn't reach it
+   at all, and nothing sequences concurrent reloads, so an older response
+   can land last.
 2. **The kit editor isn't remounted between kits.** `KitsView` renders
    `KitEditorContainer` without a `key`, and the error boundary's
    `resetKey` only clears its error. Every `useState` and `useRef` in the
@@ -326,7 +327,7 @@ Kit fields, each owned by a column of `kits`:
 | `locked` | Protection from scan and delete | none | nothing in the UI | `kits[i]` (`KitGridItem` `canDelete`) |
 | `is_favorite` | Starred | none | `toggleKitFavorite` (`toggle-kit-favorite`): flips the stored value and returns the new one | `kits[i]`, set from the returned value (#453 removed the shadow map) |
 | `modified_since_sync` | The kit changed since the last completed write | none | see below | `kits[i]`; `markKitModified` patches it locally after a gain save; the Modified filter and count (`useKitFilters`), card border, header badge |
-| `bpm` | Sequencer tempo, 30 to 180 | none | `updateKit` via `update-kit-bpm`; no reload after | two `useBpm` instances (`useKitEditorLogic`, unused output; `KitStepSequencer`, drives playback) |
+| `bpm` | Sequencer tempo, 30 to 180 | none | `updateKit` via `update-kit-bpm`; no reload after, but `KitsView` patches the kit's `bpm` in `kits` once it's saved (`useBpm` `onSaved`) | `KitStepSequencer`'s `useBpm`, which drives playback and resets on the kit name as well as the loaded BPM |
 | `step_pattern` | 4 voices × 16 steps | none | `updateKit` via `update-step-pattern`, then a full reload | `useStepPattern` state and `latestRef`; `useSequenceHistory` |
 | `trigger_conditions` | A:B condition per step | none | `updateKit` via `update-trigger-conditions`, then a full reload | `useTriggerConditions` state and ref |
 | `slice_steps` | Slice per step, in ticks of 384 per sample | mirrors | `updateKit` via `update-slice-steps` (debounced reload) | `useSliceSteps` state and ref |
@@ -370,9 +371,6 @@ Kit fields, each owned by a column of `kits`:
     `kitService.validateKitSlot` accept any Unicode capital
     (`/^\p{Lu}\d{1,2}$/u`) and leading zeros (`A01`), `sdCardSafety` only
     `[A-Z]` ignoring case (#573).
-  - BPM: the save doesn't reload, `useBpm` resets only when the incoming
-    value changes, and the editor isn't remounted, so stepping to a kit with
-    the old BPM shows and plays the new one (#565).
   - The step pattern and trigger conditions reload every kit on every save,
     undebounced, so a slower earlier reload can put an older pattern back
     for a moment (#452).
@@ -402,9 +400,9 @@ voice number):
 | `voice_alias` | Your name for the voice, or one inferred from a file name | none | `updateVoiceAlias` (`update-voice-alias`, flags the kit); scan and setup (`inferMissingVoiceAliases`, only unnamed voices); the editor's `handleInferVoiceNames` | `kits[i].voices`; `useKitEditorLogic.voiceNames`; `KitVoicePanels.voiceData`; `useVoiceNameEditor` `editValue`; grid icon (`extractVoiceNames`) |
 | `stereo_mode` | Links this voice with the next as a stereo pair | writes (see [Stereo](#stereo)) | `updateVoiceStereoMode` (`update-voice-stereo-mode`, refused for a read-only kit, flags the kit) | `KitVoicePanels.voiceData` → `useStereoHandling`; `KitStepSequencer.stereoLinks`; grid badge; search |
 | `voice_volume` | Preview level, 0 to 100 | mirrors [Levels/Drive effect](https://squarp.net/rample/manual/#zPtALyJ) loosely; never written to the card | `updateVoiceVolume` (`update-voice-volume`) | `KitStepSequencer` `voiceVolumes` |
-| `sample_mode` | Which layer plays: first, random, round-robin | mirrors [Layers](https://squarp.net/rample/manual/#e+hlH+Q) and the LAYER setting, with different modes | `updateVoiceSampleMode` (`update-voice-sample-mode`) | `KitStepSequencer` `sampleModes`; `useKitStepSequencerLogic` `roundRobinIndexRef` |
+| `sample_mode` | Which layer plays: first, random, round-robin | mirrors [Layers](https://squarp.net/rample/manual/#e+hlH+Q) and the LAYER setting, with different modes | `updateVoiceSampleMode` (`update-voice-sample-mode`) | `KitStepSequencer` `sampleModes`; `useKitStepSequencerLogic` `roundRobinIndexRef`, cleared on a kit change |
 | `slice_enabled`, `slice_max_length`, `slice_roll_amount`, `slice_vary_length` | Slicer settings | mirrors | `updateVoiceSliceSettings` (`update-voice-slice-settings`) | `useVoiceSliceSettings` state and ref |
-| mute | Silence a voice in the sequencer | none ([Mute groups](https://squarp.net/rample/manual/#qdSsFkF) is a different feature) | not saved | `KitStepSequencer` `voiceMutes` |
+| mute | Silence a voice in the sequencer | none ([Mute groups](https://squarp.net/rample/manual/#qdSsFkF) is a different feature) | not saved | `KitStepSequencer` `voiceMutes`, cleared when you step to another kit |
 
 - **Invariants:**
   - Exactly one row per kit and voice number (not enforced: #510).
@@ -418,11 +416,6 @@ voice number):
     default), `random` and `round-robin`, and saves none of it to the card,
     since the Rample keeps layer modes in its own STORE data. A parity gap
     for #538, not a bug.
-  - Mutes, the round-robin position and sequencer play state carry over
-    when you step to the next kit, although Romper's manual
-    (`docs/manual/step-sequencer.md`) says mute "resets when you reopen the
-    kit"; a failed level or sample-mode save
-    that lands after a step restores into the new kit (#565).
   - The editor's `handleInferVoiceNames` ignores `updateVoiceAlias`'s
     result and reports every voice as named (#570); `updateVoiceAlias`
     reports success when the voice row doesn't exist.
@@ -746,8 +739,8 @@ voice and slot):
   audition calls `claimVoice`); `useKitPlayback` (play and stop triggers).
 - **Readers and copies:** `useKitPlayback` state (`playTriggers`,
   `samplePlaying`, `activeSamples`, keyed by `slotKey(voice, slot)`, never
-  reset); `useKitStepSequencerLogic` (`isSeqPlaying`, `roundRobinIndexRef`,
-  the worker); the decoded buffers fetched by kit, voice and slot
+  reset); `useKitStepSequencerLogic` (`isSeqPlaying` and
+  `roundRobinIndexRef`, both reset on a kit change, and the worker); the decoded buffers fetched by kit, voice and slot
   (`get-sample-audio-buffer`).
 - **Invariants:** starting a sound on a voice stops every other sound on it
   at the new one's start; audio comes from main by kit, voice and slot,
@@ -757,8 +750,6 @@ voice and slot):
   - `voiceChoke.ts` says "a Rample voice is monophonic" as fact, and that
     `useKitPlayback` is keyed by file name and resets on refresh; neither
     holds (#571).
-  - Sequencer play state and round-robin positions carry over to the next
-    kit (#565).
 
 ## Use cases, qualities and issues
 

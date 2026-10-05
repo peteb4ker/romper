@@ -172,6 +172,80 @@ describe("useBpm", () => {
     expect(mockUpdateKitBpm).not.toHaveBeenCalled();
   });
 
+  describe("[UC-18] stepping to another kit (#565)", () => {
+    it("shows the next kit's own BPM when it loaded with the same one as the last", async () => {
+      const { rerender, result } = renderHook(
+        ({ kitName }) => useBpm({ initialBpm: 120, kitName }),
+        { initialProps: { kitName: "A0" } },
+      );
+      await act(async () => {
+        await result.current.setBpm(130);
+      });
+      expect(result.current.bpm).toBe(130);
+
+      rerender({ kitName: "A1" });
+
+      expect(result.current.bpm).toBe(120);
+    });
+
+    it("reports a saved BPM with its kit, so the loaded kit can be patched", async () => {
+      const onSaved = vi.fn();
+      const { result } = renderHook(() =>
+        useBpm({ initialBpm: 120, kitName: "A0", onSaved }),
+      );
+
+      await act(async () => {
+        await result.current.setBpm(130);
+      });
+
+      expect(onSaved).toHaveBeenCalledWith("A0", 130);
+    });
+
+    it("reports the kit it saved to when you've stepped on before main answers", async () => {
+      let answer: (result: { success: true }) => void = () => {};
+      vi.mocked(globalThis.electronAPI.updateKitBpm).mockReturnValue(
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+      );
+      const onSaved = vi.fn();
+      const { rerender, result } = renderHook(
+        ({ kitName }) => useBpm({ initialBpm: 120, kitName, onSaved }),
+        { initialProps: { kitName: "A0" } },
+      );
+      let saving: Promise<void> = Promise.resolve();
+      act(() => {
+        saving = result.current.setBpm(130);
+      });
+
+      rerender({ kitName: "A1" });
+      await act(async () => {
+        answer({ success: true });
+        await saving;
+      });
+
+      expect(onSaved).toHaveBeenCalledWith("A0", 130);
+      expect(result.current.bpm).toBe(120);
+    });
+
+    it("doesn't report a BPM main didn't save", async () => {
+      vi.mocked(globalThis.electronAPI.updateKitBpm).mockResolvedValue({
+        error: "disk full",
+        success: false,
+      });
+      const onSaved = vi.fn();
+      const { result } = renderHook(() =>
+        useBpm({ initialBpm: 120, kitName: "A0", onSaved }),
+      );
+
+      await act(async () => {
+        await result.current.setBpm(130);
+      });
+
+      expect(onSaved).not.toHaveBeenCalled();
+    });
+  });
+
   describe("[UC-30] [UC-36] a BPM that isn't saved says so (#511)", () => {
     it("gives one message for wheel nudges that all fail, and goes back", async () => {
       vi.mocked(globalThis.electronAPI.updateKitBpm).mockResolvedValue({

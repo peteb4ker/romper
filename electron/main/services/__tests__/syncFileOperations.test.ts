@@ -57,6 +57,11 @@ vi.mock("../syncValidationService.js", () => ({
 import { cardFileMatches } from "../../cardFileMatch.js";
 import { convertToRampleDefault } from "../../formatConverter.js";
 import {
+  CARD_OPERATION_TIMEOUT_MS,
+  CardNotRespondingError,
+  cardWatchdogSettings,
+} from "../cardWatchdog.js";
+import {
   type SyncFileOperation,
   syncFileOperationsService,
 } from "../syncFileOperations.js";
@@ -231,6 +236,24 @@ describe("[UC-34] SyncFileOperationsService", () => {
       await expect(
         syncFileOperationsService.processSingleFile(fileOp, 1, 2, {}),
       ).resolves.not.toThrow();
+    });
+
+    it("[UC-34] fails when the card stops responding (#653)", async () => {
+      mockPath.dirname.mockReturnValue("/dest");
+      vi.mocked(mockFs.promises.copyFile).mockReturnValueOnce(
+        new Promise<void>(() => undefined),
+      );
+      cardWatchdogSettings.timeoutMs = 20;
+      try {
+        await expect(
+          syncFileOperationsService.processSingleFile(fileOp, 1, 2, {}),
+        ).rejects.toThrow(CardNotRespondingError);
+        expect(
+          syncProgressManager.emitFileCompletionProgress,
+        ).not.toHaveBeenCalled();
+      } finally {
+        cardWatchdogSettings.timeoutMs = CARD_OPERATION_TIMEOUT_MS;
+      }
     });
   });
 

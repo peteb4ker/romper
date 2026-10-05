@@ -3,6 +3,11 @@ import type { DbResult } from "@romper/shared/db/schema.js";
 import * as fs from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  CARD_NOT_RESPONDING_MESSAGE,
+  CardNotRespondingError,
+} from "../cardWatchdog";
+
 vi.mock("node:fs", async (importOriginal) => {
   const actual = await importOriginal<typeof fs>();
   return {
@@ -93,6 +98,19 @@ describe("SyncValidationService", () => {
   });
 
   describe("categorizeError", () => {
+    it("[UC-34] passes on the card watchdog's message as it is (#653)", () => {
+      const result = syncValidationService.categorizeError(
+        new CardNotRespondingError(),
+        "/card/A0/1-01 kick.wav",
+      );
+
+      expect(result).toEqual({
+        canRetry: true,
+        type: "card_not_responding",
+        userMessage: CARD_NOT_RESPONDING_MESSAGE,
+      });
+    });
+
     it("should categorize network errors", () => {
       const error = new Error("Network timeout occurred");
 

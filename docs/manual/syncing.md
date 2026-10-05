@@ -34,12 +34,12 @@ You can catch most of these before you write. A quarantined kit shows a red warn
 1. Click the **Write** button in the Kit Browser header. The **Write to SD Card** panel opens
 2. Check the card folder at the bottom of the panel, or click **Select** (or **Change**) to choose it. Romper remembers it. It won't write to a folder that can't be a card, such as your home folder or one that overlaps your local store
 3. Romper checks every sample and shows the write summary: kits and samples per bank (banks with files to convert are marked **convert**), quarantined kits and how to fix them, stereo pairs it will link automatically and voices whose stereo samples it will mix down to mono, samples that can't be written, warnings (such as a kit with no sample on voice 1, which the Rample won't open), and anything on the card that's no longer in your library (a sample you removed, a kit you deleted, a bank you renamed); sync removes it
-4. Click **Start Write**. Files are written to the SD card with progress shown in the panel. **Cancel** stops the write after the file in progress; files already written stay on the card, and nothing is removed from it
+4. Click **Start Write**. Files are written to the SD card with progress shown in the panel. **Cancel** stops the write after the file in progress; files already written stay on the card, and nothing is removed from it. Once every file is written, the panel shows **Finalizing...** while sync removes what your library no longer has; **Cancel** then stops after the item in progress, and the next write removes the rest
 5. Format conversions happen during this step -- for example, a stereo sample on a mono voice is mixed down to mono
 6. Bank names are written to the card
 7. The panel shows **Write Complete**, with the number of samples skipped, if any. Click **Close**
 
-If a file can't be written (for example, the card is full), the write stops and the panel shows **Write Failed** with the file and the reason. Nothing is removed from the card. When the error may be temporary, a **Retry** button appears.
+If a file can't be written (for example, the card is full), the write stops and the panel shows **Write Failed** with the file and the reason. Nothing is removed from the card. When the error may be temporary, a **Retry** button appears. If the card stops responding for a minute, the write stops and says so: eject and reinsert the card, then write again.
 
 Each write covers your whole library, not just the kits you changed.
 
@@ -53,7 +53,7 @@ During sync, Romper writes:
 
 Files the Rample can't play as they are, or that have a gain adjustment, are converted as they're written: other sample rates become 44.1 kHz, other bit depths and float WAVs become 16-bit, and a stereo file on a voice that isn't [linked as stereo]({{ site.baseurl }}/manual/kit-editor#stereo-and-mono-handling) is mixed down to mono. Your original files aren't changed.
 
-The card ends up matching your library: after everything is written, sync removes kit folders, files inside kit folders, and bank name files that your library no longer has. A [quarantined]({{ site.baseurl }}/manual/kit-editor#stereo-and-mono-handling) kit is the exception: it isn't written, and its folder on the card is left exactly as it is until you fix the kit. If you cancel, nothing is removed. Romper doesn't write or remove anything else. The Rample keeps its own saved kit settings (from **STORE**) in a `_save` folder on the card, which sync leaves alone.
+The card ends up matching your library: after everything is written, sync removes kit folders, files inside kit folders, and bank name files that your library no longer has. A [quarantined]({{ site.baseurl }}/manual/kit-editor#stereo-and-mono-handling) kit is the exception: it isn't written, and its folder on the card is left exactly as it is until you fix the kit. If you cancel while files are being written, nothing is removed. Romper doesn't write or remove anything else. The Rample keeps its own saved kit settings (from **STORE**) in a `_save` folder on the card, which sync leaves alone.
 
 ### Backing Up
 

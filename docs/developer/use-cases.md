@@ -730,7 +730,8 @@ Rample's own `_save` folder alone. It links stereo voices automatically
 where stereo rule 2 says, and leaves a quarantined kit off the card with
 its card folder untouched (#537); the summary lists both. A file the card
 already holds byte for byte isn't written again (#650). Cancel stops
-between files. See
+between files, and between removals; a card that stops responding fails
+the write with a message saying so (#653). See
 [Syncing](../manual/syncing.md) and the spec,
 [`sd-card-layout.md`](sd-card-layout.md).
 
@@ -748,7 +749,7 @@ between files. See
   `writeBankRtfFiles`); `electron/main/services/syncFileOperations.ts`, `electron/main/services/syncSampleProcessing.ts`,
   `electron/main/services/syncValidationService.ts`, `electron/main/services/syncMonoAnnotation.ts`,
   `electron/main/services/syncStereoPlan.ts` (`planWriteStereo`),
-  `electron/main/services/syncProgressManager.ts`, `electron/main/services/sdCardSafety.ts`, `electron/main/services/rtfFileService.ts`;
+  `electron/main/services/syncProgressManager.ts`, `electron/main/services/sdCardSafety.ts`, `electron/main/services/cardWatchdog.ts`, `electron/main/services/rtfFileService.ts`;
   `electron/main/formatConverter.ts`, `electron/main/cardFileMatch.ts`; `shared/rampleCardLayout.ts`.
 
 ## App

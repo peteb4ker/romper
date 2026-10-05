@@ -10,6 +10,7 @@ import {
 } from "../audioUtils.js";
 import { cardFileMatches } from "../cardFileMatch.js";
 import { convertToRampleDefault } from "../formatConverter.js";
+import { withCardWatchdog } from "./cardWatchdog.js";
 import { syncProgressManager } from "./syncProgressManager.js";
 import {
   type SyncValidationError,
@@ -170,9 +171,14 @@ export class SyncFileOperationsService {
   ): Promise<void> {
     syncProgressManager.emitFileStartProgress(fileOp);
 
-    await this.ensureDestinationDirectory(fileOp.destinationPath);
-
-    await this.executeFileOperation(fileOp, inMemorySettings);
+    // A card that stops responding fails the write rather than leaving it
+    // waiting forever (#653)
+    await withCardWatchdog(
+      (async () => {
+        await this.ensureDestinationDirectory(fileOp.destinationPath);
+        await this.executeFileOperation(fileOp, inMemorySettings);
+      })(),
+    );
 
     syncProgressManager.emitFileCompletionProgress(fileOp);
   }

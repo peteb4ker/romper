@@ -2,6 +2,9 @@ import { BANK_NAME_FILE_PATTERN } from "@romper/shared/rampleCardLayout.js";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { setImmediate as yieldToEventLoop } from "node:timers/promises";
+
+import { withCardWatchdog } from "./cardWatchdog.js";
 
 /**
  * Kit folders the Rample reads at the card root: a bank letter followed by
@@ -21,6 +24,13 @@ export interface CardContents {
    */
   keepKits?: Iterable<string>;
   kits: ReadonlyMap<string, Iterable<string>>;
+}
+
+export interface RemoveCardEntriesOptions {
+  /** Called after each entry is removed, with the count so far */
+  onRemoved?: (removed: number, total: number) => void;
+  /** Checked before each entry: true stops the removal there (Cancel) */
+  shouldStop?: () => boolean;
 }
 
 export interface SdCardTargetCheck {
@@ -121,14 +131,32 @@ export function getSdCardDialogDefaultPath(): string {
  * Delete entries (paths relative to the card) found by
  * {@link findStaleCardEntries}. Folders are removed with their contents;
  * symlinks are removed, never followed.
+ *
+ * Removal is asynchronous, one entry at a time, yielding between entries
+ * (#653): deleting kit folders on a slow card blocked the main process,
+ * froze the window and kept Cancel from being handled. Each entry has the
+ * card watchdog's time limit, so a card that stops responding fails the
+ * write instead of leaving it waiting. Returns how many were removed.
  */
-export function removeCardEntries(
+export async function removeCardEntries(
   sdCardPath: string,
   entries: readonly string[],
-): void {
+  options: RemoveCardEntriesOptions = {},
+): Promise<number> {
+  let removed = 0;
   for (const entry of entries) {
-    fs.rmSync(path.join(sdCardPath, entry), { force: true, recursive: true });
+    if (options.shouldStop?.()) break;
+    // One at a time, so Cancel and the watchdog act between entries
+    const removal = fs.promises.rm(path.join(sdCardPath, entry), {
+      force: true,
+      recursive: true,
+    });
+    await withCardWatchdog(removal); // NOSONAR: sequential on purpose (#653)
+    removed++;
+    options.onRemoved?.(removed, entries.length);
+    await yieldToEventLoop(); // NOSONAR: yields between entries on purpose (#653)
   }
+  return removed;
 }
 
 /**

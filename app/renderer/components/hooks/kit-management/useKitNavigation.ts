@@ -9,6 +9,8 @@ import { markExplicitNavigation } from "../../../utils/hmrStateManager";
 interface UseKitNavigationProps {
   allKitSamples: { [kit: string]: VoiceSamples };
   kits: KitWithRelations[];
+  /** The local store the kits come from; changing it closes the open kit */
+  localStorePath?: null | string;
   refreshAllKitsAndSamples: () => Promise<void>;
 }
 
@@ -31,11 +33,22 @@ interface UseKitNavigationReturn {
 export function useKitNavigation({
   allKitSamples,
   kits,
+  localStorePath,
   refreshAllKitsAndSamples,
 }: UseKitNavigationProps): UseKitNavigationReturn {
   const [selectedKit, setSelectedKit] = useState<null | string>(null);
   const [selectedKitSamples, setSelectedKitSamples] =
     useState<null | VoiceSamples>(null);
+
+  // A kit name names a kit in one store, so when the store changes the open
+  // kit closes, back to the kit browser (#568)
+  const storeRef = useRef(localStorePath);
+  useEffect(() => {
+    if (storeRef.current === localStorePath) return;
+    storeRef.current = localStorePath;
+    markExplicitNavigation();
+    setSelectedKit(null);
+  }, [localStorePath]);
 
   // Track active timeouts for cleanup
   const activeTimeoutsRef = useRef<Set<NodeJS.Timeout>>(new Set());

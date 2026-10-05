@@ -123,6 +123,37 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
     expect(result.current.redoCount).toBe(0);
   });
 
+  it("[UC-06] undo changes nothing in another store's kit of the same name (#568)", async () => {
+    const { rerender, result } = renderHook(
+      ({ storePath }) => useUndoRedo("A0", undefined, storePath),
+      { initialProps: { storePath: "/stores/one" } },
+    );
+    act(() => {
+      result.current.addAction({
+        data: {
+          addedSample: {
+            filename: "test.wav",
+            source_path: "/stores/one/test.wav",
+          },
+          slot: 0,
+          voice: 1,
+        },
+        type: "ADD_SAMPLE",
+      });
+    });
+
+    rerender({ storePath: "/stores/two" });
+    await act(async () => {
+      await result.current.undo();
+    });
+
+    expect(result.current.canUndo).toBe(false);
+    expect(result.current.canRedo).toBe(false);
+    for (const call of Object.values(mockElectronAPI)) {
+      expect(call).not.toHaveBeenCalled();
+    }
+  });
+
   describe("[Q-02] Move undo restores the voice exactly", () => {
     it("move 1.12→1.9 then undo puts all twelve rows back, gain included, in one call", async () => {
       // Voice 1 before the move: full rows, as undo keeps them (RE-86)

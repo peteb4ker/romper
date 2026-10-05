@@ -117,6 +117,44 @@ describe("[UC-26] useUndoRedoState", () => {
     });
   });
 
+  describe("[UC-06] one stack per kit in one store (#568)", () => {
+    const renderStack = (kitName: string, storePath: string) =>
+      renderHook(
+        (props: { kitName: string; storePath: string }) =>
+          useUndoRedoState(props),
+        { initialProps: { kitName, storePath } },
+      );
+
+    it("clears undo and redo when the store changes, for a kit of the same name", () => {
+      const { rerender, result } = renderStack("A0", "/stores/one");
+      act(() => {
+        result.current.addAction(mockAction);
+        result.current.addAction(mockAction);
+        result.current.handleUndoSuccess(mockAction);
+      });
+      expect(result.current.undoCount).toBe(1);
+      expect(result.current.redoCount).toBe(1);
+
+      rerender({ kitName: "A0", storePath: "/stores/two" });
+
+      expect(result.current.undoCount).toBe(0);
+      expect(result.current.redoCount).toBe(0);
+      expect(result.current.canUndo).toBe(false);
+      expect(result.current.canRedo).toBe(false);
+    });
+
+    it("keeps the stack while the kit and store stay the same", () => {
+      const { rerender, result } = renderStack("A0", "/stores/one");
+      act(() => {
+        result.current.addAction(mockAction);
+      });
+
+      rerender({ kitName: "A0", storePath: "/stores/one" });
+
+      expect(result.current.undoCount).toBe(1);
+    });
+  });
+
   describe("error handling", () => {
     it("should set and clear errors", () => {
       const { result } = renderHook(() =>

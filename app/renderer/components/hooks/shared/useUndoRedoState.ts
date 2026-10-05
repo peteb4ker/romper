@@ -6,6 +6,8 @@ import { mergeSequenceEdit } from "./sequenceUndo";
 
 export interface UseUndoRedoStateOptions {
   kitName: string;
+  /** The local store the kit is in; the stack belongs to one kit in one store */
+  storePath?: null | string;
 }
 
 interface UndoRedoState {
@@ -20,7 +22,10 @@ interface UndoRedoState {
  * Hook for managing undo/redo state and stack operations
  * Extracted from useUndoRedo to reduce complexity
  */
-export function useUndoRedoState({ kitName }: UseUndoRedoStateOptions) {
+export function useUndoRedoState({
+  kitName,
+  storePath,
+}: UseUndoRedoStateOptions) {
   const [state, setState] = useState<UndoRedoState>({
     error: null,
     isRedoing: false,
@@ -93,7 +98,8 @@ export function useUndoRedoState({ kitName }: UseUndoRedoStateOptions) {
     );
   }, [kitName]);
 
-  // Clear stacks when kit changes
+  // Clear stacks when the kit or its store changes: another store's kit of
+  // the same name is a different kit (#568)
   useEffect(() => {
     setState((prev) => ({
       ...prev,
@@ -101,7 +107,7 @@ export function useUndoRedoState({ kitName }: UseUndoRedoStateOptions) {
       redoStack: [],
       undoStack: [],
     }));
-  }, [kitName]);
+  }, [kitName, storePath]);
 
   return {
     // Actions

@@ -9,6 +9,8 @@ import { useUndoRedo } from "./useUndoRedo";
 interface UseGlobalKeyboardShortcutsProps {
   currentKitName?: string;
   isEditMode?: boolean;
+  /** The local store the open kit is in; undo is kept per store and kit */
+  localStorePath?: null | string;
   onBackNavigation?: () => void;
   /** Tells the user when an undo or redo fails (RE-40) */
   onMessage?: (text: string, type?: string, duration?: number) => void;
@@ -28,10 +30,11 @@ export function isTypingTarget(target: EventTarget | null): boolean {
 export function useGlobalKeyboardShortcuts({
   currentKitName,
   isEditMode,
+  localStorePath,
   onBackNavigation,
   onMessage,
 }: UseGlobalKeyboardShortcutsProps) {
-  const undoRedo = useUndoRedo(currentKitName || "", onMessage);
+  const undoRedo = useUndoRedo(currentKitName || "", onMessage, localStorePath);
 
   // Helper function to check if target is in input field or dialog
   const isTargetInInputOrDialog = useCallback(

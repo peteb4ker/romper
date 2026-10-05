@@ -455,4 +455,56 @@ describe("useKitNavigation", () => {
       expect(mockRefreshAllKitsAndSamples).not.toHaveBeenCalled();
     });
   });
+
+  describe("[UC-06] changing the local store (#568)", () => {
+    const renderWithStore = (localStorePath: null | string) =>
+      renderHook(
+        ({ store }) =>
+          useKitNavigation({
+            allKitSamples: mockAllKitSamples,
+            kits: mockKits,
+            localStorePath: store,
+            refreshAllKitsAndSamples: mockRefreshAllKitsAndSamples,
+          }),
+        { initialProps: { store: localStorePath } },
+      );
+
+    it("closes the open kit, back to the kit browser", () => {
+      const { rerender, result } = renderWithStore("/stores/one");
+      act(() => {
+        result.current.handleSelectKit("A0");
+      });
+      expect(result.current.selectedKit).toBe("A0");
+
+      rerender({ store: "/stores/two" });
+
+      expect(result.current.selectedKit).toBeNull();
+      expect(result.current.selectedKitSamples).toBeNull();
+    });
+
+    it("keeps the open kit while the store stays the same", () => {
+      const { rerender, result } = renderWithStore("/stores/one");
+      act(() => {
+        result.current.handleSelectKit("A0");
+      });
+
+      rerender({ store: "/stores/one" });
+
+      expect(result.current.selectedKit).toBe("A0");
+    });
+
+    it("lets you open a kit in the new store", () => {
+      const { rerender, result } = renderWithStore("/stores/one");
+      act(() => {
+        result.current.handleSelectKit("A0");
+      });
+      rerender({ store: "/stores/two" });
+
+      act(() => {
+        result.current.handleSelectKit("A0");
+      });
+
+      expect(result.current.selectedKit).toBe("A0");
+    });
+  });
 });

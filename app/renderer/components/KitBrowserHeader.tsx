@@ -8,6 +8,7 @@ import React from "react";
 
 import type { BulkScanProgress } from "./hooks/kit-management/useKitScan";
 
+import { isScanFailure } from "./hooks/kit-management/useKitScan";
 import LedIconGrid from "./led-icon/LedIconGrid";
 import SearchInput from "./SearchInput";
 
@@ -22,7 +23,7 @@ interface KitBrowserHeaderProps {
   isSearching?: boolean;
   modifiedCount?: number;
   onAboutClick?: () => void; // NOSONAR
-  /** Clears a Scan All result that stays because kits failed (#586) */
+  /** Clears a Scan All result that stays because it failed (#586, #620) */
   onDismissBulkScan?: () => void;
   onSearchChange?: (query: string) => void;
   onSearchClear?: () => void;
@@ -63,43 +64,39 @@ function BulkScanStatus({
     );
   }
 
+  // Some kits failed: a warning, as the kit editor's message is (#540). The
+  // whole scan failed: an error.
+  let tone = "text-accent-error";
   if (progress.status === "complete") {
-    // Some kits failed: a warning, as the kit editor's message is (#540)
-    const failed = progress.failedCount > 0;
-    const tone = failed ? "text-accent-warning" : "text-accent-success";
-    // Failed kits stay listed until dismissed or the next scan (#586)
-    const dismissible = failed && onDismiss;
-    const message = (
-      <span
-        className={`px-2 py-1 text-xs ${tone}${dismissible ? " flex-1 min-w-0 break-words" : ""}`}
-        data-testid="bulk-scan-complete"
-      >
-        {progress.message}
-      </span>
-    );
-    if (!dismissible) return message;
-    return (
-      <div className="flex items-start">
-        {message}
-        <button
-          aria-label="Dismiss message"
-          className={`flex-shrink-0 px-2 py-1 opacity-60 hover:opacity-100 transition-opacity ${tone}`}
-          onClick={onDismiss}
-        >
-          <XIcon size={14} />
-        </button>
-      </div>
-    );
+    tone =
+      progress.failedCount > 0 ? "text-accent-warning" : "text-accent-success";
   }
-
-  // error
-  return (
+  // Failures stay until dismissed or the next scan (#586, #620)
+  const dismissible = isScanFailure(progress) && onDismiss;
+  const message = (
     <span
-      className="px-2 py-1 text-xs text-accent-error"
-      data-testid="bulk-scan-error"
+      className={`px-2 py-1 text-xs ${tone}${dismissible ? " flex-1 min-w-0 break-words" : ""}`}
+      data-testid={
+        progress.status === "complete"
+          ? "bulk-scan-complete"
+          : "bulk-scan-error"
+      }
     >
       {progress.message}
     </span>
+  );
+  if (!dismissible) return message;
+  return (
+    <div className="flex items-start">
+      {message}
+      <button
+        aria-label="Dismiss message"
+        className={`flex-shrink-0 px-2 py-1 opacity-60 hover:opacity-100 transition-opacity ${tone}`}
+        onClick={onDismiss}
+      >
+        <XIcon size={14} />
+      </button>
+    </div>
   );
 }
 

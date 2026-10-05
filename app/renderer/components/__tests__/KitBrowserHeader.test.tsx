@@ -163,5 +163,23 @@ describe("KitBrowserHeader", () => {
         screen.queryByRole("button", { name: "Dismiss message" }),
       ).not.toBeInTheDocument();
     });
+
+    // #620: a scan that fails outright stays until dismissed, too
+    it("shows a scan that failed outright as an error with a ✕", () => {
+      const onDismissBulkScan = vi.fn();
+      render(
+        <KitBrowserHeader
+          {...defaultProps}
+          bulkScanProgress={{ message: "No kits to scan", status: "error" }}
+          onDismissBulkScan={onDismissBulkScan}
+        />,
+      );
+      const status = screen.getByTestId("bulk-scan-error");
+      expect(status).toHaveTextContent("No kits to scan");
+      expect(status).toHaveClass("text-accent-error");
+
+      fireEvent.click(screen.getByRole("button", { name: "Dismiss message" }));
+      expect(onDismissBulkScan).toHaveBeenCalledTimes(1);
+    });
   });
 });

@@ -176,6 +176,25 @@ export const BUDGETS = {
       connections: NO_NEW_CONNECTION,
       statements: { max: 5 },
     },
+    /**
+     * #650: a full write of the mixed-format store in
+     * tests/integration/sync-write-budget.integration.test.ts.
+     * `cardWrites`: files written to the card, one per sample on an empty
+     * card. `syncFsCalls` as above, for the whole write: conversions read
+     * their headers asynchronously too (RE-07).
+     */
+    "write a full card": {
+      cardWrites: { max: 77 },
+      syncFsCalls: { max: 0 },
+    },
+    /**
+     * #650: the same store written again, unchanged. A file the card
+     * already holds byte for byte isn't written again.
+     */
+    "write an unchanged card again": {
+      cardWrites: { max: 0 },
+      syncFsCalls: { max: 0 },
+    },
   },
 
   /**

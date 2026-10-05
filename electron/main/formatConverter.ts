@@ -3,7 +3,11 @@ import type { DbResult } from "@romper/shared/db/schema.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import { getAudioMetadata, RAMPLE_FORMAT_REQUIREMENTS } from "./audioUtils.js";
+import {
+  getAudioMetadataAsync,
+  RAMPLE_FORMAT_REQUIREMENTS,
+} from "./audioUtils.js";
+import { cardFileHolds } from "./cardFileMatch.js";
 import { decodeWav, type EncodeBitDepth, encodeWav } from "./wavCodec.js";
 
 export interface ConversionOptions {
@@ -49,8 +53,8 @@ export async function convertSampleToRampleFormat(
       };
     }
 
-    // Get input file metadata
-    const metadataResult = getAudioMetadata(inputPath);
+    // Get input file metadata, without blocking the main process (RE-07)
+    const metadataResult = await getAudioMetadataAsync(inputPath);
     if (!metadataResult.success || !metadataResult.data) {
       return {
         error: `Failed to read input file metadata: ${metadataResult.error}`,
@@ -389,7 +393,9 @@ function validateTargetFormat(
 }
 
 /**
- * Writes audio data to output file
+ * Writes audio data to output file, unless the file there already holds
+ * exactly these bytes, as the card's copy does when the sample hasn't
+ * changed since the last write (#650)
  */
 async function writeOutputFile(
   outputPath: string,
@@ -404,6 +410,7 @@ async function writeOutputFile(
     targetBitDepth as EncodeBitDepth,
   );
 
+  if (await cardFileHolds(outputPath, outputBuffer)) return;
   await fs.promises.mkdir(path.dirname(outputPath), { recursive: true });
   await fs.promises.writeFile(outputPath, outputBuffer);
 }

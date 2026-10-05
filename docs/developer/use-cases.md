@@ -728,7 +728,8 @@ store. It converts files the Rample can't play, applies gain, mixes stereo
 files on unlinked voices to mono, writes bank name files, and leaves the
 Rample's own `_save` folder alone. It links stereo voices automatically
 where stereo rule 2 says, and leaves a quarantined kit off the card with
-its card folder untouched (#537); the summary lists both. Cancel stops
+its card folder untouched (#537); the summary lists both. A file the card
+already holds byte for byte isn't written again (#650). Cancel stops
 between files. See
 [Syncing](../manual/syncing.md) and the spec,
 [`sd-card-layout.md`](sd-card-layout.md).
@@ -748,7 +749,7 @@ between files. See
   `electron/main/services/syncValidationService.ts`, `electron/main/services/syncMonoAnnotation.ts`,
   `electron/main/services/syncStereoPlan.ts` (`planWriteStereo`),
   `electron/main/services/syncProgressManager.ts`, `electron/main/services/sdCardSafety.ts`, `electron/main/services/rtfFileService.ts`;
-  `electron/main/formatConverter.ts`; `shared/rampleCardLayout.ts`.
+  `electron/main/formatConverter.ts`, `electron/main/cardFileMatch.ts`; `shared/rampleCardLayout.ts`.
 
 ## App
 

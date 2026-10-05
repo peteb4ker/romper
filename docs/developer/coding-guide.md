@@ -202,7 +202,9 @@ They pin deterministic work, not wall-clock time:
   probe in `tests/perf/ipc-probe.cjs`);
 - database connections, SQL statements and synchronous fs calls per
   main-process operation
-  (`tests/integration/performance-budgets.integration.test.ts`).
+  (`tests/integration/performance-budgets.integration.test.ts`);
+- files written to the card and synchronous fs calls per card write
+  (`tests/integration/sync-write-budget.integration.test.ts`, #650).
 
 The factory-scale profile (`tests/validation/performance.validation.ts`) also
 checks headroom budgets for returned bytes and main-thread stalls, but only

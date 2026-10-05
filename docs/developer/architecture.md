@@ -275,6 +275,15 @@ voice-parsing rules live in `shared/rampleCardLayout.ts`, which sync, the
 setup wizard's import and rescan share; the spec is
 [sd-card-layout.md](sd-card-layout.md).
 
+A file the card already holds byte for byte isn't written again (#650,
+`cardFileMatch.ts`). A copied sample is compared with its card file
+(size first, then contents); a converted one is encoded in memory and
+compared before it's written. An SD card reads far faster than it
+writes, and each write costs a FAT update and, now and then, a stall
+while the card flushes, so writing an unchanged store again takes
+seconds rather than minutes. A failed read of the card copy counts as a
+mismatch, so the file is written as before.
+
 The card mirrors the store. Once every file is written (and only if the
 sync wasn't cancelled), sync deletes the Rample content the store no
 longer has: kit folders, anything inside a kit folder that isn't one of

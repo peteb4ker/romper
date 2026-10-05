@@ -90,12 +90,13 @@ beforeEach(() => {
     return createMockAudioContext();
   });
 
-  // Mock animation frame functions
-  global.requestAnimationFrame = vi.fn((cb) => {
-    setTimeout(cb, 16);
-    return 1;
-  });
-  global.cancelAnimationFrame = vi.fn();
+  // Mock animation frame functions. Cancelling clears the frame's timer, so
+  // a playhead loop stops when its waveform unmounts instead of firing
+  // after the test environment is gone.
+  global.requestAnimationFrame = vi.fn(
+    (cb) => setTimeout(cb, 16) as unknown as number,
+  );
+  global.cancelAnimationFrame = vi.fn((id: number) => clearTimeout(id));
 });
 
 describe("SampleWaveform", () => {

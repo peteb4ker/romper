@@ -25,11 +25,12 @@ vi.mock("../led-grid/useLedAnimation", () => ({
 
 // Mock RAF
 beforeEach(() => {
-  global.requestAnimationFrame = vi.fn((cb) => {
-    setTimeout(cb, 16);
-    return 1;
-  });
-  global.cancelAnimationFrame = vi.fn();
+  // Cancelling clears the frame's timer, so an animation stops when its
+  // component unmounts instead of firing after the test environment is gone.
+  global.requestAnimationFrame = vi.fn(
+    (cb) => setTimeout(cb, 16) as unknown as number,
+  );
+  global.cancelAnimationFrame = vi.fn((id: number) => clearTimeout(id));
 });
 
 describe("[UC-37] AboutDialog", () => {

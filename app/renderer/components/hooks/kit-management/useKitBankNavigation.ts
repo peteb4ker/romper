@@ -37,43 +37,32 @@ export function useKitBankNavigation({
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const isProgrammaticScrollRef = useRef(false);
   const scrollTargetBankRef = useRef<null | string>(null);
+  // Counts bank-name loads, so only the latest one's answer is shown
+  const bankNamesLoadRef = useRef({ latest: 0 });
 
-  // Bank names come from the banks themselves: a bank with no kits, or
-  // whose kits a filter hides, has no kit to carry its name (RE-90)
+  // Bank names come only from the banks (`get-all-banks`), never from the
+  // kits: a bank with no kits, or whose kits a filter hides, has no kit to
+  // carry its name (RE-90), and one source can't disagree with itself
+  // (#567). Loaded when the store opens, which is also when setup has just
+  // imported its names, and again after a rename.
+  const loadBankNames = useCallback(async () => {
+    const loads = bankNamesLoadRef.current;
+    const load = ++loads.latest;
+    const result = await globalThis.electronAPI.getAllBanks?.();
+    if (load === loads.latest && result?.success && result.data) {
+      setBankNames(namesFromBanks(result.data));
+    }
+  }, []);
+
   useEffect(() => {
     if (!localStorePath) return;
-    let current = true;
-    void globalThis.electronAPI.getAllBanks?.().then((result) => {
-      if (current && result?.success && result.data) {
-        setBankNames(namesFromBanks(result.data));
-      }
-    });
+    const loads = bankNamesLoadRef.current;
+    void loadBankNames();
     return () => {
-      current = false;
+      // A store closed or switched: drop its answer if it's still coming
+      loads.latest++;
     };
-  }, [localStorePath]);
-
-  // Reloaded kits carry their bank's current name (a bank scan may have
-  // changed it); banks without loaded kits keep theirs
-  useEffect(() => {
-    const fromKits = new Map<string, null | string>();
-    for (const kit of kits) {
-      const bankLetter = kit.name?.[0]?.toUpperCase();
-      if (bankLetter && kit.bank) {
-        fromKits.set(bankLetter, kit.bank.artist ?? null);
-      }
-    }
-    if (fromKits.size === 0) return;
-
-    setBankNames((prev) => {
-      const next = { ...prev };
-      for (const [bankLetter, artist] of fromKits) {
-        if (artist) next[bankLetter] = artist;
-        else delete next[bankLetter];
-      }
-      return next;
-    });
-  }, [kits]);
+  }, [localStorePath, loadBankNames]);
 
   // Focus the first kit when kits change
   useEffect(() => {
@@ -224,7 +213,8 @@ export function useKitBankNavigation({
 
   // Handler for bank name editing. An empty name clears the bank's name
   // (RE-23); main reports a name it can't save. No answer at all (the
-  // preload method is missing) isn't a save either (#543).
+  // preload method is missing) isn't a save either (#543). A saved name is
+  // read back from the banks, as main stored it (#567).
   const handleBankNameChange = useCallback(
     async (bank: string, newName: string) => {
       const result = await globalThis.electronAPI?.updateBank?.(bank, {
@@ -232,15 +222,7 @@ export function useKitBankNavigation({
       });
 
       if (result?.success) {
-        setBankNames((prev) => {
-          const next = { ...prev };
-          if (newName) {
-            next[bank] = newName;
-          } else {
-            delete next[bank];
-          }
-          return next;
-        });
+        await loadBankNames();
       } else {
         onMessage?.(
           result?.error ?? `Couldn't save the name of bank ${bank}`,
@@ -248,7 +230,7 @@ export function useKitBankNavigation({
         );
       }
     },
-    [onMessage],
+    [loadBankNames, onMessage],
   );
 
   return {

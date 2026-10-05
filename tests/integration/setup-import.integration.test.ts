@@ -176,6 +176,28 @@ describe("[UC-01] [UC-12] Setup imports the card's bank names (#564)", () => {
     expect(fs.readdirSync(store).filter((f) => f.endsWith(".rtf"))).toEqual([]);
   });
 
+  // #567: the factory archive's bank name files are extracted into the
+  // store, and setup reads them once from there
+  it("[UC-02] names the banks from the factory archive's files in the store", () => {
+    const archiveRtf = String.raw`{\rtf1\ansi ALWIS}`;
+    fs.writeFileSync(path.join(store, "A - ALWIS.rtf"), archiveRtf);
+    // A bank with no kits
+    fs.writeFileSync(path.join(store, "D - RICHARD DEVINE.rtf"), archiveRtf);
+
+    const result = setup.importSetupBankNames(dbDir, store);
+
+    expect(result).toEqual({ data: { importedBanks: 2 }, success: true });
+    expect(bankNames()).toEqual({
+      A: ["ALWIS", "A - ALWIS.rtf"],
+      D: ["RICHARD DEVINE", "D - RICHARD DEVINE.rtf"],
+    });
+    expect(getKit(dbDir, "A0").data?.modified_since_sync).toBe(false);
+    // The extracted files are left as they are
+    expect(fs.readFileSync(path.join(store, "A - ALWIS.rtf"), "utf8")).toBe(
+      archiveRtf,
+    );
+  });
+
   it("keeps the first file by name when a card has two for one letter", () => {
     fs.writeFileSync(path.join(card, "B - Second.rtf"), "");
     fs.writeFileSync(path.join(card, "B - First.rtf"), "");

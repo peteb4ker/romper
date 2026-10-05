@@ -1,5 +1,6 @@
 import type { Bank } from "@romper/shared/db/schema.js";
 
+import { parseBankNameFile } from "@romper/shared/rampleCardLayout.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -14,11 +15,23 @@ const BANK_LETTER_PATTERN = /^[A-Z]$/;
 const RESERVED_NAME_CHARACTERS = /["*/:<>?\\|]/;
 
 /**
+ * A bank name file change made by {@link RtfFileService.stageRtfFile} but
+ * not yet kept.
+ */
+export interface StagedRtfFile {
+  /** Keep the change: delete the files it replaced. */
+  commit(): void;
+  /** Undo the change: remove the new file and put back the ones it replaced. */
+  rollback(): void;
+}
+
+/**
  * Service for managing the bank name files: empty RTF files named
  * `{Letter} - {Artist}.rtf` at the SD card root, one per named bank.
- * Romper reads and writes them because the factory archive has them. The
- * Rample manual doesn't mention them, so whether the module reads or shows
- * them is unverified on hardware.
+ * Romper writes them because the factory archive has them, and reads them
+ * only when setup imports a card or the archive (#564, #567); the names'
+ * owner is `banks.artist`. The Rample manual doesn't mention them, so
+ * whether the module reads or shows them is unverified on hardware.
  */
 class RtfFileService {
   /**
@@ -32,6 +45,64 @@ class RtfFileService {
         fs.unlinkSync(path.join(dirPath, file));
       }
     }
+  }
+
+  /**
+   * Set a bank's name file in `dirPath` to `artistName`, or remove it when
+   * `artistName` is null, in a way that can still be undone (#567). The
+   * files it replaces are moved aside rather than deleted: `commit` deletes
+   * them, `rollback` removes the new file and puts them back. If staging
+   * fails, it undoes what it did before throwing, so the folder is as it
+   * was.
+   */
+  stageRtfFile(
+    dirPath: string,
+    bankLetter: string,
+    artistName: null | string,
+  ): StagedRtfFile {
+    requireBankLetter(bankLetter);
+    if (artistName !== null) {
+      const nameError = bankNameError(artistName);
+      if (nameError) throw new Error(nameError);
+    }
+
+    const replaced: { aside: string; original: string }[] = [];
+    let written: null | string = null;
+    const rollback = () => {
+      const failures: unknown[] = [];
+      const file = written;
+      if (file) attempt(failures, () => fs.rmSync(file, { force: true }));
+      for (const { aside, original } of [...replaced].reverse()) {
+        attempt(failures, () => fs.renameSync(aside, original));
+      }
+      if (failures.length > 0) throw failures[0];
+    };
+
+    try {
+      for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
+        if (!entry.isFile() || !isRtfFileForBank(entry.name, bankLetter)) {
+          continue;
+        }
+        const original = path.join(dirPath, entry.name);
+        const aside = path.join(dirPath, `.${entry.name}.replaced`);
+        fs.renameSync(original, aside);
+        replaced.push({ aside, original });
+      }
+      if (artistName !== null) {
+        written = path.join(dirPath, bankRtfFileName(bankLetter, artistName));
+        fs.writeFileSync(written, String.raw`{\rtf1}`, "utf-8");
+      }
+    } catch (error) {
+      rollback();
+      throw error;
+    }
+
+    return {
+      commit: () => {
+        for (const { aside } of replaced) fs.rmSync(aside, { force: true });
+      },
+      rollback,
+    };
   }
 
   /**
@@ -103,6 +174,15 @@ export function isWritableBankName(name: null | string | undefined): boolean {
   return typeof name === "string" && bankNameError(name) === null;
 }
 
+/** Run one undo step, collecting its failure so the others still run. */
+function attempt(failures: unknown[], step: () => void): void {
+  try {
+    step();
+  } catch (error) {
+    failures.push(error);
+  }
+}
+
 function hasControlCharacter(name: string): boolean {
   return [...name].some((char) => {
     const code = char.codePointAt(0) ?? 0;
@@ -111,18 +191,12 @@ function hasControlCharacter(name: string): boolean {
 }
 
 /**
- * True for a bank name file of `bankLetter` (`{Letter} - {Name}.rtf`),
- * ignoring case. Compared as text, so the letter never reaches a regular
- * expression.
+ * True for a bank name file of `bankLetter` (`{Letter} - {Name}.rtf`, the
+ * letter in either case), by the one pattern every reader uses
+ * (`parseBankNameFile`).
  */
 function isRtfFileForBank(fileName: string, bankLetter: string): boolean {
-  const lower = fileName.toLowerCase();
-  const prefix = `${bankLetter.toLowerCase()} - `;
-  return (
-    lower.startsWith(prefix) &&
-    lower.endsWith(".rtf") &&
-    lower.length > prefix.length + ".rtf".length
-  );
+  return parseBankNameFile(fileName)?.letter === bankLetter;
 }
 
 function requireBankLetter(bankLetter: string): void {

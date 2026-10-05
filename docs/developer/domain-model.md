@@ -255,50 +255,51 @@ names) and an optional name (the "artist").
   - letter: the first character of the kit name. `kits.bank_letter` stores
     a copy, set from the name by `addKit`, `copyKit` and
     `importSetupKit`.
-  - name: `banks.artist`. `banks.rtf_filename` is derived from it
-    (`bankRtfFileName`); `banks.scanned_at` records the last scan. At write
-    time `banks.artist` is the only source: `planCardContents` and
-    `writeBankRtfFiles` build the card's files from it.
+  - name: `banks.artist`, the only owner (#567). `banks.rtf_filename` is
+    derived from it (`bankRtfFileName`); `banks.scanned_at` records when
+    setup imported it (in stores from before #567, the last bank scan).
+    The store's and the card's `<L> - <name>.rtf` files are output, written
+    from it: `planCardContents` and `writeBankRtfFiles` build the card's
+    files from it, and `update-bank` the store's.
 - **Writers:**
-  - `update-bank` (handler in `dbIpcHandlers.ts`) writes or removes
-    `<store>/<L> - <name>.rtf` (`rtfFileService.writeRtfFile`,
-    `removeRtfFile`) and then `updateBank` (`source: "edit"`), which flags
-    every kit in the bank modified.
-  - `scan-banks` (`scanService.scanBanks`) reads `<store>/*.rtf` and calls
-    `updateBank` with `source: "scan"`, which flags nothing. Run at startup
-    (`useStartupActions`) and by Scan All (`useBankScanning`).
-  - setup from a card: `setup-import-bank-names`
-    (`localStoreSetupService.importSetupBankNames`) reads the card root's
-    `<L> - <name>.rtf` files (`parseBankNameFile`) and calls `updateBank`
-    with `source: "scan"`, in the step that imports the kits. The files
-    aren't copied into the store (#564).
+  - `update-bank` (handler in `dbIpcHandlers.ts`, `saveBankName`) changes
+    `banks.artist` and `<store>/<L> - <name>.rtf` together, or neither:
+    it stages the file change (`rtfFileService.stageRtfFile`, which moves
+    the old file aside), then calls `updateBank` (`source: "edit"`, which
+    flags every kit in the bank modified), then keeps the file change or
+    undoes it.
+  - setup: `setup-import-bank-names`
+    (`localStoreSetupService.importSetupBankNames`) reads the
+    `<L> - <name>.rtf` files (`parseBankNameFile`) in one folder and calls
+    `updateBank` with `source: "scan"`, which flags nothing, in the step
+    that imports the kits. The folder is the card for a card setup, whose
+    files aren't copied into the store (#564), or the store for the
+    factory archive, which was extracted into it (#567)
+    (`bankNamesSourcePath`). This is the only time Romper reads bank name
+    files: not at startup, not on Scan All, so a name file edited by hand
+    in the store isn't read.
   - the write puts `<L> - <name>.rtf` on the card root and removes bank
     files the store doesn't name (`findStaleCardEntries`).
 - **Readers and copies:**
   - main: `getAllBanks` (`get-all-banks`); every kit row joined with its
     bank (`kitRelationalHelpers`, so `get-all-kits` and `get-kit` carry
     `kit.bank.artist`); sync planning.
-  - files: `<store>/<L> - <name>.rtf` and `<card>/<L> - <name>.rtf`.
-  - renderer: `useKitBankNavigation` `bankNames`, merged from
-    `get-all-banks` (once per store, effect on `localStorePath`) and from
-    `kit.bank.artist` of the loaded, filtered kits (effect on `kits`), and
-    patched locally after a rename; `BankHeader` `editValue`; search
-    (`kitSearchUtils`) reads `kit.bank.artist`.
+  - files: `<store>/<L> - <name>.rtf` and `<card>/<L> - <name>.rtf`,
+    written only, except by setup's import.
+  - renderer: `useKitBankNavigation` `bankNames`, only from `get-all-banks`:
+    loaded when the store opens (effect on `localStorePath`, which is also
+    when setup has just imported names) and again after a rename;
+    `BankHeader` `editValue`; search (`kitSearchUtils`) reads
+    `kit.bank.artist`, which the kit reload after a rename refreshes.
 - **Invariants:**
   - The `banks` table always has 26 rows (migration `0001`).
   - A name is never blank and holds none of `/ \ : * ? " < > |` or control
     characters (`bankNameError`), because it becomes a file name.
   - At most one name file per letter, in the store and on the card.
+  - Every reader of a bank name file uses one pattern,
+    `BANK_NAME_FILE_PATTERN` (`parseBankNameFile`) in
+    `shared/rampleCardLayout.ts`: a letter A to Z, either case.
 - **Disagreements on main:**
-  - Three sources. The table owns the name, but `scanBanks` copies the
-    store's RTF files back into it on every launch, and the browser shows a
-    merge of `get-all-banks` and `kit.bank.artist`. `scanBanks` never clears
-    a name whose file is gone, picks the last of two files for one letter,
-    and its pattern (`/^\p{Lu} - .+\.rtf$/iu`) matches lowercase and
-    non-ASCII letters. After Scan All, a bank with no visible kits keeps its
-    old name until the browser remounts (#567).
-  - `update-bank` writes the store's file before the database; if
-    `updateBank` then fails, the file and the table disagree.
   - Comments in `rtfFileService` state that the Rample shows these files,
     which the manual doesn't say (#571).
 
@@ -364,8 +365,7 @@ Kit fields, each owned by a column of `kits`:
     delete, move and replace, gain, voice names and kit delete are refused
     only by the renderer (#572).
   - "Modified" has no single meaning: a voice-name edit sets it though
-    nothing on the card changes, a kit alias edit doesn't, and a bank scan
-    that changes a name doesn't (#566).
+    nothing on the card changes, and a kit alias edit doesn't (#566).
   - Kit names are checked by different patterns: `isValidKit` and
     `kitService.validateKitSlot` accept any Unicode capital
     (`/^\p{Lu}\d{1,2}$/u`) and leading zeros (`A01`), `sdCardSafety` only
@@ -671,18 +671,17 @@ voice and slot):
     gain and source; missing files are reported; new files are added to
     read-only kits only, in the lowest free slot, up to 12; empty `wav_*`
     columns are filled; unnamed voices are named from the first file.
-  - bank scan: `scan-banks` (see [Bank](#bank)).
   - setup: the wizard copies kit folders (`copy-dir`) or extracts the
     factory archive, then `setup-import-kit` → `importSetupKit`: `addKitTx`
     (read-only kit, four mono voices), `mergeKitScanTx` (which links voices
     automatically by stereo rule 2) and `markKitsAsSyncedTx`, in one
-    transaction per kit. From a card, `setup-import-bank-names` then
-    imports the card's bank names (see [Bank](#bank)).
+    transaction per kit. `setup-import-bank-names` then imports the card's
+    or the factory archive's bank names (see [Bank](#bank)).
   - the editor's Scan on an editable kit only names voices, in the renderer
     (`useKitScanning.handleInferVoiceNames`).
 - **Readers and copies:** `KitScanResult` drives the scan messages; Scan
-  All runs `scanBanks` then every kit (`useKitScan.scanAllKits`), then one
-  reload.
+  All runs every kit (`useKitScan.scanAllKits`), then one reload. Neither
+  scan reads bank names (#567).
 - **Invariants:** a locked kit is untouched; a scan never deletes a row or
   moves a sample, and never changes a stereo link (it reports what the
   stereo rules will do); a user-set voice name survives a scan.
@@ -818,7 +817,8 @@ voice and slot):
     replaced, never removed; `electronFileAPI` and `romperEnv` sit outside
     the contract;
   - one intent, several channels: six kit-field channels reach `updateKit`;
-    bank names come from `get-all-banks` and from every kit row; the local
+    every kit row carries its bank's name (`kit.bank.artist`, which search
+    reads) beside `get-all-banks`, which the browser reads; the local
     store is validated by three channels; the wizard picks a card folder
     with the store's folder picker (`select-local-store-path`);
   - `delete-sample-from-slot-without-reindexing` has no renderer caller.
@@ -889,9 +889,9 @@ the issues it names.
    preconditions for everything below: once main enforces the rules, the
    renderer's copies can be dropped without losing a check.
 2. **One owner per stored concept in main** (small, alongside 1).
-   - Bank names: `banks.artist` only. The store's RTF files become output,
-     like the card's; `scanBanks` reads them only at setup and import
-     (#564, #567).
+   - Bank names: `banks.artist` only. The store's RTF files are output,
+     like the card's; setup reads a card's or the factory archive's files
+     once (#564, #567, done).
    - Stereo: `voices.stereo_mode`, plus the user's own choice in
      `voices.stereo_choice` (#537).
    - Modified: one written definition, set in one place per intent

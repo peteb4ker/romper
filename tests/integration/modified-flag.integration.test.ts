@@ -20,7 +20,6 @@ import {
   updateVoiceAlias,
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { kitService } from "../../electron/main/services/kitService.js";
-import { scanService } from "../../electron/main/services/scanService.js";
 import { syncService } from "../../electron/main/services/syncService.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
@@ -135,16 +134,6 @@ describe("[UC-11] Edits mark a kit modified since the last write (RE-35)", () =>
     // Clearing the name takes its file off the card (RE-23)
     expect(updateBank(dbDir, "A", { artist: null }).success).toBe(true);
     expect([modified("A0"), modified("A1")]).toEqual([true, true]);
-  });
-
-  it("a bank scan reads names the card already has, so it marks nothing", () => {
-    fs.writeFileSync(path.join(localStorePath, "A - Autechre.rtf"), "{\\rtf1}");
-
-    const result = scanService.scanBanks(settings);
-
-    expect(result.success).toBe(true);
-    expect(result.data?.updatedBanks).toBe(1);
-    expect([modified("A0"), modified("A1")]).toEqual([false, false]);
   });
 
   it("a new or duplicated kit starts modified: the card doesn't have it yet", () => {

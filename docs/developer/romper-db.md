@@ -16,9 +16,9 @@ Stores artist metadata for each bank (A-Z).
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | letter | TEXT | PRIMARY KEY | Bank letter (A-Z) |
-| artist | TEXT | nullable | Artist name extracted from RTF filename |
-| rtf_filename | TEXT | nullable | Original RTF filename for reference |
-| scanned_at | INTEGER | nullable | Unix timestamp of last bank scan |
+| artist | TEXT | nullable | The bank's name, and its only owner (#567): set by a rename, or at setup from a card's or the factory archive's name files. The store's and the card's `<L> - <name>.rtf` files are written from it |
+| rtf_filename | TEXT | nullable | The name file written for it, `<L> - <name>.rtf` |
+| scanned_at | INTEGER | nullable | Unix timestamp of setup's import of the name (in stores from before #567, of the last bank scan) |
 
 Pre-populated with all 26 letters (A-Z) by migration `0001`.
 

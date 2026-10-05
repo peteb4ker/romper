@@ -5,7 +5,10 @@ import type { ElectronAPI } from "../../../electron.d";
 import { config } from "../../../config";
 import { createLogger } from "../../../utils/logger";
 import { SetupCancelledError } from "./setupCancelled";
-import { useLocalStoreWizardFileOps } from "./useLocalStoreWizardFileOps";
+import {
+  bankNamesSourcePath,
+  useLocalStoreWizardFileOps,
+} from "./useLocalStoreWizardFileOps";
 import {
   type LocalStoreSource,
   type ProgressEvent,
@@ -142,12 +145,12 @@ export function useLocalStoreWizard(
       throwIfCancelled();
 
       // Create the database and import the kits (main names the voices),
-      // and a card's bank names
+      // and the card's or the factory archive's bank names
       log.debug("initialize - creating and populating database");
       const { stereoNotices, truncationWarnings } =
         await fileOpsHook.createAndPopulateDb(
           state.targetPath,
-          state.source === "sdcard" ? state.sdCardSourcePath : undefined,
+          bankNamesSourcePath(state),
         );
       log.debug("initialize - database creation completed");
       throwIfCancelled();

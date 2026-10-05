@@ -5,8 +5,6 @@ export interface BankNames {
 
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import { toCapitalCase } from "@romper/shared/kitUtilsShared";
-
 /**
  * Checks if a bank has any kits
  */
@@ -25,23 +23,6 @@ export function getAvailableBanks(kits: KitWithRelations[]): string[] {
     }
   }
   return Array.from(banks).sort((a, b) => a.localeCompare(b));
-}
-
-/**
- * Extracts the bank and name from a single RTF filename (e.g. "A - MyBank.rtf")
- * Returns { bank, name } or null if not a valid bank RTF filename
- */
-export function getBankNameFromRtfFilename(
-  filename: string,
-): { bank: string; name: string } | null {
-  const match = /^(\p{Lu}) - (.+)\.rtf$/iu.exec(filename);
-  if (match) {
-    return {
-      bank: match[1].toUpperCase(),
-      name: toCapitalCase(match[2]),
-    };
-  }
-  return null;
 }
 
 /**

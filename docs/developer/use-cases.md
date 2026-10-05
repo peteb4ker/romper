@@ -117,10 +117,12 @@ and [Factory Samples](../manual/syncing.md#factory-samples).
   attempts when main marks the failure `retryable`, otherwise main's reason
   at once).
 - **IPC:** `download-and-extract-archive`; push events `archive-progress`,
-  `archive-error`; `scan-banks` at startup for bank names.
+  `archive-error`; `setup-import-bank-names` for the bank names, read from
+  the name files the archive extracted into the store (#567).
 - **Main:** `electron/main/services/archiveService.ts` (`downloadAndExtractArchive`,
   `getFactorySamplesArchiveUrl`); `electron/main/archiveUtils.ts`
-  (`downloadArchive`, `extractZipEntries`); `electron/main/services/scanService.ts` (`scanBanks`).
+  (`downloadArchive`, `extractZipEntries`); `electron/main/services/localStoreSetupService.ts`
+  (`importSetupBankNames`).
 
 ### UC-03 Set up an empty library
 
@@ -168,7 +170,7 @@ and [Validating Your Store](../manual/kit-browser.md#validating-your-store).
 - **Renderer:** `app/renderer/utils/SettingsContext.tsx` (`refreshLocalStoreStatus`) →
   `app/renderer/components/hooks/kit-management/useLocalStoreSetupFlow.ts` → `app/renderer/components/dialogs/InvalidLocalStoreDialog.tsx`
   or the setup wizard; `app/renderer/components/dialogs/CriticalErrorDialog.tsx`.
-  Nothing reads the store (kit load, startup bank scan, bank names) until
+  Nothing reads the store (kit load, bank names) until
   its status says it's valid (`isLocalStoreReady`, #553).
 - **IPC:** `get-local-store-status`, `validate-local-store`,
   `select-local-store-path`, `write-settings`.
@@ -298,19 +300,22 @@ store and written to the card as `<letter> - <name>.rtf` files. See
 
 - **Renderer:** `app/renderer/components/BankHeader.tsx` →
   `app/renderer/components/hooks/kit-management/useKitBankNavigation.ts` (`handleBankNameChange`).
-- **IPC:** `update-bank` (`electron/main/dbIpcHandlers.ts`), `get-all-banks`
-  (the names the browser shows), `scan-banks`.
+- **IPC:** `update-bank` (`electron/main/dbIpcHandlers.ts`, `saveBankName`),
+  `get-all-banks` (the only names the browser shows, read again after a
+  rename), `setup-import-bank-names` (the card's or the factory archive's
+  names, at setup).
 - **Main:** `electron/main/db/operations/crudOperations.ts` (`updateBank`);
-  `electron/main/services/rtfFileService.ts` (`writeRtfFile`, `removeRtfFile`); `electron/main/services/scanService.ts`
-  (`scanBanks`); written to the card by `electron/main/services/syncService.ts`
+  `electron/main/services/rtfFileService.ts` (`stageRtfFile`); `electron/main/services/localStoreSetupService.ts`
+  (`importSetupBankNames`, with `parseBankNameFile` in `shared/rampleCardLayout.ts`);
+  written to the card by `electron/main/services/syncService.ts`
   (`writeBankRtfFiles`).
 
 ### UC-13 Scan a kit, or scan all
 
 **Scan Kit** in the kit editor (or "/") rebuilds a read-only kit's samples
 from its folder, keeping edits, and names unnamed voices; in an editable
-kit it only names voices. File > **Scan All** scans the bank names and every
-kit. A scan never changes a stereo link; it reports what the write will do:
+kit it only names voices. File > **Scan All** scans every kit; it doesn't
+read bank names (#567). A scan never changes a stereo link; it reports what the write will do:
 pairs it will link automatically, voices it will mix down to mono, and
 quarantined kits (#537). See
 [Scanning Your Library](../manual/kit-browser.md#scanning-your-library).
@@ -321,9 +326,9 @@ quarantined kits (#537). See
   `app/renderer/components/hooks/kit-management/useKitScanning.ts` (`handleScanKit`);
   `app/renderer/components/hooks/kit-management/useKitViewMenuHandlers.ts` (`menu-scan-all-kits`) →
   `app/renderer/views/KitsView.tsx` (every kit in the store) →
-  `app/renderer/components/hooks/kit-management/useKitScan.ts` (`scanAllKits`), `app/renderer/components/hooks/shared/useBankScanning.ts`.
-- **IPC:** `rescan-kit`, `scan-banks`; push `menu-scan-all-kits`.
-- **Main:** `electron/main/services/scanService.ts` (`rescanKit`, `scanBanks`);
+  `app/renderer/components/hooks/kit-management/useKitScan.ts` (`scanAllKits`).
+- **IPC:** `rescan-kit`; push `menu-scan-all-kits`.
+- **Main:** `electron/main/services/scanService.ts` (`rescanKit`);
   `electron/main/db/operations/kitScanOperations.ts` (`mergeKitScan`,
   `planKitScanMerge`).
 

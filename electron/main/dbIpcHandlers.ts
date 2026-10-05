@@ -1,5 +1,7 @@
+import type { DbResult } from "@romper/shared/db/schema.js";
 import type { VoiceSliceSettings } from "@romper/shared/sliceTypes.js";
 
+import { getErrorMessage } from "@romper/shared/errorUtils.js";
 import {
   isSlicerDivision,
   normalizeSliceSteps,
@@ -52,6 +54,7 @@ import {
   bankRtfFileName,
   isBankLetter,
   rtfFileService,
+  type StagedRtfFile,
 } from "./services/rtfFileService.js";
 import { scanService } from "./services/scanService.js";
 import { ServicePathManager } from "./utils/fileSystemUtils.js";
@@ -85,15 +88,18 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     },
   );
 
-  // The card's bank names, in the same import step as its kits (#564). The
-  // card folder is one the user picked, so main has granted it
+  // The bank names of the card setup is copying from (#564), or of the
+  // factory archive extracted into the new store (#567), in the same step
+  // as the kits. Either folder is one the user picked, so main has granted
+  // it
   ipcMain.handle(
     "setup-import-bank-names",
-    (_event, dbDir: string, cardPath: string) => {
+    (_event, dbDir: string, sourcePath: string) => {
       const access = checkDatabaseDirAccess(dbDir);
-      const cardAccess = access.ok ? checkPathAccess(cardPath) : access;
-      if (!cardAccess.ok) return { error: cardAccess.error, success: false };
-      return localStoreSetupService.importSetupBankNames(dbDir, cardPath);
+      const sourceAccess = access.ok ? checkPathAccess(sourcePath) : access;
+      if (!sourceAccess.ok)
+        return { error: sourceAccess.error, success: false };
+      return localStoreSetupService.importSetupBankNames(dbDir, sourcePath);
     },
   );
 
@@ -395,9 +401,8 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
 
   // Rename or clear a bank (RE-23). An empty or null artist clears the name
   // in the database as well as its RTF file, so it stays gone after a
-  // reload and the next write removes it from the card. The file is
-  // written first, so a name that can't be written never reaches the
-  // database.
+  // reload and the next write removes it from the card. The table and the
+  // store's file change together, or neither does (#567).
   ipcMain.handle(
     "update-bank",
     createDbHandler(
@@ -418,35 +423,15 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
           const nameError = bankNameError(artist);
           if (nameError) return { error: nameError, success: false };
         }
-
-        try {
-          const localStorePath =
-            ServicePathManager.getLocalStorePath(inMemorySettings);
-          if (localStorePath) {
-            if (artist) {
-              rtfFileService.writeRtfFile(localStorePath, bankLetter, artist);
-            } else {
-              rtfFileService.removeRtfFile(localStorePath, bankLetter);
-            }
-          }
-        } catch (error) {
-          return {
-            error: `Couldn't save the name of bank ${bankLetter}: ${error instanceof Error ? error.message : String(error)}`,
-            success: false,
-          };
-        }
-
-        return updateBank(dbDir, bankLetter, {
+        return saveBankName(
+          dbDir,
+          ServicePathManager.getLocalStorePath(inMemorySettings),
+          bankLetter,
           artist,
-          rtf_filename: artist ? bankRtfFileName(bankLetter, artist) : null,
-        });
+        );
       },
     ),
   );
-
-  ipcMain.handle("scan-banks", () => {
-    return scanService.scanBanks(inMemorySettings);
-  });
 
   // Audio format validation
   ipcMain.handle("validate-sample-format", (_event, filePath: string) => {
@@ -457,4 +442,44 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
 
   // Progress events are handled via webContents.send in syncService
   // No IPC handler needed for onSyncProgress as it's a renderer-side event listener
+}
+
+/**
+ * Save a bank's name (`banks.artist`, its owner) and the store's name file
+ * written from it, together (#567). The file change is staged first, so a
+ * name that can't be written never reaches the database; if the database
+ * then refuses it, the file change is undone, leaving both as they were.
+ */
+function saveBankName(
+  dbDir: string,
+  localStorePath: null | string,
+  bankLetter: string,
+  artist: null | string,
+): DbResult<void> {
+  let staged: null | StagedRtfFile = null;
+  try {
+    if (localStorePath) {
+      staged = rtfFileService.stageRtfFile(localStorePath, bankLetter, artist);
+    }
+  } catch (error) {
+    return {
+      error: `Couldn't save the name of bank ${bankLetter}: ${getErrorMessage(error)}`,
+      success: false,
+    };
+  }
+
+  const saved = updateBank(dbDir, bankLetter, {
+    artist,
+    rtf_filename: artist ? bankRtfFileName(bankLetter, artist) : null,
+  });
+  try {
+    if (saved.success) staged?.commit();
+    else staged?.rollback();
+  } catch (error) {
+    console.error(
+      `[update-bank] Bank ${bankLetter}: couldn't tidy its name file after ${saved.success ? "saving" : "a failed save"}:`,
+      getErrorMessage(error),
+    );
+  }
+  return saved;
 }

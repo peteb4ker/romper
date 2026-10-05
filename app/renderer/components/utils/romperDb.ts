@@ -1,6 +1,6 @@
 // The setup wizard's database calls: create the new store's database and
-// import its kit folders and the card's bank names. Main does the work
-// (RE-34, #564).
+// import its kit folders and bank names. Main does the work (RE-34, #564,
+// #567).
 
 import type { KitScanResult } from "@romper/shared/db/schema.js";
 
@@ -23,20 +23,21 @@ export async function createRomperDb(dbDir: string) {
 }
 
 /**
- * Import the bank names at the root of the card setup is copying from into
- * the store setup is creating (#564). Main reads the card's
+ * Import the bank names in `sourcePath` into the store setup is creating:
+ * the card setup is copying from (#564), or the store the factory archive
+ * was extracted into (#567). Main reads the folder's
  * `<letter> - <name>.rtf` files.
  */
 export async function importSetupBankNames(
   dbDir: string,
-  cardPath: string,
+  sourcePath: string,
 ): Promise<number> {
   if (!globalThis.electronAPI?.setupImportBankNames) {
     throw new Error("IPC not available");
   }
   const result = await globalThis.electronAPI.setupImportBankNames(
     dbDir,
-    cardPath,
+    sourcePath,
   );
   if (!result.success || !result.data) {
     throw new Error(result.error || "Failed to import the card's bank names");

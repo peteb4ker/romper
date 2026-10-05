@@ -1,5 +1,4 @@
 import { createLogger } from "../../../utils/logger";
-import { useBankScanning } from "../shared/useBankScanning";
 import { isTypingTarget } from "../shared/useGlobalKeyboardShortcuts";
 import { useMenuEvents } from "../shared/useMenuEvents";
 import { SCAN_ALL_CONFIRM_MESSAGE } from "./useKitScan";
@@ -7,7 +6,6 @@ import { SCAN_ALL_CONFIRM_MESSAGE } from "./useKitScan";
 const log = createLogger("KitViewMenu");
 
 interface UseKitViewMenuHandlersProps {
-  onMessage: (text: string, type?: string, duration?: number) => void;
   /** Romper's redo, for Edit > Redo outside a text field */
   onRedo?: () => void;
   /** Scans every kit in the store, whatever the browser shows (RE-43) */
@@ -23,18 +21,12 @@ interface UseKitViewMenuHandlersProps {
  * Provides dependency injection for better testability
  */
 export function useKitViewMenuHandlers({
-  onMessage,
   onRedo,
   onScanAllKits,
   onUndo,
   openChangeDirectory,
   openPreferences,
 }: UseKitViewMenuHandlersProps): void {
-  // Bank scanning hook
-  const { scanBanks } = useBankScanning({
-    onMessage,
-  });
-
   // Menu event handlers
   useMenuEvents({
     onAbout: () => {
@@ -56,9 +48,9 @@ export function useKitViewMenuHandlers({
       log.debug("Menu scan all triggered");
       // Scan All touches every kit, so ask first (RE-04)
       if (!globalThis.confirm(SCAN_ALL_CONFIRM_MESSAGE)) return;
-      // Run bank scan first (fast), then every kit, in the browser or the
-      // editor (RE-43)
-      void scanBanks().then(() => onScanAllKits?.());
+      // Every kit, in the browser or the editor (RE-43). Bank names aren't
+      // scanned: the store's bank name files are only written (#567)
+      void onScanAllKits?.();
     },
     onUndo: () => {
       log.debug("Menu undo triggered");

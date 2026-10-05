@@ -34,7 +34,6 @@ vi.mock("../services/sampleService.js", () => ({
 vi.mock("../services/scanService.js", () => ({
   scanService: {
     rescanKit: vi.fn(),
-    scanBanks: vi.fn(),
   },
 }));
 
@@ -118,10 +117,6 @@ describe("dbIpcHandlers - Routing Tests", () => {
       data: { scannedSamples: 5, updatedVoices: 2 },
       success: true,
     });
-    mockScanService.scanBanks.mockResolvedValue({
-      data: { scannedAt: new Date(), scannedFiles: 3, updatedBanks: 3 },
-      success: true,
-    });
 
     // Mock database operations
     vi.mocked(romperDbCore.createRomperDbFile).mockResolvedValue({
@@ -157,7 +152,6 @@ describe("dbIpcHandlers - Routing Tests", () => {
         "rescan-kit",
         // The bank strip loads every bank's name (#512)
         "get-all-banks",
-        "scan-banks",
         "add-sample-to-slot",
         "replace-sample-in-slot",
         "delete-sample-from-slot",
@@ -306,14 +300,9 @@ describe("dbIpcHandlers - Routing Tests", () => {
       );
     });
 
-    it("scan-banks routes to scanService.scanBanks", async () => {
-      const handler = handlerRegistry["scan-banks"];
-      const result = await handler({});
-
-      expect(result.success).toBe(true);
-      expect(mockScanService.scanBanks).toHaveBeenCalledWith(
-        mockInMemorySettings,
-      );
+    // #567: the store's bank name files are only written, from banks.artist
+    it("has no channel that reads bank names back from the store", () => {
+      expect(handlerRegistry["scan-banks"]).toBeUndefined();
     });
   });
 

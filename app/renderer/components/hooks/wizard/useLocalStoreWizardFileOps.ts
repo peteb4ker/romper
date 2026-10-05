@@ -34,6 +34,26 @@ export interface UseLocalStoreWizardFileOpsOptions {
 }
 
 /**
+ * The folder whose bank name files (`A - Name.rtf`) setup imports into
+ * `banks.artist`, the names' only owner: the card for a card setup, since
+ * only its kit folders are copied (#564), or the store itself for the
+ * factory archive, which was extracted into it (#567). They're read once,
+ * here; afterwards the store's name files are only written. A blank store
+ * has none.
+ */
+export function bankNamesSourcePath({
+  sdCardSourcePath,
+  source,
+  targetPath,
+}: Pick<LocalStoreWizardState, "sdCardSourcePath" | "source" | "targetPath">):
+  | string
+  | undefined {
+  if (source === "sdcard") return sdCardSourcePath;
+  if (source === "squarp") return targetPath;
+  return undefined;
+}
+
+/**
  * Hook for managing Local Store Wizard file operations
  * Extracted from useLocalStoreWizard to reduce complexity
  */
@@ -169,12 +189,12 @@ export function useLocalStoreWizardFileOps({
   );
 
   /**
-   * Create the store's database and import its kit folders. Set up from a
-   * card, `sdCardSourcePath` is that card: its bank names are imported in
-   * the same step (#564), since only kit folders were copied.
+   * Create the store's database and import its kit folders, then the bank
+   * names in the `bankNamesPath` folder's name files, if setup has one
+   * (see {@link bankNamesSourcePath}).
    */
   const createAndPopulateDb = useCallback(
-    async (targetPath: string, sdCardSourcePath?: string) => {
+    async (targetPath: string, bankNamesPath?: string) => {
       const dbDir = `${targetPath}/.romperdb`;
       if (api.ensureDir) await api.ensureDir(dbDir);
       await createRomperDb(dbDir);
@@ -196,8 +216,8 @@ export function useLocalStoreWizardFileOps({
           phase: "Writing to database",
         });
       }
-      if (sdCardSourcePath) {
-        await importSetupBankNames(dbDir, sdCardSourcePath);
+      if (bankNamesPath) {
+        await importSetupBankNames(dbDir, bankNamesPath);
       }
       return { dbDir, stereoNotices, truncationWarnings, validKits };
     },

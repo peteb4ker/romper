@@ -1,24 +1,14 @@
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useBankScanning } from "../../shared/useBankScanning";
 import { useMenuEvents } from "../../shared/useMenuEvents";
 import { useKitViewMenuHandlers } from "../useKitViewMenuHandlers";
-
-// Mock the dependencies
-vi.mock("../../shared/useBankScanning", () => ({
-  useBankScanning: vi.fn(() => ({
-    scanBanks: vi.fn(),
-  })),
-}));
 
 vi.mock("../../shared/useMenuEvents", () => ({
   useMenuEvents: vi.fn(),
 }));
 
 describe("useKitViewMenuHandlers", () => {
-  const mockOnMessage = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -26,7 +16,6 @@ describe("useKitViewMenuHandlers", () => {
   it("registers the menu handlers", () => {
     renderHook(() =>
       useKitViewMenuHandlers({
-        onMessage: mockOnMessage,
         openChangeDirectory: vi.fn(),
         openPreferences: vi.fn(),
       }),
@@ -53,7 +42,6 @@ describe("useKitViewMenuHandlers", () => {
     const menuHandlers = () => {
       renderHook(() =>
         useKitViewMenuHandlers({
-          onMessage: mockOnMessage,
           onRedo,
           onUndo,
           openChangeDirectory: vi.fn(),
@@ -108,14 +96,11 @@ describe("useKitViewMenuHandlers", () => {
   });
 
   describe("[UC-13] Scan All", () => {
-    const scanBanks = vi.fn().mockResolvedValue(undefined);
     const handleScanAllKits = vi.fn();
 
     const triggerScanAll = async () => {
-      vi.mocked(useBankScanning).mockReturnValue({ scanBanks } as never);
       renderHook(() =>
         useKitViewMenuHandlers({
-          onMessage: mockOnMessage,
           onScanAllKits: handleScanAllKits,
           openChangeDirectory: vi.fn(),
           openPreferences: vi.fn(),
@@ -135,17 +120,17 @@ describe("useKitViewMenuHandlers", () => {
       expect(confirm).toHaveBeenCalledWith(
         expect.stringContaining("every kit"),
       );
-      expect(scanBanks).not.toHaveBeenCalled();
       expect(handleScanAllKits).not.toHaveBeenCalled();
       confirm.mockRestore();
     });
 
-    it("scans banks, then every kit, once confirmed", async () => {
+    // #567: the store's bank name files are only written, so Scan All
+    // doesn't read them
+    it("scans every kit once confirmed", async () => {
       const confirm = vi.spyOn(globalThis, "confirm").mockReturnValue(true);
 
       await triggerScanAll();
 
-      expect(scanBanks).toHaveBeenCalledTimes(1);
       expect(handleScanAllKits).toHaveBeenCalledTimes(1);
       confirm.mockRestore();
     });

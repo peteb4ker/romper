@@ -14,10 +14,10 @@ import type { KitStereoPlan } from "../stereoLinkRules";
 
 // Banks table - contains artist metadata for each bank (A-Z)
 export const banks = sqliteTable("banks", {
-  artist: text("artist"), // Artist name extracted from RTF filename
+  artist: text("artist"), // The bank's name, its only owner; name files are written from it (#567)
   letter: text("letter").primaryKey(), // A, B, C, etc.
-  rtf_filename: text("rtf_filename"), // Original RTF filename for reference
-  scanned_at: integer("scanned_at", { mode: "timestamp" }), // When bank was last scanned
+  rtf_filename: text("rtf_filename"), // The name file written for it: "<L> - <name>.rtf"
+  scanned_at: integer("scanned_at", { mode: "timestamp" }), // When setup imported the name (older stores: the last bank scan)
 });
 
 // Kits table - main table for kit information

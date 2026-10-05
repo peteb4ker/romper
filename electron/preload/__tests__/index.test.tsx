@@ -88,7 +88,6 @@ describe("preload/index.tsx", () => {
         readSettings: expect.any(Function),
         replaceSampleInSlot: expect.any(Function),
         rescanKit: expect.any(Function),
-        scanBanks: expect.any(Function),
         selectExistingLocalStore: expect.any(Function),
         selectLocalStorePath: expect.any(Function),
         selectSdCard: expect.any(Function),
@@ -548,7 +547,6 @@ describe("preload/index.tsx", () => {
       },
       { args: [], ipcChannel: "cancelKitSync", method: "cancelKitSync" },
       { args: [], ipcChannel: "get-all-banks", method: "getAllBanks" },
-      { args: [], ipcChannel: "scan-banks", method: "scanBanks" },
       { args: [], ipcChannel: "get-all-kits", method: "getKits" },
 
       // Methods with single string parameter

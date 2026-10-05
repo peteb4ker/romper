@@ -9,6 +9,7 @@ import fs from "node:fs/promises";
 import type { StoreSnapshot } from "./card";
 import type { ValidationReport } from "./report";
 
+import { parseBankNameFile } from "../../../shared/rampleCardLayout";
 import { listDiff, sameList } from "./card";
 
 const MAX_SLOTS = 12;
@@ -64,9 +65,10 @@ export async function verifyFactoryImport(
     { details: listDiff(store.kits, archiveKits) },
   );
 
+  // Read by the pattern setup reads them with (#567)
   const bankNames = archive.bankFiles.map((f) => {
-    const match = /^([A-Z]) - (.+)\.rtf$/i.exec(f);
-    return match ? `${match[1]}:${match[2]}` : f;
+    const bankName = parseBankNameFile(f);
+    return bankName ? `${bankName.letter}:${bankName.name}` : f;
   });
   const storeBanks = store.banks
     .filter((b) => b.artist)

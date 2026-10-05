@@ -61,6 +61,7 @@ const KitsView: React.FC = () => {
     allKitSamples,
     getKitByName,
     kits,
+    loadKitSamplesOnOpen,
     markKitModified,
     refreshAllKitsAndSamples,
     refreshSingleKitMetadata,
@@ -74,6 +75,7 @@ const KitsView: React.FC = () => {
     isInitialized,
     isLocalStoreReady: setupFlow.isLocalStoreReady,
     localStorePath,
+    onMessage: showMessage,
   });
 
   // Kit navigation
@@ -165,6 +167,14 @@ const KitsView: React.FC = () => {
     reloadCurrentKitSamples,
     selectedKit: navigation.selectedKit,
   });
+
+  // Opening a kit loads its samples if they aren't loaded, or if the last
+  // load failed, so reopening it tries again (#605)
+  useEffect(() => {
+    if (navigation.selectedKit) {
+      void loadKitSamplesOnOpen(navigation.selectedKit);
+    }
+  }, [navigation.selectedKit, loadKitSamplesOnOpen]);
 
   // Lets the sequencer's Undo button undo its own edits
   const { nextUndo, undo } = keyboardShortcuts;

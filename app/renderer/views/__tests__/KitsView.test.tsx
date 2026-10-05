@@ -592,6 +592,79 @@ describe("KitsView", () => {
     });
   });
 
+  // #605: opening a kit loads its samples when they aren't loaded; if they
+  // can't be, the kit shows locked, like a non-editable kit, with a message
+  describe("[UC-07] opening a kit whose samples aren't loaded", () => {
+    const listUnloadedA0 = () =>
+      vi.mocked(window.electronAPI.getKits).mockResolvedValue({
+        data: [
+          createMockKitWithRelations({
+            editable: true,
+            name: "A0",
+            samples: undefined,
+          }),
+        ],
+        success: true,
+      });
+
+    const openA0 = async () => {
+      render(
+        <TestSettingsProvider>
+          <KitsView />
+        </TestSettingsProvider>,
+      );
+      fireEvent.click(await screen.findByText("A0"));
+      await screen.findByText("Back");
+    };
+
+    it("loads them", async () => {
+      listUnloadedA0();
+      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+        data: [
+          createMockSample({
+            filename: "kick.wav",
+            slot_number: 0,
+            voice_number: 1,
+          }),
+        ],
+        success: true,
+      });
+
+      await openA0();
+
+      // The voice panels show the samples the open loaded
+      expect(
+        await within(screen.getByTestId("sample-list-voice-1")).findByRole(
+          "option",
+          { name: /kick\.wav/ },
+        ),
+      ).toBeInTheDocument();
+      expect(screen.getByText("Editable")).toBeInTheDocument();
+      expect(mockShowMessage).not.toHaveBeenCalledWith(
+        expect.stringContaining("Couldn't load"),
+        "error",
+      );
+    });
+
+    it("shows the kit locked and says so when they can't be loaded", async () => {
+      listUnloadedA0();
+      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+        error: "database is locked",
+        success: false,
+      });
+
+      await openA0();
+
+      await waitFor(() => {
+        expect(mockShowMessage).toHaveBeenCalledWith(
+          "Couldn't load the samples for kit A0. Try reopening it.",
+          "error",
+        );
+      });
+      expect(await screen.findByText("Locked")).toBeInTheDocument();
+    });
+  });
+
   describe("Sample data processing", () => {
     it("correctly groups samples by voice", async () => {
       vi.mocked(window.electronAPI.getKits).mockResolvedValue({

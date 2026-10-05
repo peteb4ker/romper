@@ -3,6 +3,7 @@ import type { DbResult, KitWithRelations } from "@romper/shared/db/schema";
 
 import React from "react";
 
+import { favoriteFailedMessage } from "../../../utils/favoriteMessages";
 import { createLogger } from "../../../utils/logger";
 import { useSampleManagement } from "../sample-management/useSampleManagement";
 import { useStepPattern } from "../shared/useStepPattern";
@@ -88,12 +89,7 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   const toggleFavorite = React.useMemo(() => {
     if (!onToggleFavorite || !kitName) return undefined;
     const failed = () =>
-      onMessage?.(
-        isFavorite
-          ? `Couldn't remove kit ${kitName} from favorites. Try again.`
-          : `Couldn't add kit ${kitName} to favorites. Try again.`,
-        "error",
-      );
+      onMessage?.(favoriteFailedMessage(kitName, isFavorite), "error");
     return async () => {
       try {
         const result = await onToggleFavorite(kitName);

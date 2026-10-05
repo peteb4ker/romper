@@ -3,6 +3,11 @@ import type { DbResult, KitWithRelations } from "@romper/shared/db/schema";
 import { compareKitSlots } from "@romper/shared/kitUtilsShared";
 import { useCallback, useMemo, useState } from "react";
 
+import { favoriteFailedMessage } from "../../../utils/favoriteMessages";
+import { createLogger } from "../../../utils/logger";
+
+const log = createLogger("KitFilters");
+
 export interface UseKitFiltersOptions {
   /** Every kit in the library, unfiltered; the filter badges count these */
   allKits?: KitWithRelations[];
@@ -59,25 +64,27 @@ export function useKitFilters({
     [libraryKits],
   );
 
+  // The star on a kit card and ; in the browser. A failure shows the same
+  // message as the kit editor, saying whether the kit was being added to
+  // favorites or removed, read from the kit list before the toggle (#607)
   const handleToggleFavorite = useCallback(
     async (kitName: string) => {
       if (!onToggleFavorite) return;
+      const wasFavorite = Boolean(
+        libraryKits?.find((kit) => kit.name === kitName)?.is_favorite,
+      );
+      const failed = (error: unknown) => {
+        log.warn("Toggling the favorite failed:", error);
+        onMessage?.(favoriteFailedMessage(kitName, wasFavorite), "error");
+      };
       try {
         const result = await onToggleFavorite(kitName);
-        if (!result.success) {
-          onMessage?.(
-            `Failed to toggle favorite: ${result.error || "Unknown error"}`,
-            "error",
-          );
-        }
+        if (!result.success) failed(result.error);
       } catch (error) {
-        onMessage?.(
-          `Failed to toggle favorite: ${error instanceof Error ? error.message : String(error)}`,
-          "error",
-        );
+        failed(error);
       }
     },
-    [onMessage, onToggleFavorite],
+    [libraryKits, onMessage, onToggleFavorite],
   );
 
   const handleToggleFavoritesFilter = useCallback(() => {

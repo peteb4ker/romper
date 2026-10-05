@@ -456,7 +456,7 @@ const SliceStrip: React.FC<SliceStripProps> = (props) => {
 
         <label
           className="flex items-center gap-1 text-text-secondary"
-          title="Kit-wide — like the Rample's SLICER setting. Changing it and back never loses your slices."
+          title="Kit-wide. Changing it and back never loses your slices."
         >
           <span>Slices</span>
           <select

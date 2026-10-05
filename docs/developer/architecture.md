@@ -196,8 +196,10 @@ to skip them (RE-09).
 ## Playback
 
 - **Voices are monophonic (voice choke).** Triggering a sample stops any other
-  sample playing on the same voice (`handlePlay` in `useKitPlayback.ts`).
-  This is Romper's design; the Rample manual doesn't describe a choke, so
+  sample playing on the same voice. `claimVoice` in `voiceChoke.ts` enforces
+  it at the audio layer for every sound; `handlePlay` in `useKitPlayback.ts`
+  also chokes the samples it started, through React state keyed by slot that
+  kit reloads don't reset (RE-13, #497). This is Romper's design; the Rample manual doesn't describe a choke, so
   whether the module does the same is unverified on hardware.
 - Kit samples are loaded over IPC by kit / voice / slot
   (`getSampleAudioBuffer`) and played through an `AudioBufferSourceNode` into

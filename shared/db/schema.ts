@@ -37,7 +37,7 @@ export const kits = sqliteTable("kits", {
   slice_steps: text("slice_steps", { mode: "json" }).$type<
     (null | SliceStep)[][] | null
   >(), // JSON storage for slicer data (4 voices x 16 steps)
-  slicer_division: integer("slicer_division").notNull().default(16), // Kit-wide slice count, like the Rample's SLICER setting
+  slicer_division: integer("slicer_division").notNull().default(16), // Kit-wide slice count; whether the Rample's SLICER is per kit or per voice is unverified (#617)
   step_pattern: text("step_pattern", { mode: "json" }).$type<
     null | number[][]
   >(), // JSON storage for step patterns

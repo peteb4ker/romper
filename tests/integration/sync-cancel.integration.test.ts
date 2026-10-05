@@ -187,4 +187,40 @@ describe("[UC-34] Cancelling a write to the card", () => {
       expect(getKit(dbDir, kit).data?.modified_since_sync).toBe(false);
     }
   });
+
+  // #634: the dialog says "Write Complete" on the completion event, and the
+  // user may take the card out then. The event used to go out before the
+  // card's stale entries were removed, so a card read on it still had them.
+  it("reports the next write complete only once the card mirrors the store", async () => {
+    cancelAfter(2);
+    await syncService.startKitSync(settings, { sdCardPath: card });
+    vi.restoreAllMocks();
+
+    const emit =
+      syncProgressManager.emitCompletionProgress.bind(syncProgressManager);
+    const atCompletion: { card: string[]; written: boolean[] }[] = [];
+    vi.spyOn(syncProgressManager, "emitCompletionProgress").mockImplementation(
+      (syncedFiles, totalFiles) => {
+        atCompletion.push({
+          card: listCard(card),
+          written: KITS.map(
+            (kit) => getKit(dbDir, kit).data?.modified_since_sync === false,
+          ),
+        });
+        emit(syncedFiles, totalFiles);
+      },
+    );
+
+    const result = await syncService.startKitSync(settings, {
+      sdCardPath: card,
+    });
+
+    expect(result.data?.cancelled).toBe(false);
+    expect(atCompletion).toEqual([
+      {
+        card: [...sources.keys(), path.join("_save", "A0.rpl")].sort(),
+        written: KITS.map(() => true),
+      },
+    ]);
+  });
 });

@@ -94,18 +94,19 @@ export const createHTMLAudioElementMock = (
  * Sets up Web Audio API mocks globally
  */
 export const setupAudioMocks = () => {
-  // Mock AudioContext
-  globalThis.AudioContext = vi
-    .fn()
-    .mockImplementation(() => createAudioContextMock());
+  // Mock AudioContext. The implementations are functions, not arrows, so
+  // `new AudioContext()` works; the object they return becomes the instance
+  globalThis.AudioContext = vi.fn().mockImplementation(function () {
+    return createAudioContextMock();
+  });
   (
     globalThis as unknown as { webkitAudioContext: unknown }
   ).webkitAudioContext = globalThis.AudioContext;
 
   // Mock HTMLAudioElement
-  globalThis.Audio = vi
-    .fn()
-    .mockImplementation(() => createHTMLAudioElementMock());
+  globalThis.Audio = vi.fn().mockImplementation(function () {
+    return createHTMLAudioElementMock();
+  });
 
   // Mock MediaDevices for audio input tests
   Object.defineProperty(globalThis.navigator, "mediaDevices", {

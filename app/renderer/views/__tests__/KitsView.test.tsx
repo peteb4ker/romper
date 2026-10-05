@@ -5,17 +5,19 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Set up IntersectionObserver mock before any component imports
 // This prevents race conditions with centralized mocks
-class MockIntersectionObserver {
+class MockIntersectionObserver implements IntersectionObserver {
   disconnect = vi.fn();
   observe = vi.fn();
   root = null;
   rootMargin = "0px";
-  thresholds = [0];
+  takeRecords = vi.fn((): IntersectionObserverEntry[] => []);
+  thresholds: number[] = [0];
   unobserve = vi.fn();
 
   constructor(
@@ -23,19 +25,24 @@ class MockIntersectionObserver {
     options?: IntersectionObserverInit,
   ) {
     this.rootMargin = options?.rootMargin || "0px";
-    this.thresholds = options?.threshold ? [options.threshold] : [0];
+    this.thresholds = options?.threshold ? [options.threshold].flat() : [0];
   }
 }
 
-globalThis.IntersectionObserver = MockIntersectionObserver as unknown;
+globalThis.IntersectionObserver = MockIntersectionObserver;
 if (typeof window !== "undefined") {
-  window.IntersectionObserver = MockIntersectionObserver as unknown;
+  window.IntersectionObserver = MockIntersectionObserver;
 }
 
 import React from "react";
 
+import type { MenuEventHandlers } from "../../components/hooks/shared/useMenuEvents";
+
+import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
+import { createMockSample } from "../../../../tests/factories/sample.factory";
 import { setupAudioMocks } from "../../../../tests/mocks/browser/audio";
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
+import { createMockSettings } from "../../../../tests/mocks/settings";
 import { TestSettingsProvider } from "../../../../tests/providers/TestSettingsProvider";
 import { useDialogState } from "../../components/hooks/shared/useDialogState";
 import { useValidationResults } from "../../components/hooks/shared/useValidationResults";
@@ -52,10 +59,18 @@ const mockHandleScanAllKits = vi.fn();
 // Removed unused search mocks since search is now handled by useKitSearch hook
 
 // Store the menu callbacks globally for testing
-let globalMenuCallbacks: unknown = null;
+let globalMenuCallbacks: MenuEventHandlers | null = null;
+
+/** The handlers KitsView last passed to useMenuEvents. */
+function menuCallbacks(): MenuEventHandlers {
+  if (!globalMenuCallbacks) {
+    throw new Error("useMenuEvents has not been called");
+  }
+  return globalMenuCallbacks;
+}
 
 vi.mock("../../components/hooks/shared/useMenuEvents", () => ({
-  useMenuEvents: vi.fn((callbacks) => {
+  useMenuEvents: vi.fn((callbacks: MenuEventHandlers) => {
     // Store the callbacks for testing access
     globalMenuCallbacks = callbacks;
     // Register menu event listeners
@@ -146,74 +161,74 @@ describe("KitsView", () => {
     vi.spyOn(console, "log").mockImplementation(() => {});
 
     // Refresh the IntersectionObserver mock before each test
-    globalThis.IntersectionObserver = MockIntersectionObserver as unknown;
+    globalThis.IntersectionObserver = MockIntersectionObserver;
     if (typeof window !== "undefined") {
-      window.IntersectionObserver = MockIntersectionObserver as unknown;
+      window.IntersectionObserver = MockIntersectionObserver;
     }
 
     // Mock electronAPI methods using centralized mocks
     // getKits() carries each kit's samples inline — the hook no longer
     // fetches samples kit-by-kit at load time.
     const defaultSamples = [
-      {
+      createMockSample({
         filename: "kick.wav",
         slot_number: 100,
         voice_number: 1,
-      },
-      {
+      }),
+      createMockSample({
         filename: "snare.wav",
         slot_number: 100,
         voice_number: 2,
-      },
+      }),
     ];
     vi.mocked(window.electronAPI.getKits).mockResolvedValue({
       data: [
-        {
+        createMockKitWithRelations({
           alias: null,
           bank_letter: "A",
           editable: false,
           name: "A0",
           samples: defaultSamples,
-        },
-        {
+        }),
+        createMockKitWithRelations({
           alias: null,
           bank_letter: "A",
           editable: false,
           name: "A1",
           samples: defaultSamples,
-        },
-        {
+        }),
+        createMockKitWithRelations({
           alias: null,
           bank_letter: "B",
           editable: false,
           name: "B0",
           samples: defaultSamples,
-        },
+        }),
       ],
       success: true,
     });
     vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
       data: [
-        {
+        createMockSample({
           filename: "kick.wav",
           slot_number: 100,
           voice_number: 1,
-        },
-        {
+        }),
+        createMockSample({
           filename: "snare.wav",
           slot_number: 100,
           voice_number: 2,
-        },
+        }),
       ],
       success: true,
     });
-    vi.mocked(window.electronAPI.closeApp).mockImplementation(() => {});
+    vi.mocked(window.electronAPI.closeApp).mockResolvedValue(undefined);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     cleanup();
-    delete (globalThis as unknown).menuEventCallbacks;
+    globalMenuCallbacks = null;
   });
 
   describe("Component rendering", () => {
@@ -321,7 +336,7 @@ describe("KitsView", () => {
       });
 
       // Trigger the unified scan all callback
-      globalMenuCallbacks.onScanAll();
+      menuCallbacks().onScanAll?.();
 
       // Every kit
       await waitFor(() => {
@@ -347,7 +362,7 @@ describe("KitsView", () => {
         expect(screen.queryAllByText("A1")).toHaveLength(0);
       });
 
-      globalMenuCallbacks.onScanAll();
+      menuCallbacks().onScanAll?.();
 
       await waitFor(() => {
         expect(window.electronAPI.rescanKit).toHaveBeenCalledTimes(3);
@@ -374,7 +389,7 @@ describe("KitsView", () => {
         expect(screen.getByText("Back")).toBeInTheDocument();
       });
 
-      globalMenuCallbacks.onScanAll();
+      menuCallbacks().onScanAll?.();
 
       await waitFor(() => {
         expect(mockShowMessage).toHaveBeenCalledWith(
@@ -392,7 +407,18 @@ describe("KitsView", () => {
         async (kitName: string) =>
           kitName === "A1"
             ? { error: "folder missing", success: false }
-            : { data: { scannedSamples: 0 }, success: true },
+            : {
+                data: {
+                  addedSamples: 0,
+                  locked: false,
+                  metadataUpdated: 0,
+                  missingSamples: [],
+                  scannedSamples: 0,
+                  skippedFiles: [],
+                  updatedVoices: 0,
+                },
+                success: true,
+              },
       );
       render(
         <TestSettingsProvider>
@@ -407,7 +433,7 @@ describe("KitsView", () => {
         expect(screen.getByText("Back")).toBeInTheDocument();
       });
 
-      globalMenuCallbacks.onScanAll();
+      menuCallbacks().onScanAll?.();
 
       await waitFor(() => {
         expect(mockShowMessage).toHaveBeenCalledWith(
@@ -431,7 +457,7 @@ describe("KitsView", () => {
       );
       await screen.findAllByText("A0");
 
-      globalMenuCallbacks.onScanAll();
+      menuCallbacks().onScanAll?.();
 
       expect(await screen.findByTestId("bulk-scan-complete")).toHaveTextContent(
         "All 3 kits scanned",
@@ -457,7 +483,7 @@ describe("KitsView", () => {
       });
 
       // Trigger the unified scan all callback
-      globalMenuCallbacks.onScanAll();
+      menuCallbacks().onScanAll?.();
 
       expect(confirm).toHaveBeenCalledTimes(1);
       expect(window.electronAPI.rescanKit).not.toHaveBeenCalled();
@@ -477,7 +503,7 @@ describe("KitsView", () => {
       });
 
       // Trigger the menu callback directly
-      globalMenuCallbacks.onChangeLocalStoreDirectory();
+      menuCallbacks().onChangeLocalStoreDirectory?.();
 
       await waitFor(() => {
         expect(mockOpenChangeDirectory).toHaveBeenCalled();
@@ -497,27 +523,11 @@ describe("KitsView", () => {
       });
 
       // Trigger the menu callback directly
-      globalMenuCallbacks.onPreferences();
+      menuCallbacks().onPreferences?.();
 
       await waitFor(() => {
         expect(mockOpenPreferences).toHaveBeenCalled();
       });
-    });
-
-    it("handles about menu event", async () => {
-      render(
-        <TestSettingsProvider>
-          <KitsView />
-        </TestSettingsProvider>,
-      );
-
-      // Trigger the menu event
-      window.dispatchEvent(new Event("menu-about"));
-
-      // About menu doesn't have specific business logic yet,
-      // but the event should be handled without errors
-      // In the future, this could test navigation to about page
-      expect(window.dispatchEvent).toBeDefined();
     });
   });
 
@@ -557,7 +567,15 @@ describe("KitsView", () => {
 
     it("handles kits without sample data gracefully", async () => {
       vi.mocked(window.electronAPI.getKits).mockResolvedValue({
-        data: [{ alias: null, bank_letter: "A", editable: false, name: "A0" }],
+        data: [
+          createMockKitWithRelations({
+            alias: null,
+            bank_letter: "A",
+            editable: false,
+            name: "A0",
+            samples: undefined,
+          }),
+        ],
         success: true,
       });
 
@@ -578,34 +596,34 @@ describe("KitsView", () => {
     it("correctly groups samples by voice", async () => {
       vi.mocked(window.electronAPI.getKits).mockResolvedValue({
         data: [
-          {
+          createMockKitWithRelations({
             alias: null,
             bank_letter: "A",
             editable: false,
             name: "A0",
             samples: [
-              {
+              createMockSample({
                 filename: "kick.wav",
-                slot_number: 100,
+                slot_number: 0,
                 voice_number: 1,
-              },
-              {
+              }),
+              createMockSample({
                 filename: "snare.wav",
-                slot_number: 100,
+                slot_number: 0,
                 voice_number: 2,
-              },
-              {
+              }),
+              createMockSample({
                 filename: "hat.wav",
-                slot_number: 200,
+                slot_number: 1,
                 voice_number: 1,
-              },
-              {
+              }),
+              createMockSample({
                 filename: "stereo.wav",
-                slot_number: 100,
+                slot_number: 0,
                 voice_number: 3,
-              },
+              }),
             ],
-          },
+          }),
         ],
         success: true,
       });
@@ -620,6 +638,24 @@ describe("KitsView", () => {
         expect(window.electronAPI.getKits).toHaveBeenCalled();
         expect(screen.getByText("A0")).toBeInTheDocument();
       });
+
+      fireEvent.click(screen.getByText("A0"));
+      const voice = (n: number) =>
+        within(screen.getByTestId(`sample-list-voice-${n}`));
+      expect(
+        await voice(1).findByRole("option", {
+          name: "Sample kick.wav in slot 1",
+        }),
+      ).toBeInTheDocument();
+      expect(
+        voice(1).getByRole("option", { name: "Sample hat.wav in slot 2" }),
+      ).toBeInTheDocument();
+      expect(
+        voice(2).getByRole("option", { name: "Sample snare.wav in slot 1" }),
+      ).toBeInTheDocument();
+      expect(
+        voice(3).getByRole("option", { name: "Sample stereo.wav in slot 1" }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -631,22 +667,14 @@ describe("KitsView", () => {
         </TestSettingsProvider>,
       );
 
-      await waitFor(() => {
-        expect(screen.getByText("A0")).toBeInTheDocument();
-      });
+      fireEvent.click(await screen.findByText("A0"));
+      await screen.findByText("Back");
 
-      // Select A0 first
-      fireEvent.click(screen.getByText("A0"));
+      fireEvent.click(screen.getByTitle("Next Kit: A1"));
 
       await waitFor(() => {
-        expect(screen.getByText("Back")).toBeInTheDocument();
+        expect(screen.getByTestId("kit-header-name")).toHaveTextContent("A1");
       });
-
-      // Find next kit button and click it (mocked in KitEditor)
-      const nextButton = screen.queryByText("Next");
-      if (nextButton) {
-        fireEvent.click(nextButton);
-      }
     });
 
     it("handles previous kit navigation", async () => {
@@ -656,22 +684,14 @@ describe("KitsView", () => {
         </TestSettingsProvider>,
       );
 
-      await waitFor(() => {
-        expect(screen.getByText("A1")).toBeInTheDocument();
-      });
+      fireEvent.click(await screen.findByText("A1"));
+      await screen.findByText("Back");
 
-      // Select A1 first
-      fireEvent.click(screen.getByText("A1"));
+      fireEvent.click(screen.getByTitle("Previous Kit: A0"));
 
       await waitFor(() => {
-        expect(screen.getByText("Back")).toBeInTheDocument();
+        expect(screen.getByTestId("kit-header-name")).toHaveTextContent("A0");
       });
-
-      // Find previous kit button and click it (mocked in KitEditor)
-      const prevButton = screen.queryByText("Previous");
-      if (prevButton) {
-        fireEvent.click(prevButton);
-      }
     });
   });
 
@@ -681,21 +701,14 @@ describe("KitsView", () => {
       const TestSettingsProviderNeedsSetup: React.FC<{
         children: React.ReactNode;
       }> = ({ children }) => {
-        const contextValue = {
-          confirmDestructiveActions: true,
-          isDarkMode: false,
-          isInitialized: true,
+        const contextValue = createMockSettings({
           localStorePath: null,
           localStoreStatus: {
             hasLocalStore: false,
             isValid: false,
             localStorePath: null,
           },
-          setConfirmDestructiveActions: vi.fn(),
-          setLocalStorePath: vi.fn(),
-          setThemeMode: vi.fn(),
-          themeMode: "light" as const,
-        };
+        });
 
         return (
           <SettingsContext.Provider value={contextValue}>
@@ -733,21 +746,14 @@ describe("KitsView", () => {
       const TestSettingsProviderNeedsSetup: React.FC<{
         children: React.ReactNode;
       }> = ({ children }) => {
-        const contextValue = {
-          confirmDestructiveActions: true,
-          isDarkMode: false,
-          isInitialized: true,
+        const contextValue = createMockSettings({
           localStorePath: null,
           localStoreStatus: {
             hasLocalStore: false,
             isValid: false,
             localStorePath: null,
           },
-          setConfirmDestructiveActions: vi.fn(),
-          setLocalStorePath: vi.fn(),
-          setThemeMode: vi.fn(),
-          themeMode: "light" as const,
-        };
+        });
 
         return (
           <SettingsContext.Provider value={contextValue}>
@@ -795,7 +801,7 @@ describe("KitsView", () => {
       });
 
       // Trigger change directory dialog via menu callback
-      globalMenuCallbacks.onChangeLocalStoreDirectory();
+      menuCallbacks().onChangeLocalStoreDirectory?.();
 
       await waitFor(() => {
         expect(mockOpenChangeDirectory).toHaveBeenCalled();
@@ -815,47 +821,11 @@ describe("KitsView", () => {
       });
 
       // Trigger preferences dialog via menu callback
-      globalMenuCallbacks.onPreferences();
+      menuCallbacks().onPreferences?.();
 
       await waitFor(() => {
         expect(mockOpenPreferences).toHaveBeenCalled();
       });
-    });
-  });
-
-  describe("Sample reloading", () => {
-    it("handles sample reload for selected kit", async () => {
-      render(
-        <TestSettingsProvider>
-          <KitsView />
-        </TestSettingsProvider>,
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText("A0")).toBeInTheDocument();
-      });
-
-      // Select a kit
-      fireEvent.click(screen.getByText("A0"));
-
-      await waitFor(() => {
-        expect(screen.getByText("Back")).toBeInTheDocument();
-      });
-
-      // Mock the sample reload call
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-        data: [
-          {
-            filename: "new-kick.wav",
-            slot_number: 100,
-            voice_number: 1,
-          },
-        ],
-        success: true,
-      });
-
-      // Trigger sample reload (this would normally be triggered by KitEditor)
-      // We can't easily test this without exposing the callback, but the function is covered
     });
   });
 
@@ -882,26 +852,33 @@ describe("KitsView", () => {
     });
 
     it("handles single-kit sample reload exceptions", async () => {
-      // The per-kit fetch is only used for single-kit reloads now; a
-      // rejection there must not crash the view
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockRejectedValue(
-        new Error("File not found"),
-      );
-
       render(
         <TestSettingsProvider>
           <KitsView />
         </TestSettingsProvider>,
       );
 
-      await waitFor(() => {
-        expect(window.electronAPI.getKits).toHaveBeenCalled();
-      });
+      fireEvent.click(await screen.findByText("A0"));
+      await screen.findByText("Back");
 
-      // Component should still render without crashing
-      expect(
-        screen.getByRole("button", { name: "Settings" }),
-      ).toBeInTheDocument();
+      // A rejected single-kit reload must not crash the view. The
+      // editor fetched on opening; forget that, so only the reload counts
+      vi.mocked(window.electronAPI.getAllSamplesForKit)
+        .mockClear()
+        .mockRejectedValue(new Error("File not found"));
+      document.dispatchEvent(
+        new CustomEvent("romper:refresh-samples", {
+          detail: { kitName: "A0" },
+        }),
+      );
+
+      await waitFor(() => {
+        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
+          "A0",
+        );
+      });
+      // The editor stays open on the kit
+      expect(screen.getByTestId("kit-header-name")).toHaveTextContent("A0");
     });
   });
 
@@ -913,19 +890,11 @@ describe("KitsView", () => {
         </TestSettingsProvider>,
       );
 
-      await waitFor(() => {
-        expect(screen.getByText("B0")).toBeInTheDocument();
-      });
+      fireEvent.click(await screen.findByText("B0"));
+      await screen.findByText("Back");
 
-      // Select the last kit (B0)
-      fireEvent.click(screen.getByText("B0"));
-
-      await waitFor(() => {
-        expect(screen.getByText("Back")).toBeInTheDocument();
-      });
-
-      // Test navigation beyond boundary - should stay at last kit
-      // This would normally be handled by KitEditor component
+      expect(screen.getByTitle("No next kit")).toBeDisabled();
+      expect(screen.getByTestId("kit-header-name")).toHaveTextContent("B0");
     });
 
     it("handles previous kit navigation at boundary", async () => {
@@ -935,19 +904,11 @@ describe("KitsView", () => {
         </TestSettingsProvider>,
       );
 
-      await waitFor(() => {
-        expect(screen.getByText("A0")).toBeInTheDocument();
-      });
+      fireEvent.click(await screen.findByText("A0"));
+      await screen.findByText("Back");
 
-      // Select the first kit (A0)
-      fireEvent.click(screen.getByText("A0"));
-
-      await waitFor(() => {
-        expect(screen.getByText("Back")).toBeInTheDocument();
-      });
-
-      // Test navigation beyond boundary - should stay at first kit
-      // This would normally be handled by KitEditor component
+      expect(screen.getByTitle("No previous kit")).toBeDisabled();
+      expect(screen.getByTestId("kit-header-name")).toHaveTextContent("A0");
     });
   });
 
@@ -959,37 +920,41 @@ describe("KitsView", () => {
         </TestSettingsProvider>,
       );
 
-      await waitFor(() => {
-        expect(screen.getByText("A0")).toBeInTheDocument();
-      });
+      fireEvent.click(await screen.findByText("A0"));
+      await screen.findByText("Back");
 
-      // Select kit A0
-      fireEvent.click(screen.getByText("A0"));
-
-      await waitFor(() => {
-        expect(screen.getByText("Back")).toBeInTheDocument();
-      });
-
-      // Mock new sample data
       vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
         data: [
-          {
+          createMockSample({
             filename: "new-kick.wav",
-            slot_number: 100,
+            slot_number: 0,
             voice_number: 1,
-          },
-          {
+          }),
+          createMockSample({
             filename: "new-snare.wav",
-            slot_number: 100,
+            slot_number: 0,
             voice_number: 2,
-          },
+          }),
         ],
         success: true,
       });
+      document.dispatchEvent(
+        new CustomEvent("romper:refresh-samples", {
+          detail: { kitName: "A0" },
+        }),
+      );
 
-      // This would normally be triggered by the KitEditor component
-      // But we're testing the reload functionality exists
-      expect(window.electronAPI.getAllSamplesForKit).toBeDefined();
+      expect(
+        await within(screen.getByTestId("sample-list-voice-1")).findByRole(
+          "option",
+          { name: "Sample new-kick.wav in slot 1" },
+        ),
+      ).toBeInTheDocument();
+      expect(
+        within(screen.getByTestId("sample-list-voice-2")).getByRole("option", {
+          name: "Sample new-snare.wav in slot 1",
+        }),
+      ).toBeInTheDocument();
     });
 
     it("handles sample reload error for selected kit", async () => {
@@ -999,95 +964,26 @@ describe("KitsView", () => {
         </TestSettingsProvider>,
       );
 
-      await waitFor(() => {
-        expect(screen.getByText("A0")).toBeInTheDocument();
-      });
+      fireEvent.click(await screen.findByText("A0"));
+      await screen.findByText("Back");
 
-      // Select kit A0
-      fireEvent.click(screen.getByText("A0"));
-
-      await waitFor(() => {
-        expect(screen.getByText("Back")).toBeInTheDocument();
-      });
-
-      // Mock sample reload failure
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-        error: "Sample reload failed",
-        success: false,
-      });
-
-      // The component should handle reload errors gracefully
-      expect(console.warn).toBeDefined();
-    });
-  });
-
-  describe("Back navigation with refresh", () => {
-    it("handles back navigation with refresh parameter", async () => {
-      render(
-        <TestSettingsProvider>
-          <KitsView />
-        </TestSettingsProvider>,
+      // Forget the fetch the editor made on opening, so only the reload counts
+      vi.mocked(window.electronAPI.getAllSamplesForKit)
+        .mockClear()
+        .mockResolvedValue({ error: "Sample reload failed", success: false });
+      document.dispatchEvent(
+        new CustomEvent("romper:refresh-samples", {
+          detail: { kitName: "A0" },
+        }),
       );
 
       await waitFor(() => {
-        expect(screen.getByText("A0")).toBeInTheDocument();
+        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
+          "A0",
+        );
       });
-
-      // Select kit A0
-      fireEvent.click(screen.getByText("A0"));
-
-      await waitFor(() => {
-        expect(screen.getByText("Back")).toBeInTheDocument();
-      });
-
-      // Mock successful refresh data
-      vi.mocked(window.electronAPI.getKits).mockResolvedValue({
-        data: [
-          {
-            alias: "Updated Kit",
-            bank_letter: "A",
-            editable: true,
-            name: "A0",
-          },
-          { alias: null, bank_letter: "A", editable: false, name: "A1" },
-        ],
-        success: true,
-      });
-
-      // This would normally be triggered by KitEditor with refresh parameter
-      // We're testing that the refresh functionality exists
-      expect(window.electronAPI.getKits).toBeDefined();
-    });
-
-    it("handles back navigation with scroll to kit", async () => {
-      render(
-        <TestSettingsProvider>
-          <KitsView />
-        </TestSettingsProvider>,
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText("A1")).toBeInTheDocument();
-      });
-
-      // Select kit A1
-      fireEvent.click(screen.getByText("A1"));
-
-      await waitFor(() => {
-        expect(screen.getByText("Back")).toBeInTheDocument();
-      });
-
-      // Create a mock DOM element for scrolling test
-      const mockKitElement = document.createElement("div");
-      mockKitElement.setAttribute("data-kit", "A1");
-      mockKitElement.scrollIntoView = vi.fn();
-      document.body.appendChild(mockKitElement);
-
-      // Click back - this would normally trigger scroll to kit functionality
-      fireEvent.click(screen.getByText("Back"));
-
-      // Cleanup
-      document.body.removeChild(mockKitElement);
+      // The editor stays open on the kit
+      expect(screen.getByTestId("kit-header-name")).toHaveTextContent("A0");
     });
   });
 
@@ -1099,10 +995,7 @@ describe("KitsView", () => {
       const TestSettingsProviderWithMock: React.FC<{
         children: React.ReactNode;
       }> = ({ children }) => {
-        const contextValue = {
-          confirmDestructiveActions: true,
-          isDarkMode: false,
-          isInitialized: true,
+        const contextValue = createMockSettings({
           localStorePath: null,
           localStoreStatus: {
             hasLocalStore: false,
@@ -1110,11 +1003,7 @@ describe("KitsView", () => {
             localStorePath: null,
           },
           refreshLocalStoreStatus: mockRefreshLocalStoreStatus,
-          setConfirmDestructiveActions: vi.fn(),
-          setLocalStorePath: vi.fn(),
-          setThemeMode: vi.fn(),
-          themeMode: "light" as const,
-        };
+        });
 
         return (
           <SettingsContext.Provider value={contextValue}>
@@ -1150,49 +1039,49 @@ describe("KitsView", () => {
       // Each kit's samples ride along on getKits()
       vi.mocked(window.electronAPI.getKits).mockResolvedValue({
         data: [
-          {
+          createMockKitWithRelations({
             alias: null,
             bank_letter: "A",
             editable: false,
             name: "A0",
             samples: [
-              {
+              createMockSample({
                 filename: "kick.wav",
-                slot_number: 100,
+                slot_number: 0,
                 voice_number: 1,
-              },
-              {
+              }),
+              createMockSample({
                 filename: "snare.wav",
-                slot_number: 200,
+                slot_number: 1,
                 voice_number: 1,
-              },
-              {
+              }),
+              createMockSample({
                 filename: "hat.wav",
-                slot_number: 100,
+                slot_number: 0,
                 voice_number: 2,
-              },
+              }),
             ],
-          },
-          {
+          }),
+          createMockKitWithRelations({
             alias: null,
             bank_letter: "A",
             editable: false,
             name: "A1",
             samples: [
-              {
+              createMockSample({
                 filename: "bass.wav",
-                slot_number: 100,
+                slot_number: 0,
                 voice_number: 1,
-              },
+              }),
             ],
-          },
-          {
+          }),
+          createMockKitWithRelations({
             alias: null,
             bank_letter: "B",
             editable: false,
             name: "B0",
             samples: [],
-          },
+          }),
         ],
         success: true,
       });
@@ -1209,49 +1098,19 @@ describe("KitsView", () => {
         expect(screen.getByText("A0")).toBeInTheDocument();
       });
 
-      // Component should have processed sample counts
-      // The actual counts would be used by KitBrowser for display
-    });
-  });
-
-  describe("Kit data refresh on back navigation", () => {
-    it("handles kit data refresh failure during back navigation", async () => {
-      render(
-        <TestSettingsProvider>
-          <KitsView />
-        </TestSettingsProvider>,
+      // The kit cards show each kit's total and per-voice counts
+      expect(screen.getByTestId("kit-item-A0")).toHaveAccessibleName(
+        "Kit A0 - 3 samples",
       );
-
-      await waitFor(() => {
-        expect(screen.getByText("A0")).toBeInTheDocument();
-      });
-
-      // Select kit A0
-      fireEvent.click(screen.getByText("A0"));
-
-      await waitFor(() => {
-        expect(screen.getByText("Back")).toBeInTheDocument();
-      });
-
-      // Mock kit refresh failure
-      vi.mocked(window.electronAPI.getKits).mockResolvedValue({
-        error: "Database connection lost",
-        success: false,
-      });
-
-      // Clear HMR state to prevent it from restoring the selected kit after back navigation
-      sessionStorage.removeItem("hmr_selected_kit");
-
-      // Back navigation with refresh should handle errors gracefully
-      fireEvent.click(screen.getByText("Back"));
-
-      // Component should not crash and should show empty state
-      await waitFor(() => {
-        // The component should handle the error gracefully by updating state
-        expect(
-          screen.getByRole("button", { name: "Settings" }),
-        ).toBeInTheDocument();
-      });
+      expect(screen.getByTestId("kit-item-A1")).toHaveAccessibleName(
+        "Kit A1 - 1 samples",
+      );
+      expect(screen.getByTestId("kit-item-B0")).toHaveAccessibleName(
+        "Kit B0 - 0 samples",
+      );
+      const a0 = within(screen.getByTestId("kit-item-A0"));
+      expect(a0.getByTitle("Voice 1: 2 samples")).toBeInTheDocument();
+      expect(a0.getByTitle("Voice 2: 1 samples")).toBeInTheDocument();
     });
   });
 
@@ -1260,9 +1119,7 @@ describe("KitsView", () => {
       const TestSettingsProviderNotInitialized: React.FC<{
         children: React.ReactNode;
       }> = ({ children }) => {
-        const contextValue = {
-          confirmDestructiveActions: true,
-          isDarkMode: false,
+        const contextValue = createMockSettings({
           isInitialized: false, // Not initialized
           localStorePath: "/mock/path",
           localStoreStatus: {
@@ -1270,11 +1127,7 @@ describe("KitsView", () => {
             isValid: true,
             localStorePath: "/mock/path",
           },
-          setConfirmDestructiveActions: vi.fn(),
-          setLocalStorePath: vi.fn(),
-          setThemeMode: vi.fn(),
-          themeMode: "light" as const,
-        };
+        });
 
         return (
           <SettingsContext.Provider value={contextValue}>
@@ -1297,21 +1150,14 @@ describe("KitsView", () => {
       const TestSettingsProviderNoPath: React.FC<{
         children: React.ReactNode;
       }> = ({ children }) => {
-        const contextValue = {
-          confirmDestructiveActions: true,
-          isDarkMode: false,
-          isInitialized: true,
+        const contextValue = createMockSettings({
           localStorePath: null, // No path
           localStoreStatus: {
             hasLocalStore: false,
             isValid: false,
             localStorePath: null,
           },
-          setConfirmDestructiveActions: vi.fn(),
-          setLocalStorePath: vi.fn(),
-          setThemeMode: vi.fn(),
-          themeMode: "light" as const,
-        };
+        });
 
         return (
           <SettingsContext.Provider value={contextValue}>
@@ -1367,20 +1213,34 @@ describe("KitsView", () => {
 
       // Search functionality should be working
       expect(searchInput).toHaveValue("A0");
+      await waitFor(() => {
+        expect(screen.queryByTestId("kit-item-A1")).not.toBeInTheDocument();
+      });
+      expect(screen.getByTestId("kit-item-A0")).toBeInTheDocument();
     });
 
     it("shows search results when filtering", async () => {
       // Mock kits with different names for search testing
       vi.mocked(window.electronAPI.getKits).mockResolvedValue({
         data: [
-          { alias: "Drum Kit", bank_letter: "A", editable: false, name: "A0" },
-          { alias: "Bass Kit", bank_letter: "A", editable: false, name: "A1" },
-          {
+          createMockKitWithRelations({
+            alias: "Drum Kit",
+            bank_letter: "A",
+            editable: false,
+            name: "A0",
+          }),
+          createMockKitWithRelations({
+            alias: "Bass Kit",
+            bank_letter: "A",
+            editable: false,
+            name: "A1",
+          }),
+          createMockKitWithRelations({
             alias: "Melody Kit",
             bank_letter: "B",
             editable: false,
             name: "B0",
-          },
+          }),
         ],
         success: true,
       });
@@ -1400,11 +1260,14 @@ describe("KitsView", () => {
       // Search for "drum" - should match A0's alias
       fireEvent.change(searchInput, { target: { value: "drum" } });
 
-      // The useKitSearch hook should filter the kits
-      // Results depend on the search implementation
       await waitFor(() => {
         expect(searchInput).toHaveValue("drum");
       });
+      await waitFor(() => {
+        expect(screen.queryByTestId("kit-item-A1")).not.toBeInTheDocument();
+      });
+      expect(screen.queryByTestId("kit-item-B0")).not.toBeInTheDocument();
+      expect(screen.getByTestId("kit-item-A0")).toBeInTheDocument();
     });
 
     it("clears search results", async () => {
@@ -1420,46 +1283,22 @@ describe("KitsView", () => {
 
       const searchInput = screen.getByPlaceholderText(/search/i);
 
-      // Type search query
-      fireEvent.change(searchInput, { target: { value: "test" } });
-      expect(searchInput).toHaveValue("test");
+      // Type a query that filters out A1 (every kit's bank artist matches
+      // "test", so that query filtered nothing)
+      fireEvent.change(searchInput, { target: { value: "A0" } });
+      expect(searchInput).toHaveValue("A0");
+      await waitFor(() => {
+        expect(screen.queryByTestId("kit-item-A1")).not.toBeInTheDocument();
+      });
 
-      // Clear search (look for clear button or clear the input)
-      const clearButton =
-        screen.queryByText("Clear") || screen.queryByTitle(/clear/i);
-      if (clearButton) {
-        fireEvent.click(clearButton);
-      } else {
-        // Alternative: clear by setting empty value
-        fireEvent.change(searchInput, { target: { value: "" } });
-      }
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Clear search" }),
+      );
 
       await waitFor(() => {
         expect(searchInput).toHaveValue("");
       });
-    });
-
-    it("shows search result count", async () => {
-      render(
-        <TestSettingsProvider>
-          <KitsView />
-        </TestSettingsProvider>,
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText("A0")).toBeInTheDocument();
-      });
-
-      const searchInput = screen.getByPlaceholderText(/search/i);
-
-      // Search for something that should return results
-      fireEvent.change(searchInput, { target: { value: "A0" } });
-
-      // Look for search result indicators
-      // This depends on how the UI displays search results
-      await waitFor(() => {
-        expect(searchInput).toHaveValue("A0");
-      });
+      expect(await screen.findByTestId("kit-item-A1")).toBeInTheDocument();
     });
 
     it("handles search with no results", async () => {
@@ -1482,8 +1321,10 @@ describe("KitsView", () => {
         expect(searchInput).toHaveValue("xyz123nonexistent");
       });
 
-      // Should handle no results gracefully
-      // The exact behavior depends on the UI implementation
+      // No kit card matches
+      await waitFor(() => {
+        expect(screen.queryAllByTestId(/^kit-item-/)).toHaveLength(0);
+      });
     });
   });
 
@@ -1492,27 +1333,27 @@ describe("KitsView", () => {
       // Mock some kits with favorites
       vi.mocked(window.electronAPI.getKits).mockResolvedValue({
         data: [
-          {
+          createMockKitWithRelations({
             alias: null,
             bank_letter: "A",
             editable: false,
             is_favorite: true,
             name: "A0",
-          },
-          {
+          }),
+          createMockKitWithRelations({
             alias: null,
             bank_letter: "A",
             editable: false,
             is_favorite: false,
             name: "A1",
-          },
-          {
+          }),
+          createMockKitWithRelations({
             alias: null,
             bank_letter: "B",
             editable: false,
             is_favorite: true,
             name: "B0",
-          },
+          }),
         ],
         success: true,
       });
@@ -1527,46 +1368,43 @@ describe("KitsView", () => {
         expect(screen.getByText("A0")).toBeInTheDocument();
       });
 
-      // Look for favorites filter button
-      const favoritesFilter =
-        screen.queryByText(/favorites/i) || screen.queryByText("★");
-      if (favoritesFilter) {
-        fireEvent.click(favoritesFilter);
-      }
+      fireEvent.click(
+        screen.getByRole("button", { name: "Show only favorite kits" }),
+      );
 
-      // The favorites filter should work with search results
-      // This tests the integration between useKitFilters and useKitSearch
+      // A1 is the only kit the filter leaves out
       await waitFor(() => {
-        // Should still show kits (favorites are filtered from search results)
-        expect(screen.getByTestId("kits-view")).toBeInTheDocument();
+        expect(screen.queryByTestId("kit-item-A1")).not.toBeInTheDocument();
       });
+      expect(screen.getByTestId("kit-item-A0")).toBeInTheDocument();
+      expect(screen.getByTestId("kit-item-B0")).toBeInTheDocument();
     });
 
     it("shows modified kits filter with search", async () => {
       // Mock some kits with modified state
       vi.mocked(window.electronAPI.getKits).mockResolvedValue({
         data: [
-          {
+          createMockKitWithRelations({
             alias: null,
             bank_letter: "A",
             editable: true,
             modified_since_sync: true,
             name: "A0",
-          },
-          {
+          }),
+          createMockKitWithRelations({
             alias: null,
             bank_letter: "A",
             editable: false,
             modified_since_sync: false,
             name: "A1",
-          },
-          {
+          }),
+          createMockKitWithRelations({
             alias: null,
             bank_letter: "B",
             editable: true,
             modified_since_sync: true,
             name: "B0",
-          },
+          }),
         ],
         success: true,
       });
@@ -1581,16 +1419,16 @@ describe("KitsView", () => {
         expect(screen.getByText("A0")).toBeInTheDocument();
       });
 
-      // Look for modified filter
-      const modifiedFilter = screen.queryByText(/modified/i);
-      if (modifiedFilter) {
-        fireEvent.click(modifiedFilter);
-      }
+      fireEvent.click(
+        screen.getByRole("button", { name: "Show only modified kits" }),
+      );
 
-      // Should apply modified filter to search results
+      // A1 is the only kit the filter leaves out
       await waitFor(() => {
-        expect(screen.getByTestId("kits-view")).toBeInTheDocument();
+        expect(screen.queryByTestId("kit-item-A1")).not.toBeInTheDocument();
       });
+      expect(screen.getByTestId("kit-item-A0")).toBeInTheDocument();
+      expect(screen.getByTestId("kit-item-B0")).toBeInTheDocument();
     });
   });
 
@@ -1599,27 +1437,15 @@ describe("KitsView", () => {
       const TestSettingsProviderOverride: React.FC<{
         children: React.ReactNode;
       }> = ({ children }) => {
-        const contextValue = {
-          clearError: vi.fn(),
-          confirmDestructiveActions: true,
-          error: null,
-          isDarkMode: false,
-          isInitialized: true,
-          isLoading: false,
+        const contextValue = createMockSettings({
           localStorePath: "/env/store",
           localStoreStatus: {
-            error: null,
             hasLocalStore: true,
             isEnvironmentOverride: true,
             isValid: true,
             localStorePath: "/env/store",
           },
-          refreshLocalStoreStatus: vi.fn(),
-          setConfirmDestructiveActions: vi.fn(),
-          setLocalStorePath: vi.fn(),
-          setThemeMode: vi.fn(),
-          themeMode: "light" as const,
-        };
+        });
 
         return (
           <SettingsContext.Provider value={contextValue}>
@@ -1643,13 +1469,7 @@ describe("KitsView", () => {
       const TestSettingsProviderCriticalError: React.FC<{
         children: React.ReactNode;
       }> = ({ children }) => {
-        const contextValue = {
-          clearError: vi.fn(),
-          confirmDestructiveActions: true,
-          error: null,
-          isDarkMode: false,
-          isInitialized: true,
-          isLoading: false,
+        const contextValue = createMockSettings({
           localStorePath: "/invalid/path",
           localStoreStatus: {
             error: "Path does not exist",
@@ -1658,12 +1478,7 @@ describe("KitsView", () => {
             isValid: false,
             localStorePath: "/invalid/path",
           },
-          refreshLocalStoreStatus: vi.fn(),
-          setConfirmDestructiveActions: vi.fn(),
-          setLocalStorePath: vi.fn(),
-          setThemeMode: vi.fn(),
-          themeMode: "light" as const,
-        };
+        });
 
         return (
           <SettingsContext.Provider value={contextValue}>
@@ -1692,13 +1507,7 @@ describe("KitsView", () => {
       const TestSettingsProviderInvalidStore: React.FC<{
         children: React.ReactNode;
       }> = ({ children }) => {
-        const contextValue = {
-          clearError: vi.fn(),
-          confirmDestructiveActions: true,
-          error: null,
-          isDarkMode: false,
-          isInitialized: true,
-          isLoading: false,
+        const contextValue = createMockSettings({
           localStorePath: "/invalid/store",
           localStoreStatus: {
             error: "Invalid local store configuration",
@@ -1706,12 +1515,7 @@ describe("KitsView", () => {
             isValid: false,
             localStorePath: "/invalid/store",
           },
-          refreshLocalStoreStatus: vi.fn(),
-          setConfirmDestructiveActions: vi.fn(),
-          setLocalStorePath: vi.fn(),
-          setThemeMode: vi.fn(),
-          themeMode: "light" as const,
-        };
+        });
 
         return (
           <SettingsContext.Provider value={contextValue}>
@@ -1751,14 +1555,16 @@ describe("KitsView", () => {
         expect(screen.getByText("Back")).toBeInTheDocument();
       });
 
-      // Mock new sample data for reload
+      // Mock new sample data for reload. Opening the editor already fetched
+      // the kit's samples, so clear that call
+      vi.mocked(window.electronAPI.getAllSamplesForKit).mockClear();
       vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
         data: [
-          {
+          createMockSample({
             filename: "refreshed-sample.wav",
             slot_number: 100,
             voice_number: 1,
-          },
+          }),
         ],
         success: true,
       });
@@ -1842,7 +1648,7 @@ describe("KitsView", () => {
 
       // Cleanup
       sessionStorage.removeItem("hmr_selected_kit");
-      delete (import.meta as unknown).hot;
+      Reflect.deleteProperty(import.meta, "hot");
     });
   });
 });

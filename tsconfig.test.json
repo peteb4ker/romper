@@ -17,6 +17,7 @@
     "app/renderer/components/shared/__tests__/**/*",
     "app/renderer/components/utils/__tests__/**/*",
     "app/renderer/utils/__tests__/**/*",
+    "app/renderer/views/__tests__/**/*",
     "electron/main/**/__tests__/**/*",
     "electron/preload/__tests__/**/*",
     "electron/types/*.d.ts",

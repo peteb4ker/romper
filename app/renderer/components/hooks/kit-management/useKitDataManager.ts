@@ -10,6 +10,7 @@ import React, {
   useState,
 } from "react";
 
+import { samplesFailedMessage } from "../../../utils/kitLoadMessages";
 import { groupDbSamplesByVoice } from "../../../utils/sampleGroupingUtils";
 
 interface UseKitDataManagerProps {
@@ -50,10 +51,6 @@ interface UseKitDataManagerReturn {
 }
 
 const NO_KITS: ReadonlySet<string> = new Set();
-
-// Approved by Pete on #605
-const samplesFailedMessage = (kitName: string) =>
-  `Couldn't load the samples for kit ${kitName}. Try reopening it.`;
 
 /**
  * Custom hook for managing kit and sample data loading

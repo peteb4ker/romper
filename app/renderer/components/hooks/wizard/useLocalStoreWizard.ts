@@ -176,6 +176,34 @@ export function useLocalStoreWizard(
     }
   }, [state.source, state.sdCardSourcePath, state.targetPath, fileOpsHook]);
 
+  // Setup failed or was cancelled: say why (unless cancelled) and remove
+  // what this run wrote (kit folders it extracted or copied), moving its
+  // database aside, so a retry starts fresh. Main only acts on what this
+  // setup created (RE-10, RE-66).
+  const handleSetupFailure = useCallback(
+    async (e: unknown, writingStarted: boolean) => {
+      const cancelled =
+        e instanceof SetupCancelledError || cancelRequested.current;
+      const errorMessage = e instanceof Error ? e.message : "Unknown error";
+      if (cancelled) {
+        log.debug("initialize cancelled");
+      } else {
+        log.error("initialize error:", e);
+        stateHook.setError(normalizeErrorMessage(errorMessage));
+      }
+      if (writingStarted && state.targetPath) {
+        await cleanUpPartialStore(api, state.targetPath);
+      }
+      if (state.source === "sdcard") {
+        stateHook.setWizardState({ source: null });
+      }
+      return cancelled
+        ? { cancelled: true, success: false as const }
+        : { error: errorMessage, success: false as const };
+    },
+    [api, state.source, state.targetPath, stateHook],
+  );
+
   const runSetup = useCallback(async () => {
     log.debug("initialize starting");
     stateHook.setIsInitializing(true);
@@ -217,38 +245,7 @@ export function useLocalStoreWizard(
         truncationWarnings: truncationWarnings ?? [],
       });
     } catch (e: unknown) {
-      const cancelled =
-        e instanceof SetupCancelledError || cancelRequested.current;
-      const errorMessage = e instanceof Error ? e.message : "Unknown error";
-      if (cancelled) {
-        log.debug("initialize cancelled");
-      } else {
-        log.error("initialize error:", e);
-        stateHook.setError(normalizeErrorMessage(errorMessage));
-      }
-
-      // Remove what this run wrote (kit folders it extracted or copied) and
-      // move its database aside, so a retry starts fresh. Main only acts on
-      // what this setup created (RE-10, RE-66).
-      if (writingStarted && state.targetPath && api.cleanupPartialInit) {
-        try {
-          const cleanup = await api.cleanupPartialInit(state.targetPath);
-          if (cleanup.removed) {
-            log.debug("Cleaned up the partial local store");
-          } else {
-            log.debug("Partial local store not cleaned up:", cleanup.error);
-          }
-        } catch {
-          // Cleanup is best-effort; don't mask the original error
-        }
-      }
-
-      if (state.source === "sdcard") {
-        stateHook.setWizardState({ source: null });
-      }
-      return cancelled
-        ? { cancelled: true, success: false as const }
-        : { error: errorMessage, success: false as const };
+      return await handleSetupFailure(e, writingStarted);
     } finally {
       stateHook.setIsInitializing(false);
       stateHook.setProgress(null);
@@ -259,6 +256,7 @@ export function useLocalStoreWizard(
     fileOpsHook,
     stateHook,
     saveFinishedStore,
+    handleSetupFailure,
     processSource,
     throwIfCancelled,
   ]);
@@ -348,6 +346,21 @@ export function useLocalStoreWizard(
       fileOpsHook.validateSdCardFolder,
     ],
   );
+}
+
+/** Best-effort: a cleanup failure never masks the setup's own error */
+async function cleanUpPartialStore(api: ElectronAPI, targetPath: string) {
+  if (!api.cleanupPartialInit) return;
+  try {
+    const cleanup = await api.cleanupPartialInit(targetPath);
+    if (cleanup.removed) {
+      log.debug("Cleaned up the partial local store");
+    } else {
+      log.debug("Partial local store not cleaned up:", cleanup.error);
+    }
+  } catch {
+    // Cleanup is best-effort; don't mask the original error
+  }
 }
 
 function useElectronAPI(): ElectronAPI {

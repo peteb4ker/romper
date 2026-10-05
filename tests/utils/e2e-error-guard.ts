@@ -68,6 +68,8 @@ export const test = base.extend<ErrorGuardFixtures>({
         return app;
       };
       try {
+        // Playwright's fixture callback, not React's use() hook
+        // eslint-disable-next-line react-hooks/rules-of-hooks
         await use();
       } finally {
         _electron.launch = launch;

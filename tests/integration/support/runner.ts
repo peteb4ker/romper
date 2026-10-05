@@ -11,11 +11,11 @@
 // closed by the time a test's own cleanup deletes files.
 import type { RunnerTestCase } from "vitest";
 
-import { VitestTestRunner } from "vitest/runners";
+import { TestRunner } from "vitest";
 
 import { closeRegisteredDbConnections } from "./dbConnectionCloser.js";
 
-export default class IntegrationTestRunner extends VitestTestRunner {
+export default class IntegrationTestRunner extends TestRunner {
   onTaskFinished(_test: RunnerTestCase): void {
     closeRegisteredDbConnections();
   }

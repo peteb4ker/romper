@@ -126,7 +126,7 @@ afterEach(() => {
 
 // Orchestration tests for the thin index.ts shell.
 // Pure logic tests (settings, validation, window state) are in mainProcessSetup.test.ts.
-describe.sequential("main/index.ts", () => {
+describe("main/index.ts", () => {
   describe("ROMPER_HEADLESS", () => {
     const originalPlatform = process.platform;
 

@@ -37,7 +37,7 @@ Central table for kit configurations and sequencer state.
 | locked | BOOLEAN | NOT NULL, default false | Protection against accidental edits. Scan leaves a locked kit alone and delete refuses it, but nothing in the UI sets this yet |
 | modified_since_sync | BOOLEAN | NOT NULL, default false | Tracks changes since last SD card sync |
 | slice_steps | TEXT (JSON) | nullable | Sequencer slicer: 4 voices x 16 steps of `{ start, length, random, locked }` in ticks of 384 per sample (null = sequential default) |
-| slicer_division | INTEGER | NOT NULL, default 16 | Kit-wide slice count (8, 12, 16, 24, 32, 48, 64, 128), like the Rample's SLICER setting |
+| slicer_division | INTEGER | NOT NULL, default 16 | Kit-wide slice count (8, 12, 16, 24, 32, 48, 64, 128); whether the Rample's SLICER is per kit or per voice is unverified (#617) |
 | step_pattern | TEXT (JSON) | nullable | 4 voices x 16 steps pattern grid |
 | trigger_conditions | TEXT (JSON) | nullable | A:B trigger conditions per step |
 

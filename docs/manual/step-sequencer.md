@@ -85,7 +85,7 @@ The slicer plays **parts of a long sample** from each step -- a drum break, a vo
 
 On a slice row, clicking a lit step **selects** it; clicking the selected step again turns it off. The scroll wheel over a step moves it to the previous or next slice (Shift + scroll changes its length), and right-clicking a step lets you type a slice number, change the length, make it random, or lock it.
 
-**Slices** sets how many equal parts the sample is cut into: /8, /12, /16, /24, /32, /48, /64 or /128, like the Rample's **SLICER** setting. It applies to the whole kit. Changing it never loses anything -- switch back and your slices are exactly where they were -- so trying another division is a quick way to find something new.
+**Slices** sets how many equal parts the sample is cut into: /8, /12, /16, /24, /32, /48, /64 or /128. It applies to the whole kit. Changing it never loses anything -- switch back and your slices are exactly where they were -- so trying another division is a quick way to find something new.
 
 ### Happy accidents
 

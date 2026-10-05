@@ -117,7 +117,7 @@ plays, and slice data adds _what_ it plays.
 | D2  | "Control on one channel at a time"           | **Edit one voice at a time.** Any voice can be in slice mode, but the slice editor shows one voice at a time.                                                                                           |
 | D3  | Editing UX                                   | **Waveform strip plus steps.** A sliced waveform strip appears above the grid. Select a step, then click or drag slices on the waveform. Steps show their slice number, and the scroll wheel nudges it. |
 | D4  | Randomization                                | All four: a **re-roll button**, **live random per trigger**, **randomized length**, and **locks plus amount**.                                                                                          |
-| D5  | Division scope                               | **Per kit**, like the Rample's single global SLICER setting.                                                                                                                                            |
+| D5  | Division scope                               | **Per kit.** Whether the Rample's SLICER is per kit or per voice is unverified (#617).                                                                                                                  |
 | D6  | Division options                             | **/8, /12, /16, /24, /32, /48, /64, /128.** No EXP.                                                                                                                                                     |
 | D7  | Default mapping when slice mode is turned on | **Sequential**: step _n_ plays slice _n_, wrapping round.                                                                                                                                               |
 | D8  | Default playback                             | **One slice long, with a monophonic choke** and a short anti-click fade.                                                                                                                                |
@@ -219,8 +219,8 @@ voice at a time, called the **editing voice**.
 - **Voice and sample**: the voice label and the file name of the slot
   being shown.
 - **Division**: a dropdown with `/8 /12 /16 /24 /32 /48 /64 /128`.
-  - Its tooltip reads _"Kit-wide — like the Rample's SLICER setting"_
-    (D5).
+  - Its tooltip reads _"Kit-wide. Changing it and back never loses your
+    slices."_ (D5).
   - Changing it re-divides every slice row in the kit. Nothing stored is
     lost (see [Data Model](#data-model)).
 - **🎲 Roll**: re-rolls the editing voice. See

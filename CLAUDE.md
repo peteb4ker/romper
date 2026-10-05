@@ -195,10 +195,8 @@ Hooks in `.claude/hooks/` and `.husky/` enforce the first two.
 - **Voices are monophonic (voice choke).** Triggering a sample stops whatever
   else is playing on that voice. This is Romper's design; the manual
   doesn't describe a choke, so whether the Rample does it is unverified on
-  hardware. `claimVoice` in `voiceChoke.ts` enforces it
-  at the audio layer for every sound (sequencer, previews, slicer
-  auditions); `handlePlay` in `useKitPlayback.ts` also chokes through React
-  state, which kit refreshes reset (RE-13).
+  hardware. `claimVoice` in `voiceChoke.ts` enforces it at the audio layer
+  for every sound (sequencer, previews, slicer auditions).
 - **Stereo is a voice setting, not a sample property.** This is Romper's
   design, chosen to stop phantom samples, not Rample behaviour. The manual
   says only "A stereo sample will fill 2 mono voices." and "All layers
@@ -234,6 +232,9 @@ Hooks in `.claude/hooks/` and `.husky/` enforce the first two.
 - [`docs/developer/coding-guide.md`](docs/developer/coding-guide.md) --
   TypeScript, component, and test conventions
 - [`docs/developer/romper-db.md`](docs/developer/romper-db.md) -- schema
+- [`docs/developer/domain-model.md`](docs/developer/domain-model.md) -- one
+  owner per concept (kit, voice, sample, bank, store), with links to the
+  Rample manual and the use cases
 - [`docs/developer/product-requirements.md`](docs/developer/product-requirements.md)
   -- users, journeys, and product requirements
 - [`docs/developer/use-cases.md`](docs/developer/use-cases.md) -- the use

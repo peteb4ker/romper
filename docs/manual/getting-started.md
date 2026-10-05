@@ -18,8 +18,10 @@ This guide walks you through installing Romper, setting up your local store, and
 Download the latest release for your operating system from the [Releases page](https://github.com/peteb4ker/romper/releases):
 
 - **macOS** (Apple silicon) -- `Romper.dmg` (drag to Applications)
-- **Windows** -- `Romper-x.x.x.Setup.exe` (run the installer)
-- **Linux** -- `romper_x.x.x_amd64.deb` (Debian, Ubuntu) or `romper-x.x.x-1.x86_64.rpm` (Fedora, openSUSE), or the `Romper-linux-x64-x.x.x.zip` archive
+- **Windows** (x64) -- `Romper-x.x.x.Setup.exe` (run the installer)
+- **Linux** (x64) -- `romper_x.x.x_amd64.deb` (Debian, Ubuntu) or `romper-x.x.x-1.x86_64.rpm` (Fedora, openSUSE), or the `Romper-linux-x64-x.x.x.zip` archive
+
+The macOS build runs on Apple silicon (arm64) Macs only, and the Windows and Linux builds on x64 only. There's no build for Intel Macs or for ARM Windows and Linux.
 
 Romper requires no additional dependencies and works offline. It goes online only to download the factory samples, if you choose to, and on macOS to check for updates.
 

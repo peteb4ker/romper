@@ -101,9 +101,10 @@ The sequencer is a preview: it isn't written to the SD card. See the [Step Seque
    - **macOS** (Apple silicon): `Romper.dmg`, or `Romper-darwin-arm64-x.x.x.zip`
    - **Linux** (x64): `romper_x.x.x_amd64.deb`, `romper-x.x.x-1.x86_64.rpm`, or `Romper-linux-x64-x.x.x.zip`
 
-   There's no build for Intel Macs or for ARM Windows and Linux yet. On macOS,
-   Romper checks for updates at launch and then weekly; on Windows and Linux,
-   download new releases yourself.
+   The macOS build runs on Apple silicon (arm64) Macs only, and the Windows
+   and Linux builds on x64 only; there's no build for Intel Macs or for ARM
+   Windows and Linux. On macOS, Romper checks for updates at launch and then
+   weekly; on Windows and Linux, download new releases yourself.
 
 2. **Install** and launch Romper
 

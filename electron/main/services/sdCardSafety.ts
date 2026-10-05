@@ -128,6 +128,26 @@ export function getSdCardDialogDefaultPath(): string {
 }
 
 /**
+ * Remove the AppleDouble file (`._<name>`) macOS made beside a file just
+ * written to the card (#653). On a FAT or exFAT card, macOS keeps a file's
+ * extended attributes in a `._` file next to it, and it tags every file a
+ * downloaded app creates with `com.apple.provenance`, which can't be
+ * removed. So each sample written got a 4 KB `._` file, which the Rample
+ * doesn't need and the write's stale-entry removal then deleted, one by
+ * one, at the end. Removing it as each file is written keeps the card
+ * clean, even after a cancelled write. Only macOS makes these files.
+ */
+export async function removeAppleDoubleCompanion(
+  cardFilePath: string,
+): Promise<void> {
+  if (process.platform !== "darwin") return;
+  await fs.promises.rm(
+    path.join(path.dirname(cardFilePath), `._${path.basename(cardFilePath)}`),
+    { force: true },
+  );
+}
+
+/**
  * Delete entries (paths relative to the card) found by
  * {@link findStaleCardEntries}. Folders are removed with their contents;
  * symlinks are removed, never followed.

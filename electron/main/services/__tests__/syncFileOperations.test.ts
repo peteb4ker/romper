@@ -28,6 +28,10 @@ vi.mock("../../formatConverter.js", () => ({
   convertToRampleDefault: vi.fn().mockResolvedValue({ success: true }),
 }));
 
+vi.mock("../sdCardSafety.js", () => ({
+  removeAppleDoubleCompanion: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock("../syncProgressManager.js", () => ({
   syncProgressManager: {
     emitErrorProgress: vi.fn(),
@@ -61,6 +65,7 @@ import {
   CardNotRespondingError,
   cardWatchdogSettings,
 } from "../cardWatchdog.js";
+import { removeAppleDoubleCompanion } from "../sdCardSafety.js";
 import {
   type SyncFileOperation,
   syncFileOperationsService,
@@ -236,6 +241,14 @@ describe("[UC-34] SyncFileOperationsService", () => {
       await expect(
         syncFileOperationsService.processSingleFile(fileOp, 1, 2, {}),
       ).resolves.not.toThrow();
+    });
+
+    it("[UC-34] removes the ._ file macOS makes beside each written file (#653)", async () => {
+      mockPath.dirname.mockReturnValue("/dest");
+
+      await syncFileOperationsService.processSingleFile(fileOp, 1, 2, {});
+
+      expect(removeAppleDoubleCompanion).toHaveBeenCalledWith("/dest/file.wav");
     });
 
     it("[UC-34] fails when the card stops responding (#653)", async () => {

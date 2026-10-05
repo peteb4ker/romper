@@ -11,6 +11,7 @@ import {
 import {
   findStaleCardEntries,
   getSdCardDialogDefaultPath,
+  removeAppleDoubleCompanion,
   removeCardEntries,
   validateSdCardTarget,
 } from "../sdCardSafety";
@@ -142,6 +143,20 @@ describe("[UC-34] sdCardSafety", () => {
       ).toEqual(["B3"]);
     });
 
+    it("[UC-34] lists macOS's ._ files in kit folders, and leaves its root folders alone (#653)", async () => {
+      write("A0/1-01 kick.wav");
+      write("A0/._1-01 kick.wav");
+      write("._A0");
+      write(".fseventsd/fseventsd-uuid");
+      write(".Spotlight-V100/Store-V2/x");
+      write(".Trashes/501/x");
+      write("._.Trashes");
+
+      expect(
+        await findStaleCardEntries(card, contents({ A0: ["1-01 kick.wav"] })),
+      ).toEqual([path.join("A0", "._1-01 kick.wav")]);
+    });
+
     it("[UC-34] keeps a quarantined kit's folder and everything in it (#537)", async () => {
       write("A0/1-01 kick.wav");
       write("A0/2-01 old snare.wav");
@@ -253,6 +268,43 @@ describe("[UC-34] sdCardSafety", () => {
 
         expect(fs.existsSync(path.join(card, "A0", "linked"))).toBe(false);
         expect(fs.existsSync(path.join(outside, "precious.wav"))).toBe(true);
+      },
+    );
+
+    it.runIf(process.platform === "darwin")(
+      "[UC-34] removes the ._ file macOS made beside a written file (#653)",
+      async () => {
+        fs.mkdirSync(path.join(card, "A0"));
+        fs.writeFileSync(path.join(card, "A0", "1-01 kick.wav"), "x");
+        fs.writeFileSync(path.join(card, "A0", "._1-01 kick.wav"), "x");
+
+        await removeAppleDoubleCompanion(
+          path.join(card, "A0", "1-01 kick.wav"),
+        );
+        // And there's nothing to do when there's no ._ file
+        await removeAppleDoubleCompanion(
+          path.join(card, "A0", "1-01 kick.wav"),
+        );
+
+        expect(fs.readdirSync(path.join(card, "A0"))).toEqual([
+          "1-01 kick.wav",
+        ]);
+      },
+    );
+
+    it.skipIf(process.platform === "darwin")(
+      "leaves ._ files alone where macOS doesn't make them",
+      async () => {
+        fs.mkdirSync(path.join(card, "A0"));
+        fs.writeFileSync(path.join(card, "A0", "._1-01 kick.wav"), "x");
+
+        await removeAppleDoubleCompanion(
+          path.join(card, "A0", "1-01 kick.wav"),
+        );
+
+        expect(fs.readdirSync(path.join(card, "A0"))).toEqual([
+          "._1-01 kick.wav",
+        ]);
       },
     );
 

@@ -400,7 +400,7 @@ describe("useKitEditorLogic", () => {
     const { result } = renderHook(() =>
       useKitEditorLogic({
         ...mockProps,
-        kit: { ...mockKit, is_favorite: true } as unknown,
+        kit: { ...mockKit, is_favorite: true },
         onToggleFavorite,
       }),
     );

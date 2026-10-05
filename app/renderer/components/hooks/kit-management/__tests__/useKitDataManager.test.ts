@@ -191,47 +191,6 @@ describe("useKitDataManager", () => {
     expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith("A0");
   });
 
-  it("should handle sample reload failure", async () => {
-    const { result } = renderHook(() =>
-      useKitDataManager({
-        isInitialized: true,
-        isLocalStoreReady: true,
-        localStorePath: "/test/path",
-      }),
-    );
-
-    vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-      error: "Failed to load samples",
-      success: false,
-    });
-
-    await act(async () => {
-      await result.current.reloadCurrentKitSamples("A0");
-    });
-
-    expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith("A0");
-  });
-
-  it("should handle sample reload exception", async () => {
-    const { result } = renderHook(() =>
-      useKitDataManager({
-        isInitialized: true,
-        isLocalStoreReady: true,
-        localStorePath: "/test/path",
-      }),
-    );
-
-    vi.mocked(window.electronAPI.getAllSamplesForKit).mockRejectedValue(
-      new Error("Network error"),
-    );
-
-    await act(async () => {
-      await result.current.reloadCurrentKitSamples("A0");
-    });
-
-    expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith("A0");
-  });
-
   it("should refresh all kits and samples", async () => {
     const { result } = renderHook(() =>
       useKitDataManager({
@@ -893,6 +852,224 @@ describe("useKitDataManager", () => {
           "Update kit API not available",
         );
       });
+    });
+  });
+  // #605: a failed load keeps the samples already shown; a kit with none to
+  // show is unavailable (locked) until its samples load. Either way the
+  // user is told.
+  describe("[UC-07] a kit whose samples can't be loaded", () => {
+    const FAILED_A0 = "Couldn't load the samples for kit A0. Try reopening it.";
+    const onMessage = vi.fn();
+
+    const renderLoaded = async (kits: KitWithRelations[] = mockKits) => {
+      vi.mocked(window.electronAPI.getKits).mockResolvedValue({
+        data: kits,
+        success: true,
+      });
+      const rendered = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          isLocalStoreReady: true,
+          localStorePath: "/test/path",
+          onMessage,
+        }),
+      );
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      return rendered;
+    };
+
+    const failSamples = () =>
+      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+        error: "database is locked",
+        success: false,
+      });
+
+    // A0 listed without its samples, so there's nothing to keep
+    const unloadedA0 = createMockKitWithRelations({
+      editable: true,
+      name: "A0",
+      samples: undefined,
+    });
+
+    describe("on a reload", () => {
+      it("keeps the samples already shown and says so", async () => {
+        const { result } = await renderLoaded();
+        const shown = result.current.allKitSamples.A0;
+        failSamples();
+
+        await act(async () => {
+          await result.current.reloadCurrentKitSamples("A0");
+        });
+
+        expect(result.current.allKitSamples.A0).toBe(shown);
+        expect(result.current.sampleCounts.A0).toEqual([1, 1, 0, 0]);
+        expect(onMessage).toHaveBeenCalledWith(FAILED_A0, "error");
+      });
+
+      it("keeps them when the call throws", async () => {
+        const { result } = await renderLoaded();
+        const shown = result.current.allKitSamples.A0;
+        vi.mocked(window.electronAPI.getAllSamplesForKit).mockRejectedValue(
+          new Error("IPC closed"),
+        );
+
+        await act(async () => {
+          await result.current.reloadCurrentKitSamples("A0");
+        });
+
+        expect(result.current.allKitSamples.A0).toBe(shown);
+        expect(onMessage).toHaveBeenCalledWith(FAILED_A0, "error");
+      });
+
+      it("leaves the kit as editable as it was", async () => {
+        const { result } = await renderLoaded([
+          createMockKitWithRelations({
+            editable: true,
+            name: "A0",
+            samples: mockSamples,
+          }),
+        ]);
+        failSamples();
+
+        await act(async () => {
+          await result.current.reloadCurrentKitSamples("A0");
+        });
+
+        expect(result.current.getKitByName("A0")?.editable).toBe(true);
+      });
+
+      it("tries again when the kit is opened again", async () => {
+        const { result } = await renderLoaded();
+        failSamples();
+        await act(async () => {
+          await result.current.reloadCurrentKitSamples("A0");
+        });
+        const newSamples = [
+          createMockSample({ filename: "new.wav", voice_number: 3 }),
+        ];
+        vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+          data: newSamples,
+          success: true,
+        });
+
+        await act(async () => {
+          await result.current.loadKitSamplesOnOpen("A0");
+        });
+
+        expect(result.current.sampleCounts.A0).toEqual([0, 0, 1, 0]);
+      });
+    });
+
+    describe("on a first open with nothing to keep", () => {
+      it("shows the kit as unavailable, not editable, and says so", async () => {
+        const { result } = await renderLoaded([unloadedA0, mockKits[1]]);
+        failSamples();
+
+        await act(async () => {
+          await result.current.loadKitSamplesOnOpen("A0");
+        });
+
+        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
+          "A0",
+        );
+        expect(onMessage).toHaveBeenCalledWith(FAILED_A0, "error");
+        expect(result.current.allKitSamples.A0).toBeUndefined();
+        expect(result.current.getKitByName("A0")?.editable).toBe(false);
+        expect(
+          result.current.kits.find((kit) => kit.name === "A0")?.editable,
+        ).toBe(false);
+        // Other kits are untouched
+        expect(result.current.getKitByName("A1")).toBe(mockKits[1]);
+      });
+
+      it("keeps the kit locked: turning editing on says why instead", async () => {
+        const { result } = await renderLoaded([unloadedA0]);
+        failSamples();
+        await act(async () => {
+          await result.current.loadKitSamplesOnOpen("A0");
+        });
+        onMessage.mockClear();
+
+        await act(async () => {
+          await result.current.toggleKitEditable("A0");
+        });
+
+        expect(window.electronAPI.updateKit).not.toHaveBeenCalled();
+        expect(onMessage).toHaveBeenCalledWith(FAILED_A0, "error");
+        expect(result.current.getKitByName("A0")?.editable).toBe(false);
+      });
+
+      it("shows the kit again once reopening loads its samples", async () => {
+        const { result } = await renderLoaded([unloadedA0]);
+        failSamples();
+        await act(async () => {
+          await result.current.loadKitSamplesOnOpen("A0");
+        });
+        vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+          data: mockSamples,
+          success: true,
+        });
+
+        await act(async () => {
+          await result.current.loadKitSamplesOnOpen("A0");
+        });
+
+        expect(result.current.sampleCounts.A0).toEqual([1, 1, 0, 0]);
+        expect(result.current.getKitByName("A0")?.editable).toBe(true);
+      });
+
+      it("shows the kit again after a full refresh", async () => {
+        const { result } = await renderLoaded([unloadedA0]);
+        failSamples();
+        await act(async () => {
+          await result.current.loadKitSamplesOnOpen("A0");
+        });
+        vi.mocked(window.electronAPI.getKits).mockResolvedValue({
+          data: [{ ...unloadedA0, samples: mockSamples }],
+          success: true,
+        });
+
+        await act(async () => {
+          await result.current.refreshAllKitsAndSamples();
+        });
+
+        expect(result.current.getKitByName("A0")?.editable).toBe(true);
+        expect(result.current.sampleCounts.A0).toEqual([1, 1, 0, 0]);
+      });
+
+      it("loads the samples on opening when they can be loaded", async () => {
+        const { result } = await renderLoaded([unloadedA0]);
+
+        await act(async () => {
+          await result.current.loadKitSamplesOnOpen("A0");
+        });
+
+        expect(result.current.allKitSamples.A0).toBeDefined();
+        expect(result.current.getKitByName("A0")?.editable).toBe(true);
+        expect(onMessage).not.toHaveBeenCalled();
+      });
+    });
+
+    it("doesn't fetch on opening a kit whose samples are loaded", async () => {
+      const { result } = await renderLoaded();
+
+      await act(async () => {
+        await result.current.loadKitSamplesOnOpen("A0");
+      });
+
+      expect(window.electronAPI.getAllSamplesForKit).not.toHaveBeenCalled();
+    });
+
+    it("doesn't fetch for a kit that isn't in the list", async () => {
+      const { result } = await renderLoaded();
+
+      await act(async () => {
+        await result.current.loadKitSamplesOnOpen("Z9");
+      });
+
+      expect(window.electronAPI.getAllSamplesForKit).not.toHaveBeenCalled();
     });
   });
 });

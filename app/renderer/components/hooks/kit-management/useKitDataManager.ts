@@ -2,7 +2,13 @@ import type { VoiceSamples } from "@romper/app/renderer/components/kitTypes";
 import type { DbResult, KitWithRelations } from "@romper/shared/db/schema";
 
 import { compareKitSlots } from "@romper/shared/kitUtilsShared";
-import React, { useCallback, useEffect, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { groupDbSamplesByVoice } from "../../../utils/sampleGroupingUtils";
 
@@ -15,12 +21,20 @@ interface UseKitDataManagerProps {
    */
   isLocalStoreReady: boolean;
   localStorePath: null | string;
+  /** Shows a message to the user, e.g. when a kit's samples can't be loaded */
+  onMessage?: (text: string, type?: string, duration?: number) => void;
 }
 
 interface UseKitDataManagerReturn {
   allKitSamples: { [kit: string]: VoiceSamples };
   getKitByName: (kitName: string) => KitWithRelations | undefined;
+  /**
+   * The kits. A kit whose samples couldn't be loaded, with none loaded
+   * before to show, is unavailable: it's listed as not editable (#605).
+   */
   kits: KitWithRelations[];
+  /** Loads a kit's samples on opening it, if none loaded or the last load failed (#605) */
+  loadKitSamplesOnOpen: (kitName: string) => Promise<void>;
   loadKitsData: (scrollToKit?: string) => Promise<void>;
   markKitModified: (kitName: string) => void;
   refreshAllKitsAndSamples: () => Promise<void>;
@@ -35,6 +49,12 @@ interface UseKitDataManagerReturn {
   updateKitAlias: (kitName: string, alias: string) => Promise<void>;
 }
 
+const NO_KITS: ReadonlySet<string> = new Set();
+
+// Approved by Pete on #605
+const samplesFailedMessage = (kitName: string) =>
+  `Couldn't load the samples for kit ${kitName}. Try reopening it.`;
+
 /**
  * Custom hook for managing kit and sample data loading
  * Handles all database operations for kits and samples
@@ -43,42 +63,69 @@ export function useKitDataManager({
   isInitialized,
   isLocalStoreReady,
   localStorePath,
+  onMessage,
 }: UseKitDataManagerProps): UseKitDataManagerReturn {
-  const [kits, setKits] = useState<KitWithRelations[]>([]);
+  const [dbKits, setKits] = useState<KitWithRelations[]>([]);
   const [allKitSamples, setAllKitSamples] = useState<{
     [kit: string]: VoiceSamples;
   }>({});
 
+  // Kits whose last sample load failed (#605). A full load replaces every
+  // kit's samples, so it clears them.
+  const [failedKits, setFailedKits] = useState<ReadonlySet<string>>(NO_KITS);
+
+  // Read through refs so loadKitSamplesOnOpen stays stable
+  const dbKitsRef = useRef(dbKits);
+  const allKitSamplesRef = useRef(allKitSamples);
+  const failedKitsRef = useRef(failedKits);
+  useEffect(() => {
+    dbKitsRef.current = dbKits;
+    allKitSamplesRef.current = allKitSamples;
+    failedKitsRef.current = failedKits;
+  }, [dbKits, allKitSamples, failedKits]);
+  const clearFailedKits = useCallback(() => setFailedKits(NO_KITS), []);
+
+  // Read through a ref so the reload callbacks stay stable
+  const onMessageRef = useRef(onMessage);
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
+
   // getKits() already returns each kit's samples (batched in the db layer);
   // group them per voice here instead of re-fetching kit-by-kit over IPC —
   // the per-kit loop was an N+1 that serialized startup on IPC round trips.
+  // A kit that came without its samples gets no entry, rather than four
+  // empty voices, so opening it loads them (#605).
   const groupLoadedKitSamples = useCallback(
     (loadedKits: KitWithRelations[]) => {
       const samples: { [kit: string]: VoiceSamples } = {};
       for (const kit of loadedKits) {
-        samples[kit.name] = groupDbSamplesByVoice(kit.samples ?? []);
+        if (kit.samples) samples[kit.name] = groupDbSamplesByVoice(kit.samples);
       }
       return samples;
     },
     [],
   );
 
-  // Helper function to load samples for a single kit
+  // Loads one kit's samples; null if they couldn't be loaded. An empty
+  // result here would show a full kit as empty (#605).
   const loadKitSamples = useCallback(
-    async (kit: string): Promise<VoiceSamples> => {
+    async (kit: string): Promise<null | VoiceSamples> => {
       try {
         const samplesResult =
           await globalThis.electronAPI?.getAllSamplesForKit?.(kit);
 
         if (samplesResult?.success && samplesResult.data) {
-          const grouped = groupDbSamplesByVoice(samplesResult.data);
-          return grouped;
+          return groupDbSamplesByVoice(samplesResult.data);
         }
+        console.error(
+          `Failed to load samples for kit ${kit}:`,
+          samplesResult?.error,
+        );
       } catch (error) {
         console.error(`Error loading samples for kit ${kit}:`, error);
       }
-
-      return { 1: [], 2: [], 3: [], 4: [] };
+      return null;
     },
     [],
   );
@@ -115,6 +162,7 @@ export function useKitDataManager({
       }
 
       setAllKitSamples(groupLoadedKitSamples(loadedKits));
+      clearFailedKits();
 
       // If a specific kit should be scrolled to, do it after data loads
       if (scrollToKit) {
@@ -134,23 +182,71 @@ export function useKitDataManager({
         }, 100); // Small delay to ensure DOM is updated
       }
     },
-    [isInitialized, isLocalStoreReady, localStorePath, groupLoadedKitSamples],
+    [
+      isInitialized,
+      isLocalStoreReady,
+      localStorePath,
+      groupLoadedKitSamples,
+      clearFailedKits,
+    ],
   );
 
-  // Function to reload samples for a specific kit
+  // Reload one kit's samples. If they can't be loaded, the samples already
+  // shown stay; a kit with none to show becomes unavailable (#605).
   const reloadCurrentKitSamples = useCallback(
     async (kitName: string) => {
-      try {
-        const voices = await loadKitSamples(kitName);
-        setAllKitSamples((prev) => ({
-          ...prev,
-          [kitName]: voices,
-        }));
-      } catch (error) {
-        console.error(`Error reloading samples for kit ${kitName}:`, error);
+      const voices = await loadKitSamples(kitName);
+      if (voices) {
+        setAllKitSamples((prev) => ({ ...prev, [kitName]: voices }));
+        setFailedKits((prev) => {
+          if (!prev.has(kitName)) return prev;
+          const next = new Set(prev);
+          next.delete(kitName);
+          return next;
+        });
+        return;
       }
+      setFailedKits((prev) =>
+        prev.has(kitName) ? prev : new Set(prev).add(kitName),
+      );
+      onMessageRef.current?.(samplesFailedMessage(kitName), "error");
     },
     [loadKitSamples],
+  );
+
+  // Opening a kit loads its samples if none are loaded yet, or if the last
+  // load failed, so reopening tries again, as the message says (#605)
+  const loadKitSamplesOnOpen = useCallback(
+    async (kitName: string) => {
+      const listed = dbKitsRef.current.some((kit) => kit.name === kitName);
+      const loaded = allKitSamplesRef.current[kitName] !== undefined;
+      if (listed && (!loaded || failedKitsRef.current.has(kitName))) {
+        await reloadCurrentKitSamples(kitName);
+      }
+    },
+    [reloadCurrentKitSamples],
+  );
+
+  // Kits whose samples couldn't be loaded and that have none to show. They
+  // show as not editable, the way the editor shows a locked kit, so nothing
+  // is dropped into slots that may be full in the library (#605).
+  const unavailableKits = useMemo(() => {
+    const unavailable = new Set<string>();
+    for (const kitName of failedKits) {
+      if (allKitSamples[kitName] === undefined) unavailable.add(kitName);
+    }
+    return unavailable;
+  }, [failedKits, allKitSamples]);
+  const kits = useMemo(
+    () =>
+      unavailableKits.size === 0
+        ? dbKits
+        : dbKits.map((kit) =>
+            unavailableKits.has(kit.name) && kit.editable
+              ? { ...kit, editable: false }
+              : kit,
+          ),
+    [dbKits, unavailableKits],
   );
 
   // Refresh metadata for a single kit (voice aliases, etc.) without reloading all samples
@@ -186,7 +282,8 @@ export function useKitDataManager({
       setKits([]);
       setAllKitSamples({});
     }
-  }, [groupLoadedKitSamples]);
+    clearFailedKits();
+  }, [groupLoadedKitSamples, clearFailedKits]);
 
   // Get a specific kit by name from the cached data
   const getKitByName = useCallback(
@@ -293,6 +390,11 @@ export function useKitDataManager({
   // Toggle kit editable mode
   const toggleKitEditable = useCallback(
     async (kitName: string) => {
+      // An unavailable kit stays locked until its samples load (#605)
+      if (unavailableKits.has(kitName)) {
+        onMessageRef.current?.(samplesFailedMessage(kitName), "error");
+        return;
+      }
       const kit = getKitByName(kitName);
       if (!kit) {
         throw new Error(`Kit ${kitName} not found`);
@@ -305,7 +407,7 @@ export function useKitDataManager({
         "toggle editable mode",
       );
     },
-    [getKitByName, updateKitViaAPI],
+    [getKitByName, unavailableKits, updateKitViaAPI],
   );
 
   // Calculate sample counts for all kits
@@ -335,6 +437,7 @@ export function useKitDataManager({
     allKitSamples,
     getKitByName,
     kits,
+    loadKitSamplesOnOpen,
     loadKitsData,
     markKitModified,
     refreshAllKitsAndSamples,

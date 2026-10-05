@@ -55,8 +55,9 @@ The pipeline, in `release.yml` order:
 4. The signing inputs are deleted, and `scripts/smoke-packaged-app.mjs`
    launches the packaged app and waits for it to start its auto-updater
    (RE-16).
-5. `electron-forge make --skip-package -p darwin -a arm64` builds the DMG
-   and zip around the signed `.app`.
+5. `electron-forge make --from-package -p darwin -a arm64` builds the DMG
+   and zip around the signed `.app`. Forge 8 writes the DMG to
+   `out/make/dmg/arm64/` and the zip to `out/make/zip/darwin/arm64/`.
 6. The DMG is signed, notarized, and stapled on its own, so offline
    Gatekeeper checks pass when mounting it.
 

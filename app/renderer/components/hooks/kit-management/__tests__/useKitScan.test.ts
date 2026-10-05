@@ -1,3 +1,5 @@
+import type { KitScanResult } from "@romper/shared/db/schema";
+
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -13,6 +15,18 @@ import {
 
 const kit = (name: string) => ({ name }) as never;
 
+/** A rescan's result: nothing changed unless the test says so */
+const scanResult = (overrides: Partial<KitScanResult>): KitScanResult => ({
+  addedSamples: 0,
+  locked: false,
+  metadataUpdated: 0,
+  missingSamples: [],
+  scannedSamples: 0,
+  skippedFiles: [],
+  updatedVoices: 0,
+  ...overrides,
+});
+
 describe("scanSingleKit", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -21,7 +35,7 @@ describe("scanSingleKit", () => {
 
   it("delegates to the main-process rescan", async () => {
     vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
-      data: { scannedSamples: 7, updatedVoices: 2 },
+      data: scanResult({ scannedSamples: 7, updatedVoices: 2 }),
       success: true,
     });
 
@@ -45,7 +59,7 @@ describe("scanSingleKit", () => {
   });
 
   it("fails cleanly when the rescan API is unavailable", async () => {
-    delete (window.electronAPI as { rescanKit?: unknown }).rescanKit;
+    setupElectronAPIMock({ rescanKit: undefined });
 
     const result = await scanSingleKit({ kitName: "A1" });
     expect(result.success).toBe(false);
@@ -59,7 +73,7 @@ describe("scanAllKits", () => {
     vi.clearAllMocks();
     setupElectronAPIMock();
     vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
-      data: { scannedSamples: 3, updatedVoices: 1 },
+      data: scanResult({ scannedSamples: 3, updatedVoices: 1 }),
       success: true,
     });
   });
@@ -146,7 +160,10 @@ describe("scanAllKits", () => {
 
   it("counts failures and surfaces their errors", async () => {
     vi.mocked(window.electronAPI.rescanKit)
-      .mockResolvedValueOnce({ data: { scannedSamples: 3 }, success: true })
+      .mockResolvedValueOnce({
+        data: scanResult({ scannedSamples: 3 }),
+        success: true,
+      })
       .mockResolvedValueOnce({ error: "boom", success: false });
     const onProgress = vi.fn();
 
@@ -177,7 +194,7 @@ describe("useKitScan", () => {
     vi.clearAllMocks();
     setupElectronAPIMock();
     vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
-      data: { scannedSamples: 3, updatedVoices: 1 },
+      data: scanResult({ scannedSamples: 3, updatedVoices: 1 }),
       success: true,
     });
   });
@@ -242,6 +259,7 @@ describe("describeScanTotals", () => {
   it("pluralises each part", () => {
     expect(
       describeScanTotals({
+        ...EMPTY_SCAN_TOTALS,
         added: 1,
         editableSkipped: 0,
         lockedKits: 2,

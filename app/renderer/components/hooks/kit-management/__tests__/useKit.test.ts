@@ -3,6 +3,9 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 import { renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createMockKitWithRelations } from "../../../../../../tests/factories/kit.factory";
+import { createMockVoice } from "../../../../../../tests/factories/voice.factory";
+import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
 import { useKit } from "../useKit";
 
 // Mock window.electronAPI
@@ -12,30 +15,47 @@ const mockElectronAPI = {
 };
 
 beforeEach(() => {
-  (window as unknown).electronAPI = mockElectronAPI;
+  setupElectronAPIMock(mockElectronAPI);
   vi.clearAllMocks();
 });
 
 afterEach(() => {
-  delete (window as unknown).electronAPI;
+  vi.unstubAllGlobals();
 });
 
 describe("useKit", () => {
-  const mockKit: KitWithRelations = {
+  const mockKit: KitWithRelations = createMockKitWithRelations({
     alias: "Test Alias",
-    artist: "Test Artist",
     bank_letter: "T",
     editable: true,
-    locked: false,
     name: "TestKit",
-    step_pattern: null,
     voices: [
-      { id: 1, kit_name: "TestKit", voice_alias: "Kick", voice_number: 1 },
-      { id: 2, kit_name: "TestKit", voice_alias: "Snare", voice_number: 2 },
-      { id: 3, kit_name: "TestKit", voice_alias: "Hat", voice_number: 3 },
-      { id: 4, kit_name: "TestKit", voice_alias: "Tom", voice_number: 4 },
+      createMockVoice({
+        id: 1,
+        kit_name: "TestKit",
+        voice_alias: "Kick",
+        voice_number: 1,
+      }),
+      createMockVoice({
+        id: 2,
+        kit_name: "TestKit",
+        voice_alias: "Snare",
+        voice_number: 2,
+      }),
+      createMockVoice({
+        id: 3,
+        kit_name: "TestKit",
+        voice_alias: "Hat",
+        voice_number: 3,
+      }),
+      createMockVoice({
+        id: 4,
+        kit_name: "TestKit",
+        voice_alias: "Tom",
+        voice_number: 4,
+      }),
     ],
-  };
+  });
 
   describe("loadKit", () => {
     it("loads kit data successfully", async () => {
@@ -195,7 +215,7 @@ describe("useKit", () => {
     });
 
     it("does nothing when electronAPI is not available", async () => {
-      delete (window as unknown).electronAPI;
+      vi.stubGlobal("electronAPI", undefined);
 
       const { result } = renderHook(() => useKit({ kitName: "TestKit" }));
 

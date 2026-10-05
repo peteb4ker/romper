@@ -190,9 +190,7 @@ describe("useKitDuplication", () => {
     });
 
     it("should work when electronAPI is completely unavailable", async () => {
-      const originalAPI = window.electronAPI;
-      // Set to undefined instead of delete to avoid property deletion issues
-      (window as unknown).electronAPI = undefined;
+      vi.stubGlobal("electronAPI", undefined);
 
       mockDuplicateKit.mockResolvedValueOnce(undefined);
       const { result } = renderHook(() => useKitDuplication(defaultProps));
@@ -211,7 +209,7 @@ describe("useKitDuplication", () => {
       expect(result.current.duplicateKitSource).toBeNull();
 
       // Restore
-      (window as unknown).electronAPI = originalAPI;
+      vi.unstubAllGlobals();
     });
   });
 

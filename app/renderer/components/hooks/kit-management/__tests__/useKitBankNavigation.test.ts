@@ -3,59 +3,54 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createMockKitWithRelations } from "../../../../../../tests/factories/kit.factory";
 import { useKitBankNavigation } from "../useKitBankNavigation";
 
 // Mock the bank operations
 vi.mock("../../../utils/bankOperations", () => ({
-  bankHasKits: vi.fn((kits, bank) =>
-    kits.some((kit: unknown) => kit.name?.[0]?.toUpperCase() === bank),
+  bankHasKits: vi.fn((kits: KitWithRelations[], bank: string) =>
+    kits.some((kit) => kit.name?.[0]?.toUpperCase() === bank),
   ),
-  getFirstKitInBank: vi.fn((kits, bank) => {
-    const kit = kits.find((k: unknown) => k.name?.[0]?.toUpperCase() === bank);
+  getFirstKitInBank: vi.fn((kits: KitWithRelations[], bank: string) => {
+    const kit = kits.find((k) => k.name?.[0]?.toUpperCase() === bank);
     return kit?.name || null;
   }),
 }));
 
 import { bankHasKits } from "../../../utils/bankOperations";
 
+/** A bank row as the kits load it. */
+const bankOf = (letter: string, artist: null | string) => ({
+  artist,
+  letter,
+  rtf_filename: null,
+  scanned_at: null,
+});
+
+/** A scroll container whose scrollTo is a mock (jsdom doesn't scroll). */
+const scrollContainer = () => {
+  const container = document.createElement("div");
+  container.scrollTo = vi.fn();
+  return container;
+};
+
 describe("useKitBankNavigation", () => {
   const mockKits: KitWithRelations[] = [
-    {
-      alias: null,
-      artist: null,
-      bank: { artist: "Artist A" },
+    createMockKitWithRelations({
+      bank: bankOf("A", "Artist A"),
       bank_letter: "A",
-      editable: false,
-      locked: false,
-      modified_since_sync: false,
       name: "A0",
-      step_pattern: null,
-      voices: [],
-    },
-    {
-      alias: null,
-      artist: null,
-      bank: { artist: "Artist A" },
+    }),
+    createMockKitWithRelations({
+      bank: bankOf("A", "Artist A"),
       bank_letter: "A",
-      editable: false,
-      locked: false,
-      modified_since_sync: false,
       name: "A1",
-      step_pattern: null,
-      voices: [],
-    },
-    {
-      alias: null,
-      artist: null,
-      bank: { artist: "Artist B" },
+    }),
+    createMockKitWithRelations({
+      bank: bankOf("B", "Artist B"),
       bank_letter: "B",
-      editable: false,
-      locked: false,
-      modified_since_sync: false,
       name: "B0",
-      step_pattern: null,
-      voices: [],
-    },
+    }),
   ];
 
   const mockKitListRef = {
@@ -124,7 +119,7 @@ describe("useKitBankNavigation", () => {
     it("should handle kits without bank artists", () => {
       const kitsWithoutArtists = [
         { ...mockKits[0], bank: null },
-        { ...mockKits[1], bank: { artist: null } },
+        { ...mockKits[1], bank: bankOf("A", null) },
       ];
       const props = { ...defaultProps, kits: kitsWithoutArtists };
       const { result } = renderHook(() => useKitBankNavigation(props));
@@ -222,7 +217,7 @@ describe("useKitBankNavigation", () => {
 
       rerender({
         ...defaultProps,
-        kits: [{ ...mockKits[2], bank: { artist: null } }],
+        kits: [{ ...mockKits[2], bank: bankOf("B", null) }],
         localStorePath: "/store",
       });
 
@@ -271,12 +266,7 @@ describe("useKitBankNavigation", () => {
       const { result } = renderHook(() => useKitBankNavigation(defaultProps));
 
       // Mock scrollContainerRef
-      const mockScrollContainer = {
-        getBoundingClientRect: () => ({ top: 0 }),
-        scrollTo: vi.fn(),
-        scrollTop: 0,
-      };
-      result.current.scrollContainerRef.current = mockScrollContainer;
+      result.current.scrollContainerRef.current = scrollContainer();
 
       act(() => {
         result.current.handleBankClickWithScroll("B");
@@ -308,7 +298,7 @@ describe("useKitBankNavigation", () => {
         key: "B",
         preventDefault: vi.fn(),
         target: { tagName: "DIV" },
-      } as unknown;
+      } as unknown as KeyboardEvent;
 
       act(() => {
         result.current.globalBankHotkeyHandler(mockEvent);
@@ -399,7 +389,7 @@ describe("useKitBankNavigation", () => {
         key: "B",
         preventDefault: vi.fn(),
         target: { tagName: "DIV" },
-      } as unknown;
+      } as unknown as KeyboardEvent;
 
       act(() => {
         result.current.globalBankHotkeyHandler(mockEvent);
@@ -419,7 +409,7 @@ describe("useKitBankNavigation", () => {
         key: "B",
         preventDefault: vi.fn(),
         target: { tagName: "INPUT" },
-      } as unknown;
+      } as unknown as KeyboardEvent;
 
       act(() => {
         result.current.globalBankHotkeyHandler(mockEvent);
@@ -437,7 +427,7 @@ describe("useKitBankNavigation", () => {
         key: "B",
         preventDefault: vi.fn(),
         target: { tagName: "TEXTAREA" },
-      } as unknown;
+      } as unknown as KeyboardEvent;
 
       act(() => {
         result.current.globalBankHotkeyHandler(mockEvent);
@@ -454,7 +444,7 @@ describe("useKitBankNavigation", () => {
         key: "1",
         preventDefault: vi.fn(),
         target: { tagName: "DIV" },
-      } as unknown;
+      } as unknown as KeyboardEvent;
 
       act(() => {
         result.current.globalBankHotkeyHandler(mockEvent);
@@ -474,7 +464,7 @@ describe("useKitBankNavigation", () => {
         key: "Z",
         preventDefault: vi.fn(),
         target: { tagName: "DIV" },
-      } as unknown;
+      } as unknown as KeyboardEvent;
 
       act(() => {
         result.current.globalBankHotkeyHandler(mockEvent);
@@ -521,22 +511,6 @@ describe("useKitBankNavigation", () => {
       };
       const { result } = renderHook(() =>
         useKitBankNavigation(propsWithoutRef),
-      );
-
-      act(() => {
-        result.current.focusBankInKitList("B");
-      });
-
-      expect(result.current.selectedBank).toBe("A");
-    });
-
-    it("should handle kitListRef without scrollAndFocusKitByIndex method", () => {
-      const propsWithIncompleteRef = {
-        ...defaultProps,
-        kitListRef: { current: {} },
-      };
-      const { result } = renderHook(() =>
-        useKitBankNavigation(propsWithIncompleteRef),
       );
 
       act(() => {
@@ -611,12 +585,7 @@ describe("useKitBankNavigation", () => {
     it("should suppress handleVisibleBankChange during bank click", () => {
       const { result } = renderHook(() => useKitBankNavigation(defaultProps));
 
-      const mockScrollContainer = {
-        getBoundingClientRect: () => ({ top: 0 }),
-        scrollTo: vi.fn(),
-        scrollTop: 0,
-      };
-      result.current.scrollContainerRef.current = mockScrollContainer;
+      result.current.scrollContainerRef.current = scrollContainer();
 
       act(() => {
         result.current.handleBankClickWithScroll("B");
@@ -630,18 +599,13 @@ describe("useKitBankNavigation", () => {
     it("should suppress handleVisibleBankChange during hotkey navigation", () => {
       const { result } = renderHook(() => useKitBankNavigation(defaultProps));
 
-      const mockScrollContainer = {
-        getBoundingClientRect: () => ({ top: 0 }),
-        scrollTo: vi.fn(),
-        scrollTop: 0,
-      };
-      result.current.scrollContainerRef.current = mockScrollContainer;
+      result.current.scrollContainerRef.current = scrollContainer();
 
       const mockEvent = {
         key: "B",
         preventDefault: vi.fn(),
         target: { tagName: "DIV" },
-      } as unknown;
+      } as unknown as KeyboardEvent;
 
       act(() => {
         result.current.globalBankHotkeyHandler(mockEvent);
@@ -679,12 +643,7 @@ describe("useKitBankNavigation", () => {
 
       const { result } = renderHook(() => useKitBankNavigation(defaultProps));
 
-      const mockScrollContainer = {
-        getBoundingClientRect: () => ({ top: 0 }),
-        scrollTo: vi.fn(),
-        scrollTop: 0,
-      };
-      result.current.scrollContainerRef.current = mockScrollContainer;
+      result.current.scrollContainerRef.current = scrollContainer();
 
       act(() => {
         result.current.handleBankClickWithScroll("B");
@@ -732,12 +691,7 @@ describe("useKitBankNavigation", () => {
     it("should resolve to last target on rapid successive clicks", () => {
       const { result } = renderHook(() => useKitBankNavigation(defaultProps));
 
-      const mockScrollContainer = {
-        getBoundingClientRect: () => ({ top: 0 }),
-        scrollTo: vi.fn(),
-        scrollTop: 0,
-      };
-      result.current.scrollContainerRef.current = mockScrollContainer;
+      result.current.scrollContainerRef.current = scrollContainer();
 
       act(() => {
         result.current.handleBankClickWithScroll("B");
@@ -750,12 +704,7 @@ describe("useKitBankNavigation", () => {
     it("should suppress multiple intermediate header changes", () => {
       const { result } = renderHook(() => useKitBankNavigation(defaultProps));
 
-      const mockScrollContainer = {
-        getBoundingClientRect: () => ({ top: 0 }),
-        scrollTo: vi.fn(),
-        scrollTop: 0,
-      };
-      result.current.scrollContainerRef.current = mockScrollContainer;
+      result.current.scrollContainerRef.current = scrollContainer();
 
       act(() => {
         result.current.handleBankClickWithScroll("B");

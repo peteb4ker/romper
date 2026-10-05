@@ -3,6 +3,7 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createMockKitWithRelations } from "../../../../../../tests/factories/kit.factory";
 import { useKitCreation } from "../useKitCreation";
 
 // Mock the kit operations
@@ -37,28 +38,8 @@ const mockMarkExplicitNavigation = vi.mocked(markExplicitNavigation);
 
 describe("useKitCreation", () => {
   const mockKits: KitWithRelations[] = [
-    {
-      alias: null,
-      artist: null,
-      bank_letter: "A",
-      editable: false,
-      locked: false,
-      modified_since_sync: false,
-      name: "A0",
-      step_pattern: null,
-      voices: [],
-    },
-    {
-      alias: null,
-      artist: null,
-      bank_letter: "A",
-      editable: false,
-      locked: false,
-      modified_since_sync: false,
-      name: "A1",
-      step_pattern: null,
-      voices: [],
-    },
+    createMockKitWithRelations({ name: "A0" }),
+    createMockKitWithRelations({ name: "A1" }),
   ];
 
   const defaultProps = {
@@ -109,17 +90,9 @@ describe("useKitCreation", () => {
     });
 
     it("should show warning when bank is full", async () => {
-      const fullBankKits = Array.from({ length: 100 }, (_, i) => ({
-        alias: null,
-        artist: null,
-        bank_letter: "A",
-        editable: false,
-        locked: false,
-        modified_since_sync: false,
-        name: `A${i}`,
-        step_pattern: null,
-        voices: [],
-      })) as KitWithRelations[];
+      const fullBankKits = Array.from({ length: 100 }, (_, i) =>
+        createMockKitWithRelations({ name: `A${i}` }),
+      );
 
       const { result } = renderHook(() =>
         useKitCreation({ ...defaultProps, kits: fullBankKits }),

@@ -2,7 +2,15 @@ import type { SliceStep } from "@romper/shared/sliceTypes";
 
 import { act, renderHook } from "@testing-library/react";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type Mock,
+  vi,
+} from "vitest";
 
 import type { FocusedStep } from "../../shared/stepPatternConstants";
 import type { SequenceEditMeta } from "../useSequenceHistory";
@@ -22,6 +30,7 @@ import {
 } from "../useSlicerEditor";
 
 type Grid = (null | SliceStep)[][];
+type PlaySample = Parameters<typeof useSlicerEditor>[0]["onPlaySample"];
 
 const emptyPattern = () =>
   Array.from({ length: 4 }, () => new Array(16).fill(0));
@@ -34,7 +43,7 @@ interface HarnessOptions {
 }
 
 /** Wires the editor to real state so interactions behave as in the app. */
-function useHarness(options: HarnessOptions, onPlaySample: () => void) {
+function useHarness(options: HarnessOptions, onPlaySample: PlaySample) {
   const [sliceSteps, setGrid] = React.useState<Grid>(createEmptySliceSteps);
   // How each edit would appear in the undo history
   const edits = React.useRef<(SequenceEditMeta | undefined)[]>([]);
@@ -127,7 +136,7 @@ function patternWith(steps: number[]): number[][] {
 
 describe("[UC-33] useSlicerEditor", () => {
   let api: ReturnType<typeof setupElectronAPIMock>;
-  let onPlaySample: ReturnType<typeof vi.fn>;
+  let onPlaySample: Mock<PlaySample>;
 
   beforeEach(() => {
     api = setupElectronAPIMock();

@@ -1,10 +1,12 @@
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 import {
   SCHEDULE_AHEAD_MS,
   useKitStepSequencerLogic,
 } from "../useKitStepSequencerLogic";
+
+type Params = Parameters<typeof useKitStepSequencerLogic>[0];
 
 // Mock the worker
 const mockWorker = {
@@ -33,9 +35,9 @@ describe("useKitStepSequencerLogic", () => {
     [0, 0, 0, 127, 0, 0, 0, 127, 0, 0, 0, 127, 0, 0, 0, 127],
   ];
 
-  let mockOnPlaySample: ReturnType<typeof vi.fn>;
-  let mockSetStepPattern: ReturnType<typeof vi.fn>;
-  let mockSetSequencerOpen: ReturnType<typeof vi.fn>;
+  let mockOnPlaySample: Mock<Params["onPlaySample"]>;
+  let mockSetStepPattern: Mock<Params["setStepPattern"]>;
+  let mockSetSequencerOpen: Mock<Params["setSequencerOpen"]>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -50,7 +52,7 @@ describe("useKitStepSequencerLogic", () => {
   // Sequencer triggers carry a scheduled start time
   const scheduled = { startAt: expect.any(Number) };
 
-  const getDefaultParams = () => ({
+  const getDefaultParams = (): Params => ({
     bpm: 120,
     onPlaySample: mockOnPlaySample,
     samples: defaultSamples,
@@ -669,7 +671,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowUp",
           preventDefault: vi.fn(),
-        } as unknown);
+        } as unknown as React.KeyboardEvent<HTMLDivElement>);
       });
 
       expect(result.current.focusedStep).toEqual({ step: 0, voice: 1 });
@@ -687,7 +689,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowDown",
           preventDefault: vi.fn(),
-        } as unknown);
+        } as unknown as React.KeyboardEvent<HTMLDivElement>);
       });
 
       expect(result.current.focusedStep).toEqual({ step: 0, voice: 1 });
@@ -710,7 +712,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowLeft",
           preventDefault: vi.fn(),
-        } as unknown);
+        } as unknown as React.KeyboardEvent<HTMLDivElement>);
       });
 
       expect(result.current.focusedStep).toEqual({ step: 4, voice: 0 });
@@ -728,7 +730,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowRight",
           preventDefault: vi.fn(),
-        } as unknown);
+        } as unknown as React.KeyboardEvent<HTMLDivElement>);
       });
 
       expect(result.current.focusedStep).toEqual({ step: 1, voice: 0 });
@@ -747,7 +749,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowUp",
           preventDefault: vi.fn(),
-        } as unknown);
+        } as unknown as React.KeyboardEvent<HTMLDivElement>);
       });
 
       expect(result.current.focusedStep).toEqual({ step: 0, voice: 0 });
@@ -757,7 +759,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowLeft",
           preventDefault: vi.fn(),
-        } as unknown);
+        } as unknown as React.KeyboardEvent<HTMLDivElement>);
       });
 
       expect(result.current.focusedStep).toEqual({ step: 0, voice: 0 });
@@ -771,7 +773,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowDown",
           preventDefault: vi.fn(),
-        } as unknown);
+        } as unknown as React.KeyboardEvent<HTMLDivElement>);
       });
 
       expect(result.current.focusedStep).toEqual({ step: 0, voice: 3 });
@@ -785,7 +787,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowRight",
           preventDefault: vi.fn(),
-        } as unknown);
+        } as unknown as React.KeyboardEvent<HTMLDivElement>);
       });
 
       expect(result.current.focusedStep).toEqual({ step: 15, voice: 0 });
@@ -807,7 +809,7 @@ describe("useKitStepSequencerLogic", () => {
         key: " ",
         preventDefault: mockPreventDefault,
         stopPropagation: mockStopPropagation,
-      } as unknown;
+      } as unknown as React.KeyboardEvent<HTMLDivElement>;
 
       act(() => {
         result.current.handleStepGridKeyDown(space);
@@ -869,7 +871,7 @@ describe("useKitStepSequencerLogic", () => {
           key: "Enter",
           preventDefault,
           target: popoverButton,
-        } as unknown);
+        } as unknown as React.KeyboardEvent<HTMLDivElement>);
       });
 
       expect(preventDefault).not.toHaveBeenCalled();
@@ -898,7 +900,7 @@ describe("useKitStepSequencerLogic", () => {
           preventDefault,
           stopPropagation: vi.fn(),
           target: muteButton,
-        } as unknown);
+        } as unknown as React.KeyboardEvent<HTMLDivElement>);
       });
       expect(preventDefault).not.toHaveBeenCalled();
       expect(result.current.isSeqPlaying).toBe(false);
@@ -911,7 +913,7 @@ describe("useKitStepSequencerLogic", () => {
           preventDefault,
           stopPropagation: vi.fn(),
           target: pad,
-        } as unknown);
+        } as unknown as React.KeyboardEvent<HTMLDivElement>);
       });
       expect(result.current.isSeqPlaying).toBe(true);
     });
@@ -946,7 +948,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "Enter",
           preventDefault: mockPreventDefault,
-        } as unknown);
+        } as unknown as React.KeyboardEvent<HTMLDivElement>);
       });
 
       expect(mockPreventDefault).toHaveBeenCalled();
@@ -967,7 +969,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowUp",
           preventDefault: mockPreventDefault,
-        } as unknown);
+        } as unknown as React.KeyboardEvent<HTMLDivElement>);
       });
 
       expect(mockPreventDefault).not.toHaveBeenCalled();
@@ -988,7 +990,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "a",
           preventDefault: mockPreventDefault,
-        } as unknown);
+        } as unknown as React.KeyboardEvent<HTMLDivElement>);
       });
 
       expect(mockPreventDefault).not.toHaveBeenCalled();
@@ -997,11 +999,9 @@ describe("useKitStepSequencerLogic", () => {
 
   describe("Grid Focus Management", () => {
     it("should focus grid when sequencer opens", async () => {
-      const mockGridRef = {
-        current: {
-          focus: vi.fn(),
-        },
-      };
+      const grid = document.createElement("div");
+      vi.spyOn(grid, "focus");
+      const mockGridRef = { current: grid };
 
       const params = {
         ...getDefaultParams(),
@@ -1034,11 +1034,9 @@ describe("useKitStepSequencerLogic", () => {
     });
 
     it("should not focus when sequencer is closed", async () => {
-      const mockGridRef = {
-        current: {
-          focus: vi.fn(),
-        },
-      };
+      const grid = document.createElement("div");
+      vi.spyOn(grid, "focus");
+      const mockGridRef = { current: grid };
 
       const params = {
         ...getDefaultParams(),
@@ -1356,7 +1354,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowDown",
           preventDefault: vi.fn(),
-        } as unknown);
+        } as unknown as React.KeyboardEvent<HTMLDivElement>);
       });
 
       expect(result.current.focusedStep).toEqual({ step: 0, voice: 2 });
@@ -1380,7 +1378,7 @@ describe("useKitStepSequencerLogic", () => {
         result.current.handleStepGridKeyDown({
           key: "ArrowUp",
           preventDefault: vi.fn(),
-        } as unknown);
+        } as unknown as React.KeyboardEvent<HTMLDivElement>);
       });
 
       expect(result.current.focusedStep).toEqual({ step: 0, voice: 0 });
@@ -1529,7 +1527,7 @@ describe("useKitStepSequencerLogic", () => {
       });
 
       const options = mockOnPlaySample.mock.calls[0][3];
-      expect(options.startAt).toBeCloseTo(ideal + SCHEDULE_AHEAD_MS, 3);
+      expect(options?.startAt).toBeCloseTo(ideal + SCHEDULE_AHEAD_MS, 3);
     });
 
     it("uses an exact, unrounded step length", () => {

@@ -97,6 +97,12 @@ fill 2 mono voices."
   a test mocks `useSettings`, build its value with `createMockSettings`
   (`tests/mocks/settings.ts`), and build rows with the factories in
   `tests/factories/`, so the fixtures match the real types.
+- In a typed test, give mocks the real signature
+  (`Mock<Parameters<typeof useHook>[0]["onPlay"]>`) and a mocked hook a
+  full return value (`ReturnType<typeof useHook>`), not a cast. To test
+  code without the IPC bridge, use `vi.stubGlobal("electronAPI", undefined)`
+  (and `vi.unstubAllGlobals()` after), or
+  `setupElectronAPIMock({ someMethod: undefined })` for one missing method.
 
 ## Tests
 

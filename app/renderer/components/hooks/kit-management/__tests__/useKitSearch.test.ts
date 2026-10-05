@@ -3,11 +3,12 @@ import type { KitWithRelations } from "@romper/shared/db/schema";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createMockKitWithRelations } from "../../../../../../tests/factories/kit.factory";
 import { useKitSearch } from "../useKitSearch";
 
 // Mock the search utilities
 vi.mock("../../../../utils/kitSearchUtils", () => ({
-  filterKitsWithSearch: vi.fn((kits, query) => {
+  filterKitsWithSearch: vi.fn((kits: KitWithRelations[], query: string) => {
     if (!query || query.length < 2) {
       return kits.map((kit) => ({ ...kit }));
     }
@@ -35,39 +36,9 @@ describe("[UC-09] useKitSearch", () => {
   });
 
   const mockKits: KitWithRelations[] = [
-    {
-      alias: null,
-      bank_letter: "A",
-      bpm: 120,
-      editable: false,
-      is_favorite: false,
-      locked: false,
-      modified_since_sync: false,
-      name: "A0",
-      step_pattern: null,
-    },
-    {
-      alias: null,
-      bank_letter: "A",
-      bpm: 120,
-      editable: false,
-      is_favorite: false,
-      locked: false,
-      modified_since_sync: false,
-      name: "A1",
-      step_pattern: null,
-    },
-    {
-      alias: null,
-      bank_letter: "B",
-      bpm: 120,
-      editable: false,
-      is_favorite: false,
-      locked: false,
-      modified_since_sync: false,
-      name: "B0",
-      step_pattern: null,
-    },
+    createMockKitWithRelations({ bank_letter: "A", name: "A0" }),
+    createMockKitWithRelations({ bank_letter: "A", name: "A1" }),
+    createMockKitWithRelations({ bank_letter: "B", name: "B0" }),
   ];
 
   it("should initialize with empty search state", () => {
@@ -183,17 +154,7 @@ describe("[UC-09] useKitSearch", () => {
     // Add a new kit that matches the search
     const newKits = [
       ...mockKits,
-      {
-        alias: null,
-        bank_letter: "A",
-        bpm: 120,
-        editable: false,
-        is_favorite: false,
-        locked: false,
-        modified_since_sync: false,
-        name: "A0_NEW",
-        step_pattern: null,
-      },
+      createMockKitWithRelations({ bank_letter: "A", name: "A0_NEW" }),
     ];
 
     rerender({ kits: newKits });

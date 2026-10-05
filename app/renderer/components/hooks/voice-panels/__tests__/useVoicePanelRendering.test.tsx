@@ -1,7 +1,10 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { useVoicePanelRendering } from "../useVoicePanelRendering";
+import {
+  useVoicePanelRendering,
+  type UseVoicePanelRenderingOptions,
+} from "../useVoicePanelRendering";
 
 // Mock SampleWaveform component
 vi.mock("../../../SampleWaveform", () => ({
@@ -10,6 +13,8 @@ vi.mock("../../../SampleWaveform", () => ({
 
 describe("useVoicePanelRendering", () => {
   const mockDragAndDropHook = {
+    dragOverSlot: null,
+    dropZone: null,
     getSampleDragHandlers: vi.fn(() => ({})),
     handleDragLeave: vi.fn(),
     handleDragOver: vi.fn(),
@@ -35,28 +40,30 @@ describe("useVoicePanelRendering", () => {
   };
 
   const mockSampleActionsHook = {
+    handleDeleteSample: vi.fn(),
     handleSampleContextMenu: vi.fn(),
   };
 
-  const mockPlaybackHook = {
-    handlePlay: vi.fn(),
-    handleStop: vi.fn(),
-    handleWaveformPlayingChange: vi.fn(),
-    playbackError: null,
-    playTriggers: {},
-    samplePlaying: {},
-    stopTriggers: {},
+  const mockVoiceNameEditorHook = {
+    editing: false,
+    editValue: "",
+    handleCancel: vi.fn(),
+    handleKeyDown: vi.fn(),
+    handleSave: vi.fn(),
+    setEditValue: vi.fn(),
+    startEditing: vi.fn(),
   };
 
-  const defaultProps = {
+  const defaultProps: UseVoicePanelRenderingOptions = {
     dragAndDropHook: mockDragAndDropHook,
     isActive: false,
     isEditable: true,
     kitName: "TestKit",
-    onSampleDelete: vi.fn(),
+    onPlay: vi.fn(),
     onSampleSelect: vi.fn(),
+    onStop: vi.fn(),
     onWaveformPlayingChange: vi.fn(),
-    playbackHook: mockPlaybackHook,
+    playsStereo: false,
     playTriggers: {},
     sampleActionsHook: mockSampleActionsHook,
     sampleMetadata: {},
@@ -66,6 +73,8 @@ describe("useVoicePanelRendering", () => {
     slotRenderingHook: mockSlotRenderingHook,
     stopTriggers: {},
     voice: 1,
+    voiceName: null,
+    voiceNameEditorHook: mockVoiceNameEditorHook,
   };
 
   it("initializes without errors", () => {

@@ -22,6 +22,7 @@ describe("useVoiceAlias", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   describe("[UC-27] updateVoiceAlias", () => {
@@ -44,7 +45,7 @@ describe("useVoiceAlias", () => {
     });
 
     it("does not call API when electronAPI is not available", async () => {
-      (window as unknown).electronAPI = undefined;
+      vi.stubGlobal("electronAPI", undefined);
       const onUpdate = vi.fn();
 
       const { result } = renderHook(() =>
@@ -59,7 +60,7 @@ describe("useVoiceAlias", () => {
     });
 
     it("does not call API when updateVoiceAlias method is not available", async () => {
-      (window as unknown).electronAPI = {};
+      setupElectronAPIMock({ updateVoiceAlias: undefined });
       const onUpdate = vi.fn();
 
       const { result } = renderHook(() =>

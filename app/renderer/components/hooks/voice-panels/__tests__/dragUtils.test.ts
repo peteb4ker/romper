@@ -13,7 +13,7 @@ describe("dragUtils", () => {
         dataTransfer: {
           types: [DRAG_TYPES.ROMPER_SAMPLE, "text/plain"],
         },
-      } as React.DragEvent;
+      } as unknown as React.DragEvent;
 
       expect(isInternalSampleDrag(mockEvent)).toBe(true);
     });
@@ -23,7 +23,7 @@ describe("dragUtils", () => {
         dataTransfer: {
           types: ["text/plain", "text/html"],
         },
-      } as React.DragEvent;
+      } as unknown as React.DragEvent;
 
       expect(isInternalSampleDrag(mockEvent)).toBe(false);
     });
@@ -33,7 +33,7 @@ describe("dragUtils", () => {
         dataTransfer: {
           types: [],
         },
-      } as React.DragEvent;
+      } as unknown as React.DragEvent;
 
       expect(isInternalSampleDrag(mockEvent)).toBe(false);
     });
@@ -67,7 +67,7 @@ describe("dragUtils", () => {
         dataTransfer: {
           types: [DRAG_TYPES.ROMPER_SAMPLE],
         },
-      } as React.DragEvent;
+      } as unknown as React.DragEvent;
 
       combinedHandlers.onDragOver(internalDragEvent);
       combinedHandlers.onDrop(internalDragEvent);
@@ -93,7 +93,7 @@ describe("dragUtils", () => {
         dataTransfer: {
           types: ["text/plain"],
         },
-      } as React.DragEvent;
+      } as unknown as React.DragEvent;
 
       combinedHandlers.onDragOver(externalDragEvent);
       combinedHandlers.onDrop(externalDragEvent);
@@ -121,7 +121,7 @@ describe("dragUtils", () => {
         dataTransfer: {
           types: [DRAG_TYPES.ROMPER_SAMPLE],
         },
-      } as React.DragEvent;
+      } as unknown as React.DragEvent;
 
       expect(() => {
         combinedHandlers.onDragOver(internalDragEvent);

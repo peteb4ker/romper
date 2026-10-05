@@ -8,13 +8,27 @@ import {
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useVoicePanelSlots } from "../useVoicePanelSlots";
+import {
+  useVoicePanelSlots,
+  type UseVoicePanelSlotsOptions,
+} from "../useVoicePanelSlots";
 
-// Mock SampleWaveform component
+// Mock SampleWaveform component; clicking it reports a load error
 vi.mock("../../../SampleWaveform", () => ({
-  default: ({ kitName, slotNumber, voiceNumber }: unknown) => (
+  default: ({
+    kitName,
+    onError,
+    slotNumber,
+    voiceNumber,
+  }: {
+    kitName: string;
+    onError?: (error: string) => void;
+    slotNumber: number;
+    voiceNumber: number;
+  }) => (
     <div
       data-testid={`sample-waveform-${kitName}-${voiceNumber}-${slotNumber - 1}`}
+      onClick={() => onError?.("decode failed")}
     >
       Waveform
     </div>
@@ -59,13 +73,14 @@ describe("useVoicePanelSlots", () => {
     handleSampleContextMenu: vi.fn(),
   };
 
-  const defaultProps = {
+  const defaultProps: UseVoicePanelSlotsOptions = {
     dragAndDropHook: mockDragAndDropHook,
     isActive: false,
     isEditable: true,
     kitName: "TestKit",
     onSampleSelect: vi.fn(),
     onWaveformPlayingChange: vi.fn(),
+    playsStereo: false,
     playTriggers: {},
     renderDeleteButton: vi.fn(() => <button>Delete</button>),
     renderPlayButton: vi.fn(() => <button>Play</button>),
@@ -246,11 +261,11 @@ describe("useVoicePanelSlots", () => {
 
     // Test keyboard selection (Enter key)
     firstSample?.focus();
-    fireEvent.keyDown(firstSample, { key: "Enter" });
+    fireEvent.keyDown(firstSample!, { key: "Enter" });
     expect(defaultProps.onSampleSelect).toHaveBeenCalledWith(1, 0);
 
     // Test keyboard selection (Space key)
-    fireEvent.keyDown(firstSample, { key: " " });
+    fireEvent.keyDown(firstSample!, { key: " " });
     expect(defaultProps.onSampleSelect).toHaveBeenCalledWith(1, 0);
   });
 
@@ -280,7 +295,7 @@ describe("useVoicePanelSlots", () => {
       samples: ["dup.wav", "dup.wav"],
     };
 
-    const renderTwins = (props: typeof twins) => {
+    const renderTwins = (props: UseVoicePanelSlotsOptions) => {
       const TestComponent = () => {
         const { renderSampleSlots } = useVoicePanelSlots(props);
         return <ul>{renderSampleSlots()}</ul>;
@@ -423,12 +438,12 @@ describe("useVoicePanelSlots", () => {
     expect(firstSample).toHaveAttribute("tabIndex", "0");
   });
 
-  it("handles waveform error events correctly", () => {
-    const mockDispatchEvent = vi.fn();
-    Object.defineProperty(window, "dispatchEvent", {
-      value: mockDispatchEvent,
-      writable: true,
-    });
+  it("announces a waveform load error as a SampleWaveformError event", () => {
+    const errors: unknown[] = [];
+    const onWaveformError = (e: Event) => {
+      if (e instanceof CustomEvent) errors.push(e.detail);
+    };
+    globalThis.addEventListener("SampleWaveformError", onWaveformError);
 
     const TestComponent = () => {
       const { renderSampleSlots } = useVoicePanelSlots(defaultProps);
@@ -437,11 +452,9 @@ describe("useVoicePanelSlots", () => {
 
     render(<TestComponent />);
 
-    // Simulate waveform error callback
-    const waveformComponent = screen.getByTestId("sample-waveform-TestKit-1-0");
+    fireEvent.click(screen.getByTestId("sample-waveform-TestKit-1-0"));
+    globalThis.removeEventListener("SampleWaveformError", onWaveformError);
 
-    // The onError callback should be tested if it's accessible through props
-    // Since it's an inline function, we'll test the dispatch event behavior
-    expect(waveformComponent).toBeInTheDocument();
+    expect(errors).toEqual(["decode failed"]);
   });
 });

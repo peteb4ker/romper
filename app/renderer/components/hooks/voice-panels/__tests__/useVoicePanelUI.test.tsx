@@ -354,16 +354,6 @@ describe("useVoicePanelUI", () => {
       expect(container.textContent).toContain("16");
     });
 
-    it("handles undefined voiceName", () => {
-      const { result } = renderHook(() =>
-        useVoicePanelUI({ ...defaultProps, voiceName: undefined as unknown }),
-      );
-
-      const { container } = render(result.current.renderVoiceName());
-
-      expect(container.textContent).toContain("No voice name set");
-    });
-
     it("handles empty editValue when editing", () => {
       const { result } = renderHook(() =>
         useVoicePanelUI({

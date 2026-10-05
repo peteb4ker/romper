@@ -248,6 +248,23 @@ test.describe("[UC-29] Play a sample", () => {
     expect((await readProbe(window)).sounds).toHaveLength(1);
   });
 
+  test("Space on the kit name only opens the name editor (#587)", async () => {
+    const snare = slot(2, "2_snare.wav", 1);
+    await waitForAudio(snare, 2, 1);
+    await snare.click();
+    await expect(snare).toHaveAttribute("aria-selected", "true");
+
+    await window.getByTitle("Edit kit name").focus();
+    await window.keyboard.press("Space");
+
+    const field = window.getByRole("textbox", { name: "Kit name" });
+    await expect(field).toBeFocused();
+    await expect(field).not.toHaveValue(/ $/);
+    // Give a stray start time to show up
+    await window.waitForTimeout(500);
+    expect((await readProbe(window)).sounds).toHaveLength(0);
+  });
+
   test("starting a second sample on a voice stops the first (voice choke)", async () => {
     await window.getByTitle("Enable editable mode").click();
     await window.waitForSelector('[data-testid="drop-zone-voice-3"]');

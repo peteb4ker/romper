@@ -6,6 +6,7 @@ import { cleanup } from "@testing-library/react";
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { useKitEditorKeyboardNav } from "../hooks/kit-management/useKitEditorKeyboardNav";
 import KitHeader from "../KitHeader";
 
 afterEach(() => {
@@ -54,6 +55,72 @@ describe("KitHeader", () => {
 
     fireEvent.click(screen.getByText("Scan Kit"));
     expect(onScanKit).toHaveBeenCalled();
+  });
+
+  // #587: Space on the kit name opened the name editor and also played the
+  // selected sample, through the editor's window Space shortcut
+  describe("[UC-29] keys on the kit name", () => {
+    /** The header, with the kit editor's window shortcuts listening */
+    const HeaderInEditor = (
+      props: Readonly<{
+        onPlaySample: (voice: number, slot: number) => void;
+        setEditingKitAlias: (v: boolean) => void;
+      }>,
+    ) => {
+      useKitEditorKeyboardNav({
+        isEditable: false,
+        onInferVoiceNames: vi.fn(),
+        onPlaySample: props.onPlaySample,
+        onSampleKeyNav: vi.fn(),
+        onScanKit: vi.fn(),
+        samples: { 1: ["kick.wav"] },
+        selectedSampleIdx: 0,
+        selectedVoice: 1,
+        sequencerOpen: false,
+        setSequencerOpen: vi.fn(),
+      });
+      return (
+        <KitHeader
+          {...baseProps}
+          setEditingKitAlias={props.setEditingKitAlias}
+        />
+      );
+    };
+
+    const setup = () => {
+      const onPlaySample = vi.fn();
+      const setEditingKitAlias = vi.fn();
+      render(
+        <HeaderInEditor
+          onPlaySample={onPlaySample}
+          setEditingKitAlias={setEditingKitAlias}
+        />,
+      );
+      const name = screen.getByRole("button", { name: "My Kit" });
+      name.focus();
+      return { name, onPlaySample, setEditingKitAlias };
+    };
+
+    it("Space only opens the name editor; it plays no sample", () => {
+      const { name, onPlaySample, setEditingKitAlias } = setup();
+      const notHandled = fireEvent.keyDown(name, { key: " " });
+      expect(setEditingKitAlias).toHaveBeenCalledWith(true);
+      expect(notHandled).toBe(false); // marked handled (preventDefault)
+      expect(onPlaySample).not.toHaveBeenCalled();
+    });
+
+    it("Enter opens the name editor as before", () => {
+      const { name, onPlaySample, setEditingKitAlias } = setup();
+      fireEvent.keyDown(name, { key: "Enter" });
+      expect(setEditingKitAlias).toHaveBeenCalledWith(true);
+      expect(onPlaySample).not.toHaveBeenCalled();
+    });
+
+    it("Space elsewhere still plays the selected sample", () => {
+      const { onPlaySample } = setup();
+      fireEvent.keyDown(document.body, { key: " " });
+      expect(onPlaySample).toHaveBeenCalledWith(1, 0);
+    });
   });
 
   it("shows input when editingKitAlias is true and handles input events", () => {

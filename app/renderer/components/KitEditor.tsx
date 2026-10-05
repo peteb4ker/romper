@@ -22,7 +22,7 @@ interface KitEditorAllProps extends KitEditorProps {
   onToggleEditableMode?: (kitName: string) => Promise<void>; // Toggle editable mode - used via useKitEditorLogic hook
   onToggleFavorite?: (
     kitName: string,
-  ) => Promise<DbResult<{ isFavorite: boolean }>>; // For favorite star button
+  ) => Promise<DbResult<{ isFavorite: boolean }>>; // Star button and ; key, via useKitEditorLogic
   onUpdateKitAlias?: (kitName: string, alias: string) => Promise<void>; // Update kit alias - used via useKitEditorLogic hook
 }
 
@@ -67,7 +67,7 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
             : logic.handleScanKit
         }
         onToggleEditableMode={logic.toggleEditableMode}
-        onToggleFavorite={props.onToggleFavorite}
+        onToggleFavorite={logic.toggleFavorite}
         setEditingKitAlias={setEditingKitAlias}
         setKitAliasInput={setKitAliasInput}
       />

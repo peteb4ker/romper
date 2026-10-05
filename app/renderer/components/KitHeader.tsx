@@ -34,7 +34,7 @@ interface KitHeaderProps {
   onPrevKit?: () => void;
   onScanKit?: () => void;
   onToggleEditableMode?: () => void;
-  onToggleFavorite?: (kitName: string) => void;
+  onToggleFavorite?: () => Promise<void> | void;
   setEditingKitAlias: (v: boolean) => void;
   setKitAliasInput: (v: string) => void;
 }
@@ -254,7 +254,7 @@ const KitHeader: React.FC<KitHeaderProps> = ({
                 ? "text-accent-favorite hover:brightness-110"
                 : "text-text-tertiary hover:text-accent-favorite"
             }`}
-            onClick={() => onToggleFavorite(kitName)}
+            onClick={() => void onToggleFavorite()}
             title={
               kit?.is_favorite ? "Remove from favorites" : "Add to favorites"
             }

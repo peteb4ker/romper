@@ -1,0 +1,40 @@
+# Dependabot version updates (#468). Security updates are separate: they
+# ignore the grouping, the major-version rule and the PR limit below.
+#
+# Major npm upgrades are left out on purpose: they're release work, tracked
+# in #469, and done by hand in order (Electron, Forge, Vitest/ESLint,
+# TypeScript). Minor and patch updates arrive as one grouped PR per
+# ecosystem each week.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      npm-minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions-minor-and-patch:
+        update-types:
+          - minor
+          - patch

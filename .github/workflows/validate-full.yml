@@ -56,7 +56,7 @@ jobs:
       # cache is private to this repo; the archive is never uploaded as an
       # artifact (it's Squarp's content).
       - name: Restore the factory archive
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/romper
           key: factory-archive-${{ hashFiles('tests/validation/factory-archive.json') }}

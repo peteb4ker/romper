@@ -128,22 +128,24 @@ jobs:
           path: coverage/integration/
           retention-days: 1
 
-  # Coverage merge + SonarCloud. Runs on main pushes and on same-repo PRs
-  # (fork and Dependabot PRs don't get SONAR_TOKEN), not when the release
-  # workflow runs the tests on a tag.
+  # Coverage merge + SonarCloud. Runs on main pushes and on every PR, not
+  # when the release workflow runs the tests on a tag.
   #
   # This job is the required check that enforces SonarCloud's quality gate
   # on PRs (#468): on a PR the scan waits for the gate and fails the job
   # when it's red. Require `analysis`, not the SonarCloud app's "SonarCloud
-  # Code Analysis" check: fork and Dependabot PRs never get the app's check,
-  # so requiring it would block them forever, whereas a job skipped by its
-  # `if:` reports success to branch protection.
+  # Code Analysis" check, which fork and Dependabot PRs never get.
+  #
+  # Fork and Dependabot PRs get no SONAR_TOKEN, so they skip the scan at
+  # step level and the job succeeds. Don't move that skip back to the job's
+  # `if:`: a job skipped by its `if:` concludes "skipped", and a required
+  # check that's skipped doesn't let the PR merge (Dependabot PR #642 sat
+  # blocked that way).
   analysis:
     needs: [unit-tests, integration-tests]
     if: >-
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      (github.event.pull_request.head.repo.full_name == github.repository &&
-       github.actor != 'dependabot[bot]')
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     # The SonarCloud Scan step exceeded the previous 8-minute limit and was
     # killed mid-scan on every main push, so SonarCloud had not re-analyzed
@@ -196,13 +198,23 @@ jobs:
           files: ./coverage/merged/coverage-final.json
           disable_search: true
 
-      # A same-repo PR without the token would skip the scan and pass the
-      # required check without a gate, so fail closed instead.
-      - name: Require SONAR_TOKEN on pull requests
-        if: env.SONAR_TOKEN == '' && github.event_name == 'pull_request'
+      # Fork and Dependabot PRs get no secrets, so there's nothing to scan
+      # with: say so and let the job pass. A same-repo PR by a person always
+      # has the token; without it the scan would be skipped and the required
+      # check would pass with no gate, so that case fails instead.
+      - name: Skip SonarCloud without SONAR_TOKEN
+        if: env.SONAR_TOKEN == ''
+        env:
+          SAME_REPO_PR: >-
+            ${{ github.event_name == 'pull_request' &&
+                github.event.pull_request.head.repo.full_name == github.repository &&
+                github.actor != 'dependabot[bot]' }}
         run: |
-          echo "::error::SONAR_TOKEN is not available, so the SonarCloud quality gate can't be checked."
-          exit 1
+          if [ "$SAME_REPO_PR" = "true" ]; then
+            echo "::error::SONAR_TOKEN is not available on a same-repo PR, so the SonarCloud quality gate can't be checked."
+            exit 1
+          fi
+          echo "::notice::SONAR_TOKEN is not available (fork or Dependabot run), so the SonarCloud scan and quality gate are skipped."
 
       # sonarcloud-github-action was deprecated and its bundled scanner
       # stopped working (no analysis landed after 2026-07-21).

@@ -33,8 +33,9 @@ Playwright (e2e).
   If a run fails on such a line, add or widen its source's entry there,
   with its platforms, a reason (required), a link where there is one, and
   the real line as an example; don't expect it in one spec. See "Known
-  noise" in the coding guide. PRs that touch the app or e2e run e2e on
-  macOS and Windows too, not just Linux.
+  noise" in the coding guide. CI runs e2e on Linux only for PRs; pushes
+  to `main` and releases run it on macOS and Windows too, so a macOS- or
+  Windows-only failure first shows up on `main`.
 - `npm run dev` -- builds everything, then runs Vite + Electron. Long-running;
   start it with `run_in_background`. Its settings live in the worktree's
   `.romper-dev/user-data`, seeded from the installed app's on first run, so

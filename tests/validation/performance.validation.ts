@@ -3,8 +3,9 @@
  *
  * Sets up a factory store through the wizard, then measures what the app
  * does for each common action: which IPC calls it makes, how long main spends
- * in each, how much data comes back, how long the main thread was blocked,
- * and the renderer's long animation frames. Counts are the stable signal;
+ * in each, how much data comes back, how long the main thread was blocked
+ * (and how much of that it was busy), and the renderer's long animation
+ * frames. Counts are the stable signal;
  * timings depend on the machine and its load, which the report records.
  *
  * Run with `npx playwright test --config playwright.validation.config.ts
@@ -12,6 +13,9 @@
  *
  * Each action is also checked against its headroom budgets for returned
  * bytes and main-thread stalls (`validation` in tests/perf/budgets.ts). The
+ * stall budget counts only the time main was busy: a shared runner can
+ * leave an idle main thread waiting for a core for hundreds of
+ * milliseconds, which isn't the app's doing (#675). The
  * report lists any failures, and the run fails after writing it.
  */
 import {
@@ -62,6 +66,8 @@ interface Measurement {
 }
 interface Snapshot {
   blocking: { count: number; maxMs: number; p99Ms: number };
+  /** The longest stall, counting only main's own CPU time */
+  busy: { maxMs: number };
   calls: Call[];
 }
 
@@ -397,7 +403,7 @@ function checkActionBudgets(
     failures.push(
       ...enforceBudgets(`validation/${m.action}`, {
         bytes: bytesOf(m.main.calls),
-        mainBlockedMs: Math.round(m.main.blocking.maxMs),
+        mainBusyMs: Math.round(m.main.busy.maxMs),
       }),
     );
   }
@@ -434,17 +440,17 @@ async function writeReport(
     "",
     "## Actions",
     "",
-    "Wall ms includes the 750 ms quiet period used to tell an action has settled. Handler ms (sync) is main-thread time until each handler's first await; total includes awaited work. Main blocked max is the longest event-loop stall seen during the action.",
+    "Wall ms includes the 750 ms quiet period used to tell an action has settled. Handler ms (sync) is main-thread time until each handler's first await; total includes awaited work. Main blocked max is the longest event-loop stall seen during the action; main busy max is the longest stall counting only main's own CPU time, which leaves out time the OS kept main waiting for a core (#675). The budget is on main busy.",
     "",
-    "| Action | Wall ms | IPC calls | Handler ms (sync) | Handler ms (total) | Main blocked max ms | Returned | Long frames | Longest frame ms |",
-    "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+    "| Action | Wall ms | IPC calls | Handler ms (sync) | Handler ms (total) | Main blocked max ms | Main busy max ms | Returned | Long frames | Longest frame ms |",
+    "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
   );
   for (const m of measurements) {
     const sync = m.main.calls.reduce((s, c) => s + c.syncMs, 0);
     const total = m.main.calls.reduce((s, c) => s + c.totalMs, 0);
     const bytes = m.main.calls.reduce((s, c) => s + c.bytes, 0);
     lines.push(
-      `| ${m.action} | ${m.wallMs} | ${m.main.calls.length} | ${sync.toFixed(1)} | ${total.toFixed(1)} | ${m.main.blocking.maxMs.toFixed(0)} | ${kb(bytes)} | ${m.frames.count} | ${m.frames.longestMs.toFixed(0)} |`,
+      `| ${m.action} | ${m.wallMs} | ${m.main.calls.length} | ${sync.toFixed(1)} | ${total.toFixed(1)} | ${m.main.blocking.maxMs.toFixed(0)} | ${m.main.busy.maxMs.toFixed(0)} | ${kb(bytes)} | ${m.frames.count} | ${m.frames.longestMs.toFixed(0)} |`,
     );
   }
   lines.push("", "## Calls per action", "");

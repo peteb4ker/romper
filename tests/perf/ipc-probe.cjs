@@ -8,6 +8,14 @@
  * size can be measured later, outside the timed region. An event-loop-delay
  * histogram shows how long the main thread was blocked. The test reads and
  * resets it through `globalThis.__romperProbe` from `app.evaluate`.
+ *
+ * A blocked main thread isn't always the app's doing: on a loaded machine
+ * (a shared CI runner) the OS can leave the thread waiting for a core for
+ * hundreds of milliseconds while it has nothing to run (#675). So the probe
+ * also times each stall against the main thread's own CPU time: `busy` is
+ * the longest stall counting only the time main was running (JavaScript,
+ * garbage collection, native work, synchronous file reads from cache). Time
+ * spent waiting off-CPU, for a core or for a disk, doesn't count.
  */
 const { ipcMain } = require("electron");
 const { monitorEventLoopDelay, performance } = require("node:perf_hooks");
@@ -19,6 +27,27 @@ let started = 0;
 let pending = 0;
 const loop = monitorEventLoopDelay({ resolution: 5 });
 loop.enable();
+
+/** Main-thread CPU time (user + system), in ms */
+const threadCpuMs = () => {
+  const { system, user } = process.threadCpuUsage();
+  return (user + system) / 1000;
+};
+// Each tick that arrives late is a stall; the CPU main used meanwhile says
+// how much of it was main's own work rather than waiting for a core
+const TICK_MS = 5;
+let busyMaxMs = 0;
+let lastTick = performance.now();
+let lastCpu = threadCpuMs();
+setInterval(() => {
+  const now = performance.now();
+  const cpu = threadCpuMs();
+  const lateMs = now - lastTick - TICK_MS;
+  if (lateMs > 0)
+    busyMaxMs = Math.max(busyMaxMs, Math.min(lateMs, cpu - lastCpu));
+  lastTick = now;
+  lastCpu = cpu;
+}, TICK_MS).unref();
 
 const handle = ipcMain.handle.bind(ipcMain);
 ipcMain.handle = (channel, listener) =>
@@ -78,6 +107,7 @@ globalThis.__romperProbe = {
   reset() {
     calls = [];
     started = 0;
+    busyMaxMs = 0;
     loop.reset();
   },
   snapshot() {
@@ -90,9 +120,11 @@ globalThis.__romperProbe = {
       maxMs: loop.max / 1e6,
       p99Ms: loop.percentile(99) / 1e6,
     };
+    const busy = { maxMs: busyMaxMs };
     calls = [];
     started = 0;
+    busyMaxMs = 0;
     loop.reset();
-    return { blocking, calls: out };
+    return { blocking, busy, calls: out };
   },
 };

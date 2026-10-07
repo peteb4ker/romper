@@ -40,6 +40,7 @@ also removes the measured waste. Make the persistent connection with a unit
 of work the first change: RE-26, RE-27 and RE-28 all depend on it.
 
 Not recommended:
+
 - a rewrite;
 - a state-management or query library;
 - moving search to a worker;
@@ -57,10 +58,13 @@ times, and then performs each common action.
 A main-process probe
 ([`ipc-probe.cjs`](../../tests/perf/ipc-probe.cjs)), loaded
 with Electron's `--require`, records the following for each action:
+
 - every IPC call;
 - the handler's time;
 - the size of the value it returned;
-- the longest event-loop stall.
+- the longest event-loop stall, and how much of it main was busy (the
+  stall budget counts only busy time, since a loaded runner can keep an idle
+  main thread waiting for a core; #675).
 
 The renderer records long animation frames (over 50 ms).
 
@@ -74,6 +78,7 @@ npx playwright test --config playwright.validation.config.ts performance
 
 The report goes to `validation-report/performance/report.md`. **Call counts
 and byte counts are deterministic.** Timings depend on the machine:
+
 - These runs used a 12-core M-series Mac, headless, with load average 14–21
   from other sessions.
 - The store was on the internal SSD. A store or card on removable media
@@ -86,31 +91,31 @@ measure again, run the profile.
 
 Cold start, from launch to the first kit card: 408–429 ms.
 
-| Startup call | Calls | Main ms | Returned |
-|---|---:|---:|---:|
-| `get-all-kits` | 1 | 11 | 1.5 MB |
-| `scan-banks` | 1 | 11 | — |
-| `get-local-store-status` | 1 | 1.4 | — |
-| `read-settings` | 2 | 0.2 | — |
-| `get-favorite-kits-count` | 1 | 0.6 | — |
+| Startup call              | Calls | Main ms | Returned |
+| ------------------------- | ----: | ------: | -------: |
+| `get-all-kits`            |     1 |      11 |   1.5 MB |
+| `scan-banks`              |     1 |      11 |        — |
+| `get-local-store-status`  |     1 |     1.4 |        — |
+| `read-settings`           |     2 |     0.2 |        — |
+| `get-favorite-kits-count` |     1 |     0.6 |        — |
 
 Actions (second run):
 
-| Action | IPC calls | Handler ms | Main blocked max | Returned | Notes |
-|---|---:|---:|---:|---:|---|
-| Type "kick" in search | 4 | 6 | 11 ms | 152 B | 1 `get-favorite-kits-count` per keystroke |
-| Toggle a favourite | 2 | 3 | 7 ms | 96 B | one run had a 188 ms long frame |
-| Open kit A0 | 31 | 27 | 31 ms | 4.7 MB | 30 audio buffers; a 116 ms long frame |
-| Next kit (A1) | 55 | 51 | 41 ms | 17 MB | **54 buffer fetches for 30 slots** |
-| Previous kit (A0) | 55 | 46 | 32 ms | 9 MB | refetched; no cache |
-| Drop one sample | 13 | 25 | 12 ms | 3.1 MB | **2 × `get-all-kits`**, 4 × `get-all-samples-for-kit` |
-| Gain: 10 wheel steps | 10 | 19 | 9 ms | — | one DB write per step |
-| Rename a voice | 4 | 14 | 12 ms | 1.5 MB | full reload |
-| Toggle 4 sequencer steps | 16 | 41 | 13 ms | 6 MB | **a full reload per step** |
-| Sequencer playing, 5 s | 0 | 0 | 10 ms | — | 0–1 long frames |
-| Delete a sample | 12 | 25 | 14 ms | 2 MB | full reload + 5 buffer refetches |
-| Open the write summary | 1 | **447** | **454 ms** | 1 KB | all synchronous inside one handler |
-| Idle on the grid, 10 s | 0 | — | 12 ms | — | renderer 1.5 % CPU, main 1.2 % |
+| Action                   | IPC calls | Handler ms | Main blocked max | Returned | Notes                                                 |
+| ------------------------ | --------: | ---------: | ---------------: | -------: | ----------------------------------------------------- |
+| Type "kick" in search    |         4 |          6 |            11 ms |    152 B | 1 `get-favorite-kits-count` per keystroke             |
+| Toggle a favourite       |         2 |          3 |             7 ms |     96 B | one run had a 188 ms long frame                       |
+| Open kit A0              |        31 |         27 |            31 ms |   4.7 MB | 30 audio buffers; a 116 ms long frame                 |
+| Next kit (A1)            |        55 |         51 |            41 ms |    17 MB | **54 buffer fetches for 30 slots**                    |
+| Previous kit (A0)        |        55 |         46 |            32 ms |     9 MB | refetched; no cache                                   |
+| Drop one sample          |        13 |         25 |            12 ms |   3.1 MB | **2 × `get-all-kits`**, 4 × `get-all-samples-for-kit` |
+| Gain: 10 wheel steps     |        10 |         19 |             9 ms |        — | one DB write per step                                 |
+| Rename a voice           |         4 |         14 |            12 ms |   1.5 MB | full reload                                           |
+| Toggle 4 sequencer steps |        16 |         41 |            13 ms |     6 MB | **a full reload per step**                            |
+| Sequencer playing, 5 s   |         0 |          0 |            10 ms |        — | 0–1 long frames                                       |
+| Delete a sample          |        12 |         25 |            14 ms |     2 MB | full reload + 5 buffer refetches                      |
+| Open the write summary   |         1 |    **447** |       **454 ms** |     1 KB | all synchronous inside one handler                    |
+| Idle on the grid, 10 s   |         0 |          — |            12 ms |        — | renderer 1.5 % CPU, main 1.2 %                        |
 
 What the numbers say:
 
@@ -236,6 +241,7 @@ What the numbers say:
 The direction, without new libraries:
 
 **Main**
+
 - **One connection per store,** opened and migrated once. It closes on store
   change, on setup cleanup (Windows file locks) and at quit.
 - **A unit of work.** Operations take a handle (`fooTx(db, …)`).
@@ -249,6 +255,7 @@ The direction, without new libraries:
   `DbResult` and hosts an IPC trace for tests.
 
 **Renderer**
+
 - **A kits store** on `useSyncExternalStore` (the `syncProgressStore`
   pattern). It holds kits by name and sample rows by slot, and edits patch it
   with the kit the operation returned. Selectors replace the derived copies,
@@ -271,18 +278,18 @@ the check fails until the budget is tightened in that PR. The target column
 below describes the goal; the budgets file has the numbers. See the coding
 guide's [performance budgets](coding-guide.md#performance-budgets) section.
 
-| # | Change | IDs | Size | Measured target (budgets in `tests/perf/budgets.ts`) |
-|---|---|---|---|---|
-| 1 | **Done in #513.** Persistent connection per store; reentrant unit of work; handles passed down; reindex in the same transaction | RE-81, RE-28 | M | the test asserts one connection per store; delete is 1 connection, not 5 |
-| 2 | **Done in #527.** Replace as one in-place update (keeps gain and metadata) | RE-26 | S | fault injection leaves no partial state |
-| 3 | **Done in #527.** Move between kits in one transaction, carrying the row | RE-27 | M | gain and metadata survive; move is 1 connection, not ~12 |
-| 4 | Sync planning from one query, with async header reads that yield (done in #519) | RE-82 | S–M | write summary blocks main < 50 ms |
-| 5 | Edits return the changed kit; the renderer patches instead of reloading | RE-36 | M | step toggle 4 calls / 1.5 MB → 1 call / < 1 KB; drop 13 → ~5 calls |
-| 6 | Audio: async read by id, renderer cache, no double fetch | RE-83 | S–M | fetches = filled slots; a revisit makes 0 fetches |
-| 7 | Typed channel map, unused channels pruned (pruning done in #514), one result shape | RE-57, RE-84 (done), RE-41 | M | `tsc` fails on drift |
-| 8 | Kits store with selectors; one favourites path | RE-37, RE-45 | L | favourites repro test; no copies of sample state |
-| 9 | **Restore done in #534** (one transactional call, keeps gain); the stack still lives in the keyboard-shortcut hook. Undo as transactional intent-level operations | RE-86 | M | undo of a delete is 1–2 calls and keeps gain |
-| 10 | Playback store; waveform draw path; memoisation; throttled gain | RE-87, RE-46, RE-47, RE-88 | M | gain drag ≤ 10 writes/s; grid cards don't re-render on a toast |
+| #   | Change                                                                                                                                                            | IDs                        | Size | Measured target (budgets in `tests/perf/budgets.ts`)                     |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | ---- | ------------------------------------------------------------------------ |
+| 1   | **Done in #513.** Persistent connection per store; reentrant unit of work; handles passed down; reindex in the same transaction                                   | RE-81, RE-28               | M    | the test asserts one connection per store; delete is 1 connection, not 5 |
+| 2   | **Done in #527.** Replace as one in-place update (keeps gain and metadata)                                                                                        | RE-26                      | S    | fault injection leaves no partial state                                  |
+| 3   | **Done in #527.** Move between kits in one transaction, carrying the row                                                                                          | RE-27                      | M    | gain and metadata survive; move is 1 connection, not ~12                 |
+| 4   | Sync planning from one query, with async header reads that yield (done in #519)                                                                                   | RE-82                      | S–M  | write summary blocks main < 50 ms                                        |
+| 5   | Edits return the changed kit; the renderer patches instead of reloading                                                                                           | RE-36                      | M    | step toggle 4 calls / 1.5 MB → 1 call / < 1 KB; drop 13 → ~5 calls       |
+| 6   | Audio: async read by id, renderer cache, no double fetch                                                                                                          | RE-83                      | S–M  | fetches = filled slots; a revisit makes 0 fetches                        |
+| 7   | Typed channel map, unused channels pruned (pruning done in #514), one result shape                                                                                | RE-57, RE-84 (done), RE-41 | M    | `tsc` fails on drift                                                     |
+| 8   | Kits store with selectors; one favourites path                                                                                                                    | RE-37, RE-45               | L    | favourites repro test; no copies of sample state                         |
+| 9   | **Restore done in #534** (one transactional call, keeps gain); the stack still lives in the keyboard-shortcut hook. Undo as transactional intent-level operations | RE-86                      | M    | undo of a delete is 1–2 calls and keeps gain                             |
+| 10  | Playback store; waveform draw path; memoisation; throttled gain                                                                                                   | RE-87, RE-46, RE-47, RE-88 | M    | gain drag ≤ 10 writes/s; grid cards don't re-render on a toast           |
 
 Steps 1–3 are RE-26, RE-27 and RE-28 as already researched; the persistent
 connection makes them straightforward. Steps 4 and 6 are small,
@@ -293,6 +300,7 @@ and its Target ownership section orders steps 5, 7 and 8 with the owner
 changes that go before them.
 
 Quick fixes that can go in at any time:
+
 - the logging item from the register's Low list;
 - RE-21 (settings loading and atomic writes);
 - the rest of RE-56 (about 490 LOC of unused main code, plus the unused hooks

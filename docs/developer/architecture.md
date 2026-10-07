@@ -141,7 +141,10 @@ in `electron/main/security/`.
   validation read (RE-89).
 - better-sqlite3 ships N-API prebuilds (`prebuilds/<platform>-<arch>.node`)
   that load in both Node and Electron, so nothing is rebuilt at install
-  (Forge's `rebuildConfig` rebuilds no modules). Integration tests run
+  (Forge's `rebuildConfig` rebuilds no modules). Its npm package carries
+  every platform's prebuild; Forge's `packageAfterPrune` hook
+  (`scripts/prune-sqlite-prebuilds.cjs`) keeps only the target's, which is
+  the one `lib/binding.js` loads (#694). Integration tests run
   inside Electron as Node (`ELECTRON_RUN_AS_NODE`, via
   `electron/run-vitest-in-electron.cjs`), so they use the Node that ships
   with Electron.

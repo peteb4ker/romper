@@ -1,6 +1,10 @@
 const { FusesPlugin } = require("@electron-forge/plugin-fuses");
 const { FuseV1Options, FuseVersion } = require("@electron/fuses");
 
+const {
+  pruneSqlitePrebuilds,
+} = require("./scripts/prune-sqlite-prebuilds.cjs");
+
 const config = {
   packagerConfig: {
     name: "Romper",
@@ -53,6 +57,13 @@ const config = {
   // needs a C++ toolchain node-gyp can find, which the Windows release runner
   // (Visual Studio 2026) didn't provide to Forge's bundled node-gyp.
   rebuildConfig: { onlyModules: [] },
+  hooks: {
+    // better-sqlite3's npm package carries a prebuild for every platform;
+    // ship only the target's (#694). See scripts/prune-sqlite-prebuilds.cjs.
+    packageAfterPrune: (_config, buildPath, _electron, platform, arch) => {
+      pruneSqlitePrebuilds(buildPath, platform, arch);
+    },
+  },
   makers: [
     {
       name: "@electron-forge/maker-squirrel",

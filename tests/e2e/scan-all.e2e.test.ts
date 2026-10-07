@@ -1,6 +1,5 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { DatabaseSync } from "node:sqlite";
 import {
   _electron as electron,
   type ElectronApplication,
@@ -15,6 +14,7 @@ import {
   type E2ETestEnvironment,
   extractE2EFixture,
 } from "../utils/e2e-fixture-extractor";
+import { openStoreDb } from "../utils/e2e-store-db";
 
 type ApiWindow = { electronAPI: ElectronAPI } & typeof globalThis;
 
@@ -127,9 +127,7 @@ test.describe("[UC-13] Scan All", () => {
     test("keeps a scan that fails outright on screen until dismissed", async () => {
       // A store with no kits: there's nothing to scan
       await electronApp.close();
-      const db = new DatabaseSync(
-        path.join(testEnv.localStorePath, ".romperdb", "romper.sqlite"),
-      );
+      const db = openStoreDb(testEnv.localStorePath);
       try {
         db.exec("DELETE FROM samples; DELETE FROM voices; DELETE FROM kits;");
       } finally {

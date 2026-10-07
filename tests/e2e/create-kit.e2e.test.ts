@@ -1,7 +1,6 @@
 import { type Page } from "@playwright/test";
 import fs from "fs-extra";
 import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
 import { _electron as electron, type ElectronApplication } from "playwright";
 
 import { expect, test } from "../utils/e2e-error-guard";
@@ -10,6 +9,7 @@ import {
   type E2ETestEnvironment,
   extractE2EFixture,
 } from "../utils/e2e-fixture-extractor";
+import { openStoreDb } from "../utils/e2e-store-db";
 
 // RE-64: a kit could only be created in a bank that already had one, so an
 // empty library had no way to make its first kit.
@@ -42,9 +42,7 @@ test.describe("[UC-14] Create a kit", () => {
 
   test("[UC-14] creates the first kit in an empty library", async () => {
     // Empty the fixture store, like the setup wizard's "empty" option
-    const db = new DatabaseSync(
-      path.join(testEnv.localStorePath, ".romperdb", "romper.sqlite"),
-    );
+    const db = openStoreDb(testEnv.localStorePath);
     try {
       db.exec("DELETE FROM samples; DELETE FROM voices; DELETE FROM kits;");
     } finally {

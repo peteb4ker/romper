@@ -5,10 +5,10 @@ import {
 import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
 
 import { approveLocalStorePrompts } from "../utils/e2e-dialogs";
 import { expect, test } from "../utils/e2e-error-guard";
+import { openStoreDb } from "../utils/e2e-store-db";
 import { encodeTestWav, sine } from "../validation/support/wav";
 
 interface SampleRow {
@@ -21,10 +21,7 @@ interface SampleRow {
 
 /** Each kit's voices linked as stereo, from the store's database */
 function linkedVoices(storePath: string): string[] {
-  const db = new DatabaseSync(
-    path.join(storePath, ".romperdb", "romper.sqlite"),
-    { readOnly: true },
-  );
+  const db = openStoreDb(storePath, { readOnly: true });
   try {
     return (
       db
@@ -66,10 +63,7 @@ const kickName = (i: number) => `1 KICK ${String(i).padStart(2, "0")}.wav`;
 
 /** Each named bank's name, from the store's database */
 function bankNames(storePath: string): Record<string, string> {
-  const db = new DatabaseSync(
-    path.join(storePath, ".romperdb", "romper.sqlite"),
-    { readOnly: true },
-  );
+  const db = openStoreDb(storePath, { readOnly: true });
   try {
     const rows = db
       .prepare(
@@ -106,10 +100,7 @@ async function buildCard(card: string) {
 }
 
 function readStore(storePath: string) {
-  const db = new DatabaseSync(
-    path.join(storePath, ".romperdb", "romper.sqlite"),
-    { readOnly: true },
-  );
+  const db = openStoreDb(storePath, { readOnly: true });
   try {
     const kits = (
       db.prepare("SELECT name FROM kits ORDER BY name").all() as {

@@ -6,19 +6,16 @@ import AdmZip from "adm-zip";
 import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
 import { pathToFileURL } from "node:url";
 
 import { approveLocalStorePrompts } from "../utils/e2e-dialogs";
 import { expect, test } from "../utils/e2e-error-guard";
+import { openStoreDb } from "../utils/e2e-store-db";
 import { encodeTestWav, sine } from "../validation/support/wav";
 
 /** Each named bank's name, from the store's database */
 function bankNames(storePath: string): Record<string, string> {
-  const db = new DatabaseSync(
-    path.join(storePath, ".romperdb", "romper.sqlite"),
-    { readOnly: true },
-  );
+  const db = openStoreDb(storePath, { readOnly: true });
   try {
     const rows = db
       .prepare(

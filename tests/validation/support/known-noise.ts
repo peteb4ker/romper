@@ -62,13 +62,15 @@ export const KNOWN_NOISE: KnownNoise[] = [
     examples: [
       "[4063:1001/200346.787692:ERROR:gpu/ipc/client/command_buffer_proxy_impl.cc:285] ContextResult::kTransientFailure: Failed to send GpuControl.CreateCommandBuffer.",
       "[7167:1003/135553.496539:ERROR:gpu/ipc/client/command_buffer_proxy_impl.cc:490] GPU state invalid after WaitForGetOffsetInRange.",
+      // macOS: https://github.com/peteb4ker/romper/actions/runs/37652084347
+      "[3874:1007/164046.874962:ERROR:gpu/ipc/client/command_buffer_proxy_impl.cc:490] GPU state invalid after WaitForGetOffsetInRange.",
     ],
     link: `${CHROMIUM_SOURCE}gpu/ipc/client/command_buffer_proxy_impl.cc`,
     pattern:
       /:ERROR:gpu\/ipc\/client\/command_buffer_proxy_impl\.cc:\d+\] (ContextResult::kTransientFailure|GPU state invalid after WaitForGetOffsetInRange)/,
-    platforms: ["linux"],
+    platforms: ["darwin", "linux"],
     reason:
-      "Chromium's GPU process fails on the GPU-less Linux CI runners, at a time that depends on load",
+      "Chromium's GPU process fails on the GPU-less Linux CI runners, and on the virtualized macOS runners (#690), at a time that depends on load",
     source: "Chromium GPU client",
   },
   {

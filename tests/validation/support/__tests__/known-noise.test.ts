@@ -88,6 +88,13 @@ describe("[Q-07] known noise", () => {
       )?.source,
     ).toBe("Blink audio output IPC");
   });
+
+  it("covers the GPU client line that failed a macOS run (#690)", () => {
+    const line =
+      "[3874:1007/164046.874962:ERROR:gpu/ipc/client/command_buffer_proxy_impl.cc:490] GPU state invalid after WaitForGetOffsetInRange.";
+    expect(matchKnownNoise(line, "darwin")?.source).toBe("Chromium GPU client");
+    expect(matchKnownNoise(line, "win32")).toBeUndefined();
+  });
 });
 
 describe("[Q-07] MessageCollector.classify with known noise", () => {

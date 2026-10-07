@@ -127,7 +127,7 @@
     "serialize-javascript": "^7.0.5",
     "minimatch@>=10.0.0": "10.2.4",
     "tar": "^7.5.22",
-    "shell-quote": "^1.10.0",
+    "shell-quote": "^1.11.0",
     "@electron/node-gyp": "npm:node-gyp@^13.0.2"
   },
   "dependencies": {

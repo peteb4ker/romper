@@ -107,7 +107,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
@@ -264,14 +264,14 @@ jobs:
       # e2e-tests-check below shows the totals in its job summary
       - name: Upload results for the testing summary
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: test-results-e2e-${{ matrix.os }}-shard-${{ matrix.shard }}-of-${{ matrix.shards }}
           path: reports/
           retention-days: 7
 
       - name: Upload test results
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: failure()
         with:
           name: e2e-test-results-${{ matrix.os }}-shard-${{ matrix.shard }}-of-${{ matrix.shards }}
@@ -281,7 +281,7 @@ jobs:
           retention-days: 7
 
       - name: Upload screenshots
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: failure()
         with:
           name: e2e-screenshots-${{ matrix.os }}-shard-${{ matrix.shard }}-of-${{ matrix.shards }}
@@ -308,7 +308,7 @@ jobs:
       - name: Download the shards' results
         if: needs.plan.result == 'success'
         continue-on-error: true
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           pattern: test-results-e2e-*
           path: shards

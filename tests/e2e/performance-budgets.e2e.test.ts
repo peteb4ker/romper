@@ -14,7 +14,6 @@ import {
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
 
 import { type BudgetName, enforceBudgets } from "../perf/budgets";
 import { dropFiles } from "../utils/e2e-drop";
@@ -30,6 +29,7 @@ import {
   takeIpcCounts,
   waitForIpcQuiet,
 } from "../utils/e2e-ipc-budget";
+import { openStoreDb } from "../utils/e2e-store-db";
 import { encodeTestWav, sine } from "../validation/support/wav";
 
 test.describe("[Q-01] Performance budgets: IPC calls per action", () => {
@@ -148,9 +148,7 @@ test.describe("[Q-01] Performance budgets: IPC calls per action", () => {
  * own names.
  */
 async function renameKitSamples(storePath: string, kit: string) {
-  const db = new DatabaseSync(
-    path.join(storePath, ".romperdb", "romper.sqlite"),
-  );
+  const db = openStoreDb(storePath);
   try {
     const rows = db
       .prepare("SELECT id, filename FROM samples WHERE kit_name = ?")

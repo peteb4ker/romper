@@ -29,7 +29,7 @@ describe("undoTypes", () => {
 
       const id = createActionId();
 
-      expect(id).toMatch(new RegExp(`^${now}-[a-z0-9]{9}$`));
+      expect(id).toMatch(new RegExp(`^${now}-[a-f0-9]{8}$`));
 
       vi.restoreAllMocks();
     });
@@ -38,20 +38,35 @@ describe("undoTypes", () => {
       const id = createActionId();
 
       // Should match format: timestamp-randomstring
-      expect(id).toMatch(/^\d+-[a-z0-9]{9}$/);
+      expect(id).toMatch(/^\d+-[a-f0-9]{8}$/);
     });
 
-    it("uses Math.random for suffix generation", () => {
-      const mockRandom = vi.spyOn(Math, "random").mockReturnValue(0.123456789);
+    it("takes the suffix from crypto.randomUUID", () => {
+      vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValue(
+        "4fa2c9e1-7b3d-4c8e-9a1f-2d3e4f5a6b7c",
+      );
       vi.spyOn(Date, "now").mockReturnValue(1000000000000);
 
-      const id = createActionId();
+      expect(createActionId()).toBe("1000000000000-4fa2c9e1");
 
-      // Should contain the substring generated from the mocked random value
-      // 0.123456789.toString(36).substring(2, 11) = "4fzzzxjyl"
-      expect(id).toContain("4fzzzxjyl");
+      vi.restoreAllMocks();
+    });
 
-      mockRandom.mockRestore();
+    // #669: the suffix came from Math.random().toString(36), which drops
+    // trailing zeros, so its length varied
+    it("[Q-07] always has an 8-character suffix", () => {
+      vi.spyOn(Date, "now").mockReturnValue(1000000000000);
+
+      // (0.5).toString(36) is "0.i": the old suffix was just "i"
+      vi.spyOn(Math, "random").mockReturnValue(0.5);
+      expect(createActionId()).toMatch(/^1000000000000-[a-f0-9]{8}$/);
+
+      // Leading zeros are kept
+      vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValue(
+        "00000000-0000-4000-8000-000000000000",
+      );
+      expect(createActionId()).toBe("1000000000000-00000000");
+
       vi.restoreAllMocks();
     });
   });

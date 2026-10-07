@@ -10,36 +10,44 @@ import { createTempStore, removeTempStore } from "./support/tempStore.js";
 // card the window froze until every removal finished. Removal is now
 // asynchronous and yields between entries.
 
-const KITS = 40;
-const FILES_PER_KIT = 48;
+// A kit folder per voice-layer file is enough to show the removal yields
+// between entries. Kept small, and built in parallel, so setup is quick on
+// Windows runners, where creating files is slow (#673).
+const KITS = 12;
+const FILES_PER_KIT = 4;
 
 describe("[UC-34] [Q-01] removing old kits from the card (#653)", () => {
   let work: string;
   let card: string;
   let kits: string[];
 
-  beforeEach(() => {
+  beforeEach(async () => {
     work = createTempStore("romper-card-removal-");
     card = path.join(work, "card");
-    kits = [];
-    for (let k = 0; k < KITS; k++) {
-      const kit = `${String.fromCodePoint(65 + (k % 26))}${Math.floor(k / 26) + 10}`;
-      kits.push(kit);
-      fs.mkdirSync(path.join(card, kit), { recursive: true });
-      for (let f = 0; f < FILES_PER_KIT; f++) {
-        fs.writeFileSync(
-          path.join(card, kit, `${(f % 4) + 1}-${f} sample.wav`),
-          "x",
+    kits = Array.from(
+      { length: KITS },
+      (_, k) => `${String.fromCodePoint(65 + k)}10`,
+    );
+    await Promise.all(
+      kits.map(async (kit) => {
+        await fs.promises.mkdir(path.join(card, kit), { recursive: true });
+        await Promise.all(
+          Array.from({ length: FILES_PER_KIT }, (_, f) =>
+            fs.promises.writeFile(
+              path.join(card, kit, `${f + 1}-01 sample.wav`),
+              "",
+            ),
+          ),
         );
-      }
-    }
+      }),
+    );
   });
 
   afterEach(() => {
     removeTempStore(work);
   });
 
-  it("lets other work run while it removes a large tree", async () => {
+  it("lets other work run while it removes a tree of kit folders", async () => {
     // Count event-loop turns during the removal: a removal that held the
     // main thread would let none through until it finished
     let turns = 0;

@@ -201,41 +201,44 @@ export const BUDGETS = {
    * Headroom budgets for the factory-scale profile
    * (tests/validation/performance.validation.ts), which only runs in the
    * manual validation workflow. `bytes` is the size of everything IPC
-   * returned; `mainBlockedMs` is the longest main-thread stall.
+   * returned; `mainBusyMs` is the longest main-thread stall, counting only
+   * the time main was running. Time the OS kept an idle main thread waiting
+   * for a core isn't counted: on a loaded runner that alone reached 384 ms
+   * with no IPC call (#675).
    */
   validation: {
-    "back to the grid": { bytes: SMALL, mainBlockedMs: STALL },
+    "back to the grid": { bytes: SMALL, mainBusyMs: STALL },
     "cold start": { bytes: { max: mb(2) } },
-    "delete a sample": { bytes: { max: mb(2.6) }, mainBlockedMs: STALL },
+    "delete a sample": { bytes: { max: mb(2.6) }, mainBusyMs: STALL },
     "drop a sample on voice 4": {
       bytes: { max: mb(4) },
-      mainBlockedMs: STALL,
+      mainBusyMs: STALL,
     },
-    "enable editing": { bytes: { max: kb(24) }, mainBlockedMs: STALL },
+    "enable editing": { bytes: { max: kb(24) }, mainBusyMs: STALL },
     "gain: 10 wheel steps on one knob": {
       bytes: SMALL,
-      mainBlockedMs: STALL,
+      mainBusyMs: STALL,
     },
-    "idle on the kit grid, 10 s": { bytes: SMALL, mainBlockedMs: STALL },
-    "next kit (A1)": { bytes: { max: mb(22) }, mainBlockedMs: STALL },
-    "open kit A0": { bytes: { max: mb(6) }, mainBlockedMs: STALL },
-    "open the sequencer": { bytes: SMALL, mainBlockedMs: STALL },
+    "idle on the kit grid, 10 s": { bytes: SMALL, mainBusyMs: STALL },
+    "next kit (A1)": { bytes: { max: mb(22) }, mainBusyMs: STALL },
+    "open kit A0": { bytes: { max: mb(6) }, mainBusyMs: STALL },
+    "open the sequencer": { bytes: SMALL, mainBusyMs: STALL },
     /** Planning yields instead of holding main for the whole plan (RE-82) */
-    "open the write summary": { bytes: { max: kb(8) }, mainBlockedMs: STALL },
+    "open the write summary": { bytes: { max: kb(8) }, mainBusyMs: STALL },
     /** RE-83: a revisited kit's buffers come from the renderer's cache */
     "previous kit (A0)": {
       bytes: { max: mb(12), target: kb(64), until: "RE-83" },
-      mainBlockedMs: STALL,
+      mainBusyMs: STALL,
     },
-    "rename voice 1": { bytes: { max: mb(2) }, mainBlockedMs: STALL },
-    "search: clear": { bytes: SMALL, mainBlockedMs: STALL },
-    "search: type 'kick'": { bytes: SMALL, mainBlockedMs: STALL },
-    "sequencer playing, 5 s": { bytes: SMALL, mainBlockedMs: STALL },
+    "rename voice 1": { bytes: { max: mb(2) }, mainBusyMs: STALL },
+    "search: clear": { bytes: SMALL, mainBusyMs: STALL },
+    "search: type 'kick'": { bytes: SMALL, mainBusyMs: STALL },
+    "sequencer playing, 5 s": { bytes: SMALL, mainBusyMs: STALL },
     "toggle 4 sequencer steps": {
       bytes: { max: mb(8), target: kb(4), until: "RE-36" },
-      mainBlockedMs: STALL,
+      mainBusyMs: STALL,
     },
-    "toggle a favourite": { bytes: SMALL, mainBlockedMs: STALL },
+    "toggle a favourite": { bytes: SMALL, mainBusyMs: STALL },
   },
 } satisfies Record<string, Record<string, Budgets>>;
 

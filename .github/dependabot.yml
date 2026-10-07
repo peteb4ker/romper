@@ -1,9 +1,12 @@
 # Dependabot version updates (#468). Security updates are separate: they
 # ignore the grouping and the PR limit below.
 #
-# Minor and patch updates arrive as one grouped PR per ecosystem each
-# week; major updates arrive as individual PRs. Upgrading the major
-# versions the app is built on is release work, tracked in #469.
+# npm: minor and patch updates arrive as one grouped PR each week; major
+# updates arrive as individual PRs. Upgrading the major versions the app
+# is built on is release work, tracked in #469.
+#
+# GitHub Actions: every update, majors included, arrives in one grouped
+# PR each week, so the CI changes land through one CI and merge cycle.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -41,7 +44,8 @@ updates:
     commit-message:
       prefix: "ci"
     groups:
-      actions-minor-and-patch:
+      actions:
         update-types:
+          - major
           - minor
           - patch

@@ -126,7 +126,7 @@ that the app needs at runtime (static estimate from the lockfile).
 | lcov | 1.16.0 | lcov merge tool | GPL-2.0-or-later |
 | handlebars | 4.7.9 | Release-note templates | MIT |
 | sharp, fontkit | 0.35.0, 2.0.4 | Icon and DMG background generators | Apache-2.0, MIT |
-| archiver, tar, adm-zip | 7.0.1, 7.5.16, 0.6.0 | Test fixtures and archive tests | MIT, BlueOak-1.0.0, MIT |
+| archiver, tar, adm-zip | 8.0.0, 7.5.16, 0.6.0 | Test fixtures and archive tests | MIT, BlueOak-1.0.0, MIT |
 | madge | 8.0.0 | Dependency analysis scripts | MIT |
 
 **Unused devDependencies** (no import or script reference): `cross-env`,

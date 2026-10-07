@@ -10,7 +10,7 @@
 import fs from "fs-extra";
 import os from "os";
 import path from "path";
-import archiver from "archiver";
+import { TarArchive } from "archiver";
 import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "url";
 
@@ -276,7 +276,7 @@ async function main() {
 
     await new Promise((resolve, reject) => {
       const output = fs.createWriteStream(archivePath);
-      const archive = archiver('tar', { gzip: true });
+      const archive = new TarArchive({ gzip: true });
 
       output.on('close', () => {
         console.log(`📦 Archive created: ${archivePath} (${archive.pointer()} bytes)`);

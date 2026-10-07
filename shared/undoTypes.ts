@@ -203,9 +203,11 @@ export interface VoiceSnapshot {
   voice: number;
 }
 
-// Helper to create action IDs
+// Helper to create action IDs: the timestamp, then 8 random hex digits, the
+// first segment of a UUID. Its length is fixed, unlike the old
+// Math.random().toString(36) suffix, which drops trailing zeros (#669).
 export function createActionId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+  return `${Date.now()}-${globalThis.crypto.randomUUID().slice(0, 8)}`;
 }
 
 // Helper to create action descriptions

@@ -148,14 +148,14 @@ fill 2 mono voices."
 
   An error Romper itself logs on purpose isn't noise: declare it in the
   spec's `expectedMessages`.
-- Pull requests that change only tests or docs (`tests/`, `__tests__/`,
-  `*.test.*` and `*.spec.*` files, `docs/`, `aidlc-docs/`, Markdown) run
-  e2e on Linux only. Any other change, to the app, `electron/`, `shared/`,
-  scripts, `package.json`, the lockfile, the workflows or the Playwright
-  config, runs e2e on Linux, macOS and Windows, as do pushes to `main`.
-  On pull requests CI splits the suite into shards (`--shard`) on each
-  platform; the `plan` job in `e2e.yml` sets how many. `e2e-tests-check` passes only when every
-  shard on every platform passed, and its job summary adds the shards up.
+- Pull requests run e2e on Linux only, split into shards (`--shard`); the
+  `plan` job in `e2e.yml` sets how many. The unit and integration suites
+  still run on Linux, macOS and Windows on every pull request. Pushes to
+  `main` and the release (its tag or a manual run) run e2e on Linux, macOS
+  and Windows, so a macOS- or Windows-only e2e failure shows up on `main`
+  after the merge: fix it forward like any red check on `main`.
+  `e2e-tests-check` passes only when every shard on every platform that
+  ran passed, and its job summary adds the shards up.
 - On CI, Playwright retries a failed e2e test once (`retries` in
   `playwright.config.ts`), so one flaky test doesn't fail the run; locally
   it doesn't retry. A test that passed only on retry is flaky, not

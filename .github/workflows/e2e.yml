@@ -21,23 +21,23 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # Which runners to use, and how many shards each runs (#660). A pull
-  # request that changes only tests or docs runs e2e on Linux only; any
-  # other change (the app, electron, shared code, scripts, package files,
-  # workflows, the Playwright config) runs all three platforms, as do
-  # pushes (main, and the release's tag).
+  # Which runners to use, and how many shards each runs (#660, #698).
+  # Pull requests run e2e on Linux only: the cross-platform unit and
+  # integration suites (test.yml) still run on all three platforms and are
+  # required. Everything else runs e2e on Linux, macOS and Windows: pushes
+  # to main, which don't hold up the queue and catch a macOS- or
+  # Windows-only regression right after merge, and the release (its tag
+  # push or a manual run, which call this workflow), as does a manual run
+  # of this workflow.
   #
   # Shards: on one runner (workers: 1) the suite takes about 8 minutes on
-  # macOS, 6 on Windows and 4 on Linux. A pull request splits it, three
-  # shards on macOS and two on the others, so each runs 2-3 minutes of
-  # tests. Pushes don't: nobody waits on them, and GitHub runs at most 5
-  # macOS jobs at once across the repo, so a sharded main push would hold
-  # back the next pull request's macOS shards.
+  # macOS, 6 on Windows and 4 on Linux. A pull request splits it into two
+  # Linux shards, so each runs about 2 minutes of tests. Other runs don't
+  # shard: nobody waits on a main push, and GitHub runs at most 5 macOS
+  # jobs at once across the repo.
   plan:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: read
+    permissions: {}
     outputs:
       os: ${{ steps.plan.outputs.os }}
       matrix: ${{ steps.plan.outputs.matrix }}
@@ -46,9 +46,6 @@ jobs:
         id: plan
         env:
           EVENT: ${{ github.event_name }}
-          GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.pull_request.number }}
-          REPO: ${{ github.repository }}
         run: |
           # plan <os>:<shards>...  writes the os list and the job matrix
           plan() {
@@ -65,35 +62,13 @@ jobs:
             echo "os=[${oses[*]}]" >> "$GITHUB_OUTPUT"
             echo "matrix={\"include\":[${jobs[*]}]}" >> "$GITHUB_OUTPUT"
           }
-          all() { plan ubuntu-latest:2 macos-latest:3 windows-latest:2; }
-          linux() { plan ubuntu-latest:2; }
 
-          if [ "$EVENT" = "push" ]; then
-            plan ubuntu-latest:1 macos-latest:1 windows-latest:1
-            exit 0
-          fi
-          if [ "$EVENT" != "pull_request" ]; then
-            linux
-            exit 0
-          fi
-          # If the file list can't be read, run every platform
-          if ! files=$(gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[].filename'); then
-            echo "Couldn't list the PR's files; running every platform"
-            all
-            exit 0
-          fi
-          # Tests (tests/, __tests__/, *.test.* and *.spec.* files) and docs
-          # (docs/, aidlc-docs/, Markdown). Anything else can behave
-          # differently per platform.
-          tests_or_docs='^(tests/|docs/|aidlc-docs/)|(^|/)__tests__/|\.(test|spec)\.[cm]?[jt]sx?$|\.md$'
-          others=$(printf '%s\n' "$files" | grep -Ev "$tests_or_docs" | grep -v '^$' || true)
-          if [ -n "$others" ]; then
-            echo "These files aren't tests or docs, so e2e runs on all three platforms:"
-            printf '%s\n' "$others" | sed 's/^/  /'
-            all
+          if [ "$EVENT" = "pull_request" ]; then
+            echo "Pull request: e2e runs on Linux only"
+            plan ubuntu-latest:2
           else
-            echo "Only tests and docs changed; e2e runs on Linux only"
-            linux
+            echo "$EVENT: e2e runs on Linux, macOS and Windows"
+            plan ubuntu-latest:1 macos-latest:1 windows-latest:1
           fi
 
   e2e-tests:

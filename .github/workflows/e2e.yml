@@ -21,11 +21,10 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # Which runners to use, and how many shards each runs (#660). Pushes
-  # (main, and the release's tag) run all three platforms. A pull request
-  # that changes only tests or docs runs Linux only (#660, extending
-  # RE-52/#467); any other change (the app, electron, shared code, scripts,
-  # package files, workflows, the Playwright config) runs all three.
+  # Which runners to use, and how many shards each runs (#660). Every
+  # push and pull request runs all three platforms for now; a follow-up
+  # (#660) brings back a Linux-only run for PRs that change only tests or
+  # docs, with its proof.
   #
   # Shards per platform: the suite takes about 8 minutes on macOS, 6 on
   # Windows and 4 on Linux on one runner (workers: 1), so macOS gets three
@@ -43,9 +42,6 @@ jobs:
         id: plan
         env:
           EVENT: ${{ github.event_name }}
-          GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.pull_request.number }}
-          REPO: ${{ github.repository }}
         run: |
           # plan <os>:<shards>...  writes the os list and the job matrix
           plan() {
@@ -65,31 +61,9 @@ jobs:
           all() { plan ubuntu-latest:2 macos-latest:3 windows-latest:2; }
           linux() { plan ubuntu-latest:2; }
 
-          if [ "$EVENT" = "push" ]; then
-            all
-            exit 0
-          fi
-          if [ "$EVENT" != "pull_request" ]; then
-            linux
-            exit 0
-          fi
-          # If the file list can't be read, run every platform
-          if ! files=$(gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[].filename'); then
-            echo "Couldn't list the PR's files; running every platform"
-            all
-            exit 0
-          fi
-          # Tests (tests/, __tests__/, *.test.* and *.spec.* files) and docs
-          # (docs/, aidlc-docs/, Markdown). Everything else can behave
-          # differently per platform.
-          tests_or_docs='^(tests/|docs/|aidlc-docs/)|(^|/)__tests__/|\.(test|spec)\.[cm]?[jt]sx?$|\.md$'
-          others=$(printf '%s\n' "$files" | grep -Ev "$tests_or_docs" | grep -v '^$' || true)
-          if [ -n "$others" ]; then
-            echo "These files aren't tests or docs, so e2e runs on all three platforms:"
-            printf '%s\n' "$others" | sed 's/^/  /'
+          if [ "$EVENT" = "pull_request" ] || [ "$EVENT" = "push" ]; then
             all
           else
-            echo "Only tests and docs changed; e2e runs on Linux only"
             linux
           fi
 

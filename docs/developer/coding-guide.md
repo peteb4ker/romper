@@ -148,11 +148,7 @@ fill 2 mono voices."
 
   An error Romper itself logs on purpose isn't noise: declare it in the
   spec's `expectedMessages`.
-- Pull requests that change only tests or docs (`tests/`, `__tests__/`,
-  `*.test.*` and `*.spec.*` files, `docs/`, `aidlc-docs/`, Markdown) run
-  e2e on Linux only. Any other change, to the app, `electron/`, `shared/`,
-  scripts, `package.json`, the lockfile, the workflows or the Playwright
-  config, runs e2e on Linux, macOS and Windows, as do pushes to `main`.
+- Pull requests and pushes to `main` run e2e on Linux, macOS and Windows.
   CI splits the suite into shards (`--shard`) on each platform; the `plan`
   job in `e2e.yml` sets how many. `e2e-tests-check` passes only when every
   shard on every platform passed, and its job summary adds the shards up.

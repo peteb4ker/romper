@@ -14,6 +14,7 @@ const { version } = JSON.parse(readFileSync("package.json", "utf8")) as {
 };
 
 // RE-72: the About dialog showed "Version: dev" in every build
+// TEMP (#660 proof): a test-only change, to show e2e runs on Linux only
 test.describe("[UC-37] About", () => {
   let electronApp: ElectronApplication;
   let window: Page;

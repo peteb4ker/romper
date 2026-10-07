@@ -172,13 +172,13 @@ jobs:
 
       # Download coverage artifacts from previous jobs
       - name: Download unit coverage artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: unit-coverage
           path: coverage/unit/
 
       - name: Download integration coverage artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: integration-coverage
           path: coverage/integration/

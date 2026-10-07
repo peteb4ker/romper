@@ -270,7 +270,7 @@ jobs:
       - name: Download the shards' results
         if: needs.plan.result == 'success'
         continue-on-error: true
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           pattern: test-results-e2e-*
           path: shards

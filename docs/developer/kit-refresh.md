@@ -4,7 +4,7 @@ priority: medium
 status: in progress
 updated: 2026-10-08
 context_size: small
-implementation_status: step 1 in the PR that added this file; steps 2-4 planned
+implementation_status: step 1 in #765; steps 2-4 planned
 -->
 
 # Kit refresh after an edit
@@ -74,8 +74,8 @@ refetches its own `sampleMetadata` copy with `get-all-samples-for-kit`.
   on many kits), a bank rename (bank names on many kits), and creating,
   duplicating or deleting a kit (until those return what they changed, step
   4).
-- **What the user sees doesn't change**, apart from speed. A single-kit
-  reload that fails keeps what's on screen (see Decisions).
+- **What the user sees doesn't change**, apart from speed. A reload that
+  fails keeps what's on screen and says so (see Decisions).
 
 ## Steps
 
@@ -86,9 +86,10 @@ not here.
 ### 1. Reload one kit, in order (done in the PR that added this file)
 
 - `useKitDataManager.refreshKit(kitName)` reads one kit with the existing
-  `get-kit` channel and patches both copies. `reloadCurrentKitSamples` is
-  `refreshKit` plus the #605 failure handling (mark the kit, say so), and
-  replaces `refreshSingleKitMetadata`.
+  `get-kit` channel and patches both copies. If the kit can't be read, it
+  keeps what's shown and uses the #605 failure handling (mark the kit, say
+  so) after any edit. It replaces `reloadCurrentKitSamples` and
+  `refreshSingleKitMetadata`.
 - `KitsView` passes the editor a kit-named `onKitUpdated`, and
   `onRequestSamplesReload` takes the kit name too. A sample edit, a rescan
   and an undo each reload once (one `get-kit`), not a full reload plus a
@@ -97,7 +98,8 @@ not here.
   share the read numbering above.
 - **Verified by:** unit tests in `useKitDataManager.test.ts` for each
   ordering case (they fail with the numbering removed) and for a failed
-  read; `useKitEditorLogic.test.ts` for the kit name and the single reload;
+  read; `KitsView.test.tsx` for a voice rename, which reloads one kit and
+  says so when that fails; `useKitEditorLogic.test.ts` for the kit name and the single reload;
   the e2e budgets, where every editor action has a `get-all-kits` budget of
   none and a `get-kit` budget, and the step toggle has a `get-kit bytes`
   budget; tighter `bytes` budgets in the validation profile for the editor
@@ -129,14 +131,14 @@ not here.
   integration budgets for each operation's statements; ordering tests with
   results instead of reads. This PR says `Fixes #452`.
 
-### 4. List changes without a full reload (needs a decision first)
+### 4. List changes without a full reload
 
 - Create and duplicate return the new kit and delete removes its kit, so
   only Scan all, a write, a bank rename, setup and store changes reload
   every kit.
-- A failed full reload keeps the kits on screen instead of emptying the
-  grid. This changes what the user sees, so it waits for Pete's sign-off on
-  the issue.
+- A failed full reload (Scan all, a write, creating or deleting a kit)
+  keeps the kits on screen instead of emptying the grid. Approved by Pete
+  on #452 (2026-10-08).
 - **Verified by:** unit tests for each list change and for the failure;
   the create and delete e2e flows.
 
@@ -146,13 +148,17 @@ results.
 
 ## Decisions
 
-- **A single-kit reload that fails** (step 1). Before, any failed reload
-  emptied the kit list. Now the kit on screen stays. After a sample edit or
-  an undo, the existing message says the samples couldn't be loaded, as it
-  did when the samples fetch failed; after other edits nothing is said.
-  Whether those should say something is open for Pete.
-- **A failed full reload** (step 4) still empties the list until Pete
-  decides.
+Approved by Pete on #452 (2026-10-08):
+
+- **A single-kit reload that fails** (step 1) keeps the kit on screen,
+  where any failed reload used to empty the kit list. After every kind of
+  edit (samples, steps, trigger conditions, voice names, stereo, sequencer
+  settings, slices) and after an undo, it shows the #605 message, "Couldn't
+  load the samples for kit X. Try reopening it." No new wording. The
+  message stack drops a repeat of a message already showing (#657), so
+  several failed reloads show it once.
+- **A failed full reload** (step 4) keeps the kits on screen instead of
+  emptying the grid.
 
 ## Not covered
 

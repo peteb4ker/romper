@@ -45,12 +45,10 @@ interface UseKitDataManagerReturn {
    */
   refreshAllKitsAndSamples: () => Promise<void>;
   /**
-   * Reloads one kit, with its voices and samples, in one call (#452).
-   * Resolves false if it couldn't be read; what's shown then stays.
+   * Reloads one kit, with its voices and samples, in one call (#452). If
+   * it can't be read, what's shown stays and the user is told (#605).
    */
-  refreshKit: (kitName: string) => Promise<boolean>;
-  /** refreshKit, and says so if the kit's samples couldn't be loaded (#605) */
-  reloadCurrentKitSamples: (kitName: string) => Promise<void>;
+  refreshKit: (kitName: string) => Promise<void>;
   sampleCounts: Record<string, [number, number, number, number]>;
   toggleKitEditable: (kitName: string) => Promise<void>;
   toggleKitFavorite: (
@@ -211,7 +209,7 @@ export function useKitDataManager({
   // Reload one kit (its row, voices and samples) with one get-kit call,
   // instead of every kit (#452). A response older than what the kit shows
   // is dropped. If the kit can't be read, what's shown stays.
-  const refreshKit = useCallback(async (kitName: string) => {
+  const readKit = useCallback(async (kitName: string) => {
     const read = ++lastRead.current;
     let kit: KitWithRelations | null = null;
     try {
@@ -248,17 +246,19 @@ export function useKitDataManager({
     return true;
   }, []);
 
-  // Reload one kit with its samples. If they can't be loaded, the samples
-  // already shown stay; a kit with none to show becomes unavailable (#605).
-  const reloadCurrentKitSamples = useCallback(
+  // Reload one kit after any edit to it, on opening it without its samples,
+  // and after an undo. If it can't be read, what's shown stays and the user
+  // is told, whatever the edit was; a kit with no samples to show becomes
+  // unavailable (#605, #452).
+  const refreshKit = useCallback(
     async (kitName: string) => {
-      if (await refreshKit(kitName)) return;
+      if (await readKit(kitName)) return;
       setFailedKits((prev) =>
         prev.has(kitName) ? prev : new Set(prev).add(kitName),
       );
       onMessageRef.current?.(samplesFailedMessage(kitName), "error");
     },
-    [refreshKit],
+    [readKit],
   );
 
   // Opening a kit loads its samples if none are loaded yet, or if the last
@@ -268,10 +268,10 @@ export function useKitDataManager({
       const listed = dbKitsRef.current.some((kit) => kit.name === kitName);
       const loaded = allKitSamplesRef.current[kitName] !== undefined;
       if (listed && (!loaded || failedKitsRef.current.has(kitName))) {
-        await reloadCurrentKitSamples(kitName);
+        await refreshKit(kitName);
       }
     },
-    [reloadCurrentKitSamples],
+    [refreshKit],
   );
 
   // Kits whose samples couldn't be loaded and that have none to show. They
@@ -459,7 +459,6 @@ export function useKitDataManager({
     markKitModified,
     refreshAllKitsAndSamples,
     refreshKit,
-    reloadCurrentKitSamples,
     sampleCounts,
     toggleKitEditable,
     toggleKitFavorite,

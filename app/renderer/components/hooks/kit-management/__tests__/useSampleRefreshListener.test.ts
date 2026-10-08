@@ -11,10 +11,10 @@ function refresh(kitName: string) {
 
 describe("[UC-26] useSampleRefreshListener", () => {
   it("[Q-01] reloads the selected kit, samples and sequence, in one reload (#452)", () => {
-    const reloadCurrentKitSamples = vi.fn().mockResolvedValue(undefined);
+    const refreshKit = vi.fn().mockResolvedValue(undefined);
     const { unmount } = renderHook(() =>
       useSampleRefreshListener({
-        reloadCurrentKitSamples,
+        refreshKit,
         selectedKit: "A0",
       }),
     );
@@ -22,8 +22,8 @@ describe("[UC-26] useSampleRefreshListener", () => {
     refresh("A0");
     refresh("B1");
 
-    expect(reloadCurrentKitSamples).toHaveBeenCalledTimes(1);
-    expect(reloadCurrentKitSamples).toHaveBeenCalledWith("A0");
+    expect(refreshKit).toHaveBeenCalledTimes(1);
+    expect(refreshKit).toHaveBeenCalledWith("A0");
     unmount();
   });
 });

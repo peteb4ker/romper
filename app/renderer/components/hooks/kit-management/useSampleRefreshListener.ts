@@ -5,7 +5,7 @@ interface UseSampleRefreshListenerParams {
    * Reloads the kit: its samples and its own data, e.g. its sequence after
    * a sequencer undo, in one call (#452)
    */
-  reloadCurrentKitSamples: (kitName: string) => Promise<void>;
+  refreshKit: (kitName: string) => Promise<void>;
   selectedKit: null | string;
 }
 
@@ -16,12 +16,12 @@ interface UseSampleRefreshListenerParams {
  * selection and reload function are read through refs.
  */
 export function useSampleRefreshListener({
-  reloadCurrentKitSamples,
+  refreshKit,
   selectedKit,
 }: UseSampleRefreshListenerParams) {
   // Store latest values in refs to avoid recreating event listener
   const selectedKitRef = useRef(selectedKit);
-  const reloadCurrentKitSamplesRef = useRef(reloadCurrentKitSamples);
+  const refreshKitRef = useRef(refreshKit);
 
   // Update refs when values change
   useEffect(() => {
@@ -29,15 +29,15 @@ export function useSampleRefreshListener({
   }, [selectedKit]);
 
   useEffect(() => {
-    reloadCurrentKitSamplesRef.current = reloadCurrentKitSamples;
-  }, [reloadCurrentKitSamples]);
+    refreshKitRef.current = refreshKit;
+  }, [refreshKit]);
 
   // Listen for refresh events from undo operations - stable event listener
   useEffect(() => {
     const handleRefreshSamples = (event: Event) => {
       const customEvent = event as CustomEvent<{ kitName: string }>;
       if (customEvent.detail.kitName === selectedKitRef.current) {
-        void reloadCurrentKitSamplesRef.current(selectedKitRef.current);
+        void refreshKitRef.current(selectedKitRef.current);
       }
     };
 

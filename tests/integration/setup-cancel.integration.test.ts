@@ -16,6 +16,7 @@ import {
   LocalStoreSetupService,
   SetupCancelledError,
 } from "../../electron/main/services/localStoreSetupService.js";
+import { encodeTestWav, sine } from "../validation/support/wav.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 /**
@@ -185,5 +186,76 @@ describe("[UC-02] Cancelling setup (RE-66)", () => {
     expect(holdsOpen(zipPath)).not.toBe(true);
     // What Windows needs: the file can go
     fs.rmSync(zipPath);
+  });
+});
+
+// #616: the wizard marks the store finished (finish-setup) as soon as it's
+// fully built, before saving it as the local store. If that save fails and
+// the user quits, the quit-time cleanup keeps the store; a store whose
+// build failed part way is still cleaned up.
+describe("[UC-01] Quitting after setup built the store (#616)", () => {
+  let tempDir: string;
+  let target: string;
+  let dbDir: string;
+  let setup: LocalStoreSetupService;
+
+  /** What the wizard does before the settings save: copy a kit, build the db */
+  async function buildStore() {
+    await setup.trackCreatedEntries(target, () => {
+      fs.mkdirSync(path.join(target, "A0"));
+      fs.writeFileSync(
+        path.join(target, "A0", "1 kick.wav"),
+        encodeTestWav([sine(220, 0.05, 44100)], {
+          bitDepth: 16,
+          encoding: "pcm",
+          sampleRate: 44100,
+        }),
+      );
+    });
+    expect(setup.createSetupDatabase(dbDir).success).toBe(true);
+    expect(setup.importSetupKit(dbDir, "A0").success).toBe(true);
+  }
+
+  beforeEach(() => {
+    tempDir = createTempStore("setup-finish-");
+    target = path.join(tempDir, "store");
+    dbDir = path.join(target, ".romperdb");
+    fs.mkdirSync(target);
+    setup = new LocalStoreSetupService();
+  });
+
+  afterEach(() => {
+    removeTempStore(tempDir);
+  });
+
+  it("keeps a fully built store when saving it as the local store failed", async () => {
+    await buildStore();
+    setup.markSetupComplete(target);
+
+    // The settings save failed, so no local store is configured at quit
+    expect(setup.cleanupUnfinishedSetups(null)).toEqual([]);
+
+    expect(fs.readdirSync(target).sort()).toEqual([".romperdb", "A0"]);
+    expect(fs.existsSync(path.join(dbDir, "romper.sqlite"))).toBe(true);
+    expect(fs.existsSync(path.join(target, "A0", "1 kick.wav"))).toBe(true);
+  });
+
+  it("still cleans up a store whose build failed part way", async () => {
+    await setup.trackCreatedEntries(target, () => {
+      fs.mkdirSync(path.join(target, "A0"));
+    });
+    expect(setup.createSetupDatabase(dbDir).success).toBe(true);
+    // The build stops here (a crash, or a failed kit import): never finished
+
+    const results = setup.cleanupUnfinishedSetups(null);
+
+    expect(results).toEqual([
+      expect.objectContaining({ removed: true, targetPath: target }),
+    ]);
+    expect(fs.existsSync(path.join(target, "A0"))).toBe(false);
+    expect(fs.existsSync(dbDir)).toBe(false);
+    expect(fs.readdirSync(target)).toEqual([
+      expect.stringMatching(/^\.romperdb\.failed-\d+$/),
+    ]);
   });
 });

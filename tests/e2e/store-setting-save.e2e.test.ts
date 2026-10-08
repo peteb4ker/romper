@@ -150,6 +150,33 @@ test.describe("Saving the local store setting fails (#528)", () => {
     expect(await fs.pathExists(db)).toBe(true);
   });
 
+  test("[UC-01] quitting after the setting wasn't saved keeps the store setup built (#616)", async () => {
+    await launch({});
+    const target = path.join(await tempDir("romper-e2e-target-"), "romper");
+    await window.locator('[data-testid="wizard-source-blank"]').click();
+    await window.locator("#local-store-path-input").fill(target);
+    await refuseSettingsSave();
+
+    await window.locator('[data-testid="wizard-initialize-btn"]').click();
+    expect(await settledOn("wizard-error", "wizard-post-init-guidance")).toBe(
+      "wizard-error",
+    );
+
+    // Quit instead of trying again: the quit-time cleanup of unfinished
+    // setups (RE-66) runs, and must leave the finished store alone
+    const app = electronApp!;
+    const closed = app.waitForEvent("close");
+    await app.evaluate(({ app: electronMain }) => {
+      setTimeout(() => electronMain.quit(), 0);
+    });
+    await closed;
+    electronApp = undefined;
+
+    const db = path.join(target, ".romperdb", "romper.sqlite");
+    expect(await fs.pathExists(db)).toBe(true);
+    expect(await fs.readdir(target)).toEqual([".romperdb"]);
+  });
+
   test("[UC-05] Set Up a New Local Store says so when it can't forget the saved store", async () => {
     const missing = path.join(await tempDir("romper-e2e-gone-"), "romper");
     await launch({ localStorePath: missing });

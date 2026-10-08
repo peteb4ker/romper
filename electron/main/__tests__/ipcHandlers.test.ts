@@ -736,6 +736,32 @@ describe("registerIpcHandlers - path authorization (RE-03)", () => {
     expect(localStoreSetupService.cleanupFailedSetup).not.toHaveBeenCalled();
   });
 
+  it("[UC-01] finish-setup marks the built store finished (#616)", async () => {
+    const { localStoreSetupService } =
+      await import("../services/localStoreSetupService.js");
+    const { checkPathAccess } = await setup();
+
+    const result = await ipcMainHandlers["finish-setup"]({}, "/store");
+
+    expect(checkPathAccess).toHaveBeenCalledWith("/store", { write: true });
+    expect(result).toEqual({ success: true });
+    expect(localStoreSetupService.markSetupComplete).toHaveBeenCalledWith(
+      "/store",
+    );
+  });
+
+  it("finish-setup needs write access to the target", async () => {
+    const { checkPathAccess } = await setup();
+    checkPathAccess.mockReturnValueOnce(DENIED);
+    const { localStoreSetupService } =
+      await import("../services/localStoreSetupService.js");
+
+    const result = await ipcMainHandlers["finish-setup"]({}, "/other");
+
+    expect(result).toEqual({ error: DENIED.error, success: false });
+    expect(localStoreSetupService.markSetupComplete).not.toHaveBeenCalled();
+  });
+
   it("check-existing-local-store needs read access and fails closed", async () => {
     const { checkPathAccess } = await setup();
     checkPathAccess.mockReturnValueOnce(DENIED);

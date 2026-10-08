@@ -152,7 +152,9 @@ Renderer paths are under `app/renderer/components/` unless they start with
   `useLocalStoreWizard`, and Change Local Store; setup creates the folder
   and database (`create-romper-db` → `localStoreSetupService.createSetupDatabase`).
   Changing it closes every connection (`closeAllDbConnections`) and marks
-  setup complete (`markSetupComplete`).
+  setup complete (`markSetupComplete`). The wizard marks it complete
+  earlier, with `finish-setup`, as soon as the store is built, so a quit
+  after a failed save keeps the store (#616).
 - **Readers and copies:**
   - main: `ServicePathManager.getLocalStorePath` for almost every service;
     `get-local-store-status` (`localStoreService.getLocalStoreStatus`) with

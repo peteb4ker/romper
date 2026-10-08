@@ -883,6 +883,48 @@ describe("useLocalStoreWizard", () => {
       expect(window.electronAPI.cleanupPartialInit).not.toHaveBeenCalled();
     });
 
+    it("marks the built store finished before saving the setting (#616)", async () => {
+      const save = vi.fn().mockResolvedValue(false);
+      const { result } = await setUpWith(save);
+
+      await initialize(result);
+
+      // So the quit-time cleanup of unfinished setups leaves it alone
+      expect(window.electronAPI.finishSetup).toHaveBeenCalledWith(root);
+      expect(
+        vi.mocked(window.electronAPI.finishSetup).mock.invocationCallOrder[0],
+      ).toBeLessThan(save.mock.invocationCallOrder[0]);
+    });
+
+    it("doesn't mark a store finished when the build fails part way (#616)", async () => {
+      const save = vi.fn().mockResolvedValue(true);
+      const { result } = await setUpWith(save);
+      vi.mocked(window.electronAPI.setupImportKit).mockRejectedValue(
+        new Error("disk full"),
+      );
+
+      const outcome = await initialize(result);
+
+      expect(outcome).toMatchObject({ success: false });
+      expect(window.electronAPI.finishSetup).not.toHaveBeenCalled();
+      expect(save).not.toHaveBeenCalled();
+      expect(window.electronAPI.cleanupPartialInit).toHaveBeenCalledWith(root);
+    });
+
+    it("still saves the setting when marking the store finished fails (#616)", async () => {
+      vi.mocked(window.electronAPI.finishSetup).mockRejectedValueOnce(
+        new Error("IPC failed"),
+      );
+      const save = vi.fn().mockResolvedValue(true);
+      const { result } = await setUpWith(save);
+
+      const outcome = await initialize(result);
+
+      expect(save).toHaveBeenCalledWith(root);
+      expect(outcome).toMatchObject({ success: true });
+      expect(window.electronAPI.cleanupPartialInit).not.toHaveBeenCalled();
+    });
+
     it("keeps the store when the setSetting fallback fails", async () => {
       vi.mocked(window.electronAPI.setSetting).mockRejectedValue(
         new Error("disk full"),

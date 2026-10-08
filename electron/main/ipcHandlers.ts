@@ -49,7 +49,9 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
     if (key === "localStorePath" && value !== previousStore) {
       closeAllDbConnections();
     }
-    // The wizard saves the store as the last step of a successful setup
+    // The wizard saves the store as the last step of a successful setup. It
+    // marked the store finished already (finish-setup); this covers any
+    // other caller that saves a store setup built.
     if (key === "localStorePath" && typeof value === "string" && !clearing) {
       localStoreSetupService.markSetupComplete(value);
     }
@@ -249,6 +251,15 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
   // Stop the setup download or extraction in progress (RE-66)
   ipcMain.handle("cancel-setup", () => {
     localStoreSetupService.cancelSetup();
+    return { success: true };
+  });
+
+  // The store setup built is complete: a quit no longer cleans it up, even
+  // if saving it as the local store then fails (#616)
+  ipcMain.handle("finish-setup", (_event, targetPath: string) => {
+    const access = checkPathAccess(targetPath, { write: true });
+    if (!access.ok) return { error: access.error, success: false };
+    localStoreSetupService.markSetupComplete(targetPath);
     return { success: true };
   });
 

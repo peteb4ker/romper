@@ -368,10 +368,9 @@ describe("KitsView", () => {
         </TestSettingsProvider>,
       );
 
-      // Wait for component to render and callbacks to be set up
-      await waitFor(() => {
-        expect(globalMenuCallbacks).not.toBeNull();
-      });
+      // Scan All covers the kits loaded, so wait for them: a scan started
+      // before they load scans none
+      await screen.findAllByText("B0");
 
       // Trigger the unified scan all callback
       menuCallbacks().onScanAll?.();

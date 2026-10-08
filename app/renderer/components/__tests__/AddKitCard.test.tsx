@@ -1,12 +1,8 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import AddKitCard from "../AddKitCard";
-
-afterEach(() => {
-  cleanup();
-});
 
 describe("[UC-14] AddKitCard", () => {
   const defaultProps = {

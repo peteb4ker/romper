@@ -1,8 +1,8 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { VoiceSamples } from "../kitTypes";
 
@@ -54,10 +54,6 @@ describe("KitEditorContainer", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    cleanup();
   });
 
   describe("rendering", () => {

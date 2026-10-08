@@ -1,13 +1,12 @@
 import {
   act,
-  cleanup,
   fireEvent,
   render,
   screen,
   waitFor,
 } from "@testing-library/react";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
 
@@ -84,10 +83,6 @@ describe("KitStepSequencer", () => {
 
     mockLogic = createMockLogic();
     mockUseKitStepSequencerLogic.mockReturnValue(mockLogic);
-  });
-
-  afterEach(() => {
-    cleanup();
   });
 
   it("renders transport controls and grid", () => {

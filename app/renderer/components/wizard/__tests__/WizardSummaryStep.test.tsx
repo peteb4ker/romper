@@ -1,11 +1,7 @@
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 
 import WizardSummaryStep from "../WizardSummaryStep";
-
-afterEach(() => {
-  cleanup();
-});
 
 describe("WizardSummaryStep", () => {
   it("renders summary with source only (no sourceUrl or targetUrl)", () => {

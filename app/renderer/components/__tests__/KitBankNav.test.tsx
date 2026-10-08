@@ -1,5 +1,5 @@
 // Test suite for KitBankNav component
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
@@ -8,10 +8,6 @@ import KitBankNav from "../KitBankNav";
 describe("KitBankNav", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    cleanup();
   });
 
   it("renders all 26 bank buttons", () => {
@@ -135,10 +131,6 @@ describe("[UC-07] A-Z hotkey navigation and bank highlighting", () => {
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    cleanup();
-  });
-
   it("highlights the correct bank when selectedBank is set", () => {
     const mockKits = [
       createMockKitWithRelations({ bank_letter: "A", name: "A1" }),
@@ -207,7 +199,6 @@ describe("KitBankNav fisheye hover behavior", () => {
   });
 
   afterEach(() => {
-    cleanup();
     window.getComputedStyle = originalGetComputedStyle;
     vi.restoreAllMocks();
   });

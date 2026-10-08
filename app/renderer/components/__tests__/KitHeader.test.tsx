@@ -2,17 +2,12 @@ import type { Kit } from "@romper/shared/db/schema";
 
 // Test suite for KitHeader component
 import { fireEvent, render, screen } from "@testing-library/react";
-import { cleanup } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { useKitEditorKeyboardNav } from "../hooks/kit-management/useKitEditorKeyboardNav";
 import KitHeader from "../KitHeader";
-
-afterEach(() => {
-  cleanup();
-});
 
 describe("KitHeader", () => {
   const baseProps = {

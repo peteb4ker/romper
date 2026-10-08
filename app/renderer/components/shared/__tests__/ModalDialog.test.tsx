@@ -1,7 +1,7 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import ModalDialog from "../ModalDialog";
 
@@ -18,8 +18,6 @@ function Dialog(props: Partial<React.ComponentProps<typeof ModalDialog>>) {
 
 // RE-48: modals had no dialog role, focus trap or Escape
 describe("[Q-06] ModalDialog", () => {
-  afterEach(cleanup);
-
   it("is a labelled modal dialog", () => {
     render(<Dialog />);
     const dialog = screen.getByRole("dialog", { name: "Title" });

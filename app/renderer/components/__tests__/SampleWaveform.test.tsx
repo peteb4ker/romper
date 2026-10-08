@@ -38,6 +38,7 @@ function createMockAudioContext(overrides?: Record<string, unknown>) {
     createChannelSplitter: vi.fn(() => ({ connect: vi.fn() })),
     createGain: vi.fn(() => ({
       connect: vi.fn(),
+      disconnect: vi.fn(),
       gain: { setValueAtTime: vi.fn() },
     })),
     currentTime: 0,
@@ -336,6 +337,7 @@ describe("SampleWaveform", () => {
   it("creates GainNode and applies volume when volume prop is provided", async () => {
     const mockGainNode = {
       connect: vi.fn(),
+      disconnect: vi.fn(),
       gain: { setValueAtTime: vi.fn() },
     };
     const mockSource = {
@@ -791,11 +793,34 @@ describe("SampleWaveform", () => {
   });
 
   it("draws on canvas when audio buffer is available", async () => {
-    const canvas = document.querySelector("canvas");
-    expect(canvas).toBeTruthy();
+    global.AudioContext = vi.fn(function () {
+      return createMockAudioContext({
+        decodeAudioData: vi.fn(async () => ({
+          duration: 1.0,
+          getChannelData: vi.fn(() => new Float32Array(100)),
+          length: 44100,
+          numberOfChannels: 1,
+          sampleRate: 44100,
+        })),
+      });
+    });
+    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
+      data: new ArrayBuffer(1024),
+      success: true,
+    });
 
-    // Mock basic canvas functionality
-    expect(mockCanvasContext).toBeDefined();
+    render(
+      <SampleWaveform
+        kitName="A1"
+        playTrigger={0}
+        slotNumber={1}
+        voiceNumber={1}
+      />,
+    );
+
+    expect(document.querySelector("canvas")).toBeInTheDocument();
+    await waitFor(() => expect(mockCanvasContext.fill).toHaveBeenCalled());
+    expect(mockCanvasContext.stroke).toHaveBeenCalled();
   });
 
   it("clears onended on previous source when replaying to prevent stale callback", async () => {
@@ -817,6 +842,7 @@ describe("SampleWaveform", () => {
     };
     const mockGainNode = {
       connect: vi.fn(),
+      disconnect: vi.fn(),
       gain: { setValueAtTime: vi.fn() },
     };
     const mockAudioBuffer = {
@@ -908,6 +934,7 @@ describe("SampleWaveform", () => {
     };
     const mockGainNode = {
       connect: vi.fn(),
+      disconnect: vi.fn(),
       gain: { setValueAtTime: vi.fn() },
     };
     const mockAudioBuffer = {
@@ -1004,6 +1031,7 @@ describe("SampleWaveform", () => {
     };
     const mockGainNode = {
       connect: vi.fn(),
+      disconnect: vi.fn(),
       gain: { setValueAtTime: vi.fn() },
     };
     const mockAudioBuffer = {

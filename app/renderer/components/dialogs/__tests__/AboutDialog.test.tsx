@@ -1,6 +1,6 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../../tests/mocks/electron/electronAPI";
 import AboutDialog from "../AboutDialog";
@@ -42,10 +42,6 @@ describe("[UC-37] AboutDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setupElectronAPIMock();
-  });
-
-  afterEach(() => {
-    cleanup();
   });
 
   describe("rendering", () => {

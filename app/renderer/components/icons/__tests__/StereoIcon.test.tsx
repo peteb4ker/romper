@@ -1,14 +1,10 @@
-import { cleanup, render } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import React from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import StereoIcon from "../StereoIcon";
 
 describe("StereoIcon", () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   it("renders an svg element", () => {
     const { container } = render(<StereoIcon />);
     expect(container.querySelector("svg")).not.toBeNull();

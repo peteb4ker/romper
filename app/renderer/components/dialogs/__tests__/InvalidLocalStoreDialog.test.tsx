@@ -1,12 +1,6 @@
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../../tests/mocks/electron/electronAPI";
 import { createMockSettings } from "../../../../../tests/mocks/settings";
@@ -68,10 +62,6 @@ describe("[UC-05] InvalidLocalStoreDialog", () => {
       }),
     );
     Object.assign(window, { electronAPI: mockElectronAPI });
-  });
-
-  afterEach(() => {
-    cleanup();
   });
 
   it("should not render when closed", () => {

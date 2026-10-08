@@ -1,8 +1,8 @@
 import type { Kit } from "@romper/shared/db/schema.js";
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock isValidKit before importing the component
 vi.mock("@romper/shared/kitUtilsShared", () => ({
@@ -71,10 +71,6 @@ describe("[UC-08] KitGridCard", () => {
     mockIsValidKit.mockImplementation((name: string) =>
       /^\p{Lu}\d{1,2}$/u.test(name),
     );
-  });
-
-  afterEach(() => {
-    cleanup();
   });
 
   describe("Rendering", () => {

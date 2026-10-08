@@ -1,10 +1,8 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { SequencerKeysButton, SequencerKeysOverlay } from "../SequencerHelp";
-
-afterEach(() => cleanup());
 
 describe("SequencerKeysButton", () => {
   it("opens the shortcut list", () => {

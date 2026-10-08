@@ -1,7 +1,7 @@
 // Test suite for KitBrowserHeader component
-import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock LedIconGrid to avoid RAF/animation complexity in tests
 vi.mock("../led-icon/LedIconGrid", () => ({
@@ -14,10 +14,6 @@ vi.mock("../led-icon/LedIconGrid", () => ({
 
 import { render } from "../../../../tests/utils/renderWithProviders";
 import KitBrowserHeader from "../KitBrowserHeader";
-
-afterEach(() => {
-  cleanup();
-});
 
 describe("KitBrowserHeader", () => {
   const defaultProps = {

@@ -1,7 +1,7 @@
 // Test suite for KitDialogs component
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import KitDialogs from "../KitDialogs";
 
@@ -15,10 +15,6 @@ describe("KitDialogs", () => {
     onDuplicateKitDestChange: vi.fn(),
     showDuplicateKit: false,
   };
-
-  afterEach(() => {
-    cleanup();
-  });
 
   it("renders nothing if dialog is hidden", () => {
     render(<KitDialogs {...defaultProps} />);

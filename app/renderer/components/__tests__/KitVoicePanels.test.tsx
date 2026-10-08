@@ -1,6 +1,5 @@
 import {
   act,
-  cleanup,
   fireEvent,
   render,
   screen,
@@ -34,7 +33,6 @@ const baseProps = {
 
 afterEach(() => {
   vi.clearAllMocks();
-  cleanup();
 });
 
 function MultiVoicePanelsTestWrapper({

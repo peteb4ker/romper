@@ -1,6 +1,6 @@
 import { SAMPLE_FILE_LABELS } from "@romper/shared/stereoLinkRules";
-import { cleanup, render, renderHook } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { render, renderHook } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { slotKey } from "../../../../utils/slotKey";
 import {
@@ -143,8 +143,6 @@ describe("useVoicePanelSlotRendering", () => {
   });
 
   describe("file labels (#537)", () => {
-    afterEach(cleanup);
-
     function renderWithStatus(status: null | string) {
       const props: UseVoicePanelSlotRenderingOptions = {
         ...mockProps,

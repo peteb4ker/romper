@@ -1,10 +1,4 @@
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -68,10 +62,6 @@ function stripProps(overrides: Partial<SliceStripProps> = {}): SliceStripProps {
 }
 
 describe("SliceStrip", () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   beforeEach(() => {
     setupElectronAPIMock();
   });
@@ -216,7 +206,6 @@ describe("SliceStrip waveform", () => {
   });
 
   afterEach(() => {
-    cleanup();
     // @ts-expect-error -- test-only global
     delete globalThis.OfflineAudioContext;
   });

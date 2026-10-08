@@ -1,8 +1,8 @@
 import type { SliceStep } from "@romper/shared/sliceTypes";
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { makeSliceStep, toSliceView } from "../hooks/shared/sliceConstants";
 import SliceStepEditor from "../SliceStepEditor";
@@ -19,10 +19,6 @@ function setup(step: SliceStep) {
 }
 
 describe("[UC-33] SliceStepEditor", () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   it("shows the step's slice number and length", () => {
     setup(makeSliceStep(4, 2, 16));
     expect(screen.getByTestId("slice-step-start")).toHaveValue(5);

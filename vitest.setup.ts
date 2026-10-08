@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom/vitest";
+import { cleanup } from "@testing-library/react";
 import { TextEncoder } from "node:util";
-import { beforeAll, vi } from "vitest";
+import { afterEach, beforeAll, vi } from "vitest";
 
 import { setupAudioMocks } from "./tests/mocks/browser/audio";
 import { setupDOMMocks, setupWindowDOMMocks } from "./tests/mocks/browser/dom";
@@ -14,6 +15,13 @@ import "./tests/mocks/errorHandling";
 if (typeof globalThis.TextEncoder === "undefined") {
   globalThis.TextEncoder = TextEncoder;
 }
+
+// Unmount whatever each test rendered. Testing Library does this on its own
+// only when Vitest's globals are on, and they aren't here. A component or
+// hook left mounted keeps its listeners and timers, which can then handle
+// the next test's events or fire after jsdom is gone (#704, #709). Test
+// files' own afterEach hooks run first, so cleanup sees their teardown.
+afterEach(cleanup);
 
 // Setup global DOM mocks (IntersectionObserver, Document, Worker, Canvas)
 setupDOMMocks();

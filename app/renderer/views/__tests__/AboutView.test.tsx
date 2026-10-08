@@ -1,12 +1,8 @@
 // Test suite for AboutView component
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
 import AboutView from "../AboutView";
-
-afterEach(() => {
-  cleanup();
-});
 
 describe("AboutView", () => {
   it("renders app name, version, and MIT license", () => {

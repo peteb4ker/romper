@@ -49,6 +49,7 @@ function stripProps(overrides: Partial<SliceStripProps> = {}): SliceStripProps {
     notice: null,
     onAssign: vi.fn(),
     onAudition: vi.fn(),
+    onClose: vi.fn(),
     onDivisionChange: vi.fn(),
     onRoll: vi.fn(),
     onSelectVoice: vi.fn(),
@@ -219,7 +220,7 @@ describe("SliceStrip waveform", () => {
   });
 
   it("loads the displayed slot, draws it, and reuses the decoded peaks", async () => {
-    api.getSampleAudioBuffer.mockResolvedValue({
+    vi.mocked(api.getSampleAudioBuffer).mockResolvedValue({
       data: { bytes: new ArrayBuffer(8), version: "v1" },
       success: true,
     });
@@ -242,7 +243,7 @@ describe("SliceStrip waveform", () => {
   it("[UC-33] loads the file that moves up into the slot (#575)", async () => {
     // Each answer is another file, so another version
     let answers = 0;
-    api.getSampleAudioBuffer.mockImplementation(async () => ({
+    vi.mocked(api.getSampleAudioBuffer).mockImplementation(async () => ({
       data: { bytes: new ArrayBuffer(8), version: `v${++answers}` },
       success: true,
     }));
@@ -270,7 +271,7 @@ describe("SliceStrip waveform", () => {
   });
 
   it("doesn't reuse peaks while it's unknown which file they're from", async () => {
-    api.getSampleAudioBuffer.mockResolvedValue({
+    vi.mocked(api.getSampleAudioBuffer).mockResolvedValue({
       data: { bytes: new ArrayBuffer(8), version: "v1" },
       success: true,
     });
@@ -286,7 +287,7 @@ describe("SliceStrip waveform", () => {
 
   it("warns and draws nothing when the sample can't be decoded", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    api.getSampleAudioBuffer.mockRejectedValue(new Error("missing"));
+    vi.mocked(api.getSampleAudioBuffer).mockRejectedValue(new Error("missing"));
     render(<SliceStrip {...stripProps({ slotIndex: 1 })} />);
     await waitFor(() => expect(warn).toHaveBeenCalled());
     expect(fillRect).not.toHaveBeenCalled();
@@ -294,7 +295,10 @@ describe("SliceStrip waveform", () => {
   });
 
   it("ignores failed loads", async () => {
-    api.getSampleAudioBuffer.mockResolvedValue({ error: "no", success: false });
+    vi.mocked(api.getSampleAudioBuffer).mockResolvedValue({
+      error: "no",
+      success: false,
+    });
     render(<SliceStrip {...stripProps({ slotIndex: 2 })} />);
     await waitFor(() => expect(api.getSampleAudioBuffer).toHaveBeenCalled());
     expect(fillRect).not.toHaveBeenCalled();

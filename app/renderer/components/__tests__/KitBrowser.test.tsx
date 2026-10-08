@@ -8,128 +8,94 @@ vi.mock("../hooks/kit-management/useKitBrowser", () => ({
   useKitBrowser: vi.fn(),
 }));
 
+import type { KitWithRelations } from "@romper/shared/db/schema";
+
 import React from "react";
 
+import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
+import { createMockVoice } from "../../../../tests/factories/voice.factory";
 import { useKitBrowser } from "../hooks/kit-management/useKitBrowser";
 import KitBrowser from "../KitBrowser";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 
+type KitBrowserProps = React.ComponentProps<typeof KitBrowser>;
+
 // Get the mocked function for use in tests
 const mockUseKitBrowser = vi.mocked(useKitBrowser);
 
+type KitBrowserState = ReturnType<typeof useKitBrowser>;
+
+const VOICE_NAMES = ["Kick", "Snare", "Hat", "Tom"];
+
+const makeKit = (
+  name: string,
+  overrides: Partial<KitWithRelations> = {},
+): KitWithRelations =>
+  createMockKitWithRelations({
+    bank: null,
+    bank_letter: name[0],
+    name,
+    voices: VOICE_NAMES.map((voice_alias, i) =>
+      createMockVoice({
+        id: i + 1,
+        kit_name: name,
+        voice_alias,
+        voice_number: i + 1,
+      }),
+    ),
+    ...overrides,
+  });
+
 const baseProps = {
-  kitData: [
-    {
-      name: "A0",
-      voices: [
-        { voice_alias: "Kick", voice_number: 1 },
-        { voice_alias: "Snare", voice_number: 2 },
-        { voice_alias: "Hat", voice_number: 3 },
-        { voice_alias: "Tom", voice_number: 4 },
-      ],
-    },
-    {
-      name: "A1",
-      voices: [
-        { voice_alias: "Kick", voice_number: 1 },
-        { voice_alias: "Snare", voice_number: 2 },
-        { voice_alias: "Hat", voice_number: 3 },
-        { voice_alias: "Tom", voice_number: 4 },
-      ],
-    },
-    {
-      name: "B0",
-      voices: [
-        { voice_alias: "Kick", voice_number: 1 },
-        { voice_alias: "Snare", voice_number: 2 },
-        { voice_alias: "Hat", voice_number: 3 },
-        { voice_alias: "Tom", voice_number: 4 },
-      ],
-    },
-  ],
-  kits: [
-    {
-      alias: null,
-      artist: null,
-      bank: null,
-      bank_letter: "A",
-      editable: false,
-      locked: false,
-      modified_since_sync: false,
-      name: "A0",
-      samples: [],
-      step_pattern: null,
-      voices: [
-        { kit_name: "A0", voice_alias: "Kick", voice_number: 1 },
-        { kit_name: "A0", voice_alias: "Snare", voice_number: 2 },
-        { kit_name: "A0", voice_alias: "Hat", voice_number: 3 },
-        { kit_name: "A0", voice_alias: "Tom", voice_number: 4 },
-      ],
-    },
-    {
-      alias: null,
-      artist: null,
-      bank: null,
-      bank_letter: "A",
-      editable: false,
-      locked: false,
-      modified_since_sync: false,
-      name: "A1",
-      samples: [],
-      step_pattern: null,
-      voices: [
-        { kit_name: "A1", voice_alias: "Kick", voice_number: 1 },
-        { kit_name: "A1", voice_alias: "Snare", voice_number: 2 },
-        { kit_name: "A1", voice_alias: "Hat", voice_number: 3 },
-        { kit_name: "A1", voice_alias: "Tom", voice_number: 4 },
-      ],
-    },
-    {
-      alias: null,
-      artist: null,
-      bank: null,
-      bank_letter: "B",
-      editable: false,
-      locked: false,
-      modified_since_sync: false,
-      name: "B0",
-      samples: [],
-      step_pattern: null,
-      voices: [
-        { kit_name: "B0", voice_alias: "Kick", voice_number: 1 },
-        { kit_name: "B0", voice_alias: "Snare", voice_number: 2 },
-        { kit_name: "B0", voice_alias: "Hat", voice_number: 3 },
-        { kit_name: "B0", voice_alias: "Tom", voice_number: 4 },
-      ],
-    },
-  ],
-  onRefreshKits: vi.fn(),
-  onSelectKit: vi.fn(),
-  sampleCounts: { A0: [1, 1, 1, 1], A1: [1, 1, 1, 1], B0: [1, 1, 1, 1] },
+  kits: [makeKit("A0"), makeKit("A1"), makeKit("B0")],
+  localStorePath: "/test/local-store",
+  onRefreshKits: vi
+    .fn<NonNullable<KitBrowserProps["onRefreshKits"]>>()
+    .mockResolvedValue(undefined),
+  onSelectKit: vi.fn<KitBrowserProps["onSelectKit"]>(),
+  onShowSettings: vi.fn<KitBrowserProps["onShowSettings"]>(),
+  sampleCounts: {
+    A0: [1, 1, 1, 1],
+    A1: [1, 1, 1, 1],
+    B0: [1, 1, 1, 1],
+  } satisfies KitBrowserProps["sampleCounts"],
 };
 
-const createMockReturnValue = (overrides = {}) => ({
+const createMockReturnValue = (
+  overrides: Partial<KitBrowserState> = {},
+): KitBrowserState => ({
   bankNames: {},
   duplicateKitDest: "",
-  duplicateKitDirect: vi.fn().mockResolvedValue({}),
+  duplicateKitDirect: vi
+    .fn<KitBrowserState["duplicateKitDirect"]>()
+    .mockResolvedValue({}),
   duplicateKitError: null,
   duplicateKitSource: null,
-  error: null,
-  focusBankInKitList: vi.fn(),
+  focusBankInKitList: vi.fn<KitBrowserState["focusBankInKitList"]>(),
   focusedKit: "A0",
-  globalBankHotkeyHandler: vi.fn(),
-  handleBankClick: vi.fn(),
-  handleCreateKitInBank: vi.fn(),
-  handleDuplicateKit: vi.fn(),
+  globalBankHotkeyHandler: vi.fn<KitBrowserState["globalBankHotkeyHandler"]>(),
+  handleBankClick: vi.fn<KitBrowserState["handleBankClick"]>(),
+  handleBankClickWithScroll:
+    vi.fn<KitBrowserState["handleBankClickWithScroll"]>(),
+  handleBankNameChange: vi
+    .fn<KitBrowserState["handleBankNameChange"]>()
+    .mockResolvedValue(undefined),
+  handleCreateKitInBank: vi.fn<KitBrowserState["handleCreateKitInBank"]>(),
+  handleDuplicateKit: vi.fn<KitBrowserState["handleDuplicateKit"]>(),
+  handleVisibleBankChange: vi.fn<KitBrowserState["handleVisibleBankChange"]>(),
   isCreatingKit: false,
   kits: baseProps.kits,
+  newlyAnimatedKit: null,
   scrollContainerRef: { current: null },
-  sdCardWarning: null,
   selectedBank: "A",
-  setDuplicateKitDest: vi.fn(),
-  setDuplicateKitError: vi.fn(),
-  setDuplicateKitSource: vi.fn(),
-  setSelectedBank: vi.fn(),
+  setBankNames: vi.fn<KitBrowserState["setBankNames"]>(),
+  setDuplicateKitDest: vi.fn<KitBrowserState["setDuplicateKitDest"]>(),
+  setDuplicateKitError: vi.fn<KitBrowserState["setDuplicateKitError"]>(),
+  setDuplicateKitSource: vi.fn<KitBrowserState["setDuplicateKitSource"]>(),
+  setFocusedKit: vi.fn<KitBrowserState["setFocusedKit"]>(),
+  setSelectedBank: vi.fn<KitBrowserState["setSelectedBank"]>(),
+  showEmptyBank: vi.fn<KitBrowserState["showEmptyBank"]>(),
+  shownEmptyBank: null,
   ...overrides,
 });
 
@@ -240,10 +206,12 @@ describe("KitBrowser", () => {
   });
 
   describe("keyboard navigation", () => {
-    it("does not highlight/select a bank button when pressing a key for a bank with no kits", async () => {
+    // Unfiltered, an empty bank's button stays clickable to add a kit
+    // (RE-64); with a filter on it's disabled
+    it("does not highlight/select a bank button when pressing a key for a bank with no kits while filtered", async () => {
       render(
         <MockMessageDisplayProvider>
-          <KitBrowser {...baseProps} />
+          <KitBrowser {...baseProps} showFavoritesOnly={true} />
         </MockMessageDisplayProvider>,
       );
       const kitGrid = screen.getAllByTestId("kit-grid")[0];
@@ -268,72 +236,18 @@ describe("KitBrowser", () => {
     describe("KitBrowser keyboard navigation bugs", () => {
       const navProps = {
         ...baseProps,
-        kitData: [
-          { alias: "Kick", name: "A1", voices: [] },
-          { alias: "Snare", name: "A2", voices: [] },
-          { alias: "Hat", name: "B1", voices: [] },
-          { alias: "Tom", name: "B2", voices: [] },
-        ],
         kits: [
-          {
-            alias: "Kick",
-            artist: null,
-            bank: null,
-            bank_letter: "A",
-            editable: false,
-            locked: false,
-            modified_since_sync: false,
-            name: "A1",
-            samples: [],
-            step_pattern: null,
-            voices: [],
-          },
-          {
-            alias: "Snare",
-            artist: null,
-            bank: null,
-            bank_letter: "A",
-            editable: false,
-            locked: false,
-            modified_since_sync: false,
-            name: "A2",
-            samples: [],
-            step_pattern: null,
-            voices: [],
-          },
-          {
-            alias: "Hat",
-            artist: null,
-            bank: null,
-            bank_letter: "B",
-            editable: false,
-            locked: false,
-            modified_since_sync: false,
-            name: "B1",
-            samples: [],
-            step_pattern: null,
-            voices: [],
-          },
-          {
-            alias: "Tom",
-            artist: null,
-            bank: null,
-            bank_letter: "B",
-            editable: false,
-            locked: false,
-            modified_since_sync: false,
-            name: "B2",
-            samples: [],
-            step_pattern: null,
-            voices: [],
-          },
+          makeKit("A1", { alias: "Kick", voices: [] }),
+          makeKit("A2", { alias: "Snare", voices: [] }),
+          makeKit("B1", { alias: "Hat", voices: [] }),
+          makeKit("B2", { alias: "Tom", voices: [] }),
         ],
         sampleCounts: {
           A1: [1, 1, 1, 1],
           A2: [1, 1, 1, 1],
           B1: [1, 1, 1, 1],
           B2: [1, 1, 1, 1],
-        },
+        } satisfies KitBrowserProps["sampleCounts"],
       };
 
       it("should highlight/select the first kit in a bank when a bank button is clicked", async () => {

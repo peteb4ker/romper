@@ -6,7 +6,15 @@ import {
   waitFor,
 } from "@testing-library/react";
 import React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type Mock,
+  vi,
+} from "vitest";
 
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
 
@@ -18,9 +26,10 @@ vi.mock("../hooks/kit-management/useKitStepSequencerLogic", () => ({
 import { useKitStepSequencerLogic } from "../hooks/kit-management/useKitStepSequencerLogic";
 import KitStepSequencer from "../KitStepSequencer";
 
-const mockUseKitStepSequencerLogic = useKitStepSequencerLogic as ReturnType<
-  typeof vi.fn
->;
+const mockUseKitStepSequencerLogic = vi.mocked(useKitStepSequencerLogic);
+
+type Logic = ReturnType<typeof useKitStepSequencerLogic>;
+type Props = React.ComponentProps<typeof KitStepSequencer>;
 
 // Minimal stub for required props
 const defaultSamples = {
@@ -29,24 +38,30 @@ const defaultSamples = {
   3: ["hat.wav"],
   4: ["tom.wav"],
 };
-const defaultStepPattern = Array.from({ length: 4 }, () =>
-  Array(16).fill(false),
+const defaultStepPattern: number[][] = Array.from({ length: 4 }, () =>
+  Array<number>(16).fill(0),
+);
+const noConditions: (null | string)[][] = Array.from({ length: 4 }, () =>
+  Array<null | string>(16).fill(null),
 );
 
 describe("KitStepSequencer", () => {
-  let onPlaySample;
-  let stepPattern;
-  let setStepPattern;
-  let sequencerOpen;
-  let setSequencerOpen;
-  let mockLogic;
+  let onPlaySample: Mock<Props["onPlaySample"]>;
+  let stepPattern: number[][];
+  let setStepPattern: Mock<Props["setStepPattern"]>;
+  let setTriggerConditions: Mock<Props["setTriggerConditions"]>;
+  let sequencerOpen: boolean;
+  let setSequencerOpen: Mock<Props["setSequencerOpen"]>;
+  let mockLogic: Logic;
 
-  function createMockLogic(overrides = {}) {
+  function createMockLogic(overrides: Partial<Logic> = {}): Logic {
     return {
       currentSeqStep: 0,
+      cycleCount: 0,
+      firingVoices: [false, false, false, false],
       focusedStep: { step: 0, voice: 0 },
-      gridRefInternal: { current: null },
-      handleStepGridKeyDown: vi.fn(),
+      gridRefInternal: React.createRef<HTMLDivElement>(),
+      handleStepGridKeyDown: vi.fn<Logic["handleStepGridKeyDown"]>(),
       isSeqPlaying: false,
       LED_GLOWS: [
         "shadow-glow-red",
@@ -63,9 +78,9 @@ describe("KitStepSequencer", () => {
         "bg-blue-400",
       ],
       safeStepPattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
-      setFocusedStep: vi.fn(),
-      setIsSeqPlaying: vi.fn(),
-      toggleStep: vi.fn(),
+      setFocusedStep: vi.fn<Logic["setFocusedStep"]>(),
+      setIsSeqPlaying: vi.fn<Logic["setIsSeqPlaying"]>(),
+      toggleStep: vi.fn<Logic["toggleStep"]>(),
       ...overrides,
     };
   }
@@ -73,17 +88,24 @@ describe("KitStepSequencer", () => {
   beforeEach(() => {
     setupElectronAPIMock();
 
-    onPlaySample = vi.fn();
+    onPlaySample = vi.fn<Props["onPlaySample"]>();
     stepPattern = defaultStepPattern.map((row) => [...row]);
-    setStepPattern = vi.fn(async (pattern) => {
+    setStepPattern = vi.fn<Props["setStepPattern"]>(async (pattern) => {
       stepPattern = pattern;
       return true;
     });
+    setTriggerConditions = vi
+      .fn<Props["setTriggerConditions"]>()
+      .mockResolvedValue(true);
     sequencerOpen = false;
-    setSequencerOpen = vi.fn();
+    setSequencerOpen = vi.fn<Props["setSequencerOpen"]>();
 
     mockLogic = createMockLogic();
     mockUseKitStepSequencerLogic.mockReturnValue(mockLogic);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("renders transport controls and grid", () => {
@@ -96,7 +118,9 @@ describe("KitStepSequencer", () => {
         sequencerOpen={sequencerOpen}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
+        setTriggerConditions={setTriggerConditions}
         stepPattern={stepPattern}
+        triggerConditions={noConditions}
       />,
     );
 
@@ -119,7 +143,9 @@ describe("KitStepSequencer", () => {
         sequencerOpen={sequencerOpen}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
+        setTriggerConditions={setTriggerConditions}
         stepPattern={stepPattern}
+        triggerConditions={noConditions}
       />,
     );
 
@@ -147,7 +173,9 @@ describe("KitStepSequencer", () => {
         sequencerOpen={sequencerOpen}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
+        setTriggerConditions={setTriggerConditions}
         stepPattern={stepPattern}
+        triggerConditions={noConditions}
       />,
     );
 
@@ -185,7 +213,9 @@ describe("KitStepSequencer", () => {
         sequencerOpen={sequencerOpen}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
+        setTriggerConditions={setTriggerConditions}
         stepPattern={stepPattern}
+        triggerConditions={noConditions}
       />,
     );
 
@@ -215,7 +245,9 @@ describe("KitStepSequencer", () => {
         sequencerOpen={true}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
+        setTriggerConditions={setTriggerConditions}
         stepPattern={stepPattern}
+        triggerConditions={noConditions}
         voices={voices}
       />,
     );
@@ -235,7 +267,7 @@ describe("KitStepSequencer", () => {
   });
 
   it("handles playback control", () => {
-    const mockSetIsSeqPlaying = vi.fn();
+    const mockSetIsSeqPlaying = vi.fn<Logic["setIsSeqPlaying"]>();
     mockUseKitStepSequencerLogic.mockReturnValue({
       ...createMockLogic(),
       isSeqPlaying: false,
@@ -251,7 +283,9 @@ describe("KitStepSequencer", () => {
         sequencerOpen={true}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
+        setTriggerConditions={setTriggerConditions}
         stepPattern={stepPattern}
+        triggerConditions={noConditions}
       />,
     );
 
@@ -262,7 +296,7 @@ describe("KitStepSequencer", () => {
   });
 
   it("allows setting up a custom grid reference", () => {
-    const customGridRef = { current: null };
+    const customGridRef = { current: document.createElement("div") };
 
     render(
       <KitStepSequencer
@@ -274,7 +308,9 @@ describe("KitStepSequencer", () => {
         sequencerOpen={true}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
+        setTriggerConditions={setTriggerConditions}
         stepPattern={stepPattern}
+        triggerConditions={noConditions}
       />,
     );
 
@@ -295,7 +331,9 @@ describe("KitStepSequencer", () => {
         sequencerOpen={true}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
+        setTriggerConditions={setTriggerConditions}
         stepPattern={stepPattern}
+        triggerConditions={noConditions}
       />,
     );
 
@@ -318,7 +356,9 @@ describe("KitStepSequencer", () => {
         sequencerOpen={true}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
+        setTriggerConditions={setTriggerConditions}
         stepPattern={stepPattern}
+        triggerConditions={noConditions}
         voices={[
           { sample_mode: "first", voice_number: 1, voice_volume: 100 },
           { sample_mode: "first", voice_number: 2, voice_volume: 100 },
@@ -350,7 +390,9 @@ describe("KitStepSequencer", () => {
         sequencerOpen={true}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
+        setTriggerConditions={setTriggerConditions}
         stepPattern={stepPattern}
+        triggerConditions={noConditions}
         voices={[
           { sample_mode: "first", voice_number: 1, voice_volume: 100 },
           { sample_mode: "first", voice_number: 2, voice_volume: 100 },
@@ -382,7 +424,9 @@ describe("KitStepSequencer", () => {
         sequencerOpen={true}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
+        setTriggerConditions={setTriggerConditions}
         stepPattern={stepPattern}
+        triggerConditions={noConditions}
         voices={[
           { sample_mode: "first", voice_number: 1, voice_volume: 100 },
           { sample_mode: "first", voice_number: 2, voice_volume: 100 },
@@ -429,7 +473,9 @@ describe("KitStepSequencer", () => {
           sequencerOpen={true}
           setSequencerOpen={setSequencerOpen}
           setStepPattern={setStepPattern}
+          setTriggerConditions={setTriggerConditions}
           stepPattern={stepPattern}
+          triggerConditions={noConditions}
           voices={[
             { sample_mode: "first", voice_number: 1, voice_volume: 100 },
             { sample_mode: "first", voice_number: 2, voice_volume: 100 },
@@ -463,11 +509,9 @@ describe("KitStepSequencer", () => {
         sequencerOpen={true}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
-        setTriggerConditions={vi.fn()}
+        setTriggerConditions={setTriggerConditions}
         stepPattern={stepPattern}
-        triggerConditions={Array.from({ length: 4 }, () =>
-          Array(16).fill(null),
-        )}
+        triggerConditions={noConditions}
       />,
     );
 
@@ -489,11 +533,9 @@ describe("KitStepSequencer", () => {
         sequencerOpen={true}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
-        setTriggerConditions={vi.fn()}
+        setTriggerConditions={setTriggerConditions}
         stepPattern={stepPattern}
-        triggerConditions={Array.from({ length: 4 }, () =>
-          Array(16).fill(null),
-        )}
+        triggerConditions={noConditions}
       />,
     );
 
@@ -509,7 +551,7 @@ describe("KitStepSequencer", () => {
       mockUseKitStepSequencerLogic.mock.calls[
         mockUseKitStepSequencerLogic.mock.calls.length - 1
       ];
-    expect(lastCall[0].voiceMutes[1]).toBe(true);
+    expect(lastCall[0].voiceMutes?.[1]).toBe(true);
   });
 
   it("calls onVoiceSettingChanged once the sample mode is saved", async () => {
@@ -525,7 +567,9 @@ describe("KitStepSequencer", () => {
         sequencerOpen={true}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
+        setTriggerConditions={setTriggerConditions}
         stepPattern={stepPattern}
+        triggerConditions={noConditions}
         voices={[
           { sample_mode: "first", voice_number: 1, voice_volume: 100 },
           { sample_mode: "first", voice_number: 2, voice_volume: 100 },
@@ -562,7 +606,9 @@ describe("KitStepSequencer", () => {
           sequencerOpen={true}
           setSequencerOpen={setSequencerOpen}
           setStepPattern={setStepPattern}
+          setTriggerConditions={setTriggerConditions}
           stepPattern={stepPattern}
+          triggerConditions={noConditions}
           voices={voices}
         />,
       );
@@ -659,9 +705,10 @@ describe("KitStepSequencer", () => {
 
     it("[Q-02] puts a level back when main gives no answer (#543)", async () => {
       // The preload method is missing, so the optional call gives undefined
-      vi.mocked(window.electronAPI.updateVoiceVolume).mockResolvedValue(
-        undefined as never,
-      );
+      vi.stubGlobal("electronAPI", {
+        ...globalThis.electronAPI,
+        updateVoiceVolume: undefined,
+      });
       const onMessage = vi.fn();
       renderSequencer(onMessage);
 
@@ -675,9 +722,10 @@ describe("KitStepSequencer", () => {
     });
 
     it("[Q-02] puts a sample mode back when main gives no answer (#543)", async () => {
-      vi.mocked(window.electronAPI.updateVoiceSampleMode).mockResolvedValue(
-        undefined as never,
-      );
+      vi.stubGlobal("electronAPI", {
+        ...globalThis.electronAPI,
+        updateVoiceSampleMode: undefined,
+      });
       const onMessage = vi.fn();
       const onVoiceSettingChanged = vi.fn();
       renderSequencer(onMessage, onVoiceSettingChanged);
@@ -735,11 +783,9 @@ describe("KitStepSequencer", () => {
         sequencerOpen={true}
         setSequencerOpen={setSequencerOpen}
         setStepPattern={setStepPattern}
-        setTriggerConditions={vi.fn()}
+        setTriggerConditions={setTriggerConditions}
         stepPattern={stepPattern}
-        triggerConditions={Array.from({ length: 4 }, () =>
-          Array(16).fill(null),
-        )}
+        triggerConditions={noConditions}
         voices={voicesAt(100)}
         {...extra}
       />
@@ -789,7 +835,7 @@ describe("KitStepSequencer", () => {
     it("starts the next kit with no voice muted", () => {
       const { rerender } = render(renderKit("A0"));
       fireEvent.click(screen.getByTestId("voice-mute-0"));
-      expect(lastLogicCall().voiceMutes[1]).toBe(true);
+      expect(lastLogicCall().voiceMutes?.[1]).toBe(true);
 
       rerender(renderKit("A1"));
 
@@ -831,7 +877,7 @@ describe("KitStepSequencer", () => {
       expect(
         (screen.getByTestId("voice-volume-0") as HTMLInputElement).value,
       ).toBe("60");
-      expect(lastLogicCall().voiceVolumes[1]).toBe(60);
+      expect(lastLogicCall().voiceVolumes?.[1]).toBe(60);
     });
 
     it("doesn't put a sample mode that fails after the step onto the next kit", async () => {
@@ -863,7 +909,7 @@ describe("KitStepSequencer", () => {
           .getByTestId("sample-mode-0-round-robin")
           .getAttribute("aria-pressed"),
       ).toBe("true");
-      expect(lastLogicCall().sampleModes[1]).toBe("round-robin");
+      expect(lastLogicCall().sampleModes?.[1]).toBe("round-robin");
     });
   });
 
@@ -878,11 +924,9 @@ describe("KitStepSequencer", () => {
           sequencerOpen={true}
           setSequencerOpen={setSequencerOpen}
           setStepPattern={setStepPattern}
-          setTriggerConditions={vi.fn()}
+          setTriggerConditions={setTriggerConditions}
           stepPattern={stepPattern}
-          triggerConditions={Array.from({ length: 4 }, () =>
-            Array(16).fill(null),
-          )}
+          triggerConditions={noConditions}
           voices={[
             { stereo_mode: true, voice_number: 1, voice_volume: 100 },
             { voice_number: 2, voice_volume: 100 },
@@ -911,11 +955,9 @@ describe("KitStepSequencer", () => {
           sequencerOpen={true}
           setSequencerOpen={setSequencerOpen}
           setStepPattern={setStepPattern}
-          setTriggerConditions={vi.fn()}
+          setTriggerConditions={setTriggerConditions}
           stepPattern={stepPattern}
-          triggerConditions={Array.from({ length: 4 }, () =>
-            Array(16).fill(null),
-          )}
+          triggerConditions={noConditions}
           voices={[
             { stereo_mode: true, voice_number: 1, voice_volume: 100 },
             { voice_number: 2, voice_volume: 100 },
@@ -939,11 +981,9 @@ describe("KitStepSequencer", () => {
           sequencerOpen={true}
           setSequencerOpen={setSequencerOpen}
           setStepPattern={setStepPattern}
-          setTriggerConditions={vi.fn()}
+          setTriggerConditions={setTriggerConditions}
           stepPattern={stepPattern}
-          triggerConditions={Array.from({ length: 4 }, () =>
-            Array(16).fill(null),
-          )}
+          triggerConditions={noConditions}
           voices={[
             { voice_number: 1, voice_volume: 100 },
             { voice_number: 2, voice_volume: 100 },
@@ -969,11 +1009,9 @@ describe("KitStepSequencer", () => {
           sequencerOpen={true}
           setSequencerOpen={setSequencerOpen}
           setStepPattern={setStepPattern}
-          setTriggerConditions={vi.fn()}
+          setTriggerConditions={setTriggerConditions}
           stepPattern={stepPattern}
-          triggerConditions={Array.from({ length: 4 }, () =>
-            Array(16).fill(null),
-          )}
+          triggerConditions={noConditions}
           voices={[
             { stereo_mode: true, voice_number: 1, voice_volume: 100 },
             { voice_number: 2, voice_volume: 100 },
@@ -988,8 +1026,8 @@ describe("KitStepSequencer", () => {
           mockUseKitStepSequencerLogic.mock.calls.length - 1
         ];
       const stereoLinks = lastCall[0].stereoLinks;
-      expect(stereoLinks.linkedSecondaries.has(2)).toBe(true);
-      expect(stereoLinks.primaryLabels[1]).toBe("1+2");
+      expect(stereoLinks?.linkedSecondaries.has(2)).toBe(true);
+      expect(stereoLinks?.primaryLabels[1]).toBe("1+2");
     });
   });
 
@@ -1004,11 +1042,9 @@ describe("KitStepSequencer", () => {
           sequencerOpen={true}
           setSequencerOpen={setSequencerOpen}
           setStepPattern={setStepPattern}
-          setTriggerConditions={vi.fn()}
+          setTriggerConditions={setTriggerConditions}
           stepPattern={stepPattern}
-          triggerConditions={Array.from({ length: 4 }, () =>
-            Array(16).fill(null),
-          )}
+          triggerConditions={noConditions}
           {...extra}
         />,
       );
@@ -1084,7 +1120,7 @@ describe("KitStepSequencer", () => {
     it("passes slicer data to the sequencer logic", () => {
       renderSequencer({ voices: sliceVoices });
       const lastCall = mockUseKitStepSequencerLogic.mock.calls.at(-1)![0];
-      expect(lastCall.sliceSettings[3].enabled).toBe(true);
+      expect(lastCall.sliceSettings?.[3].enabled).toBe(true);
       expect(lastCall.slicerDivision).toBe(16);
       expect(typeof lastCall.onGridKeyDown).toBe("function");
       expect(typeof lastCall.onSliceTriggered).toBe("function");

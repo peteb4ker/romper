@@ -1,9 +1,12 @@
 // Test suite for KitBankNav component
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
 import KitBankNav from "../KitBankNav";
+
+// Bank buttons are <button>s; read their disabled state through the DOM
+const isDisabled = (el: HTMLElement) => el.matches(":disabled");
 
 describe("KitBankNav", () => {
   beforeEach(() => {
@@ -31,10 +34,10 @@ describe("KitBankNav", () => {
     const cButtons = screen.queryAllByText("C");
     const zButtons = screen.queryAllByText("Z");
     // At least one enabled for A and B, all disabled for C and Z
-    expect(aButtons.some((btn) => !btn.disabled)).toBe(true);
-    expect(bButtons.some((btn) => !btn.disabled)).toBe(true);
-    expect(cButtons.every((btn) => btn.disabled)).toBe(true);
-    expect(zButtons.every((btn) => btn.disabled)).toBe(true);
+    expect(aButtons.some((btn) => !isDisabled(btn))).toBe(true);
+    expect(bButtons.some((btn) => !isDisabled(btn))).toBe(true);
+    expect(cButtons.every(isDisabled)).toBe(true);
+    expect(zButtons.every(isDisabled)).toBe(true);
   });
 
   it("calls onBankClick when enabled bank is clicked", () => {
@@ -47,10 +50,10 @@ describe("KitBankNav", () => {
 
     // Use getAllByRole to handle multiple renders
     const aButtons = screen.getAllByRole("button", { name: "Jump to bank A" });
-    const enabledButton = aButtons.find((button) => !button.disabled);
+    const enabledButton = aButtons.find((button) => !isDisabled(button));
 
     expect(enabledButton).toBeDefined();
-    expect(enabledButton?.disabled).toBe(false);
+    expect(enabledButton).toBeEnabled();
 
     fireEvent.click(enabledButton!);
     expect(onBankClick).toHaveBeenCalledWith("A");
@@ -64,9 +67,9 @@ describe("KitBankNav", () => {
     render(<KitBankNav kits={mockKits} onBankClick={onBankClick} />);
     // Use getAllByRole to match the correct button by accessible name
     const bButtons = screen.getAllByRole("button", { name: "Jump to bank B" });
-    const disabledB = bButtons.find((btn) => btn.disabled);
+    const disabledB = bButtons.find(isDisabled);
     expect(disabledB).toBeDefined();
-    fireEvent.click(disabledB);
+    fireEvent.click(disabledB!);
     expect(onBankClick).not.toHaveBeenCalled();
   });
 
@@ -154,7 +157,7 @@ describe("[UC-07] A-Z hotkey navigation and bank highlighting", () => {
     ];
     render(<KitBankNav kits={mockKits} onBankClick={() => {}} />);
     const aButtons = screen.getAllByRole("button", { name: "Jump to bank A" });
-    const enabledAButton = aButtons.find((btn) => !btn.disabled);
+    const enabledAButton = aButtons.find((btn) => !isDisabled(btn));
     expect(enabledAButton).toBeDefined();
     enabledAButton!.focus();
     expect(document.activeElement).toBe(enabledAButton);
@@ -166,9 +169,9 @@ describe("[UC-07] A-Z hotkey navigation and bank highlighting", () => {
     ];
     render(<KitBankNav kits={mockKits} onBankClick={() => {}} />);
     const bButtons = screen.getAllByRole("button", { name: "Jump to bank B" });
-    const disabledBButton = bButtons.find((btn) => btn.disabled);
+    const disabledBButton = bButtons.find(isDisabled);
     expect(disabledBButton).toBeDefined();
-    expect(disabledBButton!.disabled).toBe(true);
+    expect(disabledBButton).toBeDisabled();
   });
 
   it("calls onBankClick when enabled bank is clicked", () => {
@@ -179,7 +182,7 @@ describe("[UC-07] A-Z hotkey navigation and bank highlighting", () => {
     ];
     render(<KitBankNav kits={mockKits} onBankClick={onBankClick} />);
     const aButtons = screen.getAllByRole("button", { name: "Jump to bank A" });
-    const enabledAButton = aButtons.find((button) => !button.disabled);
+    const enabledAButton = aButtons.find((button) => !isDisabled(button));
     expect(enabledAButton).toBeDefined();
     fireEvent.click(enabledAButton!);
     expect(onBankClick).toHaveBeenCalledWith("A");
@@ -187,8 +190,6 @@ describe("[UC-07] A-Z hotkey navigation and bank highlighting", () => {
 });
 
 describe("KitBankNav fisheye hover behavior", () => {
-  const originalGetComputedStyle = window.getComputedStyle;
-
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
@@ -199,41 +200,25 @@ describe("KitBankNav fisheye hover behavior", () => {
   });
 
   afterEach(() => {
-    window.getComputedStyle = originalGetComputedStyle;
     vi.restoreAllMocks();
   });
 
   function mockNavGeometry(nav: HTMLElement) {
     // Simulate a nav with py-2 (8px top/bottom padding) and 26 buttons of 24px each = 624px content
     // Total height = 624 + 16 = 640px
-    vi.spyOn(nav, "getBoundingClientRect").mockReturnValue({
-      bottom: 740,
-      height: 640,
-      left: 0,
-      right: 28,
-      top: 100,
-      width: 28,
-      x: 0,
-      y: 100,
-    });
-    // Only intercept getComputedStyle for the nav element; delegate all others to real implementation
-    window.getComputedStyle = ((el: Element, ...rest: unknown[]) => {
-      if (el === nav) {
-        return {
-          ...originalGetComputedStyle(el),
-          paddingBottom: "8px",
-          paddingTop: "8px",
-        } as CSSStyleDeclaration;
-      }
-      return originalGetComputedStyle(el, ...(rest as [string | undefined]));
-    }) as typeof window.getComputedStyle;
+    vi.spyOn(nav, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 100, 28, 640),
+    );
+    // py-2 padding: jsdom has no stylesheet, so set it inline for getComputedStyle
+    nav.style.paddingTop = "8px";
+    nav.style.paddingBottom = "8px";
   }
 
   function getBankButton(letter: string) {
     const nav = screen.getByTestId("bank-nav");
-    return nav.querySelector(
-      `button[aria-label="Jump to bank ${letter}"]`,
-    ) as HTMLButtonElement;
+    return within(nav).getByRole("button", {
+      name: `Jump to bank ${letter}`,
+    });
   }
 
   it("hovering at the top of content area highlights letter A (not B)", () => {
@@ -383,26 +368,11 @@ describe("KitBankNav fisheye hover behavior", () => {
 
     // Simulate flex-stretched nav: 800px tall instead of natural 640px
     // This is the root cause — extra height below buttons skews the fraction
-    vi.spyOn(nav, "getBoundingClientRect").mockReturnValue({
-      bottom: 900,
-      height: 800,
-      left: 0,
-      right: 28,
-      top: 100,
-      width: 28,
-      x: 0,
-      y: 100,
-    });
-    window.getComputedStyle = ((el: Element, ...rest: unknown[]) => {
-      if (el === nav) {
-        return {
-          ...originalGetComputedStyle(el),
-          paddingBottom: "8px",
-          paddingTop: "8px",
-        } as CSSStyleDeclaration;
-      }
-      return originalGetComputedStyle(el, ...(rest as [string | undefined]));
-    }) as typeof window.getComputedStyle;
+    vi.spyOn(nav, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 100, 28, 800),
+    );
+    nav.style.paddingTop = "8px";
+    nav.style.paddingBottom = "8px";
 
     // Mouse at Z's position: top(100) + pad(8) + 25.5*24 = 100 + 8 + 612 = 720
     fireEvent.mouseMove(nav, { clientY: 720 });

@@ -1,44 +1,42 @@
-import type { KitWithRelations } from "@romper/shared/db/schema";
-
 import { render, screen } from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type KitBrowser from "../KitBrowser";
+
+import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
 import KitBrowserContainer from "../KitBrowserContainer";
+
+type ContainerProps = React.ComponentProps<typeof KitBrowserContainer>;
 
 // Mock KitBrowser component
 vi.mock("../KitBrowser", () => ({
-  default: React.forwardRef((props: unknown, ref: unknown) => (
-    <div data-testid="kit-browser" ref={ref}>
-      <button onClick={() => props.onMessage("Test message", "info", 5000)}>
+  default: (props: React.ComponentProps<typeof KitBrowser>) => (
+    <div data-testid="kit-browser">
+      <button onClick={() => props.onMessage?.("Test message", "info", 5000)}>
         Message
       </button>
-      <button onClick={props.onRefreshKits}>Refresh</button>
+      <button onClick={() => void props.onRefreshKits?.()}>Refresh</button>
       <button onClick={() => props.onSelectKit("test-kit")}>Select</button>
     </div>
-  )),
+  ),
 }));
 
 describe("KitBrowserContainer", () => {
-  const mockKit: KitWithRelations = {
-    alias: null,
-    artist: null,
-    bank_letter: "A",
-    editable: false,
-    locked: false,
-    modified_since_sync: false,
-    name: "TestKit",
-    step_pattern: null,
-    voices: [],
-  };
+  const mockKit = createMockKitWithRelations({ name: "TestKit" });
 
   const defaultProps = {
     kits: [mockKit],
     localStorePath: "/test/path",
-    onMessage: vi.fn(),
-    onRefreshKits: vi.fn(),
-    onSelectKit: vi.fn(),
-    sampleCounts: { TestKit: [1, 2, 3, 4] as [number, number, number, number] },
+    onMessage: vi.fn<ContainerProps["onMessage"]>(),
+    onRefreshKits: vi
+      .fn<ContainerProps["onRefreshKits"]>()
+      .mockResolvedValue(undefined),
+    onSelectKit: vi.fn<ContainerProps["onSelectKit"]>(),
+    onShowSettings: vi.fn<ContainerProps["onShowSettings"]>(),
+    sampleCounts: {
+      TestKit: [1, 2, 3, 4],
+    } satisfies ContainerProps["sampleCounts"],
   };
 
   beforeEach(() => {
@@ -97,23 +95,6 @@ describe("KitBrowserContainer", () => {
       selectButton.click();
 
       expect(defaultProps.onSelectKit).toHaveBeenCalledWith("test-kit");
-    });
-  });
-
-  describe("forwardRef", () => {
-    it("should forward ref correctly", () => {
-      const ref = React.createRef<unknown>();
-      render(<KitBrowserContainer {...defaultProps} ref={ref} />);
-
-      expect(ref.current).toBeDefined();
-    });
-
-    it("should handle forwardRef behavior correctly", () => {
-      const ref = React.createRef<unknown>();
-      render(<KitBrowserContainer {...defaultProps} ref={ref} />);
-
-      // Additional verification that ref is passed through
-      expect(ref.current).toBeDefined();
     });
   });
 

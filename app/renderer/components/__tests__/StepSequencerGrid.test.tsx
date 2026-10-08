@@ -4,15 +4,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import StepSequencerGrid from "../StepSequencerGrid";
 
+type Props = React.ComponentProps<typeof StepSequencerGrid>;
+
 describe("StepSequencerGrid", () => {
-  let defaultProps;
+  let defaultProps: Props;
 
   beforeEach(() => {
     defaultProps = {
       currentSeqStep: 0,
       focusedStep: { step: 0, voice: 0 },
-      gridRef: { current: null },
-      handleStepGridKeyDown: vi.fn(),
+      gridRef: React.createRef<HTMLDivElement>(),
+      handleStepGridKeyDown: vi.fn<Props["handleStepGridKeyDown"]>(),
       isSeqPlaying: false,
       LED_GLOWS: [
         "shadow-glow-red",
@@ -24,8 +26,8 @@ describe("StepSequencerGrid", () => {
       NUM_VOICES: 4,
       ROW_COLORS: ["bg-voice-1", "bg-voice-2", "bg-voice-3", "bg-voice-4"],
       safeStepPattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
-      setFocusedStep: vi.fn(),
-      toggleStep: vi.fn(),
+      setFocusedStep: vi.fn<Props["setFocusedStep"]>(),
+      toggleStep: vi.fn<Props["toggleStep"]>(),
     };
   });
 
@@ -532,7 +534,7 @@ describe("StepSequencerGrid", () => {
     });
 
     it("focuses the popover, and returns focus to the grid on close", () => {
-      const gridRef = { current: null as HTMLDivElement | null };
+      const gridRef = React.createRef<HTMLDivElement>();
       render(<StepSequencerGrid {...defaultProps} gridRef={gridRef} />);
 
       fireEvent.contextMenu(screen.getByTestId("seq-step-0-0"));
@@ -665,7 +667,7 @@ describe("StepSequencerGrid", () => {
 
     it("nudges a slice with the scroll wheel (Shift for length)", () => {
       const props = sliceProps();
-      const gridRef = { current: null as HTMLDivElement | null };
+      const gridRef = React.createRef<HTMLDivElement>();
       render(<StepSequencerGrid {...props} gridRef={gridRef} />);
       fireEvent.wheel(screen.getByTestId("seq-step-0-0"), { deltaY: -100 });
       expect(props.onStepWheel).toHaveBeenCalledWith(0, 0, 1, false);

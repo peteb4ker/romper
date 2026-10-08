@@ -2,7 +2,11 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
+import { createMockVoice } from "../../../../tests/factories/voice.factory";
 import KitGridItem from "../KitGridItem";
+
+type ItemProps = React.ComponentProps<typeof KitGridItem>;
 
 // Mock dependencies
 vi.mock("@romper/shared/kitUtilsShared", () => ({
@@ -40,14 +44,15 @@ describe("KitGridItem", () => {
     isSelected: false,
     isValid: true,
     kit: "A0",
-    kitData: {
+    kitData: createMockKitWithRelations({
       editable: false,
       is_favorite: false,
       modified_since_sync: false,
-    },
-    onDuplicate: vi.fn(),
-    onSelect: vi.fn(),
-    sampleCounts: [4, 3, 2, 1],
+      name: "A0",
+    }),
+    onDuplicate: vi.fn<ItemProps["onDuplicate"]>(),
+    onSelect: vi.fn<ItemProps["onSelect"]>(),
+    sampleCounts: [4, 3, 2, 1] satisfies ItemProps["sampleCounts"],
   };
 
   beforeEach(() => {
@@ -384,7 +389,7 @@ describe("KitGridItem", () => {
     it("applies danger color for empty voices (0 samples)", () => {
       const props = {
         ...defaultProps,
-        sampleCounts: [0, 3, 2, 1],
+        sampleCounts: [0, 3, 2, 1] satisfies ItemProps["sampleCounts"],
       };
       render(<KitGridItem {...props} />);
 
@@ -395,7 +400,7 @@ describe("KitGridItem", () => {
     it("applies success color and bold for full voices (12 samples)", () => {
       const props = {
         ...defaultProps,
-        sampleCounts: [12, 3, 2, 1],
+        sampleCounts: [12, 3, 2, 1] satisfies ItemProps["sampleCounts"],
       };
       render(<KitGridItem {...props} />);
 
@@ -543,7 +548,7 @@ describe("KitGridItem", () => {
     it("calculates total samples correctly", () => {
       const props = {
         ...defaultProps,
-        sampleCounts: [5, 7, 3, 2],
+        sampleCounts: [5, 7, 3, 2] satisfies ItemProps["sampleCounts"],
       };
       render(<KitGridItem {...props} />);
 
@@ -560,17 +565,6 @@ describe("KitGridItem", () => {
 
       const container = screen.getByTestId("kit-item-A0");
       expect(container).toHaveAttribute("aria-label", "Kit A0 - 0 samples");
-    });
-
-    it("handles partial sample counts array", () => {
-      const props = {
-        ...defaultProps,
-        sampleCounts: [5, 3],
-      };
-      render(<KitGridItem {...props} />);
-
-      const container = screen.getByTestId("kit-item-A0");
-      expect(container).toHaveAttribute("aria-label", "Kit A0 - 8 samples");
     });
   });
 
@@ -816,31 +810,25 @@ describe("KitGridItem", () => {
       render(
         <KitGridItem
           {...defaultProps}
-          kitData={
-            {
-              ...defaultProps.kitData,
-              voices: [
-                {
-                  id: 1,
-                  kit_name: "A0",
-                  sample_mode: "first",
-                  stereo_mode: true,
-                  voice_alias: null,
-                  voice_number: 1,
-                  voice_volume: 100,
-                },
-                {
-                  id: 2,
-                  kit_name: "A0",
-                  sample_mode: "first",
-                  stereo_mode: false,
-                  voice_alias: null,
-                  voice_number: 2,
-                  voice_volume: 100,
-                },
-              ],
-            } as never
-          }
+          kitData={{
+            ...defaultProps.kitData,
+            voices: [
+              createMockVoice({
+                id: 1,
+                kit_name: "A0",
+                stereo_mode: true,
+                voice_alias: null,
+                voice_number: 1,
+              }),
+              createMockVoice({
+                id: 2,
+                kit_name: "A0",
+                stereo_mode: false,
+                voice_alias: null,
+                voice_number: 2,
+              }),
+            ],
+          }}
         />,
       );
 
@@ -851,28 +839,24 @@ describe("KitGridItem", () => {
       render(
         <KitGridItem
           {...defaultProps}
-          kitData={
-            {
-              ...defaultProps.kitData,
-              searchMatch: {
-                matchedOn: ["stereo"],
-                matchedSamples: [],
-                matchedVoices: [],
-                searchTerm: "stereo",
-              },
-              voices: [
-                {
-                  id: 1,
-                  kit_name: "A0",
-                  sample_mode: "first",
-                  stereo_mode: true,
-                  voice_alias: null,
-                  voice_number: 1,
-                  voice_volume: 100,
-                },
-              ],
-            } as never
-          }
+          kitData={{
+            ...defaultProps.kitData,
+            searchMatch: {
+              matchedOn: ["stereo"],
+              matchedSamples: [],
+              matchedVoices: [],
+              searchTerm: "stereo",
+            },
+            voices: [
+              createMockVoice({
+                id: 1,
+                kit_name: "A0",
+                stereo_mode: true,
+                voice_alias: null,
+                voice_number: 1,
+              }),
+            ],
+          }}
         />,
       );
 
@@ -884,22 +868,18 @@ describe("KitGridItem", () => {
       render(
         <KitGridItem
           {...defaultProps}
-          kitData={
-            {
-              ...defaultProps.kitData,
-              voices: [
-                {
-                  id: 1,
-                  kit_name: "A0",
-                  sample_mode: "first",
-                  stereo_mode: false,
-                  voice_alias: null,
-                  voice_number: 1,
-                  voice_volume: 100,
-                },
-              ],
-            } as never
-          }
+          kitData={{
+            ...defaultProps.kitData,
+            voices: [
+              createMockVoice({
+                id: 1,
+                kit_name: "A0",
+                stereo_mode: false,
+                voice_alias: null,
+                voice_number: 1,
+              }),
+            ],
+          }}
         />,
       );
 
@@ -915,9 +895,11 @@ describe("KitGridItem", () => {
         editable: true,
         locked: false,
       },
-      onDeleteKit: vi.fn().mockResolvedValue(undefined),
+      onDeleteKit: vi
+        .fn<NonNullable<ItemProps["onDeleteKit"]>>()
+        .mockResolvedValue(undefined),
       onRequestDeleteSummary: vi
-        .fn()
+        .fn<NonNullable<ItemProps["onRequestDeleteSummary"]>>()
         .mockResolvedValue({ locked: false, sampleCount: 3 }),
     };
 
@@ -971,7 +953,7 @@ describe("KitGridItem", () => {
       const props = {
         ...editableProps,
         onRequestDeleteSummary: vi
-          .fn()
+          .fn<NonNullable<ItemProps["onRequestDeleteSummary"]>>()
           .mockResolvedValue({ locked: false, sampleCount: 1 }),
       };
       render(<KitGridItem {...props} />);
@@ -987,7 +969,7 @@ describe("KitGridItem", () => {
       const props = {
         ...editableProps,
         onRequestDeleteSummary: vi
-          .fn()
+          .fn<NonNullable<ItemProps["onRequestDeleteSummary"]>>()
           .mockResolvedValue({ locked: false, sampleCount: 0 }),
       };
       render(<KitGridItem {...props} />);
@@ -1002,7 +984,9 @@ describe("KitGridItem", () => {
     it("does not open popover when summary returns null (locked)", async () => {
       const props = {
         ...editableProps,
-        onRequestDeleteSummary: vi.fn().mockResolvedValue(null),
+        onRequestDeleteSummary: vi
+          .fn<NonNullable<ItemProps["onRequestDeleteSummary"]>>()
+          .mockResolvedValue(null),
       };
       render(<KitGridItem {...props} />);
       fireEvent.click(screen.getByTestId("delete-kit-button"));
@@ -1045,7 +1029,9 @@ describe("KitGridItem", () => {
     it("rolls back the exit animation when deletion fails", async () => {
       const failingProps = {
         ...editableProps,
-        onDeleteKit: vi.fn().mockRejectedValue(new Error("DB locked")),
+        onDeleteKit: vi
+          .fn<NonNullable<ItemProps["onDeleteKit"]>>()
+          .mockRejectedValue(new Error("DB locked")),
       };
       const { container } = render(<KitGridItem {...failingProps} />);
       fireEvent.click(screen.getByTestId("delete-kit-button"));
@@ -1094,7 +1080,9 @@ describe("KitGridItem", () => {
   describe("[UC-15] Duplicate popover", () => {
     const duplicateProps = {
       ...defaultProps,
-      onDuplicateKit: vi.fn().mockResolvedValue({}),
+      onDuplicateKit: vi
+        .fn<NonNullable<ItemProps["onDuplicateKit"]>>()
+        .mockResolvedValue({}),
     };
 
     it("opens duplicate popover when button is clicked with onDuplicateKit", () => {
@@ -1127,11 +1115,9 @@ describe("KitGridItem", () => {
       render(<KitGridItem {...duplicateProps} />);
       fireEvent.click(screen.getByTitle("Duplicate kit"));
 
-      const input = screen.getByTestId(
-        "duplicate-dest-input",
-      ) as HTMLInputElement;
+      const input = screen.getByTestId("duplicate-dest-input");
       fireEvent.change(input, { target: { value: "b5" } });
-      expect(input.value).toBe("B5"); // Should uppercase
+      expect(input).toHaveValue("B5"); // Should uppercase
     });
 
     it("calls onDuplicateKit when confirm is clicked", async () => {
@@ -1175,7 +1161,7 @@ describe("KitGridItem", () => {
       const props = {
         ...duplicateProps,
         onDuplicateKit: vi
-          .fn()
+          .fn<NonNullable<ItemProps["onDuplicateKit"]>>()
           .mockResolvedValue({ error: "Slot already occupied" }),
       };
       render(<KitGridItem {...props} />);
@@ -1214,10 +1200,8 @@ describe("KitGridItem", () => {
 
       // Reopen - should be empty
       fireEvent.click(screen.getByTitle("Duplicate kit"));
-      const input = screen.getByTestId(
-        "duplicate-dest-input",
-      ) as HTMLInputElement;
-      expect(input.value).toBe("");
+      const input = screen.getByTestId("duplicate-dest-input");
+      expect(input).toHaveValue("");
     });
   });
 
@@ -1227,32 +1211,26 @@ describe("KitGridItem", () => {
       render(
         <KitGridItem
           {...defaultProps}
-          kitData={
-            {
-              ...defaultProps.kitData,
-              voices: [
-                {
-                  id: 1,
-                  kit_name: "A0",
-                  sample_mode: "first",
-                  stereo_mode: false,
-                  voice_alias: "kick",
-                  voice_number: 1,
-                  voice_volume: 100,
-                },
-                {
-                  id: 2,
-                  kit_name: "A0",
-                  sample_mode: "first",
-                  stereo_mode: false,
-                  voice_alias: "snare",
-                  voice_number: 2,
-                  voice_volume: 100,
-                },
-              ],
-            } as never
-          }
-          sampleCounts={undefined as never}
+          kitData={{
+            ...defaultProps.kitData,
+            voices: [
+              createMockVoice({
+                id: 1,
+                kit_name: "A0",
+                stereo_mode: false,
+                voice_alias: "kick",
+                voice_number: 1,
+              }),
+              createMockVoice({
+                id: 2,
+                kit_name: "A0",
+                stereo_mode: false,
+                voice_alias: "snare",
+                voice_number: 2,
+              }),
+            ],
+          }}
+          sampleCounts={undefined}
         />,
       );
 
@@ -1267,7 +1245,7 @@ describe("KitGridItem", () => {
       render(
         <KitGridItem
           {...defaultProps}
-          kitData={{ ...defaultProps.kitData, quarantined: true } as never}
+          kitData={{ ...defaultProps.kitData, quarantined: true }}
         />,
       );
       const indicator = screen.getByTestId("quarantine-indicator");

@@ -19,7 +19,11 @@ test.describe("[UC-11] Modified filter", () => {
   let testEnv: E2ETestEnvironment;
 
   const showModifiedOnly = () =>
-    window.getByRole("button", { name: "Show only modified kits" }).click();
+    window
+      .getByRole("button", {
+        name: "Show kits with changes not yet on the SD card",
+      })
+      .click();
 
   test.beforeEach(async () => {
     testEnv = await extractE2EFixture();

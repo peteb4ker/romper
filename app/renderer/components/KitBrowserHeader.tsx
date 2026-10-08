@@ -169,7 +169,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
             aria-label={
               props.showModifiedOnly
                 ? "Show all kits"
-                : "Show only modified kits"
+                : "Show kits with changes not yet on the SD card"
             }
             className={`flex-shrink-0 px-2.5 py-1.5 text-xs rounded-md transition duration-150 font-medium flex items-center gap-1.5 border ${
               props.showModifiedOnly
@@ -180,7 +180,7 @@ const KitBrowserHeader: React.FC<KitBrowserHeaderProps> = (props) => {
             title={
               props.showModifiedOnly
                 ? "Show all kits"
-                : "Show only modified kits with unsaved changes"
+                : "Show kits with changes not yet on the SD card"
             }
           >
             Modified

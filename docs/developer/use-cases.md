@@ -170,11 +170,12 @@ and [Validating Your Store](../manual/kit-browser.md#validating-your-store).
   (`validateSavedLocalStore`), which reports an invalid saved store but keeps
   its path (RE-80).
 - **Main, while running:** `electron/main/db/utils/dbUtilities.ts`
-  (`watchDatabaseFile`) watches the store's `.romperdb` folder. If the
-  database file is deleted or moved, it closes the connection, so the next
-  edit fails and nothing recreates the file, and pushes
-  `local-store-database-missing`; the renderer (`SettingsContext.tsx`)
-  checks the store again and shows the dialog (#535).
+  (`checkOpenDatabaseFiles`) checks every second that each open store's
+  database file is still there. If the file or the store's folder is
+  deleted or moved, it closes the connection, so the next edit fails and
+  nothing recreates the file, and pushes `local-store-database-missing`;
+  the renderer (`SettingsContext.tsx`) checks the store again and shows
+  the dialog (#535).
 - **Renderer:** `app/renderer/utils/SettingsContext.tsx` (`refreshLocalStoreStatus`) →
   `app/renderer/components/hooks/kit-management/useLocalStoreSetupFlow.ts` → `app/renderer/components/dialogs/InvalidLocalStoreDialog.tsx`
   or the setup wizard; `app/renderer/components/dialogs/CriticalErrorDialog.tsx`.

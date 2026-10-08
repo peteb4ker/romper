@@ -15,6 +15,7 @@ import {
   closeAllDbConnections,
   closeDbConnection,
   getOpenDbConnection,
+  listOpenDbConnections,
   registerDbConnection,
   reportDatabaseMissing,
   type RomperDb,
@@ -39,6 +40,19 @@ export {
   logMigrationError,
   repairMigrationHistory,
 } from "./dbMigrations.js";
+
+/**
+ * Check every open store's database file is still there (see
+ * checkDatabaseFile). Main runs this every FILE_CHECK_INTERVAL_MS while a
+ * store is open; tests call it to check straight away.
+ */
+export async function checkOpenDatabaseFiles(): Promise<void> {
+  await Promise.all(
+    listOpenDbConnections().map(([dbDir, connection]) =>
+      checkDatabaseFile(dbDir, connection),
+    ),
+  );
+}
 
 /**
  * Close every connection, so the next operation on each store reopens and
@@ -231,9 +245,13 @@ export function withDbTransaction<T>(
 
 /**
  * Check, without holding the main thread, that the file at the store's
- * path is still the one `connection` opened. If it was deleted or moved,
- * close the connection and report it; if another file replaced it, close
- * the connection so the next operation opens that one.
+ * path is still the one `connection` opened (#535). An open connection
+ * keeps writing to the file it opened, so if the file was deleted or moved
+ * (by hand or a sync tool) edits would go to a file that's no longer in
+ * the store, with no message. If it was, close the connection, so the next
+ * operation fails (nothing recreates the file), and report it; if another
+ * file replaced it, close the connection so the next operation opens that
+ * one.
  */
 async function checkDatabaseFile(
   dbDir: string,
@@ -244,7 +262,11 @@ async function checkDatabaseFile(
   try {
     const { dev, ino } = await fs.promises.stat(dbPath);
     current = { dev, ino };
-  } catch {
+  } catch (e) {
+    // Only a file that isn't there is missing; a stat that fails for
+    // another reason (a busy network drive, say) is tried again next time
+    const code = (e as NodeJS.ErrnoException).code;
+    if (code !== "ENOENT" && code !== "ENOTDIR") return;
     current = undefined;
   }
   // Closed or replaced by Romper itself while the check ran
@@ -320,7 +342,7 @@ function connect(
       sqlite,
     };
     registerDbConnection(dbDir, connection);
-    connection.watcher = watchDatabaseFile(dbDir, connection);
+    startDatabaseFileChecks();
     return connection;
   } catch (e) {
     sqlite.close();
@@ -329,6 +351,11 @@ function connect(
     throw new Error(`Migration failed: ${error}`);
   }
 }
+
+/** How often main checks that open stores' database files are still there */
+const FILE_CHECK_INTERVAL_MS = 1000;
+let fileCheckTimer: ReturnType<typeof setInterval> | undefined;
+let fileCheckRunning = false;
 
 /** The file's device and inode, or undefined if it can't be read */
 function fileIdentity(filePath: string): StoreConnection["file"] {
@@ -348,36 +375,26 @@ function isSameFile(
 }
 
 /**
- * Watch the store's folder for its database file being deleted, moved or
- * replaced (by hand or a sync tool) while the connection is open (#535).
- * An open connection keeps writing to the file it opened, so without this
- * edits would go to a file that's no longer in the store, with no message.
- * Closing the connection makes the next operation fail (nothing recreates
- * the file) or open the file now there. A watch costs nothing per
- * operation; a check before each one would hold the main thread. If the
- * folder can't be watched, the store works as before.
+ * Check the open stores' database files every FILE_CHECK_INTERVAL_MS until
+ * none is open. An async stat per store per second costs nothing per
+ * operation, where a check before each operation would hold the main
+ * thread, and unlike a folder watch it doesn't miss changes (macOS can
+ * drop watch events) or depend on the drive supporting watches.
  */
-function watchDatabaseFile(
-  dbDir: string,
-  connection: StoreConnection,
-): StoreConnection["watcher"] {
-  try {
-    const watcher = fs.watch(
-      dbDir,
-      { persistent: false },
-      (_event, filename) => {
-        // The WAL and shared-memory files change on every write
-        if (filename && filename.toString() !== DB_FILENAME) return;
-        void checkDatabaseFile(dbDir, connection);
-      },
-    );
-    watcher.on("error", () => watcher.close());
-    return watcher;
-  } catch (e) {
-    console.warn(
-      `[Main] Can't watch ${dbDir} for the database file going missing:`,
-      e instanceof Error ? e.message : String(e),
-    );
-    return undefined;
-  }
+function startDatabaseFileChecks(): void {
+  if (fileCheckTimer) return;
+  fileCheckTimer = setInterval(() => {
+    if (listOpenDbConnections().length === 0) {
+      clearInterval(fileCheckTimer);
+      fileCheckTimer = undefined;
+      return;
+    }
+    if (fileCheckRunning) return;
+    fileCheckRunning = true;
+    void checkOpenDatabaseFiles().finally(() => {
+      fileCheckRunning = false;
+    });
+  }, FILE_CHECK_INTERVAL_MS);
+  // Never keeps the app (or a test run) alive
+  fileCheckTimer.unref?.();
 }

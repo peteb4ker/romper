@@ -11,6 +11,7 @@ import GainKnob from "../../GainKnob";
 import SampleWaveform from "../../SampleWaveform";
 import { MAX_SLOTS_PER_VOICE } from "./constants";
 import { createCombinedDragHandlers } from "./dragUtils";
+import { SlotWithPlayback } from "./SlotWithPlayback";
 import { BaseVoicePanelOptions } from "./types";
 
 // Re-export constant for backward compatibility
@@ -75,19 +76,15 @@ export function useVoicePanelSlotRendering({
   onGainCommit,
   onSampleSelect,
   onWaveformPlayingChange,
-  playOptions,
   playsStereo,
-  playTriggers,
-  playVolumes,
   renderDeleteButton,
   renderPlayButton,
   sampleActionsHook,
   sampleMetadata,
-  samplePlaying,
   samples,
   selectedIdx,
+  slotPlayback,
   slotRenderingHook,
-  stopTriggers,
   voice,
 }: UseVoicePanelSlotRenderingOptions) {
   // Helper to get slot styling properties (eliminates duplication)
@@ -133,7 +130,6 @@ export function useVoicePanelSlotRendering({
           : sampleName;
       // Playback and metadata are keyed by slot, not file name (RE-45)
       const sampleKey = slotKey(voice, slotNumber);
-      const isPlaying = Boolean(samplePlaying[sampleKey]);
       const uiSlotNumber = slotNumber + 1;
       const sampleData = sampleMetadata?.[sampleKey];
       const isSelected = selectedIdx === slotNumber && isActive;
@@ -187,113 +183,121 @@ export function useVoicePanelSlotRendering({
           }
         : dragHandlers;
 
+      // The slot reads its own playback, so a trigger re-renders only the
+      // slots it plays or stops (#482)
       return (
-        <li
-          aria-describedby={describedBy}
-          aria-label={`Sample ${sampleName} in slot ${uiSlotNumber}`}
-          aria-selected={isSelected}
-          className={className}
-          data-playing={isPlaying}
-          data-testid={
-            isSelected ? `sample-selected-voice-${voice}` : undefined
-          }
-          draggable={isEditable}
+        <SlotWithPlayback
           key={`${voice}-${slotNumber}-${sampleName}`}
-          onClick={() => onSampleSelect?.(voice, slotNumber)}
-          onContextMenu={(e) =>
-            sampleActionsHook.handleSampleContextMenu(e, sampleData)
-          }
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              onSampleSelect?.(voice, slotNumber);
-            }
-          }}
-          role="option"
-          tabIndex={0}
-          title={title}
-          {...combinedDragHandlers}
+          slotKey={sampleKey}
+          store={slotPlayback}
         >
-          {renderPlayButton(isPlaying, slotNumber)}
-          <div className="flex-1 min-w-0">
-            <span
-              className="block truncate text-xs font-mono font-medium text-text-primary"
-              title={sampleName}
+          {(playback) => (
+            <li
+              aria-describedby={describedBy}
+              aria-label={`Sample ${sampleName} in slot ${uiSlotNumber}`}
+              aria-selected={isSelected}
+              className={className}
+              data-playing={playback.playing}
+              data-testid={
+                isSelected ? `sample-selected-voice-${voice}` : undefined
+              }
+              draggable={isEditable}
+              onClick={() => onSampleSelect?.(voice, slotNumber)}
+              onContextMenu={(e) =>
+                sampleActionsHook.handleSampleContextMenu(e, sampleData)
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onSampleSelect?.(voice, slotNumber);
+                }
+              }}
+              role="option"
+              tabIndex={0}
+              title={title}
+              {...combinedDragHandlers}
             >
-              {displayName}
-            </span>
-            {monoInPair && (
-              <span
-                className="block truncate text-[10px] text-accent-warning"
-                data-testid={`mono-in-pair-label-${voice}-${slotNumber}`}
-                id={monoLabelId}
-              >
-                {STEREO_LABELS.monoInPair}
-              </span>
-            )}
-            {fileLabel && (
-              <span
-                className={`block truncate text-[10px] ${
-                  // Missing is skipped at write; unreadable quarantines
-                  fileStatus === "missing"
-                    ? "text-accent-warning"
-                    : "text-accent-danger"
-                }`}
-                data-testid={`sample-file-label-${voice}-${slotNumber}`}
-                id={fileLabelId}
-              >
-                {fileLabel}
-              </span>
-            )}
-          </div>
-          {isEditable && (
-            <GainKnob
-              onChange={(db) =>
-                onGainChange?.(voice, slotNumber, sampleName, db)
-              }
-              onCommit={(db, fromDb) =>
-                // The parent saves it and reports a failure (RE-91)
-                onGainCommit?.(voice, slotNumber, sampleName, db, fromDb)
-              }
-              value={gainsUnknown ? null : (sampleData?.gain_db ?? 0)}
-            />
+              {renderPlayButton(playback.playing, slotNumber)}
+              <div className="flex-1 min-w-0">
+                <span
+                  className="block truncate text-xs font-mono font-medium text-text-primary"
+                  title={sampleName}
+                >
+                  {displayName}
+                </span>
+                {monoInPair && (
+                  <span
+                    className="block truncate text-[10px] text-accent-warning"
+                    data-testid={`mono-in-pair-label-${voice}-${slotNumber}`}
+                    id={monoLabelId}
+                  >
+                    {STEREO_LABELS.monoInPair}
+                  </span>
+                )}
+                {fileLabel && (
+                  <span
+                    className={`block truncate text-[10px] ${
+                      // Missing is skipped at write; unreadable quarantines
+                      fileStatus === "missing"
+                        ? "text-accent-warning"
+                        : "text-accent-danger"
+                    }`}
+                    data-testid={`sample-file-label-${voice}-${slotNumber}`}
+                    id={fileLabelId}
+                  >
+                    {fileLabel}
+                  </span>
+                )}
+              </div>
+              {isEditable && (
+                <GainKnob
+                  onChange={(db) =>
+                    onGainChange?.(voice, slotNumber, sampleName, db)
+                  }
+                  onCommit={(db, fromDb) =>
+                    // The parent saves it and reports a failure (RE-91)
+                    onGainCommit?.(voice, slotNumber, sampleName, db, fromDb)
+                  }
+                  value={gainsUnknown ? null : (sampleData?.gain_db ?? 0)}
+                />
+              )}
+              {isEditable && renderDeleteButton(slotNumber, sampleName)}
+              <SampleWaveform
+                // Unread, the gain plays at 0 dB; unreadable, nothing plays (#636)
+                gainDb={gainsUnreadable ? null : sampleData?.gain_db}
+                key={`${kitName}-${voice}-${uiSlotNumber}-${sampleName}`}
+                kitName={kitName}
+                onError={(err) => {
+                  if (
+                    typeof globalThis !== "undefined" &&
+                    globalThis.dispatchEvent
+                  ) {
+                    globalThis.dispatchEvent(
+                      new CustomEvent("SampleWaveformError", { detail: err }),
+                    );
+                  }
+                }}
+                onPlayingChange={(playing) =>
+                  onWaveformPlayingChange(voice, slotNumber, playing)
+                }
+                playOptions={playback.options}
+                playsStereo={playsStereo}
+                playTrigger={playback.playTrigger}
+                sampleSource={slotSampleSource(sampleData, sampleName)}
+                slotNumber={slotNumber}
+                stopTrigger={playback.stopTrigger}
+                voiceColor={`var(--voice-${voice})`}
+                voiceNumber={voice}
+                volume={playback.volume}
+              />
+            </li>
           )}
-          {isEditable && renderDeleteButton(slotNumber, sampleName)}
-          <SampleWaveform
-            // Unread, the gain plays at 0 dB; unreadable, nothing plays (#636)
-            gainDb={gainsUnreadable ? null : sampleData?.gain_db}
-            key={`${kitName}-${voice}-${uiSlotNumber}-${sampleName}`}
-            kitName={kitName}
-            onError={(err) => {
-              if (
-                typeof globalThis !== "undefined" &&
-                globalThis.dispatchEvent
-              ) {
-                globalThis.dispatchEvent(
-                  new CustomEvent("SampleWaveformError", { detail: err }),
-                );
-              }
-            }}
-            onPlayingChange={(playing) =>
-              onWaveformPlayingChange(voice, slotNumber, playing)
-            }
-            playOptions={playOptions?.[sampleKey]}
-            playsStereo={playsStereo}
-            playTrigger={playTriggers[sampleKey] || 0}
-            sampleSource={slotSampleSource(sampleData, sampleName)}
-            slotNumber={slotNumber}
-            stopTrigger={stopTriggers[sampleKey] || 0}
-            voiceColor={`var(--voice-${voice})`}
-            voiceNumber={voice}
-            volume={playVolumes?.[sampleKey]}
-          />
-        </li>
+        </SlotWithPlayback>
       );
     },
     [
       getSlotStylingProps,
       voice,
-      samplePlaying,
       sampleMetadata,
       selectedIdx,
       isActive,
@@ -305,11 +309,8 @@ export function useVoicePanelSlotRendering({
       renderDeleteButton,
       kitName,
       onWaveformPlayingChange,
-      playOptions,
       playsStereo,
-      playTriggers,
-      playVolumes,
-      stopTriggers,
+      slotPlayback,
       handleCombinedDragOver,
       handleCombinedDrop,
       onGainChange,

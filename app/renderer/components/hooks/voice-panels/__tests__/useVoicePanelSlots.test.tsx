@@ -2,10 +2,18 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createSlotPlaybackStore } from "../../kit-management/slotPlaybackStore";
 import {
   useVoicePanelSlots,
   type UseVoicePanelSlotsOptions,
 } from "../useVoicePanelSlots";
+
+/** A store in which the slot is playing */
+function playingStore(key: string) {
+  const store = createSlotPlaybackStore();
+  store.update(key, (slot) => ({ ...slot, playing: true }));
+  return store;
+}
 
 // Mock SampleWaveform component; clicking it reports a load error
 vi.mock("../../../SampleWaveform", () => ({
@@ -71,16 +79,14 @@ describe("useVoicePanelSlots", () => {
     onSampleSelect: vi.fn(),
     onWaveformPlayingChange: vi.fn(),
     playsStereo: false,
-    playTriggers: {},
     renderDeleteButton: vi.fn(() => <button>Delete</button>),
     renderPlayButton: vi.fn(() => <button>Play</button>),
     sampleActionsHook: mockSampleActionsHook,
     sampleMetadata: {},
-    samplePlaying: {},
     samples: ["sample1.wav", "sample2.wav"],
     selectedIdx: 1,
+    slotPlayback: createSlotPlaybackStore(),
     slotRenderingHook: mockSlotRenderingHook,
-    stopTriggers: {},
     voice: 1,
   };
 
@@ -262,7 +268,7 @@ describe("useVoicePanelSlots", () => {
   it("renders playing state correctly", () => {
     const propsWithPlaying = {
       ...defaultProps,
-      samplePlaying: { "1:0": true },
+      slotPlayback: playingStore("1:0"),
     };
 
     const TestComponent = () => {
@@ -297,7 +303,7 @@ describe("useVoicePanelSlots", () => {
     it("shows only the playing slot as playing", () => {
       const [first, second] = renderTwins({
         ...twins,
-        samplePlaying: { "1:1": true },
+        slotPlayback: playingStore("1:1"),
       });
 
       expect(first).toHaveAttribute("data-playing", "false");

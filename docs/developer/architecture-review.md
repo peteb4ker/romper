@@ -222,9 +222,11 @@ What the numbers say:
 
 ### Rendering and audio
 
-- **Playback state lives in `KitEditor` (RE-87).** Each trigger commits the
-  whole editor two or three times (48 waveforms, 48 knobs, the sequencer).
-  Play state is keyed by voice and filename (RE-45).
+- **Playback state lived in `KitEditor` (RE-87, fixed in #482).** Each
+  trigger committed the whole editor two or three times (48 waveforms, 48
+  knobs, the sequencer). It's now in a per-slot store, so a trigger
+  re-renders only the slots it plays or stops. Play state is keyed by slot
+  (RE-45).
 - **Gain writes on every input event (RE-88).** Each wheel step or mousemove
   of the knob writes to the database and re-renders all four voice panels.
 - **RE-46: the waveform is fixed (#461).** A playing waveform used to

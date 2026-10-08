@@ -2,7 +2,15 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { IDLE_SLOT } from "../slotPlaybackStore";
 import { useKitPlayback } from "../useKitPlayback";
+
+type Playback = { current: ReturnType<typeof useKitPlayback> };
+
+/** A slot's playback, as its waveform reads it */
+function slotOf(result: Playback, key: string) {
+  return result.current.slotPlayback.get(key);
+}
 
 describe("useKitPlayback", () => {
   beforeEach(() => {
@@ -15,9 +23,7 @@ describe("useKitPlayback", () => {
   it("initializes state correctly", () => {
     const { result } = renderHook(() => useKitPlayback());
     expect(result.current.playbackError).toBeNull();
-    expect(result.current.playTriggers).toEqual({});
-    expect(result.current.stopTriggers).toEqual({});
-    expect(result.current.samplePlaying).toEqual({});
+    expect(slotOf(result, "1:0")).toBe(IDLE_SLOT);
   });
 
   it("handlePlay triggers play and clears error", () => {
@@ -25,67 +31,70 @@ describe("useKitPlayback", () => {
     act(() => {
       result.current.handlePlay(1, 0);
     });
-    expect(result.current.playTriggers["1:0"]).toBe(1);
+    expect(slotOf(result, "1:0").playTrigger).toBe(1);
     expect(result.current.playbackError).toBeNull();
     act(() => {
       result.current.handlePlay(1, 0);
     });
-    expect(result.current.playTriggers["1:0"]).toBe(2);
+    expect(slotOf(result, "1:0").playTrigger).toBe(2);
   });
 
-  it("handleStop triggers stop and sets samplePlaying false", () => {
+  it("handleStop triggers stop and marks the slot not playing", () => {
     const { result } = renderHook(() => useKitPlayback());
     act(() => {
       result.current.handleStop(2, 1);
     });
-    expect(result.current.stopTriggers["2:1"]).toBe(1);
-    expect(result.current.samplePlaying["2:1"]).toBe(false);
+    expect(slotOf(result, "2:1").stopTrigger).toBe(1);
+    expect(slotOf(result, "2:1").playing).toBe(false);
   });
 
-  it("handleWaveformPlayingChange sets samplePlaying", () => {
+  it("handleWaveformPlayingChange sets the slot playing", () => {
     const { result } = renderHook(() => useKitPlayback());
     act(() => {
       result.current.handleWaveformPlayingChange(3, 2, true);
     });
-    expect(result.current.samplePlaying["3:2"]).toBe(true);
+    expect(slotOf(result, "3:2").playing).toBe(true);
     act(() => {
       result.current.handleWaveformPlayingChange(3, 2, false);
     });
-    expect(result.current.samplePlaying["3:2"]).toBe(false);
+    expect(slotOf(result, "3:2").playing).toBe(false);
   });
 
-  it("sets playVolumes when volume is provided", () => {
+  it("sets the volume when volume is provided", () => {
     const { result } = renderHook(() => useKitPlayback());
     act(() => {
       result.current.handlePlay(1, 0, 75);
     });
-    expect(result.current.playVolumes["1:0"]).toBe(75);
+    expect(slotOf(result, "1:0").volume).toBe(75);
   });
 
-  it("does not set playVolumes when volume is omitted", () => {
+  it("does not set a volume when volume is omitted", () => {
     const { result } = renderHook(() => useKitPlayback());
     act(() => {
       result.current.handlePlay(1, 0);
     });
-    expect(result.current.playVolumes["1:0"]).toBeUndefined();
+    expect(slotOf(result, "1:0").volume).toBeUndefined();
   });
 
-  it("updates playVolumes on subsequent calls with different volumes", () => {
+  it("updates the volume on subsequent calls with different volumes", () => {
     const { result } = renderHook(() => useKitPlayback());
     act(() => {
       result.current.handlePlay(1, 0, 100);
     });
-    expect(result.current.playVolumes["1:0"]).toBe(100);
+    expect(slotOf(result, "1:0").volume).toBe(100);
     act(() => {
       result.current.handlePlay(1, 0, 50);
     });
-    expect(result.current.playVolumes["1:0"]).toBe(50);
+    expect(slotOf(result, "1:0").volume).toBe(50);
   });
 
-  it("returns playVolumes in hook interface", () => {
+  it("keeps a volume until a play gives another", () => {
     const { result } = renderHook(() => useKitPlayback());
-    expect(result.current).toHaveProperty("playVolumes");
-    expect(result.current.playVolumes).toEqual({});
+    act(() => {
+      result.current.handlePlay(1, 0, 60);
+      result.current.handlePlay(1, 0);
+    });
+    expect(slotOf(result, "1:0").volume).toBe(60);
   });
 
   it("chokes other playing samples on the same voice", () => {
@@ -94,16 +103,16 @@ describe("useKitPlayback", () => {
     act(() => {
       result.current.handleWaveformPlayingChange(1, 0, true);
     });
-    expect(result.current.samplePlaying["1:0"]).toBe(true);
+    expect(slotOf(result, "1:0").playing).toBe(true);
 
     // Play sample B on voice 1 — should stop sample A
-    const prevStopTrigger = result.current.stopTriggers["1:0"] || 0;
+    const prevStopTrigger = slotOf(result, "1:0").stopTrigger;
     act(() => {
       result.current.handlePlay(1, 1);
     });
-    expect(result.current.stopTriggers["1:0"]).toBeGreaterThan(prevStopTrigger);
+    expect(slotOf(result, "1:0").stopTrigger).toBeGreaterThan(prevStopTrigger);
     // New sample should have its play trigger incremented
-    expect(result.current.playTriggers["1:1"]).toBe(1);
+    expect(slotOf(result, "1:1").playTrigger).toBe(1);
   });
 
   it("does not choke samples on other voices", () => {
@@ -115,11 +124,11 @@ describe("useKitPlayback", () => {
     });
 
     // Play a new sample on voice 1 — should NOT stop voice 2
-    const voice2StopBefore = result.current.stopTriggers["2:1"] || 0;
+    const voice2StopBefore = slotOf(result, "2:1").stopTrigger;
     act(() => {
       result.current.handlePlay(1, 2);
     });
-    expect(result.current.stopTriggers["2:1"] || 0).toBe(voice2StopBefore);
+    expect(slotOf(result, "2:1").stopTrigger).toBe(voice2StopBefore);
   });
 
   it("does not choke the same sample being replayed", () => {
@@ -130,11 +139,11 @@ describe("useKitPlayback", () => {
 
     // Replay same sample — SampleWaveform handles its own restart,
     // no extra stop trigger needed for the same key
-    const stopBefore = result.current.stopTriggers["1:0"] || 0;
+    const stopBefore = slotOf(result, "1:0").stopTrigger;
     act(() => {
       result.current.handlePlay(1, 0);
     });
-    expect(result.current.stopTriggers["1:0"] || 0).toBe(stopBefore);
+    expect(slotOf(result, "1:0").stopTrigger).toBe(stopBefore);
   });
 
   it("records play options for a play, and clears them for a plain play", () => {
@@ -143,12 +152,12 @@ describe("useKitPlayback", () => {
     act(() => {
       result.current.handlePlay(2, 0, 80, options);
     });
-    expect(result.current.playOptions["2:0"]).toEqual(options);
+    expect(slotOf(result, "2:0").options).toEqual(options);
 
     act(() => {
       result.current.handlePlay(2, 0);
     });
-    expect(result.current.playOptions["2:0"]).toBeUndefined();
+    expect(slotOf(result, "2:0").options).toBeUndefined();
   });
 
   it("stops a choked sample when the choking sound is scheduled to start", () => {
@@ -159,8 +168,8 @@ describe("useKitPlayback", () => {
     act(() => {
       result.current.handlePlay(1, 1, 100, { startAt: 2500 });
     });
-    expect(result.current.stopTriggers["1:0"]).toBe(1);
-    expect(result.current.playOptions["1:0"]?.stopAt).toBe(2500);
+    expect(slotOf(result, "1:0").stopTrigger).toBe(1);
+    expect(slotOf(result, "1:0").options?.stopAt).toBe(2500);
   });
 
   describe("[UC-29] keyed by slot, not file name (RE-45)", () => {
@@ -171,8 +180,8 @@ describe("useKitPlayback", () => {
       act(() => {
         result.current.handlePlay(1, 0);
       });
-      expect(result.current.playTriggers["1:0"]).toBe(1);
-      expect(result.current.playTriggers["1:1"]).toBeUndefined();
+      expect(slotOf(result, "1:0").playTrigger).toBe(1);
+      expect(slotOf(result, "1:1").playTrigger).toBe(0);
     });
 
     it("chokes the other slot with the same file name on the voice", () => {
@@ -184,9 +193,9 @@ describe("useKitPlayback", () => {
       act(() => {
         result.current.handlePlay(1, 1);
       });
-      expect(result.current.stopTriggers["1:0"]).toBe(1);
-      expect(result.current.playTriggers["1:1"]).toBe(1);
-      expect(result.current.stopTriggers["1:1"]).toBeUndefined();
+      expect(slotOf(result, "1:0").stopTrigger).toBe(1);
+      expect(slotOf(result, "1:1").playTrigger).toBe(1);
+      expect(slotOf(result, "1:1").stopTrigger).toBe(0);
     });
 
     it("tracks playing state per slot", () => {
@@ -194,9 +203,9 @@ describe("useKitPlayback", () => {
       act(() => {
         result.current.handleWaveformPlayingChange(1, 1, true);
       });
-      expect(result.current.samplePlaying["1:1"]).toBe(true);
-      expect(result.current.samplePlaying["1:0"]).toBeUndefined();
-      expect(result.current.samplePlaying["2:0"]).toBeUndefined();
+      expect(slotOf(result, "1:1").playing).toBe(true);
+      expect(slotOf(result, "1:0").playing).toBe(false);
+      expect(slotOf(result, "2:0").playing).toBe(false);
     });
   });
 
@@ -211,13 +220,13 @@ describe("useKitPlayback", () => {
       // An edit reloads the kit, which re-renders the editor
       rerender();
       rerender();
-      expect(result.current.playTriggers["1:0"]).toBe(1);
-      expect(result.current.samplePlaying["1:0"]).toBe(true);
+      expect(slotOf(result, "1:0").playTrigger).toBe(1);
+      expect(slotOf(result, "1:0").playing).toBe(true);
 
       act(() => {
         result.current.handlePlay(1, 1);
       });
-      expect(result.current.stopTriggers["1:0"]).toBe(1);
+      expect(slotOf(result, "1:0").stopTrigger).toBe(1);
     });
 
     it("chokes a sample triggered moments ago, before it reports playing", () => {
@@ -227,8 +236,8 @@ describe("useKitPlayback", () => {
         result.current.handlePlay(1, 1, 100, { startAt: 1125 });
       });
 
-      expect(result.current.stopTriggers["1:0"]).toBe(1);
-      expect(result.current.playOptions["1:0"]?.stopAt).toBe(1125);
+      expect(slotOf(result, "1:0").stopTrigger).toBe(1);
+      expect(slotOf(result, "1:0").options?.stopAt).toBe(1125);
     });
 
     it("leaves a sample alone once it has finished", () => {
@@ -242,7 +251,7 @@ describe("useKitPlayback", () => {
         result.current.handlePlay(1, 1);
       });
 
-      expect(result.current.stopTriggers["1:0"]).toBeUndefined();
+      expect(slotOf(result, "1:0").stopTrigger).toBe(0);
     });
 
     it("leaves a sample alone once it was stopped", () => {
@@ -256,7 +265,7 @@ describe("useKitPlayback", () => {
       });
 
       // One stop from handleStop, none from the choke
-      expect(result.current.stopTriggers["1:0"]).toBe(1);
+      expect(slotOf(result, "1:0").stopTrigger).toBe(1);
     });
 
     it("chokes each sample only once", () => {
@@ -267,9 +276,36 @@ describe("useKitPlayback", () => {
         result.current.handlePlay(1, 2);
       });
 
-      expect(result.current.stopTriggers["1:0"]).toBe(1);
-      expect(result.current.stopTriggers["1:1"]).toBe(1);
-      expect(result.current.stopTriggers["1:2"]).toBeUndefined();
+      expect(slotOf(result, "1:0").stopTrigger).toBe(1);
+      expect(slotOf(result, "1:1").stopTrigger).toBe(1);
+      expect(slotOf(result, "1:2").stopTrigger).toBe(0);
     });
+  });
+});
+
+describe("[Q-01] [UC-29] useKitPlayback re-renders nothing on a trigger (#482)", () => {
+  it("keeps its handlers and doesn't re-render the editor that holds it", () => {
+    let renders = 0;
+    const { result } = renderHook(() => {
+      renders++;
+      return useKitPlayback();
+    });
+    const first = result.current;
+    renders = 0;
+
+    act(() => {
+      result.current.handlePlay(1, 0, 100, { startAt: 1000 });
+      result.current.handleWaveformPlayingChange(1, 0, true);
+      result.current.handlePlay(1, 1);
+      result.current.handleStop(1, 1);
+    });
+
+    expect(renders).toBe(0);
+    expect(result.current.handlePlay).toBe(first.handlePlay);
+    expect(result.current.handleStop).toBe(first.handleStop);
+    expect(result.current.handleWaveformPlayingChange).toBe(
+      first.handleWaveformPlayingChange,
+    );
+    expect(result.current.slotPlayback).toBe(first.slotPlayback);
   });
 });

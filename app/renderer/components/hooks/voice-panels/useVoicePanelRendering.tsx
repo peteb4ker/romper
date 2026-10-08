@@ -1,6 +1,7 @@
 import React from "react";
 
-import type { PlayOptions, SampleData } from "../../kitTypes";
+import type { SampleData } from "../../kitTypes";
+import type { SlotPlaybackStore } from "../kit-management/slotPlaybackStore";
 import type { SlotGainChange, SlotGainCommit } from "./types";
 
 import { useVoicePanelButtons } from "./useVoicePanelButtons";
@@ -44,11 +45,8 @@ export interface UseVoicePanelRenderingOptions {
     slot: number,
     playing: boolean,
   ) => void;
-  playOptions?: { [key: string]: PlayOptions | undefined };
   /** The voice is in a stereo pair, as the write makes it (#569) */
   playsStereo: boolean;
-  playTriggers: { [key: string]: number };
-  playVolumes?: { [key: string]: number };
   sampleActionsHook: {
     handleDeleteSample: (slotNumber: number) => Promise<void>;
     handleSampleContextMenu: (
@@ -57,9 +55,10 @@ export interface UseVoicePanelRenderingOptions {
     ) => void;
   };
   sampleMetadata?: { [slotKey: string]: SampleData }; // Keyed by slotKey(voice, slot)
-  samplePlaying: { [key: string]: boolean };
   samples: string[];
   selectedIdx: number;
+  /** Each slot's playback, read by the slot itself (#482) */
+  slotPlayback: SlotPlaybackStore;
 
   slotRenderingHook: {
     calculateRenderSlots: () => {
@@ -91,7 +90,6 @@ export interface UseVoicePanelRenderingOptions {
   };
   /** A mono voice's note: its stereo samples are mixed down (#537) */
   stereoNote?: string;
-  stopTriggers: { [key: string]: number };
   voice: number;
   voiceName: null | string;
   voiceNameEditorHook: {
@@ -126,18 +124,14 @@ export function useVoicePanelRendering({
   onStop,
   onVoiceUnlink,
   onWaveformPlayingChange,
-  playOptions,
   playsStereo,
-  playTriggers,
-  playVolumes,
   sampleActionsHook,
   sampleMetadata,
-  samplePlaying,
   samples,
   selectedIdx,
+  slotPlayback,
   slotRenderingHook,
   stereoNote,
-  stopTriggers,
   voice,
   voiceName,
   voiceNameEditorHook,
@@ -164,19 +158,15 @@ export function useVoicePanelRendering({
     onGainCommit,
     onSampleSelect,
     onWaveformPlayingChange,
-    playOptions,
     playsStereo,
-    playTriggers,
-    playVolumes,
     renderDeleteButton: buttons.renderDeleteButton,
     renderPlayButton: buttons.renderPlayButton,
     sampleActionsHook,
     sampleMetadata,
-    samplePlaying,
     samples,
     selectedIdx,
+    slotPlayback,
     slotRenderingHook,
-    stopTriggers,
     voice,
   });
 

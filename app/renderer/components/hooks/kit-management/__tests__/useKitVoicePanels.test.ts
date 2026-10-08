@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { VoiceSamples } from "../../../kitTypes";
 
 import { createMockKitWithRelations } from "../../../../../../tests/factories/kit.factory";
+import { createSlotPlaybackStore } from "../slotPlaybackStore";
 import { useKitVoicePanels } from "../useKitVoicePanels";
 
 // Mock kit data
@@ -29,14 +30,12 @@ const defaultProps = {
   onSaveVoiceName: vi.fn(),
   onStop: vi.fn(),
   onWaveformPlayingChange: vi.fn(),
-  playTriggers: {},
-  samplePlaying: {},
   samples: mockSamples,
   selectedSampleIdx: 0,
   selectedVoice: 1,
   setSelectedSampleIdx: vi.fn(),
   setSelectedVoice: vi.fn(),
-  stopTriggers: {},
+  slotPlayback: createSlotPlaybackStore(),
 };
 
 describe("useKitVoicePanels", () => {
@@ -53,12 +52,10 @@ describe("useKitVoicePanels", () => {
       expect(result.current.onWaveformPlayingChange).toBe(
         defaultProps.onWaveformPlayingChange,
       );
-      expect(result.current.playTriggers).toBe(defaultProps.playTriggers);
-      expect(result.current.samplePlaying).toBe(defaultProps.samplePlaying);
+      expect(result.current.slotPlayback).toBe(defaultProps.slotPlayback);
       expect(result.current.samples).toBe(mockSamples);
       expect(result.current.selectedSampleIdx).toBe(0);
       expect(result.current.selectedVoice).toBe(1);
-      expect(result.current.stopTriggers).toBe(defaultProps.stopTriggers);
     });
 
     it("should provide onSampleKeyNav function", () => {

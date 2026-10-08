@@ -1,10 +1,9 @@
-import type {
-  PlayOptions,
-  VoiceSamples,
-} from "@romper/app/renderer/components/kitTypes";
+import type { VoiceSamples } from "@romper/app/renderer/components/kitTypes";
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import { useCallback } from "react";
+
+import type { SlotPlaybackStore } from "./slotPlaybackStore";
 
 export function useKitVoicePanels({
   kit,
@@ -14,17 +13,13 @@ export function useKitVoicePanels({
   onSaveVoiceName,
   onStop,
   onWaveformPlayingChange,
-  playOptions,
-  playTriggers,
-  playVolumes,
-  samplePlaying,
   samples,
   selectedSampleIdx,
   selectedVoice,
   sequencerOpen = false,
   setSelectedSampleIdx,
   setSelectedVoice,
-  stopTriggers,
+  slotPlayback,
 }: {
   kit: KitWithRelations | null;
   kitName: string;
@@ -37,17 +32,14 @@ export function useKitVoicePanels({
     slot: number,
     playing: boolean,
   ) => void;
-  playOptions?: { [key: string]: PlayOptions | undefined };
-  playTriggers: { [key: string]: number };
-  playVolumes?: { [key: string]: number };
-  samplePlaying: { [key: string]: boolean };
   samples: VoiceSamples;
   selectedSampleIdx: number;
   selectedVoice: number;
   sequencerOpen?: boolean;
   setSelectedSampleIdx: (i: number) => void;
   setSelectedVoice: (v: number) => void;
-  stopTriggers: { [key: string]: number };
+  /** Each slot's playback, read by the slot itself (#482) */
+  slotPlayback: SlotPlaybackStore;
 }) {
   // Helper to get number of samples for a voice
   const getNumSamples = useCallback(
@@ -113,13 +105,9 @@ export function useKitVoicePanels({
     onSaveVoiceName,
     onStop,
     onWaveformPlayingChange,
-    playOptions,
-    playTriggers,
-    playVolumes,
-    samplePlaying,
     samples,
     selectedSampleIdx,
     selectedVoice,
-    stopTriggers,
+    slotPlayback,
   };
 }

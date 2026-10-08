@@ -19,7 +19,8 @@ import {
 } from "@romper/shared/stereoLinkRules";
 import React, { useId, useState } from "react";
 
-import type { PlayOptions, SampleData, VoiceSamples } from "./kitTypes";
+import type { SlotPlaybackStore } from "./hooks/kit-management/slotPlaybackStore";
+import type { SampleData, VoiceSamples } from "./kitTypes";
 
 import { samplesFailedMessage } from "../utils/kitLoadMessages";
 import { slotKey } from "../utils/slotKey";
@@ -67,19 +68,15 @@ interface KitVoicePanelsProps {
     slot: number,
     playing: boolean,
   ) => void; // Used by useKitVoicePanels hook
-  playOptions?: { [key: string]: PlayOptions | undefined }; // Region and start time per sample key, set by sequencer
-  playTriggers: { [key: string]: number }; // Used by useKitVoicePanels hook
-  playVolumes?: { [key: string]: number }; // Volume per sample key, set by sequencer
-  samplePlaying: { [key: string]: boolean }; // Used by useKitVoicePanels hook
   samples: VoiceSamples; // Used by useKitVoicePanels hook
   selectedSampleIdx: number; // Used by useKitVoicePanels hook
-
   selectedVoice: number; // Used by useKitVoicePanels hook
+
   sequencerOpen: boolean; // Used by useKitVoicePanels hook
   setSelectedSampleIdx: (i: number) => void; // Used by useKitVoicePanels hook
   setSelectedVoice: (v: number) => void; // Used by useKitVoicePanels hook
-
-  stopTriggers: { [key: string]: number }; // Used by useKitVoicePanels hook
+  /** Each slot's playback, read by the slot itself (#482) */
+  slotPlayback: SlotPlaybackStore;
 }
 
 /**
@@ -780,12 +777,8 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                     onStop={hookProps.onStop}
                     onVoiceUnlink={handleVoiceUnlink}
                     onWaveformPlayingChange={hookProps.onWaveformPlayingChange}
-                    playOptions={hookProps.playOptions}
                     playsStereo={stereoPlan.links.includes(voice)}
-                    playTriggers={hookProps.playTriggers}
-                    playVolumes={hookProps.playVolumes}
                     sampleMetadata={sampleMetadata}
-                    samplePlaying={hookProps.samplePlaying}
                     samples={hookProps.samples[voice] || []}
                     selectedIdx={
                       voice === hookProps.selectedVoice
@@ -794,6 +787,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                     }
                     setSharedDraggedSample={setInternalDraggedSample}
                     sharedDraggedSample={internalDraggedSample}
+                    slotPlayback={hookProps.slotPlayback}
                     stereoDrop={stereoDrop}
                     stereoNote={(() => {
                       const mixdown = stereoPlan.mixdowns.find(
@@ -801,7 +795,6 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                       );
                       return mixdown ? describeMixdownNote(mixdown) : undefined;
                     })()}
-                    stopTriggers={hookProps.stopTriggers}
                     voice={voice}
                     voiceName={
                       hookProps.kit?.voices?.find(

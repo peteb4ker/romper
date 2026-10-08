@@ -3,6 +3,7 @@ import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
+import { createSlotPlaybackStore } from "../hooks/kit-management/slotPlaybackStore";
 import KitVoicePanel from "../KitVoicePanel";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 import { MockSettingsProvider } from "./MockSettingsProvider";
@@ -36,10 +37,8 @@ const baseProps = {
   onSaveVoiceName: vi.fn(),
   onStop: vi.fn(),
   onWaveformPlayingChange: vi.fn(),
-  playTriggers: {},
-  samplePlaying: {},
   samples: ["kick.wav", "snare.wav"],
-  stopTriggers: {},
+  slotPlayback: createSlotPlaybackStore(),
   voice: 1,
   voiceName: "Voice 1",
 };
@@ -184,10 +183,8 @@ describe("KitVoicePanel", () => {
         onSaveVoiceName: vi.fn(),
         onStop: vi.fn(),
         onWaveformPlayingChange: vi.fn(),
-        playTriggers: {},
-        samplePlaying: {},
         samples: [],
-        stopTriggers: {},
+        slotPlayback: createSlotPlaybackStore(),
         voice: 1,
         voiceName: "Voice 1",
       };

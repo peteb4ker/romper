@@ -5,10 +5,11 @@
  * Rample manual doesn't describe a choke, so whether the module does the
  * same is unverified on hardware.
  *
- * React state also chokes (useKitPlayback's handlePlay, keyed by slot and
- * not reset by a kit refresh since RE-13 and RE-45), but only the samples
- * it started. This registry holds the live sounds themselves, whatever
- * started them, so every sound on the voice is choked.
+ * The kit editor's playback state also chokes (useKitPlayback's handlePlay,
+ * keyed by slot and not reset by a kit refresh since RE-13 and RE-45, in a
+ * per-slot store since #482), but only the samples it started. This
+ * registry holds the live sounds themselves, whatever started them, so
+ * every sound on the voice is choked.
  */
 
 /** Stops one sound at `atMs` (a performance.now() time), or now. */

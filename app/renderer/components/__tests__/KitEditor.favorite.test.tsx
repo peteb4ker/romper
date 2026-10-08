@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
+import { createSlotPlaybackStore } from "../hooks/kit-management/slotPlaybackStore";
 import KitEditor from "../KitEditor";
 
 // The header and the editor's logic are real; the panels below the header
@@ -19,9 +20,7 @@ vi.mock("../hooks/kit-management/useKitPlayback", () => ({
     handleStop: vi.fn(),
     handleWaveformPlayingChange: vi.fn(),
     playbackError: null,
-    playTriggers: {},
-    samplePlaying: null,
-    stopTriggers: {},
+    slotPlayback: createSlotPlaybackStore(),
   })),
 }));
 

@@ -95,6 +95,25 @@ describe("[Q-07] known noise", () => {
     expect(matchKnownNoise(line, "darwin")?.source).toBe("Chromium GPU client");
     expect(matchKnownNoise(line, "win32")).toBeUndefined();
   });
+
+  it("covers the shared image line that failed a Linux run, and nothing else from that file (#772)", () => {
+    const line =
+      "[4899:1008/192821.847299:ERROR:gpu/command_buffer/service/shared_image/shared_image_manager.cc:395] SharedImageManager::ProduceMemory: Trying to Produce a Memory representation from a non-existent mailbox.";
+    expect(matchKnownNoise(line, "linux")?.source).toBe(
+      "Chromium shared image manager",
+    );
+    expect(matchKnownNoise(line, "win32")).toBeUndefined();
+
+    const prefix =
+      "[4899:1008/192821.847299:ERROR:gpu/command_buffer/service/shared_image/shared_image_manager.cc:395] ";
+    for (const other of [
+      "SharedImageManager::Register: Trying to register an already registered mailbox.",
+      "SharedImageManager::ProduceMemory: Trying to Produce a Skia representation from a non-existent mailbox.",
+      "SharedImageManager::ProduceMemory: Trying to Produce a Memory representation from a non-existent mailbox. And more",
+    ]) {
+      expect(matchKnownNoise(`${prefix}${other}`, "linux")).toBeUndefined();
+    }
+  });
 });
 
 describe("[Q-07] MessageCollector.classify with known noise", () => {

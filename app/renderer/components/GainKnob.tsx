@@ -100,9 +100,11 @@ const GainKnob: React.FC<GainKnobProps> = ({
   const didDrag = useRef(false);
 
   // Sync local state when prop changes (e.g. kit reload)
-  useEffect(() => {
+  const [shownValue, setShownValue] = useState(value);
+  if (shownValue !== value) {
+    setShownValue(value);
     setLocalDb(value ?? 0);
-  }, [value]);
+  }
 
   const clampDb = (db: number) => Math.max(MIN_DB, Math.min(MAX_DB, db));
 

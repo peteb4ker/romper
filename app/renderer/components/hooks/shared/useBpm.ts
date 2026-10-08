@@ -1,5 +1,6 @@
 import React from "react";
 
+import { useLatestRef } from "./useLatestRef";
 import { useSettingSave } from "./useSettingSave";
 
 interface UseBpmParams {
@@ -34,10 +35,8 @@ export function useBpm({
   const [isEditing, setIsEditing] = React.useState(false); // NOSONAR
 
   // The BPM on screen, so wheel nudges each see the one before
-  const latestRef = React.useRef(bpmState);
-  latestRef.current = bpmState;
-  const kitRef = React.useRef(kitName);
-  kitRef.current = kitName;
+  const latestRef = useLatestRef(bpmState);
+  const kitRef = useLatestRef(kitName);
 
   // updateKitBpm resolves with success: false on a database failure rather
   // than rejecting. Either way the last saved BPM goes back and the user is
@@ -47,8 +46,12 @@ export function useBpm({
   // Show the kit's own BPM when it's reloaded or patched, and when you step
   // to another kit: two kits can have the same BPM, so a kit change alone
   // must reset it too (#565)
-  React.useEffect(() => {
+  const [shown, setShown] = React.useState({ initialBpm, kitName });
+  if (shown.initialBpm !== initialBpm || shown.kitName !== kitName) {
+    setShown({ initialBpm, kitName });
     setBpmState(initialBpm);
+  }
+  React.useEffect(() => {
     reset();
   }, [initialBpm, kitName, reset]);
 
@@ -79,7 +82,7 @@ export function useBpm({
         what: `the BPM for kit ${kitName}`,
       });
     },
-    [kitName, onMessage, onSaved, save],
+    [kitName, kitRef, latestRef, onMessage, onSaved, save],
   );
 
   const validateBpm = React.useCallback((value: number): boolean => {

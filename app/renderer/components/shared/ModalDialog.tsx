@@ -1,5 +1,7 @@
 import React, { useEffect, useId, useRef } from "react";
 
+import { useLatestRef } from "../hooks/shared/useLatestRef";
+
 /**
  * Every modal in Romper renders through this wrapper (Q-06, RE-48). It
  * gives the panel `role="dialog"` and `aria-modal="true"` with a label, keeps
@@ -67,8 +69,7 @@ const ModalDialog: React.FC<ModalDialogProps> = ({
 }) => {
   const id = useId();
   const panelRef = useRef<HTMLDivElement>(null);
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  const onCloseRef = useLatestRef(onClose);
 
   // Register as the innermost dialog, move focus in, and give it back on close
   useEffect(() => {
@@ -127,7 +128,7 @@ const ModalDialog: React.FC<ModalDialogProps> = ({
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [id]);
+  }, [id, onCloseRef]);
 
   // Focus that lands outside the innermost dialog (a click behind it, a
   // window coming back to the front) goes back into it

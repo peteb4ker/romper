@@ -29,6 +29,7 @@ import {
   type AddedDropFile,
   type StereoDropHandlers,
 } from "./hooks/shared/useExternalDragHandlers";
+import { useLatestRef } from "./hooks/shared/useLatestRef";
 import { useSettingSave } from "./hooks/shared/useSettingSave";
 import KitVoicePanel from "./KitVoicePanel";
 import ModalDialog from "./shared/ModalDialog";
@@ -139,8 +140,9 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   >();
 
   // Get voice data from kit with fallback defaults
+  const kitVoices = props.kit?.voices;
   const voiceData = React.useMemo(() => {
-    if (!props.kit?.voices) {
+    if (!kitVoices) {
       // Fallback to default voice structure if no voices in kit
       return [1, 2, 3, 4].map((voice_number) => ({
         id: voice_number,
@@ -159,7 +161,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     }
 
     // Use actual voice data from database
-    return props.kit.voices.map((voice) => ({
+    return kitVoices.map((voice) => ({
       id: voice.id,
       kit_name: voice.kit_name,
       sample_mode: voice.sample_mode || "first",
@@ -173,7 +175,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
       voice_number: voice.voice_number,
       voice_volume: voice.voice_volume ?? 100,
     }));
-  }, [props.kit?.voices, hookProps.kitName]);
+  }, [kitVoices, hookProps.kitName]);
 
   // Convert sample data for stereo handling
   const sampleData = React.useMemo(() => {
@@ -370,9 +372,11 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     [stereoPrompt],
   );
   // A prompt still open when the panels go away keeps the voice as it is
-  const stereoPromptRef = React.useRef(stereoPrompt);
-  stereoPromptRef.current = stereoPrompt;
-  React.useEffect(() => () => stereoPromptRef.current?.resolve(false), []);
+  const stereoPromptRef = useLatestRef(stereoPrompt);
+  React.useEffect(
+    () => () => stereoPromptRef.current?.resolve(false),
+    [stereoPromptRef],
+  );
   // Link takes focus when the prompt opens, after the dialog's own focus
   // (a parent's effect runs after its children's)
   const stereoLinkButtonRef = React.useRef<HTMLButtonElement>(null);
@@ -471,8 +475,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   // Load sample metadata when kit changes. If it can't be read, the kit's
   // gains are unknown and the user is told; reopening the kit reads it
   // again (#628).
-  const reportLoadFailure = React.useRef(props.onMessage);
-  reportLoadFailure.current = props.onMessage;
+  const reportLoadFailure = useLatestRef(props.onMessage);
   React.useEffect(() => {
     const kitName = hookProps.kitName;
     // A read for a kit that's no longer on screen is dropped
@@ -531,7 +534,13 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     return () => {
       current = false;
     };
-  }, [hookProps.kitName, props.kit, resetGainSaves, checkSampleFilesOnce]);
+  }, [
+    hookProps.kitName,
+    props.kit,
+    reportLoadFailure,
+    resetGainSaves,
+    checkSampleFilesOnce,
+  ]);
 
   // Optimistic update for gain changes so SampleWaveform gets the new
   // gainDb immediately. Main marks the kit modified with the gain (RE-35),
@@ -540,8 +549,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   const { onKitModified, onMessage } = props;
   // The kit on screen, so a gain that fails after you step to another kit
   // isn't put back on the new kit's slot (#565)
-  const kitRef = React.useRef(hookProps.kitName);
-  kitRef.current = hookProps.kitName;
+  const kitRef = useLatestRef(hookProps.kitName);
   const setSlotGain = React.useCallback((key: string, gainDb: number) => {
     setSampleDetails((prev) => {
       const existing = prev?.status === "loaded" ? prev.metadata[key] : null;
@@ -582,6 +590,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     },
     [
       hookProps.kitName,
+      kitRef,
       onKitModified,
       onMessage,
       sampleMetadata,
@@ -595,31 +604,33 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     new Set(),
   );
 
-  React.useEffect(() => {
-    const currentSecondaries = new Set<number>();
+  const { getVoiceLinkingStatus } = stereoHandling;
+  const currentSecondaries = React.useMemo(() => {
+    const secondaries = new Set<number>();
     for (const voice of voiceData) {
-      const status = stereoHandling.getVoiceLinkingStatus(
-        voice.voice_number,
-        voiceData,
-      );
+      const status = getVoiceLinkingStatus(voice.voice_number, voiceData);
       if (status.isLinked && !status.isPrimary) {
-        currentSecondaries.add(voice.voice_number);
+        secondaries.add(voice.voice_number);
       }
     }
+    return secondaries;
+  }, [voiceData, getVoiceLinkingStatus]);
 
-    // If a voice just became secondary, delay hiding its content until animation completes
-    const newlyHidden = [...currentSecondaries].filter(
-      (v) => !deferredSecondaries.has(v),
-    );
-    if (newlyHidden.length > 0) {
-      const timer = setTimeout(() => {
-        setDeferredSecondaries(currentSecondaries);
-      }, 300); // Match transition duration
-      return () => clearTimeout(timer);
-    }
-
+  // If a voice just became secondary, delay hiding its content until
+  // animation completes; otherwise follow the linking straight away
+  const newlyHidden = [...currentSecondaries].some(
+    (v) => !deferredSecondaries.has(v),
+  );
+  if (!newlyHidden && !sameVoices(deferredSecondaries, currentSecondaries)) {
     setDeferredSecondaries(currentSecondaries);
-  }, [voiceData, stereoHandling.getVoiceLinkingStatus]); // eslint-disable-line react-hooks/exhaustive-deps
+  }
+  React.useEffect(() => {
+    if (!newlyHidden) return;
+    const timer = setTimeout(() => {
+      setDeferredSecondaries(currentSecondaries);
+    }, 300); // Match transition duration
+    return () => clearTimeout(timer);
+  }, [currentSecondaries, newlyHidden]);
 
   return (
     <div className="flex flex-col w-full">
@@ -852,3 +863,8 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
 };
 
 export default KitVoicePanels;
+
+/** Whether two sets hold the same voices */
+function sameVoices(a: ReadonlySet<number>, b: ReadonlySet<number>): boolean {
+  return a.size === b.size && [...a].every((v) => b.has(v));
+}

@@ -55,6 +55,7 @@ export interface UseLocalStoreWizardStateOptions {
 export function useLocalStoreWizardState({
   api,
 }: UseLocalStoreWizardStateOptions) {
+  // Each mount starts the wizard with no source or target chosen
   const [state, setState] = useState<LocalStoreWizardState>({
     error: null,
     isInitializing: false,
@@ -136,18 +137,6 @@ export function useLocalStoreWizardState({
     };
 
     void loadDefaultPath();
-
-    // Clear targetPath and source on wizard mount (start)
-    setState((s) => ({
-      ...s,
-      error: null,
-      isInitializing: false,
-      kitFolderValidationError: undefined,
-      sdCardMounted: false,
-      sdCardSourcePath: undefined,
-      source: null,
-      targetPath: "",
-    }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

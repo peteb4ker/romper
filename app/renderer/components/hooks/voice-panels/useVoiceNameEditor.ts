@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 export interface UseVoiceNameEditorOptions {
   // Resolves to false when the name wasn't saved (RE-91)
@@ -20,9 +20,11 @@ export function useVoiceNameEditor({
   const [editValue, setEditValue] = useState(voiceName || "");
 
   // Update edit value when voice name changes externally
-  useEffect(() => {
+  const [shownName, setShownName] = useState(voiceName);
+  if (shownName !== voiceName) {
+    setShownName(voiceName);
     setEditValue(voiceName || "");
-  }, [voiceName]);
+  }
 
   const handleSave = useCallback(() => {
     const saved = onSaveVoiceName(voice, editValue.trim());

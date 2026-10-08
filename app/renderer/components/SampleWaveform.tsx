@@ -9,6 +9,7 @@ import React, {
 import type { PlayOptions, PlayRegion } from "./kitTypes";
 
 import { getSharedAudioContext } from "../utils/sharedAudioContext";
+import { useLatestRef } from "./hooks/shared/useLatestRef";
 import { clearVoiceLevel, setVoiceLevel } from "./led-icon/audioLevels";
 import { bufferForVoice } from "./monoMixdown";
 import { claimVoice } from "./voiceChoke";
@@ -222,9 +223,12 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   volume,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  // useState is already destructured as [value, setter]; NOSONAR
-  // suppresses S6754 false positive.
-  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null); // NOSONAR
+  // The decoded sample, with the context it was decoded in
+  const [loaded, setLoaded] = useState<{
+    buffer: AudioBuffer;
+    ctx: AudioContext;
+  } | null>(null);
+  const audioBuffer = loaded?.buffer ?? null;
   const [isPlaying, setIsPlaying] = useState(false);
   const [playhead, setPlayhead] = useState(0);
   // Counts reloads for another file taking the slot (#575)
@@ -255,8 +259,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   // play until it is triggered (RE-45).
   const handledPlayTriggerRef = useRef(playTrigger);
   // Latest play options, read when a choke arrives
-  const playOptionsRef = useRef(playOptions);
-  playOptionsRef.current = playOptions;
+  const playOptionsRef = useLatestRef(playOptions);
 
   // Disconnect this slot's volume and meter nodes from the shared context.
   // They are connected to its output, so they would otherwise live (and
@@ -270,74 +273,6 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     analyserDataRRef.current = null;
     metersStereoRef.current = false;
   }, []);
-
-  // Load audio file and decode
-  useEffect(() => {
-    let cancelled = false;
-
-    // Use secure API with kit/voice/slot identifiers
-    if (!globalThis.electronAPI?.getSampleAudioBuffer) {
-      if (onError) onError("Sample audio buffer API not available");
-      return;
-    }
-
-    const api = globalThis.electronAPI;
-    const where = `kit=${kitName}, voice=${voiceNumber}, slot=${slotNumber}`;
-
-    /** The slot's file, or null for an empty slot or one that can't load */
-    const fetchAudio = async (): Promise<ArrayBuffer | null> => {
-      try {
-        const result = await api.getSampleAudioBuffer(
-          kitName,
-          voiceNumber,
-          slotNumber,
-        );
-        if (!result.success) {
-          throw new Error(result.error || "Failed to load sample audio");
-        }
-        // Null data for missing samples (empty slots)
-        return result.data ?? null;
-      } catch (err) {
-        if (!cancelled) {
-          // Logged for debugging, without a user-facing error for missing samples
-          console.warn(`[SampleWaveform] Sample not found: ${where}:`, err);
-        }
-        return null;
-      }
-    };
-
-    const load = async () => {
-      const arrayBuffer = await fetchAudio();
-      if (cancelled) return;
-      if (!arrayBuffer) {
-        setAudioBuffer(null);
-        return;
-      }
-
-      try {
-        // The new sample may have another channel count, so its meters are
-        // rebuilt on first play
-        releaseMeters();
-        const ctx = getSharedAudioContext();
-        audioCtxRef.current = ctx;
-        const buf = await ctx.decodeAudioData(arrayBuffer.slice(0));
-        if (cancelled) return;
-        setAudioBuffer(buf);
-        drawWaveform(buf);
-      } catch (err) {
-        // A file Romper can't read: its slot is labelled and the kit
-        // quarantined (#537), so this isn't a background failure
-        if (!cancelled) {
-          console.warn(`[SampleWaveform] Can't decode sample: ${where}:`, err);
-        }
-        setAudioBuffer(null);
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [kitName, voiceNumber, slotNumber, fileChanges]); // eslint-disable-line react-hooks/exhaustive-deps -- onError intentionally excluded to prevent infinite loops
 
   // Draw waveform using an envelope (top/bottom outline with fill)
   const drawWaveform = useCallback(
@@ -384,6 +319,74 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     [voiceColor],
   );
 
+  // Load audio file and decode
+  useEffect(() => {
+    let cancelled = false;
+
+    // Use secure API with kit/voice/slot identifiers
+    if (!globalThis.electronAPI?.getSampleAudioBuffer) {
+      if (onError) onError("Sample audio buffer API not available");
+      return;
+    }
+
+    const api = globalThis.electronAPI;
+    const where = `kit=${kitName}, voice=${voiceNumber}, slot=${slotNumber}`;
+
+    /** The slot's file, or null for an empty slot or one that can't load */
+    const fetchAudio = async (): Promise<ArrayBuffer | null> => {
+      try {
+        const result = await api.getSampleAudioBuffer(
+          kitName,
+          voiceNumber,
+          slotNumber,
+        );
+        if (!result.success) {
+          throw new Error(result.error || "Failed to load sample audio");
+        }
+        // Null data for missing samples (empty slots)
+        return result.data ?? null;
+      } catch (err) {
+        if (!cancelled) {
+          // Logged for debugging, without a user-facing error for missing samples
+          console.warn(`[SampleWaveform] Sample not found: ${where}:`, err);
+        }
+        return null;
+      }
+    };
+
+    const load = async () => {
+      const arrayBuffer = await fetchAudio();
+      if (cancelled) return;
+      if (!arrayBuffer) {
+        setLoaded(null);
+        return;
+      }
+
+      try {
+        // The new sample may have another channel count, so its meters are
+        // rebuilt on first play
+        releaseMeters();
+        const ctx = getSharedAudioContext();
+        audioCtxRef.current = ctx;
+        const buf = await ctx.decodeAudioData(arrayBuffer.slice(0));
+        if (cancelled) return;
+        setLoaded({ buffer: buf, ctx });
+        drawWaveform(buf);
+      } catch (err) {
+        // A file Romper can't read: its slot is labelled and the kit
+        // quarantined (#537), so this isn't a background failure
+        if (!cancelled) {
+          console.warn(`[SampleWaveform] Can't decode sample: ${where}:`, err);
+        }
+        setLoaded(null);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [kitName, voiceNumber, slotNumber, fileChanges]); // eslint-disable-line react-hooks/exhaustive-deps -- onError intentionally excluded to prevent infinite loops
+
   // Stop playback logic. `stopAt` (context time) lets a choke land exactly
   // when the next scheduled sound starts, instead of leaving a gap before it.
   const stopPlayback = useCallback(
@@ -425,10 +428,8 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   // (#569). Mixed once per load or link change, not per trigger.
   const playBuffer = useMemo(
     () =>
-      audioBuffer && audioCtxRef.current
-        ? bufferForVoice(audioCtxRef.current, audioBuffer, playsStereo)
-        : null,
-    [audioBuffer, playsStereo],
+      loaded ? bufferForVoice(loaded.ctx, loaded.buffer, playsStereo) : null,
+    [loaded, playsStereo],
   );
 
   // Play sample and animate playhead (triggered by playTrigger prop)
@@ -580,7 +581,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     stopPlayback(
       ctx ? toContextTime(ctx, playOptionsRef.current?.stopAt) : undefined,
     );
-  }, [stopTrigger, isPlaying, stopPlayback]);
+  }, [stopTrigger, isPlaying, playOptionsRef, stopPlayback]);
 
   // Notify parent about playing state changes
   useEffect(() => {

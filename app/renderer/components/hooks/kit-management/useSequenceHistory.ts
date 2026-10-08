@@ -5,6 +5,7 @@ import React from "react";
 
 import { createSequenceEditAction } from "../shared/sequenceUndo";
 import { ensureValidStepPattern } from "../shared/stepPatternConstants";
+import { useLatestRef } from "../shared/useLatestRef";
 
 /** How an edit appears in the undo history. */
 export interface SequenceEditMeta {
@@ -39,18 +40,13 @@ export function useSequenceHistory({
   stepPattern,
   triggerConditions,
 }: UseSequenceHistoryParams) {
-  // The current sequence. Updated on every render and by each edit, so
+  // The current sequence. Updated on every commit and by each edit, so
   // several edits in one event see each other.
-  const latestRef = React.useRef<SequenceSnapshot>({
+  const latestRef = useLatestRef<SequenceSnapshot>({
     sliceSteps,
     stepPattern: ensureValidStepPattern(stepPattern),
     triggerConditions,
   });
-  latestRef.current = {
-    sliceSteps,
-    stepPattern: ensureValidStepPattern(stepPattern),
-    triggerConditions,
-  };
 
   const record = React.useCallback(
     (
@@ -70,7 +66,7 @@ export function useSequenceHistory({
         ),
       );
     },
-    [onAddUndoAction],
+    [latestRef, onAddUndoAction],
   );
 
   const recordStepPattern = React.useCallback(
@@ -98,7 +94,7 @@ export function useSequenceHistory({
       record({ sliceSteps: next }, "Edit slices", meta);
       return setSliceSteps(next);
     },
-    [record, setSliceSteps],
+    [latestRef, record, setSliceSteps],
   );
 
   return {

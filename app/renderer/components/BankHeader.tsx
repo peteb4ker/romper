@@ -40,9 +40,12 @@ const BankHeader: React.FC<BankHeaderProps> = ({
     return () => observer.disconnect();
   }, [bank, onBankVisible]);
 
-  useEffect(() => {
+  // Show the bank's new name when it changes
+  const [shownName, setShownName] = useState(bankName);
+  if (shownName !== bankName) {
+    setShownName(bankName);
     setEditValue(bankName ?? "");
-  }, [bankName]);
+  }
 
   useEffect(() => {
     if (isEditing && inputRef.current) {

@@ -90,7 +90,7 @@ function useHarness(options: HarnessOptions, onPlaySample: PlaySample) {
   });
   return {
     editor,
-    edits: edits.current,
+    edits,
     pattern,
     setFocusedStep,
     sliceSettings,
@@ -352,7 +352,7 @@ describe("[UC-33] useSlicerEditor", () => {
         15,
       );
       expect(result.current.editor.rolledSteps?.steps).toEqual([0, 4]);
-      expect(result.current.edits).toEqual([
+      expect(result.current.edits.current).toEqual([
         { description: "Roll slices on voice 1" },
       ]);
     });
@@ -400,7 +400,7 @@ describe("[UC-33] useSlicerEditor", () => {
       );
       act(() => result.current.editor.roll(1));
       expect(result.current.editor.notice).toMatch(/Nothing to roll/);
-      expect(result.current.edits).toEqual([]);
+      expect(result.current.edits.current).toEqual([]);
     });
 
     it("merges repeated edits of one step's slice", () => {
@@ -412,7 +412,7 @@ describe("[UC-33] useSlicerEditor", () => {
       );
       act(() => result.current.editor.handleStepWheel(0, 0, 1, false));
       act(() => result.current.editor.handleStepWheel(0, 0, 1, true));
-      expect(result.current.edits.map((e) => e?.mergeKey)).toEqual([
+      expect(result.current.edits.current.map((e) => e?.mergeKey)).toEqual([
         "slice:0:0",
         "slice:0:0",
       ]);
@@ -474,7 +474,7 @@ describe("[UC-33] useSlicerEditor", () => {
       act(() => {
         result.current.editor.handleGridKeyDown(key("d"), focus);
       });
-      expect(result.current.edits).toEqual([
+      expect(result.current.edits.current).toEqual([
         { description: "Roll slices on voice 1" },
       ]);
     });

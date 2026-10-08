@@ -40,9 +40,12 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
   const kitAliasInputRef = React.useRef<HTMLInputElement>(null!);
 
   // Update kitAliasInput when kit changes
-  React.useEffect(() => {
-    setKitAliasInput(logic.kit?.alias || "");
-  }, [logic.kit?.alias]);
+  const kitAlias = logic.kit?.alias;
+  const [shownAlias, setShownAlias] = React.useState(kitAlias);
+  if (shownAlias !== kitAlias) {
+    setShownAlias(kitAlias);
+    setKitAliasInput(kitAlias || "");
+  }
 
   return (
     <div

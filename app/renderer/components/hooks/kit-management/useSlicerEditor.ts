@@ -20,6 +20,7 @@ import {
   toSliceView,
 } from "../shared/sliceConstants";
 import { type FocusedStep, NUM_VOICES } from "../shared/stepPatternConstants";
+import { useLatestRef } from "../shared/useLatestRef";
 import { useSettingSave } from "../shared/useSettingSave";
 
 export interface PlayingSlice {
@@ -159,18 +160,23 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
   const [notice, setNotice] = React.useState<null | string>(null);
 
   // Forget selection, undo and flashes when switching kits
-  React.useEffect(() => {
+  const [editorKit, setEditorKit] = React.useState(kitName);
+  if (editorKit !== kitName) {
+    setEditorKit(kitName);
     setChosenVoice(null);
     setEditorOpen(true);
     setSelection(null);
     setRolledSteps(null);
     setPlayingSlice(null);
     setNotice(null);
-  }, [kitName]);
+  }
 
-  React.useEffect(() => {
+  // Stopping clears the playing slice's flash
+  const [wasPlaying, setWasPlaying] = React.useState(isSeqPlaying);
+  if (wasPlaying !== isSeqPlaying) {
+    setWasPlaying(isSeqPlaying);
     if (!isSeqPlaying) setPlayingSlice(null);
-  }, [isSeqPlaying]);
+  }
 
   const sliceVoices = React.useMemo(
     () =>
@@ -193,16 +199,15 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
   );
 
   // Keyboard focus on a slice row selects that step
-  const prevFocusRef = React.useRef(focusedStep);
-  React.useEffect(() => {
-    if (prevFocusRef.current === focusedStep) return;
-    prevFocusRef.current = focusedStep;
+  const [prevFocus, setPrevFocus] = React.useState(focusedStep);
+  if (prevFocus !== focusedStep) {
+    setPrevFocus(focusedStep);
     const voiceNumber = focusedStep.voice + 1;
     if (isSliceVoice(voiceNumber)) {
       setSelection(focusedStep);
       setChosenVoice(voiceNumber);
     }
-  }, [focusedStep, isSliceVoice]);
+  }
 
   const selectedStep =
     selection && editingVoice != null && selection.voice === editingVoice - 1
@@ -536,29 +541,27 @@ export function useVoiceSliceSettings(
   onVoiceSettingChanged?: () => void,
   onMessage?: (text: string, type?: string, duration?: number) => void,
 ) {
-  const [sliceSettings, setSliceSettings] = React.useState(
-    defaultSettingsRecord,
+  const [sliceSettings, setSliceSettings] = React.useState(() =>
+    withVoiceSettings(defaultSettingsRecord(), voices),
   );
   // The settings on screen, so each change knows what it replaces
-  const latestRef = React.useRef(sliceSettings);
-  latestRef.current = sliceSettings;
-  const kitRef = React.useRef(kitName);
-  kitRef.current = kitName;
+  const latestRef = useLatestRef(sliceSettings);
+  const kitRef = useLatestRef(kitName);
 
   // Keyed by voice and the fields changed, so a toggle and a roll amount
   // change on the same voice don't decide each other's outcome
   const { reset, save } = useSettingSave<string, Partial<VoiceSliceSettings>>();
 
+  // Show the loaded voices' settings whenever the kit's voices load
+  const [shownVoices, setShownVoices] = React.useState(voices);
+  if (shownVoices !== voices) {
+    setShownVoices(voices);
+    if (voices?.length) {
+      setSliceSettings((prev) => withVoiceSettings(prev, voices));
+    }
+  }
   React.useEffect(() => {
-    if (!voices?.length) return;
-    setSliceSettings((prev) => {
-      const next = { ...prev };
-      for (const voice of voices) {
-        next[voice.voice_number] = settingsFromVoice(voice);
-      }
-      return next;
-    });
-    reset();
+    if (voices?.length) reset();
   }, [voices, reset]);
 
   const updateSliceSettings = React.useCallback(
@@ -596,7 +599,7 @@ export function useVoiceSliceSettings(
         what: `the slicer settings for voice ${voiceNumber}`,
       });
     },
-    [kitName, onMessage, onVoiceSettingChanged, save],
+    [kitName, kitRef, latestRef, onMessage, onVoiceSettingChanged, save],
   );
 
   return { sliceSettings, updateSliceSettings };
@@ -627,4 +630,17 @@ function settingsFromVoice(voice: SlicerVoiceData): VoiceSliceSettings {
     varyLength:
       voice.slice_vary_length ?? DEFAULT_VOICE_SLICE_SETTINGS.varyLength,
   };
+}
+
+/** `settings` with each loaded voice's own settings in place of its entry */
+function withVoiceSettings(
+  settings: Record<number, VoiceSliceSettings>,
+  voices: SlicerVoiceData[] | undefined,
+): Record<number, VoiceSliceSettings> {
+  if (!voices?.length) return settings;
+  const next = { ...settings };
+  for (const voice of voices) {
+    next[voice.voice_number] = settingsFromVoice(voice);
+  }
+  return next;
 }

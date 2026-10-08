@@ -78,6 +78,43 @@ const DismissButton: React.FC<DismissButtonProps> = ({
   );
 };
 
+/**
+ * Calls `onChange` while rendering, in the render where `value` changes, so
+ * state that follows it is updated before anything shows.
+ */
+function useOnChange<T>(value: T, onChange: (value: T) => void) {
+  const [previous, setPrevious] = useState(value);
+  if (previous !== value) {
+    setPrevious(value);
+    onChange(value);
+  }
+}
+
+/**
+ * Calls `onOpen` while rendering, in the render where the dialog opens or
+ * where any of `inputs` changes while it's open.
+ */
+function useOnOpen(
+  isOpen: boolean,
+  inputs: Record<string, unknown>,
+  onOpen: () => void,
+) {
+  const [openedFor, setOpenedFor] = useState<null | Record<string, unknown>>(
+    null,
+  );
+  if (!isOpen) {
+    if (openedFor !== null) setOpenedFor(null);
+    return;
+  }
+  const changed =
+    openedFor === null ||
+    Object.keys(inputs).some((key) => openedFor[key] !== inputs[key]);
+  if (changed) {
+    setOpenedFor(inputs);
+    onOpen();
+  }
+}
+
 const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   isLoading = false,
   isOpen,
@@ -104,22 +141,23 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   // Cancel was pressed during a write; main stops after the current file
   const [isCancelling, setIsCancelling] = useState(false);
 
-  useEffect(() => {
-    if (!isLoading) setIsCancelling(false);
-  }, [isLoading]);
+  // A write that stops is no longer being cancelled
+  useOnChange(isLoading, (loading) => {
+    if (!loading) setIsCancelling(false);
+  });
 
   // The summary reads the card (to list what sync will remove), so it is
   // regenerated whenever the card changes. Only the latest request counts:
   // an earlier one (say, before the saved card path loaded) can finish last.
+  // requestSummary sends the request; whoever calls it shows the summary as
+  // generating first (loadSummary, or the dialog opening).
   const latestSummaryRequest = useRef(0);
-  const loadSummary = useCallback(
+  const requestSummary = useCallback(
     (cardPath: string) => {
       if (!onGenerateChangeSummary) return;
 
       const request = ++latestSummaryRequest.current;
       const isCurrent = () => request === latestSummaryRequest.current;
-      setIsGeneratingSummary(true);
-      setSummaryError(null);
       onGenerateChangeSummary(cardPath)
         .then((summary) => {
           if (!isCurrent()) return;
@@ -149,22 +187,38 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
     },
     [onGenerateChangeSummary],
   );
+  const loadSummary = useCallback(
+    (cardPath: string) => {
+      if (!onGenerateChangeSummary) return;
+      setIsGeneratingSummary(true);
+      setSummaryError(null);
+      requestSummary(cardPath);
+    },
+    [onGenerateChangeSummary, requestSummary],
+  );
+
+  // Opening the dialog, or a new card or summary while it's open, starts it
+  // afresh: the given summary, or a new one generated for the card
+  useOnOpen(
+    isOpen,
+    { localChangeSummary, onGenerateChangeSummary, sdCardPath },
+    () => {
+      setIsClosing(false);
+      setSummaryError(null);
+      setSkipInvalidFiles(false);
+      setLocalSdCardPath(sdCardPath || null);
+      if (localChangeSummary) {
+        setChangeSummary(localChangeSummary);
+      } else if (onGenerateChangeSummary) {
+        setIsGeneratingSummary(true);
+      }
+    },
+  );
 
   useEffect(() => {
-    if (!isOpen) return;
-
-    setIsClosing(false);
-    setSummaryError(null);
-    setSkipInvalidFiles(false);
-    setLocalSdCardPath(sdCardPath || null);
-
-    if (localChangeSummary) {
-      setChangeSummary(localChangeSummary);
-      return;
-    }
-
-    loadSummary(sdCardPath || "");
-  }, [isOpen, sdCardPath, localChangeSummary, loadSummary]);
+    if (!isOpen || localChangeSummary) return;
+    requestSummary(sdCardPath || "");
+  }, [isOpen, sdCardPath, localChangeSummary, requestSummary]);
 
   const handleSdCardSelect = async () => {
     if (!globalThis.electronAPI?.selectSdCard) return;

@@ -21,9 +21,12 @@ const KitForm: React.FC<KitFormProps> = ({
   const [editingTags, setEditingTags] = React.useState(false);
   const [tagInput, setTagInput] = React.useState("");
 
-  React.useEffect(() => {
-    setTags([]); // Tags not currently in schema
-  }, [kit]);
+  // Another kit starts with no tags (tags aren't in the schema yet)
+  const [tagsKit, setTagsKit] = React.useState(kit);
+  if (tagsKit !== kit) {
+    setTagsKit(kit);
+    setTags([]);
+  }
 
   // The new-tag field takes focus as it appears
   const tagInputRef = React.useRef<HTMLInputElement>(null);

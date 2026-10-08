@@ -163,32 +163,31 @@ function useWaveformPeaks(
   slotIndex: null | number,
   sampleSource: null | string,
 ): Float32Array | null {
-  const [peaks, setPeaks] = React.useState<Float32Array | null>(null);
   // Peaks by slot, with the file they were read from. The voice panels
   // stay usable beside the strip, and a delete or move there shifts the
   // samples after it up a slot, so a slot's peaks are used only while it
-  // holds the same file, and dropped when another file takes it (#575).
-  const cacheRef = React.useRef(
-    new Map<string, { peaks: Float32Array; source: string }>(),
-  );
+  // holds the same file, and replaced when another file takes it (#575).
+  const [cache, setCache] = React.useState<
+    ReadonlyMap<string, { peaks: Float32Array; source: string }>
+  >(() => new Map());
+  // The latest peaks read for a slot whose file isn't known; not cached
+  const [uncached, setUncached] = React.useState<{
+    id: string;
+    peaks: Float32Array;
+  } | null>(null);
+
+  const key =
+    slotIndex == null ? null : `${kitName}:${voiceNumber}:${slotIndex}`;
+  const cached = key == null ? undefined : cache.get(key);
+  const isCached = sampleSource != null && cached?.source === sampleSource;
 
   React.useEffect(() => {
-    if (slotIndex == null) {
-      setPeaks(null);
-      return;
-    }
-    const key = `${kitName}:${voiceNumber}:${slotIndex}`;
-    const cached = cacheRef.current.get(key);
-    if (sampleSource != null && cached?.source === sampleSource) {
-      setPeaks(cached.peaks);
-      return;
-    }
-    cacheRef.current.delete(key);
-    setPeaks(null);
+    if (slotIndex == null || isCached) return;
     const api = globalThis.electronAPI;
     const OfflineCtx = globalThis.OfflineAudioContext;
     if (!api?.getSampleAudioBuffer || !OfflineCtx) return;
 
+    const slotKey = `${kitName}:${voiceNumber}:${slotIndex}`;
     let cancelled = false;
     api
       .getSampleAudioBuffer(kitName, voiceNumber, slotIndex)
@@ -199,10 +198,13 @@ function useWaveformPeaks(
         if (cancelled) return;
         const next = buildPeaks(buffer.getChannelData(0), WAVE_COLUMNS);
         // Kept only when it's known which file they're from
-        if (sampleSource != null) {
-          cacheRef.current.set(key, { peaks: next, source: sampleSource });
+        if (sampleSource == null) {
+          setUncached({ id: slotKey, peaks: next });
+        } else {
+          setCache((prev) =>
+            new Map(prev).set(slotKey, { peaks: next, source: sampleSource }),
+          );
         }
-        setPeaks(next);
       })
       .catch((err) => {
         console.warn("[SliceStrip] Could not load waveform:", err);
@@ -210,9 +212,13 @@ function useWaveformPeaks(
     return () => {
       cancelled = true;
     };
-  }, [kitName, voiceNumber, slotIndex, sampleSource]);
+  }, [kitName, voiceNumber, slotIndex, sampleSource, isCached]);
 
-  return peaks;
+  if (isCached) return cached.peaks;
+  if (sampleSource == null && key != null && uncached?.id === key) {
+    return uncached.peaks;
+  }
+  return null;
 }
 
 const selectClass =

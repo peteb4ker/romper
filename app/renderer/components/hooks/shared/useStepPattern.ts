@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ensureValidStepPattern } from "./stepPatternConstants";
+import { useLatestRef } from "./useLatestRef";
 import { useSettingSave } from "./useSettingSave";
 
 export interface UseStepPatternParams {
@@ -26,19 +27,22 @@ export function useStepPattern({
   // useState is already destructured as [value, setter]; NOSONAR
   // suppresses S6754 false positive.
   // prettier-ignore
-  const [stepPatternState, setStepPatternState] = useState<null | number[][]>(null); // NOSONAR
+  const [stepPatternState, setStepPatternState] = useState<null | number[][]>(() => ensureValidStepPattern(initialPattern)); // NOSONAR
 
   // The pattern on screen, so rapid edits each see the one before
-  const latestRef = useRef(stepPatternState);
-  latestRef.current = stepPatternState;
-  const kitRef = useRef(kitName);
-  kitRef.current = kitName;
+  const latestRef = useLatestRef(stepPatternState);
+  const kitRef = useLatestRef(kitName);
 
   // A failed save puts the last saved pattern back and says so (#511)
   const { reset, save } = useSettingSave<string, number[][]>();
 
-  useEffect(() => {
+  // Show the kit's saved pattern whenever it's loaded or reloaded
+  const [shownPattern, setShownPattern] = useState(initialPattern);
+  if (shownPattern !== initialPattern) {
+    setShownPattern(initialPattern);
     setStepPatternState(ensureValidStepPattern(initialPattern));
+  }
+  useEffect(() => {
     reset();
   }, [initialPattern, reset]);
 
@@ -68,7 +72,7 @@ export function useStepPattern({
         what: `the steps for kit ${kitName}`,
       });
     },
-    [kitName, initialPattern, onMessage, onSaved, save],
+    [kitName, kitRef, initialPattern, latestRef, onMessage, onSaved, save],
   );
 
   return {

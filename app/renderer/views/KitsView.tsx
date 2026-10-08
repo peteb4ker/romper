@@ -4,6 +4,7 @@ import CriticalErrorDialog from "../components/dialogs/CriticalErrorDialog";
 import InvalidLocalStoreDialog from "../components/dialogs/InvalidLocalStoreDialog";
 import { EnvironmentBanner } from "../components/EnvironmentBanner";
 import { ErrorBoundary } from "../components/ErrorBoundary";
+import { useHmrSelectedKit } from "../components/hooks/kit-management/useHmrSelectedKit";
 import { useKitDataManager } from "../components/hooks/kit-management/useKitDataManager";
 import { useKitFilters } from "../components/hooks/kit-management/useKitFilters";
 import { useKitNavigation } from "../components/hooks/kit-management/useKitNavigation";
@@ -22,7 +23,6 @@ import KitBrowserContainer from "../components/KitBrowserContainer";
 import KitEditorContainer from "../components/KitEditorContainer";
 import KitViewDialogs from "../components/KitViewDialogs";
 import LocalStoreWizardModal from "../components/LocalStoreWizardModal";
-import { saveSelectedKitState } from "../utils/hmrStateManager";
 import { useSettings } from "../utils/SettingsContext";
 
 // Opens the About dialog (main.tsx listens). One function, not an inline
@@ -158,12 +158,12 @@ const KitsView: React.FC = () => {
     openPreferences: dialogState.openPreferences,
   });
 
-  // HMR: Save selected kit state before hot reload
-  useEffect(() => {
-    if ((import.meta as { hot?: unknown }).hot && navigation.selectedKit) {
-      saveSelectedKitState(navigation.selectedKit);
-    }
-  }, [navigation.selectedKit]);
+  // During development, reopen the open kit after a live reload (#770)
+  useHmrSelectedKit({
+    kits,
+    selectedKit: navigation.selectedKit,
+    setSelectedKit: navigation.setSelectedKit,
+  });
 
   // Reload the selected kit, its samples and data (its sequence), when undo
   // operations request it

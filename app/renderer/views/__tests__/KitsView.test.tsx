@@ -46,6 +46,11 @@ import { createMockSettings } from "../../../../tests/mocks/settings";
 import { TestSettingsProvider } from "../../../../tests/providers/TestSettingsProvider";
 import { useDialogState } from "../../components/hooks/shared/useDialogState";
 import { useValidationResults } from "../../components/hooks/shared/useValidationResults";
+import {
+  getSavedSelectedKit,
+  markExplicitNavigation,
+  saveSelectedKitState,
+} from "../../utils/hmrStateManager";
 import { SettingsContext } from "../../utils/SettingsContext";
 import KitsView from "../KitsView";
 
@@ -310,6 +315,40 @@ describe("KitsView", () => {
       await waitFor(() => {
         expect(screen.getByText("A0")).toBeInTheDocument();
       });
+    });
+  });
+
+  describe("[Q-07] after a live reload during development (#770)", () => {
+    it("reopens the kit that was open", async () => {
+      // What the view saved before the reload
+      saveSelectedKitState("A1");
+
+      render(
+        <TestSettingsProvider>
+          <KitsView />
+        </TestSettingsProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Back")).toBeInTheDocument();
+      });
+      expect(getSavedSelectedKit()).toBe("A1");
+    });
+
+    it("stays on the kit browser when the user has just navigated", async () => {
+      saveSelectedKitState("A1");
+      markExplicitNavigation();
+
+      render(
+        <TestSettingsProvider>
+          <KitsView />
+        </TestSettingsProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("A0")).toBeInTheDocument();
+      });
+      expect(screen.queryByText("Back")).not.toBeInTheDocument();
     });
   });
 

@@ -75,6 +75,21 @@ export const KNOWN_NOISE: KnownNoise[] = [
   },
   {
     examples: [
+      // Linux: https://github.com/peteb4ker/romper/actions/runs/37831977776
+      "[4899:1008/192821.847299:ERROR:gpu/command_buffer/service/shared_image/shared_image_manager.cc:395] SharedImageManager::ProduceMemory: Trying to Produce a Memory representation from a non-existent mailbox.",
+      // macOS: https://github.com/peteb4ker/romper/actions/runs/37641515841
+      "[8568:1007/150650.359808:ERROR:gpu/command_buffer/service/shared_image/shared_image_manager.cc:254] SharedImageManager::ProduceSkia: Trying to Produce a Skia representation from a non-existent mailbox.",
+    ],
+    link: "https://github.com/peteb4ker/romper/issues/772",
+    pattern:
+      /:ERROR:gpu\/command_buffer\/service\/shared_image\/shared_image_manager\.cc:\d+\] SharedImageManager::Produce(Memory|Skia): Trying to Produce a \1 representation from a non-existent mailbox\.$/,
+    platforms: ["darwin", "linux"],
+    reason:
+      "Chromium's GPU service logs this when a frame refers to a shared image that was already destroyed, as when a window resizes or closes; Romper creates no shared images",
+    source: "Chromium shared image manager",
+  },
+  {
+    examples: [
       '[3669:1001/183952.828516:ERROR:sandbox/mac/system_services.cc:35] SetApplicationIsDaemon: Error Domain=NSOSStatusErrorDomain Code=-50 "paramErr: error in user parameter list" (-50)',
     ],
     link: `${CHROMIUM_SOURCE}sandbox/mac/system_services.cc`,

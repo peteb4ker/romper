@@ -1,5 +1,4 @@
-import { ipcMain } from "electron";
-
+import { handle } from "../ipcHandle.js";
 import { createDbHandler } from "./ipcHandlerUtils.js";
 import { toggleKitFavorite } from "./romperDbCoreORM.js";
 
@@ -10,7 +9,7 @@ export function registerFavoritesIpcHandlers(
   inMemorySettings: Record<string, unknown>,
 ) {
   // Task 20.1: Favorites system IPC handlers
-  ipcMain.handle(
+  handle(
     "toggle-kit-favorite",
     createDbHandler(inMemorySettings, toggleKitFavorite),
   );

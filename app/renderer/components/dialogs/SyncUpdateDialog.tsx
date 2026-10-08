@@ -21,7 +21,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import type {
   SyncChangeSummary,
-  SyncProgress,
+  SyncProgressState,
   SyncUpdateDialogProps,
 } from "./SyncUpdateDialog.types.js";
 
@@ -36,7 +36,7 @@ interface DismissButtonProps {
   isWriting: boolean;
   onCancelWrite: () => void;
   onClose: () => void;
-  status?: SyncProgress["status"];
+  status?: SyncProgressState["status"];
 }
 
 const DISMISS_BUTTON_CLASS =

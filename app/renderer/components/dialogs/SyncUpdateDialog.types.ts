@@ -4,15 +4,10 @@ export type {
   SyncValidationError,
 } from "@romper/shared/electronApi.js";
 
-import type { SyncChangeSummary } from "@romper/shared/electronApi.js";
-
-export interface SyncErrorDetails {
-  canRetry: boolean;
-  error: string;
-  fileName: string;
-  kitName?: string;
-  operation: "convert" | "copy";
-}
+import type {
+  SyncChangeSummary,
+  SyncProgress,
+} from "@romper/shared/electronApi.js";
 
 export interface SyncFileOperation {
   destinationPath: string;
@@ -24,30 +19,15 @@ export interface SyncFileOperation {
   targetFormat?: string;
 }
 
-export interface SyncProgress {
-  bytesCompleted: number;
-  currentFile: string;
-  currentKitName?: string;
+/**
+ * What the write panel shows: main's latest progress event (SyncProgress),
+ * or the state the renderer sets before the first event ("preparing") and
+ * once the write's result arrives ("cancelled", or "error" with `error`)
+ */
+export type SyncProgressState = {
   error?: string;
-  errorDetails?: SyncErrorDetails;
-  filesCompleted: number;
-  /**
-   * While status is "removing": entries removed from the card so far, of
-   * those the store no longer has (#653)
-   */
-  removal?: { completed: number; total: number };
-  status:
-    | "cancelled"
-    | "completed"
-    | "converting"
-    | "copying"
-    | "error"
-    | "finalizing"
-    | "preparing"
-    | "removing";
-  totalBytes: number;
-  totalFiles: number;
-}
+  status: "cancelled" | "preparing" | SyncProgress["status"];
+} & Omit<SyncProgress, "elapsedTime" | "estimatedTimeRemaining" | "status">;
 
 export interface SyncUpdateDialogProps {
   isLoading?: boolean;
@@ -66,5 +46,5 @@ export interface SyncUpdateDialogProps {
   ) => Promise<null | SyncChangeSummary>;
   onSdCardPathChange?: (path: null | string) => void;
   sdCardPath?: null | string;
-  syncProgress?: null | SyncProgress;
+  syncProgress?: null | SyncProgressState;
 }

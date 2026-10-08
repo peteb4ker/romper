@@ -12,21 +12,41 @@ import type { SliceStep, VoiceSliceSettings } from "./sliceTypes.js";
 import type { WriteStereoSummary } from "./stereoLinkRules.js";
 import type { SequenceSnapshot, VoiceSnapshot } from "./undoTypes.js";
 
+/** Why the factory-samples install failed, sent over "archive-error" */
+export interface ArchiveError {
+  message?: string;
+}
+
+/**
+ * A factory-samples download or extraction progress event, sent over the
+ * "archive-progress" channel. `percent` is null while the size is unknown.
+ */
+export interface ArchiveProgress {
+  file?: string;
+  percent: null | number;
+  phase: string;
+}
+
 /**
  * THE canonical contract for the preload bridge (window.electronAPI).
  *
- * Single source of truth, enforced on both sides:
+ * Single source of truth, enforced on every side (#472):
  * - the preload implements it via `satisfies ElectronAPI`, so a missing or
  *   drifted method is a COMPILE ERROR in the preload build;
+ * - the channels behind it (shared/ipcChannels.ts) are derived from it, and
+ *   main registers each handler through that map (electron/main/ipcHandle.ts),
+ *   so a handler whose arguments or result drift fails typecheck;
  * - the renderer's global declaration (app/renderer/electron.d.ts) imports
- *   this same type, so call sites see exactly what the preload exposes.
+ *   this same type, so call sites see exactly what the preload exposes;
+ * - the renderer tests' mock (tests/mocks/electron/electronAPI.ts) is
+ *   checked against it too.
  *
  * Every member is required: an optional member turns missing wiring into a
  * silent no-op at `?.` call sites — the bug class behind the dead About
  * links, the phantom playback API, and three orphaned IPC channels.
- * tests/unit/ipcChannelParity.test.ts guards the preload<->main layer.
+ * tests/unit/ipcChannelParity.test.ts guards that every channel is both
+ * invoked and handled.
  */
-
 export interface ElectronAPI {
   addSampleToSlot: (
     kitName: string,
@@ -34,7 +54,8 @@ export interface ElectronAPI {
     slotNumber: number,
     filePath: string,
   ) => Promise<DbResult<{ sampleId: number } & SampleEditKit>>;
-  cancelKitSync: () => Promise<unknown>;
+  /** Stop the write in progress after the file being written */
+  cancelKitSync: () => Promise<void>;
   /** Stop the setup download or extraction in progress (RE-66) */
   cancelSetup: () => Promise<{ success: boolean }>;
   checkDiskSpace: (
@@ -101,10 +122,10 @@ export interface ElectronAPI {
    */
   downloadAndExtractArchive: (
     destDir: string,
-    onProgress?: (p: unknown) => void,
-    onError?: (e: unknown) => void,
+    onProgress?: (progress: ArchiveProgress) => void,
+    onError?: (error: ArchiveError) => void,
   ) => Promise<{ cancelled?: boolean; retryable?: boolean } & DbResult>;
-  ensureDir: (dir: string) => Promise<unknown>;
+  ensureDir: (dir: string) => Promise<{ error?: string; success: boolean }>;
   /**
    * The store setup built at `targetPath` is complete, so quitting no longer
    * cleans it up, even if saving it as the local store fails (#616)
@@ -176,7 +197,11 @@ export interface ElectronAPI {
    * stops listening.
    */
   onLocalStoreDatabaseMissing: (callback: () => void) => () => void;
-  onSyncProgress: (callback: (progress: SyncProgress) => void) => void;
+  /**
+   * Call `callback` with each progress event of the write in progress. It
+   * replaces the previous callback; returns a function that stops listening.
+   */
+  onSyncProgress: (callback: (progress: SyncProgress) => void) => () => void;
   openExternal: (url: string) => Promise<{ error?: string; success: boolean }>;
   readSettings: () => Promise<SettingsData>;
   /**
@@ -230,7 +255,7 @@ export interface ElectronAPI {
     dbDir: string,
     kitName: string,
   ) => Promise<DbResult<KitScanResult>>;
-  showItemInFolder: (path: string) => Promise<unknown>;
+  showItemInFolder: (path: string) => Promise<void>;
   startKitSync: (options: SyncOptions) => Promise<DbResult<SyncOutcome>>;
   toggleKitFavorite: (
     kitName: string,
@@ -302,7 +327,14 @@ export interface ElectronAPI {
   ) => Promise<DbResult<FormatValidationResult>>;
 }
 
-// createRomperDb returns a DbResult extended with the created file path
+/**
+ * The preload's second bridge (window.electronFileAPI): the path of a file
+ * the user dropped, which main then allows reading (RE-03).
+ */
+export interface ElectronFileAPI {
+  getDroppedFilePath: (file: File) => Promise<string>;
+}
+
 /**
  * The kit details `updateKit` may change. Main refuses any other field
  * (RE-22): the rest of a kit has its own channel or belongs to main.
@@ -312,8 +344,31 @@ export interface KitMetadataUpdates {
   editable?: boolean;
 }
 
+/** The arguments `moveSampleBetweenKits` sends over its channel, as one object */
+export interface MoveSampleBetweenKitsParams {
+  fromKit: string;
+  fromSlot: number;
+  fromVoice: number;
+  mode: "insert";
+  toKit: string;
+  toSlot: number;
+  toVoice: number;
+}
+
+// createRomperDb returns a DbResult extended with the created file path
 export interface RomperDbResult extends DbResult<void> {
   dbPath?: string;
+}
+
+/**
+ * The environment the preload exposes as window.romperEnv, for end-to-end
+ * tests
+ */
+export interface RomperEnv {
+  ROMPER_LOCAL_PATH?: string;
+  ROMPER_SDCARD_PATH?: string;
+  ROMPER_SQUARP_ARCHIVE_URL?: string;
+  ROMPER_TEST_MODE?: string;
 }
 
 /**
@@ -330,8 +385,8 @@ export interface SampleEditKit {
 
 export interface SettingsData {
   confirmDestructiveActions?: boolean;
-  localStorePath?: string;
-  sdCardPath?: string;
+  localStorePath?: null | string;
+  sdCardPath?: null | string;
   theme?: string;
   themeMode?: "dark" | "light" | "system";
 }
@@ -365,6 +420,15 @@ export interface SyncChangeSummary {
   warnings: string[];
 }
 
+/** A file a write couldn't convert or copy, in a progress event */
+export interface SyncErrorDetails {
+  canRetry: boolean;
+  error: string;
+  fileName: string;
+  kitName?: string;
+  operation: "convert" | "copy";
+}
+
 export interface SyncOptions {
   sdCardPath: string;
   /**
@@ -376,28 +440,33 @@ export interface SyncOptions {
 }
 
 export interface SyncOutcome {
-  /** The user cancelled; writing stopped after the file in progress */
+  /**
+   * The user cancelled: writing stopped after the file in progress, and
+   * nothing was removed from the card or marked as synced. Cancel during
+   * the removal of what the store no longer has stops after the entry in
+   * progress (#653); the next write removes the rest.
+   */
   cancelled: boolean;
+  /** Samples that were not written because they failed validation */
   skippedFiles: SyncValidationError[];
   syncedFiles: number;
   warnings: string[];
 }
 
-// The sync progress events forwarded over the "sync-progress" channel.
-// NOTE: this is the renderer-facing shape; reconciling it with the main
-// process emitters is tracked as the SyncProgress consolidation follow-up.
+/**
+ * A progress event of the write in progress, sent over the "sync-progress"
+ * channel (syncProgressManager in main)
+ */
 export interface SyncProgress {
-  bytesCompleted: number;
   currentFile: string;
+  /** 0 when the current file starts, 100 when it's written */
+  currentFileProgress?: number;
   currentKitName?: string;
-  error?: string;
-  errorDetails?: {
-    canRetry: boolean;
-    error: string;
-    fileName: string;
-    kitName?: string;
-    operation: "convert" | "copy";
-  };
+  /** Milliseconds since the write started */
+  elapsedTime: number;
+  errorDetails?: SyncErrorDetails;
+  /** Seconds, from the files written so far */
+  estimatedTimeRemaining: number;
   filesCompleted: number;
   /**
    * While status is "removing": entries removed from the card so far, of
@@ -410,9 +479,7 @@ export interface SyncProgress {
     | "copying"
     | "error"
     | "finalizing"
-    | "preparing"
     | "removing";
-  totalBytes: number;
   totalFiles: number;
 }
 
@@ -422,4 +489,9 @@ export interface SyncValidationError {
   kitName?: string;
   sourcePath: string;
   type: "access_denied" | "invalid_format" | "missing_file" | "other";
+  /**
+   * The file is there but its WAV can't be read: the kit is quarantined
+   * rather than written without it (#537 rule 4)
+   */
+  unreadable?: boolean;
 }

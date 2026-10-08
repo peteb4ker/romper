@@ -1,4 +1,11 @@
 import type { Bank, DbResult, Sample } from "@romper/shared/db/schema.js";
+import type {
+  SyncBankSummary,
+  SyncChangeSummary,
+  SyncOptions,
+  SyncOutcome,
+  SyncValidationError,
+} from "@romper/shared/electronApi.js";
 import type { WriteStereoSummary } from "@romper/shared/stereoLinkRules.js";
 
 import { cardSampleFileName } from "@romper/shared/rampleCardLayout.js";
@@ -35,58 +42,6 @@ import { annotateMonoConversion } from "./syncMonoAnnotation.js";
 import { syncProgressManager } from "./syncProgressManager.js";
 import { syncSampleProcessingService } from "./syncSampleProcessing.js";
 import { type PlannedSampleFile, planWriteStereo } from "./syncStereoPlan.js";
-import { type SyncValidationError } from "./syncValidationService.js";
-
-export interface SyncBankSummary {
-  bank: string;
-  fileCount: number;
-  hasConversions: boolean;
-  kitCount: number;
-}
-
-export interface SyncChangeSummary {
-  banks: SyncBankSummary[];
-  /** Files that will be written to the card */
-  fileCount: number;
-  kitCount: number;
-  /**
-   * Rample content on the card that sync will delete because the store no
-   * longer has it (paths relative to the card). Empty without a card path.
-   */
-  removals: string[];
-  /**
-   * Stereo pairs linked automatically, mixdowns, and quarantined kits,
-   * which aren't written and whose copy on the card is kept (#537)
-   */
-  stereo: WriteStereoSummary;
-  /** Samples that can't be written (missing source files) */
-  validationErrors: SyncValidationError[];
-  warnings: string[];
-}
-
-export interface SyncOptions {
-  sdCardPath: string;
-  /**
-   * The user has seen the summary's validation errors and chose to write
-   * the rest. Without it, sync refuses to start while any sample would be
-   * skipped.
-   */
-  skipInvalidFiles?: boolean;
-}
-
-export interface SyncOutcome {
-  /**
-   * The user cancelled: writing stopped after the file in progress, and
-   * nothing was removed from the card or marked as synced. Cancel during
-   * the removal of what the store no longer has stops after the entry in
-   * progress (#653); the next write removes the rest.
-   */
-  cancelled: boolean;
-  /** Samples that were not written because they failed validation */
-  skippedFiles: SyncValidationError[];
-  syncedFiles: number;
-  warnings: string[];
-}
 
 interface SampleFileStatus {
   id: number;

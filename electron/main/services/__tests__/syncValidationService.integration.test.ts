@@ -1,12 +1,11 @@
+import type { SyncValidationError } from "@romper/shared/electronApi.js";
+
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import {
-  type SyncValidationError,
-  SyncValidationService,
-} from "../syncValidationService.js";
+import { SyncValidationService } from "../syncValidationService.js";
 
 // Each test gets its own directory under the OS temp dir (see beforeEach),
 // so nothing is written into the source tree.

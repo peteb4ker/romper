@@ -1,7 +1,6 @@
 import type { VoiceSnapshot } from "@romper/shared/undoTypes.js";
 
-import { ipcMain } from "electron";
-
+import { handle } from "../ipcHandle.js";
 import {
   checkSampleSourceAccess,
   rememberKitSampleSources,
@@ -19,17 +18,17 @@ import {
 export function registerSampleIpcHandlers(
   inMemorySettings: Record<string, unknown>,
 ) {
-  ipcMain.handle(
+  handle(
     "add-sample-to-slot",
     createSampleOperationHandler(inMemorySettings, "add"),
   );
 
-  ipcMain.handle(
+  handle(
     "delete-sample-from-slot",
     createSampleOperationHandler(inMemorySettings, "delete"),
   );
 
-  ipcMain.handle(
+  handle(
     "move-sample-in-kit",
     async (
       _event,
@@ -67,7 +66,7 @@ export function registerSampleIpcHandlers(
     },
   );
 
-  ipcMain.handle(
+  handle(
     "move-sample-between-kits",
     async (
       _event,
@@ -106,7 +105,7 @@ export function registerSampleIpcHandlers(
   // Undo puts voices back as they were, in one transaction (RE-86). Every
   // file it restores must be one Romper may read (RE-03): the edit being
   // undone remembered the kit's files before it removed them.
-  ipcMain.handle(
+  handle(
     "restore-kit-voices",
     async (_event, kitName: string, voices: VoiceSnapshot[]) => {
       if (!Array.isArray(voices)) {

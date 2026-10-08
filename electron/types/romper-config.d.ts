@@ -1,12 +1,7 @@
-export {};
+import type { RomperEnv } from "../../shared/electronApi.js";
 
 declare global {
   interface Window {
-    romperEnv?: {
-      ROMPER_LOCAL_PATH?: string;
-      ROMPER_SDCARD_PATH?: string;
-      ROMPER_SQUARP_ARCHIVE_URL?: string;
-      ROMPER_TEST_MODE?: string;
-    };
+    romperEnv?: RomperEnv;
   }
 }

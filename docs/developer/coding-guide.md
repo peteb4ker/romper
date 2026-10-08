@@ -58,12 +58,16 @@ fill 2 mono voices."
 
 - Renderer code calls main only through `globalThis.electronAPI`, whose type
   is `ElectronAPI` in `shared/electronApi.ts`. To add a call:
-  1. Add the method to `ElectronAPI`.
-  2. Implement it in `electron/preload/index.ts`.
-  3. Register the handler with `ipcMain.handle` in main.
+  1. Add the method to `ElectronAPI`, and its channel to
+     `IpcInvokeChannels` in `shared/ipcChannels.ts`.
+  2. Implement it in `electron/preload/index.ts` with `invoke(channel, ...)`.
+  3. Register the handler with `handle` from `electron/main/ipcHandle.ts`
+     (never `ipcMain.handle`), so typecheck holds it to the contract.
   4. Add it to the default mock in `tests/mocks/`.
 
-  `ipcChannelParity.test.ts` fails if the preload and main channels drift.
+  A type that crosses the bridge goes in `shared/`. Typecheck fails if the
+  preload, a handler or the mock drifts from the contract, and
+  `ipcChannelParity.test.ts` fails if a channel isn't handled.
 - Database functions return `DbResult<T>` (`{ success, data?, error? }`).
   Build a failure as `{ error, success: false }`, with `getErrorMessage`
   from `@romper/shared/errorUtils` for a caught error's text.
@@ -233,10 +237,11 @@ fill 2 mono voices."
 
 - When work is split across parallel sessions or agents, shared interfaces
   count as shared work, like files: the IPC contract
-  (`shared/electronApi.ts`, the preload, the `ipcMain` handlers) and the
-  database layer. A change that removes or changes them runs alone, or
-  after the work that might use them. (#514 removed `getAllBanks` as
-  unused while #512, in a parallel batch split by files, started using it.)
+  (`shared/electronApi.ts`, `shared/ipcChannels.ts`, the preload, main's
+  handlers) and the database layer. A change that removes or changes them
+  runs alone, or after the work that might use them. (#514 removed
+  `getAllBanks` as unused while #512, in a parallel batch split by files,
+  started using it.)
 - A PR that deletes an API, IPC channel or exported function re-checks its
   callers against current main when it's rebased to merge
   (`git grep <name> origin/main`), not only when it was written.

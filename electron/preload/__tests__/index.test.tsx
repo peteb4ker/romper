@@ -288,15 +288,12 @@ describe("preload/index.tsx", () => {
   });
 
   describe("SettingsManager", () => {
-    it("[Q-03] readSettings returns ROMPER_LOCAL_PATH as localStorePath", async () => {
+    it("[Q-03] readSettings returns main's settings, which already apply ROMPER_LOCAL_PATH", async () => {
       process.env.ROMPER_LOCAL_PATH = "/env/test/path";
       try {
         mockElectron.ipcRenderer.invoke.mockImplementation((channel) => {
           if (channel === "read-settings") {
-            return Promise.resolve({
-              darkMode: true,
-              localStorePath: "/saved/path",
-            });
+            return Promise.resolve({ localStorePath: "/env/test/path" });
           }
           return Promise.resolve();
         });
@@ -310,10 +307,7 @@ describe("preload/index.tsx", () => {
         const api = electronAPICall[1];
 
         const result = await api.readSettings();
-        expect(result).toEqual({
-          darkMode: true,
-          localStorePath: "/env/test/path",
-        });
+        expect(result).toEqual({ localStorePath: "/env/test/path" });
       } finally {
         delete process.env.ROMPER_LOCAL_PATH;
       }
@@ -384,27 +378,6 @@ describe("preload/index.tsx", () => {
 
       consoleErrorSpy.mockRestore();
     });
-
-    it("handles JSON parsing in readSettings", async () => {
-      mockElectron.ipcRenderer.invoke.mockImplementation((channel) => {
-        if (channel === "read-settings") {
-          return Promise.resolve('{"testKey": "jsonValue"}');
-        }
-        return Promise.resolve();
-      });
-
-      vi.resetModules();
-      await import("../index");
-
-      const electronAPICall =
-        mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
-          (call) => call[0] === "electronAPI",
-        );
-      const api = electronAPICall[1];
-
-      const result = await api.readSettings();
-      expect(result).toEqual({ testKey: "jsonValue" });
-    });
   });
 
   describe("MenuEventForwarder", () => {
@@ -469,12 +442,6 @@ describe("preload/index.tsx", () => {
 
       await api.downloadAndExtractArchive("/dest", onProgress, onError);
 
-      expect(mockElectron.ipcRenderer.removeAllListeners).toHaveBeenCalledWith(
-        "archive-progress",
-      );
-      expect(mockElectron.ipcRenderer.removeAllListeners).toHaveBeenCalledWith(
-        "archive-error",
-      );
       expect(mockElectron.ipcRenderer.on).toHaveBeenCalledWith(
         "archive-progress",
         expect.any(Function),
@@ -489,6 +456,51 @@ describe("preload/index.tsx", () => {
       );
     });
 
+    it("[Q-07] stops forwarding archive events once the install ends (#472)", async () => {
+      await import("../index");
+
+      const api = mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+        (call) => call[0] === "electronAPI",
+      )[1];
+      const onProgress = vi.fn();
+      const onError = vi.fn();
+      mockElectron.ipcRenderer.invoke.mockResolvedValue({ success: true });
+
+      await api.downloadAndExtractArchive("/dest", onProgress, onError);
+
+      for (const channel of ["archive-progress", "archive-error"]) {
+        const listener = mockElectron.ipcRenderer.on.mock.calls.find(
+          (call) => call[0] === channel,
+        )[1];
+        expect(mockElectron.ipcRenderer.removeListener).toHaveBeenCalledWith(
+          channel,
+          listener,
+        );
+      }
+    });
+
+    it("[Q-07] stops forwarding archive events when the install fails (#472)", async () => {
+      await import("../index");
+
+      const api = mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+        (call) => call[0] === "electronAPI",
+      )[1];
+      mockElectron.ipcRenderer.invoke.mockRejectedValue(new Error("boom"));
+
+      await expect(
+        api.downloadAndExtractArchive("/dest", vi.fn(), vi.fn()),
+      ).rejects.toThrow("boom");
+
+      expect(mockElectron.ipcRenderer.removeListener).toHaveBeenCalledWith(
+        "archive-progress",
+        expect.any(Function),
+      );
+      expect(mockElectron.ipcRenderer.removeListener).toHaveBeenCalledWith(
+        "archive-error",
+        expect.any(Function),
+      );
+    });
+
     it("sets up onSyncProgress listener correctly", async () => {
       await import("../index");
 
@@ -500,14 +512,22 @@ describe("preload/index.tsx", () => {
 
       const callback = vi.fn();
 
-      api.onSyncProgress(callback);
+      const stop = api.onSyncProgress(callback);
 
       expect(mockElectron.ipcRenderer.removeAllListeners).toHaveBeenCalledWith(
         "sync-progress",
       );
-      expect(mockElectron.ipcRenderer.on).toHaveBeenCalledWith(
+      const listener = mockElectron.ipcRenderer.on.mock.calls.find(
+        (call) => call[0] === "sync-progress",
+      )[1];
+      listener({}, { filesCompleted: 1 });
+      expect(callback).toHaveBeenCalledWith({ filesCompleted: 1 });
+
+      // [Q-07] It returns a function that stops listening (#472)
+      stop();
+      expect(mockElectron.ipcRenderer.removeListener).toHaveBeenCalledWith(
         "sync-progress",
-        expect.any(Function),
+        listener,
       );
     });
   });
@@ -848,12 +868,14 @@ describe("preload/index.tsx", () => {
         "/dest/path",
       );
       // Should not set up listeners when no callbacks provided
-      expect(
-        mockElectron.ipcRenderer.removeAllListeners,
-      ).not.toHaveBeenCalledWith("archive-progress");
-      expect(
-        mockElectron.ipcRenderer.removeAllListeners,
-      ).not.toHaveBeenCalledWith("archive-error");
+      expect(mockElectron.ipcRenderer.on).not.toHaveBeenCalledWith(
+        "archive-progress",
+        expect.any(Function),
+      );
+      expect(mockElectron.ipcRenderer.on).not.toHaveBeenCalledWith(
+        "archive-error",
+        expect.any(Function),
+      );
     });
   });
 

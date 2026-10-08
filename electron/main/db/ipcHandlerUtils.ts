@@ -1,5 +1,6 @@
 import type { DbResult, Sample } from "@romper/shared/db/schema.js";
 import type { SampleEditKit } from "@romper/shared/electronApi.js";
+import type { IpcResult } from "@romper/shared/ipcChannels.js";
 
 import { snapshotVoices } from "@romper/shared/undoTypes.js";
 
@@ -10,6 +11,21 @@ import {
 import { sampleService } from "../services/sampleService.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
 import { getKit, getKitSamples } from "./romperDbCoreORM.js";
+
+type AddSampleHandler = (
+  _event: unknown,
+  kitName: string,
+  voiceNumber: number,
+  slotNumber: number,
+  filePath?: string,
+) => Promise<IpcResult<"add-sample-to-slot">>;
+
+type DeleteSampleHandler = (
+  _event: unknown,
+  kitName: string,
+  voiceNumber: number,
+  slotNumber: number,
+) => Promise<IpcResult<"delete-sample-from-slot">>;
 
 /**
  * Creates a wrapper for IPC handlers that require database directory validation
@@ -32,40 +48,39 @@ export function createDbHandler<T extends unknown[], R>(
  */
 export function createSampleOperationHandler(
   inMemorySettings: Record<string, unknown>,
+  operationType: "add",
+): AddSampleHandler;
+export function createSampleOperationHandler(
+  inMemorySettings: Record<string, unknown>,
+  operationType: "delete",
+): DeleteSampleHandler;
+export function createSampleOperationHandler(
+  inMemorySettings: Record<string, unknown>,
   operationType: "add" | "delete",
-) {
-  return async (
-    _event: unknown,
-    kitName: string,
-    voiceNumber: number,
-    slotNumber: number,
-    filePath?: string,
-  ) => {
-    try {
-      let result: DbResult<unknown>;
-
-      // RE-03: a new sample source must be a file the user gave Romper.
-      if (operationType === "add" && filePath) {
-        const access = await checkSampleSourceAccess(
-          inMemorySettings,
-          filePath,
-        );
-        if (!access.ok) return { error: access.error, success: false };
-      }
-      // Undo re-adds whatever this edit removes; let it read those files.
-      if (operationType === "delete") {
-        await rememberKitSampleSources(inMemorySettings, kitName);
-      }
-
-      switch (operationType) {
-        case "add":
+): AddSampleHandler | DeleteSampleHandler {
+  switch (operationType) {
+    case "add": {
+      const add: AddSampleHandler = (
+        _event,
+        kitName,
+        voiceNumber,
+        slotNumber,
+        filePath,
+      ) =>
+        runSampleOperation(async () => {
           if (!filePath) {
             return {
               error: "File path required for add operation",
               success: false,
             };
           }
-          result = withEditedKitSamples(
+          // RE-03: a new sample source must be a file the user gave Romper.
+          const access = await checkSampleSourceAccess(
+            inMemorySettings,
+            filePath,
+          );
+          if (!access.ok) return { error: access.error, success: false };
+          return withEditedKitSamples(
             inMemorySettings,
             kitName,
             sampleService.addSampleToSlot(
@@ -76,11 +91,22 @@ export function createSampleOperationHandler(
               filePath,
             ),
           );
-          break;
+        });
+      return add;
+    }
 
-        case "delete": {
+    case "delete": {
+      const remove: DeleteSampleHandler = (
+        _event,
+        kitName,
+        voiceNumber,
+        slotNumber,
+      ) =>
+        runSampleOperation(async () => {
+          // Undo re-adds whatever this edit removes; let it read those files.
+          await rememberKitSampleSources(inMemorySettings, kitName);
           const rows = readKitRows(inMemorySettings, kitName);
-          result = withEditedKitSamples(
+          return withEditedKitSamples(
             inMemorySettings,
             kitName,
             sampleService.deleteSampleFromSlot(
@@ -91,23 +117,13 @@ export function createSampleOperationHandler(
             ),
             { rows, voices: [voiceNumber] },
           );
-          break;
-        }
-
-        default:
-          return { error: "Unknown operation type", success: false };
-      }
-
-      return result;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      return {
-        error: `Failed to perform sample operation: ${errorMessage}`,
-        success: false,
-      };
+        });
+      return remove;
     }
-  };
+
+    default:
+      return async () => ({ error: "Unknown operation type", success: false });
+  }
 }
 
 /**
@@ -167,4 +183,19 @@ export function withEditedKitSamples<T extends object>(
       }),
     },
   };
+}
+
+/** A sample operation's result, or why it failed if it threw */
+async function runSampleOperation<T>(
+  operation: () => Promise<DbResult<T>>,
+): Promise<DbResult<T>> {
+  try {
+    return await operation();
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return {
+      error: `Failed to perform sample operation: ${errorMessage}`,
+      success: false,
+    };
+  }
 }

@@ -1,4 +1,8 @@
-import type { DbResult, KitEdit } from "@romper/shared/db/schema.js";
+import type {
+  DbResult,
+  KitEdit,
+  KitWithRelations,
+} from "@romper/shared/db/schema.js";
 import type { VoiceSliceSettings } from "@romper/shared/sliceTypes.js";
 import type { SequenceSnapshot } from "@romper/shared/undoTypes.js";
 
@@ -8,7 +12,6 @@ import {
   normalizeSliceSteps,
 } from "@romper/shared/sliceTypes.js";
 // IMPORTANT: Drizzle ORM with better-sqlite3 is SYNCHRONOUS - do not use await with database operations
-import { ipcMain } from "electron";
 
 import type { InMemorySettings } from "./types/settings.js";
 
@@ -32,6 +35,7 @@ import {
 } from "./db/romperDbCoreORM.js";
 import { registerSampleIpcHandlers } from "./db/sampleIpcHandlers.js";
 import { registerSyncIpcHandlers } from "./db/syncIpcHandlers.js";
+import { handle } from "./ipcHandle.js";
 import {
   bpmError,
   firstError,
@@ -75,26 +79,23 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   // already holds a store (RE-10), and setup-import-kit and
   // setup-import-bank-names only import into a store this setup created
   // (RE-34).
-  ipcMain.handle("create-romper-db", async (_event, dbDir: string) => {
+  handle("create-romper-db", async (_event, dbDir: string) => {
     const access = await checkSetupDatabaseDirAccess(dbDir);
     if (!access.ok) return { error: access.error, success: false };
     return localStoreSetupService.createSetupDatabase(dbDir);
   });
 
-  ipcMain.handle(
-    "setup-import-kit",
-    async (_event, dbDir: string, kitName: string) => {
-      const access = await checkSetupDatabaseDirAccess(dbDir);
-      if (!access.ok) return { error: access.error, success: false };
-      return localStoreSetupService.importSetupKit(dbDir, kitName);
-    },
-  );
+  handle("setup-import-kit", async (_event, dbDir: string, kitName: string) => {
+    const access = await checkSetupDatabaseDirAccess(dbDir);
+    if (!access.ok) return { error: access.error, success: false };
+    return localStoreSetupService.importSetupKit(dbDir, kitName);
+  });
 
   // The bank names of the card setup is copying from (#564), or of the
   // factory archive extracted into the new store (#567), in the same step
   // as the kits. Either folder is one the user picked, so main has granted
   // it
-  ipcMain.handle(
+  handle(
     "setup-import-bank-names",
     async (_event, dbDir: string, sourcePath: string) => {
       const access = await checkSetupDatabaseDirAccess(dbDir);
@@ -107,17 +108,26 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     },
   );
 
-  ipcMain.handle(
+  handle(
     "get-kit",
-    createDbHandler(inMemorySettings, (dbDir: string, kitName: string) => {
-      return getKit(dbDir, kitName);
-    }),
+    createDbHandler(
+      inMemorySettings,
+      (dbDir: string, kitName: string): DbResult<KitWithRelations> => {
+        const kit = getKit(dbDir, kitName);
+        if (!kit.success) return { error: kit.error, success: false };
+        // A kit that isn't there is a failure, as the contract says (#472)
+        if (!kit.data) {
+          return { error: `Kit ${kitName} not found`, success: false };
+        }
+        return { data: kit.data, success: true };
+      },
+    ),
   );
 
   // Kit details: only the alias and the editable flag (RE-22). Spreading
   // the renderer's object into the update let it rename the kit, change its
   // bank or clear its lock.
-  ipcMain.handle(
+  handle(
     "update-kit-metadata",
     createDbHandler(
       inMemorySettings,
@@ -129,14 +139,14 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     ),
   );
 
-  ipcMain.handle(
+  handle(
     "get-all-kits",
     createDbHandler(inMemorySettings, (dbDir: string) => {
       return getKits(dbDir);
     }),
   );
 
-  ipcMain.handle(
+  handle(
     "update-voice-alias",
     createDbHandler(
       inMemorySettings,
@@ -157,7 +167,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     ),
   );
 
-  ipcMain.handle(
+  handle(
     "update-sample-gain",
     createDbHandler(
       inMemorySettings,
@@ -187,7 +197,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     ),
   );
 
-  ipcMain.handle(
+  handle(
     "update-voice-volume",
     createDbHandler(
       inMemorySettings,
@@ -206,7 +216,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     ),
   );
 
-  ipcMain.handle(
+  handle(
     "update-voice-sample-mode",
     createDbHandler(
       inMemorySettings,
@@ -230,7 +240,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     ),
   );
 
-  ipcMain.handle(
+  handle(
     "update-voice-stereo-mode",
     createDbHandler(
       inMemorySettings,
@@ -272,7 +282,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     ),
   );
 
-  ipcMain.handle(
+  handle(
     "update-kit-bpm",
     createDbHandler(
       inMemorySettings,
@@ -284,7 +294,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     ),
   );
 
-  ipcMain.handle(
+  handle(
     "update-step-pattern",
     createDbHandler(
       inMemorySettings,
@@ -298,7 +308,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     ),
   );
 
-  ipcMain.handle(
+  handle(
     "update-trigger-conditions",
     createDbHandler(
       inMemorySettings,
@@ -316,7 +326,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     ),
   );
 
-  ipcMain.handle(
+  handle(
     "update-slice-steps",
     createDbHandler(
       inMemorySettings,
@@ -334,7 +344,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
 
   // Undo and redo put back the parts of a sequence that differ, in one
   // statement, so a failure leaves none of them changed (#570)
-  ipcMain.handle(
+  handle(
     "restore-kit-sequence",
     createDbHandler(
       inMemorySettings,
@@ -355,7 +365,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     ),
   );
 
-  ipcMain.handle(
+  handle(
     "update-kit-slicer-division",
     createDbHandler(
       inMemorySettings,
@@ -375,7 +385,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     ),
   );
 
-  ipcMain.handle(
+  handle(
     "update-voice-slice-settings",
     createDbHandler(
       inMemorySettings,
@@ -396,26 +406,23 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     ),
   );
 
-  ipcMain.handle(
-    "validate-local-store",
-    async (_event, localStorePath?: string) => {
-      // Check environment override first, then provided path, then settings
-      const settingsPath =
-        typeof inMemorySettings.localStorePath === "string"
-          ? inMemorySettings.localStorePath
-          : undefined;
-      const pathToValidate =
-        process.env.ROMPER_LOCAL_PATH || localStorePath || settingsPath;
-      if (!pathToValidate) {
-        throw new Error("No local store path provided or configured");
-      }
-      const access = await checkPathAccess(pathToValidate);
-      if (!access.ok) return { error: access.error, isValid: false };
-      return localStoreService.validateLocalStore(pathToValidate);
-    },
-  );
+  handle("validate-local-store", async (_event, localStorePath?: string) => {
+    // Check environment override first, then provided path, then settings
+    const settingsPath =
+      typeof inMemorySettings.localStorePath === "string"
+        ? inMemorySettings.localStorePath
+        : undefined;
+    const pathToValidate =
+      process.env.ROMPER_LOCAL_PATH || localStorePath || settingsPath;
+    if (!pathToValidate) {
+      throw new Error("No local store path provided or configured");
+    }
+    const access = await checkPathAccess(pathToValidate);
+    if (!access.ok) return { error: access.error, isValid: false };
+    return localStoreService.validateLocalStore(pathToValidate);
+  });
 
-  ipcMain.handle(
+  handle(
     "validate-local-store-basic",
     async (_event, localStorePath?: string) => {
       // Check environment override first, then provided path, then settings
@@ -434,20 +441,20 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     },
   );
 
-  ipcMain.handle(
+  handle(
     "get-all-samples-for-kit",
     createDbHandler(inMemorySettings, (dbDir: string, kitName: string) => {
       return getKitSamples(dbDir, kitName);
     }),
   );
 
-  ipcMain.handle("rescan-kit", (_event, kitName: string) => {
+  handle("rescan-kit", (_event, kitName: string) => {
     return scanService.rescanKit(inMemorySettings, kitName);
   });
 
   // The kit editor checks files it doesn't know are readable, once per
   // kit open, so missing and unreadable samples show early (#537)
-  ipcMain.handle("check-kit-sample-files", (_event, kitName: string) => {
+  handle("check-kit-sample-files", (_event, kitName: string) => {
     if (typeof kitName !== "string" || kitName === "") {
       return { error: "Kit name must be a string", success: false };
     }
@@ -456,7 +463,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
 
   // Bank operations: the bank strip loads every bank's name, including
   // banks with no kits (#512)
-  ipcMain.handle(
+  handle(
     "get-all-banks",
     createDbHandler(inMemorySettings, (dbDir: string) => {
       return getAllBanks(dbDir);
@@ -467,7 +474,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   // in the database as well as its RTF file, so it stays gone after a
   // reload and the next write removes it from the card. The table and the
   // store's file change together, or neither does (#567).
-  ipcMain.handle(
+  handle(
     "update-bank",
     createDbHandler(
       inMemorySettings,
@@ -498,7 +505,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   );
 
   // Audio format validation
-  ipcMain.handle("validate-sample-format", async (_event, filePath: string) => {
+  handle("validate-sample-format", async (_event, filePath: string) => {
     const access = await checkSampleSourceAccess(inMemorySettings, filePath);
     if (!access.ok) return { error: access.error, success: false };
     return validateSampleFormat(filePath);

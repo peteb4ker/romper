@@ -1,3 +1,5 @@
+import type { SyncProgress } from "@romper/shared/electronApi.js";
+
 import { BrowserWindow } from "electron";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -11,7 +13,6 @@ vi.mock("electron", () => ({
 
 import {
   PROGRESS_THROTTLE_MS,
-  type SyncProgress,
   syncProgressManager,
 } from "../syncProgressManager.js";
 
@@ -259,7 +260,7 @@ describe("SyncProgressManager", () => {
           currentFileProgress: 100,
           estimatedTimeRemaining: 0,
           filesCompleted: 5,
-          status: "complete",
+          status: "completed",
           totalFiles: 5,
         }),
       );
@@ -450,7 +451,10 @@ describe("SyncProgressManager", () => {
 
       const sent = sentProgress();
       expect(sent).toHaveLength(2);
-      expect(sent[1]).toMatchObject({ filesCompleted: 50, status: "complete" });
+      expect(sent[1]).toMatchObject({
+        filesCompleted: 50,
+        status: "completed",
+      });
     });
 
     it("sends errors immediately and drops any pending update", () => {

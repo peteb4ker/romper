@@ -45,14 +45,7 @@ export class LocalStoreService {
   getLocalStoreStatus(
     localStorePath: null | string,
     envPath?: string,
-  ): {
-    error: null | string;
-    hasLocalStore: boolean;
-    isCriticalEnvironmentError: boolean;
-    isEnvironmentOverride: boolean;
-    isValid: boolean;
-    localStorePath: null | string;
-  } {
+  ): LocalStoreValidationDetailedResult {
     // An empty or blank ROMPER_LOCAL_PATH is unset, as every other reader
     // of it treats it
     const envOverride = envPath?.trim() ? envPath : undefined;
@@ -84,7 +77,7 @@ export class LocalStoreService {
       isEnvironmentOverride && !validationResult.isValid && !isTestEnvironment;
 
     return {
-      error: validationResult.error || validationResult.errorSummary || null,
+      error: validationResult.error || validationResult.errorSummary,
       hasLocalStore: true,
       isCriticalEnvironmentError,
       isEnvironmentOverride,

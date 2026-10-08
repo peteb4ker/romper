@@ -6,7 +6,6 @@ import { useCallback, useState } from "react";
 import { createLogger } from "../../../utils/logger";
 import {
   createSyncProgressStore,
-  type SyncProgress,
   type SyncProgressStore,
 } from "./syncProgressStore";
 
@@ -86,30 +85,20 @@ export function useSyncUpdate(
       setIsLoading(true);
       setError(null);
       setSyncProgress({
-        bytesCompleted: 0,
         currentFile: "",
         filesCompleted: 0,
         status: "preparing",
-        totalBytes: 0, // Will be updated by progress events
         totalFiles: 0, // Will be updated by progress events
       });
 
       // Progress events can be delivered after the write's result (a large
       // sync queues thousands), and must not overwrite the final state.
       let settled = false;
+      let stopListening: (() => void) | undefined;
       try {
-        // Set up progress listener if available
-        if (electronAPI.onSyncProgress) {
-          electronAPI.onSyncProgress((progress: SyncProgress) => {
-            if (settled) return;
-            // Normalize backend "complete" status to frontend "completed"
-            const normalizedStatus =
-              (progress.status as string) === "complete"
-                ? "completed"
-                : progress.status;
-            setSyncProgress({ ...progress, status: normalizedStatus });
-          });
-        }
+        stopListening = electronAPI.onSyncProgress?.((progress) => {
+          if (!settled) setSyncProgress(progress);
+        });
 
         const result = await electronAPI.startKitSync({
           sdCardPath: options.sdCardPath,
@@ -148,6 +137,7 @@ export function useSyncUpdate(
         );
         return false;
       } finally {
+        stopListening?.();
         setIsLoading(false);
       }
     },

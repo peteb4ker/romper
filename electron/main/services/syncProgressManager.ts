@@ -1,36 +1,10 @@
+import type { SyncProgress } from "@romper/shared/electronApi.js";
+
 import { BrowserWindow } from "electron";
 
 import type { SyncFileOperation } from "./syncFileOperations.js";
 
-export interface SyncProgress {
-  currentFile: string;
-  currentFileProgress?: number; // 0-100 percentage for current file
-  currentKitName?: string;
-  elapsedTime: number;
-  errorDetails?: {
-    canRetry: boolean;
-    error: string;
-    fileName: string;
-    kitName?: string;
-    operation: "convert" | "copy";
-  };
-  estimatedTimeRemaining: number;
-  filesCompleted: number;
-  /**
-   * While status is "removing": entries removed from the card so far, of
-   * those the store no longer has (#653)
-   */
-  removal?: { completed: number; total: number };
-  status:
-    | "complete"
-    | "converting"
-    | "copying"
-    | "error"
-    | "finalizing"
-    | "preparing"
-    | "removing";
-  totalFiles: number;
-}
+import { sendEvent } from "../ipcHandle.js";
 
 interface SyncJob {
   cancelled: boolean;
@@ -101,7 +75,7 @@ export class SyncProgressManager {
       elapsedTime: Date.now() - this.currentSyncJob.startTime,
       estimatedTimeRemaining: 0,
       filesCompleted: syncedFiles,
-      status: "complete",
+      status: "completed",
       totalFiles,
     });
   }
@@ -202,7 +176,7 @@ export class SyncProgressManager {
   emitProgress(progress: SyncProgress): void {
     const mainWindow = BrowserWindow.getAllWindows()[0];
     if (mainWindow) {
-      mainWindow.webContents.send("sync-progress", progress);
+      sendEvent(mainWindow.webContents, "sync-progress", progress);
     }
   }
 

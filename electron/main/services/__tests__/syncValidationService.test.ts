@@ -1,4 +1,5 @@
 import type { DbResult } from "@romper/shared/db/schema.js";
+import type { SyncValidationError } from "@romper/shared/electronApi.js";
 
 import * as fs from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -24,10 +25,7 @@ import {
   type FormatValidationResult,
   validateSampleFormatAsync,
 } from "../../audioUtils.js";
-import {
-  type SyncValidationError,
-  syncValidationService,
-} from "../syncValidationService.js";
+import { syncValidationService } from "../syncValidationService.js";
 
 const mockFs = vi.mocked(fs);
 const mockValidateSampleFormat = vi.mocked(validateSampleFormatAsync);

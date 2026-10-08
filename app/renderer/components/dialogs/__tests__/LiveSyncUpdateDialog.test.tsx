@@ -22,12 +22,10 @@ describe("LiveSyncUpdateDialog", () => {
 
     act(() =>
       store.set({
-        bytesCompleted: 0,
         currentFile: "kick.wav",
         currentKitName: "A0",
         filesCompleted: 1,
         status: "copying",
-        totalBytes: 0,
         totalFiles: 2395,
       }),
     );

@@ -64,7 +64,9 @@ describe("useLocalStoreWizard", () => {
         success: true,
       }),
     );
-    vi.mocked(window.electronAPI.ensureDir).mockResolvedValue(true);
+    vi.mocked(window.electronAPI.ensureDir).mockResolvedValue({
+      success: true,
+    });
     vi.mocked(window.electronAPI.setSetting).mockResolvedValue(undefined);
     vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
       async (_destDir, _onProgress, _onError) => ({ success: true }),
@@ -337,7 +339,7 @@ describe("useLocalStoreWizard", () => {
     vi.mocked(window.electronAPI.ensureDir).mockImplementation(async (dir) => {
       ensureDirCalled = true;
       if (!dir.includes("romper")) throw new Error("Invalid dir");
-      return true;
+      return { success: true };
     });
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
@@ -358,7 +360,7 @@ describe("useLocalStoreWizard", () => {
     vi.mocked(window.electronAPI.ensureDir).mockImplementation(async (dir) => {
       ensureDirCalled = true;
       if (!dir.includes("romper")) throw new Error("Invalid dir");
-      return true;
+      return { success: true };
     });
     vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
       async (_destDir) => {
@@ -384,7 +386,7 @@ describe("useLocalStoreWizard", () => {
     vi.mocked(window.electronAPI.ensureDir).mockImplementation(async (dir) => {
       ensureDirCalled = true;
       if (!dir.includes("romper")) throw new Error("Invalid dir");
-      return true;
+      return { success: true };
     });
     // SD card returns one kit folder, local store returns same kit folder
     vi.mocked(window.electronAPI.listFilesInRoot)

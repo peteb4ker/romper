@@ -1,4 +1,7 @@
-import type { ElectronAPI } from "@romper/shared/electronApi.js";
+import type {
+  ElectronAPI,
+  ElectronFileAPI,
+} from "@romper/shared/electronApi.js";
 
 // The canonical contract lives in shared/electronApi.ts and is ENFORCED on
 // the preload via `satisfies ElectronAPI` — this file only attaches it to the
@@ -15,9 +18,7 @@ declare global {
 
   interface Window {
     electronAPI: ElectronAPI;
-    electronFileAPI?: {
-      getDroppedFilePath: (file: File) => Promise<string>;
-    };
+    electronFileAPI?: ElectronFileAPI;
   }
 
   // In the renderer `globalThis === window`, so the preload-injected bridges
@@ -26,9 +27,5 @@ declare global {
 
   var electronAPI: ElectronAPI;
 
-  var electronFileAPI:
-    | {
-        getDroppedFilePath: (file: File) => Promise<string>;
-      }
-    | undefined;
+  var electronFileAPI: ElectronFileAPI | undefined;
 }

@@ -270,11 +270,9 @@ describe("[UC-34] SyncUpdateDialog", () => {
             onConfirm={mockOnConfirm}
             sdCardPath="/path/to/sd"
             syncProgress={{
-              bytesCompleted: 0,
               currentFile: "",
               filesCompleted: 15,
               status: "completed",
-              totalBytes: 0,
               totalFiles: 15,
             }}
           />,
@@ -435,11 +433,9 @@ describe("[UC-34] SyncUpdateDialog", () => {
           onConfirm={mockOnConfirm}
           sdCardPath="/path/to/sd"
           syncProgress={{
-            bytesCompleted: 0,
             currentFile: "kick.wav",
             filesCompleted: 1,
             status: "copying",
-            totalBytes: 0,
             totalFiles: 4,
           }}
         />,
@@ -470,11 +466,9 @@ describe("[UC-34] SyncUpdateDialog", () => {
           onConfirm={mockOnConfirm}
           sdCardPath="/path/to/sd"
           syncProgress={{
-            bytesCompleted: 0,
             currentFile: "",
             filesCompleted: 2,
             status: "cancelled",
-            totalBytes: 0,
             totalFiles: 4,
           }}
         />,
@@ -489,12 +483,10 @@ describe("[UC-34] SyncUpdateDialog", () => {
 
     it("should show progress during sync", () => {
       const mockSyncProgress = {
-        bytesCompleted: 1024,
         currentFile: "kick.wav",
         currentKitName: "A0",
         filesCompleted: 1,
         status: "copying" as const,
-        totalBytes: 2048,
         totalFiles: 2,
       };
 
@@ -516,12 +508,10 @@ describe("[UC-34] SyncUpdateDialog", () => {
 
     it("counts the removals while old kits are removed from the card (#653)", () => {
       const removing = {
-        bytesCompleted: 0,
         currentFile: "",
         filesCompleted: 15,
         removal: { completed: 3, total: 40 },
         status: "removing" as const,
-        totalBytes: 0,
         totalFiles: 15,
       };
       const props = {
@@ -559,11 +549,9 @@ describe("[UC-34] SyncUpdateDialog", () => {
 
     it("should show success message when write completes", () => {
       const mockSyncProgress = {
-        bytesCompleted: 2048,
         currentFile: "",
         filesCompleted: 15,
         status: "completed" as const,
-        totalBytes: 2048,
         totalFiles: 15,
       };
 
@@ -665,7 +653,6 @@ describe("[UC-34] SyncUpdateDialog", () => {
   describe("error handling", () => {
     it("should show detailed error message with error details", () => {
       const mockSyncProgressWithError = {
-        bytesCompleted: 100,
         currentFile: "test.wav",
         errorDetails: {
           canRetry: true,
@@ -675,7 +662,6 @@ describe("[UC-34] SyncUpdateDialog", () => {
         },
         filesCompleted: 1,
         status: "error" as const,
-        totalBytes: 200,
         totalFiles: 2,
       };
 
@@ -697,7 +683,6 @@ describe("[UC-34] SyncUpdateDialog", () => {
 
     it("should show retry button for retryable errors", () => {
       const mockSyncProgressWithRetryableError = {
-        bytesCompleted: 100,
         currentFile: "test.wav",
         errorDetails: {
           canRetry: true,
@@ -707,7 +692,6 @@ describe("[UC-34] SyncUpdateDialog", () => {
         },
         filesCompleted: 1,
         status: "error" as const,
-        totalBytes: 200,
         totalFiles: 2,
       };
 
@@ -729,12 +713,10 @@ describe("[UC-34] SyncUpdateDialog", () => {
 
     it("should show generic error message when no error details", () => {
       const mockSyncProgressWithGenericError = {
-        bytesCompleted: 100,
         currentFile: "test.wav",
         error: "Generic sync error occurred",
         filesCompleted: 1,
         status: "error" as const,
-        totalBytes: 200,
         totalFiles: 2,
       };
 
@@ -757,7 +739,6 @@ describe("[UC-34] SyncUpdateDialog", () => {
 
     it("should disable start write for non-retryable errors", () => {
       const mockSyncProgressWithNonRetryableError = {
-        bytesCompleted: 100,
         currentFile: "test.wav",
         errorDetails: {
           canRetry: false,
@@ -767,7 +748,6 @@ describe("[UC-34] SyncUpdateDialog", () => {
         },
         filesCompleted: 1,
         status: "error" as const,
-        totalBytes: 200,
         totalFiles: 2,
       };
 

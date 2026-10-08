@@ -513,7 +513,7 @@ describe("registerIpcHandlers", () => {
     expect(result).toBe("/mock/local/store");
   });
 
-  it("select-local-store-path returns null when cancelled", async () => {
+  it("[Q-07] select-local-store-path resolves to undefined when cancelled, as the contract says (#472)", async () => {
     const electron = await import("electron");
     vi.mocked(electron.dialog.showOpenDialog).mockResolvedValue({
       canceled: true,
@@ -524,7 +524,7 @@ describe("registerIpcHandlers", () => {
     registerIpcHandlers({ localStorePath: null });
 
     const result = await ipcMainHandlers["select-local-store-path"]();
-    expect(result).toBeNull();
+    expect(result).toBeUndefined();
   });
 
   it("[UC-04] registers select-existing-local-store and validates path", async () => {

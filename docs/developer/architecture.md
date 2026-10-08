@@ -33,12 +33,42 @@ and `shared` imports from nothing else in the repo.
   `romperEnv` (environment flags). Renderer code reaches them through
   `globalThis.electronAPI`.
 
-`shared/electronApi.ts` is the single contract for `electronAPI`. The preload
-implements it with `satisfies ElectronAPI`, and the renderer's global
-declaration imports the same type, so drift is a compile error.
-`tests/unit/ipcChannelParity.test.ts` checks that every channel the preload
-invokes has a matching `ipcMain.handle` in main. Handlers are registered in
-`electron/main/ipcHandlers.ts`, `dbIpcHandlers.ts`, and `electron/main/db/*IpcHandlers.ts`.
+### IPC contracts
+
+`shared/electronApi.ts` is the single contract for the bridge (#472). It
+binds every side at compile time:
+
+- **The bridge.** `ElectronAPI` is `electronAPI`'s type; `ElectronFileAPI`
+  and `RomperEnv` type the other two globals. The preload implements each
+  with `satisfies`, and the renderer's global declarations import the same
+  types.
+- **The channels.** `shared/ipcChannels.ts` maps each `invoke` channel to
+  the arguments it carries and what main resolves with. Most entries are
+  `Call<"method">`, a method's own parameters and result, so a channel can't
+  drift from the method it serves. `IpcEvents` does the same for what main
+  sends the renderer (`sync-progress`, `archive-progress`, `archive-error`,
+  `local-store-database-missing`).
+- **Main.** Every handler is registered with `handle(channel, handler)` from
+  `electron/main/ipcHandle.ts`, and the events in `IpcEvents` are sent with
+  `sendEvent` (the menu's events carry nothing and are sent directly). A
+  handler whose arguments or result differ from the channel's entry fails
+  typecheck. A handler may take wider argument types (`unknown`) to
+  validate them itself. Handlers live in `electron/main/ipcHandlers.ts`,
+  `dbIpcHandlers.ts`, and `electron/main/db/*IpcHandlers.ts`.
+- **Preload.** It calls `invoke(channel, ...args)` and `listen(event, cb)`,
+  typed by the same map, rather than `ipcRenderer` directly.
+- **Tests.** The renderer tests' default mock
+  (`tests/mocks/electron/electronAPI.ts`) is checked with
+  `satisfies ElectronAPI`, each member a `vi.fn` typed by its method.
+  `tests/unit/ipcContract.test.ts` pins the type-level rules.
+  `tests/unit/ipcChannelParity.test.ts` checks what types can't: that every
+  channel in the map is registered in main and invoked by the preload, and
+  that main never calls `ipcMain.handle` directly.
+
+Types that cross the bridge live in `shared/`, never in main: main imports
+`SyncProgress`, `SyncChangeSummary` and the other sync types from the
+contract. The renderer's write panel extends `SyncProgress` with the states
+only it sets (`SyncProgressState`).
 
 Database operations return `DbResult<T>` (`{ success, data?, error? }`);
 `shared/errorUtils.ts` has `getErrorMessage`, which turns a caught error

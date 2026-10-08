@@ -14,12 +14,14 @@ import {
   ArchiveService,
   SQUARP_FACTORY_SAMPLES_URL,
 } from "../../electron/main/services/archiveService.js";
+import { generatedFactoryArchive } from "../utils/generated-library";
 
 // RE-77: a factory archive that arrives damaged used to be downloaded three
 // times, and its real reason replaced by a generic network error. Main now
 // says why it failed and whether another download could help.
 
-const STUB_ZIP = path.resolve("tests/fixtures/squarp.zip");
+// A small archive shaped like Squarp's, of generated audio
+const ARCHIVE = generatedFactoryArchive();
 
 describe("[UC-02] A damaged factory archive (RE-77)", () => {
   let tempDir: string;
@@ -40,7 +42,7 @@ describe("[UC-02] A damaged factory archive (RE-77)", () => {
 
   it("refuses a download that doesn't match the checksum, and says not to expect a retry to help", async () => {
     // Squarp's URL answers with bytes that aren't the pinned archive
-    const body = fs.readFileSync(STUB_ZIP);
+    const body = new Uint8Array(ARCHIVE);
     const fetchMock = vi.fn(
       async (_url: string) =>
         new Response(body, {
@@ -68,8 +70,10 @@ describe("[UC-02] A damaged factory archive (RE-77)", () => {
 
   it("refuses an archive that can't be unpacked, with the reason", async () => {
     const damaged = path.join(tempDir, "damaged.zip");
-    const bytes = fs.readFileSync(STUB_ZIP);
-    fs.writeFileSync(damaged, bytes.subarray(0, Math.floor(bytes.length / 2)));
+    fs.writeFileSync(
+      damaged,
+      ARCHIVE.subarray(0, Math.floor(ARCHIVE.length / 2)),
+    );
 
     const result = await new ArchiveService().downloadAndExtractArchive(
       pathToFileURL(damaged).href,

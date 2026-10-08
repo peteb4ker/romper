@@ -1,253 +1,189 @@
-import { _electron as electron } from "playwright";
+import {
+  _electron as electron,
+  type ElectronApplication,
+} from "@playwright/test";
+import fs from "fs-extra";
+import os from "node:os";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 
+import { approveLocalStorePrompts } from "../utils/e2e-dialogs";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
-  cleanupE2EFixture,
-  type E2ETestEnvironment,
-  extractE2EFixture,
-  verifyE2EFixture,
-} from "../utils/e2e-fixture-extractor";
+  GENERATED_SAMPLES,
+  generatedFactoryArchive,
+} from "../utils/generated-library";
+import {
+  decodeWav,
+  maxSampleDifference,
+  readPcm16,
+  readWavInfo,
+  referenceConversion,
+} from "../validation/support/wav";
 
-test.describe("Sync Workflow E2E Tests", () => {
-  let electronApp: unknown;
-  let window: unknown;
-  let testEnv: E2ETestEnvironment;
+/**
+ * What each generated sample should become on the card. Copied: the
+ * Rample plays it as it is, so the card file is the source byte for byte.
+ * Converted: 16-bit, 44.1 kHz, with the channels given. B1's voices 1 and
+ * 2 arrive linked as stereo, so PAD stays stereo; voice 4 can't be linked,
+ * so LOOP is mixed down to mono.
+ */
+const CARD: Record<
+  string,
+  { as: "convert"; channels: 1 | 2 } | { as: "copy" }
+> = {
+  "A0/1-01 KICK 1.wav": { as: "copy" },
+  "A0/1-02 KICK 2.wav": { as: "copy" },
+  "A0/2-01 SNARE.wav": { as: "copy" },
+  "B1/1-01 PAD 1.wav": { as: "copy" },
+  "B1/1-02 PAD 2.wav": { as: "convert", channels: 2 },
+  "B1/3-01 HAT.wav": { as: "convert", channels: 1 },
+  "B1/4-01 LOOP.wav": { as: "convert", channels: 1 },
+};
+
+/** The generated sample a card file was written from */
+function sourceOf(cardPath: string) {
+  const [kit, file] = cardPath.split("/");
+  const name = file.replace(/^\d-\d{2} /, "");
+  const source = GENERATED_SAMPLES.find(
+    (s) => s.kit === kit && s.file.slice(2) === name,
+  );
+  if (!source) throw new Error(`no generated sample for ${cardPath}`);
+  return source;
+}
+
+/**
+ * RE-67: Romper's main promise as one flow, through the UI of the built
+ * app. Set up a library from the factory archive, then write it to an
+ * empty card, and compare every file on the card with what it should be.
+ * The archive is generated (tests/utils/generated-library.ts): real WAV
+ * audio, mono and stereo, in formats the Rample plays and formats Romper
+ * converts. Converted files are checked against the validation harness's
+ * own reference conversion, which shares no code with the app's.
+ */
+test.describe("[UC-02] [UC-28] [UC-34] [Q-07] From the factory archive to the card", () => {
+  test.use({
+    expectedMessages: {
+      "the test starts with no local store, so the wizard opens": {
+        pattern: /No local store configured/,
+        sources: ["main-stdout"],
+      },
+    },
+  });
+
+  let electronApp: ElectronApplication | undefined;
+  let tempDir: string;
 
   test.beforeEach(async () => {
-    // Extract pre-built E2E fixtures instead of manual setup
-    console.log("[E2E Test] Setting up sync workflow test environment...");
-    testEnv = await extractE2EFixture();
-
-    // Verify fixtures are valid
-    const isValid = await verifyE2EFixture(testEnv);
-    if (!isValid) {
-      throw new Error("E2E fixture verification failed");
-    }
-
-    console.log(
-      `[E2E Test] Using pre-initialized local store with ${testEnv.metadata.kits.length} kits: ${testEnv.metadata.kits.join(", ")}`,
-    );
-
-    // Set up environment using extracted fixtures
-    const env = {
-      ...process.env,
-      ...testEnv.environment, // Contains ROMPER_LOCAL_PATH, ROMPER_SDCARD_PATH, etc.
-    };
-
-    // Launch the Electron app
-    electronApp = await electron.launch({
-      args: ["dist/electron/main/index.js"],
-      env,
-      timeout: 30000,
-    });
-
-    // Get the first window
-    window = await electronApp.firstWindow();
-
-    // Set up progress and error logging for debugging
-    window.on("console", (msg) => {
-      if (msg.type() === "error") {
-        console.error(`[renderer error] ${msg.text()}`);
-      }
-    });
-
-    // Wait for the app to load
-    await window.waitForLoadState("domcontentloaded");
-
-    // Wait for the main content to be ready
-    await window.waitForSelector('[data-testid="kits-view"]', {
-      timeout: 10000,
-    });
-
-    // Wait for wizard to complete automatically and kit grid to be available
-    // The ROMPER_SDCARD_PATH should trigger automatic initialization like in wizard tests
-    await window.waitForSelector('[data-testid="kit-grid"]', {
-      timeout: 15000,
-    });
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "romper-e2e-workflow-"));
   });
 
   test.afterEach(async () => {
-    if (electronApp) {
-      await electronApp.close();
-    }
-
-    // Clean up extracted fixtures
-    if (testEnv) {
-      await cleanupE2EFixture(testEnv);
-    }
+    await electronApp?.close();
+    await fs.remove(tempDir).catch(() => {});
   });
 
-  test.describe("Basic Sync Workflow", () => {
-    test("should complete full sync workflow from kit list to success", async () => {
-      // Wait for kit list to load
-      await window.waitForSelector('[data-testid="kit-grid"]', {
-        timeout: 10000,
-      });
+  test("every sample reaches the card intact: copied byte for byte, or converted correctly", async () => {
+    test.setTimeout(90000);
+    const archive = path.join(tempDir, "factory.zip");
+    await fs.writeFile(archive, generatedFactoryArchive());
+    const store = path.join(tempDir, "Romper");
+    // An empty card but for the Rample's own saved settings
+    const card = path.join(tempDir, "card");
+    const saved = Buffer.from("rample state");
+    await fs.outputFile(path.join(card, "_save", "A0.rpl"), saved);
 
-      // Verify sync button is available in header
-      const syncButton = await window.locator(
-        '[data-testid="sync-to-sd-card"]',
-      );
-      await syncButton.waitFor({ state: "visible", timeout: 5000 });
+    electronApp = await electron.launch({
+      args: [
+        "dist/electron/main/index.js",
+        ...(process.env.CI ? ["--no-sandbox", "--disable-setuid-sandbox"] : []),
+      ],
+      env: {
+        ...process.env,
+        ROMPER_SDCARD_PATH: card,
+        ROMPER_SQUARP_ARCHIVE_URL: pathToFileURL(archive).href,
+        ROMPER_USER_DATA_DIR: path.join(tempDir, "user-data"),
+      },
+      timeout: 30000,
+    });
+    // The typed target path makes main ask the user to approve it (RE-03)
+    await approveLocalStorePrompts(electronApp);
+    const window = await electronApp.firstWindow();
 
-      // Click sync button to open sync dialog
-      await syncButton.click();
+    // Set up from the factory archive
+    await window.locator('[data-testid="wizard-source-squarp"]').click();
+    await window.locator("#local-store-path-input").fill(store);
+    await window.locator('[data-testid="wizard-initialize-btn"]').click();
+    // Setup says it linked B1's stereo voices
+    const guidance = window.locator(
+      '[data-testid="wizard-post-init-guidance"]',
+    );
+    await expect(guidance).toContainText(
+      "Kit B1: voices 1 and 2 linked automatically as a stereo pair.",
+      { timeout: 30000 },
+    );
+    await window.locator('[data-testid="post-init-continue-btn"]').click();
+    await expect(
+      window.locator('[data-testid="local-store-wizard"]'),
+    ).toHaveCount(0);
 
-      // Wait for sync dialog to appear
-      await window.waitForSelector('[data-testid="sync-dialog"]', {
-        timeout: 5000,
-      });
+    // The kits arrive in the browser
+    await expect(window.locator('[data-testid^="kit-item-"]')).toHaveCount(2);
 
-      // Verify dialog is visible
-      const syncDialog = await window.isVisible('[data-testid="sync-dialog"]');
-      expect(syncDialog).toBe(true);
+    // Write to the card: the summary counts what will be written
+    await window.locator('[data-testid="sync-to-sd-card"]').click();
+    await window
+      .locator('[data-testid="bank-summary"]')
+      .waitFor({ state: "visible", timeout: 10000 });
+    await expect(window.locator('[data-testid="total-kits"]')).toHaveText("2");
+    await expect(window.locator('[data-testid="total-samples"]')).toHaveText(
+      String(GENERATED_SAMPLES.length),
+    );
+    await window.locator('[data-testid="confirm-sync"]').click();
+    await window
+      .locator("text=Write Complete")
+      .waitFor({ state: "visible", timeout: 20000 });
 
-      // Verify dialog shows the header title
-      const dialogTitle = await window.locator("text=Write to SD Card");
-      await expect(dialogTitle).toBeVisible();
-
-      // Verify SD card path is loaded from environment
-      const sdCardPath = await window.locator('[data-testid="sd-card-path"]');
-      await expect(sdCardPath).toBeVisible();
-
-      // The dialog should automatically get the SD card path from environment
-      // and generate the change summary. Let's wait for this to happen.
-
-      // Wait for change summary generation to complete
-      await window.waitForTimeout(3000);
-
-      // Verify the sync dialog finished loading by checking the confirm button is present
-      const confirmButton = await window.locator(
-        '[data-testid="confirm-sync"]',
-      );
-      await expect(confirmButton).toBeVisible();
-
-      // Check if dialog shows the expected state
-      const hasChanges = await window.isVisible("text=No changes to write");
-      if (hasChanges) {
-        console.log("No files to sync - this is expected with test fixtures");
+    // The card holds the kits, the bank name and the Rample's own folder
+    expect((await fs.readdir(card)).sort()).toEqual([
+      "A - ALWIS.rtf",
+      "A0",
+      "B1",
+      "_save",
+    ]);
+    expect(await fs.readFile(path.join(card, "_save", "A0.rpl"))).toEqual(
+      saved,
+    );
+    // Each kit folder holds exactly its samples; voice 2 of B1's pair, none
+    const written: string[] = [];
+    for (const kit of ["A0", "B1"]) {
+      for (const file of await fs.readdir(path.join(card, kit))) {
+        written.push(`${kit}/${file}`);
       }
+    }
+    expect(written.sort()).toEqual(Object.keys(CARD).sort());
 
-      // Verify we can close the dialog
-      const cancelButton = await window.locator('[data-testid="cancel-sync"]');
-      await cancelButton.click();
-
-      // Wait for dialog close animation and removal from DOM
-      await window.waitForSelector('[data-testid="sync-dialog"]', {
-        state: "detached",
-        timeout: 3000,
+    for (const [cardPath, expected] of Object.entries(CARD)) {
+      const bytes = await fs.readFile(path.join(card, cardPath));
+      const source = sourceOf(cardPath);
+      if (expected.as === "copy") {
+        expect(bytes.equals(source.bytes), cardPath).toBe(true);
+        continue;
+      }
+      const info = readWavInfo(bytes);
+      expect(
+        `${info.bitDepth}-bit ${info.encoding} ${info.sampleRate} Hz, ${info.channels} ch`,
+        cardPath,
+      ).toBe(`16-bit pcm 44100 Hz, ${expected.channels} ch`);
+      const reference = referenceConversion(decodeWav(source.bytes), {
+        gainDb: 0,
+        outputChannels: expected.channels,
       });
-
-      // Verify dialog closes
-      const dialogStillVisible = await window.isVisible(
-        '[data-testid="sync-dialog"]',
-      );
-      expect(dialogStillVisible).toBe(false);
-
-      // Verify we're back on the kit list
-      const kitListVisible = await window.isVisible('[data-testid="kit-grid"]');
-      expect(kitListVisible).toBe(true);
-    });
-
-    test("should handle sync cancellation", async () => {
-      await window.waitForSelector('[data-testid="kit-grid"]', {
-        timeout: 10000,
-      });
-
-      // Open sync dialog
-      const syncButton = await window.locator(
-        '[data-testid="sync-to-sd-card"]',
-      );
-      await syncButton.click();
-
-      await window.waitForSelector('[data-testid="sync-dialog"]', {
-        timeout: 5000,
-      });
-
-      // Click cancel button
-      const cancelButton = await window.locator('[data-testid="cancel-sync"]');
-      await cancelButton.click();
-
-      // Wait for dialog close animation and removal from DOM
-      await window.waitForSelector('[data-testid="sync-dialog"]', {
-        state: "detached",
-        timeout: 3000,
-      });
-
-      // Verify dialog is closed
-      const dialogVisible = await window.isVisible(
-        '[data-testid="sync-dialog"]',
-      );
-      expect(dialogVisible).toBe(false);
-
-      // Verify we're back on kit list
-      const kitListVisible = await window.isVisible('[data-testid="kit-grid"]');
-      expect(kitListVisible).toBe(true);
-    });
-  });
-
-  // Removed SD Card Selection Flow tests - not core functionality
-
-  // Removed Sync Options and Configuration tests - advanced features
-
-  // Removed Sync Progress and Status tests - UX polish
-
-  // Removed Error Handling tests - edge cases
-
-  // Removed UI Responsiveness tests - edge cases
-
-  test.describe("Integration with Kit Management", () => {
-    // Removed "should open sync dialog from kit list context" - covered by other tests
-
-    test("should return to kit list after successful sync", async () => {
-      await window.waitForSelector('[data-testid="kit-grid"]', {
-        timeout: 10000,
-      });
-
-      // Use real implementation for complete sync workflow
-
-      // Complete sync workflow
-      const syncButton = await window.locator(
-        '[data-testid="sync-to-sd-card"]',
-      );
-      await syncButton.click();
-
-      await window.waitForSelector('[data-testid="sync-dialog"]', {
-        timeout: 5000,
-      });
-
-      // Verify SD card path is loaded from environment
-      const sdCardPath = await window.locator('[data-testid="sd-card-path"]');
-      await expect(sdCardPath).toBeVisible();
-
-      // Wait for auto-summary generation (should happen automatically)
-      await window.waitForTimeout(3000);
-
-      // Verify the sync dialog finished loading by checking the confirm button is present
-      const confirmButton = await window.locator(
-        '[data-testid="confirm-sync"]',
-      );
-      await expect(confirmButton).toBeVisible();
-
-      // Test cancellation instead of actual sync (since test fixtures may have no files)
-      const cancelButton = await window.locator('[data-testid="cancel-sync"]');
-      await cancelButton.click();
-
-      // Wait for dialog close animation and removal from DOM
-      await window.waitForSelector('[data-testid="sync-dialog"]', {
-        state: "detached",
-        timeout: 3000,
-      });
-
-      // Verify dialog is closed first
-      const dialogVisible = await window.isVisible(
-        '[data-testid="sync-dialog"]',
-      );
-      expect(dialogVisible).toBe(false);
-
-      // Verify we're back on kit list
-      const kitListVisible = await window.isVisible('[data-testid="kit-grid"]');
-      expect(kitListVisible).toBe(true);
-    });
+      // Within one step of the reference, sample by sample
+      expect(
+        maxSampleDifference(readPcm16(bytes), reference),
+        cardPath,
+      ).toBeLessThanOrEqual(1);
+    }
   });
 });

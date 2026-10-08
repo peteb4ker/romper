@@ -80,7 +80,32 @@ describe("readWavInfo", () => {
   });
 });
 
+describe("encodeTestWav", () => {
+  it("writes an extensible header that reads back as its sub-format", () => {
+    const wav = encodeTestWav(
+      [sine(440, 0.01, 44100)],
+      { bitDepth: 24, encoding: "pcm", sampleRate: 44100 },
+      { extensible: true },
+    );
+    const info = readWavInfo(wav);
+    expect(info.formatTag).toBe(0xfffe);
+    expect(info.encoding).toBe("pcm");
+    expect(info.bitDepth).toBe(24);
+  });
+});
+
 describe("decodeWav", () => {
+  it("reads 8-bit as unsigned, centred on 128", () => {
+    const wav = encodeTestWav([Float64Array.from([-1, 0, 1])], {
+      bitDepth: 8,
+      encoding: "pcm",
+      sampleRate: 44100,
+    });
+    const info = readWavInfo(wav);
+    expect(Array.from(wav.subarray(info.dataOffset))).toEqual([0, 128, 255]);
+    expect(Array.from(decodeWav(wav).channels[0])).toEqual([-1, 0, 1]);
+  });
+
   it("scales 16-bit asymmetrically so full scale is exactly ±1", () => {
     const decoded = decodeWav(pcm16Buffer([[-32768, 0, 32767]]));
     expect(Array.from(decoded.channels[0])).toEqual([-1, 0, 1]);

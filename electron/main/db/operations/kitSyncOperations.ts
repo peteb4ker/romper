@@ -31,9 +31,9 @@ export interface SyncPlanData {
 }
 
 /**
- * Flag every kit in a bank as changed since the last write, on an open
- * connection. A bank's name file sits on the card beside its kits, so
- * renaming the bank is a change to each of them (RE-35).
+ * Flag every kit in a bank as modified, on an open connection. A bank's
+ * name file sits on the card beside its kits, so renaming the bank changes
+ * what the next write puts on the card for each of them (RE-35, #566).
  */
 export function flagBankKitsModified(db: RomperDb, bankLetter: string): void {
   db.update(kits)
@@ -43,14 +43,32 @@ export function flagBankKitsModified(db: RomperDb, bankLetter: string): void {
 }
 
 /**
- * Flag a kit as changed since the last write, on a connection the caller
- * already has open, so an edit and its flag cost one connection. It's a
- * single update by primary key, cheap enough for every gain step (RE-35).
+ * Flag kits as modified, on a connection the caller already has open, so
+ * an edit and its flag cost one connection. It's a single update by primary
+ * key, cheap enough for every gain step (RE-35); a move between kits flags
+ * both in that one update.
+ *
+ * "Modified" means the next write will change this kit on the card (#566).
+ * Every edit that changes what the write puts there calls this (or
+ * `flagBankKitsModified`) once, in the edit's transaction: adding,
+ * deleting, moving, replacing or restoring samples, a scan that adds
+ * samples, gain (the written file is scaled), and a stereo link, unlink or
+ * "Keep mono" (they decide which files are mixed to mono). Edits the card
+ * never sees don't: voice names, the kit alias, BPM, steps, trigger
+ * conditions, slicer data and settings, level and sample mode. A new or
+ * duplicated kit's row starts flagged.
  */
-export function flagKitModified(db: RomperDb, kitName: string): void {
+export function flagKitModified(
+  db: RomperDb,
+  ...kitNames: [string, ...string[]]
+): void {
   db.update(kits)
     .set({ modified_since_sync: true })
-    .where(eq(kits.name, kitName))
+    .where(
+      kitNames.length === 1
+        ? eq(kits.name, kitNames[0])
+        : inArray(kits.name, kitNames),
+    )
     .run();
 }
 

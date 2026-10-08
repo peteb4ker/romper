@@ -38,9 +38,10 @@ export function linkVoicesAutomaticallyTx(
 }
 
 /**
- * Update voice alias. Renaming a voice is an edit to the kit, so a name
- * that actually changes marks the kit modified (RE-35); saving the same
- * name again doesn't. Only an editable kit's voices are renamed (#572).
+ * Update voice alias. Only an editable kit's voices are renamed (#572).
+ * Voice names aren't written to the card (a card file is named by voice,
+ * slot and file name, `cardSampleFileName`), so a rename doesn't mark the
+ * kit modified (#566).
  */
 export function updateVoiceAlias(
   dbDir: string,
@@ -61,12 +62,12 @@ export function updateVoiceAlias(
       .get();
     if (!current || (current.voice_alias ?? "") === (alias ?? "")) return;
     db.update(voices).set({ voice_alias: alias }).where(voice).run();
-    flagKitModified(db, kitName);
   });
 }
 
 /**
- * Update voice sample mode ("first" | "random" | "round-robin")
+ * Update voice sample mode ("first" | "random" | "round-robin"). The mode
+ * isn't written to the card, so the kit isn't marked modified (#566).
  */
 export function updateVoiceSampleMode(
   dbDir: string,
@@ -87,7 +88,8 @@ export function updateVoiceSampleMode(
 
 /**
  * Update voice slicer settings (slice mode toggle and roll settings).
- * Only the provided fields are changed.
+ * Only the provided fields are changed. They aren't written to the card,
+ * so the kit isn't marked modified (#566).
  */
 export function updateVoiceSliceSettings(
   dbDir: string,
@@ -175,7 +177,8 @@ export function updateVoiceStereoMode(
 }
 
 /**
- * Update voice volume (0-100)
+ * Update voice volume (0-100). The level isn't written to the card, so the
+ * kit isn't marked modified (#566).
  */
 export function updateVoiceVolume(
   dbDir: string,

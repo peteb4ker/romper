@@ -105,7 +105,8 @@ export class SampleBatchOperationsService {
           slotNumber: slotNumber, // Database stores 0-11 directly
           voiceNumber,
         });
-        flagKitModified(db, kitName);
+        // An empty slot deletes nothing, so the card wouldn't change (#566)
+        if (result.deletedSamples.length > 0) flagKitModified(db, kitName);
         return result;
       });
 

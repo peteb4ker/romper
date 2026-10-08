@@ -328,7 +328,7 @@ Kit fields, each owned by a column of `kits`:
 | `editable` | Whether sample, gain, voice-name and stereo edits are allowed | none | `update-kit-metadata`; on for created and duplicated kits, off for imported ones | `kits[i]`, patched; `useKitEditorLogic.isEditable`; gates undo of sample edits (`applyUndoRedo`) |
 | `locked` | Protection from scan and delete | none | nothing in the UI | `kits[i]` (`KitGridItem` `canDelete`) |
 | `is_favorite` | Starred | none | `toggleKitFavorite` (`toggle-kit-favorite`): flips the stored value and returns the new one | `kits[i]`, set from the returned value (#453 removed the shadow map) |
-| `modified_since_sync` | The kit changed since the last completed write | none | see below | `kits[i]`; `markKitModified` patches it locally after a gain save; the Modified filter and count (`useKitFilters`), card border, header badge |
+| `modified_since_sync` | The next write will change this kit on the card (#566) | none | see below | `kits[i]`; `markKitModified` patches it locally after a gain save; the Modified filter and count (`useKitFilters`), card border, header badge |
 | `bpm` | Sequencer tempo, 30 to 180 | none | `updateKit` via `update-kit-bpm`; no reload after, but `KitsView` patches the kit's `bpm` in `kits` once it's saved (`useBpm` `onSaved`) | `KitStepSequencer`'s `useBpm`, which drives playback and resets on the kit name as well as the loaded BPM |
 | `step_pattern` | 4 voices × 16 steps | none | `updateKit` via `update-step-pattern`, then a full reload | `useStepPattern` state and `latestRef`; `useSequenceHistory` |
 | `trigger_conditions` | A:B condition per step | none | `updateKit` via `update-trigger-conditions`, then a full reload | `useTriggerConditions` state and ref |
@@ -345,14 +345,22 @@ Kit fields, each owned by a column of `kits`:
   [Note about start point & sample length](https://squarp.net/rample/manual/#XX9CMqGW9):
   "/8, /16, /32, /64, /128, /12, /24, /48" or EXP); Romper stores it per
   kit and has no EXP.
-- **Modified since last write.** Set in the same transaction as the edit
-  by `flagKitModified` (sample add, delete, move, replace, restore; gain;
-  stereo link; voice name) and `flagBankKitsModified` (bank rename); new and
-  duplicated kits start set; a scan sets it only when it adds samples.
-  Cleared on every kit by a completed, uncancelled write, except kits with a
-  skipped sample (`markAllKitsAsSyncedExcept`), and by setup import
-  (`markKitsAsSyncedTx`). It drives only the UI: every write sends the whole
-  store, whatever the flag says.
+- **Modified since last write.** Means the next write will change this kit
+  on the card (#566). Set once per edit, in the edit's transaction, by
+  `flagKitModified` (sample add, delete, move, replace, restore; gain,
+  since the written file is scaled; stereo link, unlink and Keep mono,
+  since they decide which files are mixed to mono) and
+  `flagBankKitsModified` (bank rename or clear, since the bank's name file
+  sits beside its kits); new and duplicated kits start set; a scan sets it
+  only when it adds samples. Edits the card never sees don't set it: voice
+  names, the kit alias, `editable`, BPM, steps, trigger conditions, slicer
+  data and settings, level and sample mode. Cleared on every kit by a
+  completed, uncancelled write, except kits with a skipped sample
+  (`markAllKitsAsSyncedExcept`), and by setup import (`markKitsAsSyncedTx`,
+  whose bank names are saved with `source: "scan"` and set nothing). It
+  drives only the UI: every write sends the whole store, whatever the flag
+  says. Deleting a kit can't set it (the row is gone), though the next
+  write removes the kit's folder.
 - **Invariants:**
   - A name is a bank letter and 0 to 99. A kit has exactly four voice rows
     and at most 12 samples per voice.
@@ -367,8 +375,6 @@ Kit fields, each owned by a column of `kits`:
   - Main enforces `editable` only for stereo links (RE-71). Sample add,
     delete, move and replace, gain, voice names and kit delete are refused
     only by the renderer (#572).
-  - "Modified" has no single meaning: a voice-name edit sets it though
-    nothing on the card changes, and a kit alias edit doesn't (#566).
   - Kit names are checked by different patterns: `isValidKit` and
     `kitService.validateKitSlot` accept any Unicode capital
     (`/^\p{Lu}\d{1,2}$/u`) and leading zeros (`A01`), `sdCardSafety` only
@@ -376,8 +382,8 @@ Kit fields, each owned by a column of `kits`:
   - The step pattern and trigger conditions reload every kit on every save,
     undebounced, so a slower earlier reload can put an older pattern back
     for a moment (#452).
-  - `updateKit` still accepts `name`, `bank_letter` and a non-column
-    `modified`; only `parseKitMetadataUpdates` stops a renderer rename
+  - `updateKit` still accepts `name` and `bank_letter`; only
+    `parseKitMetadataUpdates` stops a renderer rename
     (RE-22). Six channels reach it with different validation.
   - "Locked" is used in comments and the UI vocabulary for "not editable",
     while `kits.locked` is a different, unused flag.
@@ -886,8 +892,8 @@ the issues it names.
      once (#564, #567, done).
    - Stereo: `voices.stereo_mode`, plus the user's own choice in
      `voices.stereo_choice` (#537).
-   - Modified: one written definition, set in one place per intent
-     (#566).
+   - Modified: one written definition, set in one place per writer
+     (#566, done).
    - Settings: one function for the store path and its override.
 3. **Typed channel map, one result shape** (architecture review step 7,
    #472). `handle(name, impl)` in main against `ElectronAPI`; every

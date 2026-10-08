@@ -32,6 +32,7 @@ vi.mock("drizzle-orm", () => ({
 }));
 
 vi.mock("@romper/shared/db/schema.js", () => ({
+  banks: {},
   kits: { modified_since_sync: "modified_since_sync", name: "name" },
   samples: {
     id: "id",
@@ -39,6 +40,7 @@ vi.mock("@romper/shared/db/schema.js", () => ({
     slot_number: "slot_number",
     voice_number: "voice_number",
   },
+  voices: {},
 }));
 
 // Import the actual withDbTransaction type for better type safety

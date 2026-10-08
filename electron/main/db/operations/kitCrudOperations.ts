@@ -295,6 +295,11 @@ export function getKitsMetadata(dbDir: string): DbResult<Partial<Kit>[]> {
   });
 }
 
+/**
+ * Update a kit's own fields. None of the fields callers change (the alias,
+ * editable, BPM, steps, trigger conditions, slicer data) is written to the
+ * card, so the kit isn't marked modified (#566).
+ */
 export function updateKit(
   dbDir: string,
   kitName: string,
@@ -304,7 +309,6 @@ export function updateKit(
     bpm?: number;
     editable?: boolean;
     is_favorite?: boolean;
-    modified?: boolean;
     name?: string;
     slice_steps?: (null | SliceStep)[][] | null;
     slicer_division?: number;

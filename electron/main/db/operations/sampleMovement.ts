@@ -1,11 +1,12 @@
 import type { DbResult, Sample } from "@romper/shared/db/schema.js";
 
 import * as schema from "@romper/shared/db/schema.js";
-import { and, eq, inArray, ne } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 
 import { type RomperDb, withDbTransaction } from "../utils/dbUtilities.js";
+import { flagKitModified } from "./kitSyncOperations.js";
 
-const { kits, samples } = schema;
+const { samples } = schema;
 
 // Type for tracking original positions during moves
 type SampleWithOriginalPosition = {
@@ -70,7 +71,7 @@ export function moveSampleBetweenKitsTx(
       toVoice,
       toSlot,
     );
-    flagKitsModified(db, [fromKit]);
+    flagKitModified(db, fromKit);
     return moved;
   }
 
@@ -133,7 +134,7 @@ export function moveSampleBetweenKitsTx(
     ),
   ];
 
-  flagKitsModified(db, [fromKit, toKit]);
+  flagKitModified(db, fromKit, toKit);
 
   const movedSample: Sample = {
     ...sampleToMove,
@@ -296,13 +297,6 @@ function compactToContiguousSlots(
   }
 
   return affectedSamples;
-}
-
-function flagKitsModified(db: RomperDb, kitNames: string[]): void {
-  db.update(kits)
-    .set({ modified_since_sync: true })
-    .where(inArray(kits.name, kitNames))
-    .run();
 }
 
 /**

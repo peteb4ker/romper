@@ -104,6 +104,7 @@ function Editor({
     isEditable: true,
     onInferVoiceNames: noop,
     onPlaySample: playback.handlePlay,
+    onSampleKeyNav: noop,
     onScanKit: noop,
     samples,
     selectedSampleIdx: 0,

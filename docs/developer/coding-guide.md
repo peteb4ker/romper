@@ -86,11 +86,10 @@ fill 2 mono voices."
   CommonJS) and tests.
 - `npm run typecheck` covers `app/`, `electron/` (minus the preload), and
   `shared/` through `tsconfig.json`, and test code through
-  `tsconfig.test.json`: so far `tests/` (with the e2e specs), the tests in
-  `shared/`, `electron/main/` and `electron/preload/`, the `app/` test
-  folders listed there, `vitest.setup.ts` and `playwright.config.ts`. The
-  other `app/` tests aren't type-checked yet (#466); add a folder to
-  `tsconfig.test.json` once its errors are fixed. The preload is
+  `tsconfig.test.json`: `tests/` (with the e2e specs), every test folder in
+  `app/`, `electron/` and `shared/`, `vitest.setup.ts` and
+  `playwright.config.ts`. A new `app/` test folder goes in its list. The
+  tests in `scripts/` aren't type-checked yet (#766). The preload is
   type-checked by its own build (`npm run build:preload`).
 - An e2e spec launches the app with `env: appEnv(...)`
   (`tests/utils/e2e-app-env.ts`), not a `process.env` spread, whose values

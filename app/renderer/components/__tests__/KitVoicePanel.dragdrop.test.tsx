@@ -30,6 +30,7 @@ describe("KitVoicePanel Drag & Drop Integration", () => {
     onSaveVoiceName: vi.fn(),
     onStop: vi.fn(),
     onWaveformPlayingChange: vi.fn(),
+    playsStereo: false,
     samples: ["sample1.wav", "sample2.wav"],
     slotPlayback: createSlotPlaybackStore(),
     voice: 1,

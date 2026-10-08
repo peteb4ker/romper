@@ -55,6 +55,7 @@ function EditorWithKit({
     <KitEditor
       kit={kit}
       kitName="A0"
+      onBack={vi.fn()}
       onMessage={onMessage}
       onToggleFavorite={onToggleFavorite}
     />

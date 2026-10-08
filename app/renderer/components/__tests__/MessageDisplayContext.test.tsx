@@ -1,16 +1,13 @@
 import { render } from "@testing-library/react";
 import React from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+import type { useMessageDisplay } from "../hooks/shared/useMessageDisplay";
 
 import { MessageDisplayContext } from "../MessageDisplayContext";
 
 describe("MessageDisplayContext", () => {
   describe("Context creation", () => {
-    it("should create context with correct default value", () => {
-      expect(MessageDisplayContext).toBeDefined();
-      expect(MessageDisplayContext._currentValue).toBeNull();
-    });
-
     it("should handle null value as default", () => {
       const TestConsumer: React.FC = () => {
         const context = React.useContext(MessageDisplayContext);
@@ -26,41 +23,22 @@ describe("MessageDisplayContext", () => {
     });
   });
 
-  describe("TypeScript interface validation", () => {
-    it("should accept proper useMessageDisplay return type", () => {
-      // Mock the useMessageDisplay return type
-      const mockUseMessageDisplayReturn = {
-        clearMessage: () => {},
-        currentMessage: null,
-        showMessage: () => {},
-      };
-
-      // This tests that the context can accept the proper type
-      const TestProvider: React.FC<{ children: React.ReactNode }> = ({
-        children,
-      }) => (
-        <MessageDisplayContext.Provider value={mockUseMessageDisplayReturn}>
-          {children}
-        </MessageDisplayContext.Provider>
-      );
-
-      expect(TestProvider).toBeDefined();
-    });
-  });
-
   describe("React Context behavior", () => {
     it("should properly provide and consume context values", () => {
-      const mockMessageDisplay = {
-        clearMessage: () => {},
-        currentMessage: "test message",
-        showMessage: () => {},
+      const mockMessageDisplay: ReturnType<typeof useMessageDisplay> = {
+        clearMessages: vi.fn(),
+        dismissMessage: vi.fn(),
+        messages: [
+          { duration: 4000, id: 1, text: "test message", type: "info" },
+        ],
+        showMessage: vi.fn(() => 1),
       };
 
       const TestConsumer: React.FC = () => {
         const context = React.useContext(MessageDisplayContext);
         return (
           <div data-testid="test-message">
-            {context?.currentMessage || "no-message"}
+            {context?.messages[0]?.text || "no-message"}
           </div>
         );
       };

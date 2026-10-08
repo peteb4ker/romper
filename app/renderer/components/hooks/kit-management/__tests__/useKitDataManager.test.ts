@@ -192,7 +192,7 @@ describe("useKitDataManager", () => {
 
     // Reload samples for A0: the kit and its samples come in one call
     await act(async () => {
-      await result.current.reloadCurrentKitSamples("A0");
+      await result.current.refreshKit("A0");
     });
 
     expect(window.electronAPI.getKit).toHaveBeenCalledWith("A0");
@@ -272,7 +272,7 @@ describe("useKitDataManager", () => {
     expect(result.current.sampleCounts["A1"]).toEqual([1, 1, 0, 0]);
   });
 
-  it("should handle empty kit name in reloadCurrentKitSamples", async () => {
+  it("should handle empty kit name in refreshKit", async () => {
     const { result } = renderHook(() =>
       useKitDataManager({
         isInitialized: true,
@@ -282,7 +282,7 @@ describe("useKitDataManager", () => {
     );
 
     await act(async () => {
-      await result.current.reloadCurrentKitSamples("");
+      await result.current.refreshKit("");
     });
 
     // The function will still call the API with empty string
@@ -898,7 +898,7 @@ describe("useKitDataManager", () => {
         failSamples();
 
         await act(async () => {
-          await result.current.reloadCurrentKitSamples("A0");
+          await result.current.refreshKit("A0");
         });
 
         expect(result.current.allKitSamples.A0).toBe(shown);
@@ -914,7 +914,7 @@ describe("useKitDataManager", () => {
         );
 
         await act(async () => {
-          await result.current.reloadCurrentKitSamples("A0");
+          await result.current.refreshKit("A0");
         });
 
         expect(result.current.allKitSamples.A0).toBe(shown);
@@ -932,7 +932,7 @@ describe("useKitDataManager", () => {
         failSamples();
 
         await act(async () => {
-          await result.current.reloadCurrentKitSamples("A0");
+          await result.current.refreshKit("A0");
         });
 
         expect(result.current.getKitByName("A0")?.editable).toBe(true);
@@ -942,7 +942,7 @@ describe("useKitDataManager", () => {
         const { result } = await renderLoaded();
         failSamples();
         await act(async () => {
-          await result.current.reloadCurrentKitSamples("A0");
+          await result.current.refreshKit("A0");
         });
         const newSamples = [
           createMockSample({ filename: "new.wav", voice_number: 3 }),
@@ -1400,12 +1400,10 @@ describe("useKitDataManager", () => {
         ok(kitWith("A0", "added.wav")),
       );
 
-      let reloaded: boolean | undefined;
       await act(async () => {
-        reloaded = await result.current.refreshKit("A0");
+        await result.current.refreshKit("A0");
       });
 
-      expect(reloaded).toBe(true);
       expect(window.electronAPI.getKit).toHaveBeenCalledTimes(1);
       expect(window.electronAPI.getKits).not.toHaveBeenCalled();
       expect(window.electronAPI.getAllSamplesForKit).not.toHaveBeenCalled();
@@ -1426,8 +1424,8 @@ describe("useKitDataManager", () => {
         .mockReturnValueOnce(first.promise)
         .mockReturnValueOnce(second.promise);
 
-      let older: Promise<boolean>;
-      let newer: Promise<boolean>;
+      let older: Promise<void>;
+      let newer: Promise<void>;
       act(() => {
         older = result.current.refreshKit("A0");
         newer = result.current.refreshKit("A0");
@@ -1482,7 +1480,7 @@ describe("useKitDataManager", () => {
         ok([kitWith("A0", "fresh.wav"), kitWith("A1", "fresh.wav")]),
       );
 
-      let read: Promise<boolean>;
+      let read: Promise<void>;
       act(() => {
         read = result.current.refreshKit("A0");
       });
@@ -1519,7 +1517,7 @@ describe("useKitDataManager", () => {
       expect(result.current.kits.map((kit) => kit.name)).toEqual(["B0"]);
     });
 
-    it("keeps what's shown, without a message, when the kit can't be read", async () => {
+    it("[UC-36] keeps what's shown and says so when the kit can't be read", async () => {
       const onMessage = vi.fn();
       const rendered = renderHook(() =>
         useKitDataManager({
@@ -1540,15 +1538,16 @@ describe("useKitDataManager", () => {
         success: false,
       });
 
-      let reloaded: boolean | undefined;
       await act(async () => {
-        reloaded = await result.current.refreshKit("A0");
+        await result.current.refreshKit("A0");
       });
 
-      expect(reloaded).toBe(false);
       expect(result.current.kits).toBe(kitsShown);
       expect(result.current.allKitSamples).toBe(samplesShown);
-      expect(onMessage).not.toHaveBeenCalled();
+      expect(onMessage).toHaveBeenCalledWith(
+        "Couldn't load the samples for kit A0. Try reopening it.",
+        "error",
+      );
     });
 
     it("treats a kit that's no longer there as unreadable", async () => {
@@ -1557,12 +1556,10 @@ describe("useKitDataManager", () => {
       // Main answers a kit it can't find with no kit
       vi.mocked(window.electronAPI.getKit).mockResolvedValue({ success: true });
 
-      let reloaded: boolean | undefined;
       await act(async () => {
-        reloaded = await result.current.refreshKit("A0");
+        await result.current.refreshKit("A0");
       });
 
-      expect(reloaded).toBe(false);
       expect(result.current.kits).toBe(kitsShown);
     });
   });

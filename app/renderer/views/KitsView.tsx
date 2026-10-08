@@ -71,7 +71,6 @@ const KitsView: React.FC = () => {
     markKitModified,
     refreshAllKitsAndSamples,
     refreshKit,
-    reloadCurrentKitSamples,
     sampleCounts,
     toggleKitEditable,
     toggleKitFavorite,
@@ -169,7 +168,7 @@ const KitsView: React.FC = () => {
   // Reload the selected kit, its samples and data (its sequence), when undo
   // operations request it
   useSampleRefreshListener({
-    reloadCurrentKitSamples,
+    refreshKit,
     selectedKit: navigation.selectedKit,
   });
 
@@ -196,18 +195,9 @@ const KitsView: React.FC = () => {
   const handleRequestSamplesReload = useCallback(
     async (kitName?: string) => {
       const kit = kitName ?? navigation.selectedKit;
-      if (kit) await reloadCurrentKitSamples(kit);
+      if (kit) await refreshKit(kit);
     },
-    [navigation.selectedKit, reloadCurrentKitSamples],
-  );
-
-  // An edit in the kit editor reloads only the kit it was made in, not
-  // every kit (#452)
-  const handleKitUpdated = useCallback(
-    async (kitName: string) => {
-      await refreshKit(kitName);
-    },
-    [refreshKit],
+    [navigation.selectedKit, refreshKit],
   );
 
   // A BPM save doesn't reload the kit, so patch the loaded copy; otherwise
@@ -254,7 +244,7 @@ const KitsView: React.FC = () => {
             onBack={navigation.handleBack}
             onBpmSaved={handleBpmSaved}
             onKitModified={markKitModified}
-            onKitUpdated={handleKitUpdated}
+            onKitUpdated={refreshKit}
             onMessage={showMessage}
             onNextKit={navigation.handleNextKit}
             onPrevKit={navigation.handlePrevKit}

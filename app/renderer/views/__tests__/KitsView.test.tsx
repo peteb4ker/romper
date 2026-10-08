@@ -1065,6 +1065,76 @@ describe("KitsView", () => {
     });
   });
 
+  // #452: an edit reloads only its kit; if that fails, the kit stays on
+  // screen and the user is told, whatever the edit was (approved on #452)
+  describe("[Q-01] reloading a kit after an edit", () => {
+    const openEditableA0 = async () => {
+      vi.mocked(window.electronAPI.getKits).mockResolvedValue({
+        data: [
+          createMockKitWithRelations({
+            editable: true,
+            name: "A0",
+            samples: [createMockSample({ filename: "kick.wav" })],
+          }),
+        ],
+        success: true,
+      });
+      render(
+        <TestSettingsProvider>
+          <KitsView />
+        </TestSettingsProvider>,
+      );
+      fireEvent.click(await screen.findByText("A0"));
+      await screen.findByText("Back");
+    };
+
+    const renameVoice1 = () => {
+      fireEvent.click(screen.getAllByTitle("Edit voice name")[0]);
+      fireEvent.change(screen.getByLabelText("Name of voice 1"), {
+        target: { value: "Kick" },
+      });
+      fireEvent.click(screen.getByTitle("Save"));
+    };
+
+    it("[UC-27] reloads only the renamed voice's kit", async () => {
+      await openEditableA0();
+      vi.mocked(window.electronAPI.getKits).mockClear();
+      vi.mocked(window.electronAPI.getKit).mockClear();
+
+      renameVoice1();
+
+      await waitFor(() => {
+        expect(window.electronAPI.getKit).toHaveBeenCalledWith("A0");
+      });
+      expect(window.electronAPI.getKits).not.toHaveBeenCalled();
+    });
+
+    it("[UC-27] keeps the kit open and says so when the reload after a rename fails", async () => {
+      await openEditableA0();
+      vi.mocked(window.electronAPI.getKit).mockResolvedValue({
+        error: "database is locked",
+        success: false,
+      });
+
+      renameVoice1();
+
+      await waitFor(() => {
+        expect(mockShowMessage).toHaveBeenCalledWith(
+          "Couldn't load the samples for kit A0. Try reopening it.",
+          "error",
+        );
+      });
+      expect(window.electronAPI.updateVoiceAlias).toHaveBeenCalledWith(
+        "A0",
+        1,
+        "Kick",
+      );
+      // The editor stays open on the kit, still editable
+      expect(screen.getByTestId("kit-header-name")).toHaveTextContent("A0");
+      expect(screen.getByText("Editable")).toBeInTheDocument();
+    });
+  });
+
   describe("Wizard success callback", () => {
     it("handles wizard success and refreshes store status", async () => {
       // Mock refresh function

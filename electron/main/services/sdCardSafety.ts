@@ -4,7 +4,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { setImmediate as yieldToEventLoop } from "node:timers/promises";
 
-import { withCardWatchdog } from "./cardWatchdog.js";
+import { CardNotRespondingError, withCardWatchdog } from "./cardWatchdog.js";
 
 /**
  * Kit folders the Rample reads at the card root: a bank letter followed by
@@ -183,25 +183,29 @@ export async function removeCardEntries(
  * Check that a sync target is safe to write to (and, if asked, to clear).
  * Refuses the system root, the home folder and anything above it, and any
  * folder that is, contains or sits inside a local store.
+ *
+ * The write runs this first, so resolving the card's path is asynchronous
+ * and under the card watchdog: a card that stopped responding fails the
+ * write instead of freezing the window (#656).
  */
-export function validateSdCardTarget(
+export async function validateSdCardTarget(
   sdCardPath: string,
   protectedStorePaths: readonly string[],
-): SdCardTargetCheck {
+): Promise<SdCardTargetCheck> {
   if (!sdCardPath || !path.isAbsolute(sdCardPath)) {
     return { ok: false, reason: "No SD card folder selected" };
   }
 
-  const target = canonicalize(sdCardPath);
+  const target = await canonicalize(sdCardPath, withCardWatchdog);
 
-  if (target === systemRoot()) {
+  if (target === (await systemRoot())) {
     return {
       ok: false,
       reason: `Refusing to use the system root (${sdCardPath}) as the SD card`,
     };
   }
 
-  const home = canonicalize(os.homedir());
+  const home = await canonicalize(os.homedir());
   if (isSameOrInside(home, target)) {
     return {
       ok: false,
@@ -211,7 +215,7 @@ export function validateSdCardTarget(
 
   for (const storePath of protectedStorePaths) {
     if (!storePath) continue;
-    const store = canonicalize(storePath);
+    const store = await canonicalize(storePath);
     if (isSameOrInside(target, store) || isSameOrInside(store, target)) {
       return {
         ok: false,
@@ -223,12 +227,21 @@ export function validateSdCardTarget(
   return { ok: true };
 }
 
-/** Resolve symlinks where the path exists; normalise case on case-insensitive platforms. */
-function canonicalize(p: string): string {
+/**
+ * Resolve symlinks where the path exists; normalise case on
+ * case-insensitive platforms. `guard` wraps the lookup (the card watchdog,
+ * for the card's path).
+ */
+async function canonicalize(
+  p: string,
+  guard: <T>(lookup: Promise<T>) => Promise<T> = (lookup) => lookup,
+): Promise<string> {
   let resolved: string;
   try {
-    resolved = fs.realpathSync.native(p);
-  } catch {
+    resolved = await guard(fs.promises.realpath(p));
+  } catch (error) {
+    // A card that stopped responding fails the write
+    if (error instanceof CardNotRespondingError) throw error;
     resolved = path.resolve(p);
   }
   return process.platform === "darwin" || process.platform === "win32"
@@ -249,7 +262,7 @@ function lowerCaseSet(names: Iterable<string>): Set<string> {
   return new Set([...names].map((name) => name.toLowerCase()));
 }
 
-function systemRoot(): string {
+async function systemRoot(): Promise<string> {
   if (process.platform === "win32") {
     const systemDrive = process.env.SystemDrive || "C:";
     return canonicalize(`${systemDrive}\\`);

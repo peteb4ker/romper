@@ -57,7 +57,7 @@ vi.mock("../syncMonoAnnotation.js", () => ({
 vi.mock("../sdCardSafety.js", () => ({
   findStaleCardEntries: vi.fn(async () => []),
   removeCardEntries: vi.fn(),
-  validateSdCardTarget: vi.fn(() => ({ ok: true })),
+  validateSdCardTarget: vi.fn(async () => ({ ok: true })),
 }));
 
 import type { SyncPlanData } from "../../db/operations/kitSyncOperations.js";
@@ -346,7 +346,7 @@ describe("[UC-34] SyncService", () => {
     });
 
     it("handles missing SD card path", async () => {
-      mockValidateSdCardTarget.mockReturnValueOnce({
+      mockValidateSdCardTarget.mockResolvedValueOnce({
         ok: false,
         reason: "No SD card folder selected",
       });
@@ -390,7 +390,7 @@ describe("[UC-34] SyncService", () => {
     });
 
     it("refuses an unsafe target before reading or writing anything", async () => {
-      mockValidateSdCardTarget.mockReturnValueOnce({
+      mockValidateSdCardTarget.mockResolvedValueOnce({
         ok: false,
         reason: "Refusing to use your home folder",
       });
@@ -513,7 +513,7 @@ describe("[UC-34] SyncService", () => {
       mockGetSyncPlanData.mockReturnValue(planData({ banks }));
       const write = vi
         .spyOn(rtfFileService, "writeAllBankRtfFiles")
-        .mockReturnValue(1);
+        .mockResolvedValue(1);
 
       try {
         await syncService.startKitSync(mockSettings, {
@@ -533,9 +533,7 @@ describe("[UC-34] SyncService", () => {
     it("[UC-12] fails the write when a bank name file can't be written (RE-23)", async () => {
       const write = vi
         .spyOn(rtfFileService, "writeAllBankRtfFiles")
-        .mockImplementation(() => {
-          throw new Error("EIO: card removed");
-        });
+        .mockRejectedValue(new Error("EIO: card removed"));
 
       try {
         const result = await syncService.startKitSync(mockSettings, {

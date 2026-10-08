@@ -246,7 +246,7 @@ class SyncService {
       // anything is read or written. The saved path is protected too when
       // ROMPER_LOCAL_PATH overrides it.
       const savedLocalStorePath = inMemorySettings.localStorePath;
-      const target = validateSdCardTarget(options.sdCardPath, [
+      const target = await validateSdCardTarget(options.sdCardPath, [
         localStorePath,
         typeof savedLocalStorePath === "string" ? savedLocalStorePath : "",
       ]);
@@ -292,7 +292,7 @@ class SyncService {
 
       // Write bank RTF files to SD card root, from the banks the plan used,
       // so the stale-entry check below keeps exactly these
-      this.writeBankRtfFiles(banks, options.sdCardPath);
+      await this.writeBankRtfFiles(banks, options.sdCardPath);
 
       // The card mirrors the store: delete what the store no longer has.
       // Only after every file is written, so a cancelled or failed sync
@@ -597,10 +597,18 @@ class SyncService {
   /**
    * Write bank RTF files to the SD card root for banks with artist names.
    * A failure fails the write, like any other file the card can't take,
-   * so it isn't only logged (RE-23).
+   * so it isn't only logged (RE-23). The files are written asynchronously
+   * under the card watchdog, so a card that stops responding fails the
+   * write instead of freezing the window (#656).
    */
-  private writeBankRtfFiles(banks: Bank[], sdCardPath: string): void {
-    const written = rtfFileService.writeAllBankRtfFiles(sdCardPath, banks);
+  private async writeBankRtfFiles(
+    banks: Bank[],
+    sdCardPath: string,
+  ): Promise<void> {
+    const written = await rtfFileService.writeAllBankRtfFiles(
+      sdCardPath,
+      banks,
+    );
     if (written > 0) {
       logger.log(`Wrote ${written} bank RTF files to SD card`);
     }

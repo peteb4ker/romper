@@ -539,7 +539,7 @@ The kit browser uses a comprehensive visual system for instant kit recognition:
 
 **Kit Type Borders:** Colored left borders provide immediate visual identification
 
-- **Amber border**: Modified user kits (work-in-progress with unsaved changes)
+- **Amber border**: Modified user kits (changes not yet on the SD card)
 - **Green border**: Editable user kits (saved user-created content)
 - **Gray border**: Factory kits (read-only baseline content)
 

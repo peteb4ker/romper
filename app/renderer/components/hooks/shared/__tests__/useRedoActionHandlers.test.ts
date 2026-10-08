@@ -168,37 +168,6 @@ describe("useRedoActionHandlers", () => {
       expect(redoResult).toEqual({ success: true });
     });
 
-    it("should handle REPLACE_SAMPLE redo action", async () => {
-      const { result } = renderHook(() =>
-        useRedoActionHandlers({ kitName: testKitName }),
-      );
-
-      const replaceAction = {
-        data: {
-          newSample: {
-            source_path: "/path/to/new.wav",
-          },
-          slot: 0,
-          voice: 1,
-        },
-        type: "REPLACE_SAMPLE" as const,
-      };
-
-      vi.mocked(window.electronAPI.replaceSampleInSlot).mockResolvedValue({
-        success: true,
-      });
-
-      const redoResult = await result.current.executeRedoAction(replaceAction);
-
-      expect(window.electronAPI.replaceSampleInSlot).toHaveBeenCalledWith(
-        testKitName,
-        1,
-        0,
-        "/path/to/new.wav",
-      );
-      expect(redoResult).toEqual({ success: true });
-    });
-
     it("should handle unknown action type", async () => {
       const { result } = renderHook(() =>
         useRedoActionHandlers({ kitName: testKitName }),

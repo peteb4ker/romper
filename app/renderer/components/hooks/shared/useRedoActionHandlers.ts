@@ -53,13 +53,6 @@ export function useRedoActionHandlers({
           action.data.voice,
           action.data.deletedSlot,
         );
-      case "REPLACE_SAMPLE":
-        return globalThis.electronAPI?.replaceSampleInSlot?.(
-          kitName,
-          action.data.voice,
-          action.data.slot,
-          action.data.newSample.source_path,
-        );
       case "SEQUENCE_EDIT":
         return writeSequenceSnapshot(
           kitName,

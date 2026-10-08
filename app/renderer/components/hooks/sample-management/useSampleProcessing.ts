@@ -14,25 +14,16 @@ export interface UseSampleProcessingOptions {
     slotNumber: number,
     filePath: string,
   ) => Promise<boolean>;
-  /** Replaces a slot's file; resolves true when it was replaced */
-  onSampleReplace?: (
-    voice: number,
-    slotNumber: number,
-    filePath: string,
-  ) => Promise<boolean>;
-  samples: string[];
   voice: number;
 }
 
 /**
- * Hook for processing sample assignments and replacements
+ * Hook for processing sample assignments
  * Extracted from useDragAndDrop to reduce complexity
  */
 export function useSampleProcessing({
   kitName,
   onSampleAdd,
-  onSampleReplace,
-  samples,
   voice,
 }: UseSampleProcessingOptions) {
   // Null when the kit's samples can't be read; the drop reports it (RE-40)
@@ -62,26 +53,12 @@ export function useSampleProcessing({
     [voice],
   );
 
-  // Resolves true only when the sample was added or replaced (#542)
-  const executeAssignment = useCallback(
-    async (
-      filePath: string,
-      slotNumber: number,
-      options: { replaceExisting: boolean },
-    ): Promise<boolean> => {
-      if (samples[slotNumber] && options.replaceExisting && onSampleReplace) {
-        return onSampleReplace(voice, slotNumber, filePath);
-      }
-      return (await onSampleAdd?.(voice, slotNumber, filePath)) ?? false;
-    },
-    [samples, voice, onSampleAdd, onSampleReplace],
-  );
-
-  // Adds a dropped file to a slot; resolves true when it was added
+  // Adds a dropped file to a slot, even an occupied one (it inserts);
+  // resolves true only when the sample was added (#542)
   const processAssignment = useCallback(
-    (filePath: string, slotNumber: number): Promise<boolean> =>
-      executeAssignment(filePath, slotNumber, { replaceExisting: false }),
-    [executeAssignment],
+    async (filePath: string, slotNumber: number): Promise<boolean> =>
+      (await onSampleAdd?.(voice, slotNumber, filePath)) ?? false,
+    [voice, onSampleAdd],
   );
 
   return {

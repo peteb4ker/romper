@@ -12,7 +12,7 @@ export interface UseSampleManagementParams {
 }
 
 /**
- * Hook for managing sample add/replace/delete operations with source_path tracking
+ * Hook for managing sample add/move/delete operations with source_path tracking
  * Implements Task 5.2.2 & 5.2.3: Drag-and-drop sample assignment and operations
  */
 export function useSampleManagement({
@@ -44,6 +44,5 @@ export function useSampleManagement({
     handleSampleAdd: operations.handleSampleAdd,
     handleSampleDelete: operations.handleSampleDelete,
     handleSampleMove: moveOps.handleSampleMove,
-    handleSampleReplace: operations.handleSampleReplace,
   };
 }

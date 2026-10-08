@@ -11,7 +11,6 @@ const mockElectronAPI = {
   getAllSamplesForKit: vi.fn(),
   moveSampleBetweenKits: vi.fn(),
   moveSampleInKit: vi.fn(),
-  replaceSampleInSlot: vi.fn(),
   restoreKitVoices: vi.fn(),
 };
 
@@ -350,58 +349,6 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
         3,
         "/path/to/deleted.wav",
       );
-    });
-  });
-
-  describe("REPLACE_SAMPLE Undo Operations", () => {
-    it("should undo REPLACE_SAMPLE by restoring the voice as it was", async () => {
-      const voicesBefore = [
-        {
-          samples: [
-            {
-              filename: "old.wav",
-              gain_db: -4.5,
-              slot_number: 1,
-              source_path: "/path/to/old.wav",
-              wav_bit_depth: 24,
-              wav_bitrate: null,
-              wav_channels: 2,
-              wav_sample_rate: 48000,
-            },
-          ],
-          voice: 1,
-        },
-      ];
-      const { result } = renderHook(() => useUndoRedo("test-kit"));
-
-      act(() => {
-        result.current.addAction({
-          data: {
-            newSample: {
-              filename: "new.wav",
-              source_path: "/path/to/new.wav",
-            },
-            oldSample: {
-              filename: "old.wav",
-              source_path: "/path/to/old.wav",
-            },
-            slot: 1,
-            voice: 1,
-            voicesBefore,
-          },
-          type: "REPLACE_SAMPLE",
-        });
-      });
-
-      await act(async () => {
-        await result.current.undo();
-      });
-
-      expect(mockElectronAPI.restoreKitVoices).toHaveBeenCalledWith(
-        "test-kit",
-        voicesBefore,
-      );
-      expect(mockElectronAPI.replaceSampleInSlot).not.toHaveBeenCalled();
     });
   });
 

@@ -52,11 +52,6 @@ interface KitVoicePanelProps {
     toVoice: number,
     toSlot: number,
   ) => Promise<void>;
-  onSampleReplace?: (
-    voice: number,
-    slotNumber: number,
-    filePath: string,
-  ) => Promise<boolean>;
   onSampleSelect?: (voice: number, idx: number) => void;
   onSaveVoiceName: (voice: number, newName: string) => Promise<boolean> | void;
 
@@ -124,7 +119,6 @@ const KitVoicePanel: React.FC<
   onSampleAdd,
   onSampleDelete,
   onSampleMove,
-  onSampleReplace,
   // onSampleKeyNav, // Note: Keyboard navigation now handled by parent component
   onSampleSelect,
   onSaveVoiceName,
@@ -174,7 +168,6 @@ const KitVoicePanel: React.FC<
     onMessage,
     onSampleAdd,
     onSampleMove,
-    onSampleReplace,
     samples,
     setSharedDraggedSample,
     sharedDraggedSample,

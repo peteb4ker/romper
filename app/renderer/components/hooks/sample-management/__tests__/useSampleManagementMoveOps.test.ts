@@ -52,8 +52,6 @@ describe("useSampleManagementMoveOps", () => {
     ),
     createReindexSamplesAction:
       vi.fn<UndoActions["createReindexSamplesAction"]>(),
-    createReplaceSampleAction:
-      vi.fn<UndoActions["createReplaceSampleAction"]>(),
     createSameKitMoveAction: vi.fn<UndoActions["createSameKitMoveAction"]>(
       () => ({ data: {}, type: "MOVE_SAMPLE" }) as MoveSampleAction,
     ),

@@ -20,7 +20,7 @@ import { pathAccess, type PathAccessResult } from "./pathAccess.js";
  *    record of paths the user added in earlier sessions (insert paths are
  *    themselves guarded, so it can't be seeded from the renderer), or
  * 3. main saw the store reference it before an edit this session
- *    (`rememberKitSampleSources`), so undo can put a deleted or replaced
+ *    (`rememberKitSampleSources`), so undo can put a deleted or moved
  *    sample back.
  */
 
@@ -40,7 +40,7 @@ export async function checkSampleSourceAccess(
 
 /**
  * Record the source files the given kits reference right now, before a
- * handler deletes, replaces or moves samples, so undo can re-add them.
+ * handler deletes or moves samples, so undo can re-add them.
  * Best effort: a lookup failure only means undo may be refused later.
  */
 export async function rememberKitSampleSources(

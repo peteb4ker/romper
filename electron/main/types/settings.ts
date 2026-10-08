@@ -11,7 +11,7 @@ export interface InMemorySettings
 
 /** The settings Romper knows about, as saved in `romper-settings.json`. */
 export interface KnownSettings {
-  /** Ask before deleting or replacing a sample. The renderer defaults it to on. */
+  /** Ask before deleting a sample. The renderer defaults it to on. */
   confirmDestructiveActions?: boolean;
 
   /** Path to the local store directory. Can be null if not configured. */

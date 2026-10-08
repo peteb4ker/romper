@@ -25,7 +25,6 @@ describe("KitVoicePanel Drag & Drop Integration", () => {
     onSampleAdd: vi.fn(),
     onSampleDelete: vi.fn(),
     onSampleMove: vi.fn(),
-    onSampleReplace: vi.fn(),
     onSampleSelect: vi.fn(),
     onSaveVoiceName: vi.fn(),
     onStop: vi.fn(),

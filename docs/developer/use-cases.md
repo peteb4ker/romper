@@ -285,7 +285,7 @@ The Modified filter shows the kits the next write will change on the card
 - **Main:** `electron/main/db/operations/kitSyncOperations.ts` (`flagKitModified`,
   `flagBankKitsModified`, `markAllKitsAsSyncedExcept`); each writer sets it
   once, in its transaction:
-  sample add, delete, move, replace and undo's restore
+  sample add, delete, move and undo's restore
   (`electron/main/services/sampleBatchOperations.ts`, `electron/main/services/crud/sampleCrudService.ts`,
   `electron/main/db/operations/sampleMovement.ts`), a scan that adds samples
   (`electron/main/db/operations/kitScanOperations.ts`), gain and stereo link, unlink and Keep mono
@@ -454,26 +454,15 @@ See [Drag and Drop](../manual/kit-editor.md#drag-and-drop).
 
 ### UC-20 Replace a sample
 
-**Status:** not built
+**Status:** not built (won't build, #611)
 
-Replace the file in an occupied slot, keeping its position. The service,
-IPC channel and undo action exist, but no gesture reaches them: the only
-caller passes `replaceExisting: false`, so a drop onto an occupied slot
-appends instead (UC-19). No manual page describes replacing; the
-"Confirm destructive actions" preference mentions it.
+Replace the file in an occupied slot, keeping its position. Pete decided
+on 2026-10-04 not to build it (#611), and the unused replace path
+(service, IPC channel, preload method and undo action) was removed. To
+replace a sample, delete it (UC-23) and drop the new file (UC-19); a drop
+onto an occupied slot inserts.
 
 **Concepts:** [Sample](domain-model.md#sample).
-
-- **Renderer:** `app/renderer/components/hooks/sample-management/useSampleManagementOperations.ts` (`handleSampleReplace`),
-  reachable only through `useSampleProcessing.executeAssignment` with
-  `replaceExisting: true`, which nothing passes.
-- **IPC:** `replace-sample-in-slot`.
-- **Main:** `electron/main/services/crud/sampleCrudService.ts` (`replaceSampleInSlot`) →
-  `electron/main/db/operations/sampleCrudOperations.ts` (`replaceSampleTx`,
-  one in-place update that keeps the slot and gain).
-- **Decision needed:** build a replace gesture, or delete the dead path. A
-  replace gesture must ask first while "Confirm destructive actions" is on,
-  as sample delete does (`app/renderer/components/SampleDeleteButton.tsx`).
 
 ### UC-21 Move samples within a kit
 
@@ -584,8 +573,8 @@ focused text field keeps its own undo. See
   `app/renderer/components/hooks/sample-management/useSampleManagementUndoActions.ts`;
   `app/renderer/components/hooks/kit-management/useKitViewMenuHandlers.ts` with
   `app/renderer/components/hooks/shared/useMenuEvents.ts`; action types in `shared/undoTypes.ts`.
-- **IPC:** `menu-undo`, `menu-redo` (pushed from main). Undoing a delete,
-  replace or move restores the voices it touched with one
+- **IPC:** `menu-undo`, `menu-redo` (pushed from main). Undoing a delete
+  or move restores the voices it touched with one
   `restore-kit-voices` call: full rows, gain and WAV details included, in
   one transaction (RE-86). Redo and undoing an add replay the sample
   channels above. Undoing or redoing a sequencer edit writes the steps,

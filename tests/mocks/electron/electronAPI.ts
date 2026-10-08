@@ -147,7 +147,6 @@ export const createElectronAPIMock = (
     sdCardPath: "/mock/sd/card",
     themeMode: "light",
   }),
-  replaceSampleInSlot: vi.fn().mockResolvedValue(undefined),
   requestLocalStoreAccess: vi.fn().mockResolvedValue({ granted: true }),
   rescanKit: vi.fn().mockResolvedValue({
     data: {

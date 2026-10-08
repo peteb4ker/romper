@@ -46,7 +46,6 @@ export {
   getAllSamples,
   getKitSamples,
   getSamplesToDelete,
-  replaceSampleTx,
   restoreVoicesTx,
   updateSampleGain,
   updateSampleMetadata,

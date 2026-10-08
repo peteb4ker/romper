@@ -26,7 +26,7 @@ const SampleManagementTab: React.FC<SampleManagementTabProps> = ({
                 Confirm destructive actions
               </label>
               <p className="text-sm text-text-tertiary mt-1">
-                Show confirmation prompts before replacing or deleting samples
+                Show confirmation prompts before deleting samples
               </p>
             </div>
             <div className="flex items-center ml-4">

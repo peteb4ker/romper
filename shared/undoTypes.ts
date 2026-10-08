@@ -23,7 +23,6 @@ export type AnyUndoAction =
   | MoveSampleAction
   | MoveSampleBetweenKitsAction
   | ReindexSamplesAction
-  | ReplaceSampleAction
   | SequenceEditAction;
 
 export interface DeleteSampleAction extends UndoAction {
@@ -125,24 +124,6 @@ export interface ReindexSamplesAction extends UndoAction {
   type: "REINDEX_SAMPLES";
 }
 
-export interface ReplaceSampleAction extends UndoAction {
-  data: {
-    newSample: {
-      filename: string;
-      source_path: string;
-    };
-    oldSample: {
-      filename: string;
-      source_path: string;
-    };
-    slot: number;
-    voice: number;
-    /** The voice's full rows before the replace; undo restores them */
-    voicesBefore: VoiceSnapshot[];
-  };
-  type: "REPLACE_SAMPLE";
-}
-
 /**
  * A sample row as undo keeps it: everything the user can see or set, so
  * restoring it brings back its gain and WAV details too (RE-86). The id,
@@ -193,7 +174,6 @@ export interface UndoAction {
     | "MOVE_SAMPLE_BETWEEN_KITS"
     | "MOVE_SAMPLE"
     | "REINDEX_SAMPLES"
-    | "REPLACE_SAMPLE"
     | "SEQUENCE_EDIT";
 }
 
@@ -223,8 +203,6 @@ export function getActionDescription(action: AnyUndoAction): string {
       return `Undo move sample from ${action.data.fromKit} voice ${action.data.fromVoice}, slot ${action.data.fromSlot + 1} to ${action.data.toKit} voice ${action.data.toVoice}, slot ${action.data.toSlot + 1}`;
     case "REINDEX_SAMPLES":
       return `Undo reindex samples in voice ${action.data.voice} after deleting slot ${action.data.deletedSlot + 1}`;
-    case "REPLACE_SAMPLE":
-      return `Undo replace sample in voice ${action.data.voice}, slot ${action.data.slot + 1}`;
     case "SEQUENCE_EDIT":
       return `Undo ${action.description.charAt(0).toLowerCase()}${action.description.slice(1)}`;
     default:

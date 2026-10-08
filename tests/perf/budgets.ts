@@ -195,10 +195,6 @@ export const BUDGETS = {
       /** Planning's own file reads are asynchronous (RE-82). */
       syncFsCalls: { max: 0 },
     },
-    "replace sample": {
-      connections: NO_NEW_CONNECTION,
-      statements: { max: 5 },
-    },
     /**
      * #650: a full write of the mixed-format store in
      * tests/integration/sync-write-budget.integration.test.ts.

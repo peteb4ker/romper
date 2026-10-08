@@ -17,7 +17,7 @@ export function kitNotEditableError(kitName: string): string {
  * Throw unless each kit exists and is editable, on the caller's
  * transaction, so the edit that follows is rolled back with it (#572).
  * Main refuses the edits the kit editor refuses on a read-only kit:
- * adding, replacing, moving and deleting samples, undoing those, gain and
+ * adding, moving and deleting samples, undoing those, gain and
  * voice names. Sequencer settings work on a read-only kit and don't call
  * this. One query, however many kits.
  */

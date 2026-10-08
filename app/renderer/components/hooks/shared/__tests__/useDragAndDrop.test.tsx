@@ -53,14 +53,12 @@ const renderHookWithSettings = (hookFn: () => unknown, options?: unknown) => {
 describe("useDragAndDrop", () => {
   const mockOnSampleAdd = vi.fn();
   const mockOnSampleMove = vi.fn();
-  const mockOnSampleReplace = vi.fn();
 
   const defaultProps = {
     isEditable: true,
     kitName: "TestKit",
     onSampleAdd: mockOnSampleAdd,
     onSampleMove: mockOnSampleMove,
-    onSampleReplace: mockOnSampleReplace,
     samples: ["sample1.wav", "sample2.wav", "", "sample4.wav"],
     voice: 2,
   };

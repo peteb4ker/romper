@@ -138,7 +138,6 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
           onSampleDelete={logic.sampleManagement.handleSampleDelete}
           onSampleKeyNav={logic.kitVoicePanels.onSampleKeyNav}
           onSampleMove={logic.sampleManagement.handleSampleMove}
-          onSampleReplace={logic.sampleManagement.handleSampleReplace}
           onSampleSelect={(voice, idx) => {
             logic.setSelectedVoice(voice);
             logic.setSelectedSampleIdx(idx);

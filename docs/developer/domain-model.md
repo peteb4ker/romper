@@ -345,7 +345,7 @@ Kit fields, each owned by a column of `kits`:
   kit and has no EXP.
 - **Modified since last write.** Means the next write will change this kit
   on the card (#566). Set once per edit, in the edit's transaction, by
-  `flagKitModified` (sample add, delete, move, replace, restore; gain,
+  `flagKitModified` (sample add, delete, move, restore; gain,
   since the written file is scaled; stereo link, unlink and Keep mono,
   since they decide which files are mixed to mono) and
   `flagBankKitsModified` (bank rename or clear, since the bank's name file
@@ -371,7 +371,7 @@ Kit fields, each owned by a column of `kits`:
     editable).
 - **Disagreements on main:**
   - Main enforces `editable` only for stereo links (RE-71). Sample add,
-    delete, move and replace, gain, voice names and kit delete are refused
+    delete and move, gain, voice names and kit delete are refused
     only by the renderer (#572).
   - Kit names are checked by different patterns: `isValidKit` and
     `kitService.validateKitSlot` accept any Unicode capital
@@ -540,11 +540,11 @@ voice and slot):
 | Field | Meaning | Rample | Writers | Renderer copies |
 |---|---|---|---|---|
 | `slot_number` | Position in the voice, 0 to 11 (shown 1 to 12) | writes (the `-NN` in the card name sets the layer order) | add, move, delete with reindex, restore (`sampleCrudService`, `sampleBatchOperations`, `sampleMovement`, `restoreVoicesTx`) | `allKitSamples[kit][voice][slot]` (file name only, `""` for gaps); `sampleMetadata` keyed by `slotKey(voice, slot)` |
-| `source_path` | The file Romper reads: outside the store for samples you add, inside it for imported ones | none | add, replace; scan inserts | `sampleMetadata`; undo snapshots |
-| `filename` | The readable part of the card name | writes (`cardSampleFileName`) | add, replace, scan | `allKitSamples`; `kits[i].samples` |
+| `source_path` | The file Romper reads: outside the store for samples you add, inside it for imported ones | none | add; scan inserts | `sampleMetadata`; undo snapshots |
+| `filename` | The readable part of the card name | writes (`cardSampleFileName`) | add, scan | `allKitSamples`; `kits[i].samples` |
 | `gain_db` | Trim from -24 to +12 dB, baked in at write | writes (no counterpart: the Rample's level is per voice) | `updateSampleGain` (`update-sample-gain`, flags the kit) | `sampleMetadata` only; `kits[i].samples[].gain_db` isn't refreshed after a save |
-| `wav_bit_depth`, `wav_channels`, `wav_sample_rate`, `wav_bitrate` | The file's format when it was added or last scanned | none (the write reads the header) | add and replace (from the validation read), scan only when null | `sampleMetadata` → tooltip and format badge (`wavMetadataFormatter`) |
-| `source_status` | What Romper found when it last read the file: `readable`, `missing`, `unreadable`, or null (never checked, as in older libraries) | none | add and replace (`readable`); scan (`mergeKitScanTx`); the kit editor's check when a kit opens (`check-kit-sample-files` → `checkKitSampleFiles`, #537); a completed write (`completeWrite`: `missing`, `unreadable`, or null once a problem file is fine) | `kits[i].quarantined` (`isKitQuarantined`, in main); `sampleMetadata` → the slot labels "File not found" and "Can't be read", the missing-files notice, and the quarantine notice |
+| `wav_bit_depth`, `wav_channels`, `wav_sample_rate`, `wav_bitrate` | The file's format when it was added or last scanned | none (the write reads the header) | add (from the validation read), scan only when null | `sampleMetadata` → tooltip and format badge (`wavMetadataFormatter`) |
+| `source_status` | What Romper found when it last read the file: `readable`, `missing`, `unreadable`, or null (never checked, as in older libraries) | none | add (`readable`); scan (`mergeKitScanTx`); the kit editor's check when a kit opens (`check-kit-sample-files` → `checkKitSampleFiles`, #537); a completed write (`completeWrite`: `missing`, `unreadable`, or null once a problem file is fine) | `kits[i].quarantined` (`isKitQuarantined`, in main); `sampleMetadata` → the slot labels "File not found" and "Can't be read", the missing-files notice, and the quarantine notice |
 
 - **Canonical owner of the file's format:** the file itself, read at write
   time (`validateSampleFormatAsync`, `formatConverter`). The `wav_*`
@@ -703,13 +703,13 @@ voice and slot):
   `useGlobalKeyboardShortcuts` in `KitsView`, and cleared when the kit name
   or the store changes. Not persisted.
 - **Writers:** `addAction` after a successful edit (sample add, delete,
-  move, replace; `SEQUENCE_EDIT` from `useSequenceHistory` once main has
+  move; `SEQUENCE_EDIT` from `useSequenceHistory` once main has
   saved the edit, merged by `mergeSequenceEdit`). Sample actions keep full voice rows fetched from
   main before the edit (`VoiceSnapshot`); sequencer actions keep the
   renderer's own pattern state.
 - **Readers and copies:** undo and redo replay through
   `useUndoActionHandlers` and `useRedoActionHandlers`
-  (`restore-kit-voices` for delete, replace and move, one transaction;
+  (`restore-kit-voices` for delete and move, one transaction;
   add and delete channels otherwise; `writeSequenceSnapshot` for the
   sequencer, one `restore-kit-sequence` write of the parts that differ),
   then dispatch `romper:refresh-samples` on `document`, which

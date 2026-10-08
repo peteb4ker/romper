@@ -115,11 +115,6 @@ describe("[UC-17] main refuses edits to a read-only kit (#572)", () => {
       () => sampleService.addSampleToSlot(settings, READ_ONLY, 2, 0, newWav),
     ],
     [
-      "replace-sample-in-slot",
-      () =>
-        sampleService.replaceSampleInSlot(settings, READ_ONLY, 1, 0, newWav),
-    ],
-    [
       "delete-sample-from-slot",
       () => sampleService.deleteSampleFromSlot(settings, READ_ONLY, 1, 0),
     ],

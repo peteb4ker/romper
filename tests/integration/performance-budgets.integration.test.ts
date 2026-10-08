@@ -266,13 +266,6 @@ describe("[Q-01] performance budgets: main-process operations", () => {
     );
   });
 
-  it("replace sample", async () => {
-    const file = await dropped("replacement.wav");
-    await expectWithinBudget("integration/replace sample", () =>
-      invoke("replace-sample-in-slot", "A0", 1, 0, file),
-    );
-  });
-
   it("move sample between kits", async () => {
     await expectWithinBudget("integration/move sample between kits", () =>
       invoke("move-sample-between-kits", {

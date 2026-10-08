@@ -28,7 +28,7 @@ export function createDbHandler<T extends unknown[], R>(
  */
 export function createSampleOperationHandler(
   inMemorySettings: Record<string, unknown>,
-  operationType: "add" | "delete" | "replace",
+  operationType: "add" | "delete",
 ) {
   return async (
     _event: unknown,
@@ -41,7 +41,7 @@ export function createSampleOperationHandler(
       let result: DbResult<unknown>;
 
       // RE-03: a new sample source must be a file the user gave Romper.
-      if (operationType !== "delete" && filePath) {
+      if (operationType === "add" && filePath) {
         const access = await checkSampleSourceAccess(
           inMemorySettings,
           filePath,
@@ -49,7 +49,7 @@ export function createSampleOperationHandler(
         if (!access.ok) return { error: access.error, success: false };
       }
       // Undo re-adds whatever this edit removes; let it read those files.
-      if (operationType !== "add") {
+      if (operationType === "delete") {
         await rememberKitSampleSources(inMemorySettings, kitName);
       }
 
@@ -76,22 +76,6 @@ export function createSampleOperationHandler(
             kitName,
             voiceNumber,
             slotNumber,
-          );
-          break;
-
-        case "replace":
-          if (!filePath) {
-            return {
-              error: "File path required for replace operation",
-              success: false,
-            };
-          }
-          result = sampleService.replaceSampleInSlot(
-            inMemorySettings,
-            kitName,
-            voiceNumber,
-            slotNumber,
-            filePath,
           );
           break;
 

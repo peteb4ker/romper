@@ -11,8 +11,8 @@ export function slotKey(voice: number, slot: number): string {
 /**
  * The file in a slot, for keying audio loaded from it (#575): the sample
  * row's source path, when that row holds the file the slot shows. A delete
- * or move shifts the samples after it up a slot, and a replace keeps the
- * row, so neither the slot nor the file name tells which file it holds.
+ * or move shifts the samples after it up a slot, and two files can share a
+ * name, so neither the slot nor the file name tells which file it holds.
  *
  * Null when the row is missing or holds another file: the rows come from a
  * separate load that can lag the slots while a kit reloads after an edit.

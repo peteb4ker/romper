@@ -5,7 +5,6 @@ import type {
   MoveSampleAction,
   MoveSampleBetweenKitsAction,
   ReindexSamplesAction,
-  ReplaceSampleAction,
   VoiceSnapshot,
 } from "@romper/shared/undoTypes";
 
@@ -59,11 +58,6 @@ export function useUndoActionHandlers({
     );
     log.debug(" ADD_SAMPLE undo result:", result);
     return result;
-  };
-
-  const undoReplaceSample = async (action: ReplaceSampleAction) => {
-    log.debug(" Undoing REPLACE_SAMPLE - restoring the voice");
-    return restoreVoices(action.data.voicesBefore);
   };
 
   const undoMoveSample = async (action: MoveSampleAction) => {
@@ -122,8 +116,6 @@ export function useUndoActionHandlers({
         return await undoMoveSampleBetweenKits(action);
       case "REINDEX_SAMPLES":
         return await undoReindexSamples(action);
-      case "REPLACE_SAMPLE":
-        return await undoReplaceSample(action);
       case "SEQUENCE_EDIT":
         return await writeSequenceSnapshot(
           kitName,

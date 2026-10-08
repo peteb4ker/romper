@@ -27,7 +27,6 @@ vi.mock("../services/sampleService.js", () => ({
   sampleService: {
     addSampleToSlot: vi.fn(),
     deleteSampleFromSlot: vi.fn(),
-    replaceSampleInSlot: vi.fn(),
   },
 }));
 
@@ -108,10 +107,6 @@ describe("dbIpcHandlers - Routing Tests", () => {
       data: { sampleId: 123 },
       success: true,
     });
-    mockSampleService.replaceSampleInSlot.mockReturnValue({
-      data: { sampleId: 456 },
-      success: true,
-    });
     mockSampleService.deleteSampleFromSlot.mockReturnValue({ success: true });
     mockScanService.rescanKit.mockResolvedValue({
       data: { scannedSamples: 5, updatedVoices: 2 },
@@ -153,7 +148,6 @@ describe("dbIpcHandlers - Routing Tests", () => {
         // The bank strip loads every bank's name (#512)
         "get-all-banks",
         "add-sample-to-slot",
-        "replace-sample-in-slot",
         "delete-sample-from-slot",
         "validate-sample-format",
       ];
@@ -260,18 +254,9 @@ describe("dbIpcHandlers - Routing Tests", () => {
       );
     });
 
-    it("replace-sample-in-slot routes to sampleService.replaceSampleInSlot", async () => {
-      const handler = handlerRegistry["replace-sample-in-slot"];
-      const result = await handler({}, "TestKit", 2, 5, "/test/new.wav");
-
-      expect(result.success).toBe(true);
-      expect(mockSampleService.replaceSampleInSlot).toHaveBeenCalledWith(
-        mockInMemorySettings,
-        "TestKit",
-        2,
-        5,
-        "/test/new.wav",
-      );
+    // #611: replacing a sample won't be built (UC-20); the channel is gone
+    it("replace-sample-in-slot is no longer registered", () => {
+      expect(handlerRegistry).not.toHaveProperty("replace-sample-in-slot");
     });
 
     it("delete-sample-from-slot routes to sampleService.deleteSampleFromSlot", async () => {
@@ -512,36 +497,21 @@ describe("dbIpcHandlers - Routing Tests", () => {
       expect(getAudioMetadata).not.toHaveBeenCalled();
     });
 
-    it.each(["add-sample-to-slot", "replace-sample-in-slot"])(
-      "%s refuses a source file the user never gave Romper",
-      async (channel) => {
-        vi.mocked(checkSampleSourceAccess).mockResolvedValueOnce(DENIED);
-        const result = await handlerRegistry[channel](
-          {},
-          "A0",
-          1,
-          0,
-          "/Users/me/.ssh/id_rsa",
-        );
-        expect(result).toEqual({ error: DENIED.error, success: false });
-        expect(mockSampleService.addSampleToSlot).not.toHaveBeenCalled();
-        expect(mockSampleService.replaceSampleInSlot).not.toHaveBeenCalled();
-      },
-    );
-
-    it("replace and delete remember the kit's sources so undo can re-add them", async () => {
-      await handlerRegistry["replace-sample-in-slot"](
+    it("add-sample-to-slot refuses a source file the user never gave Romper", async () => {
+      vi.mocked(checkSampleSourceAccess).mockResolvedValueOnce(DENIED);
+      const result = await handlerRegistry["add-sample-to-slot"](
         {},
         "A0",
         1,
         0,
-        "/new.wav",
+        "/Users/me/.ssh/id_rsa",
       );
+      expect(result).toEqual({ error: DENIED.error, success: false });
+      expect(mockSampleService.addSampleToSlot).not.toHaveBeenCalled();
+    });
+
+    it("delete remembers the kit's sources so undo can re-add them", async () => {
       await handlerRegistry["delete-sample-from-slot"]({}, "B1", 1, 0);
-      expect(rememberKitSampleSources).toHaveBeenCalledWith(
-        mockInMemorySettings,
-        "A0",
-      );
       expect(rememberKitSampleSources).toHaveBeenCalledWith(
         mockInMemorySettings,
         "B1",

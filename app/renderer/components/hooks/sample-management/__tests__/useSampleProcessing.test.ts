@@ -7,21 +7,6 @@ describe("useSampleProcessing", () => {
   const makeOptions = () => ({
     kitName: "Test Kit",
     onSampleAdd: vi.fn().mockResolvedValue(true),
-    onSampleReplace: vi.fn().mockResolvedValue(true),
-    samples: [
-      "sample1.wav",
-      "",
-      "sample3.wav",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-    ],
     voice: 1,
   });
 
@@ -150,7 +135,6 @@ describe("useSampleProcessing", () => {
 
       expect(added).toBe(true);
       expect(options.onSampleAdd).toHaveBeenCalledWith(1, 1, "/path/new.wav");
-      expect(options.onSampleReplace).not.toHaveBeenCalled();
     });
 
     it("resolves false when the add is refused", async () => {
@@ -172,16 +156,6 @@ describe("useSampleProcessing", () => {
       expect(await result.current.processAssignment("/path/new.wav", 1)).toBe(
         false,
       );
-    });
-
-    it("adds rather than replaces when the slot is filled", async () => {
-      const options = makeOptions();
-      const { result } = renderHook(() => useSampleProcessing(options));
-
-      await result.current.processAssignment("/path/new.wav", 0);
-
-      expect(options.onSampleAdd).toHaveBeenCalledWith(1, 0, "/path/new.wav");
-      expect(options.onSampleReplace).not.toHaveBeenCalled();
     });
 
     it("lets an unexpected failure reach the drop, which reports it", async () => {

@@ -21,11 +21,6 @@ export function registerSampleIpcHandlers(
   );
 
   ipcMain.handle(
-    "replace-sample-in-slot",
-    createSampleOperationHandler(inMemorySettings, "replace"),
-  );
-
-  ipcMain.handle(
     "delete-sample-from-slot",
     createSampleOperationHandler(inMemorySettings, "delete"),
   );

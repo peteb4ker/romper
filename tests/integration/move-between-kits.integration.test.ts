@@ -1,10 +1,9 @@
 /**
- * Replace (RE-26) and move between kits (RE-27) as single units of work.
+ * Move between kits (RE-27) as a single unit of work.
  *
- * Both run through the real services on a real store. Fault injection uses
- * a SQLite trigger (RAISE(ABORT)) on the kit's modified flag, which each
- * operation writes last, so the operation runs unmodified and fails after
- * its other writes.
+ * It runs through the real services on a real store. Fault injection uses
+ * a SQLite trigger (RAISE(ABORT)) on the kit's modified flag, which the
+ * move writes last, so it runs unmodified and fails after its other writes.
  */
 import type { Sample } from "@romper/shared/db/schema.js";
 
@@ -97,24 +96,21 @@ function slots(kitName: string, voice: number) {
     .map((s) => `${s.slot_number}:${s.filename}`);
 }
 
-function wav(
-  file: string,
-  hz = 220,
-  { channels = 1, sampleRate = 44100 } = {},
-) {
+function wav(file: string, hz: number) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(
     file,
-    encodeTestWav(
-      Array.from({ length: channels }, () => sine(hz, 0.02, sampleRate)),
-      { bitDepth: 24, encoding: "pcm", sampleRate },
-    ),
+    encodeTestWav([sine(hz, 0.02, 44100)], {
+      bitDepth: 24,
+      encoding: "pcm",
+      sampleRate: 44100,
+    }),
   );
   return file;
 }
 
 beforeEach(() => {
-  work = createTempStore("romper-replace-move-");
+  work = createTempStore("romper-move-between-kits-");
   store = path.join(work, "store");
   dbDir = path.join(store, ".romperdb");
   expect(createRomperDbFile(dbDir).success).toBe(true);
@@ -134,90 +130,6 @@ beforeEach(() => {
 
 afterEach(() => {
   removeTempStore(work);
-});
-
-describe("[UC-20] [Q-02] replacing a sample is one update (RE-26)", () => {
-  it("keeps the row, slot and gain, and stores the new file's header", () => {
-    const before = kitRows("A0")[1];
-    const file = wav(path.join(work, "in", "new.wav"), 440, {
-      channels: 2,
-      sampleRate: 48000,
-    });
-
-    const result = sampleService.replaceSampleInSlot(
-      settings,
-      "A0",
-      1,
-      1,
-      file,
-    );
-
-    expect(result.error).toBeUndefined();
-    const after = kitRows("A0")[1];
-    expect(after).toEqual({
-      ...before,
-      filename: "new.wav",
-      source_path: file,
-      // The new file was read (#537)
-      source_status: "readable",
-      wav_bit_depth: 24,
-      wav_bitrate: 48000 * 2 * 24,
-      wav_channels: 2,
-      wav_sample_rate: 48000,
-    });
-    expect(result.data?.sampleId).toBe(before.id);
-    expect(result.data?.replacedSample).toEqual(before);
-    expect(slots("A0", 1)).toEqual(["0:a.wav", "1:new.wav", "2:c.wav"]);
-    expect(modified("A0")).toBe(true);
-  });
-
-  it("checks the new file first: a file it can't use leaves the slot alone", () => {
-    const before = kitRows("A0");
-    const broken = path.join(work, "in", "broken.wav");
-    fs.mkdirSync(path.dirname(broken), { recursive: true });
-    fs.writeFileSync(broken, "not a wav");
-
-    const result = sampleService.replaceSampleInSlot(
-      settings,
-      "A0",
-      1,
-      1,
-      broken,
-    );
-
-    expect(result.success).toBe(false);
-    expect(kitRows("A0")).toEqual(before);
-    expect(modified("A0")).toBe(false);
-  });
-
-  it("refuses an empty slot instead of adding", () => {
-    const result = sampleService.replaceSampleInSlot(
-      settings,
-      "A0",
-      2,
-      0,
-      wav(path.join(work, "in", "new.wav")),
-    );
-
-    expect(result.success).toBe(false);
-    expect(slots("A0", 2)).toEqual([]);
-  });
-
-  it("a failure partway keeps the original sample", () => {
-    const before = kitRows("A0");
-    failFlagWrites();
-
-    const result = sampleService.replaceSampleInSlot(
-      settings,
-      "A0",
-      1,
-      1,
-      wav(path.join(work, "in", "new.wav")),
-    );
-
-    expect(result.success).toBe(false);
-    expect(kitRows("A0")).toEqual(before);
-  });
 });
 
 describe("[UC-22] [Q-02] moving a sample to another kit is one transaction (RE-27)", () => {

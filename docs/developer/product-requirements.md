@@ -91,7 +91,7 @@ The three main user journeys are:
 #### Typical Kit Creation Workflows
 
 1. **From scratch**: Create new kit → Add samples one by one → Preview → Assign to bank/slot
-2. **From existing kit**: Duplicate kit → Replace some samples → Preview changes → Save _Replacing a sample isn't built (UC-20); changes save as they're made._
+2. **From existing kit**: Duplicate kit → Replace some samples → Preview changes → Save _Replacing a sample won't be built (UC-20, #611): delete it and drop the new one; changes save as they're made._
 3. **Bulk creation**: Drop multiple samples → Auto-assign to voices → Batch preview → Organize _Built differently (2026-10-01): files dropped on a voice fill that voice's free slots; nothing assigns files across voices._
 
 #### Common Mistakes & Solutions
@@ -300,7 +300,7 @@ but not paused or resumed._
 **Core Kit Operations**
 
 - Create, duplicate, and delete kits locally without SD card present
-- Add, replace, and remove samples in kit slots via drag-and-drop from OS file explorer _Replace: not built (status 2026-10-01, UC-20)._
+- Add, replace, and remove samples in kit slots via drag-and-drop from OS file explorer _Replace: won't be built (UC-20, #611)._
 - Move samples within kit using drag-and-drop with automatic contiguity maintenance
 - Support for 4 voices per kit, each with up to 12 sample slots
 - Enable/disable editable mode for safe kit experimentation
@@ -650,7 +650,7 @@ Optimized layout addresses whitespace and scanning efficiency:
 ### Kit Design Considerations
 
 - UI clearly indicates editable mode status (on/off) for each kit.
-- Drag-and-drop targets provide clear feedback ('Add sample', 'Replace sample'). _Replace: not built (status 2026-10-01, UC-20)._
+- Drag-and-drop targets provide clear feedback ('Add sample', 'Replace sample'). _Replace: won't be built (UC-20, #611)._
 - Warnings for format conversion are visible but non-blocking.
 - The SD card update action is prominent and requires confirmation.
 - The setup wizard is accessible from settings and on first launch if not configured. _Built differently (2026-10-01): the wizard opens only when no local store is configured; Settings can change the store but not rerun the wizard (UC-05)._

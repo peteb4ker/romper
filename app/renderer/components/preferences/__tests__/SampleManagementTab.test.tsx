@@ -28,9 +28,7 @@ describe("SampleManagementTab", () => {
         screen.getByText("Confirm destructive actions"),
       ).toBeInTheDocument();
       expect(
-        screen.getByText(
-          "Show confirmation prompts before replacing or deleting samples",
-        ),
+        screen.getByText("Show confirmation prompts before deleting samples"),
       ).toBeInTheDocument();
     });
 

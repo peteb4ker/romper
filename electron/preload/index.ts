@@ -375,28 +375,6 @@ const electronAPI = {
     isDev && console.debug("[IPC] readSettings invoked");
     return await settingsManager.readSettings();
   },
-  replaceSampleInSlot: (
-    kitName: string,
-    voiceNumber: number,
-    slotNumber: number,
-    filePath: string,
-  ) => {
-    isDev &&
-      console.debug(
-        "[IPC] replaceSampleInSlot invoked",
-        kitName,
-        voiceNumber,
-        slotNumber,
-        filePath,
-      );
-    return ipcRenderer.invoke(
-      "replace-sample-in-slot",
-      kitName,
-      voiceNumber,
-      slotNumber,
-      filePath,
-    );
-  },
   requestLocalStoreAccess: (targetPath: string) => {
     isDev && console.debug("[IPC] requestLocalStoreAccess invoked", targetPath);
     return ipcRenderer.invoke("request-local-store-access", targetPath);

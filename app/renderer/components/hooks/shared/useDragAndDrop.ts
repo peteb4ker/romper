@@ -25,12 +25,6 @@ export interface UseDragAndDropOptions {
     toVoice: number,
     toSlot: number,
   ) => Promise<void>;
-  /** Resolves true when the sample was replaced */
-  onSampleReplace?: (
-    voice: number,
-    slotNumber: number,
-    filePath: string,
-  ) => Promise<boolean>;
   samples: string[];
   setSharedDraggedSample?: (
     sample: {
@@ -63,7 +57,6 @@ export function useDragAndDrop({
   onMessage,
   onSampleAdd,
   onSampleMove,
-  onSampleReplace,
   samples,
   setSharedDraggedSample,
   sharedDraggedSample,
@@ -77,8 +70,6 @@ export function useDragAndDrop({
   const sampleProcessing = useSampleProcessing({
     kitName,
     onSampleAdd,
-    onSampleReplace,
-    samples,
     voice,
   });
 

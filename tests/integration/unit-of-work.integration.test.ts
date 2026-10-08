@@ -153,15 +153,6 @@ describe("[Q-01] [Q-02] one connection per store (RE-81)", () => {
         .success,
     ).toBe(true);
     expect(
-      sampleService.replaceSampleInSlot(
-        settings,
-        "A0",
-        2,
-        0,
-        wav(path.join(work, "in", "replacement.wav"), 330),
-      ).success,
-    ).toBe(true);
-    expect(
       sampleService.deleteSampleFromSlot(settings, "A0", 1, 0).success,
     ).toBe(true);
     expect(kitService.createKit(settings, "B0").success).toBe(true);

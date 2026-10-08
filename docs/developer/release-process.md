@@ -59,7 +59,9 @@ condensed checklist for these steps.
       Signing, or unsigned while `ALLOW_UNSIGNED_WINDOWS` is `true`), and
       Linux x64. The macOS job launches the packaged app
       (`scripts/smoke-packaged-app.mjs`) and fails unless it starts its
-      auto-updater, which no unpackaged test can check (RE-16).
+      auto-updater, which no unpackaged test can check (RE-16). It first
+      checks the app's folder holds the files the app loads and nothing
+      the packaging allowlist leaves out (#464).
    4. GitHub Release with notes from
       `scripts/generate-github-release-notes.js`, which renders
       `docs/templates/RELEASE_NOTES_TEMPLATE.md`. The notes open with

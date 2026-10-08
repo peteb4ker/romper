@@ -376,7 +376,18 @@ built-ins and every package in `dependencies` stay as imports and load
 from Node and the packaged `node_modules` at runtime. So a package main
 imports must be in `dependencies`, not `devDependencies`; the e2e
 `main-bundle` test checks this, and that the bundle has no browser stubs
-or `require` shims.
+or `require` shims. Everything else, including the renderer's packages
+(Vite bundles them), the build plugins and drizzle-kit, belongs in
+`devDependencies`, which packaging prunes (#464).
+
+The packaged app's folder (`resources/app`) is an allowlist
+(`scripts/packaged-files.cjs`, Forge's `packagerConfig.ignore`): the build
+output under `dist/electron` and `dist/renderer`, `package.json`, `LICENSE`
+and the production `node_modules`, less hidden files and better-sqlite3's
+C sources. The migrations and menu icons ship because the main build
+copies them beside its bundle. A new file the app reads at runtime from
+its own folder must be added there; the release's packaged-app smoke test
+fails on a missing required file or an unexpected top-level entry.
 
 ## Testing
 

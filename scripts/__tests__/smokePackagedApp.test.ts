@@ -1,8 +1,10 @@
 // @vitest-environment node
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
-import { smokeEnv } from "../smoke-packaged-app.mjs";
+import { appFolder, checkAppFolder, smokeEnv } from "../smoke-packaged-app.mjs";
 
 // #626: the packaged-app smoke test launched the app without its own
 // settings folder, so a local run wrote the installed app's settings.
@@ -43,5 +45,74 @@ describe("[Q-07] packaged-app smoke test environment", () => {
     ] as const) {
       expect(path.relative(root, env[key]!)).not.toMatch(/^\.\./);
     }
+  });
+});
+
+// #464: the smoke test checks the packaged app folder holds what the app
+// loads and nothing the packaging allowlist leaves out
+describe("[Q-05] packaged-app smoke test app folder check", () => {
+  const REQUIRED = [
+    "package.json",
+    "dist/electron/main/index.js",
+    "dist/electron/main/db/migrations/meta/_journal.json",
+    "dist/electron/preload/index.cjs",
+    "dist/renderer/index.html",
+    "node_modules/better-sqlite3/package.json",
+    "node_modules/drizzle-orm/package.json",
+  ];
+  let appDir: string | undefined;
+
+  function makeAppFolder(files: string[]): string {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "romper-app-folder-"));
+    appDir = dir;
+    for (const file of files) {
+      fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+      fs.writeFileSync(path.join(dir, file), "");
+    }
+    return dir;
+  }
+
+  afterEach(() => {
+    if (appDir) fs.rmSync(appDir, { force: true, recursive: true });
+    appDir = undefined;
+  });
+
+  it("finds resources/app from the executable on each platform", () => {
+    const mac = path.join("out", "Romper.app", "Contents", "MacOS", "romper");
+    expect(appFolder(mac)).toBe(
+      path.resolve("out", "Romper.app", "Contents", "Resources", "app"),
+    );
+    const linux = path.join("out", "Romper-linux-x64", "romper");
+    expect(appFolder(linux)).toBe(
+      path.resolve("out", "Romper-linux-x64", "resources", "app"),
+    );
+  });
+
+  it("passes a folder with the build output, package.json and node_modules", () => {
+    expect(checkAppFolder(makeAppFolder([...REQUIRED, "LICENSE"]))).toEqual([]);
+  });
+
+  it("reports repo files that shouldn't ship", () => {
+    const dir = makeAppFolder([...REQUIRED, ".env.local", "BACKLOG.md"]);
+    fs.mkdirSync(path.join(dir, "aidlc-docs"));
+
+    expect(checkAppFolder(dir)).toEqual([
+      "unexpected .env.local",
+      "unexpected BACKLOG.md",
+      "unexpected aidlc-docs",
+    ]);
+  });
+
+  it("reports a missing migrations folder or native module", () => {
+    const dir = makeAppFolder(
+      REQUIRED.filter(
+        (file) => !file.includes("migrations") && !file.includes("sqlite"),
+      ),
+    );
+
+    expect(checkAppFolder(dir)).toEqual([
+      "missing dist/electron/main/db/migrations/meta/_journal.json",
+      "missing node_modules/better-sqlite3/package.json",
+    ]);
   });
 });

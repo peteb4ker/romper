@@ -42,6 +42,7 @@ interface UseKitDataManagerReturn {
   /**
    * Reloads every kit. For changes to the list itself (scan, write, setup,
    * kits created, copied or deleted); an edit to one kit uses refreshKit.
+   * If the kits can't be read, the ones on screen stay.
    */
   refreshAllKitsAndSamples: () => Promise<void>;
   /**
@@ -123,54 +124,72 @@ export function useKitDataManager({
     [],
   );
 
-  // Reads every kit. Resolves to the kits loaded, an empty list if they
-  // couldn't be read, or null when a newer full load has already landed.
-  // A kit read sent after this one keeps what it showed.
-  const readAllKits = useCallback(async (): Promise<
-    KitWithRelations[] | null
-  > => {
-    const read = ++lastRead.current;
-    let loadedKits: KitWithRelations[] = [];
-    try {
-      const kitsResult = await globalThis.electronAPI?.getKits?.();
-      if (kitsResult?.success && kitsResult.data) {
-        loadedKits = kitsResult.data;
-      } else {
-        console.error("Failed to load kits from database:", kitsResult?.error);
+  // Show a full load's kits: the list it read, with any kit a later
+  // single-kit read already refreshed kept as that read showed it
+  const applyAllKits = useCallback(
+    (read: number, loadedKits: KitWithRelations[]) => {
+      listRead.current = read;
+      const newer = new Set<string>();
+      for (const kit of loadedKits) {
+        if ((kitReads.current.get(kit.name) ?? 0) > read) newer.add(kit.name);
+        else kitReads.current.set(kit.name, read);
       }
-    } catch (error) {
-      console.error("Error loading kits from database:", error);
-    }
-    if (read < listRead.current) return null;
-    listRead.current = read;
+      if (newer.size === 0) {
+        setDbKits(loadedKits);
+        setAllKitSamples(groupLoadedKitSamples(loadedKits));
+      } else {
+        setDbKits((prev) =>
+          loadedKits.map((kit) =>
+            newer.has(kit.name)
+              ? (prev.find((shown) => shown.name === kit.name) ?? kit)
+              : kit,
+          ),
+        );
+        setAllKitSamples((prev) => {
+          const next = groupLoadedKitSamples(loadedKits);
+          for (const name of newer) {
+            if (prev[name]) next[name] = prev[name];
+          }
+          return next;
+        });
+      }
+      clearFailedKits();
+      return loadedKits;
+    },
+    [groupLoadedKitSamples, clearFailedKits],
+  );
 
-    const newer = new Set<string>();
-    for (const kit of loadedKits) {
-      if ((kitReads.current.get(kit.name) ?? 0) > read) newer.add(kit.name);
-      else kitReads.current.set(kit.name, read);
-    }
-    if (newer.size === 0) {
-      setDbKits(loadedKits);
-      setAllKitSamples(groupLoadedKitSamples(loadedKits));
-    } else {
-      setDbKits((prev) =>
-        loadedKits.map((kit) =>
-          newer.has(kit.name)
-            ? (prev.find((shown) => shown.name === kit.name) ?? kit)
-            : kit,
-        ),
-      );
-      setAllKitSamples((prev) => {
-        const next = groupLoadedKitSamples(loadedKits);
-        for (const name of newer) {
-          if (prev[name]) next[name] = prev[name];
+  // Reads every kit. Resolves to the kits loaded, or null when a newer full
+  // load has already landed. A kit read sent after this one keeps what it
+  // showed. If the kits can't be read, the list empties, or with
+  // keepOnFailure the kits on screen stay and this resolves to null (#452).
+  const readAllKits = useCallback(
+    async ({
+      keepOnFailure,
+    }: {
+      keepOnFailure: boolean;
+    }): Promise<KitWithRelations[] | null> => {
+      const read = ++lastRead.current;
+      let loadedKits: KitWithRelations[] | null = null;
+      try {
+        const kitsResult = await globalThis.electronAPI?.getKits?.();
+        if (kitsResult?.success && kitsResult.data) {
+          loadedKits = kitsResult.data;
+        } else {
+          console.error(
+            "Failed to load kits from database:",
+            kitsResult?.error,
+          );
         }
-        return next;
-      });
-    }
-    clearFailedKits();
-    return loadedKits;
-  }, [groupLoadedKitSamples, clearFailedKits]);
+      } catch (error) {
+        console.error("Error loading kits from database:", error);
+      }
+      if (read < listRead.current) return null;
+      if (!loadedKits && keepOnFailure) return null;
+      return applyAllKits(read, loadedKits ?? []);
+    },
+    [applyAllKits],
+  );
 
   // Main function to load all kits and their data
   const loadKitsData = useCallback(
@@ -181,8 +200,10 @@ export function useKitDataManager({
       console.info("[useKitDataManager] Loading kits from", localStorePath);
 
       // Load kits from database — the result includes bank relationships
-      // and every kit's samples, so one IPC call covers everything
-      const loadedKits = await readAllKits();
+      // and every kit's samples, so one IPC call covers everything. A store
+      // that can't be read shows no kits: the ones on screen may be another
+      // store's.
+      const loadedKits = await readAllKits({ keepOnFailure: false });
       if (!loadedKits) return;
 
       // If a specific kit should be scrolled to, do it after data loads
@@ -296,9 +317,10 @@ export function useKitDataManager({
     [dbKits, unavailableKits],
   );
 
-  // Reload every kit, after a change to the list itself
+  // Reload every kit, after a change to the list itself. If they can't be
+  // read, the kits on screen stay (approved on #452).
   const refreshAllKitsAndSamples = useCallback(async () => {
-    await readAllKits();
+    await readAllKits({ keepOnFailure: true });
   }, [readAllKits]);
 
   // Get a specific kit by name from the cached data
@@ -446,7 +468,6 @@ export function useKitDataManager({
 
   // Load all kits and samples on mount and when dependencies change
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- loadKitsData sets state only after awaiting getKits; the rule doesn't model await
     void loadKitsData();
   }, [loadKitsData]);
 

@@ -1550,6 +1550,89 @@ describe("useKitDataManager", () => {
       );
     });
 
+    // Approved on #452: Scan all, a write, and creating, duplicating or
+    // deleting a kit reload every kit; if that fails, the kits stay
+    describe("[UC-07] a full reload that fails", () => {
+      it.each([
+        [
+          "says it failed",
+          () =>
+            vi.mocked(window.electronAPI.getKits).mockResolvedValue({
+              error: "database is locked",
+              success: false,
+            }),
+        ],
+        [
+          "throws",
+          () =>
+            vi
+              .mocked(window.electronAPI.getKits)
+              .mockRejectedValue(new Error("IPC closed")),
+        ],
+      ])("keeps the kits on screen when the read %s", async (_, fail) => {
+        const { result } = await renderLoaded();
+        const kitsShown = result.current.kits;
+        const samplesShown = result.current.allKitSamples;
+        fail();
+
+        await act(async () => {
+          await result.current.refreshAllKitsAndSamples();
+        });
+
+        expect(result.current.kits).toBe(kitsShown);
+        expect(result.current.allKitSamples).toBe(samplesShown);
+        expect(result.current.sampleCounts.A0).toEqual([1, 1, 0, 0]);
+      });
+
+      it("still lets a later reload show the new kits", async () => {
+        const { result } = await renderLoaded();
+        vi.mocked(window.electronAPI.getKits).mockResolvedValueOnce({
+          error: "database is locked",
+          success: false,
+        });
+        await act(async () => {
+          await result.current.refreshAllKitsAndSamples();
+        });
+        vi.mocked(window.electronAPI.getKits).mockResolvedValueOnce(
+          ok([kitWith("B0", "new.wav")]),
+        );
+
+        await act(async () => {
+          await result.current.refreshAllKitsAndSamples();
+        });
+
+        expect(result.current.kits.map((kit) => kit.name)).toEqual(["B0"]);
+      });
+
+      it("empties the list when a store loads and can't be read: the kits shown may be another store's", async () => {
+        const { rerender, result } = renderHook(
+          ({ path }) =>
+            useKitDataManager({
+              isInitialized: true,
+              isLocalStoreReady: true,
+              localStorePath: path,
+            }),
+          { initialProps: { path: "/store/one" } },
+        );
+        await act(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+        expect(result.current.kits).toHaveLength(2);
+        vi.mocked(window.electronAPI.getKits).mockResolvedValue({
+          error: "database is locked",
+          success: false,
+        });
+
+        rerender({ path: "/store/two" });
+        await act(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+
+        expect(result.current.kits).toEqual([]);
+        expect(result.current.allKitSamples).toEqual({});
+      });
+    });
+
     it("treats a kit that's no longer there as unreadable", async () => {
       const { result } = await renderLoaded();
       const kitsShown = result.current.kits;

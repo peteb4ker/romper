@@ -1,11 +1,38 @@
 import type { DbResult } from "@romper/shared/db/schema.js";
 
 import * as schema from "@romper/shared/db/schema.js";
-import { inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { withDb } from "../utils/dbUtilities.js";
 
 const { samples } = schema;
+
+/**
+ * The source file of the sample in one slot, or null for an empty slot.
+ * One row by the slot's unique index, rather than the whole kit (RE-83).
+ */
+export function getSlotSourcePath(
+  dbDir: string,
+  kitName: string,
+  voiceNumber: number,
+  slotNumber: number,
+): DbResult<null | string> {
+  return withDb(
+    dbDir,
+    (db) =>
+      db
+        .select({ sourcePath: samples.source_path })
+        .from(samples)
+        .where(
+          and(
+            eq(samples.kit_name, kitName),
+            eq(samples.voice_number, voiceNumber),
+            eq(samples.slot_number, slotNumber),
+          ),
+        )
+        .get()?.sourcePath ?? null,
+  );
+}
 
 /**
  * Whether any sample's source file is one of `sourcePaths`: a

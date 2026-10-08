@@ -142,15 +142,23 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
       return localStoreService.listFilesInRoot(localStorePath);
     },
   );
-  // Secure method - get audio buffer by sample identifier
+  // A slot's audio by kit/voice/slot, not by path; skipped when the
+  // renderer already holds the file's current version (#478)
   ipcMain.handle(
     "get-sample-audio-buffer",
-    (_event, kitName: string, voiceNumber: number, slotNumber: number) => {
+    (
+      _event,
+      kitName: string,
+      voiceNumber: number,
+      slotNumber: number,
+      knownVersion?: string,
+    ) => {
       return sampleService.getSampleAudioBuffer(
         inMemorySettings,
         kitName,
         voiceNumber,
         slotNumber,
+        typeof knownVersion === "string" ? knownVersion : undefined,
       );
     },
   );

@@ -8,6 +8,10 @@ import React, {
 
 import type { PlayOptions, PlayRegion } from "./kitTypes";
 
+import {
+  loadSampleAudio,
+  SampleAudioDecodeError,
+} from "../utils/sampleAudioCache";
 import { getSharedAudioContext } from "../utils/sharedAudioContext";
 import { useLatestRef } from "./hooks/shared/useLatestRef";
 import { clearVoiceLevel, setVoiceLevel } from "./led-icon/audioLevels";
@@ -323,7 +327,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     [voiceColor],
   );
 
-  // Load audio file and decode
+  // Load the slot's audio, decoded once and shared through the cache (#478)
   useEffect(() => {
     let cancelled = false;
 
@@ -333,63 +337,50 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       return;
     }
 
-    const api = globalThis.electronAPI;
     const where = `kit=${kitName}, voice=${voiceNumber}, slot=${slotNumber}`;
 
-    /** The slot's file, or null for an empty slot or one that can't load */
-    const fetchAudio = async (): Promise<ArrayBuffer | null> => {
+    const load = async () => {
+      const ctx = getSharedAudioContext();
+      let buf: AudioBuffer | null;
       try {
-        const result = await api.getSampleAudioBuffer(
-          kitName,
-          voiceNumber,
-          slotNumber,
+        buf = await loadSampleAudio(
+          { kitName, sampleSource, slotNumber, voiceNumber },
+          ctx,
         );
-        if (!result.success) {
-          throw new Error(result.error || "Failed to load sample audio");
-        }
-        // Null data for missing samples (empty slots)
-        return result.data ?? null;
       } catch (err) {
-        if (!cancelled) {
+        if (cancelled) return;
+        if (err instanceof SampleAudioDecodeError) {
+          // A file Romper can't read: its slot is labelled and the kit
+          // quarantined (#537), so this isn't a background failure
+          console.warn(
+            `[SampleWaveform] Can't decode sample: ${where}:`,
+            err.cause,
+          );
+        } else {
           // Logged for debugging, without a user-facing error for missing samples
           console.warn(`[SampleWaveform] Sample not found: ${where}:`, err);
         }
-        return null;
-      }
-    };
-
-    const load = async () => {
-      const arrayBuffer = await fetchAudio();
-      if (cancelled) return;
-      if (!arrayBuffer) {
         setLoaded(null);
         return;
       }
-
-      try {
-        // The new sample may have another channel count, so its meters are
-        // rebuilt on first play
-        releaseMeters();
-        const ctx = getSharedAudioContext();
-        audioCtxRef.current = ctx;
-        const buf = await ctx.decodeAudioData(arrayBuffer.slice(0));
-        if (cancelled) return;
-        setLoaded({ buffer: buf, ctx });
-        drawWaveform(buf);
-      } catch (err) {
-        // A file Romper can't read: its slot is labelled and the kit
-        // quarantined (#537), so this isn't a background failure
-        if (!cancelled) {
-          console.warn(`[SampleWaveform] Can't decode sample: ${where}:`, err);
-        }
+      if (cancelled) return;
+      // Null for an empty slot
+      if (!buf) {
         setLoaded(null);
+        return;
       }
+      // The new sample may have another channel count, so its meters are
+      // rebuilt on first play
+      releaseMeters();
+      audioCtxRef.current = ctx;
+      setLoaded({ buffer: buf, ctx });
+      drawWaveform(buf);
     };
     void load();
     return () => {
       cancelled = true;
     };
-  }, [kitName, voiceNumber, slotNumber, fileChanges]); // eslint-disable-line react-hooks/exhaustive-deps -- onError intentionally excluded to prevent infinite loops
+  }, [kitName, voiceNumber, slotNumber, fileChanges]); // eslint-disable-line react-hooks/exhaustive-deps -- onError intentionally excluded to prevent infinite loops; sampleSource is a cache hint, and a new file reloads through fileChanges
 
   // Stop playback logic. `stopAt` (context time) lets a choke land exactly
   // when the next scheduled sound starts, instead of leaving a gap before it.

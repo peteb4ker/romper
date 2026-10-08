@@ -1,4 +1,4 @@
-import type { FormatValidationResult } from "./audioTypes.js";
+import type { FormatValidationResult, SampleAudio } from "./audioTypes.js";
 import type {
   Bank,
   DbResult,
@@ -125,11 +125,17 @@ export interface ElectronAPI {
   >;
   getKits: () => Promise<DbResult<KitWithRelations[]>>;
   getLocalStoreStatus: () => Promise<LocalStoreValidationDetailedResult>;
+  /**
+   * The slot's audio file, or null for an empty slot. With `knownVersion`
+   * (a `SampleAudio.version` from an earlier call), the file isn't read or
+   * sent when it's still that version: `bytes` comes back null (#478).
+   */
   getSampleAudioBuffer: (
     kitName: string,
     voiceNumber: number,
     slotNumber: number,
-  ) => Promise<DbResult<ArrayBuffer | null>>;
+    knownVersion?: string,
+  ) => Promise<DbResult<null | SampleAudio>>;
   getUserHomeDir: () => Promise<string>;
   listFilesInRoot: (localStorePath: string) => Promise<string[]>;
   moveSampleBetweenKits: (

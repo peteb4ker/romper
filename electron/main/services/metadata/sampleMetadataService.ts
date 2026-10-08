@@ -1,9 +1,10 @@
-import type { DbResult, Sample } from "@romper/shared/db/schema.js";
+import type { SampleAudio } from "@romper/shared/audioTypes.js";
+import type { DbResult } from "@romper/shared/db/schema.js";
 
 import { getErrorMessage } from "@romper/shared/errorUtils.js";
 import * as fs from "node:fs";
 
-import { getKitSamples } from "../../db/romperDbCoreORM.js";
+import { getSlotSourcePath } from "../../db/operations/sampleSourceQueries.js";
 import { ServicePathManager } from "../../utils/fileSystemUtils.js";
 
 /**
@@ -12,51 +13,44 @@ import { ServicePathManager } from "../../utils/fileSystemUtils.js";
  */
 export class SampleMetadataService {
   /**
-   * Get audio buffer for a specific sample by kit/voice/slot identifier
+   * The audio file in a kit/voice/slot, or null for an empty slot (#478).
+   *
+   * Looks up the one slot's row and reads the file without blocking the
+   * main process. When the file is still `knownVersion`, which the renderer
+   * already holds, it isn't read and `bytes` is null.
    */
-  getSampleAudioBuffer(
+  async getSampleAudioBuffer(
     inMemorySettings: Record<string, unknown>,
     kitName: string,
     voiceNumber: number,
     slotNumber: number,
-  ): DbResult<ArrayBuffer | null> {
+    knownVersion?: string,
+  ): Promise<DbResult<null | SampleAudio>> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
       return { error: "No local store path configured", success: false };
     }
 
-    const dbPath = this.getDbPath(localStorePath);
+    // Slot numbers are 0-based (0-11), as in the database
+    const found = getSlotSourcePath(
+      this.getDbPath(localStorePath),
+      kitName,
+      voiceNumber,
+      slotNumber,
+    );
+    if (!found.success) {
+      return {
+        error: `Failed to get samples for kit ${kitName}`,
+        success: false,
+      };
+    }
+    const sourcePath = found.data;
+    // An empty slot
+    if (sourcePath == null) return { data: null, success: true };
 
     try {
-      // Get sample from database
-      const samplesResult = getKitSamples(dbPath, kitName);
-
-      if (!samplesResult.success || !samplesResult.data) {
-        return {
-          error: `Failed to get samples for kit ${kitName}`,
-          success: false,
-        };
-      }
-
-      // Find the specific sample - slotNumber is 0-based index
-      // Database uses 0-11 slot indexing
-      const sample = samplesResult.data.find(
-        (s: Sample) =>
-          s.voice_number === voiceNumber && s.slot_number === slotNumber,
-      );
-
-      if (!sample) {
-        // Return null for missing samples (empty slots)
-        return { data: null, success: true };
-      }
-
-      // Read the file using the database-stored source_path
-      const data = fs.readFileSync(sample.source_path);
       return {
-        data: data.buffer.slice(
-          data.byteOffset,
-          data.byteOffset + data.byteLength,
-        ),
+        data: await readSampleAudio(sourcePath, knownVersion),
         success: true,
       };
     } catch (error) {
@@ -75,6 +69,45 @@ export class SampleMetadataService {
     inMemorySettings: Record<string, unknown>,
   ): null | string {
     return ServicePathManager.getLocalStorePath(inMemorySettings);
+  }
+}
+
+/**
+ * Names a file as it is now: its path, size, modification time (ns) and
+ * inode. Rewriting the file, or putting another file at its path, changes it.
+ */
+export function sampleAudioVersion(
+  sourcePath: string,
+  stats: fs.BigIntStats,
+): string {
+  return `${stats.size}:${stats.mtimeNs}:${stats.ino}:${sourcePath}`;
+}
+
+/**
+ * Read a file unless it's still `knownVersion`. The version comes from the
+ * open handle, so it describes the bytes read through it.
+ */
+async function readSampleAudio(
+  sourcePath: string,
+  knownVersion: string | undefined,
+): Promise<SampleAudio> {
+  const handle = await fs.promises.open(sourcePath, "r");
+  try {
+    const version = sampleAudioVersion(
+      sourcePath,
+      await handle.stat({ bigint: true }),
+    );
+    if (version === knownVersion) return { bytes: null, version };
+    const data = await handle.readFile();
+    return {
+      bytes: data.buffer.slice(
+        data.byteOffset,
+        data.byteOffset + data.byteLength,
+      ),
+      version,
+    };
+  } finally {
+    await handle.close();
   }
 }
 

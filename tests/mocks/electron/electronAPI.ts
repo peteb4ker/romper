@@ -112,9 +112,10 @@ export const createElectronAPIMock = (
   getLocalStoreStatus: vi
     .fn()
     .mockResolvedValue({ hasLocalStore: true, isValid: true }),
-  getSampleAudioBuffer: vi
-    .fn()
-    .mockResolvedValue({ data: new ArrayBuffer(8), success: true }),
+  getSampleAudioBuffer: vi.fn().mockResolvedValue({
+    data: { bytes: new ArrayBuffer(8), version: "mock-version" },
+    success: true,
+  }),
   // Settings operations
   getUserHomeDir: vi.fn().mockResolvedValue("/mock/home"),
   listFilesInRoot: vi.fn().mockImplementation((path: string) => {

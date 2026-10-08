@@ -1,9 +1,15 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
+import { getSharedAudioContext } from "../../utils/sharedAudioContext";
 import SliceStrip, { sliceHint, type SliceStripProps } from "../SliceStrip";
+
+// The strip decodes in the shared context, through the sample audio cache
+vi.mock("../../utils/sharedAudioContext", () => ({
+  getSharedAudioContext: vi.fn(),
+}));
 
 // jsdom has no PointerEvent; without it pointer events lose button/clientX
 class TestPointerEvent extends MouseEvent {
@@ -196,29 +202,29 @@ describe("SliceStrip waveform", () => {
       globalAlpha: 1,
     })) as unknown as typeof HTMLCanvasElement.prototype.getContext;
     const samples = new Float32Array(2048).map((_, i) => Math.sin(i / 10));
-    globalThis.OfflineAudioContext = vi.fn(function () {
-      return {
-        decodeAudioData: vi.fn().mockResolvedValue({
-          getChannelData: () => samples,
-        }),
-      };
-    }) as unknown as typeof OfflineAudioContext;
-  });
-
-  afterEach(() => {
-    // @ts-expect-error -- test-only global
-    delete globalThis.OfflineAudioContext;
+    vi.mocked(getSharedAudioContext).mockReturnValue({
+      decodeAudioData: vi.fn().mockResolvedValue({
+        getChannelData: () => samples,
+        length: samples.length,
+        numberOfChannels: 1,
+      }),
+    } as unknown as AudioContext);
   });
 
   it("loads the displayed slot, draws it, and reuses the decoded peaks", async () => {
     api.getSampleAudioBuffer.mockResolvedValue({
-      data: new ArrayBuffer(8),
+      data: { bytes: new ArrayBuffer(8), version: "v1" },
       success: true,
     });
     const props = { slotIndex: 0 };
     const { rerender } = render(<SliceStrip {...stripProps({ ...props })} />);
     await waitFor(() => expect(fillRect).toHaveBeenCalled());
-    expect(api.getSampleAudioBuffer).toHaveBeenCalledWith("A0", 1, 0);
+    expect(api.getSampleAudioBuffer).toHaveBeenCalledWith(
+      "A0",
+      1,
+      0,
+      undefined,
+    );
 
     // Switch away and back: the second visit comes from the cache
     rerender(<SliceStrip {...stripProps({ slotIndex: null })} />);
@@ -227,10 +233,12 @@ describe("SliceStrip waveform", () => {
   });
 
   it("[UC-33] loads the file that moves up into the slot (#575)", async () => {
-    api.getSampleAudioBuffer.mockResolvedValue({
-      data: new ArrayBuffer(8),
+    // Each answer is another file, so another version
+    let answers = 0;
+    api.getSampleAudioBuffer.mockImplementation(async () => ({
+      data: { bytes: new ArrayBuffer(8), version: `v${++answers}` },
       success: true,
-    });
+    }));
     const shown = (sampleName: string, sampleSource: string) =>
       stripProps({ sampleName, sampleSource, slotIndex: 0 });
     const { rerender } = render(
@@ -244,7 +252,8 @@ describe("SliceStrip waveform", () => {
     rerender(<SliceStrip {...shown("break.wav", "/b/break.wav")} />);
     await waitFor(() => expect(fillRect).toHaveBeenCalled());
     expect(api.getSampleAudioBuffer).toHaveBeenCalledTimes(2);
-    expect(api.getSampleAudioBuffer).toHaveBeenLastCalledWith("A0", 1, 0);
+    // It offers main the audio it holds for the slot; main sends the new file
+    expect(api.getSampleAudioBuffer).toHaveBeenLastCalledWith("A0", 1, 0, "v1");
 
     // The deleted file's peaks were dropped, not kept for the slot
     rerender(<SliceStrip {...shown("break.wav", "/a/break.wav")} />);
@@ -255,7 +264,7 @@ describe("SliceStrip waveform", () => {
 
   it("doesn't reuse peaks while it's unknown which file they're from", async () => {
     api.getSampleAudioBuffer.mockResolvedValue({
-      data: new ArrayBuffer(8),
+      data: { bytes: new ArrayBuffer(8), version: "v1" },
       success: true,
     });
     const unknown = { sampleSource: null, slotIndex: 0 };

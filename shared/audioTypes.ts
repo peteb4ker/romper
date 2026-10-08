@@ -46,3 +46,16 @@ export interface FormatValidationResult {
   isValid: boolean;
   metadata?: AudioMetadata;
 }
+
+/**
+ * A slot's audio file, as `getSampleAudioBuffer` returns it (#478).
+ *
+ * `version` names the file as it is now: its path, size, modification time
+ * and inode, so it changes when another file takes the slot or the file
+ * itself is rewritten. `bytes` is null when the caller said it already
+ * holds that version, so a kit you come back to costs no file reads.
+ */
+export interface SampleAudio {
+  bytes: ArrayBuffer | null;
+  version: string;
+}

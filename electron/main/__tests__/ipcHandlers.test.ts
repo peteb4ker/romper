@@ -103,8 +103,8 @@ vi.mock("../services/kitService.js", () => ({
 
 vi.mock("../services/sampleService.js", () => ({
   sampleService: {
-    getSampleAudioBuffer: vi.fn(() => ({
-      data: new ArrayBuffer(1024),
+    getSampleAudioBuffer: vi.fn(async () => ({
+      data: { bytes: new ArrayBuffer(1024), version: "v1" },
       success: true,
     })),
   },
@@ -420,12 +420,40 @@ describe("registerIpcHandlers", () => {
       0,
     );
     expect(result.success).toBe(true);
-    expect(result.data).toBeInstanceOf(ArrayBuffer);
+    expect(result.data).toEqual({
+      bytes: expect.any(ArrayBuffer),
+      version: "v1",
+    });
+  });
+
+  it("[Q-01] get-sample-audio-buffer passes on the version the renderer holds (#478)", async () => {
+    const { sampleService } = await import("../services/sampleService.js");
+    const { registerIpcHandlers } = await import("../ipcHandlers");
+    const settings = { localStorePath: "/mock/store" };
+    registerIpcHandlers(settings);
+
+    await ipcMainHandlers["get-sample-audio-buffer"]({}, "A0", 1, 0, "v1");
+    expect(sampleService.getSampleAudioBuffer).toHaveBeenLastCalledWith(
+      settings,
+      "A0",
+      1,
+      0,
+      "v1",
+    );
+    // Anything but a string is no version
+    await ipcMainHandlers["get-sample-audio-buffer"]({}, "A0", 1, 0, 42);
+    expect(sampleService.getSampleAudioBuffer).toHaveBeenLastCalledWith(
+      settings,
+      "A0",
+      1,
+      0,
+      undefined,
+    );
   });
 
   it("get-sample-audio-buffer returns the failure DbResult", async () => {
     const { sampleService } = await import("../services/sampleService.js");
-    vi.mocked(sampleService.getSampleAudioBuffer).mockReturnValue({
+    vi.mocked(sampleService.getSampleAudioBuffer).mockResolvedValue({
       error: "Buffer failed",
       success: false,
     });
@@ -433,7 +461,9 @@ describe("registerIpcHandlers", () => {
     const { registerIpcHandlers } = await import("../ipcHandlers");
     registerIpcHandlers({ localStorePath: "/mock/store" });
 
-    expect(ipcMainHandlers["get-sample-audio-buffer"]({}, "A0", 1, 0)).toEqual({
+    await expect(
+      ipcMainHandlers["get-sample-audio-buffer"]({}, "A0", 1, 0),
+    ).resolves.toEqual({
       error: "Buffer failed",
       success: false,
     });

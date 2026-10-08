@@ -991,13 +991,13 @@ describe("SampleService Integration Tests", () => {
   });
 
   describe("[UC-29] getSampleAudioBuffer", () => {
-    it("should return audio buffer for an existing sample", () => {
+    it("should return audio buffer for an existing sample", async () => {
       const wavPath = path.join(testWavDir, "kick.wav");
       createTestWavFile(wavPath);
 
       sampleService.addSampleToSlot(mockInMemorySettings, "A1", 1, 0, wavPath);
 
-      const result = sampleService.getSampleAudioBuffer(
+      const result = await sampleService.getSampleAudioBuffer(
         mockInMemorySettings,
         "A1",
         1,
@@ -1005,12 +1005,13 @@ describe("SampleService Integration Tests", () => {
       );
 
       expect(result.success).toBe(true);
-      expect(result.data).toBeInstanceOf(ArrayBuffer);
-      expect(result.data!.byteLength).toBeGreaterThan(0);
+      expect(result.data?.bytes).toBeInstanceOf(ArrayBuffer);
+      expect(result.data?.bytes?.byteLength).toBe(fs.statSync(wavPath).size);
+      expect(result.data?.version).toContain(wavPath);
     });
 
-    it("should return null for an empty slot", () => {
-      const result = sampleService.getSampleAudioBuffer(
+    it("should return null for an empty slot", async () => {
+      const result = await sampleService.getSampleAudioBuffer(
         mockInMemorySettings,
         "A1",
         1,
@@ -1021,7 +1022,7 @@ describe("SampleService Integration Tests", () => {
       expect(result.data).toBeNull();
     });
 
-    it("should fail when source file is missing", () => {
+    it("should fail when source file is missing", async () => {
       const wavPath = path.join(testWavDir, "temporary.wav");
       createTestWavFile(wavPath);
 
@@ -1030,7 +1031,7 @@ describe("SampleService Integration Tests", () => {
       // Delete the source file
       fs.unlinkSync(wavPath);
 
-      const result = sampleService.getSampleAudioBuffer(
+      const result = await sampleService.getSampleAudioBuffer(
         mockInMemorySettings,
         "A1",
         1,
@@ -1041,12 +1042,12 @@ describe("SampleService Integration Tests", () => {
       expect(result.error).toContain("Failed to read sample audio");
     });
 
-    it("should fail when no local store path is configured", () => {
+    it("should fail when no local store path is configured", async () => {
       const emptySettings: InMemorySettings = {
         localStorePath: null,
       };
 
-      const result = sampleService.getSampleAudioBuffer(
+      const result = await sampleService.getSampleAudioBuffer(
         emptySettings,
         "A1",
         1,
@@ -1055,6 +1056,74 @@ describe("SampleService Integration Tests", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("No local store path configured");
+    });
+
+    describe("[Q-01] with the version the renderer holds (#478)", () => {
+      const load = (knownVersion?: string) =>
+        sampleService.getSampleAudioBuffer(
+          mockInMemorySettings,
+          "A1",
+          1,
+          0,
+          knownVersion,
+        );
+
+      it("sends no bytes while the file is unchanged", async () => {
+        const wavPath = path.join(testWavDir, "kick.wav");
+        createTestWavFile(wavPath);
+        sampleService.addSampleToSlot(
+          mockInMemorySettings,
+          "A1",
+          1,
+          0,
+          wavPath,
+        );
+
+        const first = await load();
+        const again = await load(first.data?.version);
+
+        expect(again).toEqual({
+          data: { bytes: null, version: first.data?.version },
+          success: true,
+        });
+      });
+
+      it("sends the file again when it's rewritten in place", async () => {
+        const wavPath = path.join(testWavDir, "kick.wav");
+        createTestWavFile(wavPath);
+        sampleService.addSampleToSlot(
+          mockInMemorySettings,
+          "A1",
+          1,
+          0,
+          wavPath,
+        );
+        const first = await load();
+
+        // Edited in another app: same path, other contents
+        fs.appendFileSync(wavPath, Buffer.alloc(64));
+        const again = await load(first.data?.version);
+
+        expect(again.data?.version).not.toBe(first.data?.version);
+        expect(again.data?.bytes?.byteLength).toBe(fs.statSync(wavPath).size);
+      });
+
+      it("sends the new file when another takes the slot", async () => {
+        const kick = path.join(testWavDir, "kick.wav");
+        const snare = path.join(testWavDir, "snare.wav");
+        createTestWavFile(kick);
+        createTestWavFile(snare);
+        sampleService.addSampleToSlot(mockInMemorySettings, "A1", 1, 0, kick);
+        sampleService.addSampleToSlot(mockInMemorySettings, "A1", 1, 1, snare);
+        const first = await load();
+
+        // Deleting the kick moves the snare up into slot 0
+        sampleService.deleteSampleFromSlot(mockInMemorySettings, "A1", 1, 0);
+        const again = await load(first.data?.version);
+
+        expect(again.data?.version).toContain(snare);
+        expect(again.data?.bytes).toBeInstanceOf(ArrayBuffer);
+      });
     });
   });
 });

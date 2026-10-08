@@ -31,16 +31,19 @@ interface Probe {
   count(): number;
   pending(): number;
   reset(): void;
-  snapshot(): { calls: { channel: string }[] };
+  snapshot(): { calls: { bytes: number; channel: string }[] };
 }
 
 /**
  * Reset the probe, run the action, wait until IPC has been quiet for
  * IPC_QUIET_MS, and return the calls it made by channel, plus `total`.
+ * `bytesOf` adds a `<channel> bytes` metric for each channel named: the
+ * size of what its calls returned.
  */
 export async function measureIpc(
   app: ElectronApplication,
   run: () => Promise<void>,
+  bytesOf: readonly string[] = [],
 ): Promise<Record<string, number>> {
   await waitForIpcQuiet(app);
   await app.evaluate(() =>
@@ -48,24 +51,30 @@ export async function measureIpc(
   );
   await run();
   await waitForIpcQuiet(app);
-  return takeIpcCounts(app);
+  return takeIpcCounts(app, bytesOf);
 }
 
 /**
  * The calls since the last reset, by channel plus `total`, leaving out
- * UNCOUNTED_CHANNELS; then reset
+ * UNCOUNTED_CHANNELS, and the bytes returned by each channel in `bytesOf`;
+ * then reset
  */
 export async function takeIpcCounts(
   app: ElectronApplication,
+  bytesOf: readonly string[] = [],
 ): Promise<Record<string, number>> {
-  const channels = await app.evaluate(() =>
+  const calls = await app.evaluate(() =>
     (globalThis as unknown as { __romperProbe: Probe }).__romperProbe
       .snapshot()
-      .calls.map((call) => call.channel),
+      .calls.map(({ bytes, channel }) => ({ bytes, channel })),
   );
-  const counted = channels.filter((c) => !UNCOUNTED_CHANNELS.includes(c));
+  const counted = calls.filter((c) => !UNCOUNTED_CHANNELS.includes(c.channel));
   const counts: Record<string, number> = { total: counted.length };
-  for (const channel of counted) counts[channel] = (counts[channel] ?? 0) + 1;
+  for (const channel of bytesOf) counts[`${channel} bytes`] = 0;
+  for (const { bytes, channel } of counted) {
+    counts[channel] = (counts[channel] ?? 0) + 1;
+    if (bytesOf.includes(channel)) counts[`${channel} bytes`] += bytes;
+  }
   return counts;
 }
 

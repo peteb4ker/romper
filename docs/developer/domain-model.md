@@ -748,7 +748,8 @@ voice and slot):
   `samplePlaying`, `activeSamples`, keyed by `slotKey(voice, slot)`, never
   reset); `useKitStepSequencerLogic` (`isSeqPlaying` and
   `roundRobinIndexRef`, both reset on a kit change, and the worker); the decoded buffers fetched by kit, voice and slot
-  (`get-sample-audio-buffer`).
+  (`get-sample-audio-buffer`), cached by file version in
+  `sampleAudioCache.ts` (#478).
 - **Invariants:** starting a sound on a voice stops every other sound on it
   at the new one's start; audio comes from main by kit, voice and slot,
   never by path.

@@ -644,7 +644,8 @@ choke). See
 - **Renderer:** `app/renderer/components/hooks/voice-panels/useVoicePanelButtons.tsx`
   (`renderPlayButton`); `app/renderer/components/hooks/kit-management/useKitPlayback.ts`;
   `app/renderer/components/voiceChoke.ts` (`claimVoice`);
-  `app/renderer/components/SampleWaveform.tsx`; `app/renderer/utils/sharedAudioContext.ts`.
+  `app/renderer/components/SampleWaveform.tsx`; `app/renderer/utils/sharedAudioContext.ts`;
+  `app/renderer/utils/sampleAudioCache.ts` (`loadSampleAudio`).
 - **IPC:** `get-sample-audio-buffer` (`electron/main/ipcHandlers.ts`).
 - **Main:** `electron/main/services/sampleService.ts` (`getSampleAudioBuffer`) →
   `electron/main/services/metadata/sampleMetadataService.ts`.

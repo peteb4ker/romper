@@ -1,13 +1,6 @@
 import type { LocalStoreValidationDetailedResult } from "@romper/shared/db/schema";
 
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -58,16 +51,32 @@ function Messages({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Render the kits view with the app's real settings, as main.tsx does */
+/**
+ * Render the kits view with the app's real settings, as main.tsx does, and
+ * let it load: the settings, the store's status, then the kits
+ */
 async function renderKitsView() {
-  render(
-    <SettingsProvider>
-      <Messages>
-        <KitsView />
-      </Messages>
-    </SettingsProvider>,
-  );
-  await screen.findByTestId("kit-item-A0");
+  await settle(() => {
+    render(
+      <SettingsProvider>
+        <Messages>
+          <KitsView />
+        </Messages>
+      </SettingsProvider>,
+    );
+  });
+  expect(screen.getByTestId("kit-item-A0")).toBeInTheDocument();
+}
+
+/**
+ * Run `work` and everything it sets off: the mocked IPC calls resolve and
+ * React renders their results before act returns. Nothing races a timer,
+ * however slowly the machine renders (CI runs the suite with coverage).
+ */
+async function settle(work: () => void) {
+  await act(async () => {
+    work();
+  });
 }
 
 describe("[Q-02] [UC-05] The library's database file goes missing while Romper runs (#535)", () => {
@@ -97,11 +106,9 @@ describe("[Q-02] [UC-05] The library's database file goes missing while Romper r
     vi.mocked(globalThis.electronAPI.getLocalStoreStatus).mockResolvedValue(
       DB_GONE,
     );
-    await act(async () => {
-      databaseMissingEvent()();
-    });
+    await settle(() => databaseMissingEvent()());
 
-    const dialog = await screen.findByRole("dialog");
+    const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByText("Invalid Local Store")).toBeInTheDocument();
     expect(
       within(dialog).getByText("Romper DB file not found"),
@@ -125,13 +132,11 @@ describe("[Q-02] [UC-05] The library's database file goes missing while Romper r
       },
     );
 
-    fireEvent.click(screen.getByTitle("Add to favorites"));
+    await settle(() => fireEvent.click(screen.getByTitle("Add to favorites")));
 
-    await screen.findByText("Invalid Local Store");
-    await waitFor(() =>
-      expect(screen.getByTestId("messages")).toHaveTextContent(
-        `error: ${favoriteFailedMessage("A0", false)}`,
-      ),
+    expect(screen.getByText("Invalid Local Store")).toBeInTheDocument();
+    expect(screen.getByTestId("messages")).toHaveTextContent(
+      `error: ${favoriteFailedMessage("A0", false)}`,
     );
     expect(
       screen.queryByTitle("Remove from favorites"),

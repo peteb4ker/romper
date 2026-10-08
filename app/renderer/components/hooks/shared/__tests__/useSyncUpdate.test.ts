@@ -231,11 +231,9 @@ describe("useSyncUpdate", () => {
       });
 
       expect(result.current.syncProgressStore.get()).toMatchObject({
-        bytesCompleted: 0,
         currentFile: "",
         filesCompleted: 0,
         status: "completed",
-        totalBytes: 0,
         totalFiles: 0,
       });
     });
@@ -255,6 +253,24 @@ describe("useSyncUpdate", () => {
       });
 
       expect(mockElectronAPI.onSyncProgress).toHaveBeenCalled();
+    });
+
+    it("[Q-07] stops listening for progress once the write ends (#472)", async () => {
+      const stopListening = vi.fn();
+      mockElectronAPI.onSyncProgress.mockReturnValue(stopListening);
+      mockElectronAPI.startKitSync.mockResolvedValue({
+        error: "card removed",
+        success: false,
+      });
+      const { result } = renderHook(() =>
+        useSyncUpdate({ electronAPI: mockElectronAPI }),
+      );
+
+      await act(async () => {
+        await result.current.startSync({ sdCardPath: "/path/to/sd" });
+      });
+
+      expect(stopListening).toHaveBeenCalledTimes(1);
     });
 
     it("should handle missing API method", async () => {
@@ -293,6 +309,7 @@ describe("useSyncUpdate", () => {
       let onProgress: ((progress: SyncProgress) => void) | undefined;
       mockElectronAPI.onSyncProgress.mockImplementation((callback) => {
         onProgress = callback;
+        return () => {};
       });
       mockElectronAPI.startKitSync.mockResolvedValue({
         data: syncOutcome({ cancelled: true, syncedFiles: 2 }),
@@ -307,11 +324,11 @@ describe("useSyncUpdate", () => {
       });
       act(() => {
         onProgress?.({
-          bytesCompleted: 0,
           currentFile: "late.wav",
+          elapsedTime: 0,
+          estimatedTimeRemaining: 0,
           filesCompleted: 2,
           status: "copying",
-          totalBytes: 0,
           totalFiles: 4,
         });
       });
@@ -324,6 +341,7 @@ describe("useSyncUpdate", () => {
       let onProgress: ((progress: SyncProgress) => void) | undefined;
       mockElectronAPI.onSyncProgress.mockImplementation((callback) => {
         onProgress = callback;
+        return () => {};
       });
       let finishWrite: (value: DbResult<SyncOutcome>) => void = () => {};
       mockElectronAPI.startKitSync.mockReturnValue(
@@ -345,11 +363,11 @@ describe("useSyncUpdate", () => {
       act(() => {
         for (let filesCompleted = 1; filesCompleted <= 100; filesCompleted++) {
           onProgress?.({
-            bytesCompleted: 0,
             currentFile: `s${filesCompleted}.wav`,
+            elapsedTime: 0,
+            estimatedTimeRemaining: 0,
             filesCompleted,
             status: "copying",
-            totalBytes: 0,
             totalFiles: 100,
           });
         }

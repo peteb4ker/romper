@@ -1,4 +1,5 @@
 import type { Sample } from "@romper/shared/db/schema.js";
+import type { SyncValidationError } from "@romper/shared/electronApi.js";
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -13,10 +14,7 @@ import { convertToRampleDefault } from "../formatConverter.js";
 import { withCardWatchdog } from "./cardWatchdog.js";
 import { removeAppleDoubleCompanion } from "./sdCardSafety.js";
 import { syncProgressManager } from "./syncProgressManager.js";
-import {
-  type SyncValidationError,
-  syncValidationService,
-} from "./syncValidationService.js";
+import { syncValidationService } from "./syncValidationService.js";
 
 export interface SyncFileOperation {
   /**

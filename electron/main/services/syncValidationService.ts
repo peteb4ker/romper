@@ -1,4 +1,5 @@
 import type { DbResult } from "@romper/shared/db/schema.js";
+import type { SyncValidationError } from "@romper/shared/electronApi.js";
 
 import * as fs from "node:fs";
 
@@ -24,19 +25,6 @@ export interface ErrorCategorizationResult {
 export interface FileValidationResult {
   fileSize: number;
   isValid: boolean;
-}
-
-export interface SyncValidationError {
-  error: string;
-  filename: string;
-  kitName?: string;
-  sourcePath: string;
-  type: "access_denied" | "invalid_format" | "missing_file" | "other";
-  /**
-   * The file is there but its WAV can't be read: the kit is quarantined
-   * rather than written without it (#537 rule 4)
-   */
-  unreadable?: boolean;
 }
 
 /**

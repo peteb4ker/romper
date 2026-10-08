@@ -301,7 +301,6 @@ describe("ipcHandlerUtils", () => {
           kitName,
           voiceNumber,
           slotNumber,
-          filePath,
         );
 
         expect(result).toEqual({

@@ -1,18 +1,14 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import {
-  createSyncProgressStore,
-  type SyncProgress,
-  useSyncProgress,
-} from "../syncProgressStore";
+import type { SyncProgressState } from "../../../dialogs/SyncUpdateDialog.types";
 
-const progress = (filesCompleted: number): SyncProgress => ({
-  bytesCompleted: 0,
+import { createSyncProgressStore, useSyncProgress } from "../syncProgressStore";
+
+const progress = (filesCompleted: number): SyncProgressState => ({
   currentFile: `s${filesCompleted}.wav`,
   filesCompleted,
   status: "copying",
-  totalBytes: 0,
   totalFiles: 10,
 });
 

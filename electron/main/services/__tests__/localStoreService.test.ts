@@ -68,7 +68,7 @@ describe("LocalStoreService", () => {
       const result = localStoreService.getLocalStoreStatus(null, "/env/path");
 
       expect(result).toEqual({
-        error: null,
+        error: undefined,
         hasLocalStore: true,
         isCriticalEnvironmentError: false,
         isEnvironmentOverride: true,
@@ -82,7 +82,7 @@ describe("LocalStoreService", () => {
       const result = localStoreService.getLocalStoreStatus("/local/path");
 
       expect(result).toEqual({
-        error: null,
+        error: undefined,
         hasLocalStore: true,
         isCriticalEnvironmentError: false,
         isEnvironmentOverride: false,

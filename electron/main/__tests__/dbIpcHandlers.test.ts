@@ -401,6 +401,10 @@ describe("dbIpcHandlers - Routing Tests", () => {
     });
 
     it("constructs database path correctly from settings", async () => {
+      vi.mocked(romperDbCore.getKit).mockReturnValueOnce({
+        data: null,
+        success: true,
+      });
       const handler = handlerRegistry["get-kit"];
       await handler({}, "A5"); // Fixed: include _event parameter
 
@@ -408,6 +412,45 @@ describe("dbIpcHandlers - Routing Tests", () => {
         "/test/path/.romperdb",
         "A5",
       );
+    });
+  });
+
+  describe("[Q-07] get-kit keeps to the contract (#472)", () => {
+    it("returns the kit it read", async () => {
+      const kit = { name: "A5" };
+      vi.mocked(romperDbCore.getKit).mockReturnValueOnce({
+        data: kit,
+        success: true,
+      } as unknown as ReturnType<typeof romperDbCore.getKit>);
+
+      expect(await handlerRegistry["get-kit"]({}, "A5")).toEqual({
+        data: kit,
+        success: true,
+      });
+    });
+
+    it("fails for a kit that isn't there, instead of succeeding with no kit", async () => {
+      vi.mocked(romperDbCore.getKit).mockReturnValueOnce({
+        data: null,
+        success: true,
+      });
+
+      expect(await handlerRegistry["get-kit"]({}, "Z9")).toEqual({
+        error: "Kit Z9 not found",
+        success: false,
+      });
+    });
+
+    it("passes on a read that failed", async () => {
+      vi.mocked(romperDbCore.getKit).mockReturnValueOnce({
+        error: "database is locked",
+        success: false,
+      });
+
+      expect(await handlerRegistry["get-kit"]({}, "A5")).toEqual({
+        error: "database is locked",
+        success: false,
+      });
     });
   });
 

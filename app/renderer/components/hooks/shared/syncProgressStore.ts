@@ -1,43 +1,14 @@
 import { useSyncExternalStore } from "react";
 
-export interface SyncProgress {
-  bytesCompleted: number;
-  currentFile: string;
-  currentKitName?: string;
-  error?: string;
-  errorDetails?: {
-    canRetry: boolean;
-    error: string;
-    fileName: string;
-    kitName?: string;
-    operation: "convert" | "copy";
-  };
-  filesCompleted: number;
-  /**
-   * While status is "removing": entries removed from the card so far, of
-   * those the store no longer has (#653)
-   */
-  removal?: { completed: number; total: number };
-  status:
-    | "cancelled"
-    | "completed"
-    | "converting"
-    | "copying"
-    | "error"
-    | "finalizing"
-    | "preparing"
-    | "removing";
-  totalBytes: number;
-  totalFiles: number;
-}
+import type { SyncProgressState } from "../../dialogs/SyncUpdateDialog.types";
 
 export interface SyncProgressStore {
-  get: () => null | SyncProgress;
+  get: () => null | SyncProgressState;
   set: (
     next:
-      | ((prev: null | SyncProgress) => null | SyncProgress)
+      | ((prev: null | SyncProgressState) => null | SyncProgressState)
       | null
-      | SyncProgress,
+      | SyncProgressState,
   ) => void;
   subscribe: (listener: () => void) => () => void;
 }
@@ -50,7 +21,7 @@ export interface SyncProgressStore {
  * (RE-61).
  */
 export function createSyncProgressStore(): SyncProgressStore {
-  let progress: null | SyncProgress = null;
+  let progress: null | SyncProgressState = null;
   const listeners = new Set<() => void>();
 
   return {
@@ -70,6 +41,8 @@ export function createSyncProgressStore(): SyncProgressStore {
   };
 }
 
-export function useSyncProgress(store: SyncProgressStore): null | SyncProgress {
+export function useSyncProgress(
+  store: SyncProgressStore,
+): null | SyncProgressState {
   return useSyncExternalStore(store.subscribe, store.get);
 }

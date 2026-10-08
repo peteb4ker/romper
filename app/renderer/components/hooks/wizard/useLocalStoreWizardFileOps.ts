@@ -142,8 +142,7 @@ export function useLocalStoreWizardFileOps({
 
         const result = await api.downloadAndExtractArchive?.(
           targetPath,
-          (p: unknown) => {
-            const progress = p as ProgressEvent;
+          (progress) => {
             const now = Date.now();
             if (
               progress.percent === 100 ||
@@ -152,12 +151,14 @@ export function useLocalStoreWizardFileOps({
             ) {
               lastProgressUpdate = now;
               lastProgressPhase = progress.phase;
-              reportProgress(progress);
+              reportProgress({
+                ...progress,
+                percent: progress.percent ?? undefined,
+              });
             }
           },
-          (e: unknown) => {
-            const error = e as Error;
-            setError(error.message || String(e));
+          (error) => {
+            setError(error.message || String(error));
           },
         );
 

@@ -4,7 +4,7 @@ priority: medium
 status: in progress
 updated: 2026-10-08
 context_size: small
-implementation_status: step 1 in #765; step 4's failure handling in #775; step 2 in #776; step 3a in #777; step 3b in the PR after it; the rest of 4 planned
+implementation_status: step 1 in #765; step 4's failure handling in #775; step 2 in #776; step 3a in #777; step 3b in #779; the rest of 4 planned
 -->
 
 # Kit refresh after an edit
@@ -162,7 +162,7 @@ Two PRs.
   and main returning the kit without its samples (and none when it can't
   be read back).
 
-**3b. Sample edits** (done in the PR after 3a)
+**3b. Sample edits** (done in #779)
 
 - Add, delete and move within a kit return the kit they changed, samples
   and all, read back right after the edit (`SampleEditKit.kit`). The

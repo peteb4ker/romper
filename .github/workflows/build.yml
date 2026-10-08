@@ -9,10 +9,15 @@ on:
       - "**"
 
 concurrency:
-  # Cancel superseded runs on the same branch/PR; never cancel main-push runs
-  # (they carry coverage + SonarCloud).
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # One group per pull request head commit, so two runs for the same commit
+  # (GitHub sometimes delivers an event twice) never cancel each other: the
+  # second waits for the first, then runs, so the newer one finishes last
+  # and its result stands (#695). cancel-stale-runs.yml cancels a pull
+  # request's runs for its older commits. Other runs have no pull request
+  # head, so they share one group per ref and queue rather than cancel:
+  # main-push runs carry coverage + SonarCloud.
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event.pull_request.head.sha }}
+  cancel-in-progress: false
 
 jobs:
   build:

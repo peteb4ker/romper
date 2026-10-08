@@ -4,6 +4,12 @@ const { FuseV1Options, FuseVersion } = require("@electron/fuses");
 const {
   pruneSqlitePrebuilds,
 } = require("./scripts/prune-sqlite-prebuilds.cjs");
+const { version } = require("./package.json");
+
+// The mounted installer's volume name and Finder window title (#705). The
+// makers don't fill in placeholders, so build it from package.json here.
+// appdmg breaks the background alias for volume names over 27 characters.
+const DMG_TITLE = `Romper ${version}`;
 
 const config = {
   packagerConfig: {
@@ -117,7 +123,8 @@ const config = {
       platforms: ["darwin"],
       config: {
         name: "Romper",
-        title: "Romper ${version}",
+        // `name` is the .dmg file name (Romper.dmg); `title` is the volume.
+        title: DMG_TITLE,
         format: "ULFO",
         icon: "./electron/resources/app-icon.icns",
         // Branded DMG window: dark background with a drag-to-install arrow.

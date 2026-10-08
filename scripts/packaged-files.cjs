@@ -46,6 +46,7 @@ const LEAVE_OUT = [
  * Forge's `packagerConfig.ignore`: true for a path the packaged app leaves
  * out. `file` is relative to the project, with a leading slash and forward
  * slashes ("" is the project folder itself).
+ * @param {string} file
  */
 function ignorePackagedPath(file) {
   if (PARENTS.has(file)) return false;

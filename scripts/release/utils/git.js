@@ -9,7 +9,21 @@ import { execSync } from "child_process";
 import chalk from "chalk";
 
 /**
+ * @typedef {object} GitCommit
+ * @property {string} authorEmail
+ * @property {string} authorName
+ * @property {Date} date
+ * @property {string} hash
+ * @property {string} subject
+ */
+
+/**
  * Execute a git command
+ * @param {string} command git's arguments, as one shell string
+ * @param {{ silent?: boolean }} [options] `silent` captures the output
+ *   instead of showing it
+ * @returns {string} the trimmed output; empty unless `silent` (git's
+ *   output went to the terminal)
  */
 function execGit(command, options = {}) {
   try {
@@ -18,9 +32,12 @@ function execGit(command, options = {}) {
       stdio: options.silent ? "pipe" : "inherit",
       ...options,
     });
-    return result?.trim();
+    // Null when the output went to the terminal
+    return (result ?? "").trim();
   } catch (error) {
-    throw new Error(`Git command failed: git ${command}\n${error.message}`);
+    throw new Error(
+      `Git command failed: git ${command}\n${/** @type {Error} */ (error).message}`,
+    );
   }
 }
 
@@ -75,6 +92,8 @@ function getAllTags() {
 
 /**
  * Get commits since a specific tag
+ * @param {string | null} tag every commit when null
+ * @returns {GitCommit[]}
  */
 function getCommitsSinceTag(tag) {
   try {
@@ -99,7 +118,7 @@ function getCommitsSinceTag(tag) {
   } catch (error) {
     console.warn(
       chalk.yellow(
-        `Warning: Could not get commits since ${tag}: ${error.message}`,
+        `Warning: Could not get commits since ${tag}: ${/** @type {Error} */ (error).message}`,
       ),
     );
     return [];
@@ -108,6 +127,7 @@ function getCommitsSinceTag(tag) {
 
 /**
  * Check if a tag exists
+ * @param {string} tag
  */
 function tagExists(tag) {
   try {
@@ -120,6 +140,8 @@ function tagExists(tag) {
 
 /**
  * Create a new tag
+ * @param {string} tag
+ * @param {string} message
  */
 function createTag(tag, message) {
   if (tagExists(tag)) {
@@ -140,6 +162,7 @@ function pushTags() {
 
 /**
  * Delete a tag locally and remotely
+ * @param {string} tag
  */
 function deleteTag(tag) {
   try {
@@ -151,7 +174,9 @@ function deleteTag(tag) {
     execGit(`push origin :refs/tags/${tag}`);
     console.log(`Deleted remote tag: ${tag}`);
   } catch (error) {
-    console.warn(`Warning: Could not delete tag ${tag}: ${error.message}`);
+    console.warn(
+      `Warning: Could not delete tag ${tag}: ${/** @type {Error} */ (error).message}`,
+    );
   }
 }
 
@@ -172,7 +197,9 @@ function isRemoteUpToDate() {
 
     return localCommit === remoteCommit;
   } catch (error) {
-    console.warn(`Warning: Could not check remote status: ${error.message}`);
+    console.warn(
+      `Warning: Could not check remote status: ${/** @type {Error} */ (error).message}`,
+    );
     return false;
   }
 }
@@ -186,6 +213,7 @@ function getCurrentCommit() {
 
 /**
  * Get the commit hash for a tag
+ * @param {string} tag
  */
 function getTagCommit(tag) {
   return execGit(`rev-list -n 1 ${tag}`, { silent: true });
@@ -193,6 +221,7 @@ function getTagCommit(tag) {
 
 /**
  * The committer date of a ref, as an ISO 8601 string
+ * @param {string} ref
  */
 function getCommitDate(ref) {
   return execGit(`log -1 --format=%cI ${ref}`, { silent: true });

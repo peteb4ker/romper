@@ -87,10 +87,15 @@ fill 2 mono voices."
 - `npm run typecheck` covers `app/`, `electron/` (minus the preload), and
   `shared/` through `tsconfig.json`, and test code through
   `tsconfig.test.json`: `tests/` (with the e2e specs), every test folder in
-  `app/`, `electron/` and `shared/`, `vitest.setup.ts` and
+  `app/`, `electron/`, `shared/` and `scripts/`, `vitest.setup.ts` and
   `playwright.config.ts`. A new `app/` test folder goes in its list. The
-  tests in `scripts/` aren't type-checked yet (#766). The preload is
-  type-checked by its own build (`npm run build:preload`).
+  preload is type-checked by its own build (`npm run build:preload`).
+- The build scripts in `scripts/` stay JavaScript, run with plain `node`,
+  and are typed with JSDoc (`@param`, `@returns`, `@typedef`).
+  `tsconfig.test.json` sets `checkJs`, so every script a test imports is
+  type-checked, and the test is checked against its types. Type a new
+  script's exports before testing it; a test that loads a CommonJS script
+  with `require` casts it to `typeof import("../script.cjs")`.
 - An e2e spec launches the app with `env: appEnv(...)`
   (`tests/utils/e2e-app-env.ts`), not a `process.env` spread, whose values
   may be undefined. Inside `page.evaluate`, reach the bridge as

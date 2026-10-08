@@ -11,6 +11,28 @@
 import { execFileSync } from "node:child_process";
 
 /**
+ * @typedef {{ description?: string | null, name: string }} IssueLabel
+ *
+ * @typedef {object} ClosedIssue A GitHub REST issue, as the search API
+ *   returns it (only the fields read here)
+ * @property {string} closed_at
+ * @property {string} html_url
+ * @property {(IssueLabel | string)[]} [labels]
+ * @property {number} number
+ * @property {object} [pull_request] set when the "issue" is a pull request
+ * @property {string | null} [state_reason]
+ * @property {string} title
+ *
+ * @typedef {{ from?: string | null, to?: string | null }} ClosedRange
+ *   ISO dates; a missing end is open
+ *
+ * @typedef {{ line: string, number: number, title: string, url: string }} FixedIssue
+ * @typedef {{ heading: string, id: string | null, issues: FixedIssue[] }} FixedIssueGroup
+ *
+ * @typedef {(args: string[]) => string} GhRunner runs `gh` and returns stdout
+ */
+
+/**
  * Labels whose issues never appear in the notes: owner-only chores,
  * duplicates, and automated SonarCloud quality-gate tracking, none of which
  * is a fix a user would notice.
@@ -34,6 +56,8 @@ const CLOSE_GRACE_MS = 5 * 60 * 1000;
 
 /**
  * Sort key for a use case or quality label, or null for any other label.
+ * @param {string} name
+ * @returns {[number, number] | null}
  */
 function groupLabelKey(name) {
   const match = GROUP_LABEL.exec(name);
@@ -41,6 +65,18 @@ function groupLabelKey(name) {
   return [GROUP_KINDS.indexOf(match[1]), Number(match[2])];
 }
 
+/**
+ * The sort key of a label already known to be a use case or quality.
+ * @param {string} name
+ */
+function groupKey(name) {
+  return /** @type {[number, number]} */ (groupLabelKey(name));
+}
+
+/**
+ * @param {[number, number]} a
+ * @param {[number, number]} b
+ */
 function compareKeys(a, b) {
   return a[0] - b[0] || a[1] - b[1];
 }
@@ -48,19 +84,21 @@ function compareKeys(a, b) {
 /**
  * The label an issue is listed under: its first use case or quality label
  * in ID order. An issue that touches several use cases is listed once.
+ * @param {IssueLabel[]} labels
+ * @returns {IssueLabel | null}
  */
 function primaryGroupLabel(labels) {
   return (
     labels
       .filter((label) => groupLabelKey(label.name))
-      .sort((a, b) =>
-        compareKeys(groupLabelKey(a.name), groupLabelKey(b.name)),
-      )[0] ?? null
+      .sort((a, b) => compareKeys(groupKey(a.name), groupKey(b.name)))[0] ??
+    null
   );
 }
 
 /**
  * Escape an issue title for use as markdown link text.
+ * @param {string} text
  */
 function escapeMarkdown(text) {
   return text
@@ -78,10 +116,14 @@ function escapeMarkdown(text) {
  * exactly at the previous release isn't listed twice. Returns
  * `[{ id, heading, issues: [{ number, title, url, line }] }]`, use cases
  * first, then qualities, then issues with neither.
+ * @param {ClosedIssue[]} issues
+ * @param {ClosedRange} [range]
+ * @returns {FixedIssueGroup[]}
  */
 function groupFixedIssues(issues, { from = null, to = null } = {}) {
   const fromMs = from ? Date.parse(from) : -Infinity;
   const toMs = to ? Date.parse(to) : Infinity;
+  /** @type {Map<string | null, FixedIssueGroup>} */
   const groups = new Map();
 
   for (const issue of issues) {
@@ -98,18 +140,20 @@ function groupFixedIssues(issues, { from = null, to = null } = {}) {
 
     const primary = primaryGroupLabel(labels);
     const id = primary ? primary.name : OTHER_GROUP.id;
-    if (!groups.has(id)) {
-      groups.set(id, {
+    let group = groups.get(id);
+    if (!group) {
+      group = {
         heading: primary
           ? escapeMarkdown(primary.description?.trim() || primary.name)
           : OTHER_GROUP.heading,
         id,
         issues: [],
-      });
+      };
+      groups.set(id, group);
     }
 
     const title = issue.title.trim();
-    groups.get(id).issues.push({
+    group.issues.push({
       line: `[${escapeMarkdown(title)}](${issue.html_url})`,
       number: issue.number,
       title,
@@ -121,7 +165,7 @@ function groupFixedIssues(issues, { from = null, to = null } = {}) {
     .sort((a, b) => {
       if (a.id === null) return 1;
       if (b.id === null) return -1;
-      return compareKeys(groupLabelKey(a.id), groupLabelKey(b.id));
+      return compareKeys(groupKey(a.id), groupKey(b.id));
     })
     .map((group) => ({
       ...group,
@@ -132,8 +176,12 @@ function groupFixedIssues(issues, { from = null, to = null } = {}) {
 /**
  * The closed-at window for a release, from the previous tag's commit date
  * (null for the first release) to the tagged commit's date.
+ * @param {string | null} previousTagDate
+ * @param {string | null} tagDate
+ * @returns {{ from: string | null, to: string | null }}
  */
 function releaseWindow(previousTagDate, tagDate) {
+  /** @param {string | null} date */
   const shift = (date) =>
     date ? new Date(Date.parse(date) + CLOSE_GRACE_MS).toISOString() : null;
   return { from: shift(previousTagDate), to: shift(tagDate) };
@@ -141,6 +189,7 @@ function releaseWindow(previousTagDate, tagDate) {
 
 /**
  * GitHub search dates: UTC, whole seconds.
+ * @param {string} date
  */
 function searchDate(date) {
   return new Date(date).toISOString().replace(/\.\d{3}Z$/, "Z");
@@ -148,6 +197,8 @@ function searchDate(date) {
 
 /**
  * The search query for issues closed as completed in [from, to].
+ * @param {string} repo `owner/name`
+ * @param {ClosedRange} [range]
  */
 function buildSearchQuery(repo, { from = null, to = null } = {}) {
   let closed;
@@ -155,19 +206,14 @@ function buildSearchQuery(repo, { from = null, to = null } = {}) {
   else if (from) closed = `closed:>=${searchDate(from)}`;
   else if (to) closed = `closed:<=${searchDate(to)}`;
 
-  return [
-    `repo:${repo}`,
-    "is:issue",
-    "is:closed",
-    "reason:completed",
-    closed,
-  ]
+  return [`repo:${repo}`, "is:issue", "is:closed", "reason:completed", closed]
     .filter(Boolean)
     .join(" ");
 }
 
 /**
  * Run `gh` and return its stdout. Uses GH_TOKEN in CI, or the local gh login.
+ * @type {GhRunner}
  */
 function runGh(args) {
   return execFileSync("gh", args, {
@@ -179,6 +225,10 @@ function runGh(args) {
 /**
  * Fetch issues closed as completed in [from, to] through the search API.
  * `gh` is injectable so tests never touch the network.
+ * @param {string} repo `owner/name`
+ * @param {ClosedRange} range
+ * @param {{ gh?: GhRunner }} [options]
+ * @returns {ClosedIssue[]}
  */
 function fetchClosedIssues(repo, range, { gh = runGh } = {}) {
   const output = gh([
@@ -205,6 +255,7 @@ function fetchClosedIssues(repo, range, { gh = runGh } = {}) {
  * Write a notice to stderr. Stdout carries the notes themselves, which the
  * release workflow captures; in GitHub Actions the notice is a warning on
  * the run.
+ * @param {string} message
  */
 function logNotice(message) {
   const prefix = process.env.GITHUB_ACTIONS === "true" ? "::warning::" : "";
@@ -214,6 +265,10 @@ function logNotice(message) {
 /**
  * The grouped fixed issues for a release, or null when GitHub can't be
  * queried (no token, no gh, no network), so local runs still produce notes.
+ * @param {string} repo `owner/name`
+ * @param {ClosedRange} range
+ * @param {{ gh?: GhRunner, log?: (message: string) => void }} [options]
+ * @returns {FixedIssueGroup[] | null}
  */
 function getFixedIssueGroups(
   repo,
@@ -223,7 +278,8 @@ function getFixedIssueGroups(
   let issues;
   try {
     issues = fetchClosedIssues(repo, range, { gh });
-  } catch (error) {
+  } catch (caught) {
+    const error = /** @type {Error & { stderr?: string }} */ (caught);
     const detail = String(error.stderr || error.message || "")
       .replace(/\s+/g, " ")
       .trim();

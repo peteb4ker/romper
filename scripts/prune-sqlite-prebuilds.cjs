@@ -23,6 +23,10 @@ const PREBUILDS_DIR = path.join("node_modules", "better-sqlite3", "prebuilds");
  *
  * Throws if the folder exists but has no binary for the target, so a
  * package that couldn't open its database is never made.
+ * @param {string} buildPath the packaged app's folder
+ * @param {string} platform
+ * @param {string} arch
+ * @returns {string[]}
  */
 function pruneSqlitePrebuilds(buildPath, platform, arch) {
   const dir = path.join(buildPath, PREBUILDS_DIR);

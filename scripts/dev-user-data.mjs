@@ -14,7 +14,17 @@ import path from "node:path";
 
 export const SETTINGS_FILE = "romper-settings.json";
 
-/** The installed app's userData folder, which a dev run only reads from */
+/**
+ * @typedef {object} UserDataEnvironment
+ * @property {NodeJS.ProcessEnv} [env]
+ * @property {string} [homedir]
+ * @property {NodeJS.Platform} [platform]
+ */
+
+/**
+ * The installed app's userData folder, which a dev run only reads from
+ * @param {UserDataEnvironment} [options]
+ */
 export function installedUserDataDir({
   env = process.env,
   homedir = os.homedir(),
@@ -33,6 +43,8 @@ export function installedUserDataDir({
  * The userData folder for a dev run from projectRoot: ROMPER_USER_DATA_DIR
  * when it's set, else `.romper-dev/user-data` in the worktree (ignored by
  * git), seeded with the installed app's settings the first time.
+ * @param {UserDataEnvironment & { log?: (message: string) => void, projectRoot: string }} options
+ * @returns {string}
  */
 export function prepareDevUserDataDir({
   env = process.env,

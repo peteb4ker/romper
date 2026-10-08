@@ -20,7 +20,19 @@
 const { ipcMain } = require("electron");
 const { monitorEventLoopDelay, performance } = require("node:perf_hooks");
 
+/**
+ * One invoke, with what its handler returned
+ * @typedef {object} ProbeCall
+ * @property {string} args the arguments as JSON, cut short
+ * @property {number} at ms since the probe loaded
+ * @property {string} channel
+ * @property {unknown} result
+ * @property {number} syncMs until the handler's first await
+ * @property {number} totalMs until the handler finished
+ */
+
 const origin = performance.now();
+/** @type {ProbeCall[]} */
 let calls = [];
 // Calls started since the last reset, and calls still awaiting their handler
 let started = 0;
@@ -80,7 +92,12 @@ ipcMain.handle = (channel, listener) =>
     return result;
   });
 
-/** Approximate structured-clone size, in bytes */
+/**
+ * Approximate structured-clone size, in bytes
+ * @param {unknown} value
+ * @param {Set<object>} [seen]
+ * @returns {number}
+ */
 function sizeOf(value, seen = new Set()) {
   if (value === null || value === undefined) return 0;
   if (typeof value === "string") return value.length * 2;
@@ -95,7 +112,9 @@ function sizeOf(value, seen = new Set()) {
   return total;
 }
 
-globalThis.__romperProbe = {
+/** @type {typeof globalThis & { __romperProbe?: object }} */ (
+  globalThis
+).__romperProbe = {
   /** Calls started since the last reset (a pending call counts) */
   count() {
     return started;

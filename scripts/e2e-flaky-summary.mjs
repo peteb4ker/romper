@@ -20,12 +20,34 @@ import { stripVTControlCharacters } from "node:util";
 const MAX_ERROR = 200;
 
 /**
+ * The parts of Playwright's JSON report (`JSONReport` in
+ * `@playwright/test/reporter`) read here.
+ * @typedef {{ error?: { message?: string }, status: string }} ReportResult
+ * @typedef {{ results?: ReportResult[], status: string }} ReportTest
+ * @typedef {{ file?: string, line?: number, tests?: ReportTest[], title: string }} ReportSpec
+ * @typedef {object} ReportSuite
+ * @property {string} [file]
+ * @property {ReportSpec[]} [specs]
+ * @property {ReportSuite[]} [suites]
+ * @property {string} title a spec file's name, or a describe's title
+ * @typedef {{ suites?: ReportSuite[] }} Report
+ *
+ * @typedef {{ error: string, file: string, line: number, title: string }} FlakyTest
+ */
+
+/**
  * The tests Playwright reports as flaky, with where they are and what the
  * failed attempt said.
- * @returns {{ title: string, file: string, line: number, error: string }[]}
+ * @param {Report | undefined} report
+ * @returns {FlakyTest[]}
  */
 export function flakyTests(report) {
+  /** @type {FlakyTest[]} */
   const found = [];
+  /**
+   * @param {ReportSuite} suite
+   * @param {string[]} titles
+   */
   const walk = (suite, titles) => {
     for (const spec of suite.specs ?? []) {
       for (const test of spec.tests ?? []) {
@@ -50,7 +72,11 @@ export function flakyTests(report) {
   return found;
 }
 
-/** The job summary section for one platform's run */
+/**
+ * The job summary section for one platform's run
+ * @param {FlakyTest[]} flaky
+ * @param {string} [platform]
+ */
 export function summaryMarkdown(flaky, platform) {
   const heading = `### E2E retries${platform ? ` (${platform})` : ""}`;
   if (flaky.length === 0) {
@@ -75,7 +101,10 @@ export function summaryMarkdown(flaky, platform) {
   ].join("\n");
 }
 
-/** GitHub Actions warning annotations, one per flaky test */
+/**
+ * GitHub Actions warning annotations, one per flaky test
+ * @param {FlakyTest[]} flaky
+ */
 export function annotations(flaky) {
   return flaky.map(
     (test) =>
@@ -84,15 +113,18 @@ export function annotations(flaky) {
   );
 }
 
+/** @param {string} text */
 function firstLine(text) {
   const line = stripVTControlCharacters(String(text)).trim().split("\n")[0];
   return line.length > MAX_ERROR ? `${line.slice(0, MAX_ERROR - 1)}…` : line;
 }
 
+/** @param {string} text */
 function cell(text) {
   return String(text).replaceAll("|", String.raw`\|`);
 }
 
+/** @param {string} text */
 function escapeAnnotation(text) {
   return String(text)
     .replaceAll("%", "%25")

@@ -35,6 +35,7 @@ const TIMEOUT_MS = 90_000;
  * even when the caller's environment already has one.
  * @param {NodeJS.ProcessEnv} baseEnv the caller's environment
  * @param {string} root the run's temp folder
+ * @returns {NodeJS.ProcessEnv & Record<"ROMPER_HEADLESS" | "ROMPER_LOCAL_PATH" | "ROMPER_SDCARD_PATH" | "ROMPER_TEST_MODE" | "ROMPER_USER_DATA_DIR", string>}
  */
 export function smokeEnv(baseEnv, root) {
   return {
@@ -88,6 +89,7 @@ export function checkAppFolder(appDir) {
   return [...missing, ...unexpected];
 }
 
+/** @param {string | undefined} executable */
 async function main(executable) {
   if (!executable || !fs.existsSync(executable)) {
     console.error(
@@ -136,15 +138,23 @@ async function main(executable) {
   }
 }
 
-/** Resolves once the app logs its updater's state, exits, or times out; then stops it. */
+/**
+ * Resolves once the app logs its updater's state, exits, or times out; then stops it.
+ * @param {import("node:child_process").ChildProcessWithoutNullStreams} app
+ * @returns {Promise<{ log: string[], result: string | null }>} result says
+ *   what went wrong; null once the updater started
+ */
 async function waitForUpdater(app) {
+  /** @type {string[]} */
   const log = [];
   let exited = false;
+  /** @type {string | null} */
   const result = await new Promise((resolve) => {
     const timer = setTimeout(
       () => resolve(`timed out after ${TIMEOUT_MS / 1000}s`),
       TIMEOUT_MS,
     );
+    /** @param {Buffer} chunk */
     const onData = (chunk) => {
       const text = chunk.toString();
       log.push(text);
@@ -177,6 +187,11 @@ async function waitForUpdater(app) {
   return { log, result };
 }
 
+/**
+ * @param {string} command
+ * @param {string[]} args
+ * @returns {Promise<void>}
+ */
 function run(command, args) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { stdio: "inherit" });

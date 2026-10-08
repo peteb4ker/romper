@@ -8,8 +8,10 @@
  * Reads what the release run's checks produced, as downloaded artifacts:
  * - `results-unit.json`, `results-integration.json`: Vitest JSON reports;
  * - `results-e2e.json`: Playwright's JSON report, one per shard (#660);
- * - `validation-report/report.json`: the full-pipeline rehearsal;
+ * - `validation-report/report.json`: the full-pipeline rehearsal (not the
+ *   cancel-setup or performance scenarios in its subfolders);
  * - `*.jsonl` performance budget rows (`tests/perf/budgets.ts`).
+ * It exits non-zero, rather than publishing 0s, if any of them is missing.
  * An artifact folder named `...-<os>-latest` says which platform ran it.
  * Use case status is generated from the open GitHub issues
  * (`deriveStatuses` in traceability.mjs), read with `gh` as the release
@@ -72,8 +74,40 @@ export function groupEntries(entries) {
   return groups;
 }
 
+/** The full-pipeline report; other scenarios get their own subfolders */
+const REHEARSAL = /(^|\/)validation-report\/report\.json$/;
+
+/** True for the full pipeline's report, not a scenario's or performance's */
+export function isRehearsalReport(file) {
+  return REHEARSAL.test(file.replaceAll("\\", "/"));
+}
+
+/** Rehearsal facts the page shows, by the name report.json gives them */
+const FACTS = {
+  cardFilesConverted: "card files converted",
+  cardFilesCopied: "card files copied",
+  kits: "kits imported",
+  samples: "samples imported",
+};
+
+const fail = (message) => {
+  throw new Error(`testing-summary: ${message}`);
+};
+
+/** A Vitest JSON report's run count: skipped and todo tests didn't run */
+function vitestCounts(json, file) {
+  const total = json.numTotalTests;
+  const passed = json.numPassedTests;
+  if (!Number.isInteger(total) || !Number.isInteger(passed)) {
+    fail(`${file} isn't a Vitest JSON report (no numTotalTests)`);
+  }
+  const notRun = (json.numPendingTests ?? 0) + (json.numTodoTests ?? 0);
+  return { passed, tests: total - notRun };
+}
+
 /**
- * Summarise a release run.
+ * Summarise a release run. Throws, rather than writing 0s, when a report
+ * the page needs is missing or isn't in the shape it expects.
  * @param {{ path: string, content: string }[]} files report files found
  * @param entries every use case and quality, with its generated status
  *   (traceability.mjs `summarise`, given the open issues)
@@ -83,10 +117,11 @@ export function summarise({ commit, date, entries = [], files, version }) {
   const layers = {
     e2e: layer(),
     integration: layer(),
-    rehearsal: { ...layer(), facts: {} },
+    rehearsal: { ...layer(), facts: undefined },
     unit: layer(),
   };
   const budgets = [];
+  const seen = { e2e: 0, integration: 0, rehearsal: 0, unit: 0 };
   // CI runs the e2e suite in shards, each with its own report: a platform's
   // results are the sum of its shards'
   const e2eShards = new Map();
@@ -109,20 +144,24 @@ export function summarise({ commit, date, entries = [], files, version }) {
     }
     const json = JSON.parse(content);
     if (name === "results-unit.json" || name === "results-integration.json") {
-      const target =
-        name === "results-unit.json" ? layers.unit : layers.integration;
-      add(target, file, json.numTotalTests, json.numPassedTests);
+      const kind = name === "results-unit.json" ? "unit" : "integration";
+      const { passed, tests } = vitestCounts(json, file);
+      add(layers[kind], file, tests, passed);
+      seen[kind] += 1;
     } else if (name === "results-e2e.json") {
-      const { expected = 0, flaky = 0, unexpected = 0 } = json.stats ?? {};
+      if (!json.stats)
+        fail(`${file} isn't a Playwright JSON report (no stats)`);
+      const { expected = 0, flaky = 0, unexpected = 0 } = json.stats;
       const key = platformOf(file) ?? file;
       const shards = e2eShards.get(key) ?? { file, passed: 0, tests: 0 };
       shards.tests += expected + flaky + unexpected;
       shards.passed += expected + flaky;
       e2eShards.set(key, shards);
-    } else if (name === "report.json" && file.includes("validation-report")) {
-      if (file.includes("performance")) continue;
+      seen.e2e += 1;
+    } else if (isRehearsalReport(file)) {
       // A "known" check is a failure tied to an open finding (knownBug)
       const checks = json.checks ?? [];
+      if (checks.length === 0) fail(`${file} has no checks`);
       const known = checks.filter((c) => c.status === "known").length;
       add(
         layers.rehearsal,
@@ -134,9 +173,8 @@ export function summarise({ commit, date, entries = [], files, version }) {
         layers.rehearsal.knownIssues ?? 0,
         known,
       );
-      if (Object.keys(layers.rehearsal.facts).length === 0) {
-        layers.rehearsal.facts = json.facts ?? {};
-      }
+      layers.rehearsal.facts ??= rehearsalFacts(json.facts, file);
+      seen.rehearsal += 1;
     }
   }
 
@@ -144,8 +182,21 @@ export function summarise({ commit, date, entries = [], files, version }) {
     add(layers.e2e, file, tests, passed);
   }
 
+  const missing = Object.entries({
+    e2e: "results-e2e.json",
+    integration: "results-integration.json",
+    rehearsal: "validation-report/report.json",
+    unit: "results-unit.json",
+  }).filter(([kind]) => seen[kind] === 0);
+  if (missing.length > 0) {
+    fail(`no ${missing.map(([, f]) => f).join(", ")} among the artifacts`);
+  }
+  const performance = summariseBudgets(budgets);
+  if (performance.length === 0) {
+    fail("no e2e budget rows (budgets-e2e.jsonl) among the artifacts");
+  }
+
   const facts = layers.rehearsal.facts;
-  const number = (key) => (typeof facts[key] === "number" ? facts[key] : 0);
   const finish = ({ facts: _facts, platforms, ...rest }) => ({
     ...rest,
     platforms: sortPlatforms(platforms),
@@ -159,17 +210,29 @@ export function summarise({ commit, date, entries = [], files, version }) {
       integration: finish(layers.integration),
       rehearsal: {
         ...finish(layers.rehearsal),
-        cardFiles: number("card files copied") + number("card files converted"),
-        kits: number("kits imported"),
-        samples: number("samples imported"),
+        cardFiles: facts.cardFilesCopied + facts.cardFilesConverted,
+        kits: facts.kits,
+        samples: facts.samples,
       },
       unit: finish(layers.unit),
     },
     groups: groupEntries(entries),
-    performance: summariseBudgets(budgets),
+    performance,
     useCases: countStatuses(entries.filter((e) => e.kind === "use case")),
     version,
   };
+}
+
+/** The page's rehearsal figures, each a count the report must give */
+function rehearsalFacts(facts = {}, file) {
+  const out = {};
+  for (const [key, label] of Object.entries(FACTS)) {
+    if (typeof facts[label] !== "number") {
+      fail(`${file} has no "${label}" count in its facts`);
+    }
+    out[key] = facts[label];
+  }
+  return out;
 }
 
 /**
@@ -195,22 +258,26 @@ export function countStatuses(useCases) {
 
 /**
  * One row per user action (the e2e budgets): within budget, within budget
- * with an improvement planned, or over budget (a release can't be).
+ * with an improvement planned, or over budget (a release can't be). The
+ * report writes `null` for a limit that isn't set (`budgetReportRows` in
+ * tests/perf/budgets.ts): a metric with no max, such as an action's total,
+ * isn't budgeted, so it doesn't count either way.
  */
 export function summariseBudgets(rows) {
   const actions = new Map();
+  const rank = { improving: 1, over: 2, within: 0 };
   for (const row of rows.filter((r) => r.suite === "e2e")) {
+    if (typeof row.measured !== "number") {
+      fail(`budget row ${row.name}/${row.metric} has no measured value`);
+    }
     // Budgets give each action a plain-language label for the public page
     const action =
       row.label ?? row.name.charAt(0).toUpperCase() + row.name.slice(1);
     const status = actions.get(action) ?? "within";
-    const next =
-      row.measured > row.max
-        ? "over"
-        : row.target === undefined
-          ? "within"
-          : "improving";
-    const rank = { improving: 1, over: 2, within: 0 };
+    const budgeted = typeof row.max === "number";
+    let next = "within";
+    if (budgeted && row.measured > row.max) next = "over";
+    else if (budgeted && typeof row.target === "number") next = "improving";
     actions.set(action, rank[next] > rank[status] ? next : status);
   }
   return [...actions.entries()].map(([action, status]) => ({
@@ -229,7 +296,7 @@ export function findReports(dir) {
       else if (
         /^results-(unit|integration|e2e)\.json$/.test(entry.name) ||
         entry.name.endsWith(".jsonl") ||
-        (entry.name === "report.json" && full.includes("validation-report"))
+        isRehearsalReport(path.relative(dir, full))
       ) {
         out.push({
           content: fs.readFileSync(full, "utf8"),
@@ -281,13 +348,19 @@ if (
   const scan = buildIndex(findTestFiles(ROOT), (f) =>
     fs.readFileSync(path.join(ROOT, f), "utf8"),
   );
-  const summary = summarise({
-    commit: option("commit") ?? "",
-    date: new Date().toISOString().slice(0, 10),
-    entries: summariseEntries(register, scan, github),
-    files: findReports(dir),
-    version: option("version") ?? "",
-  });
+  let summary;
+  try {
+    summary = summarise({
+      commit: option("commit") ?? "",
+      date: new Date().toISOString().slice(0, 10),
+      entries: summariseEntries(register, scan, github),
+      files: findReports(dir),
+      version: option("version") ?? "",
+    });
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
   const json = `${JSON.stringify(summary, null, 2)}\n`;
   const out = option("out");
   if (out) {

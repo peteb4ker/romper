@@ -1,9 +1,14 @@
 // @vitest-environment node
-import { describe, expect, it } from "vitest";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   countStatuses,
+  findReports,
   groupEntries,
+  isRehearsalReport,
   platformOf,
   summarise,
   summariseBudgets,
@@ -24,6 +29,28 @@ const rehearsal = (statuses: string[]) =>
     },
   });
 const budget = (row: object) => JSON.stringify({ suite: "e2e", ...row });
+// The reports every summary needs, for tests about one of them
+const base = [
+  { content: vitest(10, 10), path: "test-results-unit/results-unit.json" },
+  {
+    content: vitest(5, 5),
+    path: "test-results-integration-ubuntu-latest/results-integration.json",
+  },
+  {
+    content: playwright(3),
+    path: "test-results-e2e-ubuntu-latest-shard-1-of-1/results-e2e.json",
+  },
+  {
+    content: rehearsal(["pass"]),
+    path: "validation-report-ubuntu-latest/validation-report/report.json",
+  },
+  {
+    content: budget({ max: 1, measured: 1, metric: "x", name: "open a kit" }),
+    path: "test-results-e2e-ubuntu-latest-shard-1-of-1/budgets-e2e.jsonl",
+  },
+];
+const without = (name: string) =>
+  base.filter((f) => path.basename(f.path) !== name);
 
 describe("platformOf", () => {
   it("reads the platform from the artifact folder", () => {
@@ -84,6 +111,7 @@ describe("summarise", () => {
           content: "{}",
           path: "validation-report-macos-latest/validation-report/performance/report.json",
         },
+        base[4],
       ],
       version: "v1.3.2",
     });
@@ -140,6 +168,7 @@ describe("summarise e2e shards", () => {
       commit: "abc",
       date: "2026-10-04",
       files: [
+        ...without("results-e2e.json"),
         { content: playwright(70), path: shard("ubuntu", 1, 2) },
         { content: playwright(68, 0, 1), path: shard("ubuntu", 2, 2) },
         { content: playwright(46), path: shard("macos", 1, 3) },
@@ -188,6 +217,15 @@ describe("summariseBudgets", () => {
         until: "RE-36",
       }),
       budget({ max: 3, measured: 2, metric: "total", name: "toggle a step" }),
+      // No max: the report writes null, which isn't a budget of 0
+      budget({
+        label: "Opening a kit",
+        max: null,
+        measured: 6,
+        metric: "total",
+        name: "open a kit",
+        target: null,
+      }),
       JSON.stringify({
         max: 5,
         measured: 5,
@@ -266,5 +304,207 @@ describe("groupEntries", () => {
       [],
     ]);
     expect(groups[1].entries[0].followUps).toEqual([]);
+  });
+});
+
+// Budget rows as tests/perf/budgets.ts writes them: null for a limit that
+// isn't set, as an action's total has no max
+const row = (
+  label: string,
+  metric: string,
+  measured: number,
+  max: null | number,
+  target: null | number = null,
+) =>
+  budget({
+    label,
+    max,
+    measured,
+    metric,
+    name: label.toLowerCase(),
+    target,
+    until: target === null ? null : "RE-36",
+  });
+
+describe("[Q-07] summarise a release's artifacts", () => {
+  // The layout `gh run download` gives for a release run (37737278662,
+  // v1.4.0): one e2e shard per platform, and a validation report whose
+  // cancel-setup and performance scenarios sit in subfolders
+  let dir: string;
+  const write = (file: string, content: string) => {
+    fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    fs.writeFileSync(path.join(dir, file), content);
+  };
+  const vitestRun = (total: number, pending: number) =>
+    JSON.stringify({
+      numFailedTests: 0,
+      numPassedTests: total - pending,
+      numPendingTests: pending,
+      numTodoTests: 0,
+      numTotalTests: total,
+    });
+  const budgetRows = [
+    row("Opening the app", "get-all-kits", 1, 1),
+    row("Opening the app", "total", 5, null),
+    row("Opening a kit", "get-all-kits", 1, 1, 0),
+    row("Opening a kit", "total", 6, null),
+    row("Changing a sample's volume", "update-sample-gain", 5, 5),
+    row("Changing a sample's volume", "total", 5, null),
+  ].join("\n");
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "testing-summary-"));
+    write("test-results-unit/results-unit.json", vitestRun(4578, 4));
+    for (const platform of ["macos", "ubuntu", "windows"]) {
+      const pending = platform === "windows" ? 1 : 0;
+      write(
+        `test-results-integration-${platform}-latest/results-integration.json`,
+        vitestRun(752, pending),
+      );
+      const shard = `test-results-e2e-${platform}-latest-shard-1-of-1`;
+      write(`${shard}/results-e2e.json`, playwright(140));
+      write(`${shard}/budgets-e2e.jsonl`, `${budgetRows}\n`);
+      const report = `validation-report-${platform}-latest/validation-report`;
+      write(
+        `${report}/report.json`,
+        JSON.stringify({
+          checks: Array.from({ length: 54 }, (_, i) => ({
+            name: `c${i}`,
+            status: "pass",
+          })),
+          facts: {
+            "card files converted": 4,
+            "card files copied": 2367,
+            "kits imported": 183,
+            "samples imported": 2366,
+          },
+        }),
+      );
+      write(`${report}/report.md`, "# Validation");
+      write(`${report}/main.log`, "");
+      // The cancel-setup scenario only imports, so it has no card files
+      write(
+        `${report}/cancel-setup/report.json`,
+        JSON.stringify({
+          checks: [{ name: "c", status: "pass" }],
+          facts: { "kits imported": 183 },
+        }),
+      );
+      write(
+        `${report}/performance/report.json`,
+        JSON.stringify({ facts: { kits: 183, samples: 2366, setupMs: 1 } }),
+      );
+    }
+  });
+
+  afterEach(() => {
+    fs.rmSync(dir, { force: true, recursive: true });
+  });
+
+  const run = () =>
+    summarise({
+      commit: "abc",
+      date: "2026-10-08",
+      files: findReports(dir),
+      version: "v1.4.0",
+    });
+
+  it("reads the full pipeline's counts, not a scenario's", () => {
+    expect(run().layers.rehearsal).toEqual({
+      cardFiles: 2371,
+      kits: 183,
+      knownIssues: 0,
+      passed: 54,
+      platforms: ["macOS", "Windows", "Linux"],
+      samples: 2366,
+      tests: 54,
+    });
+  });
+
+  it("judges an unbudgeted total as no budget, not as over 0", () => {
+    expect(run().performance).toEqual([
+      { action: "Opening the app", status: "within" },
+      { action: "Opening a kit", status: "improving" },
+      { action: "Changing a sample's volume", status: "within" },
+    ]);
+  });
+
+  it("counts the tests that ran, so a skipped test isn't a failure", () => {
+    const { integration, unit } = run().layers;
+    expect(unit).toEqual({ passed: 4574, platforms: [], tests: 4574 });
+    expect(integration).toEqual({
+      passed: 752,
+      platforms: ["macOS", "Windows", "Linux"],
+      tests: 752,
+    });
+  });
+
+  it("refuses to summarise without the full pipeline's report", () => {
+    for (const platform of ["macos", "ubuntu", "windows"]) {
+      fs.rmSync(
+        path.join(
+          dir,
+          `validation-report-${platform}-latest/validation-report/report.json`,
+        ),
+      );
+    }
+    expect(run).toThrow("no validation-report/report.json");
+  });
+});
+
+describe("[Q-07] summarise refuses missing inputs", () => {
+  const files = (list: { content: string; path: string }[]) => () =>
+    summarise({ commit: "abc", date: "", files: list, version: "v1" });
+
+  it.each([
+    ["results-unit.json"],
+    ["results-integration.json"],
+    ["results-e2e.json"],
+    ["report.json"],
+  ])("throws when no %s was downloaded", (name) => {
+    expect(files(without(name))).toThrow("among the artifacts");
+  });
+
+  it("throws when there are no e2e budget rows", () => {
+    expect(files(without("budgets-e2e.jsonl"))).toThrow("no e2e budget rows");
+  });
+
+  it("throws when the rehearsal has no card file count", () => {
+    const report = JSON.stringify({
+      checks: [{ name: "c", status: "pass" }],
+      facts: { "kits imported": 183 },
+    });
+    expect(
+      files([
+        ...without("report.json"),
+        {
+          content: report,
+          path: "validation-report-macos-latest/validation-report/report.json",
+        },
+      ]),
+    ).toThrow('no "card files converted" count');
+  });
+
+  it("throws on a report that isn't the expected format", () => {
+    expect(
+      files([
+        ...without("results-unit.json"),
+        { content: "{}", path: "test-results-unit/results-unit.json" },
+      ]),
+    ).toThrow("isn't a Vitest JSON report");
+  });
+});
+
+describe("[Q-07] isRehearsalReport", () => {
+  it("matches the full pipeline's report only", () => {
+    const report = "validation-report-macos-latest/validation-report";
+    expect(isRehearsalReport(`${report}/report.json`)).toBe(true);
+    expect(
+      isRehearsalReport(
+        String.raw`v-windows-latest\validation-report\report.json`,
+      ),
+    ).toBe(true);
+    expect(isRehearsalReport(`${report}/cancel-setup/report.json`)).toBe(false);
+    expect(isRehearsalReport(`${report}/performance/report.json`)).toBe(false);
   });
 });

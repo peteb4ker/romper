@@ -4,7 +4,6 @@ import type {
   MoveSampleAction,
   MoveSampleBetweenKitsAction,
   ReindexSamplesAction,
-  ReplaceSampleAction,
   VoiceSnapshot,
 } from "@romper/shared/undoTypes";
 
@@ -89,36 +88,6 @@ export function useSampleManagementUndoActions({
       id: createActionId(),
       timestamp: new Date(),
       type: "ADD_SAMPLE",
-    }),
-    [],
-  );
-
-  // Helper function to create replace sample undo action
-  const createReplaceSampleAction = useCallback(
-    (
-      voice: number,
-      slotNumber: number,
-      oldSample: Sample,
-      filePath: string,
-      voicesBefore: VoiceSnapshot[],
-    ): ReplaceSampleAction => ({
-      data: {
-        newSample: {
-          filename: filePath.split("/").pop() || "",
-          source_path: filePath,
-        },
-        oldSample: {
-          filename: oldSample.filename,
-          source_path: oldSample.source_path,
-        },
-        slot: slotNumber,
-        voice,
-        voicesBefore,
-      },
-      description: `Replace sample in voice ${voice}, slot ${slotNumber + 1}`,
-      id: createActionId(),
-      timestamp: new Date(),
-      type: "REPLACE_SAMPLE",
     }),
     [],
   );
@@ -254,7 +223,6 @@ export function useSampleManagementUndoActions({
     createAddSampleAction,
     createCrossKitMoveAction,
     createReindexSamplesAction,
-    createReplaceSampleAction,
     createSameKitMoveAction,
     snapshotForUndo,
   };

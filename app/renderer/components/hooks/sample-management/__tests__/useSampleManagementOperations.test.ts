@@ -1,7 +1,4 @@
-import type {
-  ReindexSamplesAction,
-  ReplaceSampleAction,
-} from "@romper/shared/undoTypes";
+import type { ReindexSamplesAction } from "@romper/shared/undoTypes";
 
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,10 +13,6 @@ vi.mock("../useSampleManagementUndoActions", () => ({
     createReindexSamplesAction: vi.fn(() => ({
       data: {},
       type: "REINDEX_SAMPLES",
-    })),
-    createReplaceSampleAction: vi.fn(() => ({
-      data: {},
-      type: "REPLACE_SAMPLE",
     })),
     snapshotForUndo: vi.fn(),
   })),
@@ -38,7 +31,6 @@ const undoActionsWith = (overrides: Partial<UndoActions>): UndoActions => ({
   createAddSampleAction: vi.fn(),
   createCrossKitMoveAction: vi.fn(),
   createReindexSamplesAction: vi.fn(),
-  createReplaceSampleAction: vi.fn(),
   createSameKitMoveAction: vi.fn(),
   snapshotForUndo: vi.fn(),
   ...overrides,
@@ -48,7 +40,6 @@ const undoActionsWith = (overrides: Partial<UndoActions>): UndoActions => ({
 const mockElectronAPI = {
   addSampleToSlot: vi.fn(),
   deleteSampleFromSlot: vi.fn(),
-  replaceSampleInSlot: vi.fn(),
 };
 
 setupElectronAPIMock(mockElectronAPI);
@@ -214,117 +205,6 @@ describe("useSampleManagementOperations", () => {
 
       // Restore
       vi.unstubAllGlobals();
-    });
-  });
-
-  describe("[UC-20] [Q-07] handleSampleReplace", () => {
-    it("should replace sample successfully", async () => {
-      const mockOldSample = {
-        source_path: "/path/to/old.wav",
-      };
-
-      const mockUndoActions = {
-        createReplaceSampleAction: vi.fn(
-          () =>
-            ({
-              data: {},
-              type: "REPLACE_SAMPLE",
-            }) as ReplaceSampleAction,
-        ),
-        snapshotForUndo: vi.fn().mockResolvedValue({
-          sample: mockOldSample,
-          voicesBefore,
-        }),
-      };
-
-      // Mock the hook return
-      mockUseSampleManagementUndoActions.mockReturnValue(
-        undoActionsWith(mockUndoActions),
-      );
-
-      mockElectronAPI.replaceSampleInSlot.mockResolvedValue({
-        data: { sampleId: 123 },
-        success: true,
-      });
-
-      const { result } = renderHook(() =>
-        useSampleManagementOperations(mockOptions),
-      );
-
-      const replaced = await result.current.handleSampleReplace(
-        1,
-        0,
-        "/path/to/new.wav",
-      );
-      expect(replaced).toBe(true);
-
-      expect(mockUndoActions.snapshotForUndo).toHaveBeenCalledWith(1, 0);
-      expect(mockUndoActions.createReplaceSampleAction).toHaveBeenCalledWith(
-        1,
-        0,
-        mockOldSample,
-        "/path/to/new.wav",
-        voicesBefore,
-      );
-      expect(mockElectronAPI.replaceSampleInSlot).toHaveBeenCalledWith(
-        "Test Kit",
-        1,
-        0,
-        "/path/to/new.wav",
-      );
-      expect(mockOptions.onMessage).toHaveBeenCalledWith(
-        "Sample replaced in voice 1, slot 1",
-        "success",
-      );
-      expect(mockOptions.onSamplesChanged).toHaveBeenCalled();
-      expect(mockOptions.onAddUndoAction).toHaveBeenCalled();
-    });
-
-    it("should handle replace sample failure", async () => {
-      mockElectronAPI.replaceSampleInSlot.mockResolvedValue({
-        error: "Replace failed",
-        success: false,
-      });
-
-      const { result } = renderHook(() =>
-        useSampleManagementOperations(mockOptions),
-      );
-
-      const replaced = await result.current.handleSampleReplace(
-        1,
-        0,
-        "/path/to/new.wav",
-      );
-      expect(replaced).toBe(false);
-
-      expect(mockOptions.onMessage).toHaveBeenCalledWith(
-        "Replace failed",
-        "error",
-      );
-      expect(mockOptions.onSamplesChanged).not.toHaveBeenCalled();
-    });
-
-    it("should handle missing electronAPI for replace", async () => {
-      setupElectronAPIMock({ replaceSampleInSlot: undefined });
-
-      const { result } = renderHook(() =>
-        useSampleManagementOperations(mockOptions),
-      );
-
-      const replaced = await result.current.handleSampleReplace(
-        1,
-        0,
-        "/path/to/new.wav",
-      );
-      expect(replaced).toBe(false);
-
-      expect(mockOptions.onMessage).toHaveBeenCalledWith(
-        "Sample management not available",
-        "error",
-      );
-
-      // Restore
-      setupElectronAPIMock(mockElectronAPI);
     });
   });
 

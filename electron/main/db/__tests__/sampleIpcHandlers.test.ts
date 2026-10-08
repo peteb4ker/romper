@@ -53,7 +53,7 @@ describe("registerSampleIpcHandlers - Unit Tests", () => {
     it("[Q-03] should register all 7 sample IPC handlers", () => {
       registerSampleIpcHandlers(mockInMemorySettings);
 
-      expect(mockIpcMain.handle).toHaveBeenCalledTimes(7);
+      expect(mockIpcMain.handle).toHaveBeenCalledTimes(6);
     });
 
     it("should register handlers with correct IPC channel names", () => {
@@ -65,7 +65,6 @@ describe("registerSampleIpcHandlers - Unit Tests", () => {
 
       expect(registeredHandlers).toEqual([
         "add-sample-to-slot",
-        "replace-sample-in-slot",
         "delete-sample-from-slot",
         "delete-sample-from-slot-without-reindexing",
         "move-sample-in-kit",
@@ -87,14 +86,10 @@ describe("registerSampleIpcHandlers - Unit Tests", () => {
     it("should use createSampleOperationHandler for standard CRUD operations", () => {
       registerSampleIpcHandlers(mockInMemorySettings);
 
-      expect(mockCreateHandler).toHaveBeenCalledTimes(3);
+      expect(mockCreateHandler).toHaveBeenCalledTimes(2);
       expect(mockCreateHandler).toHaveBeenCalledWith(
         mockInMemorySettings,
         "add",
-      );
-      expect(mockCreateHandler).toHaveBeenCalledWith(
-        mockInMemorySettings,
-        "replace",
       );
       expect(mockCreateHandler).toHaveBeenCalledWith(
         mockInMemorySettings,

@@ -152,57 +152,6 @@ export function getSamplesToDelete(
 }
 
 /**
- * Replace the file in an occupied slot with one in-place update, on the
- * caller's transaction (RE-26). The row keeps its id, slot and gain; its
- * file name, source path and WAV header columns become the new file's, and
- * the kit is flagged modified. Throws when the slot is empty.
- */
-export function replaceSampleTx(
-  db: RomperDb,
-  kitName: string,
-  voiceNumber: number,
-  slotNumber: number,
-  replacement: Partial<
-    Pick<
-      NewSample,
-      | "source_status"
-      | "wav_bit_depth"
-      | "wav_bitrate"
-      | "wav_channels"
-      | "wav_sample_rate"
-    >
-  > &
-    Pick<NewSample, "filename" | "source_path">,
-): { replacedSample: Sample; sampleId: number } {
-  const slot = and(
-    eq(samples.kit_name, kitName),
-    eq(samples.voice_number, voiceNumber),
-    eq(samples.slot_number, slotNumber),
-  );
-  const replacedSample = db.select().from(samples).where(slot).get();
-  if (!replacedSample) {
-    throw new Error(
-      `No sample in voice ${voiceNumber}, slot ${slotNumber + 1} to replace`,
-    );
-  }
-  db.update(samples)
-    .set({
-      filename: replacement.filename,
-      source_path: replacement.source_path,
-      // What reading the new file found, not the old one's (#537)
-      source_status: replacement.source_status ?? null,
-      wav_bit_depth: replacement.wav_bit_depth ?? null,
-      wav_bitrate: replacement.wav_bitrate ?? null,
-      wav_channels: replacement.wav_channels ?? null,
-      wav_sample_rate: replacement.wav_sample_rate ?? null,
-    })
-    .where(eq(samples.id, replacedSample.id))
-    .run();
-  flagKitModified(db, kitName);
-  return { replacedSample, sampleId: replacedSample.id };
-}
-
-/**
  * Put voices back exactly as a snapshot had them, on the caller's
  * transaction (RE-86): each voice's current rows are deleted and the
  * snapshot's rows inserted with their slots, gain and WAV details, and the

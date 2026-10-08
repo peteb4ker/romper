@@ -9,7 +9,6 @@ import {
   type MoveSampleAction,
   type MoveSampleBetweenKitsAction,
   type ReindexSamplesAction,
-  type ReplaceSampleAction,
 } from "../undoTypes";
 
 describe("undoTypes", () => {
@@ -112,28 +111,6 @@ describe("undoTypes", () => {
         const description = getActionDescription(action);
 
         expect(description).toBe("Undo add sample to voice 3, slot 8");
-      });
-    });
-
-    describe("REPLACE_SAMPLE action", () => {
-      it("returns correct description for replace sample action", () => {
-        const action: ReplaceSampleAction = {
-          data: {
-            newSample: mockSample,
-            oldSample: mockSample,
-            slot: 3,
-            voice: 2,
-            voicesBefore: [],
-          },
-          description: "Test action",
-          id: "test-id",
-          timestamp: new Date(),
-          type: "REPLACE_SAMPLE",
-        };
-
-        const description = getActionDescription(action);
-
-        expect(description).toBe("Undo replace sample in voice 2, slot 4");
       });
     });
 
@@ -346,32 +323,6 @@ describe("undoTypes", () => {
       expect(action.type).toBe("ADD_SAMPLE");
       expect(action.data.voice).toBe(1);
       expect(action.data.addedSample.filename).toBe("kick.wav");
-    });
-
-    it("allows creating valid ReplaceSampleAction", () => {
-      const action: ReplaceSampleAction = {
-        data: {
-          newSample: {
-            filename: "new.wav",
-            source_path: "/path/to/new.wav",
-          },
-          oldSample: {
-            filename: "old.wav",
-            source_path: "/path/to/old.wav",
-          },
-          slot: 1,
-          voice: 2,
-          voicesBefore: [],
-        },
-        description: "Replace sample test",
-        id: "test-id",
-        timestamp: new Date(),
-        type: "REPLACE_SAMPLE",
-      };
-
-      expect(action.type).toBe("REPLACE_SAMPLE");
-      expect(action.data.oldSample.filename).toBe("old.wav");
-      expect(action.data.newSample.filename).toBe("new.wav");
     });
 
     it("allows creating valid MoveSampleAction with optional fields", () => {

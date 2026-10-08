@@ -8,7 +8,6 @@ import {
   addSampleTx,
   flagKitModified,
   moveSampleBetweenKitsTx,
-  replaceSampleTx,
   requireEditableKitTx,
   restoreVoicesTx,
   withDbTransaction,
@@ -237,48 +236,6 @@ export class SampleCrudService {
       toSlot,
       mode,
     );
-  }
-
-  /**
-   * Replace the file in an occupied slot (RE-26). The new file is checked
-   * before anything is written; then one update swaps the file on the
-   * existing row, so its slot and gain stay, and stores the new file's WAV
-   * header. A file that can't be used leaves the slot as it was.
-   */
-  replaceSampleInSlot(
-    inMemorySettings: Record<string, unknown>,
-    kitName: string,
-    voiceNumber: number,
-    slotNumber: number,
-    filePath: string,
-  ): DbResult<{ replacedSample: Sample; sampleId: number }> {
-    const localStorePath = this.getLocalStorePath(inMemorySettings);
-    if (!localStorePath) {
-      return { error: "No local store path configured", success: false };
-    }
-    const dbPath = this.getDbPath(localStorePath);
-
-    const voiceSlotValidation = sampleValidationService.validateVoiceAndSlot(
-      voiceNumber,
-      slotNumber,
-    );
-    if (!voiceSlotValidation.isValid) {
-      return { error: voiceSlotValidation.error, success: false };
-    }
-
-    const fileValidation = sampleValidationService.validateSampleFile(filePath);
-    if (!fileValidation.isValid) {
-      return { error: fileValidation.error, success: false };
-    }
-
-    return withDbTransaction(dbPath, (db) => {
-      requireEditableKitTx(db, kitName);
-      return replaceSampleTx(db, kitName, voiceNumber, slotNumber, {
-        filename: path.basename(filePath),
-        source_path: filePath,
-        ...fileValidation.metadata,
-      });
-    });
   }
 
   /**

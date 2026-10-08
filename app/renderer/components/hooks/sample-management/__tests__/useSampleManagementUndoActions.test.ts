@@ -83,7 +83,6 @@ describe("useSampleManagementUndoActions", () => {
         "createReindexSamplesAction",
         "createSameKitMoveAction",
         "createCrossKitMoveAction",
-        "createReplaceSampleAction",
         "snapshotForUndo",
       ];
 
@@ -192,42 +191,6 @@ describe("useSampleManagementUndoActions", () => {
         id: "test-action-id",
         timestamp: expect.any(Date),
         type: "ADD_SAMPLE",
-      });
-    });
-  });
-
-  describe("createReplaceSampleAction", () => {
-    it("should create replace sample action with correct structure", () => {
-      const { result } = renderHook(() =>
-        useSampleManagementUndoActions(mockOptions),
-      );
-
-      const action = result.current.createReplaceSampleAction(
-        1,
-        0,
-        mockSample,
-        "/path/to/new.wav",
-        [voiceOne],
-      );
-
-      expect(action).toEqual({
-        data: {
-          newSample: {
-            filename: "new.wav",
-            source_path: "/path/to/new.wav",
-          },
-          oldSample: {
-            filename: "test.wav",
-            source_path: "/path/to/test.wav",
-          },
-          slot: 0,
-          voice: 1,
-          voicesBefore: [voiceOne],
-        },
-        description: "Replace sample in voice 1, slot 1",
-        id: "test-action-id",
-        timestamp: expect.any(Date),
-        type: "REPLACE_SAMPLE",
       });
     });
   });

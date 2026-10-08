@@ -169,12 +169,6 @@ export interface ElectronAPI {
   onSyncProgress: (callback: (progress: SyncProgress) => void) => void;
   openExternal: (url: string) => Promise<{ error?: string; success: boolean }>;
   readSettings: () => Promise<SettingsData>;
-  replaceSampleInSlot: (
-    kitName: string,
-    voiceNumber: number,
-    slotNumber: number,
-    filePath: string,
-  ) => Promise<DbResult<{ sampleId: number }>>;
   /**
    * Ask main to allow a setup-wizard target folder the user typed. Main
    * confirms it with the user in a native prompt unless it is already inside

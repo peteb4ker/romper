@@ -81,10 +81,9 @@ in `electron/main/security/`.
   `tests/utils/e2e-dialogs.ts`.
 - **Sample sources** (`sampleSourceAccess.ts`). Samples are referenced from
   wherever the user dragged them, so reading one file
-  (`validateSampleFormat`, the path given to
-  `addSampleToSlot`/`replaceSampleInSlot`) is also allowed when the store's
-  database already references it, or referenced it before an edit this
-  session (so undo can put a sample back).
+  (`validateSampleFormat`, the path given to `addSampleToSlot`) is also
+  allowed when the store's database already references it, or referenced
+  it before an edit this session (so undo can put a sample back).
 - The factory-samples archive URL is fixed in main
   (`getFactorySamplesArchiveUrl`, overridable only by the
   `ROMPER_SQUARP_ARCHIVE_URL` launch environment). Wizard database channels
@@ -137,13 +136,11 @@ in `electron/main/security/`.
   take the handle (`RomperDb`) and throw on failure, so an operation
   composes them in one `withDbTransaction`: a kit with its voices, a delete
   with its reindex, every sample edit with the kit's modified flag, a setup
-  import with its scan merge. Replace is one in-place update of the row
-  (slot and gain stay; the new file's header is stored), and a move
-  between kits moves the row itself, so gain and WAV metadata go with it
-  (RE-26, RE-27). Undo keeps the full rows of the voices an edit touches
-  (`VoiceSnapshot` in `shared/undoTypes.ts`) and puts them back with one
-  `restoreVoicesTx` call (RE-86). An add stores the WAV header its
-  validation read (RE-89).
+  import with its scan merge. A move between kits moves the row itself, so
+  gain and WAV metadata go with it (RE-27). Undo keeps the full rows of
+  the voices an edit touches (`VoiceSnapshot` in `shared/undoTypes.ts`)
+  and puts them back with one `restoreVoicesTx` call (RE-86). An add
+  stores the WAV header its validation read (RE-89).
 - better-sqlite3 ships N-API prebuilds (`prebuilds/<platform>-<arch>.node`)
   that load in both Node and Electron, so nothing is rebuilt at install
   (Forge's `rebuildConfig` rebuilds no modules). Its npm package carries
@@ -216,7 +213,7 @@ to skip them (RE-09).
   disconnects its own gain and meter nodes when its sample changes or it
   unmounts. The renderer can't read a sample file by path: buffers come
   from main by kit / voice / slot. Channels that take a sample's path
-  (`validateSampleFormat`, add and replace) are scoped by main; see "The
+  (`validateSampleFormat`, add) are scoped by main; see "The
   renderer is untrusted".
 - Decoded samples are cached in the renderer (`utils/sampleAudioCache.ts`,
   #478), shared by the slot waveforms and the slice strip, so a sample

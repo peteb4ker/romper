@@ -59,11 +59,6 @@ interface KitVoicePanelsProps {
     toVoice: number,
     toSlot: number,
   ) => Promise<void>;
-  onSampleReplace?: (
-    voice: number,
-    slotNumber: number,
-    filePath: string,
-  ) => Promise<boolean>;
   onSampleSelect: (voice: number, idx: number) => void; // Used by useKitVoicePanels hook
   onSaveVoiceName: (voice: number, newName: string) => Promise<boolean> | void; // Used by useKitVoicePanels hook
   onStop: (voice: number, slot: number) => void; // Used by useKitVoicePanels hook
@@ -780,7 +775,6 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                     onSampleDelete={props.onSampleDelete}
                     onSampleKeyNav={hookProps.onSampleKeyNav}
                     onSampleMove={props.onSampleMove}
-                    onSampleReplace={props.onSampleReplace}
                     onSampleSelect={hookProps.onSampleSelect}
                     onSaveVoiceName={hookProps.onSaveVoiceName}
                     onStop={hookProps.onStop}

@@ -81,7 +81,6 @@ function createMockLogic(overrides = {}) {
     sampleManagement: {
       handleSampleAdd: vi.fn(),
       handleSampleDelete: vi.fn(),
-      handleSampleReplace: vi.fn(),
     },
   };
 }

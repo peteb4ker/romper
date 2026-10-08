@@ -86,7 +86,6 @@ describe("preload/index.tsx", () => {
         getUserHomeDir: expect.any(Function),
         listFilesInRoot: expect.any(Function),
         readSettings: expect.any(Function),
-        replaceSampleInSlot: expect.any(Function),
         rescanKit: expect.any(Function),
         selectExistingLocalStore: expect.any(Function),
         selectLocalStorePath: expect.any(Function),
@@ -740,11 +739,6 @@ describe("preload/index.tsx", () => {
         ipcChannel: "add-sample-to-slot",
         method: "addSampleToSlot",
       },
-      {
-        args: ["TestKit", 1, 0, "/path/to/sample.wav"],
-        ipcChannel: "replace-sample-in-slot",
-        method: "replaceSampleInSlot",
-      },
     ];
 
     it.each(optionsParameterMethods)(
@@ -863,15 +857,6 @@ describe("preload/index.tsx", () => {
       await api.addSampleToSlot("testKit", 1, 0, "/path/to/sample.wav");
       expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
         "add-sample-to-slot",
-        "testKit",
-        1,
-        0,
-        "/path/to/sample.wav",
-      );
-
-      await api.replaceSampleInSlot("testKit", 1, 0, "/path/to/sample.wav");
-      expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
-        "replace-sample-in-slot",
         "testKit",
         1,
         0,

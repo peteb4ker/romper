@@ -231,15 +231,6 @@ describe("[UC-11] Edits the next write puts on the card mark a kit modified (#56
     ]);
   });
 
-  it("replacing a sample does", () => {
-    const snare = wavFile(path.join(tempDir, "snare.wav"));
-    expect(
-      sampleService.replaceSampleInSlot(settings, "A0", 1, 0, snare).success,
-    ).toBe(true);
-
-    expect(modified("A0")).toBe(true);
-  });
-
   it("an undo's restore of a voice's samples does", () => {
     expect(
       sampleService.restoreVoices(settings, "A1", [

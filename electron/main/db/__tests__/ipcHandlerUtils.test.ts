@@ -1,7 +1,6 @@
 import * as path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createMockSample } from "../../../../tests/factories/sample.factory";
 import {
   createDbHandler,
   createSampleOperationHandler,
@@ -18,7 +17,6 @@ vi.mock("../../services/sampleService.js", () => ({
   sampleService: {
     addSampleToSlot: vi.fn(),
     deleteSampleFromSlot: vi.fn(),
-    replaceSampleInSlot: vi.fn(),
   },
 }));
 
@@ -290,84 +288,6 @@ describe("ipcHandlerUtils", () => {
       });
     });
 
-    describe("replace operation", () => {
-      it("should handle successful replace operation", async () => {
-        const mockResult = {
-          data: {
-            replacedSample: createMockSample({ id: 456 }),
-            sampleId: 456,
-          },
-          success: true,
-        };
-        vi.mocked(sampleService.replaceSampleInSlot).mockReturnValue(
-          mockResult,
-        );
-
-        const handler = createSampleOperationHandler(
-          mockInMemorySettings,
-          "replace",
-        );
-        const result = await handler(
-          mockEvent,
-          kitName,
-          voiceNumber,
-          slotNumber,
-          filePath,
-        );
-
-        expect(result).toEqual(mockResult);
-        expect(sampleService.replaceSampleInSlot).toHaveBeenCalledWith(
-          mockInMemorySettings,
-          kitName,
-          voiceNumber,
-          slotNumber,
-          filePath,
-        );
-      });
-
-      it("should return error when file path is missing for replace operation", async () => {
-        const handler = createSampleOperationHandler(
-          mockInMemorySettings,
-          "replace",
-        );
-        const result = await handler(
-          mockEvent,
-          kitName,
-          voiceNumber,
-          slotNumber,
-        );
-
-        expect(result).toEqual({
-          error: "File path required for replace operation",
-          success: false,
-        });
-        expect(sampleService.replaceSampleInSlot).not.toHaveBeenCalled();
-      });
-
-      it("should handle replace operation service errors", async () => {
-        vi.mocked(sampleService.replaceSampleInSlot).mockImplementation(() => {
-          throw new Error("Replace failed");
-        });
-
-        const handler = createSampleOperationHandler(
-          mockInMemorySettings,
-          "replace",
-        );
-        const result = await handler(
-          mockEvent,
-          kitName,
-          voiceNumber,
-          slotNumber,
-          filePath,
-        );
-
-        expect(result).toEqual({
-          error: "Failed to perform sample operation: Replace failed",
-          success: false,
-        });
-      });
-    });
-
     describe("unknown operation", () => {
       it("should return error for unknown operation type", async () => {
         const handler = createSampleOperationHandler(
@@ -442,30 +362,26 @@ describe("ipcHandlerUtils", () => {
     describe("sample source authorization (RE-03)", () => {
       const denied = { error: "Access denied: outside", ok: false } as const;
 
-      it.each(["add", "replace"] as const)(
-        "%s refuses a file the user never gave Romper",
-        async (operation) => {
-          vi.mocked(checkSampleSourceAccess).mockResolvedValueOnce(denied);
-          const handler = createSampleOperationHandler(
-            mockInMemorySettings,
-            operation,
-          );
-          const result = await handler(
-            mockEvent,
-            "A0",
-            1,
-            0,
-            "/Users/me/.ssh/id_rsa",
-          );
-          expect(checkSampleSourceAccess).toHaveBeenCalledWith(
-            mockInMemorySettings,
-            "/Users/me/.ssh/id_rsa",
-          );
-          expect(result).toEqual({ error: denied.error, success: false });
-          expect(sampleService.addSampleToSlot).not.toHaveBeenCalled();
-          expect(sampleService.replaceSampleInSlot).not.toHaveBeenCalled();
-        },
-      );
+      it("add refuses a file the user never gave Romper", async () => {
+        vi.mocked(checkSampleSourceAccess).mockResolvedValueOnce(denied);
+        const handler = createSampleOperationHandler(
+          mockInMemorySettings,
+          "add",
+        );
+        const result = await handler(
+          mockEvent,
+          "A0",
+          1,
+          0,
+          "/Users/me/.ssh/id_rsa",
+        );
+        expect(checkSampleSourceAccess).toHaveBeenCalledWith(
+          mockInMemorySettings,
+          "/Users/me/.ssh/id_rsa",
+        );
+        expect(result).toEqual({ error: denied.error, success: false });
+        expect(sampleService.addSampleToSlot).not.toHaveBeenCalled();
+      });
 
       it("delete doesn't check a source path but remembers the kit's sources", async () => {
         vi.mocked(sampleService.deleteSampleFromSlot).mockReturnValue({

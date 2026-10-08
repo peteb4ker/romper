@@ -4,7 +4,6 @@ import type {
   MoveSampleAction,
   MoveSampleBetweenKitsAction,
   ReindexSamplesAction,
-  ReplaceSampleAction,
   VoiceSnapshot,
 } from "@romper/shared/undoTypes";
 
@@ -61,11 +60,6 @@ describe("useUndoActionHandlers", () => {
         vi.mocked(
           window.electronAPI.deleteSampleFromSlotWithoutReindexing,
         ).mockResolvedValue({ success: true });
-      }
-      if (window.electronAPI.replaceSampleInSlot) {
-        vi.mocked(window.electronAPI.replaceSampleInSlot).mockResolvedValue({
-          success: true,
-        });
       }
       vi.mocked(window.electronAPI.restoreKitVoices).mockResolvedValue({
         success: true,
@@ -156,35 +150,6 @@ describe("useUndoActionHandlers", () => {
         );
 
         consoleSpy.mockRestore();
-      });
-    });
-
-    describe("[Q-02] REPLACE_SAMPLE undo", () => {
-      it("restores the voice's full rows, gain included, in one call", async () => {
-        const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
-        const action: ReplaceSampleAction = {
-          data: {
-            newSample: { filename: "new.wav", source_path: "/path/to/new.wav" },
-            oldSample: { filename: "old.wav", source_path: "/path/to/old.wav" },
-            slot: 0,
-            voice: 1,
-            voicesBefore: [voiceOne],
-          },
-          description: "Replace sample",
-          id: "test-id",
-          timestamp: new Date(),
-          type: "REPLACE_SAMPLE",
-        };
-
-        const outcome = await result.current.executeUndoAction(action);
-
-        expect(outcome).toEqual({ success: true });
-        expect(window.electronAPI?.restoreKitVoices).toHaveBeenCalledTimes(1);
-        expect(window.electronAPI?.restoreKitVoices).toHaveBeenCalledWith(
-          "TestKit",
-          [voiceOne],
-        );
-        expect(window.electronAPI?.replaceSampleInSlot).not.toHaveBeenCalled();
       });
     });
 

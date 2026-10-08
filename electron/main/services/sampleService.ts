@@ -152,26 +152,6 @@ export class SampleService {
   }
 
   /**
-   * Replace the file in an occupied slot, keeping the slot and its gain
-   * (RE-26)
-   */
-  replaceSampleInSlot(
-    inMemorySettings: Record<string, unknown>,
-    kitName: string,
-    voiceNumber: number,
-    slotNumber: number,
-    filePath: string,
-  ): DbResult<{ replacedSample: Sample; sampleId: number }> {
-    return sampleCrudService.replaceSampleInSlot(
-      inMemorySettings,
-      kitName,
-      voiceNumber,
-      slotNumber,
-      filePath,
-    );
-  }
-
-  /**
    * Put a kit's voices back as an undo snapshot had them (RE-86)
    */
   restoreVoices(

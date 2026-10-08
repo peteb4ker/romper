@@ -17,7 +17,7 @@ export interface UseSampleManagementOperationsOptions {
 }
 
 /**
- * Hook for basic sample operations (add, replace, delete)
+ * Hook for basic sample operations (add, delete)
  * Extracted from useSampleManagement to reduce complexity
  */
 export function useSampleManagementOperations({
@@ -107,67 +107,6 @@ export function useSampleManagementOperations({
     ],
   );
 
-  // Resolves true when the sample was replaced, like handleSampleAdd
-  const handleSampleReplace = useCallback(
-    async (
-      voice: number,
-      slotNumber: number,
-      filePath: string,
-    ): Promise<boolean> => {
-      if (!globalThis.electronAPI?.replaceSampleInSlot) {
-        onMessage?.("Sample management not available", "error");
-        return false;
-      }
-
-      let replaced = false;
-      try {
-        const before = await undoActions.snapshotForUndo(voice, slotNumber);
-
-        const result = await globalThis.electronAPI.replaceSampleInSlot(
-          kitName,
-          voice,
-          slotNumber,
-          filePath,
-        );
-
-        if (result.success) {
-          replaced = true;
-          onMessage?.(
-            `Sample replaced in voice ${voice}, slot ${slotNumber + 1}`,
-            "success",
-          );
-
-          // Record undo action unless explicitly skipped
-          if (before?.sample && result.data && onAddUndoAction) {
-            log.debug("Recording REPLACE_SAMPLE undo action");
-            const replaceAction = undoActions.createReplaceSampleAction(
-              voice,
-              slotNumber,
-              before.sample,
-              filePath,
-              before.voicesBefore,
-            );
-            onAddUndoAction(replaceAction);
-          }
-
-          // Reload samples to reflect changes
-          if (onSamplesChanged) {
-            await onSamplesChanged();
-          }
-        } else {
-          onMessage?.(result.error || "Failed to replace sample", "error");
-        }
-      } catch (error) {
-        onMessage?.(
-          `Failed to replace sample: ${getErrorMessage(error)}`,
-          "error",
-        );
-      }
-      return replaced;
-    },
-    [kitName, onSamplesChanged, onMessage, undoActions, onAddUndoAction],
-  );
-
   const handleSampleDelete = useCallback(
     async (voice: number, slotNumber: number) => {
       if (!globalThis.electronAPI?.deleteSampleFromSlot) {
@@ -222,6 +161,5 @@ export function useSampleManagementOperations({
   return {
     handleSampleAdd,
     handleSampleDelete,
-    handleSampleReplace,
   };
 }

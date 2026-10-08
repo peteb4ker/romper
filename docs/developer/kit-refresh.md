@@ -4,7 +4,7 @@ priority: medium
 status: in progress
 updated: 2026-10-08
 context_size: small
-implementation_status: step 1 in #765; steps 2-4 planned
+implementation_status: step 1 in #765; step 4s failure handling in the PR after it; steps 2, 3 and the rest of 4 planned
 -->
 
 # Kit refresh after an edit
@@ -136,11 +136,15 @@ not here.
 - Create and duplicate return the new kit and delete removes its kit, so
   only Scan all, a write, a bank rename, setup and store changes reload
   every kit.
-- A failed full reload (Scan all, a write, creating or deleting a kit)
-  keeps the kits on screen instead of emptying the grid. Approved by Pete
-  on #452 (2026-10-08).
-- **Verified by:** unit tests for each list change and for the failure;
-  the create and delete e2e flows.
+- **Done, ahead of the rest of this step:** a failed full reload (Scan all,
+  a write, a bank rename, creating, duplicating or deleting a kit) keeps
+  the kits on screen instead of emptying the grid, with no message.
+  Approved by Pete on #452 (2026-10-08). Loading at startup or after a
+  store change still empties the list when the store can't be read: the
+  kits on screen may belong to another store.
+- **Verified by:** unit tests for each list change and for the failure
+  (`useKitDataManager.test.ts`, which also checks a store change still
+  empties the list); the create and delete e2e flows.
 
 The renderer kits store (architecture review step 8) then replaces
 `kits`, `allKitSamples` and the per-component copies, patched from step 3's
@@ -158,7 +162,8 @@ Approved by Pete on #452 (2026-10-08):
   message stack drops a repeat of a message already showing (#657), so
   several failed reloads show it once.
 - **A failed full reload** (step 4) keeps the kits on screen instead of
-  emptying the grid.
+  emptying the grid. A load at startup or after a store change still
+  empties it.
 
 ## Not covered
 

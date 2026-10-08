@@ -232,8 +232,6 @@ reads them through `app/renderer/config.ts`.
   - `SettingsData` in `shared/electronApi.ts` allows a `theme` key nothing
     uses and types `localStorePath` as `string`, where main uses
     `null | string` (#472).
-  - A failed theme or confirmation-setting save is only logged; the
-    context's `error` isn't shown anywhere (#570).
   - The renderer reads settings twice (`SettingsContext.initializeSettings`
     and `useKitSync`), so `sdCardPath` lives outside the context, read once
     at mount.
@@ -330,7 +328,7 @@ Kit fields, each owned by a column of `kits`:
 | `is_favorite` | Starred | none | `toggleKitFavorite` (`toggle-kit-favorite`): flips the stored value and returns the new one | `kits[i]`, set from the returned value (#453 removed the shadow map) |
 | `modified_since_sync` | The next write will change this kit on the card (#566) | none | see below | `kits[i]`; `markKitModified` patches it locally after a gain save; the Modified filter and count (`useKitFilters`), card border, header badge |
 | `bpm` | Sequencer tempo, 30 to 180 | none | `updateKit` via `update-kit-bpm`; no reload after, but `KitsView` patches the kit's `bpm` in `kits` once it's saved (`useBpm` `onSaved`) | `KitStepSequencer`'s `useBpm`, which drives playback and resets on the kit name as well as the loaded BPM |
-| `step_pattern` | 4 voices × 16 steps | none | `updateKit` via `update-step-pattern`, then a full reload | `useStepPattern` state and `latestRef`; `useSequenceHistory` |
+| `step_pattern` | 4 voices × 16 steps | none | `updateKit` via `update-step-pattern`, then a full reload; undo and redo write it with the conditions and slices via `restore-kit-sequence` | `useStepPattern` state and `latestRef`; `useSequenceHistory` |
 | `trigger_conditions` | A:B condition per step | none | `updateKit` via `update-trigger-conditions`, then a full reload | `useTriggerConditions` state and ref |
 | `slice_steps` | Slice per step, in ticks of 384 per sample | mirrors | `updateKit` via `update-slice-steps` (debounced reload) | `useSliceSteps` state and ref |
 | `slicer_division` | Slices per sample (8 to 128) | mirrors the SLICER setting | `updateKit` via `update-kit-slicer-division` | `useSliceSteps` |
@@ -424,9 +422,8 @@ voice number):
     default), `random` and `round-robin`, and saves none of it to the card,
     since the Rample keeps layer modes in its own STORE data. A parity gap
     for #538, not a bug.
-  - The editor's `handleInferVoiceNames` ignores `updateVoiceAlias`'s
-    result and reports every voice as named (#570); `updateVoiceAlias`
-    reports success when the voice row doesn't exist.
+  - `updateVoiceAlias` reports success when the voice row doesn't exist,
+    so the editor's `handleInferVoiceNames` counts that voice as named.
   - The voice level, sample mode and slicer settings don't flag the kit,
     and neither does a kit alias, but a voice name does (#566).
 
@@ -706,23 +703,20 @@ voice and slot):
   `useGlobalKeyboardShortcuts` in `KitsView`, and cleared when the kit name
   or the store changes. Not persisted.
 - **Writers:** `addAction` after a successful edit (sample add, delete,
-  move, replace; `SEQUENCE_EDIT` from `useSequenceHistory`, merged by
-  `mergeSequenceEdit`). Sample actions keep full voice rows fetched from
+  move, replace; `SEQUENCE_EDIT` from `useSequenceHistory` once main has
+  saved the edit, merged by `mergeSequenceEdit`). Sample actions keep full voice rows fetched from
   main before the edit (`VoiceSnapshot`); sequencer actions keep the
   renderer's own pattern state.
 - **Readers and copies:** undo and redo replay through
   `useUndoActionHandlers` and `useRedoActionHandlers`
   (`restore-kit-voices` for delete, replace and move, one transaction;
   add and delete channels otherwise; `writeSequenceSnapshot` for the
-  sequencer), then dispatch `romper:refresh-samples` on `document`, which
+  sequencer, one `restore-kit-sequence` write of the parts that differ),
+  then dispatch `romper:refresh-samples` on `document`, which
   `useSampleRefreshListener` turns into reloads of the selected kit.
 - **Invariants:** the stack belongs to one kit in one store; it clears when
   that changes; an undo either restores everything it touched or nothing.
 - **Disagreements on main:**
-  - `writeSequenceSnapshot` sends the pattern, conditions and slices as
-    three parallel saves; if one fails, the others have committed and the
-    kit is left half undone (#570).
-  - A sequencer edit main refuses still leaves its undo entry.
   - Undoing a move between kits refreshes only the selected kit; the move
     itself can't be reached from the UI (UC-22).
   - Undo isn't offered for gain, voice names, links, BPM, level, sample mode

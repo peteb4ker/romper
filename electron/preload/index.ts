@@ -10,7 +10,10 @@ import type {
   SliceStep,
   VoiceSliceSettings,
 } from "@romper/shared/sliceTypes.js";
-import type { VoiceSnapshot } from "@romper/shared/undoTypes.js";
+import type {
+  SequenceSnapshot,
+  VoiceSnapshot,
+} from "@romper/shared/undoTypes.js";
 
 const { contextBridge, ipcRenderer, webUtils } = require("electron");
 
@@ -401,6 +404,10 @@ const electronAPI = {
   rescanKit: (kitName: string) => {
     isDev && console.debug("[IPC] rescanKit invoked", kitName);
     return ipcRenderer.invoke("rescan-kit", kitName);
+  },
+  restoreKitSequence: (kitName: string, parts: Partial<SequenceSnapshot>) => {
+    isDev && console.debug("[IPC] restoreKitSequence invoked", kitName);
+    return ipcRenderer.invoke("restore-kit-sequence", kitName, parts);
   },
   restoreKitVoices: (kitName: string, voices: VoiceSnapshot[]) => {
     isDev && console.debug("[IPC] restoreKitVoices invoked", kitName);

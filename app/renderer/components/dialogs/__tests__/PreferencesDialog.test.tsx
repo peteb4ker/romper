@@ -17,6 +17,10 @@ vi.mock("../../../utils/SettingsContext", () => ({
   useSettings: vi.fn(),
 }));
 
+vi.mock("../../hooks/shared/useMessageApi", () => ({
+  useMessageApi: () => ({ showMessage: vi.fn() }),
+}));
+
 const mockUseSettings = vi.mocked(useSettings);
 
 describe("[UC-35] PreferencesDialog", () => {
@@ -43,6 +47,8 @@ describe("[UC-35] PreferencesDialog", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSetThemeMode.mockResolvedValue(true);
+    mockSetConfirmDestructiveActions.mockResolvedValue(true);
     mockUseSettings.mockReturnValue(defaultSettingsContext);
     setupElectronAPIMock();
   });

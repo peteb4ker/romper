@@ -46,9 +46,11 @@ export function useStepPattern({
     reset();
   }, [initialPattern, reset]);
 
+  // Resolves to whether main saved the pattern and the kit is still open,
+  // so the sequencer's undo history only keeps saved edits (#570)
   const updateStepPattern = useCallback(
-    async (pattern: number[][]) => {
-      if (!globalThis.electronAPI?.updateStepPattern || !kitName) return;
+    async (pattern: number[][]): Promise<boolean> => {
+      if (!globalThis.electronAPI?.updateStepPattern || !kitName) return false;
 
       // Update UI state immediately for responsive feedback
       const current =
@@ -56,7 +58,7 @@ export function useStepPattern({
       latestRef.current = pattern;
       setStepPatternState(pattern);
 
-      await save({
+      const saved = await save({
         current,
         key: kitName,
         onSaved: () => void onSaved?.(),
@@ -71,6 +73,7 @@ export function useStepPattern({
         value: pattern,
         what: `the steps for kit ${kitName}`,
       });
+      return saved && kitRef.current === kitName;
     },
     [kitName, kitRef, initialPattern, latestRef, onMessage, onSaved, save],
   );

@@ -555,4 +555,28 @@ describe("useTriggerConditions", () => {
       expect(onMessage).not.toHaveBeenCalled();
     });
   });
+
+  // The sequencer's undo history keeps only saved edits (#570)
+  it("[UC-26] resolves to whether the conditions were saved", async () => {
+    const { result } = renderHook(() =>
+      useTriggerConditions({ initialConditions: null, kitName: "A0" }),
+    );
+    const conditions = [["1:2", null]];
+    vi.mocked(
+      globalThis.electronAPI.updateTriggerConditions,
+    ).mockResolvedValueOnce({ success: true });
+    let saved: boolean | undefined;
+    await act(async () => {
+      saved = await result.current.setTriggerConditions(conditions);
+    });
+    expect(saved).toBe(true);
+
+    vi.mocked(
+      globalThis.electronAPI.updateTriggerConditions,
+    ).mockResolvedValueOnce({ error: "disk full", success: false });
+    await act(async () => {
+      saved = await result.current.setTriggerConditions([[null, "1:2"]]);
+    });
+    expect(saved).toBe(false);
+  });
 });

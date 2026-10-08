@@ -1,5 +1,6 @@
 import type { DbResult } from "@romper/shared/db/schema.js";
 import type { VoiceSliceSettings } from "@romper/shared/sliceTypes.js";
+import type { SequenceSnapshot } from "@romper/shared/undoTypes.js";
 
 import { getErrorMessage } from "@romper/shared/errorUtils.js";
 import {
@@ -299,6 +300,29 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
       (dbDir: string, kitName: string, sliceSteps: unknown) => {
         return updateKit(dbDir, kitName, {
           slice_steps: normalizeSliceSteps(sliceSteps),
+        });
+      },
+    ),
+  );
+
+  // Undo and redo put back the parts of a sequence that differ, in one
+  // statement, so a failure leaves none of them changed (#570)
+  ipcMain.handle(
+    "restore-kit-sequence",
+    createDbHandler(
+      inMemorySettings,
+      (dbDir: string, kitName: string, parts: Partial<SequenceSnapshot>) => {
+        const { sliceSteps, stepPattern, triggerConditions } = parts ?? {};
+        const given = [sliceSteps, stepPattern, triggerConditions].filter(
+          (part) => part !== undefined,
+        );
+        if (given.length === 0 || !given.every(Array.isArray)) {
+          return { error: "No sequence to restore", success: false };
+        }
+        return updateKit(dbDir, kitName, {
+          ...(stepPattern && { step_pattern: stepPattern }),
+          ...(triggerConditions && { trigger_conditions: triggerConditions }),
+          ...(sliceSteps && { slice_steps: normalizeSliceSteps(sliceSteps) }),
         });
       },
     ),

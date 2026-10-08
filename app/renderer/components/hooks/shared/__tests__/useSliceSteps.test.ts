@@ -222,4 +222,28 @@ describe("useSliceSteps", () => {
       expect(onMessage).not.toHaveBeenCalled();
     });
   });
+
+  // The sequencer's undo history keeps only saved edits (#570)
+  it("[UC-26] resolves to whether the slices were saved", async () => {
+    const { result } = renderHook(() =>
+      useSliceSteps({ initialSliceSteps: null, kitName: "A0" }),
+    );
+    vi.mocked(globalThis.electronAPI.updateSliceSteps).mockResolvedValueOnce({
+      success: true,
+    });
+    let saved: boolean | undefined;
+    await act(async () => {
+      saved = await result.current.setSliceSteps(createEmptySliceSteps());
+    });
+    expect(saved).toBe(true);
+
+    vi.mocked(globalThis.electronAPI.updateSliceSteps).mockResolvedValueOnce({
+      error: "disk full",
+      success: false,
+    });
+    await act(async () => {
+      saved = await result.current.setSliceSteps(createEmptySliceSteps());
+    });
+    expect(saved).toBe(false);
+  });
 });

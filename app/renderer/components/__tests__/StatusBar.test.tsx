@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import StatusBar from "../StatusBar";
 
 // Mock the useSettings hook
-const mockSetThemeMode = vi.fn();
+const mockSetThemeMode = vi.fn().mockResolvedValue(true);
 const mockSettings = {
   isDarkMode: false,
   localStorePath: "/test/path",
@@ -15,6 +15,10 @@ const mockSettings = {
 
 vi.mock("../../utils/SettingsContext", () => ({
   useSettings: () => mockSettings,
+}));
+
+vi.mock("../hooks/shared/useMessageApi", () => ({
+  useMessageApi: () => ({ showMessage: vi.fn() }),
 }));
 
 // Mock @phosphor-icons/react
@@ -28,6 +32,7 @@ vi.mock("@phosphor-icons/react", () => ({
 describe("StatusBar", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSetThemeMode.mockResolvedValue(true);
     mockSettings.themeMode = "light";
     mockSettings.isDarkMode = false;
     mockSettings.localStorePath = "/test/path";

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 
 import { useSettings } from "../../utils/SettingsContext";
 import { useChooseExistingLocalStore } from "../hooks/shared/useChooseExistingLocalStore";
+import { usePreferenceSaves } from "../hooks/shared/usePreferenceSaves";
 import AdvancedTab from "../preferences/AdvancedTab";
 import AppearanceTab from "../preferences/AppearanceTab";
 import SampleManagementTab from "../preferences/SampleManagementTab";
@@ -21,11 +22,11 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
     confirmDestructiveActions,
     localStorePath,
     localStoreStatus,
-    setConfirmDestructiveActions,
     setLocalStorePath,
-    setThemeMode,
     themeMode,
   } = useSettings();
+  // A setting that wasn't saved is reported (#570)
+  const { saveConfirmDestructiveActions, saveThemeMode } = usePreferenceSaves();
 
   const [activeTab, setActiveTab] = useState<
     "advanced" | "appearance" | "samples"
@@ -116,13 +117,15 @@ const PreferencesDialog: React.FC<PreferencesDialogProps> = ({
           {activeTab === "samples" && (
             <SampleManagementTab
               confirmDestructiveActions={confirmDestructiveActions}
-              onConfirmDestructiveActionsChange={setConfirmDestructiveActions}
+              onConfirmDestructiveActionsChange={(checked) =>
+                void saveConfirmDestructiveActions(checked)
+              }
             />
           )}
 
           {activeTab === "appearance" && (
             <AppearanceTab
-              onThemeModeChange={setThemeMode}
+              onThemeModeChange={(mode) => void saveThemeMode(mode)}
               themeMode={themeMode}
             />
           )}

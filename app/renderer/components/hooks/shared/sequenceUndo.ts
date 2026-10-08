@@ -51,32 +51,32 @@ export function mergeSequenceEdit(
 
 /**
  * Save `target` as the kit's sequence. Only the parts that differ from
- * `other` (the state being replaced) are written.
+ * `other` (the state being replaced) are written, in one call that saves
+ * all of them or none, so a failed undo leaves the kit as it was (#570).
  */
 export async function writeSequenceSnapshot(
   kitName: string,
   target: SequenceSnapshot,
   other: SequenceSnapshot,
 ): Promise<{ error?: string; success: boolean }> {
-  const api = globalThis.electronAPI;
-  const writes: Promise<{ error?: string; success: boolean } | undefined>[] =
-    [];
+  const parts: Partial<SequenceSnapshot> = {};
   if (!sameGrid(target.stepPattern, other.stepPattern)) {
-    writes.push(api?.updateStepPattern?.(kitName, target.stepPattern));
+    parts.stepPattern = target.stepPattern;
   }
   if (!sameGrid(target.triggerConditions, other.triggerConditions)) {
-    writes.push(
-      api?.updateTriggerConditions?.(kitName, target.triggerConditions),
-    );
+    parts.triggerConditions = target.triggerConditions;
   }
   if (!sameGrid(target.sliceSteps, other.sliceSteps)) {
-    writes.push(api?.updateSliceSteps?.(kitName, target.sliceSteps));
+    parts.sliceSteps = target.sliceSteps;
   }
-  const results = await Promise.all(writes);
-  const failed = results.findIndex((r) => !r?.success);
-  if (failed === -1) return { success: true };
+  if (Object.keys(parts).length === 0) return { success: true };
+  const result = await globalThis.electronAPI?.restoreKitSequence?.(
+    kitName,
+    parts,
+  );
+  if (result?.success) return { success: true };
   return {
-    error: results[failed]?.error ?? "Could not save the sequence",
+    error: result?.error ?? "Could not save the sequence",
     success: false,
   };
 }

@@ -3,6 +3,8 @@ import type { VoiceSamples } from "@romper/app/renderer/components/kitTypes";
 import { inferVoiceTypeFromFilename } from "@romper/shared/kitUtilsShared";
 import React from "react";
 
+import { saveFailed } from "../shared/useSettingSave";
+import { useTimeouts } from "../shared/useTimeouts";
 import {
   addScanResultToTotals,
   describeScanTotals,
@@ -20,6 +22,15 @@ export type ScanStatus =
   | { message: string; status: "error" }
   | { status: "idle" }
   | { status: "scanning" };
+
+/** What inference says when it couldn't save some voices' names (#570) */
+export function voiceNamesNotSaved(voices: number[]): string {
+  if (voices.length === 1) {
+    return `Couldn't save the name for voice ${voices[0]}. Try again.`;
+  }
+  const list = new Intl.ListFormat("en-US").format(voices.map(String));
+  return `Couldn't save the names for voices ${list}. Try again.`;
+}
 
 /** What Scan Kit reports for a kit it scanned */
 function scanSuccessStatus(
@@ -88,30 +99,28 @@ export function useKitScanning({
     null,
   );
 
-  // Clean up timers on unmount
-  React.useEffect(() => {
-    return () => {
-      if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
-      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
-    };
-  }, []);
+  // Cleared on unmount, so a scan that outlives the editor sets nothing
+  const timeouts = useTimeouts();
 
   const scheduleStatusClear = React.useCallback(() => {
-    if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
-    scanTimerRef.current = setTimeout(
+    timeouts.clear(scanTimerRef.current);
+    scanTimerRef.current = timeouts.set(
       () => setScanStatus({ status: "idle" }),
       SCAN_SUCCESS_CLEAR_MS,
     );
-  }, []);
+  }, [timeouts]);
 
-  const flashVoicePanels = React.useCallback((voices: number[]) => {
-    setFlashVoices(new Set(voices));
-    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
-    flashTimerRef.current = setTimeout(
-      () => setFlashVoices(new Set()),
-      FLASH_DURATION_MS,
-    );
-  }, []);
+  const flashVoicePanels = React.useCallback(
+    (voices: number[]) => {
+      setFlashVoices(new Set(voices));
+      timeouts.clear(flashTimerRef.current);
+      flashTimerRef.current = timeouts.set(
+        () => setFlashVoices(new Set()),
+        FLASH_DURATION_MS,
+      );
+    },
+    [timeouts],
+  );
 
   // Handler for kit rescanning (database-first approach)
   const handleScanKit = React.useCallback(async () => {
@@ -183,29 +192,48 @@ export function useKitScanning({
         if (voiceNames?.[voice]?.trim()) continue;
 
         const inferredType = inferVoiceTypeFromFilename(voiceSamples[0]);
-        if (!inferredType || !globalThis.electronAPI?.updateVoiceAlias)
-          continue;
+        if (!inferredType) continue;
         toName.push({ alias: inferredType, voice });
       }
 
-      // Each call names a different voice, so they don't depend on each other
-      await Promise.all(
+      // Each call names a different voice, so they don't depend on each
+      // other. A name main didn't save isn't counted or flashed, and is
+      // reported (#570).
+      const failed = await Promise.all(
         toName.map(({ alias, voice }) =>
-          globalThis.electronAPI.updateVoiceAlias(kitName, voice, alias),
+          saveFailed(
+            globalThis.electronAPI?.updateVoiceAlias?.(kitName, voice, alias),
+            `the name for voice ${voice}`,
+          ),
         ),
       );
-      const updatedVoices = toName.map(({ voice }) => voice);
+      const updatedVoices = toName
+        .filter((_, i) => !failed[i])
+        .map(({ voice }) => voice);
+      const failedVoices = toName
+        .filter((_, i) => failed[i])
+        .map(({ voice }) => voice);
 
-      setScanStatus({ sampleCount: updatedVoices.length, status: "success" });
-
-      scheduleStatusClear();
+      if (failedVoices.length > 0) {
+        setScanStatus({
+          message: voiceNamesNotSaved(failedVoices),
+          status: "error",
+        });
+      } else {
+        setScanStatus({
+          sampleCount: updatedVoices.length,
+          status: "success",
+        });
+        scheduleStatusClear();
+      }
 
       // Flash updated voice panels before reload so animation renders immediately
       if (updatedVoices.length > 0) {
         flashVoicePanels(updatedVoices);
       }
 
-      // Targeted refresh: only reload this kit's metadata, not all 187 kits
+      // Targeted refresh: only reload this kit's metadata, not all 187 kits.
+      // A voice whose name wasn't saved keeps showing its saved name.
       if (onRefreshKitMetadata) {
         await onRefreshKitMetadata();
       } else {

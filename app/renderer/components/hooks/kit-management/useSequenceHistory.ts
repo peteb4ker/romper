@@ -17,11 +17,12 @@ export interface SequenceEditMeta {
 type SliceSteps = (null | SliceStep)[][];
 type SliceStepsUpdate = ((prev: SliceSteps) => SliceSteps) | SliceSteps;
 
+/** Each setter resolves to whether main saved the change */
 interface UseSequenceHistoryParams {
   onAddUndoAction?: (action: AnyUndoAction) => void;
-  setSliceSteps: (update: SliceStepsUpdate) => Promise<void> | void;
-  setStepPattern: (pattern: number[][]) => void;
-  setTriggerConditions: (conditions: (null | string)[][]) => void;
+  setSliceSteps: (update: SliceStepsUpdate) => Promise<boolean>;
+  setStepPattern: (pattern: number[][]) => Promise<boolean>;
+  setTriggerConditions: (conditions: (null | string)[][]) => Promise<boolean>;
   sliceSteps: SliceSteps;
   stepPattern: null | number[][];
   triggerConditions: (null | string)[][];
@@ -29,7 +30,9 @@ interface UseSequenceHistoryParams {
 
 /**
  * Wraps the sequencer's setters so every edit (steps, conditions, slices)
- * lands on the kit's undo stack with its before and after state.
+ * lands on the kit's undo stack with its before and after state, once main
+ * has saved it: a refused edit is put back on screen and isn't undoable
+ * (#570).
  */
 export function useSequenceHistory({
   onAddUndoAction,
@@ -48,40 +51,42 @@ export function useSequenceHistory({
     triggerConditions,
   });
 
+  // The edit's before and after are taken now, so the next edit in the same
+  // event builds on it; it goes on the stack once `save` succeeds
   const record = React.useCallback(
-    (
+    async (
       change: Partial<SequenceSnapshot>,
       fallbackDescription: string,
-      meta?: SequenceEditMeta,
+      meta: SequenceEditMeta | undefined,
+      save: () => Promise<boolean>,
     ) => {
       const before = latestRef.current;
       const after = { ...before, ...change };
       latestRef.current = after;
-      onAddUndoAction?.(
-        createSequenceEditAction(
-          meta?.description ?? fallbackDescription,
-          before,
-          after,
-          meta?.mergeKey,
-        ),
+      const action = createSequenceEditAction(
+        meta?.description ?? fallbackDescription,
+        before,
+        after,
+        meta?.mergeKey,
       );
+      if (await save()) onAddUndoAction?.(action);
     },
     [latestRef, onAddUndoAction],
   );
 
   const recordStepPattern = React.useCallback(
-    (pattern: number[][], meta?: SequenceEditMeta) => {
-      record({ stepPattern: pattern }, "Edit steps", meta);
-      setStepPattern(pattern);
-    },
+    (pattern: number[][], meta?: SequenceEditMeta) =>
+      record({ stepPattern: pattern }, "Edit steps", meta, () =>
+        setStepPattern(pattern),
+      ),
     [record, setStepPattern],
   );
 
   const recordTriggerConditions = React.useCallback(
-    (conditions: (null | string)[][], meta?: SequenceEditMeta) => {
-      record({ triggerConditions: conditions }, "Change condition", meta);
-      setTriggerConditions(conditions);
-    },
+    (conditions: (null | string)[][], meta?: SequenceEditMeta) =>
+      record({ triggerConditions: conditions }, "Change condition", meta, () =>
+        setTriggerConditions(conditions),
+      ),
     [record, setTriggerConditions],
   );
 
@@ -91,8 +96,9 @@ export function useSequenceHistory({
         typeof update === "function"
           ? update(latestRef.current.sliceSteps)
           : update;
-      record({ sliceSteps: next }, "Edit slices", meta);
-      return setSliceSteps(next);
+      return record({ sliceSteps: next }, "Edit slices", meta, () =>
+        setSliceSteps(next),
+      );
     },
     [latestRef, record, setSliceSteps],
   );

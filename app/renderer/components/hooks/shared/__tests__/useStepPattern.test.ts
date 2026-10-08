@@ -585,4 +585,58 @@ describe("useStepPattern", () => {
       expect(onMessage).not.toHaveBeenCalled();
     });
   });
+
+  // The sequencer's undo history keeps only saved edits (#570)
+  describe("[UC-26] resolves to whether the steps were saved", () => {
+    const pattern = [[127, 0, 0, 0]];
+    const initialPattern = [[0, 0, 0, 0]];
+
+    it("is true once main saves them, false when it refuses", async () => {
+      const { result } = renderHook(() =>
+        useStepPattern({ initialPattern, kitName: "A0" }),
+      );
+      vi.mocked(globalThis.electronAPI.updateStepPattern).mockResolvedValueOnce(
+        { success: true },
+      );
+      let saved: boolean | undefined;
+      await act(async () => {
+        saved = await result.current.setStepPattern(pattern);
+      });
+      expect(saved).toBe(true);
+
+      vi.mocked(globalThis.electronAPI.updateStepPattern).mockResolvedValueOnce(
+        { error: "disk full", success: false },
+      );
+      await act(async () => {
+        saved = await result.current.setStepPattern([[0, 127, 0, 0]]);
+      });
+      expect(saved).toBe(false);
+    });
+
+    it("is false when another kit opened while saving", async () => {
+      let answer: (value: { success: boolean }) => void = () => {};
+      vi.mocked(globalThis.electronAPI.updateStepPattern).mockReturnValueOnce(
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+      );
+      const { rerender, result } = renderHook(
+        ({ kitName }) => useStepPattern({ initialPattern: null, kitName }),
+        { initialProps: { kitName: "A0" } },
+      );
+
+      let pending: Promise<boolean> | undefined;
+      act(() => {
+        pending = result.current.setStepPattern(pattern);
+      });
+      rerender({ kitName: "A1" });
+      let saved: boolean | undefined;
+      await act(async () => {
+        answer({ success: true });
+        saved = await pending;
+      });
+
+      expect(saved).toBe(false);
+    });
+  });
 });

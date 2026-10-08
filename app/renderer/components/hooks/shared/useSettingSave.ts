@@ -68,6 +68,8 @@ export async function saveFailed(
  * gives one message rather than one per step. Changes that each finish
  * before the next starts (wheel notches, arrow presses) also give one
  * message while they keep failing less than `REPEAT_FAILURE_MS` apart.
+ *
+ * `save` resolves to whether main saved this change.
  */
 export function useSettingSave<K, V>() {
   // The value main last saved, per key, once a change has been sent
@@ -87,7 +89,7 @@ export function useSettingSave<K, V>() {
       send,
       value,
       what,
-    }: SettingSave<K, V>) => {
+    }: SettingSave<K, V>): Promise<boolean> => {
       if (!saved.current.has(key)) saved.current.set(key, current);
       const request = (latest.current.get(key) ?? 0) + 1;
       latest.current.set(key, request);
@@ -95,7 +97,7 @@ export function useSettingSave<K, V>() {
       const failed = await saveFailed(send(), what);
       if (!failed) saved.current.set(key, value);
       // A newer change is on its way; its answer decides
-      if (latest.current.get(key) !== request) return;
+      if (latest.current.get(key) !== request) return !failed;
 
       if (failed) {
         const previous = saved.current.has(key)
@@ -110,6 +112,7 @@ export function useSettingSave<K, V>() {
         lastFailure.current.delete(key);
         onSaved?.();
       }
+      return !failed;
     },
     [],
   );

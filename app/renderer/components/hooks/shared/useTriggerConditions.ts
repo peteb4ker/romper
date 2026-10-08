@@ -59,16 +59,20 @@ export function useTriggerConditions({
     reset();
   }, [initialConditions, reset]);
 
+  // Resolves to whether main saved the conditions and the kit is still
+  // open, so the sequencer's undo history only keeps saved edits (#570)
   const updateTriggerConditions = useCallback(
-    async (conditions: (null | string)[][]) => {
-      if (!globalThis.electronAPI?.updateTriggerConditions || !kitName) return;
+    async (conditions: (null | string)[][]): Promise<boolean> => {
+      if (!globalThis.electronAPI?.updateTriggerConditions || !kitName) {
+        return false;
+      }
 
       // Update UI state immediately for responsive feedback
       const current = latestRef.current;
       latestRef.current = conditions;
       setTriggerConditionsState(conditions);
 
-      await save({
+      const saved = await save({
         current,
         key: kitName,
         onSaved: () => void onSaved?.(),
@@ -84,6 +88,7 @@ export function useTriggerConditions({
         value: conditions,
         what: `the trigger conditions for kit ${kitName}`,
       });
+      return saved && kitRef.current === kitName;
     },
     [kitName, kitRef, latestRef, onMessage, onSaved, save],
   );

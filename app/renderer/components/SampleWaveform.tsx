@@ -17,6 +17,7 @@ import { useLatestRef } from "./hooks/shared/useLatestRef";
 import { clearVoiceLevel, setVoiceLevel } from "./led-icon/audioLevels";
 import { bufferForVoice } from "./monoMixdown";
 import { claimVoice } from "./voiceChoke";
+import { useWaveformPainter } from "./waveformDrawing";
 
 // Short gain ramp at slice edges and on choke, so slices don't click
 const ANTI_CLICK_SECONDS = 0.002;
@@ -50,29 +51,6 @@ interface SampleWaveformProps {
   voiceColor?: string; // CSS color or var(--voice-N) reference
   voiceNumber: number;
   volume?: number; // 0-100, applied via GainNode
-}
-
-// Build min/max envelope arrays for waveform rendering
-function buildEnvelope(
-  data: Float32Array,
-  width: number,
-  step: number,
-  amp: number,
-): { bottoms: Float32Array; tops: Float32Array } {
-  const tops = new Float32Array(width);
-  const bottoms = new Float32Array(width);
-  for (let i = 0; i < width; i++) {
-    let max = -1,
-      min = 1;
-    for (let j = 0; j < step; j++) {
-      const datum = data[i * step + j] || 0;
-      if (datum < min) min = datum;
-      if (datum > max) max = datum;
-    }
-    tops[i] = (1 + max) * amp;
-    bottoms[i] = (1 + min) * amp;
-  }
-  return { bottoms, tops };
 }
 
 function computeRms(
@@ -115,23 +93,6 @@ function playWindow(
     Math.min(region.length * duration, duration - offset),
   );
   return { offset, playLength };
-}
-
-// Resolve a color value that may be a CSS var() reference into a raw color
-// string usable by canvas APIs. Falls back to accent-primary or a default blue.
-function resolveWaveformColor(voiceColor?: string): string {
-  if (voiceColor) {
-    const varMatch = /^var\((.+)\)$/.exec(voiceColor);
-    if (varMatch) {
-      const resolved = getComputedStyle(document.documentElement)
-        .getPropertyValue(varMatch[1])
-        .trim();
-      if (resolved) return resolved;
-    }
-    return voiceColor;
-  }
-  const style = getComputedStyle(document.documentElement);
-  return style.getPropertyValue("--accent-primary").trim() || "#2889be";
 }
 
 /** Start a source now, at a scheduled time, or for a region only. */
@@ -207,14 +168,6 @@ function toContextTime(ctx: BaseAudioContext, at?: number): number {
   return Math.max(ctx.currentTime, mapped);
 }
 
-// Trace a canvas path through an array of y-values
-function tracePath(ctx: CanvasRenderingContext2D, values: Float32Array): void {
-  for (let i = 0; i < values.length; i++) {
-    if (i === 0) ctx.moveTo(i, values[i]);
-    else ctx.lineTo(i, values[i]);
-  }
-}
-
 const SampleWaveform: React.FC<SampleWaveformProps> = ({
   gainDb,
   kitName,
@@ -238,7 +191,12 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
   } | null>(null);
   const audioBuffer = loaded?.buffer ?? null;
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playhead, setPlayhead] = useState(0);
+  // Draws the waveform; a playing frame draws only the playhead (RE-46)
+  const paint = useWaveformPainter(canvasRef, voiceColor);
+  // The playhead (0..1) while a sample plays, null when stopped. Frames
+  // draw it straight to the canvas, without rendering (RE-46).
+  const playheadRef = useRef<null | number>(null);
+  const audioBufferRef = useLatestRef(audioBuffer);
   // Counts reloads for another file taking the slot (#575)
   const [fileChanges, setFileChanges] = useState(0);
   // The file the loaded audio is from, once known
@@ -281,51 +239,6 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     analyserDataRRef.current = null;
     metersStereoRef.current = false;
   }, []);
-
-  // Draw waveform using an envelope (top/bottom outline with fill)
-  const drawWaveform = useCallback(
-    (buffer: AudioBuffer) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      const w = canvas.width;
-      const h = canvas.height;
-      ctx.clearRect(0, 0, w, h);
-
-      const color = resolveWaveformColor(voiceColor);
-      const data = buffer.getChannelData(0);
-      const step = Math.ceil(data.length / w);
-      const amp = h / 2;
-
-      const { bottoms, tops } = buildEnvelope(data, w, step, amp);
-
-      // Draw filled envelope
-      ctx.beginPath();
-      tracePath(ctx, tops);
-      for (let i = w - 1; i >= 0; i--) {
-        ctx.lineTo(i, bottoms[i]);
-      }
-      ctx.closePath();
-      ctx.fillStyle = color;
-      ctx.globalAlpha = 0.12;
-      ctx.fill();
-
-      // Draw edge strokes
-      ctx.strokeStyle = color;
-      ctx.globalAlpha = 0.6;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      tracePath(ctx, tops);
-      ctx.stroke();
-      ctx.beginPath();
-      tracePath(ctx, bottoms);
-      ctx.stroke();
-
-      ctx.globalAlpha = 1;
-    },
-    [voiceColor],
-  );
 
   // Load the slot's audio, decoded once and shared through the cache (#478)
   useEffect(() => {
@@ -374,13 +287,22 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       releaseMeters();
       audioCtxRef.current = ctx;
       setLoaded({ buffer: buf, ctx });
-      drawWaveform(buf);
     };
     void load();
     return () => {
       cancelled = true;
     };
   }, [kitName, voiceNumber, slotNumber, fileChanges]); // eslint-disable-line react-hooks/exhaustive-deps -- onError intentionally excluded to prevent infinite loops; sampleSource is a cache hint, and a new file reloads through fileChanges
+
+  // Move the playhead (null when stopped) and draw it
+  const showPlayhead = useCallback(
+    (position: null | number) => {
+      playheadRef.current = position;
+      const buffer = audioBufferRef.current;
+      if (buffer) paint(buffer, position);
+    },
+    [audioBufferRef, paint],
+  );
 
   // Stop playback logic. `stopAt` (context time) lets a choke land exactly
   // when the next scheduled sound starts, instead of leaving a gap before it.
@@ -395,14 +317,14 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       releaseVoiceRef.current?.();
       releaseVoiceRef.current = null;
       setIsPlaying(false);
-      setPlayhead(0);
+      showPlayhead(null);
       clearVoiceLevel(voiceNumber);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = null;
       }
     },
-    [voiceNumber],
+    [voiceNumber, showPlayhead],
   );
 
   // Another file in the slot: a delete or move shifted the samples after
@@ -530,7 +452,6 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     function animate() {
       if (!playBuffer) return;
       const elapsed = Math.max(0, ctx.currentTime - startTime);
-      setPlayhead(Math.min((offset + elapsed) / playBuffer.duration, 1));
 
       // Report RMS levels for VU meter
       const leftRms =
@@ -548,10 +469,11 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       });
 
       if (elapsed < playLength) {
+        showPlayhead(Math.min((offset + elapsed) / playBuffer.duration, 1));
         animationRef.current = requestAnimationFrame(animate);
       } else {
         setIsPlaying(false);
-        setPlayhead(0);
+        showPlayhead(null);
         clearVoiceLevel(voiceNumber);
       }
     }
@@ -563,7 +485,7 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
       sliceEnvelope?.disconnect();
       releaseVoice();
       setIsPlaying(false);
-      setPlayhead(0);
+      showPlayhead(null);
       clearVoiceLevel(voiceNumber);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
@@ -588,24 +510,11 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
     if (onPlayingChange) onPlayingChange(isPlaying);
   }, [isPlaying]); // eslint-disable-line react-hooks/exhaustive-deps -- onPlayingChange intentionally excluded to prevent infinite loops
 
-  // Draw playhead
+  // Draw the waveform when a sample loads (or the voice color changes).
+  // While it plays, each frame draws only the playhead (showPlayhead).
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !audioBuffer) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    // Redraw waveform
-    drawWaveform(audioBuffer);
-    // Draw playhead
-    if (isPlaying) {
-      ctx.strokeStyle = "#f59e42"; // orange-400
-      ctx.beginPath();
-      const x = Math.floor(playhead * canvas.width);
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvas.height);
-      ctx.stroke();
-    }
-  }, [playhead, isPlaying, audioBuffer, drawWaveform]);
+    if (loaded) paint(loaded.buffer, playheadRef.current);
+  }, [loaded, paint]);
 
   // Clean up on unmount. The shared context stays open for the other slots.
   useEffect(() => {

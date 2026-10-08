@@ -224,6 +224,10 @@ to skip them (RE-09).
   when the version differs: a new file in the slot or an edited one is
   always loaded, never served from the cache. The cache evicts the least
   recently used buffers past a fixed size (`SAMPLE_AUDIO_CACHE_BYTES`).
+- A slot's waveform (`waveformDrawing.ts`) draws the sample's envelope once
+  per sample and voice color into an offscreen canvas. While it plays, each
+  animation frame copies that and draws the playhead straight to the
+  canvas, without a React render or a computed-style read (RE-46, #461).
 - Playback follows the voice's stereo setting, as the write does (#569). A
   voice that isn't in a stereo pair once the write's automatic links are
   made (`planKitStereo(...).links`) plays a sample with more than one

@@ -55,6 +55,7 @@ const mockCanvasContext = {
   beginPath: vi.fn(),
   clearRect: vi.fn(),
   closePath: vi.fn(),
+  drawImage: vi.fn(),
   fill: vi.fn(),
   fillStyle: "",
   globalAlpha: 1,
@@ -80,10 +81,12 @@ beforeEach(() => {
   Object.defineProperty(HTMLCanvasElement.prototype, "width", {
     configurable: true,
     get: () => 80,
+    set: () => {},
   });
   Object.defineProperty(HTMLCanvasElement.prototype, "height", {
     configurable: true,
     get: () => 18,
+    set: () => {},
   });
 
   // Mock AudioContext and related APIs
@@ -1587,5 +1590,125 @@ describe("SampleWaveform", () => {
       await settle();
       expect(window.electronAPI.getSampleAudioBuffer).toHaveBeenCalledTimes(1);
     });
+  });
+});
+
+describe("[Q-01] [UC-29] drawing while a sample plays (RE-46)", () => {
+  // Frames run only when the test steps them
+  let frames: Map<number, FrameRequestCallback>;
+  let nextFrame: number;
+  let ctx: ReturnType<typeof createMockAudioContext>;
+  const getChannelData = vi.fn(() => new Float32Array(44100));
+
+  function stepFrame() {
+    const due = [...frames.values()];
+    frames.clear();
+    for (const cb of due) cb(performance.now());
+  }
+
+  const waveform = (playTrigger: number) => (
+    <SampleWaveform
+      kitName="Q01"
+      playTrigger={playTrigger}
+      slotNumber={1}
+      voiceColor="var(--voice-1)"
+      voiceNumber={1}
+    />
+  );
+
+  /** Load the sample, start it, and count from the first frame on */
+  async function startPlaying() {
+    const onRender = vi.fn();
+    const ui = (trigger: number) => (
+      <React.Profiler id="waveform" onRender={onRender}>
+        {waveform(trigger)}
+      </React.Profiler>
+    );
+    const { rerender } = render(ui(0));
+    await waitFor(() => expect(mockCanvasContext.fill).toHaveBeenCalled());
+    await act(async () => {
+      rerender(ui(1));
+    });
+    vi.clearAllMocks();
+    return { onRender };
+  }
+
+  beforeEach(() => {
+    frames = new Map();
+    nextFrame = 0;
+    global.requestAnimationFrame = vi.fn((cb: FrameRequestCallback) => {
+      frames.set(++nextFrame, cb);
+      return nextFrame;
+    });
+    global.cancelAnimationFrame = vi.fn((id: number) => {
+      frames.delete(id);
+    });
+    ctx = createMockAudioContext({
+      decodeAudioData: vi.fn(async () => ({
+        duration: 1,
+        getChannelData,
+        length: 44100,
+        numberOfChannels: 1,
+        sampleRate: 44100,
+      })),
+    });
+    global.AudioContext = vi.fn(function () {
+      return ctx;
+    });
+    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
+      data: { bytes: new ArrayBuffer(1024), version: "v1" },
+      success: true,
+    });
+  });
+
+  it("draws only the playhead each frame: no envelope, styles or render", async () => {
+    const { onRender } = await startPlaying();
+    const getComputedStyleSpy = vi.spyOn(globalThis, "getComputedStyle");
+
+    for (let i = 1; i <= 10; i++) {
+      ctx.currentTime = i * 0.016; // the playhead moves every frame
+      await act(async () => {
+        stepFrame();
+      });
+    }
+
+    // The envelope isn't rebuilt from the samples or drawn again...
+    expect(getChannelData).not.toHaveBeenCalled();
+    expect(mockCanvasContext.fill).not.toHaveBeenCalled();
+    // ...no computed style is read, and React doesn't render the waveform
+    expect(getComputedStyleSpy).not.toHaveBeenCalled();
+    expect(onRender).not.toHaveBeenCalled();
+    // Each frame copies the drawn envelope and strokes the playhead once
+    expect(mockCanvasContext.drawImage).toHaveBeenCalledTimes(10);
+    expect(mockCanvasContext.stroke).toHaveBeenCalledTimes(10);
+    getComputedStyleSpy.mockRestore();
+  });
+
+  it("draws the playhead where the sample has got to, in the same color", async () => {
+    await startPlaying();
+    ctx.currentTime = 0.5; // halfway through the 1 s sample
+
+    await act(async () => {
+      stepFrame();
+    });
+
+    expect(mockCanvasContext.clearRect).toHaveBeenCalledWith(0, 0, 80, 18);
+    expect(mockCanvasContext.moveTo).toHaveBeenLastCalledWith(40, 0);
+    expect(mockCanvasContext.lineTo).toHaveBeenLastCalledWith(40, 18);
+    expect(mockCanvasContext.strokeStyle).toBe("#f59e42");
+  });
+
+  it("clears the playhead when the sample ends, without drawing the envelope again", async () => {
+    await startPlaying();
+    ctx.currentTime = 2; // past the end
+
+    await act(async () => {
+      stepFrame();
+    });
+
+    expect(mockCanvasContext.drawImage).toHaveBeenCalledTimes(1);
+    expect(mockCanvasContext.stroke).not.toHaveBeenCalled();
+    expect(getChannelData).not.toHaveBeenCalled();
+    expect(frames.size).toBe(0);
   });
 });

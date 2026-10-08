@@ -911,19 +911,28 @@ describe("useLocalStoreWizard", () => {
       expect(window.electronAPI.cleanupPartialInit).toHaveBeenCalledWith(root);
     });
 
-    it("still saves the setting when marking the store finished fails (#616)", async () => {
-      vi.mocked(window.electronAPI.finishSetup).mockRejectedValueOnce(
-        new Error("IPC failed"),
-      );
-      const save = vi.fn().mockResolvedValue(true);
-      const { result } = await setUpWith(save);
+    it.each([
+      ["throws", () => Promise.reject(new Error("IPC failed"))],
+      [
+        "is refused",
+        () => Promise.resolve({ error: "Access denied", success: false }),
+      ],
+    ])(
+      "still saves the setting when marking the store finished %s (#616)",
+      async (_case, finish) => {
+        vi.mocked(window.electronAPI.finishSetup).mockImplementationOnce(
+          finish,
+        );
+        const save = vi.fn().mockResolvedValue(true);
+        const { result } = await setUpWith(save);
 
-      const outcome = await initialize(result);
+        const outcome = await initialize(result);
 
-      expect(save).toHaveBeenCalledWith(root);
-      expect(outcome).toMatchObject({ success: true });
-      expect(window.electronAPI.cleanupPartialInit).not.toHaveBeenCalled();
-    });
+        expect(save).toHaveBeenCalledWith(root);
+        expect(outcome).toMatchObject({ success: true });
+        expect(window.electronAPI.cleanupPartialInit).not.toHaveBeenCalled();
+      },
+    );
 
     it("keeps the store when the setSetting fallback fails", async () => {
       vi.mocked(window.electronAPI.setSetting).mockRejectedValue(

@@ -58,11 +58,14 @@ export function decodeWav(buffer: Buffer): DecodedAudio {
   return { channels, sampleRate: info.sampleRate };
 }
 
-/** Encode test audio. `extraChunk` inserts a LIST chunk before `data`. */
+/**
+ * Encode test audio. `extraChunk` inserts a LIST chunk before `data`;
+ * `extensible` writes a WAVE_FORMAT_EXTENSIBLE fmt chunk.
+ */
 export function encodeTestWav(
   channels: Float64Array[],
   format: Omit<WavFormat, "channels">,
-  options: { extraChunk?: boolean } = {},
+  options: { extensible?: boolean; extraChunk?: boolean } = {},
 ): Buffer {
   const bytesPerSample = format.bitDepth / 8;
   const frames = channels[0].length;
@@ -78,20 +81,31 @@ export function encodeTestWav(
         data.writeInt16LE(Math.round(v < 0 ? v * 32768 : v * 32767), at);
       } else if (format.bitDepth === 24) {
         data.writeIntLE(Math.round(v < 0 ? v * 8388608 : v * 8388607), at, 3);
+      } else if (format.bitDepth === 8) {
+        // 8-bit WAV is unsigned, centred on 128
+        data.writeUInt8(128 + Math.round(v < 0 ? v * 128 : v * 127), at);
       } else {
         throw new Error(`test encoder doesn't write ${format.bitDepth}-bit`);
       }
     }
   }
-  const fmt = Buffer.alloc(24);
+  const tag = format.encoding === "float" ? FLOAT : PCM;
+  const fmt = Buffer.alloc(options.extensible ? 48 : 24);
   fmt.write("fmt ", 0, "ascii");
-  fmt.writeUInt32LE(16, 4);
-  fmt.writeUInt16LE(format.encoding === "float" ? FLOAT : PCM, 8);
+  fmt.writeUInt32LE(options.extensible ? 40 : 16, 4);
+  fmt.writeUInt16LE(options.extensible ? EXTENSIBLE : tag, 8);
   fmt.writeUInt16LE(channels.length, 10);
   fmt.writeUInt32LE(format.sampleRate, 12);
   fmt.writeUInt32LE(format.sampleRate * blockAlign, 16);
   fmt.writeUInt16LE(blockAlign, 20);
   fmt.writeUInt16LE(format.bitDepth, 22);
+  if (options.extensible) {
+    // cbSize, valid bits, channel mask, then the sub-format GUID, whose
+    // first two bytes are the real format tag
+    fmt.writeUInt16LE(22, 24);
+    fmt.writeUInt16LE(format.bitDepth, 26);
+    fmt.writeUInt16LE(tag, 32);
+  }
   const extra = options.extraChunk ? listChunk() : Buffer.alloc(0);
   const dataHeader = Buffer.alloc(8);
   dataHeader.write("data", 0, "ascii");

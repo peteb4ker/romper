@@ -5,13 +5,19 @@ import { _electron as electron } from "@playwright/test";
 import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { pathToFileURL } from "node:url";
 
 import {
   approveLocalStorePrompts,
   getLocalStorePromptsShown,
 } from "../../../../../../tests/utils/e2e-dialogs";
 import { expect, test } from "../../../../../../tests/utils/e2e-error-guard";
+import {
+  expectedImport,
+  generatedFactoryArchive,
+  readImport,
+  writeGeneratedCard,
+} from "../../../../../../tests/utils/generated-library";
 
 // Retry a function with exponential backoff
 async function retryWithBackoff<T>(
@@ -38,21 +44,30 @@ async function retryWithBackoff<T>(
   throw lastError || new Error("All retry attempts failed");
 }
 
+/**
+ * Run the wizard from `source` into a new folder, and return that folder.
+ * The SD card and the factory archive hold the generated library
+ * (tests/utils/generated-library.ts): real WAV audio, mono and stereo.
+ */
 async function runWizardTest(
-  {
-    fixturePath,
-    source,
-    squarpArchiveUrl,
-  }: {
-    fixturePath?: string;
-    source: "blank" | "sdcard" | "squarp";
-    squarpArchiveUrl?: string;
-  },
+  source: "blank" | "sdcard" | "squarp",
+  tempDir: string,
   testName?: string,
-) {
+): Promise<string> {
+  let fixturePath: string | undefined;
+  let squarpArchiveUrl: string | undefined;
+  if (source === "sdcard") {
+    fixturePath = path.join(tempDir, "card");
+    await writeGeneratedCard(fixturePath);
+  } else if (source === "squarp") {
+    const archive = path.join(tempDir, "factory.zip");
+    await fs.writeFile(archive, generatedFactoryArchive());
+    squarpArchiveUrl = pathToFileURL(archive).href;
+  }
+
   // Its own settings, so no earlier launch's saved store stops the wizard
   // from opening
-  const userData = fs.mkdtempSync(path.join(os.tmpdir(), "romper-e2e-wizard-"));
+  const userData = path.join(tempDir, "user-data");
   const env = Object.fromEntries(
     Object.entries({
       ...process.env,
@@ -156,11 +171,8 @@ async function runWizardTest(
     }
   }
 
-  // 2. target - generate dynamic path, since no store is configured
-  const targetPath = path.join(
-    os.tmpdir(),
-    `romper-e2e-${source}-${Date.now()}`,
-  );
+  // 2. target: a new folder, since no store is configured
+  const targetPath = path.join(tempDir, `romper-e2e-${source}`);
   await window.waitForSelector("#local-store-path-input", { state: "visible" });
   await window.fill("#local-store-path-input", targetPath);
 
@@ -219,7 +231,7 @@ async function runWizardTest(
   expect(await fs.pathExists(dbPath)).toBe(true);
 
   await electronApp.close();
-  await fs.remove(userData);
+  return targetPath;
 }
 
 // Wait for a file to exist (polling, idiomatic for Playwright E2E)
@@ -243,45 +255,40 @@ test.describe("Local Store Wizard E2E", () => {
         pattern: /No local store configured/,
         sources: ["main-stdout"],
       },
-      "the fixtures' .wav files are stubs, not audio, so WAV analysis fails": {
-        pattern: /Scan warnings for kit \w+: .*Not a WAV file/,
-        sources: ["renderer-console"],
-      },
-      "voice naming in the wizard runs before the store path is saved": {
-        pattern:
-          /Failed to set voice alias for kit \w+, voice \d: No local store path configured/,
-        ref: "RE-34",
-        sources: ["renderer-console"],
-      },
     },
   });
 
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
+  let tempDir: string;
 
-  test("[UC-01] can initialize from SD card fixture via UI", async () => {
-    const sdcardPath = path.resolve(
-      __dirname,
-      "../../../../../../tests/fixtures/sdcard",
-    );
-    await runWizardTest({ fixturePath: sdcardPath, source: "sdcard" });
+  test.beforeEach(async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "romper-e2e-wizard-"));
   });
 
-  test("[UC-02] can initialize from Squarp.net archive fixture via UI", async () => {
-    // Use a local fixture zip for the Squarp archive in E2E
-    const fixtureSquarpZip = path.resolve(
-      __dirname,
-      "../../../../../../tests/fixtures/squarp.zip",
-    );
-    const squarpArchiveUrl = `file://${fixtureSquarpZip}`;
-    await runWizardTest({
-      source: "squarp",
-      squarpArchiveUrl,
-    });
+  test.afterEach(async () => {
+    await fs.remove(tempDir).catch(() => {});
+  });
+
+  // RE-67: setup is checked by what it imported, not by the database
+  // existing: every kit, every sample in its voice and slot, each file
+  // byte for byte, the stereo pair linked and the bank named.
+
+  test("[UC-01] [Q-07] imports an SD card's kits and samples via UI", async () => {
+    const store = await runWizardTest("sdcard", tempDir);
+    expect(await readImport(store)).toEqual(expectedImport());
+  });
+
+  test("[UC-02] [Q-07] imports the factory archive's kits and samples via UI", async () => {
+    const store = await runWizardTest("squarp", tempDir);
+    expect(await readImport(store)).toEqual(expectedImport());
   });
 
   test("[UC-03] can initialize blank folder via UI", async ({}, testInfo) => {
-    const testName = testInfo.title;
-    await runWizardTest({ source: "blank" }, testName);
+    const store = await runWizardTest("blank", tempDir, testInfo.title);
+    expect(await readImport(store)).toEqual({
+      banks: {},
+      kits: [],
+      linkedVoices: [],
+      samples: [],
+    });
   });
 });

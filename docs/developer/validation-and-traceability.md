@@ -226,7 +226,8 @@ In rough priority order. Each new test names the use cases it covers (section 3)
    voice's partner never gets a copy.
 2. Conversion checked independently: 24-bit, 48 kHz, 8-bit, float, extensible
    and gain cases, compared with the reference conversion from the harness
-   (shared test utility), not with `wavCodec`.
+   (shared test utility), not with `wavCodec`. Done for #439:
+   `sync-card-bytes.integration`, on a mono voice and a linked pair.
 3. Cancel mid-write against the real sync service: nothing removed, nothing
    marked synced, files written so far intact, no temp files left.
 4. Sync error paths: unwritable card, card removed during the write, a source
@@ -245,10 +246,15 @@ In rough priority order. Each new test names the use cases it covers (section 3)
    stereo; rename a voice; delete and undo; move a sample.
 8. First kit in an empty library (settles the "no Add kit card" question).
 9. Wizard happy paths assert what was imported (kits, samples, banks), not just
-   that the database exists.
+   that the database exists. Done for #439: `localStoreWizard.e2e` sets up
+   from a generated card and factory archive
+   (`tests/utils/generated-library.ts`, which replaced the stub
+   `squarp.zip` and `tests/fixtures/sdcard`).
 10. Edit > Undo from the menu.
 11. Replace `sync-workflow.e2e` with tests that sync, and delete
-    `debug-navigation-logic.e2e` (it tests a copy).
+    `debug-navigation-logic.e2e` (it tests a copy). Done for #439:
+    `sync-workflow.e2e` sets up from the factory archive and writes to the
+    card, comparing every file; `navigation.e2e` covers opening a kit.
 
 **Unit:** where the harness finds a bug, a unit test pins the fix (as with
 RE-13's choke tests).

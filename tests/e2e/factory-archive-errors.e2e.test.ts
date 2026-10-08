@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 
 import { approveLocalStorePrompts } from "../utils/e2e-dialogs";
 import { expect, test } from "../utils/e2e-error-guard";
+import { generatedFactoryArchive } from "../utils/generated-library";
 
 // RE-77: a factory archive that arrived damaged was downloaded three times,
 // then reported as a generic "check your internet connection" error. The
@@ -35,10 +36,13 @@ test.describe("[UC-02] A damaged factory archive", () => {
   });
 
   test("shows why setup failed, without retrying it as a network error", async () => {
-    // The stub factory archive, cut short
-    const stub = await fs.readFile(path.resolve("tests/fixtures/squarp.zip"));
+    // A factory archive, cut short
+    const archive = generatedFactoryArchive();
     const damaged = path.join(tempDir, "squarp-damaged.zip");
-    await fs.writeFile(damaged, stub.subarray(0, Math.floor(stub.length / 2)));
+    await fs.writeFile(
+      damaged,
+      archive.subarray(0, Math.floor(archive.length / 2)),
+    );
 
     const electronApp = await electron.launch({
       args: [

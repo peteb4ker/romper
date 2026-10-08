@@ -78,6 +78,7 @@ import {
 import { withDbTransaction } from "../../electron/main/db/utils/dbUtilities.js";
 import { registerDbIpcHandlers } from "../../electron/main/dbIpcHandlers.js";
 import { pathAccess } from "../../electron/main/security/pathAccess.js";
+import { sampleService } from "../../electron/main/services/sampleService.js";
 import { syncService } from "../../electron/main/services/syncService.js";
 import { type NewSample, samples } from "../../shared/db/schema.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
@@ -283,6 +284,14 @@ describe("[Q-01] performance budgets: main-process operations", () => {
         toSlot: SAMPLES_PER_VOICE,
         toVoice: 1,
       }),
+    );
+  });
+
+  it("load a slot's audio", async () => {
+    await expectWithinBudget(
+      "integration/load a slot's audio",
+      () => sampleService.getSampleAudioBuffer(settings, "A0", 2, 1),
+      ["connections", "statements", "syncFsCalls"],
     );
   });
 

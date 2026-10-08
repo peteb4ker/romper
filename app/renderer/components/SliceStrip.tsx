@@ -16,6 +16,7 @@ import React from "react";
 
 import type { SliceView } from "./hooks/shared/sliceConstants";
 
+import { loadSampleAudio } from "../utils/sampleAudioCache";
 import { usePopoverDismiss } from "./hooks/shared/usePopoverDismiss";
 
 const WAVE_COLUMNS = 512;
@@ -183,19 +184,19 @@ function useWaveformPeaks(
 
   React.useEffect(() => {
     if (slotIndex == null || isCached) return;
-    const api = globalThis.electronAPI;
-    const OfflineCtx = globalThis.OfflineAudioContext;
-    if (!api?.getSampleAudioBuffer || !OfflineCtx) return;
+    if (!globalThis.electronAPI?.getSampleAudioBuffer) return;
 
     const slotKey = `${kitName}:${voiceNumber}:${slotIndex}`;
     let cancelled = false;
-    api
-      .getSampleAudioBuffer(kitName, voiceNumber, slotIndex)
-      .then(async (result) => {
-        if (cancelled || !result.success || !result.data) return;
-        const ctx = new OfflineCtx(1, 1, 44100);
-        const buffer = await ctx.decodeAudioData(result.data.slice(0));
-        if (cancelled) return;
+    // The audio the slot's waveform already decoded, when it's current (#478)
+    loadSampleAudio({
+      kitName,
+      sampleSource,
+      slotNumber: slotIndex,
+      voiceNumber,
+    })
+      .then((buffer) => {
+        if (cancelled || !buffer) return;
         const next = buildPeaks(buffer.getChannelData(0), WAVE_COLUMNS);
         // Kept only when it's known which file they're from
         if (sampleSource == null) {

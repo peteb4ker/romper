@@ -123,7 +123,7 @@ describe("SampleWaveform", () => {
 
   it("loads and decodes audio buffer on mount", async () => {
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
-      data: new ArrayBuffer(1024),
+      data: { bytes: new ArrayBuffer(1024), version: "v1" },
       success: true,
     });
 
@@ -142,6 +142,7 @@ describe("SampleWaveform", () => {
       "A1",
       2,
       1,
+      undefined,
     );
   });
 
@@ -172,6 +173,7 @@ describe("SampleWaveform", () => {
       "A2",
       3,
       2,
+      undefined,
     );
   });
 
@@ -198,6 +200,7 @@ describe("SampleWaveform", () => {
       "A1",
       1,
       1,
+      undefined,
     );
     expect(onError).not.toHaveBeenCalled();
   });
@@ -289,7 +292,7 @@ describe("SampleWaveform", () => {
       });
     });
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
-      data: new ArrayBuffer(16),
+      data: { bytes: new ArrayBuffer(16), version: "v1" },
       success: true,
     });
     const onError = vi.fn();
@@ -367,7 +370,7 @@ describe("SampleWaveform", () => {
     });
 
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
-      data: new ArrayBuffer(1024),
+      data: { bytes: new ArrayBuffer(1024), version: "v1" },
       success: true,
     });
 
@@ -466,7 +469,7 @@ describe("SampleWaveform", () => {
         return mockAudioContext;
       });
       vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
-        data: new ArrayBuffer(1024),
+        data: { bytes: new ArrayBuffer(1024), version: "v1" },
         success: true,
       });
       return { ctx: mockAudioContext, gainNodes, sources };
@@ -884,6 +887,7 @@ describe("SampleWaveform", () => {
       "B2",
       4,
       12,
+      undefined,
     );
   });
 
@@ -900,7 +904,7 @@ describe("SampleWaveform", () => {
       });
     });
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
-      data: new ArrayBuffer(1024),
+      data: { bytes: new ArrayBuffer(1024), version: "v1" },
       success: true,
     });
 
@@ -964,7 +968,7 @@ describe("SampleWaveform", () => {
       return mockAudioContext;
     });
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
-      data: new ArrayBuffer(1024),
+      data: { bytes: new ArrayBuffer(1024), version: "v1" },
       success: true,
     });
 
@@ -1052,7 +1056,7 @@ describe("SampleWaveform", () => {
       return mockAudioContext;
     });
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
-      data: new ArrayBuffer(1024),
+      data: { bytes: new ArrayBuffer(1024), version: "v1" },
       success: true,
     });
     const onPlayingChange = vi.fn();
@@ -1149,7 +1153,7 @@ describe("SampleWaveform", () => {
       return mockAudioContext;
     });
     vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
-      data: new ArrayBuffer(1024),
+      data: { bytes: new ArrayBuffer(1024), version: "v1" },
       success: true,
     });
     const onPlayingChange = vi.fn();
@@ -1231,7 +1235,7 @@ describe("SampleWaveform", () => {
         return ctx;
       });
       vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
-        data: new ArrayBuffer(1024),
+        data: { bytes: new ArrayBuffer(1024), version: "v1" },
         success: true,
       });
       const view = render(
@@ -1361,7 +1365,7 @@ describe("SampleWaveform", () => {
         return ctx;
       });
       vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
-        data: new ArrayBuffer(1024),
+        data: { bytes: new ArrayBuffer(1024), version: "v1" },
         success: true,
       });
       return { ctx, sources };
@@ -1512,10 +1516,14 @@ describe("SampleWaveform", () => {
       global.AudioContext = vi.fn(function () {
         return ctx;
       });
-      vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
-        data: new ArrayBuffer(1024),
-        success: true,
-      });
+      // Each answer is another file, so another version
+      let answers = 0;
+      vi.mocked(window.electronAPI.getSampleAudioBuffer).mockImplementation(
+        async () => ({
+          data: { bytes: new ArrayBuffer(1024), version: `v${++answers}` },
+          success: true,
+        }),
+      );
       return { sources };
     }
 

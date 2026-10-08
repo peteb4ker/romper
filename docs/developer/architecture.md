@@ -218,6 +218,15 @@ to skip them (RE-09).
   from main by kit / voice / slot. Channels that take a sample's path
   (`validateSampleFormat`, add and replace) are scoped by main; see "The
   renderer is untrusted".
+- Decoded samples are cached in the renderer (`utils/sampleAudioCache.ts`,
+  #478), shared by the slot waveforms and the slice strip, so a sample
+  decodes once and a kit you come back to isn't read again. Every load still
+  asks main for the slot, offering the version of the file the cache holds
+  (path, size, modification time and inode). Main looks up the one slot's
+  row, checks the file through an open handle, and reads and sends it only
+  when the version differs: a new file in the slot or an edited one is
+  always loaded, never served from the cache. The cache evicts the least
+  recently used buffers past a fixed size (`SAMPLE_AUDIO_CACHE_BYTES`).
 - Playback follows the voice's stereo setting, as the write does (#569). A
   voice that isn't in a stereo pair once the write's automatic links are
   made (`planKitStereo(...).links`) plays a sample with more than one

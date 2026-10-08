@@ -283,6 +283,7 @@ const electronAPI = {
     kitName: string,
     voiceNumber: number,
     slotNumber: number,
+    knownVersion?: string,
   ) => {
     isDev &&
       console.debug(
@@ -296,6 +297,7 @@ const electronAPI = {
       kitName,
       voiceNumber,
       slotNumber,
+      knownVersion,
     );
   },
   getUserHomeDir: () => {

@@ -160,7 +160,7 @@ describe("[UC-29] previewing a sample whose gain can't be read (#636)", () => {
     audio = createAudio();
     setupElectronAPIMock();
     vi.mocked(globalThis.electronAPI.getSampleAudioBuffer).mockResolvedValue({
-      data: new ArrayBuffer(1024),
+      data: { bytes: new ArrayBuffer(1024), version: "v1" },
       success: true,
     });
     vi.spyOn(console, "error").mockImplementation(() => {});

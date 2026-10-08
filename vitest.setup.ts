@@ -3,6 +3,7 @@ import { cleanup } from "@testing-library/react";
 import { TextEncoder } from "node:util";
 import { afterEach, beforeAll, vi } from "vitest";
 
+import { clearSampleAudioCache } from "./app/renderer/utils/sampleAudioCache";
 import { setupAudioMocks } from "./tests/mocks/browser/audio";
 import { setupDOMMocks, setupWindowDOMMocks } from "./tests/mocks/browser/dom";
 // Import centralized test infrastructure
@@ -22,6 +23,10 @@ if (typeof globalThis.TextEncoder === "undefined") {
 // the next test's events or fire after jsdom is gone (#704, #709). Test
 // files' own afterEach hooks run first, so cleanup sees their teardown.
 afterEach(cleanup);
+
+// Decoded sample audio is cached for the session (#478); each test starts
+// with none, so a test's mocks decide what a slot holds
+afterEach(clearSampleAudioCache);
 
 // Setup global DOM mocks (IntersectionObserver, Document, Worker, Canvas)
 setupDOMMocks();

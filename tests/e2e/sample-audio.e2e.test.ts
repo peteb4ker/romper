@@ -52,8 +52,17 @@ test.describe("[UC-29] Sample audio", () => {
   test("main process serves a sample's audio buffer from ROMPER_LOCAL_PATH", async () => {
     const result = await window.evaluate(async () => {
       const res = await window.electronAPI.getSampleAudioBuffer("A0", 1, 0);
-      const bytes = res.data ? new Uint8Array(res.data) : null;
+      const bytes = res.data?.bytes ? new Uint8Array(res.data.bytes) : null;
+      // Offering the version it sent: nothing to send again (#478)
+      const again = await window.electronAPI.getSampleAudioBuffer(
+        "A0",
+        1,
+        0,
+        res.data?.version,
+      );
       return {
+        againBytes: again.data ? again.data.bytes : "no data",
+        againVersion: again.data?.version,
         byteLength: bytes?.byteLength ?? 0,
         error: res.error,
         header: bytes
@@ -63,6 +72,7 @@ test.describe("[UC-29] Sample audio", () => {
             )
           : null,
         success: res.success,
+        version: res.data?.version,
       };
     });
 
@@ -70,6 +80,8 @@ test.describe("[UC-29] Sample audio", () => {
     expect(result.success).toBe(true);
     expect(result.header).toBe("RIFFWAVE");
     expect(result.byteLength).toBeGreaterThan(44);
+    expect(result.againBytes).toBeNull();
+    expect(result.againVersion).toBe(result.version);
   });
 
   test("voice panel draws a waveform for a loaded sample", async () => {

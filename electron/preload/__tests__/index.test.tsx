@@ -632,12 +632,14 @@ describe("preload/index.tsx", () => {
         method: "copyDir",
       },
 
-      // Methods with three parameters
+      // The version of the slot's file the renderer already holds (#478)
       {
-        args: ["TestKit", 1, 0],
+        args: ["TestKit", 1, 0, "12:34:56:/store/TestKit/1kick.wav"],
         ipcChannel: "get-sample-audio-buffer",
         method: "getSampleAudioBuffer",
       },
+
+      // Methods with three parameters
       {
         args: ["TestKit", 1, "Voice Alias"],
         ipcChannel: "update-voice-alias",

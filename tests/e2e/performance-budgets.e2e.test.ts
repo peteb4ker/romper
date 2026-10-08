@@ -32,6 +32,9 @@ import {
 import { openStoreDb } from "../utils/e2e-store-db";
 import { encodeTestWav, sine } from "../validation/support/wav";
 
+/** The channel that returns a slot's audio */
+const AUDIO = "get-sample-audio-buffer";
+
 test.describe("[Q-01] Performance budgets: IPC calls per action", () => {
   let app: ElectronApplication;
   let page: Page;
@@ -55,8 +58,12 @@ test.describe("[Q-01] Performance budgets: IPC calls per action", () => {
     const check = (name: BudgetName, counts: Record<string, number>) => {
       expect.soft(enforceBudgets(name, counts), name).toEqual([]);
     };
-    const action = async (name: BudgetName, run: () => Promise<void>) => {
-      check(name, await measureIpc(app, run));
+    const action = async (
+      name: BudgetName,
+      run: () => Promise<void>,
+      bytesOf: readonly string[] = [],
+    ) => {
+      check(name, await measureIpc(app, run, bytesOf));
     };
 
     // Cold start: everything from launch until the grid has settled
@@ -86,6 +93,18 @@ test.describe("[Q-01] Performance budgets: IPC calls per action", () => {
     await action("e2e/next kit", async () => {
       await page.keyboard.press(".");
     });
+
+    // Back to A0, whose audio was loaded when it opened: the renderer
+    // already holds it, so main sends none of it again (RE-83)
+    await action(
+      "e2e/previous kit",
+      async () => {
+        await page.keyboard.press(",");
+      },
+      [AUDIO],
+    );
+    // On to B1 again for the edits below
+    await page.keyboard.press(".");
 
     await action("e2e/enable editing", async () => {
       await page.getByTitle("Enable editable mode").click();
@@ -159,9 +178,10 @@ async function renameKitSamples(storePath: string, kit: string) {
         path.join(storePath, kit, filename),
         path.join(storePath, kit, renamed),
       );
+      // source_path is absolute: the app reads the file from it
       db.prepare(
         "UPDATE samples SET filename = ?, source_path = ? WHERE id = ?",
-      ).run(renamed, `${kit}/${renamed}`, id);
+      ).run(renamed, path.join(storePath, kit, renamed), id);
     }
   } finally {
     db.close();

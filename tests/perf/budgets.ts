@@ -125,6 +125,18 @@ export const BUDGETS = {
     "open the write summary": {
       generateSyncChangeSummary: { max: 1 },
     },
+    /**
+     * Back to A0, whose audio the renderer kept from "open a kit" (#478).
+     * Each filled slot still asks main, which checks the file is unchanged
+     * and sends back only its version, not the file. A version holds the
+     * file's path, whose length differs by OS and temp folder, so the bytes
+     * budget has headroom; one of the fixture's files is several times it.
+     */
+    "previous kit": {
+      "get-all-samples-for-kit": { max: 1 },
+      "get-sample-audio-buffer": { max: 2 },
+      "get-sample-audio-buffer bytes": { max: kb(2) },
+    },
     "rename a voice": {
       "get-all-kits": { max: 1, ...NO_RELOAD },
       "get-all-samples-for-kit": { max: 1 },
@@ -158,6 +170,15 @@ export const BUDGETS = {
     "get kits": {
       connections: NO_NEW_CONNECTION,
       statements: { max: 4 },
+    },
+    /**
+     * #478 (RE-83): one slot's row, not the whole kit's, and the file read
+     * without holding the main thread
+     */
+    "load a slot's audio": {
+      connections: NO_NEW_CONNECTION,
+      statements: { max: 1 },
+      syncFsCalls: { max: 0 },
     },
     "move sample between kits": {
       connections: NO_NEW_CONNECTION,
@@ -226,11 +247,11 @@ export const BUDGETS = {
     "open the sequencer": { bytes: SMALL, mainBusyMs: STALL },
     /** Planning yields instead of holding main for the whole plan (RE-82) */
     "open the write summary": { bytes: { max: kb(8) }, mainBusyMs: STALL },
-    /** RE-83: a revisited kit's buffers come from the renderer's cache */
-    "previous kit (A0)": {
-      bytes: { max: mb(12), target: kb(64), until: "RE-83" },
-      mainBusyMs: STALL,
-    },
+    /**
+     * RE-83: a revisited kit's buffers come from the renderer's cache, so
+     * main sends each slot's file version, not the file (#478)
+     */
+    "previous kit (A0)": { bytes: { max: kb(64) }, mainBusyMs: STALL },
     "rename voice 1": { bytes: { max: mb(2) }, mainBusyMs: STALL },
     "search: clear": { bytes: SMALL, mainBusyMs: STALL },
     "search: type 'kick'": { bytes: SMALL, mainBusyMs: STALL },
@@ -257,6 +278,7 @@ export const E2E_LABELS: Record<keyof typeof BUDGETS.e2e, string> = {
   "next kit": "Moving to the next kit",
   "open a kit": "Opening a kit",
   "open the write summary": "Preparing a card write",
+  "previous kit": "Going back to a kit you just left",
   "rename a voice": "Renaming a voice",
   "toggle a sequencer step": "Editing a pattern step",
 };

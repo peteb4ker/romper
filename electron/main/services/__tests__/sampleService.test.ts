@@ -132,18 +132,19 @@ describe("SampleService", () => {
   });
 
   describe("Metadata Operations - Delegation", () => {
-    it("should delegate getSampleAudioBuffer to sampleMetadataService", () => {
-      const mockBuffer = new ArrayBuffer(100);
-      mockMetadataService.getSampleAudioBuffer.mockReturnValue({
-        data: mockBuffer,
+    it("should delegate getSampleAudioBuffer to sampleMetadataService", async () => {
+      const audio = { bytes: new ArrayBuffer(100), version: "v1" };
+      mockMetadataService.getSampleAudioBuffer.mockResolvedValue({
+        data: audio,
         success: true,
       });
 
-      const result = sampleService.getSampleAudioBuffer(
+      const result = await sampleService.getSampleAudioBuffer(
         mockSettings,
         "TestKit",
         1,
         0,
+        "v0",
       );
 
       expect(mockMetadataService.getSampleAudioBuffer).toHaveBeenCalledWith(
@@ -151,9 +152,10 @@ describe("SampleService", () => {
         "TestKit",
         1,
         0,
+        "v0",
       );
       expect(result.success).toBe(true);
-      expect(result.data).toBe(mockBuffer);
+      expect(result.data).toBe(audio);
     });
   });
 

@@ -1,3 +1,4 @@
+import type { SampleAudio } from "@romper/shared/audioTypes.js";
 import type { DbResult, Sample } from "@romper/shared/db/schema.js";
 import type { VoiceSnapshot } from "@romper/shared/undoTypes.js";
 
@@ -80,19 +81,22 @@ export class SampleService {
   }
 
   /**
-   * Get audio buffer for a specific sample by kit/voice/slot identifier
+   * The audio file in a kit/voice/slot, or null for an empty slot; not
+   * read again when it's still `knownVersion` (#478)
    */
   getSampleAudioBuffer(
     inMemorySettings: Record<string, unknown>,
     kitName: string,
     voiceNumber: number,
     slotNumber: number,
-  ): DbResult<ArrayBuffer | null> {
+    knownVersion?: string,
+  ): Promise<DbResult<null | SampleAudio>> {
     return sampleMetadataService.getSampleAudioBuffer(
       inMemorySettings,
       kitName,
       voiceNumber,
       slotNumber,
+      knownVersion,
     );
   }
 

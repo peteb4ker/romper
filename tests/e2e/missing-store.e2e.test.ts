@@ -7,6 +7,7 @@ import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
 
+import { appEnv } from "../utils/e2e-app-env";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
   cleanupE2EFixture,
@@ -98,20 +99,15 @@ test.describe("[UC-05] A local store that isn't there at launch", () => {
     // The drive isn't connected
     offline = `${testEnv.localStorePath}.offline`;
     await fs.move(testEnv.localStorePath, offline);
-
-    const env = Object.fromEntries(
-      Object.entries(process.env).filter(
-        (e): e is [string, string] =>
-          e[1] !== undefined && e[0] !== "ROMPER_LOCAL_PATH",
-      ),
-    );
     electronApp = await electron.launch({
       args: ["dist/electron/main/index.js", `--user-data-dir=${userData}`],
-      env: {
-        ...env,
-        ROMPER_SDCARD_PATH: testEnv.environment.ROMPER_SDCARD_PATH,
-        ROMPER_USER_DATA_DIR: userData,
-      },
+      env: appEnv(
+        {
+          ROMPER_SDCARD_PATH: testEnv.environment.ROMPER_SDCARD_PATH,
+          ROMPER_USER_DATA_DIR: userData,
+        },
+        { omit: ["ROMPER_LOCAL_PATH"] },
+      ),
       timeout: 30000,
     });
     await holdBackFirstStoreStatus(electronApp);

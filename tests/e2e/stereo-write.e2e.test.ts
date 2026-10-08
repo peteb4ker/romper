@@ -7,6 +7,7 @@ import {
   type Page,
 } from "playwright";
 
+import { appEnv } from "../utils/e2e-app-env";
 import { dropFiles } from "../utils/e2e-drop";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
@@ -77,11 +78,10 @@ test.describe("[UC-13] [UC-34] [Q-04] Quarantined kits and the write (#537)", ()
     sourceDir = await fs.mkdtemp(path.join(os.tmpdir(), "romper-e2e-src-"));
     electronApp = await electron.launch({
       args: ["dist/electron/main/index.js"],
-      env: {
-        ...process.env,
+      env: appEnv({
         ...testEnv.environment,
         ROMPER_SDCARD_PATH: card,
-      },
+      }),
       timeout: 30000,
     });
     window = await electronApp.firstWindow();

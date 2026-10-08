@@ -7,6 +7,7 @@ import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
 
+import { appEnv } from "../utils/e2e-app-env";
 import { chooseFolderInOpenDialog } from "../utils/e2e-dialogs";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
@@ -45,20 +46,15 @@ test.describe("[UC-05] [UC-06] Changing the local store in Preferences", () => {
     await fs.writeJson(settingsFile(), {
       localStorePath: testEnv.localStorePath,
     });
-
-    const env = Object.fromEntries(
-      Object.entries(process.env).filter(
-        (e): e is [string, string] =>
-          e[1] !== undefined && e[0] !== "ROMPER_LOCAL_PATH",
-      ),
-    );
     electronApp = await electron.launch({
       args: ["dist/electron/main/index.js", `--user-data-dir=${userData}`],
-      env: {
-        ...env,
-        ROMPER_SDCARD_PATH: testEnv.environment.ROMPER_SDCARD_PATH,
-        ROMPER_USER_DATA_DIR: userData,
-      },
+      env: appEnv(
+        {
+          ROMPER_SDCARD_PATH: testEnv.environment.ROMPER_SDCARD_PATH,
+          ROMPER_USER_DATA_DIR: userData,
+        },
+        { omit: ["ROMPER_LOCAL_PATH"] },
+      ),
       timeout: 30000,
     });
     window = await electronApp.firstWindow();
@@ -148,7 +144,7 @@ test.describe("[UC-05] [UC-06] Changing the local store in Preferences", () => {
       Array.from({ length: 16 }, (_, step) => (step === voice ? 127 : 0)),
     );
     await window.evaluate(
-      (pattern) => window.electronAPI.updateStepPattern("A0", pattern),
+      (pattern) => globalThis.electronAPI.updateStepPattern("A0", pattern),
       own,
     );
     await pressUndoKey();
@@ -161,7 +157,7 @@ test.describe("[UC-05] [UC-06] Changing the local store in Preferences", () => {
   /** The step pattern of the current store's A0, as saved */
   async function stepPattern() {
     return window.evaluate(async () => {
-      const kit = await window.electronAPI.getKit("A0");
+      const kit = await globalThis.electronAPI.getKit("A0");
       return kit.data?.step_pattern ?? null;
     });
   }

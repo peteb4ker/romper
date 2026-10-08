@@ -7,6 +7,7 @@ import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
 
+import { appEnv } from "../utils/e2e-app-env";
 import { chooseFolderInOpenDialog } from "../utils/e2e-dialogs";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
@@ -42,19 +43,15 @@ test.describe("[UC-04] Choose an existing local store", () => {
     userData = await fs.mkdtemp(path.join(os.tmpdir(), "romper-e2e-user-"));
 
     // No saved store and no override, so the wizard opens as on a new machine
-    const env = Object.fromEntries(
-      Object.entries(process.env).filter(
-        (e): e is [string, string] =>
-          e[1] !== undefined && e[0] !== "ROMPER_LOCAL_PATH",
-      ),
-    );
     electronApp = await electron.launch({
       args: ["dist/electron/main/index.js", `--user-data-dir=${userData}`],
-      env: {
-        ...env,
-        ROMPER_SDCARD_PATH: testEnv.environment.ROMPER_SDCARD_PATH,
-        ROMPER_USER_DATA_DIR: userData,
-      },
+      env: appEnv(
+        {
+          ROMPER_SDCARD_PATH: testEnv.environment.ROMPER_SDCARD_PATH,
+          ROMPER_USER_DATA_DIR: userData,
+        },
+        { omit: ["ROMPER_LOCAL_PATH"] },
+      ),
       timeout: 30000,
     });
     window = await electronApp.firstWindow();

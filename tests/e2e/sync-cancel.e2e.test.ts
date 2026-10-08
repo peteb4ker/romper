@@ -7,6 +7,7 @@ import {
   type Page,
 } from "playwright";
 
+import { appEnv } from "../utils/e2e-app-env";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
   cleanupE2EFixture,
@@ -89,11 +90,10 @@ test.describe("[UC-34] Cancel a write to the card", () => {
 
     electronApp = await electron.launch({
       args: ["dist/electron/main/index.js"],
-      env: {
-        ...process.env,
+      env: appEnv({
         ...testEnv.environment,
         ROMPER_SDCARD_PATH: card,
-      },
+      }),
       timeout: 30000,
     });
     window = await electronApp.firstWindow();

@@ -23,13 +23,13 @@
     "electron/types/*.d.ts",
     "shared/**/__tests__/**/*",
     "tests/**/*",
-    "vitest.setup.ts"
+    "vitest.setup.ts",
+    "playwright.config.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
     "coverage",
-    "tests/e2e",
     "electron/main/__tests__/dbIpcHandlers.test.ts"
   ]
 }

@@ -6,6 +6,7 @@ import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
 
+import { appEnv } from "../utils/e2e-app-env";
 import { approveLocalStorePrompts } from "../utils/e2e-dialogs";
 import { expect, test } from "../utils/e2e-error-guard";
 import { openStoreDb } from "../utils/e2e-store-db";
@@ -173,11 +174,10 @@ test.describe("[UC-01] Set up from an SD card", () => {
         "dist/electron/main/index.js",
         ...(process.env.CI ? ["--no-sandbox", "--disable-setuid-sandbox"] : []),
       ],
-      env: {
-        ...process.env,
+      env: appEnv({
         ROMPER_SDCARD_PATH: card,
         ROMPER_USER_DATA_DIR: await tempDir("romper-e2e-userdata-"),
-      },
+      }),
       timeout: 30000,
     });
     // Typing the target path makes main ask to approve it (RE-03)

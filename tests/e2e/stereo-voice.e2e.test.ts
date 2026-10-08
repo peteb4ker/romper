@@ -9,6 +9,7 @@ import {
 
 import type { ElectronAPI } from "../../shared/electronApi";
 
+import { appEnv } from "../utils/e2e-app-env";
 import { dropFiles } from "../utils/e2e-drop";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
@@ -43,7 +44,7 @@ test.describe("Stereo voice linking", () => {
     sourceDir = await fs.mkdtemp(path.join(os.tmpdir(), "romper-e2e-src-"));
     electronApp = await electron.launch({
       args: ["dist/electron/main/index.js"],
-      env: { ...process.env, ...testEnv.environment },
+      env: appEnv(testEnv.environment),
       timeout: 30000,
     });
     window = await electronApp.firstWindow();

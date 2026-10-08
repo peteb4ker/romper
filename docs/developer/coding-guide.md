@@ -110,6 +110,14 @@ fill 2 mono voices."
   `<file>.test.ts(x)`, and run in jsdom. Integration tests go in
   `tests/integration/*.integration.test.ts` and run inside Electron.
   E2E tests are `*.e2e.test.ts` (mostly `tests/e2e/`).
+- The pre-commit hook runs the typecheck (both configs) and, on the
+  staged files only (`lint-staged.config.mjs`), `eslint --fix` and the unit
+  tests that import them (`vitest related`), so a small commit takes
+  seconds. It never runs integration or e2e tests, the whole-repo lint or
+  the build; CI runs those on every pull request. Run
+  `npm run test:integration:fast -- <path>` yourself when you change code
+  an integration test covers, and `npm run test:fast` when a change reaches
+  further than the files it touches (shared types, IPC, the schema).
 - An integration test that needs a store on disk makes it with
   `createTempStore("<prefix>-")` and deletes it with `removeTempStore(dir)`
   in `afterEach` (`tests/integration/support/tempStore.ts`). Don't close

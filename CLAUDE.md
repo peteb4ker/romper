@@ -9,14 +9,16 @@ Playwright (e2e).
 
 ## Commands
 
-- `npm run test:fast` -- unit + integration, the suite the pre-commit hook
-  runs. One file: `npm run test:unit:fast -- <path>` or
+- `npm run test:fast` -- the full unit + integration suites, as CI runs
+  them (the pre-commit hook runs only the unit tests related to the staged
+  files). One file: `npm run test:unit:fast -- <path>` or
   `npm run test:integration:fast -- <path>` (integration tests run inside
   Electron as Node; don't hand-roll `ELECTRON_RUN_AS_NODE` commands).
   The fast configs size their workers to the free cores, so a busy machine
   runs fewer instead of timing out; `ROMPER_TEST_WORKERS=<n>` overrides.
-- `npm run typecheck`, `npm run lint:check` -- the other pre-commit gates
-  (`npm run lint` auto-fixes).
+- `npm run typecheck` (both configs; the pre-commit hook runs it) and
+  `npm run lint:check` (the whole repo, as CI does; `npm run lint`
+  auto-fixes).
 - `npm run test:e2e` -- builds, then runs Playwright against the built app.
   Run it when you touch `electron/main` or app startup; unit and integration
   tests can't see startup failures. The window stays hidden
@@ -43,10 +45,14 @@ Playwright (e2e).
   ports, restarts, and screenshotting the live app.
 - `npm run build` -- production build of all three layers.
 
-The pre-commit hook runs typecheck, lint, unit + integration tests, and the
-build (about 70s). It requires the index to match the working tree, so stage
-everything you intend to commit. If it fails, nothing was committed: fix,
-stage, and commit again (don't `--amend`).
+The pre-commit hook runs the typecheck and, on the staged files only
+(`lint-staged.config.mjs`), ESLint with `--fix` and the unit tests related
+to them (`vitest related`). The full lint, unit and integration suites and
+the build run in CI only; run `npm run test:fast` or `npm run build`
+yourself when a change reaches beyond the files it touches. The hook
+requires the index to match the working tree, so stage everything you
+intend to commit. If it fails, nothing was committed: fix, stage, and
+commit again (don't `--amend`).
 
 ## Worktrees and branches
 

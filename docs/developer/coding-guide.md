@@ -130,6 +130,12 @@ fill 2 mono voices."
   a database open for Windows to refuse to delete. A plain `fs.rmSync` in
   `afterEach` works too; `removeTempStore` also retries and is safe in
   `afterAll`.
+- Give a test store its database with `createStoreDb(dbDir)`
+  (`tests/integration/support/storeDb.ts`), not `createRomperDbFile`. It
+  copies a database the test file made once, instead of switching a new
+  file to WAL and migrating it in every test, which is slow on the Windows
+  runners (#635). Call `createRomperDbFile` only in tests of creating a
+  database.
 - E2E specs import `test` and `expect` from `tests/utils/e2e-error-guard`,
   not `@playwright/test`. The guard watches every app a test launches and
   fails the test on an error-level message nobody expected: a renderer

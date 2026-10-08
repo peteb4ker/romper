@@ -394,7 +394,10 @@ or `require` shims.
   runner the test file's connection registry.
   `createTempStore`/`removeTempStore` (`tests/integration/support/tempStore.ts`)
   make and delete temp stores; `removeTempStore` closes connections again
-  first, so it's also safe in `afterAll`.
+  first, so it's also safe in `afterAll`. `createStoreDb`
+  (`tests/integration/support/storeDb.ts`) gives a store a copy of a
+  database the test file made once with `createRomperDbFile`; `setup.ts`
+  deletes that template after the file's last test.
 - **E2E** (Playwright against the built app): `*.e2e.test.ts`, mostly in
   `tests/e2e/`. Only e2e exercises app startup.
 - Unit coverage thresholds are in `vite.config.ts`.

@@ -227,17 +227,61 @@ describe("dbIpcHandlers - Routing Tests", () => {
     });
 
     it("update-voice-stereo-mode links voices in an editable kit", async () => {
-      vi.mocked(romperDbCore.getKit).mockReturnValueOnce({
-        data: { editable: true, name: "A0" },
-        success: true,
-      } as ReturnType<typeof romperDbCore.getKit>);
-      await handlerRegistry["update-voice-stereo-mode"]({}, "A0", 1, true);
+      vi.mocked(romperDbCore.getKit)
+        .mockReturnValueOnce({
+          data: { editable: true, name: "A0" },
+          success: true,
+        } as ReturnType<typeof romperDbCore.getKit>)
+        .mockReturnValueOnce({
+          data: { editable: true, name: "A0", samples: [] },
+          success: true,
+        } as unknown as ReturnType<typeof romperDbCore.getKit>);
+      const result = await handlerRegistry["update-voice-stereo-mode"](
+        {},
+        "A0",
+        1,
+        true,
+      );
       expect(romperDbCore.updateVoiceStereoMode).toHaveBeenCalledWith(
         "/test/path/.romperdb",
         "A0",
         1,
         true,
       );
+      // [Q-01] The change returns the kit, without its samples (#452)
+      expect(result).toEqual({
+        data: { editable: true, name: "A0" },
+        success: true,
+      });
+    });
+
+    it("[Q-01] update-step-pattern returns the kit without its samples, and no kit if it can't be read back (#452)", async () => {
+      vi.mocked(romperDbCore.updateKit).mockReturnValue({ success: true });
+      vi.mocked(romperDbCore.getKit).mockReturnValueOnce({
+        data: { name: "A0", samples: [], step_pattern: [[1]] },
+        success: true,
+      } as unknown as ReturnType<typeof romperDbCore.getKit>);
+      const handler = handlerRegistry["update-step-pattern"];
+
+      expect(await handler({}, "A0", [[1]])).toEqual({
+        data: { name: "A0", step_pattern: [[1]] },
+        success: true,
+      });
+
+      vi.mocked(romperDbCore.getKit).mockReturnValueOnce({
+        error: "database is locked",
+        success: false,
+      });
+      expect(await handler({}, "A0", [[1]])).toEqual({ success: true });
+
+      vi.mocked(romperDbCore.updateKit).mockReturnValueOnce({
+        error: "Kit 'A0' not found",
+        success: false,
+      });
+      expect(await handler({}, "A0", [[1]])).toEqual({
+        error: "Kit 'A0' not found",
+        success: false,
+      });
     });
 
     it("get-all-kits routes to database with settings validation", async () => {

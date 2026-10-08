@@ -3,6 +3,7 @@ import type { SliceStep } from "@romper/shared/sliceTypes";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createMockKitWithRelations } from "../../../../../../tests/factories/kit.factory";
 import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
 import { createEmptySliceSteps, makeSliceStep } from "../sliceConstants";
 import {
@@ -49,6 +50,31 @@ describe("useSliceSteps", () => {
       useSliceSteps({ initialDivision: 7, kitName: "A0" }),
     );
     expect(result.current.slicerDivision).toBe(16);
+  });
+
+  it("[Q-01] [UC-33] passes on the kit the last save of a burst returned (#452)", async () => {
+    const first = createMockKitWithRelations({ slicer_division: 8 });
+    const last = createMockKitWithRelations({ slicer_division: 12 });
+    vi.mocked(mockElectronAPI.updateKitSlicerDivision)
+      .mockResolvedValueOnce({ data: first, success: true })
+      .mockResolvedValueOnce({ data: last, success: true });
+    const onSaved = vi.fn();
+    const { result } = renderHook(() =>
+      useSliceSteps({ kitName: "A0", onSaved }),
+    );
+
+    await act(async () => {
+      await result.current.setSlicerDivision(8);
+    });
+    await act(async () => {
+      await result.current.setSlicerDivision(12);
+    });
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(onSaved).toHaveBeenCalledTimes(1);
+    expect(onSaved).toHaveBeenCalledWith(last);
   });
 
   it("saves slice steps and reloads the kit after a pause", async () => {

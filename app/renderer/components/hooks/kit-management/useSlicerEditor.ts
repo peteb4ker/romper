@@ -1,3 +1,5 @@
+import type { KitEdit } from "@romper/shared/db/schema";
+
 import {
   DEFAULT_VOICE_SLICE_SETTINGS,
   type SlicerDivision,
@@ -538,7 +540,7 @@ export function useSlicerEditor(params: UseSlicerEditorParams) {
 export function useVoiceSliceSettings(
   kitName: string,
   voices: SlicerVoiceData[] | undefined,
-  onVoiceSettingChanged?: () => void,
+  onVoiceSettingChanged?: (edited?: KitEdit) => void,
   onMessage?: (text: string, type?: string, duration?: number) => void,
 ) {
   const [sliceSettings, setSliceSettings] = React.useState(() =>
@@ -550,7 +552,11 @@ export function useVoiceSliceSettings(
 
   // Keyed by voice and the fields changed, so a toggle and a roll amount
   // change on the same voice don't decide each other's outcome
-  const { reset, save } = useSettingSave<string, Partial<VoiceSliceSettings>>();
+  const { reset, save } = useSettingSave<
+    string,
+    Partial<VoiceSliceSettings>,
+    KitEdit
+  >();
 
   // Show the loaded voices' settings whenever the kit's voices load
   const [shownVoices, setShownVoices] = React.useState(voices);
@@ -582,7 +588,7 @@ export function useVoiceSliceSettings(
       void save({
         current,
         key: `${voiceNumber}:${[...fields].sort((a, b) => a.localeCompare(b)).join(",")}`,
-        onSaved: () => onVoiceSettingChanged?.(),
+        onSaved: (edited) => onVoiceSettingChanged?.(edited),
         report: (saved) =>
           onMessage?.(sliceSettingNotSaved(voiceNumber, saved), "error"),
         restore: (saved) => {

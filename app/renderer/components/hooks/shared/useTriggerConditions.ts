@@ -1,3 +1,5 @@
+import type { KitEdit } from "@romper/shared/db/schema";
+
 import { useCallback, useEffect, useState } from "react";
 
 import {
@@ -12,7 +14,8 @@ export interface UseTriggerConditionsParams {
   kitName: string;
   /** Tells the user the trigger conditions weren't saved */
   onMessage?: (text: string, type?: string, duration?: number) => void;
-  onSaved?: () => Promise<void> | void;
+  /** Called once main saved the conditions, with the kit it returned (#452) */
+  onSaved?: (edited?: KitEdit) => Promise<void> | void;
 }
 
 export const CONDITIONS_NOT_SAVED =
@@ -39,7 +42,11 @@ export function useTriggerConditions({
   const kitRef = useLatestRef(kitName);
 
   // A failed save puts the last saved conditions back and says so (#511)
-  const { reset, save } = useSettingSave<string, TriggerConditionsState>();
+  const { reset, save } = useSettingSave<
+    string,
+    TriggerConditionsState,
+    KitEdit
+  >();
 
   // Show the loaded kit's conditions; when the kit changes before its data
   // arrives, show the defaults until it does
@@ -75,7 +82,7 @@ export function useTriggerConditions({
       const saved = await save({
         current,
         key: kitName,
-        onSaved: () => void onSaved?.(),
+        onSaved: (edited) => void onSaved?.(edited),
         report: () => onMessage?.(CONDITIONS_NOT_SAVED, "error"),
         restore: (saved) => {
           // The kit changed while this was saving; its conditions are on screen

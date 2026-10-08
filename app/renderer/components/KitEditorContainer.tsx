@@ -1,4 +1,8 @@
-import type { DbResult, KitWithRelations } from "@romper/shared/db/schema";
+import type {
+  DbResult,
+  KitEdit,
+  KitWithRelations,
+} from "@romper/shared/db/schema";
 import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
 import React from "react";
@@ -22,7 +26,7 @@ interface KitEditorContainerProps {
     slotNumber: number,
     gainDb: number,
   ) => void;
-  onKitUpdated: (kitName: string) => Promise<void>;
+  onKitUpdated: (kitName: string, edited?: KitEdit) => Promise<void>;
   onMessage: (text: string, type?: string, duration?: number) => void;
   onNextKit: () => void;
   onPrevKit: () => void;

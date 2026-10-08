@@ -1,4 +1,4 @@
-import type { DbResult } from "@romper/shared/db/schema.js";
+import type { DbResult, KitEdit } from "@romper/shared/db/schema.js";
 import type { VoiceSliceSettings } from "@romper/shared/sliceTypes.js";
 import type { SequenceSnapshot } from "@romper/shared/undoTypes.js";
 
@@ -148,7 +148,11 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
       ) => {
         const invalid = firstError(voiceNumberError(voiceNumber));
         if (invalid) return invalid;
-        return updateVoiceAlias(dbDir, kitName, voiceNumber, voiceAlias);
+        return withEditedKit(
+          dbDir,
+          kitName,
+          updateVoiceAlias(dbDir, kitName, voiceNumber, voiceAlias),
+        );
       },
     ),
   );
@@ -193,7 +197,11 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
           volumeError(volume),
         );
         if (invalid) return invalid;
-        return updateVoiceVolume(dbDir, kitName, voiceNumber, volume);
+        return withEditedKit(
+          dbDir,
+          kitName,
+          updateVoiceVolume(dbDir, kitName, voiceNumber, volume),
+        );
       },
     ),
   );
@@ -213,7 +221,11 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
           sampleModeError(sampleMode),
         );
         if (invalid) return invalid;
-        return updateVoiceSampleMode(dbDir, kitName, voiceNumber, sampleMode);
+        return withEditedKit(
+          dbDir,
+          kitName,
+          updateVoiceSampleMode(dbDir, kitName, voiceNumber, sampleMode),
+        );
       },
     ),
   );
@@ -251,7 +263,11 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
         }
         // Refuses a link the kit editor would refuse (voice 4, a voice in a
         // pair, a next voice with samples), in the update's transaction (#541)
-        return updateVoiceStereoMode(dbDir, kitName, voiceNumber, stereoMode);
+        return withEditedKit(
+          dbDir,
+          kitName,
+          updateVoiceStereoMode(dbDir, kitName, voiceNumber, stereoMode),
+        );
       },
     ),
   );
@@ -273,7 +289,11 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     createDbHandler(
       inMemorySettings,
       (dbDir: string, kitName: string, stepPattern: number[][]) => {
-        return updateKit(dbDir, kitName, { step_pattern: stepPattern });
+        return withEditedKit(
+          dbDir,
+          kitName,
+          updateKit(dbDir, kitName, { step_pattern: stepPattern }),
+        );
       },
     ),
   );
@@ -287,9 +307,11 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
         kitName: string,
         triggerConditions: (null | string)[][],
       ) => {
-        return updateKit(dbDir, kitName, {
-          trigger_conditions: triggerConditions,
-        });
+        return withEditedKit(
+          dbDir,
+          kitName,
+          updateKit(dbDir, kitName, { trigger_conditions: triggerConditions }),
+        );
       },
     ),
   );
@@ -299,9 +321,13 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     createDbHandler(
       inMemorySettings,
       (dbDir: string, kitName: string, sliceSteps: unknown) => {
-        return updateKit(dbDir, kitName, {
-          slice_steps: normalizeSliceSteps(sliceSteps),
-        });
+        return withEditedKit(
+          dbDir,
+          kitName,
+          updateKit(dbDir, kitName, {
+            slice_steps: normalizeSliceSteps(sliceSteps),
+          }),
+        );
       },
     ),
   );
@@ -340,7 +366,11 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
             success: false,
           };
         }
-        return updateKit(dbDir, kitName, { slicer_division: division });
+        return withEditedKit(
+          dbDir,
+          kitName,
+          updateKit(dbDir, kitName, { slicer_division: division }),
+        );
       },
     ),
   );
@@ -357,7 +387,11 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
       ) => {
         const invalid = firstError(voiceNumberError(voiceNumber));
         if (invalid) return invalid;
-        return updateVoiceSliceSettings(dbDir, kitName, voiceNumber, settings);
+        return withEditedKit(
+          dbDir,
+          kitName,
+          updateVoiceSliceSettings(dbDir, kitName, voiceNumber, settings),
+        );
       },
     ),
   );
@@ -512,4 +546,23 @@ function saveBankName(
     );
   }
   return saved;
+}
+
+/**
+ * After an edit to a kit's own fields or voices, the kit as it now is,
+ * without its samples, so the renderer patches it instead of reading it
+ * again (#452). The edit's result decides success; if the kit can't be
+ * read back, no kit comes with it and the renderer reloads the kit.
+ */
+function withEditedKit(
+  dbDir: string,
+  kitName: string,
+  result: DbResult<unknown>,
+): DbResult<KitEdit> {
+  if (!result.success) return { error: result.error, success: false };
+  const kit = getKit(dbDir, kitName);
+  if (!kit.success || !kit.data) return { success: true };
+  const edited: KitEdit = { ...kit.data };
+  delete (edited as { samples?: unknown }).samples;
+  return { data: edited, success: true };
 }

@@ -1,11 +1,14 @@
+import type { KitEdit } from "@romper/shared/db/schema";
+
 import { useCallback } from "react";
 
-import { saveFailed } from "../shared/useSettingSave";
+import { saveResult } from "../shared/useSettingSave";
 
 export interface UseVoiceAliasParams {
   kitName: string;
   onMessage?: (text: string, type?: string, duration?: number) => void;
-  onUpdate?: () => void;
+  /** Called once main saved the name, with the kit it returned (#452) */
+  onUpdate?: (edited?: KitEdit) => void;
 }
 
 /**
@@ -23,7 +26,7 @@ export function useVoiceAlias({
     async (voiceNumber: number, voiceAlias: string): Promise<boolean> => {
       if (!globalThis.electronAPI?.updateVoiceAlias || !kitName) return false;
 
-      const failed = await saveFailed(
+      const { data: edited, failed } = await saveResult(
         globalThis.electronAPI.updateVoiceAlias(
           kitName,
           voiceNumber,
@@ -38,7 +41,7 @@ export function useVoiceAlias({
         );
         return false;
       }
-      onUpdate?.();
+      onUpdate?.(edited);
       return true;
     },
     [kitName, onMessage, onUpdate],

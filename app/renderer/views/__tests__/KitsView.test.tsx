@@ -40,6 +40,7 @@ import type { MenuEventHandlers } from "../../components/hooks/shared/useMenuEve
 
 import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
 import { createMockSample } from "../../../../tests/factories/sample.factory";
+import { createMockVoice } from "../../../../tests/factories/voice.factory";
 import { setupAudioMocks } from "../../../../tests/mocks/browser/audio";
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
 import { createMockSettings } from "../../../../tests/mocks/settings";
@@ -1134,7 +1135,37 @@ describe("KitsView", () => {
       fireEvent.click(screen.getByTitle("Save"));
     };
 
-    it("[UC-27] reloads only the renamed voice's kit", async () => {
+    it("[UC-27] shows the kit the rename returned, without reading it again", async () => {
+      await openEditableA0();
+      const renamed = createMockKitWithRelations({
+        editable: true,
+        name: "A0",
+        voices: [
+          createMockVoice({
+            kit_name: "A0",
+            voice_alias: "Kick",
+            voice_number: 1,
+          }),
+        ],
+      });
+      delete renamed.samples;
+      vi.mocked(window.electronAPI.updateVoiceAlias).mockResolvedValue({
+        data: renamed,
+        success: true,
+      });
+      vi.mocked(window.electronAPI.getKit).mockClear();
+      vi.mocked(window.electronAPI.getKits).mockClear();
+
+      renameVoice1();
+
+      expect(await screen.findByText("Kick")).toBeInTheDocument();
+      // Its samples stay on screen
+      expect(screen.getByText("kick.wav")).toBeInTheDocument();
+      expect(window.electronAPI.getKit).not.toHaveBeenCalled();
+      expect(window.electronAPI.getKits).not.toHaveBeenCalled();
+    });
+
+    it("[UC-27] reloads only the renamed voice's kit when the rename returns no kit", async () => {
       await openEditableA0();
       vi.mocked(window.electronAPI.getKits).mockClear();
       vi.mocked(window.electronAPI.getKit).mockClear();

@@ -1,5 +1,9 @@
 import type { VoiceSamples } from "@romper/app/renderer/components/kitTypes";
-import type { DbResult, KitWithRelations } from "@romper/shared/db/schema";
+import type {
+  DbResult,
+  KitEdit,
+  KitWithRelations,
+} from "@romper/shared/db/schema";
 
 import { compareKitSlots } from "@romper/shared/kitUtilsShared";
 import React, {
@@ -29,6 +33,11 @@ interface UseKitDataManagerProps {
 
 interface UseKitDataManagerReturn {
   allKitSamples: { [kit: string]: VoiceSamples };
+  /**
+   * Shows the kit an edit to its own fields or voices returned, without
+   * reading it again (#452)
+   */
+  applyKitEdit: (kitName: string, edited: KitEdit) => void;
   getKitByName: (kitName: string) => KitWithRelations | undefined;
   /**
    * The kits. A kit whose samples couldn't be loaded, with none loaded
@@ -111,13 +120,19 @@ export function useKitDataManager({
   const kitReads = useRef(new Map<string, number>());
   const listRead = useRef(0);
   // Changes main has saved that the renderer shows without a reload (a
-  // gain, BPM, favorite, name or editable flag), numbered like reads. A
-  // read sent before one can't show it, so it's applied over that read; a
-  // read sent after it supersedes it.
+  // kit an edit returned, a gain, BPM, favorite, name or editable flag),
+  // numbered like reads. A read sent before one can't show it, so it's
+  // applied over that read; a read sent after it supersedes it. Each is
+  // keyed by what it changes, so a later change to the same thing replaces
+  // it and the list stays short between reads.
   const savedChanges = useRef(
     new Map<
       string,
-      { apply: (kit: KitWithRelations) => KitWithRelations; read: number }[]
+      {
+        apply: (kit: KitWithRelations) => KitWithRelations;
+        key: string;
+        read: number;
+      }[]
     >(),
   );
 
@@ -136,13 +151,21 @@ export function useKitDataManager({
   );
 
   // Show a change main has saved on the loaded kit, and keep it over any
-  // read sent before it. `apply` returns the kit itself when it changes
-  // nothing, so nothing re-renders.
+  // read sent before it. It replaces the earlier changes `replaces`
+  // matches by key (by default, its own key). `apply` returns the kit
+  // itself when it changes nothing, so nothing re-renders.
   const applySavedChange = useCallback(
-    (kitName: string, apply: (kit: KitWithRelations) => KitWithRelations) => {
+    (
+      kitName: string,
+      key: string,
+      apply: (kit: KitWithRelations) => KitWithRelations,
+      replaces: (earlier: string) => boolean = (earlier) => earlier === key,
+    ) => {
       const read = ++lastRead.current;
-      const changes = savedChanges.current.get(kitName) ?? [];
-      savedChanges.current.set(kitName, [...changes, { apply, read }]);
+      const changes = (savedChanges.current.get(kitName) ?? []).filter(
+        (change) => !replaces(change.key),
+      );
+      savedChanges.current.set(kitName, [...changes, { apply, key, read }]);
       setDbKits((prevKits) => {
         let changed = false;
         const next = prevKits.map((kit) => {
@@ -393,7 +416,11 @@ export function useKitDataManager({
   // Show fields main has saved on the loaded kit, without a reload
   const updateKit = useCallback(
     (kitName: string, updates: Partial<KitWithRelations>) => {
-      applySavedChange(kitName, (kit) => ({ ...kit, ...updates }));
+      const fields = Object.keys(updates).sort((a, b) => a.localeCompare(b));
+      applySavedChange(kitName, `kit:${fields.join(",")}`, (kit) => ({
+        ...kit,
+        ...updates,
+      }));
     },
     [applySavedChange],
   );
@@ -410,7 +437,7 @@ export function useKitDataManager({
       slotNumber: number,
       gainDb: number,
     ) => {
-      applySavedChange(kitName, (kit) => {
+      applySavedChange(kitName, `gain:${voiceNumber}:${slotNumber}`, (kit) => {
         const row = kit.samples?.find(
           (sample) =>
             sample.voice_number === voiceNumber &&
@@ -428,6 +455,22 @@ export function useKitDataManager({
             : kit.samples,
         };
       });
+    },
+    [applySavedChange],
+  );
+
+  // Show the kit an edit to its own fields or voices returned, in place of
+  // reading it again (#452). It's everything about the kit but its
+  // samples, so it replaces the kit-level changes saved before it.
+  const applyKitEdit = useCallback(
+    (kitName: string, edited: KitEdit) => {
+      if (edited.name !== kitName) return;
+      applySavedChange(
+        kitName,
+        "kit",
+        (kit) => ({ ...kit, ...edited, samples: kit.samples }),
+        (earlier) => earlier === "kit" || earlier.startsWith("kit:"),
+      );
     },
     [applySavedChange],
   );
@@ -549,6 +592,7 @@ export function useKitDataManager({
 
   return {
     allKitSamples,
+    applyKitEdit,
     getKitByName,
     kits,
     loadKitSamplesOnOpen,

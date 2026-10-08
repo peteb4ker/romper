@@ -381,6 +381,24 @@ describe("useStepPattern", () => {
   });
 
   describe("onSaved callback", () => {
+    it("[Q-01] [UC-30] passes on the kit main returned with the save (#452)", async () => {
+      const edited = { name: "A0", step_pattern: [[1]] };
+      vi.mocked(window.electronAPI.updateStepPattern).mockResolvedValue({
+        data: edited as never,
+        success: true,
+      });
+      const onSaved = vi.fn();
+      const { result } = renderHook(() =>
+        useStepPattern({ kitName: "A0", onSaved }),
+      );
+
+      await act(async () => {
+        await result.current.setStepPattern([[1]]);
+      });
+
+      expect(onSaved).toHaveBeenCalledWith(edited);
+    });
+
     it("calls onSaved after successful save", async () => {
       const onSaved = vi.fn();
       const { result } = renderHook(() =>

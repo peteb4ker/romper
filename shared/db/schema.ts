@@ -129,6 +129,13 @@ export type DbSamplesResult = DbResult<Sample[]>;
 export type DbVoicesResult = DbResult<Voice[]>;
 
 export type Kit = typeof kits.$inferSelect;
+/**
+ * A kit as an edit to it left it, without its samples: what main returns
+ * from an edit to the kit's own fields or voices, so the renderer patches
+ * the kit instead of reading it again (#452)
+ */
+export type KitEdit = Omit<KitWithRelations, "samples">;
+
 export interface KitScanMissingSample {
   filename: string;
   slotNumber: number;

@@ -13,18 +13,21 @@ const log = createLogger("save");
  */
 export const REPEAT_FAILURE_MS = 1000;
 
-export interface SettingSave<K, V> {
+export interface SettingSave<K, V, D = unknown> {
   /** The value on screen before this change */
   current: V;
   key: K;
-  /** Called once main has saved the latest change */
-  onSaved?: () => void;
+  /**
+   * Called once main has saved the latest change, with what main returned
+   * with it (an edited kit, #452)
+   */
+  onSaved?: (data: D | undefined) => void;
   /** Tells the user the latest change wasn't saved; `saved` is now on screen */
   report: (saved: V) => void;
   /** Puts the last saved value back on screen */
   restore: (saved: V) => void;
   /** Sends the save to main */
-  send: () => Promise<DbResult | undefined> | undefined;
+  send: () => Promise<DbResult<D> | undefined> | undefined;
   /** The new value, already on screen */
   value: V;
   /** What's being saved, for the log */
@@ -41,20 +44,31 @@ export async function saveFailed(
   save: Promise<DbResult | undefined> | undefined,
   what: string,
 ): Promise<boolean> {
+  return (await saveResult(save, what)).failed;
+}
+
+/**
+ * saveFailed, with what main returned with a save that succeeded (an
+ * edited kit, #452)
+ */
+export async function saveResult<D>(
+  save: Promise<DbResult<D> | undefined> | undefined,
+  what: string,
+): Promise<{ data?: D; failed: boolean }> {
   try {
     const result = await save;
     if (!result) {
       log.warn(`Saving ${what} failed: no answer from main`);
-      return true;
+      return { failed: true };
     }
     if (!result.success) {
       log.warn(`Saving ${what} failed:`, result.error);
-      return true;
+      return { failed: true };
     }
-    return false;
+    return { data: result.data, failed: false };
   } catch (error) {
     log.warn(`Saving ${what} failed:`, error);
-    return true;
+    return { failed: true };
   }
 }
 
@@ -71,7 +85,7 @@ export async function saveFailed(
  *
  * `save` resolves to whether main saved this change.
  */
-export function useSettingSave<K, V>() {
+export function useSettingSave<K, V, D = unknown>() {
   // The value main last saved, per key, once a change has been sent
   const saved = React.useRef(new Map<K, V>());
   // The latest change sent, per key
@@ -89,12 +103,12 @@ export function useSettingSave<K, V>() {
       send,
       value,
       what,
-    }: SettingSave<K, V>): Promise<boolean> => {
+    }: SettingSave<K, V, D>): Promise<boolean> => {
       if (!saved.current.has(key)) saved.current.set(key, current);
       const request = (latest.current.get(key) ?? 0) + 1;
       latest.current.set(key, request);
 
-      const failed = await saveFailed(send(), what);
+      const { data, failed } = await saveResult(send(), what);
       if (!failed) saved.current.set(key, value);
       // A newer change is on its way; its answer decides
       if (latest.current.get(key) !== request) return !failed;
@@ -110,7 +124,7 @@ export function useSettingSave<K, V>() {
         if (last == null || now - last > REPEAT_FAILURE_MS) report(previous);
       } else {
         lastFailure.current.delete(key);
-        onSaved?.();
+        onSaved?.(data);
       }
       return !failed;
     },

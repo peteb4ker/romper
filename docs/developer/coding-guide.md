@@ -167,11 +167,14 @@ fill 2 mono voices."
   An error Romper itself logs on purpose isn't noise: declare it in the
   spec's `expectedMessages`.
 - Pull requests run e2e on Linux only, split into shards (`--shard`); the
-  `plan` job in `e2e.yml` sets how many. The unit and integration suites
-  still run on Linux, macOS and Windows on every pull request. Pushes to
-  `main` and the release (its tag or a manual run) run e2e on Linux, macOS
-  and Windows, so a macOS- or Windows-only e2e failure shows up on `main`
-  after the merge: fix it forward like any red check on `main`.
+  `plan` job in `e2e.yml` sets how many. They run the integration suite
+  on Linux and Windows, and the unit suite on Linux. Pushes to `main`, the
+  release (its tag or a manual run) and manual runs of `e2e.yml` or
+  `test.yml` run e2e and integration on Linux, macOS and Windows, so a
+  macOS-only failure, or a Windows-only e2e failure, shows up on `main`
+  after the merge: fix it forward like any red check on `main`. (macOS
+  stays off pull requests because GitHub sometimes has no macOS runner
+  for 15 minutes, and a check waiting on one blocks the merge; #745.)
   `e2e-tests-check` passes only when every shard on every platform that
   ran passed, and its job summary adds the shards up.
 - A new commit on a pull request cancels the CI runs still going for its

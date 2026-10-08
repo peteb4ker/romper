@@ -7,6 +7,8 @@ on:
   pull_request:
     branches:
       - "**"
+  # Allow manual trigger (runs integration on all three platforms)
+  workflow_dispatch:
   # The release workflow runs this on the tagged commit (RE-17)
   workflow_call:
 
@@ -67,9 +69,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # All three OSes on PRs too: they take about a minute, and Windows-only
-        # failures (file locking, chmod semantics) otherwise reach main unseen.
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        # Pull requests run Linux and Windows: Windows-only failures (file
+        # locking, chmod semantics) otherwise reach main unseen. macOS runs
+        # on everything else (#745), as e2e does (#698): pushes to main,
+        # which catch a macOS-only regression right after merge, the release
+        # (its tag push or a manual run, which call this workflow; there
+        # github.event_name is the caller's event) and a manual run of this
+        # workflow. GitHub sometimes has no macOS arm64 runner for 15
+        # minutes, and a PR waiting on one can't merge. The job names don't
+        # change, so the Linux and Windows required checks still report.
+        os: >-
+          ${{ fromJSON(github.event_name == 'pull_request'
+          && '["ubuntu-latest", "windows-latest"]'
+          || '["ubuntu-latest", "windows-latest", "macos-latest"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
 
@@ -147,7 +159,9 @@ jobs:
           retention-days: 1
 
   # Coverage merge + SonarCloud. Runs on main pushes and on every PR, not
-  # when the release workflow runs the tests on a tag.
+  # when the release workflow runs the tests on a tag. It waits for every
+  # integration leg in the matrix: Linux and Windows on a PR, all three on
+  # main.
   #
   # This job is the required check that enforces SonarCloud's quality gate
   # on PRs (#468): on a PR the scan waits for the gate and fails the job

@@ -48,7 +48,8 @@ condensed checklist for these steps.
       re-tag.
    2. Lint, typecheck, unit tests (Ubuntu), integration tests (all three
       OSes) and e2e tests (all three OSes), run on the tagged commit by calling the CI
-      workflows. CI results on `main` don't count: a push to `main` replaces
+      workflows. Pull requests skip macOS for integration and e2e, so the
+      release, like a push to `main`, is where macOS gets tested. CI results on `main` don't count: a push to `main` replaces
       the queued run for the previous commit, so many commits never get a
       complete run. The full-pipeline rehearsal (`validate-full.yml`: the
       factory archive to a card, byte for byte, plus the performance

@@ -9,13 +9,11 @@ function refresh(kitName: string) {
   );
 }
 
-describe("useSampleRefreshListener", () => {
-  it("reloads the selected kit's samples and its data (sequence)", () => {
+describe("[UC-26] useSampleRefreshListener", () => {
+  it("[Q-01] reloads the selected kit, samples and sequence, in one reload (#452)", () => {
     const reloadCurrentKitSamples = vi.fn().mockResolvedValue(undefined);
-    const refreshKitMetadata = vi.fn().mockResolvedValue(undefined);
     const { unmount } = renderHook(() =>
       useSampleRefreshListener({
-        refreshKitMetadata,
         reloadCurrentKitSamples,
         selectedKit: "A0",
       }),
@@ -26,8 +24,6 @@ describe("useSampleRefreshListener", () => {
 
     expect(reloadCurrentKitSamples).toHaveBeenCalledTimes(1);
     expect(reloadCurrentKitSamples).toHaveBeenCalledWith("A0");
-    expect(refreshKitMetadata).toHaveBeenCalledTimes(1);
-    expect(refreshKitMetadata).toHaveBeenCalledWith("A0");
     unmount();
   });
 });

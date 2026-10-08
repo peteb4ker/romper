@@ -606,6 +606,12 @@ describe("KitsView", () => {
         success: true,
       });
 
+    // getKit reloads one kit with its samples (#452)
+    const kitA0With = (samples: ReturnType<typeof createMockSample>[]) => ({
+      data: createMockKitWithRelations({ editable: true, name: "A0", samples }),
+      success: true as const,
+    });
+
     const openA0 = async () => {
       render(
         <TestSettingsProvider>
@@ -618,16 +624,15 @@ describe("KitsView", () => {
 
     it("loads them", async () => {
       listUnloadedA0();
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-        data: [
+      vi.mocked(window.electronAPI.getKit).mockResolvedValue(
+        kitA0With([
           createMockSample({
             filename: "kick.wav",
             slot_number: 0,
             voice_number: 1,
           }),
-        ],
-        success: true,
-      });
+        ]),
+      );
 
       await openA0();
 
@@ -647,7 +652,7 @@ describe("KitsView", () => {
 
     it("shows the kit locked and says so when they can't be loaded", async () => {
       listUnloadedA0();
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+      vi.mocked(window.electronAPI.getKit).mockResolvedValue({
         error: "database is locked",
         success: false,
       });
@@ -933,9 +938,8 @@ describe("KitsView", () => {
       fireEvent.click(await screen.findByText("A0"));
       await screen.findByText("Back");
 
-      // A rejected single-kit reload must not crash the view. The
-      // editor fetched on opening; forget that, so only the reload counts
-      vi.mocked(window.electronAPI.getAllSamplesForKit)
+      // A rejected single-kit reload must not crash the view
+      vi.mocked(window.electronAPI.getKit)
         .mockClear()
         .mockRejectedValue(new Error("File not found"));
       document.dispatchEvent(
@@ -945,9 +949,7 @@ describe("KitsView", () => {
       );
 
       await waitFor(() => {
-        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
-          "A0",
-        );
+        expect(window.electronAPI.getKit).toHaveBeenCalledWith("A0");
       });
       // The editor stays open on the kit
       expect(screen.getByTestId("kit-header-name")).toHaveTextContent("A0");
@@ -995,19 +997,26 @@ describe("KitsView", () => {
       fireEvent.click(await screen.findByText("A0"));
       await screen.findByText("Back");
 
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-        data: [
-          createMockSample({
-            filename: "new-kick.wav",
-            slot_number: 0,
-            voice_number: 1,
-          }),
-          createMockSample({
-            filename: "new-snare.wav",
-            slot_number: 0,
-            voice_number: 2,
-          }),
-        ],
+      // One getKit call brings back the kit with its samples (#452)
+      vi.mocked(window.electronAPI.getKit).mockResolvedValue({
+        data: createMockKitWithRelations({
+          alias: null,
+          bank_letter: "A",
+          editable: false,
+          name: "A0",
+          samples: [
+            createMockSample({
+              filename: "new-kick.wav",
+              slot_number: 0,
+              voice_number: 1,
+            }),
+            createMockSample({
+              filename: "new-snare.wav",
+              slot_number: 0,
+              voice_number: 2,
+            }),
+          ],
+        }),
         success: true,
       });
       document.dispatchEvent(
@@ -1039,8 +1048,7 @@ describe("KitsView", () => {
       fireEvent.click(await screen.findByText("A0"));
       await screen.findByText("Back");
 
-      // Forget the fetch the editor made on opening, so only the reload counts
-      vi.mocked(window.electronAPI.getAllSamplesForKit)
+      vi.mocked(window.electronAPI.getKit)
         .mockClear()
         .mockResolvedValue({ error: "Sample reload failed", success: false });
       document.dispatchEvent(
@@ -1050,9 +1058,7 @@ describe("KitsView", () => {
       );
 
       await waitFor(() => {
-        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
-          "A0",
-        );
+        expect(window.electronAPI.getKit).toHaveBeenCalledWith("A0");
       });
       // The editor stays open on the kit
       expect(screen.getByTestId("kit-header-name")).toHaveTextContent("A0");
@@ -1629,19 +1635,7 @@ describe("KitsView", () => {
         expect(screen.getByText("Back")).toBeInTheDocument();
       });
 
-      // Mock new sample data for reload. Opening the editor already fetched
-      // the kit's samples, so clear that call
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockClear();
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-        data: [
-          createMockSample({
-            filename: "refreshed-sample.wav",
-            slot_number: 100,
-            voice_number: 1,
-          }),
-        ],
-        success: true,
-      });
+      vi.mocked(window.electronAPI.getKit).mockClear();
 
       // Dispatch the custom refresh event
       const refreshEvent = new CustomEvent("romper:refresh-samples", {
@@ -1649,12 +1643,11 @@ describe("KitsView", () => {
       });
       document.dispatchEvent(refreshEvent);
 
-      // Should trigger sample reload for the selected kit
+      // Should reload the selected kit, with its samples, in one call
       await waitFor(() => {
-        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
-          "A0",
-        );
+        expect(window.electronAPI.getKit).toHaveBeenCalledTimes(1);
       });
+      expect(window.electronAPI.getKit).toHaveBeenCalledWith("A0");
     });
 
     it("ignores refresh event for non-selected kit", async () => {
@@ -1675,7 +1668,7 @@ describe("KitsView", () => {
         expect(screen.getByText("Back")).toBeInTheDocument();
       });
 
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockClear();
+      vi.mocked(window.electronAPI.getKit).mockClear();
 
       // Dispatch refresh event for different kit
       const refreshEvent = new CustomEvent("romper:refresh-samples", {
@@ -1685,9 +1678,7 @@ describe("KitsView", () => {
 
       // Should not reload samples since B0 is not selected
       await new Promise((resolve) => setTimeout(resolve, 100));
-      expect(window.electronAPI.getAllSamplesForKit).not.toHaveBeenCalledWith(
-        "B0",
-      );
+      expect(window.electronAPI.getKit).not.toHaveBeenCalled();
     });
   });
 

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createMockKitWithRelations } from "../../../../../../tests/factories/kit.factory";
 import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
+import { useSampleManagement } from "../../sample-management/useSampleManagement";
 import { createSlotPlaybackStore } from "../slotPlaybackStore";
 import { useKitEditorLogic } from "../useKitEditorLogic";
 import { useKitPlayback } from "../useKitPlayback";
@@ -173,6 +174,47 @@ describe("useKitEditorLogic", () => {
     expect(result.current.sampleManagement).toBeDefined();
     expect(result.current.flashVoices).toBeDefined();
     expect(result.current.flashVoices.size).toBe(0);
+  });
+
+  describe("[Q-01] reloading after an edit (#452)", () => {
+    it("[UC-30] reloads only the kit the edit was made in", async () => {
+      const { result } = renderHook(() => useKitEditorLogic(mockProps));
+
+      await act(async () => {
+        await result.current.reloadKit();
+      });
+
+      expect(mockProps.onKitUpdated).toHaveBeenCalledWith("TestKit");
+    });
+
+    it("[UC-18] reloads the edited kit when a save finishes after a step to another", async () => {
+      const { rerender, result } = renderHook(
+        (props: typeof mockProps) => useKitEditorLogic(props),
+        { initialProps: mockProps },
+      );
+      const reloadEditedKit = result.current.reloadKit;
+      rerender({ ...mockProps, kitName: "OtherKit" });
+
+      await act(async () => {
+        await reloadEditedKit();
+      });
+
+      expect(mockProps.onKitUpdated).toHaveBeenCalledWith("TestKit");
+    });
+
+    it("[UC-19] reloads the kit and its samples once after a sample edit", async () => {
+      renderHook(() => useKitEditorLogic(mockProps));
+      const { onSamplesChanged } =
+        vi.mocked(useSampleManagement).mock.calls[0][0];
+
+      await act(async () => {
+        await onSamplesChanged?.();
+      });
+
+      expect(mockProps.onRequestSamplesReload).toHaveBeenCalledTimes(1);
+      expect(mockProps.onRequestSamplesReload).toHaveBeenCalledWith("TestKit");
+      expect(mockProps.onKitUpdated).not.toHaveBeenCalled();
+    });
   });
 
   it("handles kit scanning successfully", async () => {

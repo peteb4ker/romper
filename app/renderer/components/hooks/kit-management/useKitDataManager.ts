@@ -39,8 +39,17 @@ interface UseKitDataManagerReturn {
   loadKitSamplesOnOpen: (kitName: string) => Promise<void>;
   loadKitsData: (scrollToKit?: string) => Promise<void>;
   markKitModified: (kitName: string) => void;
+  /**
+   * Reloads every kit. For changes to the list itself (scan, write, setup,
+   * kits created, copied or deleted); an edit to one kit uses refreshKit.
+   */
   refreshAllKitsAndSamples: () => Promise<void>;
-  refreshSingleKitMetadata: (kitName: string) => Promise<void>;
+  /**
+   * Reloads one kit, with its voices and samples, in one call (#452).
+   * Resolves false if it couldn't be read; what's shown then stays.
+   */
+  refreshKit: (kitName: string) => Promise<boolean>;
+  /** refreshKit, and says so if the kit's samples couldn't be loaded (#605) */
   reloadCurrentKitSamples: (kitName: string) => Promise<void>;
   sampleCounts: Record<string, [number, number, number, number]>;
   toggleKitEditable: (kitName: string) => Promise<void>;
@@ -86,6 +95,14 @@ export function useKitDataManager({
   // The scroll after a load is cleared if the hook unmounts first
   const timeouts = useTimeouts();
 
+  // Kit reads are numbered as they're sent, so a slower, older response
+  // can't put older data back over newer (#452). kitReads holds the number
+  // of the read each kit on screen came from; listRead, the full load the
+  // list came from.
+  const lastRead = useRef(0);
+  const kitReads = useRef(new Map<string, number>());
+  const listRead = useRef(0);
+
   // Read through a ref so the reload callbacks stay stable
   const onMessageRef = useRef(onMessage);
   useEffect(() => {
@@ -108,28 +125,54 @@ export function useKitDataManager({
     [],
   );
 
-  // Loads one kit's samples; null if they couldn't be loaded. An empty
-  // result here would show a full kit as empty (#605).
-  const loadKitSamples = useCallback(
-    async (kit: string): Promise<null | VoiceSamples> => {
-      try {
-        const samplesResult =
-          await globalThis.electronAPI?.getAllSamplesForKit?.(kit);
-
-        if (samplesResult?.success && samplesResult.data) {
-          return groupDbSamplesByVoice(samplesResult.data);
-        }
-        console.error(
-          `Failed to load samples for kit ${kit}:`,
-          samplesResult?.error,
-        );
-      } catch (error) {
-        console.error(`Error loading samples for kit ${kit}:`, error);
+  // Reads every kit. Resolves to the kits loaded, an empty list if they
+  // couldn't be read, or null when a newer full load has already landed.
+  // A kit read sent after this one keeps what it showed.
+  const readAllKits = useCallback(async (): Promise<
+    KitWithRelations[] | null
+  > => {
+    const read = ++lastRead.current;
+    let loadedKits: KitWithRelations[] = [];
+    try {
+      const kitsResult = await globalThis.electronAPI?.getKits?.();
+      if (kitsResult?.success && kitsResult.data) {
+        loadedKits = kitsResult.data;
+      } else {
+        console.error("Failed to load kits from database:", kitsResult?.error);
       }
-      return null;
-    },
-    [],
-  );
+    } catch (error) {
+      console.error("Error loading kits from database:", error);
+    }
+    if (read < listRead.current) return null;
+    listRead.current = read;
+
+    const newer = new Set<string>();
+    for (const kit of loadedKits) {
+      if ((kitReads.current.get(kit.name) ?? 0) > read) newer.add(kit.name);
+      else kitReads.current.set(kit.name, read);
+    }
+    if (newer.size === 0) {
+      setDbKits(loadedKits);
+      setAllKitSamples(groupLoadedKitSamples(loadedKits));
+    } else {
+      setDbKits((prev) =>
+        loadedKits.map((kit) =>
+          newer.has(kit.name)
+            ? (prev.find((shown) => shown.name === kit.name) ?? kit)
+            : kit,
+        ),
+      );
+      setAllKitSamples((prev) => {
+        const next = groupLoadedKitSamples(loadedKits);
+        for (const name of newer) {
+          if (prev[name]) next[name] = prev[name];
+        }
+        return next;
+      });
+    }
+    clearFailedKits();
+    return loadedKits;
+  }, [groupLoadedKitSamples, clearFailedKits]);
 
   // Main function to load all kits and their data
   const loadKitsData = useCallback(
@@ -141,29 +184,8 @@ export function useKitDataManager({
 
       // Load kits from database — the result includes bank relationships
       // and every kit's samples, so one IPC call covers everything
-      let loadedKits: KitWithRelations[] = [];
-      try {
-        const kitsResult = await globalThis.electronAPI?.getKits?.();
-        if (kitsResult?.success && kitsResult.data) {
-          const kitsWithBanks = kitsResult.data;
-          setDbKits(kitsWithBanks);
-          loadedKits = kitsWithBanks;
-        } else {
-          console.error(
-            "Failed to load kits from database:",
-            kitsResult?.error,
-          );
-          setDbKits([]);
-          loadedKits = [];
-        }
-      } catch (error) {
-        console.error("Error loading kits from database:", error);
-        setDbKits([]);
-        loadedKits = [];
-      }
-
-      setAllKitSamples(groupLoadedKitSamples(loadedKits));
-      clearFailedKits();
+      const loadedKits = await readAllKits();
+      if (!loadedKits) return;
 
       // If a specific kit should be scrolled to, do it after data loads
       if (scrollToKit) {
@@ -183,37 +205,60 @@ export function useKitDataManager({
         }, 100); // Small delay to ensure DOM is updated
       }
     },
-    [
-      isInitialized,
-      isLocalStoreReady,
-      localStorePath,
-      groupLoadedKitSamples,
-      clearFailedKits,
-      timeouts,
-    ],
+    [isInitialized, isLocalStoreReady, localStorePath, readAllKits, timeouts],
   );
 
-  // Reload one kit's samples. If they can't be loaded, the samples already
-  // shown stay; a kit with none to show becomes unavailable (#605).
+  // Reload one kit (its row, voices and samples) with one get-kit call,
+  // instead of every kit (#452). A response older than what the kit shows
+  // is dropped. If the kit can't be read, what's shown stays.
+  const refreshKit = useCallback(async (kitName: string) => {
+    const read = ++lastRead.current;
+    let kit: KitWithRelations | null = null;
+    try {
+      const kitResult = await globalThis.electronAPI?.getKit?.(kitName);
+      if (kitResult?.success && kitResult.data?.samples) {
+        kit = kitResult.data;
+      } else {
+        console.error(`Failed to load kit ${kitName}:`, kitResult?.error);
+      }
+    } catch (error) {
+      console.error(`Error loading kit ${kitName}:`, error);
+    }
+    if (!kit?.samples) return false;
+    if (
+      read < listRead.current ||
+      read < (kitReads.current.get(kitName) ?? 0)
+    ) {
+      return true; // Newer data is already on screen
+    }
+    kitReads.current.set(kitName, read);
+
+    const loaded = kit;
+    const voices = groupDbSamplesByVoice(kit.samples);
+    setDbKits((prevKits) =>
+      prevKits.map((shown) => (shown.name === kitName ? loaded : shown)),
+    );
+    setAllKitSamples((prev) => ({ ...prev, [kitName]: voices }));
+    setFailedKits((prev) => {
+      if (!prev.has(kitName)) return prev;
+      const next = new Set(prev);
+      next.delete(kitName);
+      return next;
+    });
+    return true;
+  }, []);
+
+  // Reload one kit with its samples. If they can't be loaded, the samples
+  // already shown stay; a kit with none to show becomes unavailable (#605).
   const reloadCurrentKitSamples = useCallback(
     async (kitName: string) => {
-      const voices = await loadKitSamples(kitName);
-      if (voices) {
-        setAllKitSamples((prev) => ({ ...prev, [kitName]: voices }));
-        setFailedKits((prev) => {
-          if (!prev.has(kitName)) return prev;
-          const next = new Set(prev);
-          next.delete(kitName);
-          return next;
-        });
-        return;
-      }
+      if (await refreshKit(kitName)) return;
       setFailedKits((prev) =>
         prev.has(kitName) ? prev : new Set(prev).add(kitName),
       );
       onMessageRef.current?.(samplesFailedMessage(kitName), "error");
     },
-    [loadKitSamples],
+    [refreshKit],
   );
 
   // Opening a kit loads its samples if none are loaded yet, or if the last
@@ -251,41 +296,10 @@ export function useKitDataManager({
     [dbKits, unavailableKits],
   );
 
-  // Refresh metadata for a single kit (voice aliases, etc.) without reloading all samples
-  const refreshSingleKitMetadata = useCallback(async (kitName: string) => {
-    try {
-      const kitResult = await globalThis.electronAPI?.getKit?.(kitName);
-      if (kitResult?.success && kitResult.data) {
-        const updatedKit = kitResult.data;
-        setDbKits((prevKits) =>
-          prevKits.map((kit) => (kit.name === kitName ? updatedKit : kit)),
-        );
-      }
-    } catch (error) {
-      console.error(`Error refreshing kit metadata for ${kitName}:`, error);
-    }
-  }, []);
-
-  // Helper function to load all kits and samples from database
+  // Reload every kit, after a change to the list itself
   const refreshAllKitsAndSamples = useCallback(async () => {
-    try {
-      const kitsResult = await globalThis.electronAPI?.getKits?.();
-      if (kitsResult?.success && kitsResult.data) {
-        const kitsWithBanks = kitsResult.data;
-        setDbKits(kitsWithBanks);
-        setAllKitSamples(groupLoadedKitSamples(kitsWithBanks));
-      } else {
-        console.error("Failed to load kits from database:", kitsResult?.error);
-        setDbKits([]);
-        setAllKitSamples({});
-      }
-    } catch (error) {
-      console.error("Error loading data from database:", error);
-      setDbKits([]);
-      setAllKitSamples({});
-    }
-    clearFailedKits();
-  }, [groupLoadedKitSamples, clearFailedKits]);
+    await readAllKits();
+  }, [readAllKits]);
 
   // Get a specific kit by name from the cached data
   const getKitByName = useCallback(
@@ -444,7 +458,7 @@ export function useKitDataManager({
     loadKitsData,
     markKitModified,
     refreshAllKitsAndSamples,
-    refreshSingleKitMetadata,
+    refreshKit,
     reloadCurrentKitSamples,
     sampleCounts,
     toggleKitEditable,

@@ -46,8 +46,11 @@ export const TOTAL = "total";
  * on an open store opens none
  */
 const NO_NEW_CONNECTION = { max: 0 } as const;
-/** RE-36: edits return the changed kit instead of reloading every kit */
-const NO_RELOAD = { target: 0, until: "RE-36" } as const;
+/**
+ * #452: an edit in the kit editor reloads only its kit (`get-kit`), never
+ * every kit
+ */
+const NO_RELOAD = { max: 0 } as const;
 
 const kb = (n: number) => Math.round(n * 1024);
 const mb = (n: number) => Math.round(n * 1024 * 1024);
@@ -76,16 +79,19 @@ export const BUDGETS = {
     },
     "delete a sample": {
       "delete-sample-from-slot": { max: 1 },
-      "get-all-kits": { max: 1, ...NO_RELOAD },
-      "get-all-samples-for-kit": { max: 3 },
+      "get-all-kits": NO_RELOAD,
+      "get-all-samples-for-kit": { max: 2 },
+      "get-kit": { max: 1 },
     },
     "drop a sample": {
       "add-sample-to-slot": { max: 1 },
-      "get-all-kits": { max: 2, ...NO_RELOAD },
-      "get-all-samples-for-kit": { max: 4 },
+      "get-all-kits": NO_RELOAD,
+      "get-all-samples-for-kit": { max: 3 },
+      /** Once for the add and once when the drop finishes */
+      "get-kit": { max: 2 },
       "get-sample-audio-buffer": { max: 1 },
       "register-dropped-file": { max: 1 },
-      total: { max: 10, target: 5, until: "RE-36" },
+      total: { max: 9, target: 5, until: "#452" },
       "validate-sample-format": { max: 1 },
     },
     "enable editing": {
@@ -104,8 +110,9 @@ export const BUDGETS = {
      */
     "next kit": {
       "check-kit-sample-files": { max: 1 },
-      "get-all-kits": { max: 1, ...NO_RELOAD },
+      "get-all-kits": NO_RELOAD,
       "get-all-samples-for-kit": { max: 2 },
+      "get-kit": { max: 1 },
       "get-sample-audio-buffer": { max: 2 },
     },
     /**
@@ -113,14 +120,15 @@ export const BUDGETS = {
      * (`check-kit-sample-files`: a stat per file, and a header read only
      * for files not known to be readable). The fixture's samples have
      * never been checked (an older library), so the first open records
-     * their status and reloads the kits once, which fetches the kit's
-     * samples again. When nothing changed, an open costs the check and
-     * no reload: 1 `get-all-samples-for-kit` and no `get-all-kits`.
+     * their status and reloads the kit once (`get-kit`), which fetches
+     * its samples again. When nothing changed, an open costs the check and
+     * no reload: 1 `get-all-samples-for-kit` and no `get-kit`.
      */
     "open a kit": {
       "check-kit-sample-files": { max: 1 },
-      "get-all-kits": { max: 1, ...NO_RELOAD },
+      "get-all-kits": NO_RELOAD,
       "get-all-samples-for-kit": { max: 2 },
+      "get-kit": { max: 1 },
       "get-sample-audio-buffer": { max: 2 },
     },
     "open the write summary": {
@@ -139,14 +147,22 @@ export const BUDGETS = {
       "get-sample-audio-buffer bytes": { max: kb(2) },
     },
     "rename a voice": {
-      "get-all-kits": { max: 1, ...NO_RELOAD },
+      "get-all-kits": NO_RELOAD,
       "get-all-samples-for-kit": { max: 1 },
+      "get-kit": { max: 1 },
       "update-voice-alias": { max: 1 },
     },
+    /**
+     * The reload is one kit, not the library. Its size depends on the
+     * fixture's sample paths, which differ by OS and temp folder, so the
+     * bytes budget has headroom.
+     */
     "toggle a sequencer step": {
-      "get-all-kits": { max: 1, ...NO_RELOAD },
+      "get-all-kits": NO_RELOAD,
       "get-all-samples-for-kit": { max: 1 },
-      total: { max: 3, target: 1, until: "RE-36" },
+      "get-kit": { max: 1 },
+      "get-kit bytes": { max: kb(8) },
+      total: { max: 3, target: 1, until: "#452" },
       "update-step-pattern": { max: 1 },
     },
   },
@@ -228,9 +244,10 @@ export const BUDGETS = {
   validation: {
     "back to the grid": { bytes: SMALL, mainBusyMs: STALL },
     "cold start": { bytes: { max: mb(2) } },
-    "delete a sample": { bytes: { max: mb(2.6) }, mainBusyMs: STALL },
+    /** #452: edits reload one kit, so the library isn't sent each time */
+    "delete a sample": { bytes: { max: mb(1) }, mainBusyMs: STALL },
     "drop a sample on voice 4": {
-      bytes: { max: mb(4) },
+      bytes: { max: kb(512) },
       mainBusyMs: STALL,
     },
     "enable editing": { bytes: { max: kb(24) }, mainBusyMs: STALL },
@@ -249,12 +266,12 @@ export const BUDGETS = {
      * main sends each slot's file version, not the file (#478)
      */
     "previous kit (A0)": { bytes: { max: kb(64) }, mainBusyMs: STALL },
-    "rename voice 1": { bytes: { max: mb(2) }, mainBusyMs: STALL },
+    "rename voice 1": { bytes: { max: kb(128) }, mainBusyMs: STALL },
     "search: clear": { bytes: SMALL, mainBusyMs: STALL },
     "search: type 'kick'": { bytes: SMALL, mainBusyMs: STALL },
     "sequencer playing, 5 s": { bytes: SMALL, mainBusyMs: STALL },
     "toggle 4 sequencer steps": {
-      bytes: { max: mb(8), target: kb(4), until: "RE-36" },
+      bytes: { max: kb(512), target: kb(4), until: "#452" },
       mainBusyMs: STALL,
     },
     "toggle a favourite": { bytes: SMALL, mainBusyMs: STALL },

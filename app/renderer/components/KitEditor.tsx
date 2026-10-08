@@ -16,10 +16,9 @@ interface KitEditorAllProps extends KitEditorProps {
   onBpmSaved?: (kitName: string, bpm: number) => void; // Patches the loaded kit after a BPM save (#565)
   onCreateKit?: () => void; // Used by useKitEditorLogic hook
   onKitModified?: (kitName: string) => void; // Shows an edit main flagged without a reload (RE-35)
-  onKitUpdated?: () => Promise<void>; // Called when kit metadata is updated
+  onKitUpdated?: (kitName: string) => Promise<void>; // Reloads the kit after an edit in it (#452)
   onMessage?: (text: string, type?: string, duration?: number) => void; // Used by useKitEditorLogic hook
   onRefreshKitMetadata?: () => Promise<void>; // Targeted refresh for single kit metadata (voice aliases)
-  onRequestSamplesReload?: () => Promise<void>;
   onToggleEditableMode?: (kitName: string) => Promise<void>; // Toggle editable mode - used via useKitEditorLogic hook
   onToggleFavorite?: (
     kitName: string,

@@ -23,10 +23,10 @@ interface UseKitEditorLogicParams extends KitEditorProps {
   kit?: KitWithRelations; // Kit data passed from parent
   kitError?: null | string; // Error from parent kit loading
   onCreateKit?: () => void;
-  onKitUpdated?: () => Promise<void>;
+  /** Reloads the kit an edit was made in, and only that kit (#452) */
+  onKitUpdated?: (kitName: string) => Promise<void>;
   onMessage?: (text: string, type?: string, duration?: number) => void;
   onRefreshKitMetadata?: () => Promise<void>;
-  onRequestSamplesReload?: () => Promise<void>;
   onToggleEditableMode?: (kitName: string) => Promise<void>;
   onToggleFavorite?: (
     kitName: string,
@@ -59,12 +59,13 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   const kitError = props.kitError ?? null; // Accept error from parent if provided
   const kitLoading = false; // Data is passed from parent
 
-  // Reload kit function - now just triggers parent refresh
+  // Reload this kit after an edit. A save that finishes after a step to
+  // another kit still reloads the kit it was made in.
   const reloadKit = React.useCallback(async () => {
-    if (onKitUpdated) {
-      await onKitUpdated();
+    if (onKitUpdated && kitName) {
+      await onKitUpdated(kitName);
     }
-  }, [onKitUpdated]);
+  }, [onKitUpdated, kitName]);
 
   // Toggle editable mode via parent callback. Called from a click, so a
   // failure is reported here rather than rejected into it (RE-41)
@@ -134,10 +135,11 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     onAddUndoAction: props.onAddUndoAction,
     onMessage: props.onMessage,
     onSamplesChanged: async () => {
-      // Reload both kit data and samples when samples change
-      await reloadKit();
+      // One reload brings back the kit and its samples (#452)
       if (onRequestSamplesReload) {
-        await onRequestSamplesReload();
+        await onRequestSamplesReload(kitName);
+      } else {
+        await reloadKit();
       }
     },
   });

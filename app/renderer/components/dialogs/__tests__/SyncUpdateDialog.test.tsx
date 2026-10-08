@@ -327,6 +327,26 @@ describe("[UC-34] SyncUpdateDialog", () => {
       });
     });
 
+    it("[Q-07] doesn't call onClose if it unmounts while closing (#709)", async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+      const { unmount } = render(
+        <SyncUpdateDialog
+          isOpen={true}
+          kitName="A0"
+          localChangeSummary={mockChangeSummary}
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+        />,
+      );
+
+      await user.click(screen.getByText("Cancel"));
+      unmount();
+      vi.advanceTimersByTime(250);
+
+      expect(mockOnClose).not.toHaveBeenCalled();
+    });
+
     it("should disable buttons when loading", () => {
       render(
         <SyncUpdateDialog

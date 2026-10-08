@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 
 import { createLogger } from "../../../utils/logger";
+import { useTimeouts } from "./useTimeouts";
 
 const log = createLogger("message");
 
@@ -35,16 +36,19 @@ const DEFAULT_DURATIONS: Record<MessageType, number> = {
 export function useMessageDisplay() {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const nextId = useRef(1);
+  // Each message's dismiss timer, by message ID. They're all cleared if the
+  // provider unmounts.
+  const timeouts = useTimeouts();
   const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
 
-  const dismissMessage = useCallback((id: number) => {
-    const timer = timers.current.get(id);
-    if (timer) {
-      clearTimeout(timer);
+  const dismissMessage = useCallback(
+    (id: number) => {
+      timeouts.clear(timers.current.get(id) ?? null);
       timers.current.delete(id);
-    }
-    setMessages((prev) => prev.filter((m) => m.id !== id));
-  }, []);
+      setMessages((prev) => prev.filter((m) => m.id !== id));
+    },
+    [timeouts],
+  );
 
   const showMessage = useCallback(
     (text: string, type: string = "info", duration?: number) => {
@@ -67,22 +71,20 @@ export function useMessageDisplay() {
       ]);
 
       if (effectiveDuration > 0) {
-        timers.current.set(
-          id,
-          setTimeout(() => dismissMessage(id), effectiveDuration),
-        );
+        const timer = timeouts.set(() => dismissMessage(id), effectiveDuration);
+        if (timer !== null) timers.current.set(id, timer);
       }
 
       return id;
     },
-    [dismissMessage],
+    [dismissMessage, timeouts],
   );
 
   const clearMessages = useCallback(() => {
-    timers.current.forEach((timer) => clearTimeout(timer));
+    timers.current.forEach((timer) => timeouts.clear(timer));
     timers.current.clear();
     setMessages([]);
-  }, []);
+  }, [timeouts]);
 
   return {
     clearMessages,

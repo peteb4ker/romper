@@ -12,6 +12,7 @@ import React, {
 
 import { samplesFailedMessage } from "../../../utils/kitLoadMessages";
 import { groupDbSamplesByVoice } from "../../../utils/sampleGroupingUtils";
+import { useTimeouts } from "../shared/useTimeouts";
 
 interface UseKitDataManagerProps {
   isInitialized: boolean;
@@ -81,6 +82,9 @@ export function useKitDataManager({
     failedKitsRef.current = failedKits;
   }, [dbKits, allKitSamples, failedKits]);
   const clearFailedKits = useCallback(() => setFailedKits(NO_KITS), []);
+
+  // The scroll after a load is cleared if the hook unmounts first
+  const timeouts = useTimeouts();
 
   // Read through a ref so the reload callbacks stay stable
   const onMessageRef = useRef(onMessage);
@@ -163,7 +167,7 @@ export function useKitDataManager({
 
       // If a specific kit should be scrolled to, do it after data loads
       if (scrollToKit) {
-        setTimeout(() => {
+        timeouts.set(() => {
           // Use the loaded kits data instead of the stale kits state
           const sortedKitNames = loadedKits
             .map((k) => k.name)
@@ -185,6 +189,7 @@ export function useKitDataManager({
       localStorePath,
       groupLoadedKitSamples,
       clearFailedKits,
+      timeouts,
     ],
   );
 

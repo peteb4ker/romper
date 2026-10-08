@@ -1,7 +1,7 @@
 import type { DbResult, KitWithRelations } from "@romper/shared/db/schema";
 
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createMockKitWithRelations } from "../../../../../../tests/factories/kit.factory";
 import { createMockSample } from "../../../../../../tests/factories/sample.factory";
@@ -1070,6 +1070,81 @@ describe("useKitDataManager", () => {
       });
 
       expect(window.electronAPI.getAllSamplesForKit).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("[Q-07] scrolling to a kit after a load (#709)", () => {
+    const readyProps = {
+      isInitialized: true,
+      isLocalStoreReady: true,
+      localStorePath: "/store",
+    };
+    let kitEl: HTMLElement;
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      kitEl = document.createElement("div");
+      kitEl.dataset.kit = "A1";
+      kitEl.scrollIntoView = vi.fn();
+      document.body.appendChild(kitEl);
+    });
+
+    afterEach(() => {
+      kitEl.remove();
+      vi.useRealTimers();
+    });
+
+    async function renderLoaded() {
+      const hook = renderHook(() => useKitDataManager(readyProps));
+      // Let the load on mount finish
+      await act(async () => {});
+      return hook;
+    }
+
+    it("scrolls the kit into view 100 ms after the kits load", async () => {
+      const { result } = await renderLoaded();
+
+      await act(() => result.current.loadKitsData("A1"));
+      expect(kitEl.scrollIntoView).not.toHaveBeenCalled();
+
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+      expect(kitEl.scrollIntoView).toHaveBeenCalledWith({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
+
+    it("doesn't scroll if it unmounts before the scroll", async () => {
+      const { result, unmount } = await renderLoaded();
+      await act(() => result.current.loadKitsData("A1"));
+      expect(vi.getTimerCount()).toBe(1);
+
+      unmount();
+
+      expect(vi.getTimerCount()).toBe(0);
+      vi.advanceTimersByTime(100);
+      expect(kitEl.scrollIntoView).not.toHaveBeenCalled();
+    });
+
+    it("schedules no scroll if it unmounts while the kits load", async () => {
+      const { result, unmount } = await renderLoaded();
+      let finishLoading!: (kits: DbResult<KitWithRelations[]>) => void;
+      vi.mocked(globalThis.electronAPI.getKits).mockReturnValueOnce(
+        new Promise((resolve) => {
+          finishLoading = resolve;
+        }),
+      );
+
+      const loading = result.current.loadKitsData("A1");
+      unmount();
+      finishLoading({ data: mockKits, success: true });
+      await loading;
+
+      expect(vi.getTimerCount()).toBe(0);
+      vi.advanceTimersByTime(100);
+      expect(kitEl.scrollIntoView).not.toHaveBeenCalled();
     });
   });
 });

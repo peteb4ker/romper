@@ -25,6 +25,7 @@ import type {
   SyncUpdateDialogProps,
 } from "./SyncUpdateDialog.types.js";
 
+import { useTimeouts } from "../hooks/shared/useTimeouts";
 import ModalDialog from "../shared/ModalDialog";
 
 export type { SyncChangeSummary };
@@ -138,6 +139,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [summaryError, setSummaryError] = useState<null | string>(null);
   const [isClosing, setIsClosing] = useState(false);
+  const timeouts = useTimeouts();
   // Cancel was pressed during a write; main stops after the current file
   const [isCancelling, setIsCancelling] = useState(false);
 
@@ -242,7 +244,7 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
 
   const handleClose = () => {
     setIsClosing(true);
-    setTimeout(() => {
+    timeouts.set(() => {
       onClose();
       setIsClosing(false);
     }, 200);

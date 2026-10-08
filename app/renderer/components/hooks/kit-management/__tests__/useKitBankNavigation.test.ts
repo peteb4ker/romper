@@ -752,6 +752,25 @@ describe("useKitBankNavigation", () => {
 
       vi.useRealTimers();
     });
+
+    it("[Q-07] clears the hold timer when it unmounts (#709)", () => {
+      vi.useFakeTimers();
+      try {
+        const { result, unmount } = renderHook(() =>
+          useKitBankNavigation(defaultProps),
+        );
+        act(() => {
+          result.current.showEmptyBank("C");
+        });
+        expect(vi.getTimerCount()).toBe(1);
+
+        unmount();
+
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
   });
 
   describe("state setters", () => {

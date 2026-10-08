@@ -1147,4 +1147,207 @@ describe("useKitDataManager", () => {
       expect(kitEl.scrollIntoView).not.toHaveBeenCalled();
     });
   });
+
+  // These replace tests that ran copies of the lookup, the optimistic
+  // update and the counts instead of the hook (#601)
+  describe("[Q-07] kit lookup, optimistic updates and sample counts (#601)", () => {
+    const readyProps = {
+      isInitialized: true,
+      isLocalStoreReady: true,
+      localStorePath: "/store",
+    };
+
+    // Samples filling the first `count` slots of a voice
+    function voiceSamples(voice: number, count: number) {
+      return Array.from({ length: count }, (_, slot) =>
+        createMockSample({
+          filename: `v${voice}s${slot}.wav`,
+          slot_number: slot,
+          voice_number: voice,
+        }),
+      );
+    }
+
+    async function renderWithKits(kits: KitWithRelations[]) {
+      vi.mocked(globalThis.electronAPI.getKits).mockResolvedValue({
+        data: kits,
+        success: true,
+      });
+      const hook = renderHook(() => useKitDataManager(readyProps));
+      // Let the load on mount finish
+      await act(async () => {});
+      return hook;
+    }
+
+    describe("[UC-07] getKitByName", () => {
+      it("finds a kit by its exact name, case and all", async () => {
+        const { result } = await renderWithKits([
+          createMockKitWithRelations({ alias: "Drums", name: "A0" }),
+          createMockKitWithRelations({ alias: "Bass", name: "A1" }),
+        ]);
+
+        expect(result.current.getKitByName("A1")?.alias).toBe("Bass");
+        expect(result.current.getKitByName("a1")).toBeUndefined();
+        expect(result.current.getKitByName("A")).toBeUndefined();
+      });
+
+      it("finds no kit before the kits load", () => {
+        const { result } = renderHook(() =>
+          useKitDataManager({ ...readyProps, isInitialized: false }),
+        );
+
+        expect(result.current.getKitByName("A0")).toBeUndefined();
+      });
+
+      it("finds no kit when the library has none", async () => {
+        const { result } = await renderWithKits([]);
+
+        expect(result.current.kits).toEqual([]);
+        expect(result.current.getKitByName("A0")).toBeUndefined();
+      });
+
+      it("finds kits whose names have dashes, underscores or spaces", async () => {
+        const names = [
+          "Kit-With-Dashes",
+          "Kit_With_Underscores",
+          "Kit With Spaces",
+        ];
+        const { result } = await renderWithKits(
+          names.map((name) => createMockKitWithRelations({ name })),
+        );
+
+        for (const name of names) {
+          expect(result.current.getKitByName(name)?.name).toBe(name);
+        }
+      });
+    });
+
+    describe("[UC-17] updateKit", () => {
+      const loadedKits = () => [
+        createMockKitWithRelations({
+          alias: null,
+          bpm: 120,
+          editable: false,
+          is_favorite: false,
+          name: "A0",
+        }),
+        createMockKitWithRelations({
+          alias: "My Favorite Kit",
+          bpm: 140,
+          editable: true,
+          is_favorite: true,
+          name: "A1",
+        }),
+      ];
+
+      it("updates several properties at once and keeps the rest", async () => {
+        const { result } = await renderWithKits(loadedKits());
+
+        act(() => {
+          result.current.updateKit("A1", {
+            alias: "Updated Alias",
+            bpm: 160,
+            is_favorite: false,
+          });
+        });
+
+        expect(result.current.getKitByName("A1")).toMatchObject({
+          alias: "Updated Alias",
+          bank_letter: "A",
+          bpm: 160,
+          editable: true,
+          is_favorite: false,
+          name: "A1",
+        });
+        expect(result.current.getKitByName("A0")).toMatchObject({
+          alias: null,
+          bpm: 120,
+          is_favorite: false,
+        });
+      });
+
+      it("leaves the kits as they were for a kit that isn't listed", async () => {
+        const { result } = await renderWithKits(loadedKits());
+        const before = result.current.kits;
+
+        act(() => {
+          result.current.updateKit("B9", { is_favorite: true });
+        });
+
+        expect(result.current.kits).toEqual(before);
+      });
+
+      it("doesn't change the kit objects the load returned", async () => {
+        const kits = loadedKits();
+        const { result } = await renderWithKits(kits);
+        const loadedA0 = result.current.getKitByName("A0");
+
+        act(() => {
+          result.current.updateKit("A0", { is_favorite: true });
+        });
+
+        expect(kits[0].is_favorite).toBe(false);
+        expect(loadedA0?.is_favorite).toBe(false);
+        expect(result.current.getKitByName("A0")?.is_favorite).toBe(true);
+      });
+    });
+
+    describe("[UC-08] sampleCounts", () => {
+      it("counts each kit's samples per voice", async () => {
+        const { result } = await renderWithKits([
+          createMockKitWithRelations({
+            name: "A0",
+            samples: [
+              ...voiceSamples(1, 2),
+              ...voiceSamples(2, 1),
+              ...voiceSamples(4, 3),
+            ],
+          }),
+          createMockKitWithRelations({
+            name: "A1",
+            samples: [...voiceSamples(1, 1), ...voiceSamples(3, 2)],
+          }),
+        ]);
+
+        expect(result.current.sampleCounts).toEqual({
+          A0: [2, 1, 0, 3],
+          A1: [1, 0, 2, 0],
+        });
+      });
+
+      it("counts a full voice of 12 samples", async () => {
+        const { result } = await renderWithKits([
+          createMockKitWithRelations({
+            name: "A0",
+            samples: [
+              ...voiceSamples(1, 12),
+              ...voiceSamples(2, 5),
+              ...voiceSamples(3, 8),
+              ...voiceSamples(4, 12),
+            ],
+          }),
+        ]);
+
+        expect(result.current.sampleCounts.A0).toEqual([12, 5, 8, 12]);
+      });
+
+      it("counts zero for an empty kit and for one loaded without its samples", async () => {
+        const { result } = await renderWithKits([
+          createMockKitWithRelations({ name: "A0", samples: [] }),
+          createMockKitWithRelations({ name: "A1", samples: undefined }),
+        ]);
+
+        expect(result.current.sampleCounts).toEqual({
+          A0: [0, 0, 0, 0],
+          A1: [0, 0, 0, 0],
+        });
+      });
+
+      it("has no counts when the library has no kits", async () => {
+        const { result } = await renderWithKits([]);
+
+        expect(result.current.sampleCounts).toEqual({});
+      });
+    });
+  });
 });

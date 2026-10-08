@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import * as hmrStateManager from "../hmrStateManager";
 import {
   clearExplicitNavigation,
   clearHmrState,
@@ -138,6 +137,31 @@ describe("hmrStateManager", () => {
         expect(wasRecentExplicitNavigation()).toBe(true);
       });
 
+      it("counts a navigation as recent for just under a second", () => {
+        markExplicitNavigation();
+
+        vi.advanceTimersByTime(999);
+        expect(wasRecentExplicitNavigation()).toBe(true);
+
+        vi.advanceTimersByTime(1);
+        expect(wasRecentExplicitNavigation()).toBe(false);
+      });
+
+      it("ignores a marker that isn't a timestamp", () => {
+        sessionStorage.setItem("hmr_explicit_navigation", "invalid-timestamp");
+
+        expect(wasRecentExplicitNavigation()).toBe(false);
+      });
+
+      it("counts a marker from the future as recent (clock skew)", () => {
+        sessionStorage.setItem(
+          "hmr_explicit_navigation",
+          (Date.now() + 3_600_000).toString(),
+        );
+
+        expect(wasRecentExplicitNavigation()).toBe(true);
+      });
+
       it("should return false when explicit navigation was too long ago", () => {
         const now = Date.now();
         vi.setSystemTime(now);
@@ -201,10 +225,10 @@ describe("hmrStateManager", () => {
   });
 
   describe("isHmrAvailable", () => {
-    it("should check if import.meta.hot is available", () => {
-      const result = isHmrAvailable();
-      // In test environment, this depends on the test setup
-      expect(typeof result).toBe("boolean");
+    // Vitest defines import.meta.hot in the jsdom environment, not in the
+    // node one the integration runner uses (#601)
+    it("is true in this test environment", () => {
+      expect(isHmrAvailable()).toBe(true);
     });
   });
 
@@ -219,6 +243,7 @@ describe("hmrStateManager", () => {
       const kits = [{ name: "Kit1" }, { name: "Kit2" }];
 
       expect(kitExists("Kit3", kits)).toBe(false);
+      expect(kitExists("", kits)).toBe(false);
     });
 
     it("should return false for empty kit list", () => {
@@ -226,134 +251,129 @@ describe("hmrStateManager", () => {
     });
   });
 
-  describe("restoreSelectedKitIfExists", () => {
-    it("should restore kit when conditions are met", () => {
-      // Mock isHmrAvailable to return true
-      vi.spyOn(hmrStateManager, "isHmrAvailable").mockReturnValue(true);
+  describe("[Q-07] restoreSelectedKitIfExists", () => {
+    const kits = [{ name: "Kit1" }, { name: "Kit2" }];
 
-      sessionStorage.setItem("hmr_selected_kit", "Kit2");
-      const kits = [{ name: "Kit1" }, { name: "Kit2" }];
+    beforeEach(() => {
+      // Without HMR the function returns before its rules, and every
+      // "doesn't restore" case below would pass whatever the rules are
+      expect(isHmrAvailable()).toBe(true);
+    });
+
+    it("should restore kit when conditions are met", () => {
+      saveSelectedKitState("Kit2");
       const setSelectedKit = vi.fn();
 
       restoreSelectedKitIfExists(kits, null, setSelectedKit);
 
       expect(setSelectedKit).toHaveBeenCalledWith("Kit2");
-
-      vi.restoreAllMocks();
     });
 
     it("should not restore kit when already selected", () => {
-      vi.spyOn(hmrStateManager, "isHmrAvailable").mockReturnValue(true);
-
-      sessionStorage.setItem("hmr_selected_kit", "Kit2");
-      const kits = [{ name: "Kit1" }, { name: "Kit2" }];
+      saveSelectedKitState("Kit2");
       const setSelectedKit = vi.fn();
 
       restoreSelectedKitIfExists(kits, "Kit1", setSelectedKit);
 
       expect(setSelectedKit).not.toHaveBeenCalled();
-      vi.restoreAllMocks();
     });
 
     it("should not restore kit when kit does not exist", () => {
-      vi.spyOn(hmrStateManager, "isHmrAvailable").mockReturnValue(true);
-
-      sessionStorage.setItem("hmr_selected_kit", "Kit3");
-      const kits = [{ name: "Kit1" }, { name: "Kit2" }];
+      saveSelectedKitState("Kit3");
       const setSelectedKit = vi.fn();
 
       restoreSelectedKitIfExists(kits, null, setSelectedKit);
 
       expect(setSelectedKit).not.toHaveBeenCalled();
-      vi.restoreAllMocks();
     });
 
     it("should not restore when kits list is empty", () => {
-      vi.spyOn(hmrStateManager, "isHmrAvailable").mockReturnValue(true);
-
-      sessionStorage.setItem("hmr_selected_kit", "Kit1");
+      saveSelectedKitState("Kit1");
       const setSelectedKit = vi.fn();
 
       restoreSelectedKitIfExists([], null, setSelectedKit);
 
       expect(setSelectedKit).not.toHaveBeenCalled();
-      vi.restoreAllMocks();
     });
 
     it("should not restore when no saved kit", () => {
-      vi.spyOn(hmrStateManager, "isHmrAvailable").mockReturnValue(true);
-
-      const kits = [{ name: "Kit1" }];
       const setSelectedKit = vi.fn();
 
       restoreSelectedKitIfExists(kits, null, setSelectedKit);
 
       expect(setSelectedKit).not.toHaveBeenCalled();
-      vi.restoreAllMocks();
     });
 
     it("should not run when setSelectedKit is undefined", () => {
-      vi.spyOn(hmrStateManager, "isHmrAvailable").mockReturnValue(true);
-
-      sessionStorage.setItem("hmr_selected_kit", "Kit1");
-      const kits = [{ name: "Kit1" }];
+      saveSelectedKitState("Kit1");
 
       expect(() =>
         restoreSelectedKitIfExists(kits, null, undefined),
       ).not.toThrow();
-      vi.restoreAllMocks();
+      expect(getSavedSelectedKit()).toBe("Kit1");
     });
 
-    it("should not restore kit when recent explicit navigation occurred", () => {
-      vi.useFakeTimers();
-      vi.spyOn(hmrStateManager, "isHmrAvailable").mockReturnValue(true);
+    describe("after an explicit navigation, like Back", () => {
+      beforeEach(() => {
+        vi.useFakeTimers();
+      });
 
-      const now = Date.now();
-      vi.setSystemTime(now);
+      afterEach(() => {
+        vi.useRealTimers();
+      });
 
-      // Mark explicit navigation
-      markExplicitNavigation();
+      it("doesn't restore within a second, and keeps the saved kit", () => {
+        saveSelectedKitState("Kit1");
+        markExplicitNavigation();
+        vi.advanceTimersByTime(500);
+        const setSelectedKit = vi.fn();
 
-      // Move forward slightly but within the window
-      vi.setSystemTime(now + 500);
+        restoreSelectedKitIfExists(kits, null, setSelectedKit);
 
-      sessionStorage.setItem("hmr_selected_kit", "Kit1");
-      const kits = [{ name: "Kit1" }];
-      const setSelectedKit = vi.fn();
+        expect(setSelectedKit).not.toHaveBeenCalled();
+        expect(getSavedSelectedKit()).toBe("Kit1");
+      });
 
-      restoreSelectedKitIfExists(kits, null, setSelectedKit);
+      it("restores once the navigation has settled", () => {
+        saveSelectedKitState("Kit1");
+        markExplicitNavigation();
+        const setSelectedKit = vi.fn();
 
-      // Should not restore because of recent explicit navigation
-      expect(setSelectedKit).not.toHaveBeenCalled();
+        restoreSelectedKitIfExists(kits, null, setSelectedKit);
+        expect(setSelectedKit).not.toHaveBeenCalled();
 
-      vi.useRealTimers();
-      vi.restoreAllMocks();
-    });
+        vi.advanceTimersByTime(1100);
+        restoreSelectedKitIfExists(kits, null, setSelectedKit);
+        expect(setSelectedKit).toHaveBeenCalledWith("Kit1");
+      });
 
-    it("should restore kit when explicit navigation was long ago", () => {
-      vi.useFakeTimers();
-      vi.spyOn(hmrStateManager, "isHmrAvailable").mockReturnValue(true);
+      it("waits a second from the last of several rapid navigations", () => {
+        saveSelectedKitState("Kit1");
+        markExplicitNavigation();
+        vi.advanceTimersByTime(600);
+        markExplicitNavigation();
+        vi.advanceTimersByTime(600);
+        const setSelectedKit = vi.fn();
 
-      const now = Date.now();
-      vi.setSystemTime(now);
+        // 1200 ms after the first, 600 ms after the last
+        restoreSelectedKitIfExists(kits, null, setSelectedKit);
+        expect(setSelectedKit).not.toHaveBeenCalled();
 
-      // Mark explicit navigation
-      markExplicitNavigation();
+        vi.advanceTimersByTime(400);
+        restoreSelectedKitIfExists(kits, null, setSelectedKit);
+        expect(setSelectedKit).toHaveBeenCalledWith("Kit1");
+      });
 
-      // Move forward beyond the window
-      vi.setSystemTime(now + 1500);
+      it("restores straight away once the marker is cleared", () => {
+        saveSelectedKitState("Kit1");
+        markExplicitNavigation();
+        clearExplicitNavigation();
+        const setSelectedKit = vi.fn();
 
-      sessionStorage.setItem("hmr_selected_kit", "Kit1");
-      const kits = [{ name: "Kit1" }];
-      const setSelectedKit = vi.fn();
+        restoreSelectedKitIfExists(kits, null, setSelectedKit);
 
-      restoreSelectedKitIfExists(kits, null, setSelectedKit);
-
-      // Should restore because explicit navigation was long ago
-      expect(setSelectedKit).toHaveBeenCalledWith("Kit1");
-
-      vi.useRealTimers();
-      vi.restoreAllMocks();
+        expect(setSelectedKit).toHaveBeenCalledWith("Kit1");
+      });
     });
   });
 });

@@ -313,6 +313,14 @@ describe("dbIpcHandlers - Routing Tests", () => {
     });
 
     it("delete-sample-from-slot routes to sampleService.deleteSampleFromSlot", async () => {
+      vi.mocked(romperDbCore.getKitSamples).mockReturnValueOnce({
+        data: [],
+        success: true,
+      });
+      vi.mocked(romperDbCore.getKit).mockReturnValueOnce({
+        data: { name: "TestKit", samples: [] },
+        success: true,
+      } as unknown as ReturnType<typeof romperDbCore.getKit>);
       const handler = handlerRegistry["delete-sample-from-slot"];
       const result = await handler({}, "TestKit", 3, 7);
 

@@ -83,86 +83,12 @@ describe("useSampleManagementUndoActions", () => {
         "createReindexSamplesAction",
         "createSameKitMoveAction",
         "createCrossKitMoveAction",
-        "snapshotForUndo",
       ];
 
       expectedMethods.forEach((method) => {
         expect(result.current).toHaveProperty(method);
         expect(typeof result.current[method]).toBe("function");
       });
-    });
-  });
-
-  describe("[Q-02] snapshotForUndo", () => {
-    it("returns null when skipUndoRecording is true", async () => {
-      const { result } = renderHook(() =>
-        useSampleManagementUndoActions({
-          ...mockOptions,
-          skipUndoRecording: true,
-        }),
-      );
-
-      expect(await result.current.snapshotForUndo(1, 0)).toBeNull();
-      expect(window.electronAPI?.getAllSamplesForKit).not.toHaveBeenCalled();
-    });
-
-    it("returns the slot's row and the voice's full rows", async () => {
-      const { result } = renderHook(() =>
-        useSampleManagementUndoActions(mockOptions),
-      );
-
-      expect(await result.current.snapshotForUndo(1, 0)).toEqual({
-        sample: mockSample,
-        voicesBefore: [voiceOne],
-      });
-    });
-
-    it("snapshots every voice asked for, empty ones included", async () => {
-      const { result } = renderHook(() =>
-        useSampleManagementUndoActions(mockOptions),
-      );
-
-      const snapshot = await result.current.snapshotForUndo(1, 0, [2, 1]);
-
-      expect(snapshot?.voicesBefore).toEqual([
-        voiceOne,
-        { samples: [], voice: 2 },
-      ]);
-    });
-
-    it("returns no sample for an empty slot", async () => {
-      const { result } = renderHook(() =>
-        useSampleManagementUndoActions(mockOptions),
-      );
-
-      expect((await result.current.snapshotForUndo(1, 5))?.sample).toBeNull();
-    });
-
-    it("returns null when the kit can't be read", async () => {
-      vi.mocked(window.electronAPI!.getAllSamplesForKit).mockResolvedValue({
-        error: "API error",
-        success: false,
-      });
-      const { result } = renderHook(() =>
-        useSampleManagementUndoActions(mockOptions),
-      );
-
-      expect(await result.current.snapshotForUndo(1, 0)).toBeNull();
-    });
-
-    it("returns null when the call throws", async () => {
-      vi.mocked(window.electronAPI!.getAllSamplesForKit).mockRejectedValue(
-        new Error("API error"),
-      );
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
-      const { result } = renderHook(() =>
-        useSampleManagementUndoActions(mockOptions),
-      );
-
-      expect(await result.current.snapshotForUndo(1, 0)).toBeNull();
-      consoleSpy.mockRestore();
     });
   });
 

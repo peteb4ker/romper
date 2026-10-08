@@ -1,4 +1,7 @@
-import type { DbResult } from "@romper/shared/db/schema.js";
+import type { DbResult, Sample } from "@romper/shared/db/schema.js";
+import type { SampleEditKit } from "@romper/shared/electronApi.js";
+
+import { snapshotVoices } from "@romper/shared/undoTypes.js";
 
 import {
   checkSampleSourceAccess,
@@ -6,6 +9,7 @@ import {
 } from "../security/sampleSourceAccess.js";
 import { sampleService } from "../services/sampleService.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
+import { getKit, getKitSamples } from "./romperDbCoreORM.js";
 
 /**
  * Creates a wrapper for IPC handlers that require database directory validation
@@ -61,23 +65,34 @@ export function createSampleOperationHandler(
               success: false,
             };
           }
-          result = sampleService.addSampleToSlot(
+          result = withEditedKitSamples(
             inMemorySettings,
             kitName,
-            voiceNumber,
-            slotNumber,
-            filePath,
+            sampleService.addSampleToSlot(
+              inMemorySettings,
+              kitName,
+              voiceNumber,
+              slotNumber,
+              filePath,
+            ),
           );
           break;
 
-        case "delete":
-          result = sampleService.deleteSampleFromSlot(
+        case "delete": {
+          const rows = readKitRows(inMemorySettings, kitName);
+          result = withEditedKitSamples(
             inMemorySettings,
             kitName,
-            voiceNumber,
-            slotNumber,
+            sampleService.deleteSampleFromSlot(
+              inMemorySettings,
+              kitName,
+              voiceNumber,
+              slotNumber,
+            ),
+            { rows, voices: [voiceNumber] },
           );
           break;
+        }
 
         default:
           return { error: "Unknown operation type", success: false };
@@ -96,6 +111,21 @@ export function createSampleOperationHandler(
 }
 
 /**
+ * The kit's sample rows now, for a snapshot taken right before an edit.
+ * Main runs one IPC handler's synchronous work at a time, so nothing
+ * changes them between this read and the edit that follows it.
+ */
+export function readKitRows(
+  inMemorySettings: Record<string, unknown>,
+  kitName: string,
+): null | Sample[] {
+  const { dbDir } = validateAndGetDbDir(inMemorySettings);
+  if (!dbDir) return null;
+  const rows = getKitSamples(dbDir, kitName);
+  return rows.success && rows.data ? rows.data : null;
+}
+
+/**
  * Validates local store path and returns database directory
  * (ROMPER_LOCAL_PATH override first, then settings; see ServicePathManager)
  */
@@ -111,4 +141,30 @@ export function validateAndGetDbDir(
     return { error: "No local store path configured", success: false };
   }
   return { dbDir: ServicePathManager.getDbPath(localStorePath), success: true };
+}
+
+/**
+ * A sample edit's result with the kit as the edit left it and, when
+ * `before` holds the rows read right before it, the edited voices as they
+ * were (#452)
+ */
+export function withEditedKitSamples<T extends object>(
+  inMemorySettings: Record<string, unknown>,
+  kitName: string,
+  result: DbResult<T>,
+  before?: { rows: null | Sample[]; voices: number[] },
+): DbResult<SampleEditKit & T> {
+  if (!result.success || !result.data) return result;
+  const { dbDir } = validateAndGetDbDir(inMemorySettings);
+  const kit = dbDir ? getKit(dbDir, kitName) : null;
+  return {
+    ...result,
+    data: {
+      ...result.data,
+      ...(kit?.success && kit.data?.samples && { kit: kit.data }),
+      ...(before?.rows && {
+        voicesBefore: snapshotVoices(before.rows, before.voices),
+      }),
+    },
+  };
 }

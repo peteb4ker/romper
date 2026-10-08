@@ -56,7 +56,7 @@ const NO_RELOAD = { max: 0 } as const;
  * as loaded, so nothing asks main for a kit's samples again
  */
 const NO_SAMPLES_FETCH = { max: 0 } as const;
-/** #452: an edit to a kit's own fields or voices returns the kit */
+/** #452: an edit returns the kit it changed, so nothing reads it again */
 const NO_KIT_READ = { max: 0 } as const;
 
 const kb = (n: number) => Math.round(n * 1024);
@@ -84,22 +84,25 @@ export const BUDGETS = {
       "get-local-store-status": { max: 1 },
       "read-settings": { max: 2 },
     },
-    /** The samples fetch left is the undo snapshot, which main will return */
+    /**
+     * #452: the delete returns the kit it changed and the voice as it was,
+     * for undo, so nothing reads either
+     */
     "delete a sample": {
       "delete-sample-from-slot": { max: 1 },
       "get-all-kits": NO_RELOAD,
-      "get-all-samples-for-kit": { max: 1, target: 0, until: "#452" },
-      "get-kit": { max: 1 },
+      "get-all-samples-for-kit": NO_SAMPLES_FETCH,
+      "get-kit": NO_KIT_READ,
     },
     "drop a sample": {
       "add-sample-to-slot": { max: 1 },
       "get-all-kits": NO_RELOAD,
       "get-all-samples-for-kit": NO_SAMPLES_FETCH,
-      /** Once for the add; not again when the drop finishes */
-      "get-kit": { max: 1 },
+      /** #452: the add returns the kit it changed, so nothing reads it */
+      "get-kit": NO_KIT_READ,
       "get-sample-audio-buffer": { max: 1 },
       "register-dropped-file": { max: 1 },
-      total: { max: 5 },
+      total: { max: 4 },
       "validate-sample-format": { max: 1 },
     },
     "enable editing": {
@@ -185,13 +188,19 @@ export const BUDGETS = {
    * proxy for time the operation holds the main thread.
    */
   integration: {
+    /**
+     * #452: sample edits read the kit back (4 statements) and return it,
+     * and delete and move read the kit's rows first for undo (1). That
+     * replaces the renderer's own `get-kit` and `get-all-samples-for-kit`
+     * calls, which ran the same statements plus an IPC round trip each.
+     */
     "add sample": {
       connections: NO_NEW_CONNECTION,
-      statements: { max: 3 },
+      statements: { max: 7 },
     },
     "delete sample": {
       connections: NO_NEW_CONNECTION,
-      statements: { max: 7 },
+      statements: { max: 12 },
     },
     "get kits": {
       connections: NO_NEW_CONNECTION,
@@ -212,7 +221,7 @@ export const BUDGETS = {
     },
     "move sample within a kit": {
       connections: NO_NEW_CONNECTION,
-      statements: { max: 18 },
+      statements: { max: 23 },
     },
     "plan a sync (write summary)": {
       connections: NO_NEW_CONNECTION,
@@ -256,7 +265,7 @@ export const BUDGETS = {
     /** #452: edits reload one kit, so the library isn't sent each time */
     "delete a sample": { bytes: { max: kb(512) }, mainBusyMs: STALL },
     "drop a sample on voice 4": {
-      bytes: { max: kb(256) },
+      bytes: { max: kb(128) },
       mainBusyMs: STALL,
     },
     /** #452: the kit's details come with it, so editing fetches none */

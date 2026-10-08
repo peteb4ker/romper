@@ -1,4 +1,4 @@
-import type { KitEdit } from "@romper/shared/db/schema";
+import type { KitEdit, KitWithRelations } from "@romper/shared/db/schema";
 
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 
@@ -68,6 +68,7 @@ const KitsView: React.FC = () => {
   const {
     allKitSamples,
     applyKitEdit,
+    applyReadKit,
     getKitByName,
     kits,
     loadKitSamplesOnOpen,
@@ -193,14 +194,16 @@ const KitsView: React.FC = () => {
     [nextUndo, undo],
   );
 
-  // Reload a kit after its samples changed: the kit the edit was made in,
-  // or else the open one
+  // Show a kit after its samples changed (the kit the edit was made in, or
+  // else the open one): as the edit returned it, or else read again (#452)
   const handleRequestSamplesReload = useCallback(
-    async (kitName?: string) => {
-      const kit = kitName ?? navigation.selectedKit;
-      if (kit) await refreshKit(kit);
+    async (kitName?: string, edited?: KitWithRelations) => {
+      const name = kitName ?? navigation.selectedKit;
+      if (!name) return;
+      if (edited) applyReadKit(name, edited);
+      else await refreshKit(name);
     },
-    [navigation.selectedKit, refreshKit],
+    [applyReadKit, navigation.selectedKit, refreshKit],
   );
 
   // An edit in the kit editor shows the kit it returned, or else reads the

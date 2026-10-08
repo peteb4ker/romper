@@ -31,7 +31,10 @@ interface KitEditorContainerProps {
   onNextKit: () => void;
   onPrevKit: () => void;
   onRefreshKitMetadata?: () => Promise<void>;
-  onRequestSamplesReload: (kitName?: string) => Promise<void>;
+  onRequestSamplesReload: (
+    kitName?: string,
+    edited?: KitWithRelations,
+  ) => Promise<void>;
   onToggleEditableMode?: (kitName: string) => Promise<void>;
   onToggleFavorite?: (
     kitName: string,
@@ -85,8 +88,8 @@ const KitEditorContainer: React.FC<KitEditorContainerProps> = (props) => {
   );
 
   const handleRequestSamplesReload = React.useCallback(
-    (forKit?: string) => {
-      return onRequestSamplesReload(forKit);
+    (forKit?: string, edited?: KitWithRelations) => {
+      return onRequestSamplesReload(forKit, edited);
     },
     [onRequestSamplesReload],
   );

@@ -135,7 +135,6 @@ describe("Type Interfaces for Sample Management", () => {
         "createReindexSamplesAction",
         "createSameKitMoveAction",
         "createCrossKitMoveAction",
-        "snapshotForUndo",
       ];
 
       expectedMethods.forEach((method) => {

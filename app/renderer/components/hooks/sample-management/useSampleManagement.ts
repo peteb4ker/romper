@@ -1,3 +1,4 @@
+import type { KitWithRelations } from "@romper/shared/db/schema";
 import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
 import { useSampleManagementMoveOps } from "./useSampleManagementMoveOps";
@@ -7,7 +8,8 @@ export interface UseSampleManagementParams {
   kitName: string;
   onAddUndoAction?: (action: AnyUndoAction) => void; // Callback to add undo actions
   onMessage?: (text: string, type?: string, duration?: number) => void;
-  onSamplesChanged?: () => Promise<void>; // Callback to reload samples/kit data
+  /** Shows the kit after a sample edit: as the edit returned it, or read again (#452) */
+  onSamplesChanged?: (edited?: KitWithRelations) => Promise<void>;
   skipUndoRecording?: boolean; // Skip recording actions (used during undo operations)
 }
 

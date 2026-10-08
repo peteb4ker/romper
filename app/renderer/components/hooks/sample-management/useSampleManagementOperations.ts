@@ -1,3 +1,4 @@
+import type { KitWithRelations } from "@romper/shared/db/schema";
 import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
 import { getErrorMessage } from "@romper/shared/errorUtils";
@@ -12,7 +13,8 @@ export interface UseSampleManagementOperationsOptions {
   kitName: string;
   onAddUndoAction?: (action: AnyUndoAction) => void;
   onMessage?: (text: string, type?: string, duration?: number) => void;
-  onSamplesChanged?: () => Promise<void>;
+  /** Shows the kit after a sample edit: as the edit returned it, or read again (#452) */
+  onSamplesChanged?: (edited?: KitWithRelations) => Promise<void>;
   skipUndoRecording: boolean;
 }
 
@@ -28,10 +30,7 @@ export function useSampleManagementOperations({
   skipUndoRecording,
 }: UseSampleManagementOperationsOptions) {
   // Get undo action creators
-  const undoActions = useSampleManagementUndoActions({
-    kitName,
-    skipUndoRecording,
-  });
+  const undoActions = useSampleManagementUndoActions({ kitName });
 
   // Resolves true when the sample was added. A refused or failed add
   // tells the user why and resolves false, so a drop doesn't count it (#542).
@@ -82,9 +81,9 @@ export function useSampleManagementOperations({
             );
           }
 
-          // Reload samples to reflect changes
+          // Show the kit as the add left it (#452)
           if (onSamplesChanged) {
-            await onSamplesChanged();
+            await onSamplesChanged(result.data?.kit);
           }
         } else {
           onMessage?.(result.error || "Failed to add sample", "error");
@@ -115,8 +114,6 @@ export function useSampleManagementOperations({
       }
 
       try {
-        const before = await undoActions.snapshotForUndo(voice, slotNumber);
-
         const result = await globalThis.electronAPI.deleteSampleFromSlot(
           kitName,
           voice,
@@ -129,21 +126,30 @@ export function useSampleManagementOperations({
             "success",
           );
 
-          // Record REINDEX_SAMPLES action since deletion now triggers automatic reindexing
-          if (before?.sample && onAddUndoAction && result.data) {
+          // Record REINDEX_SAMPLES action since deletion now triggers
+          // automatic reindexing. Main returns the deleted row and the
+          // voice as it was, read right before the delete (#452).
+          const deleted = result.data?.deletedSamples?.[0];
+          const voicesBefore = result.data?.voicesBefore;
+          if (
+            !skipUndoRecording &&
+            onAddUndoAction &&
+            deleted &&
+            voicesBefore
+          ) {
             const reindexAction = undoActions.createReindexSamplesAction(
               voice,
               slotNumber,
-              before.sample,
+              deleted,
               result,
-              before.voicesBefore,
+              voicesBefore,
             );
             onAddUndoAction(reindexAction);
           }
 
-          // Reload samples to reflect changes
+          // Show the kit as the delete left it (#452)
           if (onSamplesChanged) {
-            await onSamplesChanged();
+            await onSamplesChanged(result.data?.kit);
           }
         } else {
           onMessage?.(result.error || "Failed to delete sample", "error");
@@ -155,7 +161,14 @@ export function useSampleManagementOperations({
         );
       }
     },
-    [kitName, onSamplesChanged, onMessage, undoActions, onAddUndoAction],
+    [
+      kitName,
+      onSamplesChanged,
+      onMessage,
+      undoActions,
+      onAddUndoAction,
+      skipUndoRecording,
+    ],
   );
 
   return {

@@ -7,14 +7,13 @@ import type {
   VoiceSnapshot,
 } from "@romper/shared/undoTypes";
 
-import { createActionId, snapshotVoices } from "@romper/shared/undoTypes";
+import { createActionId } from "@romper/shared/undoTypes";
 import { useCallback } from "react";
 
 import type { MoveOperationResult } from "./types.js";
 
 export interface UseSampleManagementUndoActionsOptions {
   kitName: string;
-  skipUndoRecording: boolean;
 }
 
 // Type interfaces for operation results
@@ -39,39 +38,7 @@ interface SampleOperationResult {
  */
 export function useSampleManagementUndoActions({
   kitName,
-  skipUndoRecording,
 }: UseSampleManagementUndoActionsOptions) {
-  /**
-   * Before an edit: the slot's row and the voices' full rows, so undo can
-   * put them back exactly, gain and all (RE-86). Null when undo isn't
-   * being recorded or the kit can't be read.
-   */
-  const snapshotForUndo = useCallback(
-    async (voice: number, slotNumber: number, voices: number[] = [voice]) => {
-      if (skipUndoRecording) return null;
-
-      try {
-        const samplesResult =
-          await globalThis.electronAPI?.getAllSamplesForKit?.(kitName);
-        if (!samplesResult?.success || !samplesResult.data) return null;
-        return {
-          sample:
-            samplesResult.data.find(
-              (s) => s.voice_number === voice && s.slot_number === slotNumber,
-            ) ?? null,
-          voicesBefore: snapshotVoices(samplesResult.data, voices),
-        };
-      } catch (error) {
-        console.error(
-          "[SampleManagement] Failed to get sample data for undo recording:",
-          error,
-        );
-        return null;
-      }
-    },
-    [kitName, skipUndoRecording],
-  );
-
   // Helper function to create add sample undo action
   const createAddSampleAction = useCallback(
     (voice: number, slotNumber: number, filePath: string): AddSampleAction => ({
@@ -210,6 +177,5 @@ export function useSampleManagementUndoActions({
     createCrossKitMoveAction,
     createReindexSamplesAction,
     createSameKitMoveAction,
-    snapshotForUndo,
   };
 }

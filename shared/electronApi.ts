@@ -33,7 +33,7 @@ export interface ElectronAPI {
     voiceNumber: number,
     slotNumber: number,
     filePath: string,
-  ) => Promise<DbResult<{ sampleId: number }>>;
+  ) => Promise<DbResult<{ sampleId: number } & SampleEditKit>>;
   cancelKitSync: () => Promise<unknown>;
   /** Stop the setup download or extraction in progress (RE-66) */
   cancelSetup: () => Promise<{ success: boolean }>;
@@ -86,7 +86,9 @@ export interface ElectronAPI {
     voiceNumber: number,
     slotNumber: number,
   ) => Promise<
-    DbResult<{ affectedSamples: Sample[]; deletedSamples: Sample[] }>
+    DbResult<
+      { affectedSamples: Sample[]; deletedSamples: Sample[] } & SampleEditKit
+    >
   >;
   /**
    * Installs the Squarp factory samples; main owns the archive URL.
@@ -156,10 +158,12 @@ export interface ElectronAPI {
     toVoice: number,
     toSlot: number,
   ) => Promise<
-    DbResult<{
-      affectedSamples: Sample[];
-      movedSample: Sample;
-    }>
+    DbResult<
+      {
+        affectedSamples: Sample[];
+        movedSample: Sample;
+      } & SampleEditKit
+    >
   >;
   /**
    * Call `callback` when main finds the local store's database file missing
@@ -305,6 +309,18 @@ export interface KitMetadataUpdates {
 
 export interface RomperDbResult extends DbResult<void> {
   dbPath?: string;
+}
+
+/**
+ * What a sample edit returns besides its own result (#452): the kit as the
+ * edit left it, samples and all, so the renderer shows it instead of
+ * reading it again; and for an edit undo can put back, the edited voices'
+ * rows as they were before it, so the renderer doesn't read them first.
+ * Either is left out if it can't be read.
+ */
+export interface SampleEditKit {
+  kit?: KitWithRelations;
+  voicesBefore?: VoiceSnapshot[];
 }
 
 export interface SettingsData {

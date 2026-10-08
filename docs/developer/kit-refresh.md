@@ -4,7 +4,7 @@ priority: medium
 status: in progress
 updated: 2026-10-08
 context_size: small
-implementation_status: step 1 in #765; step 4's failure handling in #775; step 2 in #776; step 3a in the PR after it; 3b and the rest of 4 planned
+implementation_status: step 1 in #765; step 4's failure handling in #775; step 2 in #776; step 3a in #777; step 3b in the PR after it; the rest of 4 planned
 -->
 
 # Kit refresh after an edit
@@ -138,8 +138,7 @@ not here.
 
 Two PRs.
 
-**3a. Edits to a kit's own fields and voices** (done in the PR after
-step 2)
+**3a. Edits to a kit's own fields and voices** (done in #777)
 
 - The step pattern, trigger conditions, slices, slice division, voice
   level, sample mode, slicer settings, voice name and stereo link return
@@ -163,15 +162,25 @@ step 2)
   and main returning the kit without its samples (and none when it can't
   be read back).
 
-**3b. Sample edits**
+**3b. Sample edits** (done in the PR after 3a)
 
-- Add, delete, move and rescan return the kit they changed, with its
-  samples. The renderer shows it as a read, and makes no `get-kit`.
-- Delete and move also return the voices' rows as they were before, for
-  the undo snapshot, so the renderer doesn't fetch them first.
+- Add, delete and move within a kit return the kit they changed, samples
+  and all, read back right after the edit (`SampleEditKit.kit`). The
+  renderer shows it as a read made when it arrived (`applyReadKit`), and
+  makes no `get-kit`. If it can't be read back, the renderer reads the
+  kit as before.
+- Delete and move also return the edited voices' rows as they were
+  (`voicesBefore`), read right before the edit, for the undo snapshot, so
+  the renderer no longer fetches them first. Main runs one handler's
+  synchronous work at a time, so nothing changes the rows in between.
+- A rescan, an undo or redo of a sample edit, and a move to another kit
+  (UC-22, not reachable from the UI) still read the kit with `get-kit`.
 - **Verified by:** the drop and delete budgets pin `get-kit` and
-  `get-all-samples-for-kit` at none; integration budgets for each
-  operation's statements.
+  `get-all-samples-for-kit` at none; the integration budgets for add,
+  delete and move are raised by the read-back and the undo read, which
+  replace the renderer's own calls, and the test checks what each
+  returns; tests for `applyReadKit` against an older reload, and for the
+  undo actions recorded from what main returned.
 
 Still open after step 3: a step toggle whose save returns while the next
 toggle is still saving shows the pattern without the newer toggle until

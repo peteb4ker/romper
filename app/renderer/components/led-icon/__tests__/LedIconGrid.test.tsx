@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ICON_LED_COUNT } from "../ledIconConstants";
 
-// Mock useMiniLedAnimation to avoid RAF in tests
+// Mock useLedVisualization to avoid RAF in tests
 const mockSetMousePosition = vi.fn();
 const mockClearMousePosition = vi.fn();
 const mockAddRipple = vi.fn();

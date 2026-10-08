@@ -55,7 +55,6 @@ function renderPanels(voices: VoiceSpec[]) {
           kit={kit as never}
           kitName="Kit1"
           onPlay={vi.fn()}
-          onSampleKeyNav={vi.fn()}
           onSampleSelect={vi.fn()}
           onSaveVoiceName={vi.fn()}
           onStop={vi.fn()}

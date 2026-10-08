@@ -84,7 +84,6 @@ function MultiVoicePanelsTestWrapper({
           kit={kit}
           kitName={baseProps.kitName}
           onPlay={onPlay}
-          onSampleKeyNav={() => {}}
           onSampleSelect={() => {}}
           onSaveVoiceName={baseProps.onSaveVoiceName}
           onStop={baseProps.onStop}
@@ -422,7 +421,6 @@ describe("KitVoicePanels", () => {
               kit={null}
               kitName="TestKit"
               onPlay={vi.fn()}
-              onSampleKeyNav={vi.fn()}
               onSampleSelect={vi.fn()}
               onSaveVoiceName={vi.fn()}
               onStop={vi.fn()}
@@ -460,7 +458,6 @@ describe("KitVoicePanels", () => {
               kit={kit}
               kitName="TestKit"
               onPlay={vi.fn()}
-              onSampleKeyNav={vi.fn()}
               onSampleSelect={vi.fn()}
               onSaveVoiceName={vi.fn()}
               onStop={vi.fn()}
@@ -502,7 +499,6 @@ describe("KitVoicePanels", () => {
         kitName: "TestKit",
         onPlay: vi.fn(),
 
-        onSampleKeyNav: vi.fn(),
         onSampleSelect: vi.fn(),
         onSaveVoiceName: vi.fn(),
         onStop: vi.fn(),
@@ -536,7 +532,6 @@ describe("KitVoicePanels", () => {
               kit={kit}
               kitName="TestKit"
               onPlay={vi.fn()}
-              onSampleKeyNav={vi.fn()}
               onSampleSelect={vi.fn()}
               onSaveVoiceName={vi.fn()}
               onStop={vi.fn()}

@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import type { SampleData } from "../../components/kitTypes";
 
 import {
-  formatEnhancedTooltip,
   formatTooltip,
   formatWavMetadata,
   getCompatibilityDisplay,
@@ -305,116 +304,6 @@ describe("wavMetadataFormatter", () => {
       const result = formatTooltip(metadata, "/path/test.wav", "test.wav");
       expect(result).toBe(
         "test.wav\n/path/test.wav\n► 44.1kHz • 16-bit • 6ch • ❌ Incompatible",
-      );
-    });
-  });
-
-  describe("formatEnhancedTooltip", () => {
-    it("formats enhanced tooltip with separated technical specs", () => {
-      const metadata: SampleData = {
-        filename: "test.wav",
-        source_path: "/path/test.wav",
-        wav_bit_depth: 16,
-        wav_channels: 2,
-        wav_sample_rate: 44100,
-      };
-
-      const result = formatEnhancedTooltip(
-        metadata,
-        "/path/test.wav",
-        "test.wav",
-      );
-      expect(result).toBe(
-        "📄 test.wav\n📁 /path/test.wav\n⚡ 44.1kHz • 🔢 16-bit • 🎛️ Stereo\n🎯 Status: ✓ Native",
-      );
-    });
-
-    it("handles partial metadata in enhanced format", () => {
-      const metadata: SampleData = {
-        filename: "test.wav",
-        source_path: "/path/test.wav",
-        wav_bit_depth: 24,
-        wav_sample_rate: 48000,
-      };
-
-      const result = formatEnhancedTooltip(
-        metadata,
-        "/path/test.wav",
-        "test.wav",
-      );
-      expect(result).toBe(
-        "📄 test.wav\n📁 /path/test.wav\n⚡ 48.0kHz • 🔢 24-bit\n🎯 Status: ✓ Native",
-      );
-    });
-
-    it("shows only filename and path when no technical metadata available", () => {
-      const metadata: SampleData = {
-        filename: "test.wav",
-        source_path: "/path/test.wav",
-      };
-
-      const result = formatEnhancedTooltip(
-        metadata,
-        "/path/test.wav",
-        "test.wav",
-      );
-      expect(result).toBe("📄 test.wav\n📁 /path/test.wav");
-    });
-
-    it("handles sample rate under 1000Hz in enhanced format", () => {
-      const metadata: SampleData = {
-        filename: "test.wav",
-        source_path: "/path/test.wav",
-        wav_bit_depth: 16,
-        wav_channels: 1,
-        wav_sample_rate: 800,
-      };
-
-      const result = formatEnhancedTooltip(
-        metadata,
-        "/path/test.wav",
-        "test.wav",
-      );
-      expect(result).toBe(
-        "📄 test.wav\n📁 /path/test.wav\n⚡ 800Hz • 🔢 16-bit • 🎛️ Mono\n🎯 Status: 🟡 Convertible",
-      );
-    });
-
-    it("handles multi-channel formats in enhanced format", () => {
-      const metadata: SampleData = {
-        filename: "test.wav",
-        source_path: "/path/test.wav",
-        wav_bit_depth: 16,
-        wav_channels: 5,
-        wav_sample_rate: 44100,
-      };
-
-      const result = formatEnhancedTooltip(
-        metadata,
-        "/path/test.wav",
-        "test.wav",
-      );
-      expect(result).toBe(
-        "📄 test.wav\n📁 /path/test.wav\n⚡ 44.1kHz • 🔢 16-bit • 🎛️ 5ch\n🎯 Status: ❌ Incompatible",
-      );
-    });
-
-    it("handles convertible format in enhanced format", () => {
-      const metadata: SampleData = {
-        filename: "test.wav",
-        source_path: "/path/test.wav",
-        wav_bit_depth: 24,
-        wav_channels: 2,
-        wav_sample_rate: 48000,
-      };
-
-      const result = formatEnhancedTooltip(
-        metadata,
-        "/path/test.wav",
-        "test.wav",
-      );
-      expect(result).toBe(
-        "📄 test.wav\n📁 /path/test.wav\n⚡ 48.0kHz • 🔢 24-bit • 🎛️ Stereo\n🎯 Status: 🟡 Convertible",
       );
     });
   });

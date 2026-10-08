@@ -14,8 +14,6 @@ import { useKitSync } from "./hooks/kit-management/useKitSync";
 import KitBankNav from "./KitBankNav";
 import KitBrowserHeader from "./KitBrowserHeader";
 import KitGrid, { KitGridHandle } from "./KitGrid";
-import LocalStoreWizardUI from "./LocalStoreWizardUI";
-import ModalDialog from "./shared/ModalDialog";
 
 interface KitBrowserProps {
   /** Scan All's progress; the scan itself runs in KitsView (RE-43) */
@@ -46,8 +44,6 @@ interface KitBrowserProps {
 
   // Search functionality
   searchQuery?: string;
-  searchResultCount?: number;
-  setLocalStorePath?: (path: string) => Promise<boolean>;
   showFavoritesOnly?: boolean;
   showModifiedOnly?: boolean;
 }
@@ -69,7 +65,6 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
     modifiedCount,
     onMessage,
     onRefreshKits,
-    setLocalStorePath,
     showFavoritesOnly,
     showModifiedOnly,
   } = props;
@@ -144,14 +139,7 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
   }
 
   // Dialog management hook
-  const dialogs = useKitDialogs({ onMessage, setLocalStorePath });
-  const {
-    handleCloseValidationDialog,
-    handleShowLocalStoreWizard,
-    localStoreWizardProps,
-    showLocalStoreWizard,
-    showValidationDialog,
-  } = dialogs;
+  const { handleCloseValidationDialog, showValidationDialog } = useKitDialogs();
 
   // Kit deletion hook
   const deletion = useKitDeletion({
@@ -207,14 +195,12 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
         onDismissBulkScan={props.onDismissBulkScan}
         onSearchChange={props.onSearchChange}
         onSearchClear={props.onSearchClear}
-        onShowLocalStoreWizard={handleShowLocalStoreWizard}
         onShowSettings={props.onShowSettings}
         onSyncToSdCard={handleSyncToSdCard}
         onToggleFavoritesFilter={handleToggleFavoritesFilter}
         onToggleModifiedFilter={handleToggleModifiedFilter}
         // Search props
         searchQuery={props.searchQuery}
-        searchResultCount={props.searchResultCount}
         showFavoritesOnly={showFavoritesOnly}
         showModifiedOnly={showModifiedOnly}
       />
@@ -250,24 +236,6 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
           sampleCounts={props.sampleCounts}
         />
       </div>
-      {/* Local Store Wizard Modal */}
-      {showLocalStoreWizard && (
-        <ModalDialog
-          aria-labelledby="kit-browser-setup-title"
-          className="bg-surface-2 rounded-lg shadow-[0_8px_40px_rgba(0,0,0,0.4)] border border-border-subtle p-6 w-full max-w-lg"
-          // The wizard's Cancel stops setup before closing, so Escape
-          // doesn't close it behind setup's back
-        >
-          <h2
-            className="text-xl font-bold mb-4 text-text-primary"
-            id="kit-browser-setup-title"
-          >
-            Romper Local Store Setup
-          </h2>
-          <LocalStoreWizardUI {...localStoreWizardProps} />
-        </ModalDialog>
-      )}
-
       {/* ValidationResultsDialog */}
       {showValidationDialog && (
         <ValidationResultsDialog

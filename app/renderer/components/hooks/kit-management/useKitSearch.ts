@@ -17,7 +17,6 @@ export interface UseKitSearchResult {
   isSearching: boolean;
   searchChange: (query: string) => void;
   searchQuery: string;
-  searchResultCount: number;
 }
 
 /**
@@ -52,10 +51,6 @@ export function useKitSearch({
     return filterKitsWithSearch(kits, searchQuery, allKitSamples);
   }, [kits, searchQuery, allKitSamples]);
 
-  const searchResultCount = useMemo(() => {
-    return searchQuery && searchQuery.length >= 2 ? filteredKits.length : 0;
-  }, [filteredKits.length, searchQuery]);
-
   const searchChange = useCallback((query: string) => {
     setIsSearching(true);
     setSearchQuery(query);
@@ -83,6 +78,5 @@ export function useKitSearch({
     isSearching,
     searchChange,
     searchQuery,
-    searchResultCount,
   };
 }

@@ -52,7 +52,6 @@ interface KitVoicePanelsProps {
     filePath: string,
   ) => Promise<boolean>;
   onSampleDelete?: (voice: number, slotNumber: number) => Promise<void>;
-  onSampleKeyNav: (direction: "down" | "up") => void; // Used directly in KitVoicePanel
   // Task 22.2: Sample move operations with contiguity
   onSampleMove?: (
     fromVoice: number,
@@ -770,7 +769,6 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                     onPlay={hookProps.onPlay}
                     onSampleAdd={props.onSampleAdd}
                     onSampleDelete={props.onSampleDelete}
-                    onSampleKeyNav={hookProps.onSampleKeyNav}
                     onSampleMove={props.onSampleMove}
                     onSampleSelect={hookProps.onSampleSelect}
                     onSaveVoiceName={hookProps.onSaveVoiceName}

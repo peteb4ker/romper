@@ -4,28 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { render } from "../../../../tests/utils/renderWithProviders";
 
-// Mock problematic imports that can cause hanging
-vi.mock("../hooks/wizard/useLocalStoreWizard", () => ({
-  useLocalStoreWizard: () => ({
-    initialize: vi.fn().mockResolvedValue(undefined),
-    progress: null,
-    progressMessage: "",
-    setError: vi.fn(),
-    setIsInitializing: vi.fn(),
-    setSdCardMounted: vi.fn(),
-    setSource: vi.fn(),
-    setTargetPath: vi.fn(),
-    state: {
-      error: null,
-      isInitializing: false,
-      sdCardMounted: false,
-      source: "blank",
-      sourceConfirmed: false,
-      targetPath: "/mock/path",
-    },
-  }),
-}));
-
 vi.mock("../hooks/kit-management/useKitBrowser", () => ({
   useKitBrowser: vi.fn(),
 }));

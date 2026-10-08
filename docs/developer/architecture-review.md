@@ -313,7 +313,5 @@ Quick fixes that can go in at any time:
 
 - the logging item from the register's Low list;
 - RE-21 (settings loading and atomic writes);
-- the rest of RE-56 (about 490 LOC of unused main code, plus the unused hooks
-  `useKit`, `useKitStepSequencer` and `useKitVoicePanel`);
 - RE-89 (store WAV metadata on add, which falls out of step 1's add
   operation).

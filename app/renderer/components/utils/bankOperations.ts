@@ -5,26 +5,11 @@ export interface BankNames {
 
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import { isBankLetter } from "@romper/shared/rampleCardLayout";
-
 /**
  * Checks if a bank has any kits
  */
 export function bankHasKits(kits: KitWithRelations[], bank: string): boolean {
   return kits.some((k) => k?.name?.startsWith(bank));
-}
-
-/**
- * Gets all banks that have kits (A-Z)
- */
-export function getAvailableBanks(kits: KitWithRelations[]): string[] {
-  const banks = new Set<string>();
-  for (const kit of kits) {
-    if (kit?.name && kit.name.length > 0) {
-      banks.add(kit.name[0].toUpperCase());
-    }
-  }
-  return Array.from(banks).sort((a, b) => a.localeCompare(b));
 }
 
 /**
@@ -36,11 +21,4 @@ export function getFirstKitInBank(
 ): null | string {
   const kit = kits.find((k) => k?.name?.startsWith(bank));
   return kit ? kit.name : null;
-}
-
-/**
- * Validates bank letter (A-Z)
- */
-export function validateBankLetter(bank: string): boolean {
-  return isBankLetter(bank.toUpperCase());
 }

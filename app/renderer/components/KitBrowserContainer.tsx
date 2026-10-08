@@ -31,8 +31,6 @@ type KitBrowserContainerProps = Readonly<{
   sampleCounts: Record<string, [number, number, number, number]>;
   // Search functionality
   searchQuery?: string;
-  searchResultCount?: number;
-  setLocalStorePath: (path: string) => Promise<boolean>;
   showFavoritesOnly?: boolean;
   showModifiedOnly?: boolean;
 }>;
@@ -65,8 +63,6 @@ const KitBrowserContainer: React.FC<KitBrowserContainerProps> = (props) => {
     sampleCounts,
     // Search props
     searchQuery,
-    searchResultCount,
-    setLocalStorePath,
     showFavoritesOnly,
     showModifiedOnly,
   } = props;
@@ -88,11 +84,6 @@ const KitBrowserContainer: React.FC<KitBrowserContainerProps> = (props) => {
       onSelectKit(kitName);
     },
     [onSelectKit],
-  );
-
-  const handleSetLocalStorePath = React.useCallback(
-    (path: string) => setLocalStorePath(path),
-    [setLocalStorePath],
   );
 
   return (
@@ -119,8 +110,6 @@ const KitBrowserContainer: React.FC<KitBrowserContainerProps> = (props) => {
       sampleCounts={sampleCounts}
       // Search props
       searchQuery={searchQuery}
-      searchResultCount={searchResultCount}
-      setLocalStorePath={handleSetLocalStorePath}
       showFavoritesOnly={showFavoritesOnly}
       showModifiedOnly={showModifiedOnly}
     />

@@ -15,9 +15,6 @@ vi.mock("../KitBrowser", () => ({
       </button>
       <button onClick={props.onRefreshKits}>Refresh</button>
       <button onClick={() => props.onSelectKit("test-kit")}>Select</button>
-      <button onClick={() => props.setLocalStorePath("/new/path")}>
-        Set Path
-      </button>
     </div>
   )),
 }));
@@ -42,7 +39,6 @@ describe("KitBrowserContainer", () => {
     onRefreshKits: vi.fn(),
     onSelectKit: vi.fn(),
     sampleCounts: { TestKit: [1, 2, 3, 4] as [number, number, number, number] },
-    setLocalStorePath: vi.fn(),
   };
 
   beforeEach(() => {
@@ -63,7 +59,6 @@ describe("KitBrowserContainer", () => {
       expect(screen.getByText("Message")).toBeInTheDocument();
       expect(screen.getByText("Refresh")).toBeInTheDocument();
       expect(screen.getByText("Select")).toBeInTheDocument();
-      expect(screen.getByText("Set Path")).toBeInTheDocument();
     });
 
     it("should handle null localStorePath", () => {
@@ -102,15 +97,6 @@ describe("KitBrowserContainer", () => {
       selectButton.click();
 
       expect(defaultProps.onSelectKit).toHaveBeenCalledWith("test-kit");
-    });
-
-    it("should handle setLocalStorePath callback", () => {
-      render(<KitBrowserContainer {...defaultProps} />);
-
-      const setPathButton = screen.getByText("Set Path");
-      setPathButton.click();
-
-      expect(defaultProps.setLocalStorePath).toHaveBeenCalledWith("/new/path");
     });
   });
 

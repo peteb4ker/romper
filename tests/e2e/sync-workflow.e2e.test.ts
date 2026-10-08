@@ -7,6 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { appEnv } from "../utils/e2e-app-env";
 import { approveLocalStorePrompts } from "../utils/e2e-dialogs";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
@@ -98,12 +99,11 @@ test.describe("[UC-02] [UC-28] [UC-34] [Q-07] From the factory archive to the ca
         "dist/electron/main/index.js",
         ...(process.env.CI ? ["--no-sandbox", "--disable-setuid-sandbox"] : []),
       ],
-      env: {
-        ...process.env,
+      env: appEnv({
         ROMPER_SDCARD_PATH: card,
         ROMPER_SQUARP_ARCHIVE_URL: pathToFileURL(archive).href,
         ROMPER_USER_DATA_DIR: path.join(tempDir, "user-data"),
-      },
+      }),
       timeout: 30000,
     });
     // The typed target path makes main ask the user to approve it (RE-03)

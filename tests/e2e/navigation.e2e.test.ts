@@ -1,5 +1,7 @@
+import { type ElectronApplication, type Page } from "@playwright/test";
 import { _electron as electron } from "playwright";
 
+import { appEnv } from "../utils/e2e-app-env";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
   cleanupE2EFixture,
@@ -9,8 +11,8 @@ import {
 import { openSequencer } from "../utils/e2e-sequencer";
 
 test.describe("[UC-07] Back Navigation E2E Tests", () => {
-  let electronApp: unknown;
-  let window: unknown;
+  let electronApp: ElectronApplication;
+  let window: Page;
   let testEnv: E2ETestEnvironment;
 
   test.beforeEach(async () => {
@@ -20,10 +22,7 @@ test.describe("[UC-07] Back Navigation E2E Tests", () => {
     // Launch the Electron app with fixture environment
     electronApp = await electron.launch({
       args: ["dist/electron/main/index.js"],
-      env: {
-        ...process.env,
-        ...testEnv.environment,
-      },
+      env: appEnv(testEnv.environment),
       timeout: 30000,
     });
 

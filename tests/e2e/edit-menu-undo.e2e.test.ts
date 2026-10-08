@@ -7,6 +7,7 @@ import {
   type Page,
 } from "playwright";
 
+import { appEnv } from "../utils/e2e-app-env";
 import { dropFiles } from "../utils/e2e-drop";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
@@ -35,10 +36,7 @@ test.describe("Edit menu undo", () => {
 
     electronApp = await electron.launch({
       args: ["dist/electron/main/index.js"],
-      env: {
-        ...process.env,
-        ...testEnv.environment,
-      },
+      env: appEnv(testEnv.environment),
       timeout: 30000,
     });
 
@@ -141,7 +139,7 @@ test.describe("Edit menu undo", () => {
     await expectSamples(voice, start + 2);
     // A gain on the sample that will be deleted
     await window.evaluate(
-      ([kit, v]) => window.electronAPI.updateSampleGain(kit, v, 0, -7.5),
+      ([kit, v]) => globalThis.electronAPI.updateSampleGain(kit, v, 0, -7.5),
       [KIT, voice] as const,
     );
     const before = await voiceRows(voice);
@@ -166,7 +164,7 @@ test.describe("Edit menu undo", () => {
   async function voiceRows(voice: number) {
     return window.evaluate(
       async ([kit, v]) => {
-        const res = await window.electronAPI.getAllSamplesForKit(kit);
+        const res = await globalThis.electronAPI.getAllSamplesForKit(kit);
         return (res.data ?? [])
           .filter((s) => s.voice_number === v)
           .sort((a, b) => a.slot_number - b.slot_number)
@@ -236,7 +234,7 @@ test.describe("Edit menu undo", () => {
   async function sampleCount(voice: number): Promise<number> {
     return window.evaluate(
       async ([kit, v]) => {
-        const res = await window.electronAPI.getAllSamplesForKit(kit);
+        const res = await globalThis.electronAPI.getAllSamplesForKit(kit);
         return (res.data ?? []).filter((s) => s.voice_number === v).length;
       },
       [KIT, voice] as const,

@@ -3,6 +3,7 @@ import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
 
+import { appEnv } from "../utils/e2e-app-env";
 import { approveLocalStorePrompts } from "../utils/e2e-dialogs";
 import { expect, test } from "../utils/e2e-error-guard";
 
@@ -65,11 +66,10 @@ test.describe("Onboarding Error Recovery E2E Tests", () => {
         "dist/electron/main/index.js",
         ...(process.env.CI ? ["--no-sandbox", "--disable-setuid-sandbox"] : []),
       ],
-      env: {
-        ...process.env,
+      env: appEnv({
         ROMPER_USER_DATA_DIR: userData,
         ...env,
-      },
+      }),
       timeout: 30000,
     });
 

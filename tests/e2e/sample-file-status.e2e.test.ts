@@ -11,6 +11,7 @@ import {
   createBrokenKitStore,
   removeBrokenKitStore,
 } from "../utils/broken-kit-store";
+import { appEnv } from "../utils/e2e-app-env";
 import { expect, test } from "../utils/e2e-error-guard";
 import { type E2ETestEnvironment } from "../utils/e2e-fixture-extractor";
 
@@ -52,11 +53,10 @@ test.describe("[UC-13] [Q-04] Missing and unreadable sample files (#537)", () =>
     card = await fs.mkdtemp(path.join(os.tmpdir(), "romper-e2e-card-"));
     electronApp = await electron.launch({
       args: ["dist/electron/main/index.js"],
-      env: {
-        ...process.env,
+      env: appEnv({
         ...testEnv.environment,
         ROMPER_SDCARD_PATH: card,
-      },
+      }),
       timeout: 30000,
     });
     window = await electronApp.firstWindow();

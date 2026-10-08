@@ -7,6 +7,7 @@ import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
 
+import { appEnv } from "../utils/e2e-app-env";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
   cleanupE2EFixture,
@@ -34,11 +35,10 @@ test.describe("[UC-23] [UC-35] Confirm destructive actions", () => {
     userData = await fs.mkdtemp(path.join(os.tmpdir(), "romper-e2e-user-"));
     electronApp = await electron.launch({
       args: ["dist/electron/main/index.js", `--user-data-dir=${userData}`],
-      env: {
-        ...process.env,
+      env: appEnv({
         ...testEnv.environment,
         ROMPER_USER_DATA_DIR: userData,
-      },
+      }),
       timeout: 30000,
     });
     window = await electronApp.firstWindow();

@@ -4,6 +4,7 @@ import {
   type Page,
 } from "playwright";
 
+import { appEnv } from "../utils/e2e-app-env";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
   cleanupE2EFixture,
@@ -26,10 +27,7 @@ test.describe("[UC-29] Sample audio", () => {
 
     electronApp = await electron.launch({
       args: ["dist/electron/main/index.js"],
-      env: {
-        ...process.env,
-        ...testEnv.environment,
-      },
+      env: appEnv(testEnv.environment),
       timeout: 30000,
     });
 
@@ -51,10 +49,10 @@ test.describe("[UC-29] Sample audio", () => {
 
   test("main process serves a sample's audio buffer from ROMPER_LOCAL_PATH", async () => {
     const result = await window.evaluate(async () => {
-      const res = await window.electronAPI.getSampleAudioBuffer("A0", 1, 0);
+      const res = await globalThis.electronAPI.getSampleAudioBuffer("A0", 1, 0);
       const bytes = res.data?.bytes ? new Uint8Array(res.data.bytes) : null;
       // Offering the version it sent: nothing to send again (#478)
-      const again = await window.electronAPI.getSampleAudioBuffer(
+      const again = await globalThis.electronAPI.getSampleAudioBuffer(
         "A0",
         1,
         0,

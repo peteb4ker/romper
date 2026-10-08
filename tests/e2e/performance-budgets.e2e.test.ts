@@ -16,6 +16,7 @@ import os from "node:os";
 import path from "node:path";
 
 import { type BudgetName, enforceBudgets } from "../perf/budgets";
+import { appEnv } from "../utils/e2e-app-env";
 import { dropFiles } from "../utils/e2e-drop";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
@@ -69,10 +70,7 @@ test.describe("[Q-01] Performance budgets: IPC calls per action", () => {
     // Cold start: everything from launch until the grid has settled
     app = await electron.launch({
       args: [...IPC_PROBE_ARGS, "dist/electron/main/index.js"],
-      env: {
-        ...(process.env as Record<string, string>),
-        ...testEnv.environment,
-      },
+      env: appEnv(testEnv.environment),
       timeout: 30_000,
     });
     page = await app.firstWindow();

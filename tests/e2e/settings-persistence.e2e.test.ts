@@ -7,6 +7,7 @@ import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
 
+import { appEnv } from "../utils/e2e-app-env";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
   cleanupE2EFixture,
@@ -28,11 +29,10 @@ test.describe("[UC-35] Preferences survive a relaunch", () => {
   async function launch(): Promise<Page> {
     electronApp = await electron.launch({
       args: ["dist/electron/main/index.js", `--user-data-dir=${userData}`],
-      env: {
-        ...process.env,
+      env: appEnv({
         ...testEnv.environment,
         ROMPER_USER_DATA_DIR: userData,
-      },
+      }),
       timeout: 30000,
     });
     const window = await electronApp.firstWindow();

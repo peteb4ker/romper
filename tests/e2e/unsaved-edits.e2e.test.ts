@@ -4,6 +4,7 @@ import {
   type Page,
 } from "playwright";
 
+import { appEnv } from "../utils/e2e-app-env";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
   cleanupE2EFixture,
@@ -47,7 +48,7 @@ test.describe("[UC-36] Edits that aren't saved say so (RE-91)", () => {
     testEnv = await extractE2EFixture();
     electronApp = await electron.launch({
       args: ["dist/electron/main/index.js"],
-      env: { ...process.env, ...testEnv.environment },
+      env: appEnv(testEnv.environment),
       timeout: 30000,
     });
     window = await electronApp.firstWindow();

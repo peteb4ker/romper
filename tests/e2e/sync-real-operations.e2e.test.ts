@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { _electron as electron } from "playwright";
 
+import { appEnv } from "../utils/e2e-app-env";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
   cleanupE2EFixture,
@@ -55,12 +56,11 @@ test.describe("[UC-34] Sync Real Operations E2E Tests", () => {
     // Launch Electron app with fixture environment + custom SD card path
     electronApp = await electron.launch({
       args: ["dist/electron/main/index.js"],
-      env: {
-        ...process.env,
+      env: appEnv({
         ...testEnv.environment,
         // Override SD card path for isolated testing
         ROMPER_SDCARD_PATH: tempSdCardDir,
-      },
+      }),
       timeout: 30000,
     });
 

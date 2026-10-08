@@ -1,5 +1,7 @@
+import { type ElectronApplication, type Page } from "@playwright/test";
 import { _electron as electron } from "playwright";
 
+import { appEnv } from "../utils/e2e-app-env";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
   cleanupE2EFixture,
@@ -8,8 +10,8 @@ import {
 } from "../utils/e2e-fixture-extractor";
 
 test.describe("Fixture System Validation", () => {
-  let electronApp: unknown;
-  let window: unknown;
+  let electronApp: ElectronApplication;
+  let window: Page;
   let testEnv: E2ETestEnvironment;
 
   test.beforeEach(async () => {
@@ -19,10 +21,7 @@ test.describe("Fixture System Validation", () => {
     // Launch the Electron app with fixture environment
     electronApp = await electron.launch({
       args: ["dist/electron/main/index.js"],
-      env: {
-        ...process.env,
-        ...testEnv.environment,
-      },
+      env: appEnv(testEnv.environment),
       timeout: 30000,
     });
 
@@ -55,28 +54,22 @@ test.describe("Fixture System Validation", () => {
     expect(wizardVisible).toBe(false);
 
     // Verify we can get kits via IPC
-    const kitsResult = await window.evaluate(async () => {
-      if (!(window as unknown).electronAPI?.getKits) {
-        return { error: "getKits API not available", success: false };
-      }
-      return await (window as unknown).electronAPI.getKits();
-    });
+    const kitsResult = await window.evaluate(() =>
+      globalThis.electronAPI.getKits(),
+    );
 
     expect(kitsResult.success).toBe(true);
     expect(kitsResult.data).toHaveLength(2);
-    expect(kitsResult.data.map((kit: unknown) => kit.name)).toEqual(
+    expect(kitsResult.data?.map((kit) => kit.name)).toEqual(
       expect.arrayContaining(["A0", "B1"]),
     );
   });
 
   test("should have valid local store status", async () => {
     // Check local store validation via IPC
-    const localStoreStatus = await window.evaluate(async () => {
-      if (!(window as unknown).electronAPI?.getLocalStoreStatus) {
-        return { error: "getLocalStoreStatus API not available" };
-      }
-      return await (window as unknown).electronAPI.getLocalStoreStatus();
-    });
+    const localStoreStatus = await window.evaluate(() =>
+      globalThis.electronAPI.getLocalStoreStatus(),
+    );
 
     expect(localStoreStatus.hasLocalStore).toBe(true);
     expect(localStoreStatus.isValid).toBe(true);
@@ -88,15 +81,9 @@ test.describe("Fixture System Validation", () => {
 
   test("should load samples for kits", async () => {
     // Get samples for the first kit
-    const samplesResult = await window.evaluate(async () => {
-      if (!(window as unknown).electronAPI?.getAllSamplesForKit) {
-        return {
-          error: "getAllSamplesForKit API not available",
-          success: false,
-        };
-      }
-      return await (window as unknown).electronAPI.getAllSamplesForKit("A0");
-    });
+    const samplesResult = await window.evaluate(() =>
+      globalThis.electronAPI.getAllSamplesForKit("A0"),
+    );
 
     expect(samplesResult.success).toBe(true);
     expect(Array.isArray(samplesResult.data)).toBe(true);

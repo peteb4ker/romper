@@ -1,5 +1,7 @@
+import { type ElectronApplication, type Page } from "@playwright/test";
 import { _electron as electron } from "playwright";
 
+import { appEnv } from "../utils/e2e-app-env";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
   cleanupE2EFixture,
@@ -8,8 +10,8 @@ import {
 } from "../utils/e2e-fixture-extractor";
 
 test.describe("Simple Fixture Loading Test", () => {
-  let electronApp: unknown;
-  let window: unknown;
+  let electronApp: ElectronApplication;
+  let window: Page;
   let testEnv: E2ETestEnvironment;
 
   test.beforeEach(async () => {
@@ -17,10 +19,7 @@ test.describe("Simple Fixture Loading Test", () => {
 
     electronApp = await electron.launch({
       args: ["dist/electron/main/index.js"],
-      env: {
-        ...process.env,
-        ...testEnv.environment,
-      },
+      env: appEnv(testEnv.environment),
       timeout: 30000,
     });
 
@@ -43,34 +42,10 @@ test.describe("Simple Fixture Loading Test", () => {
       timeout: 10000,
     });
 
-    // Check for console errors
-    const errors: string[] = [];
-    window.on("console", (msg: unknown) => {
-      if (msg.type() === "error") {
-        errors.push(msg.text());
-      }
-    });
-
-    await window.waitForTimeout(3000); // Give time for errors to appear
-
-    // Log environment info
-    const envDebug = await window.evaluate(() => {
-      return {
-        romperLocalPath: (window as unknown).romperEnv?.ROMPER_LOCAL_PATH,
-        romperSdCardPath: (window as unknown).romperEnv?.ROMPER_SDCARD_PATH,
-      };
-    });
-
-    console.log("Environment debug:", envDebug);
-    console.log("Console errors:", errors);
-
     // Verify kits are loaded via IPC
-    const kitsResult = await window.evaluate(async () => {
-      if (!(window as unknown).electronAPI?.getKits) {
-        return { error: "getKits API not available", success: false };
-      }
-      return await (window as unknown).electronAPI.getKits();
-    });
+    const kitsResult = await window.evaluate(() =>
+      globalThis.electronAPI.getKits(),
+    );
 
     expect(kitsResult.success).toBe(true);
     expect(kitsResult.data).toHaveLength(2);

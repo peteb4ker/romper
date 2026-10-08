@@ -1,6 +1,7 @@
 const { FusesPlugin } = require("@electron-forge/plugin-fuses");
 const { FuseV1Options, FuseVersion } = require("@electron/fuses");
 
+const { ignorePackagedPath } = require("./scripts/packaged-files.cjs");
 const {
   pruneSqlitePrebuilds,
 } = require("./scripts/prune-sqlite-prebuilds.cjs");
@@ -18,37 +19,9 @@ const config = {
     appBundleId: "com.romper.samplemanager",
     appCategoryType: "public.app-category.music",
     icon: "./electron/resources/app-icon", // Don't include extension, Forge handles it
-    ignore: [
-      // Ignore source files and dev dependencies
-      "^/src",
-      "^/app",
-      "^/docs",
-      "^/tests",
-      "^/playwright-report",
-      "^/test-results",
-      "^/coverage",
-      "^/\\.github",
-      "^/\\.vscode",
-      "^/\\.agent",
-      // Forge 8's packager copies a symlink's target, not the link, so the
-      // worktree's linked .claude/settings.local.json would ship in the app.
-      "^/\\.claude",
-      "^/tasks",
-      "^/scripts",
-      "^/vite\\.",
-      "^/tsconfig\\.",
-      "^/tailwind\\.",
-      "^/playwright\\.",
-      "^/vitest\\.",
-      "^/eslint\\.",
-      "^/\\.eslintrc",
-      "^/\\.gitignore",
-      "^/\\.husky",
-      "^/CLAUDE\\.md",
-      "^/README\\.md",
-      "^/.*\\.test\\.",
-      "^/.*__tests__",
-    ],
+    // An allowlist: only the build output, package.json and the production
+    // node_modules ship (#464). See scripts/packaged-files.cjs.
+    ignore: ignorePackagedPath,
     extraResource: [
       // Include any additional resources needed at runtime
     ],

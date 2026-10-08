@@ -10,12 +10,19 @@
  * folder as its SD card and its own settings folder, all in one temp folder
  * that's removed afterwards. Exits 0 once the app logs that auto-update is
  * initialised; 1 if it logs a failure, exits, or takes too long.
+ *
+ * First it checks the app's own folder (resources/app) holds what the app
+ * loads and nothing the packaging allowlist leaves out (#464).
  */
 import { spawn } from "node:child_process";
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+
+const require = createRequire(import.meta.url);
+const { SHIPPED_ENTRIES } = require("./packaged-files.cjs");
 
 const READY = "[AutoUpdate] Initialised (macOS, packaged)";
 const FAILED = "[AutoUpdate] Failed to initialise";
@@ -40,10 +47,59 @@ export function smokeEnv(baseEnv, root) {
   };
 }
 
+// What the app loads from its own folder at startup and on opening a store
+const REQUIRED_FILES = [
+  "package.json",
+  "dist/electron/main/index.js",
+  "dist/electron/main/db/migrations/meta/_journal.json",
+  "dist/electron/preload/index.cjs",
+  "dist/renderer/index.html",
+  "node_modules/better-sqlite3/package.json",
+  "node_modules/drizzle-orm/package.json",
+];
+
+/**
+ * The packaged app's own folder for its executable: Romper.app/Contents/
+ * Resources/app on macOS, resources/app beside the executable elsewhere.
+ * @param {string} executable
+ */
+export function appFolder(executable) {
+  const dir = path.dirname(path.resolve(executable));
+  return path.basename(dir) === "MacOS"
+    ? path.join(dir, "..", "Resources", "app")
+    : path.join(dir, "resources", "app");
+}
+
+/**
+ * What's wrong with a packaged app's folder: files the app needs that are
+ * missing, and top-level entries the packaging allowlist doesn't ship.
+ * @param {string} appDir
+ * @returns {string[]} one line per problem; empty when the folder is right
+ */
+export function checkAppFolder(appDir) {
+  const missing = REQUIRED_FILES.filter(
+    (file) => !fs.existsSync(path.join(appDir, file)),
+  ).map((file) => `missing ${file}`);
+  const unexpected = fs
+    .readdirSync(appDir)
+    .filter((entry) => !SHIPPED_ENTRIES.includes(entry))
+    .sort()
+    .map((entry) => `unexpected ${entry}`);
+  return [...missing, ...unexpected];
+}
+
 async function main(executable) {
   if (!executable || !fs.existsSync(executable)) {
     console.error(
       `Usage: smoke-packaged-app.mjs <executable> (got ${executable})`,
+    );
+    return 1;
+  }
+
+  const problems = checkAppFolder(appFolder(executable));
+  if (problems.length > 0) {
+    console.error(
+      `Packaged app folder ${appFolder(executable)}:\n  ${problems.join("\n  ")}`,
     );
     return 1;
   }

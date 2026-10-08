@@ -53,8 +53,8 @@ The pipeline, in `release.yml` order:
    notarize step is not used because it hard-codes a 10-minute wait, and
    Apple's notary service sometimes takes longer.
 4. The signing inputs are deleted, and `scripts/smoke-packaged-app.mjs`
-   launches the packaged app and waits for it to start its auto-updater
-   (RE-16).
+   checks the app's folder against the packaging allowlist, then launches
+   the packaged app and waits for it to start its auto-updater (RE-16).
 5. `electron-forge make --from-package -p darwin -a arm64` builds the DMG
    and zip around the signed `.app`. Forge 8 writes the DMG to
    `out/make/dmg/arm64/` and the zip to `out/make/zip/darwin/arm64/`.

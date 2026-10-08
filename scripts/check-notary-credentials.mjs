@@ -8,7 +8,8 @@
  *   ASC_API_KEY_JSON='{...}' node scripts/check-notary-credentials.mjs
  *
  * ASC_API_KEY_JSON is the output of `rcodesign
- * encode-app-store-connect-api-key` (issuer_id, key_id, private_key). The
+ * encode-app-store-connect-api-key` (issuer_id, key_id, private_key), where
+ * private_key is the base64 of the .p8 key's PKCS#8 DER (#719). The
  * check signs a short-lived token with the key and lists notary
  * submissions: a bad key gets 401, a missing or expired agreement 403.
  */
@@ -36,10 +37,17 @@ export async function checkNotaryCredentials(keyJson, fetchImpl = fetch) {
     };
   }
 
+  let token;
+  try {
+    token = notaryToken(key);
+  } catch (error) {
+    return { message: error.message, ok: false };
+  }
+
   let response;
   try {
     response = await fetchImpl(`${NOTARY_SUBMISSIONS}?limit=1`, {
-      headers: { Authorization: `Bearer ${notaryToken(key)}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
   } catch (error) {
     return {
@@ -76,9 +84,38 @@ export function notaryToken(key, now = Date.now()) {
   )}`;
   const signature = crypto.sign("sha256", Buffer.from(unsigned), {
     dsaEncoding: "ieee-p1363",
-    key: key.private_key,
+    key: notaryPrivateKey(key.private_key),
   });
   return `${unsigned}.${signature.toString("base64url")}`;
+}
+
+export const UNREADABLE_KEY =
+  "ASC_API_KEY_JSON private_key couldn't be read as a PKCS#8 key";
+
+/**
+ * The signing key from ASC_API_KEY_JSON's private_key. rcodesign stores the
+ * base64 of the .p8 file's PKCS#8 DER; PEM text, raw or base64-encoded, is
+ * accepted too. Throws UNREADABLE_KEY, never the key, when none of them fit.
+ */
+export function notaryPrivateKey(privateKey) {
+  try {
+    const text = String(privateKey);
+    if (text.includes("-----BEGIN")) {
+      return crypto.createPrivateKey(text);
+    }
+    const decoded = Buffer.from(text, "base64");
+    const decodedText = decoded.toString("utf8");
+    if (decodedText.includes("-----BEGIN")) {
+      return crypto.createPrivateKey(decodedText);
+    }
+    return crypto.createPrivateKey({
+      format: "der",
+      key: decoded,
+      type: "pkcs8",
+    });
+  } catch {
+    throw new Error(UNREADABLE_KEY);
+  }
 }
 
 async function appleErrorDetail(response) {

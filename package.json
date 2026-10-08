@@ -105,6 +105,7 @@
     "globals": "^16.3.0",
     "handlebars": "^4.7.9",
     "husky": "^9.1.7",
+    "image-size": "file:scripts/image-size-compat",
     "istanbul-merge": "^2.0.0",
     "jsdom": "^30.1.2",
     "lcov": "^1.16.0",
@@ -127,7 +128,8 @@
     "minimatch@>=10.0.0": "10.2.4",
     "tar": "^7.5.22",
     "shell-quote": "^1.11.0",
-    "@electron/node-gyp": "npm:node-gyp@^13.0.2"
+    "@electron/node-gyp": "npm:node-gyp@^13.0.2",
+    "image-size": "$image-size"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

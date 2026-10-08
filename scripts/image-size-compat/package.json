@@ -1,0 +1,11 @@
+{
+  "name": "image-size-compat",
+  "version": "1.0.0",
+  "private": true,
+  "description": "image-size 0.x callback API on top of the patched image-size 2.x, for appdmg (#700)",
+  "license": "MIT",
+  "main": "index.cjs",
+  "dependencies": {
+    "image-size-v2": "npm:image-size@^2.0.4"
+  }
+}

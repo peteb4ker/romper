@@ -1,4 +1,7 @@
-import { type RefObject, useCallback, useRef } from "react";
+import { type RefObject, useCallback, useEffect, useRef } from "react";
+
+import { type AppliedTheme, useAppliedTheme } from "../utils/appliedTheme";
+import { useLatestRef } from "./hooks/shared/useLatestRef";
 
 /** The playhead line's color (orange-400) */
 export const PLAYHEAD_COLOR = "#f59e42";
@@ -99,29 +102,51 @@ export function resolveWaveformColor(voiceColor?: string): string {
  * nor reads computed styles (RE-46).
  *
  * `paint(buffer, null)` (stopped) resolves the voice color first, and
- * `paint(buffer, position)` (playing, 0..1) uses the last one resolved.
- * The waveform paints stopped when it loads, starts playing and stops, so
- * colors are read then, as they were before; never per frame.
+ * `paint(buffer, position)` (playing, 0..1) uses the last one resolved,
+ * unless the theme has changed since. The waveform paints stopped when it
+ * loads, starts playing and stops, and the painter repaints its last frame
+ * when the theme changes (#760), so colors are read then; never per frame.
  */
 export function useWaveformPainter(
   canvasRef: RefObject<HTMLCanvasElement | null>,
   voiceColor?: string,
 ): (buffer: AudioBuffer, playhead: null | number) => void {
-  // The resolved color, and the voice color it was resolved for
-  const colorRef = useRef<{ for?: string; value: string } | null>(null);
+  const theme = useAppliedTheme();
+  const themeRef = useLatestRef(theme);
+  // The resolved color, and the voice color and theme it was resolved for
+  const colorRef = useRef<{
+    for?: string;
+    theme: AppliedTheme;
+    value: string;
+  } | null>(null);
   const envelopeRef = useRef<EnvelopeImage | null>(null);
+  // What was painted last, to paint again in another theme's colors
+  const lastPaintRef = useRef<{
+    buffer: AudioBuffer;
+    playhead: null | number;
+  } | null>(null);
 
-  return useCallback(
+  const paint = useCallback(
     (buffer: AudioBuffer, playhead: null | number) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
+      lastPaintRef.current = { buffer, playhead };
       const w = canvas.width;
       const h = canvas.height;
       let resolved = colorRef.current;
-      if (!resolved || playhead === null || resolved.for !== voiceColor) {
-        resolved = { for: voiceColor, value: resolveWaveformColor(voiceColor) };
+      if (
+        !resolved ||
+        playhead === null ||
+        resolved.for !== voiceColor ||
+        resolved.theme !== themeRef.current
+      ) {
+        resolved = {
+          for: voiceColor,
+          theme: themeRef.current,
+          value: resolveWaveformColor(voiceColor),
+        };
         colorRef.current = resolved;
       }
       const color = resolved.value;
@@ -146,8 +171,19 @@ export function useWaveformPainter(
       ctx.lineTo(x, h);
       ctx.stroke();
     },
-    [canvasRef, voiceColor],
+    [canvasRef, themeRef, voiceColor],
   );
+
+  // Another theme: paint the last frame again in its colors, playing or
+  // not, rather than waiting for the next load, start or stop (#760)
+  useEffect(() => {
+    const last = lastPaintRef.current;
+    if (last && colorRef.current?.theme !== theme) {
+      paint(last.buffer, last.playhead);
+    }
+  }, [paint, theme]);
+
+  return paint;
 }
 
 /** Draw the envelope into a new offscreen canvas of the waveform's size */

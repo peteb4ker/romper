@@ -16,6 +16,7 @@ import React from "react";
 
 import type { SliceView } from "./hooks/shared/sliceConstants";
 
+import { useAppliedTheme } from "../utils/appliedTheme";
 import { loadSampleAudio } from "../utils/sampleAudioCache";
 import { usePopoverDismiss } from "./hooks/shared/usePopoverDismiss";
 
@@ -364,13 +365,16 @@ const SliceStrip: React.FC<SliceStripProps> = (props) => {
     sampleSource,
   );
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  // The voice color is read when drawing, so another theme draws it again
+  // in its colors (#760)
+  const theme = useAppliedTheme();
   React.useEffect(() => {
     drawPeaks(
       canvasRef.current,
       peaks,
       resolveCssVar(`--voice-${editingVoice}`),
     );
-  }, [peaks, editingVoice]);
+  }, [peaks, editingVoice, theme]);
 
   // Drag across slices to choose a span
   const areaRef = React.useRef<HTMLDivElement>(null);

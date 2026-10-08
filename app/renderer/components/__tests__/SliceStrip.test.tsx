@@ -1,8 +1,15 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
+import { applyTheme } from "../../utils/appliedTheme";
 import { getSharedAudioContext } from "../../utils/sharedAudioContext";
 import SliceStrip, { sliceHint, type SliceStripProps } from "../SliceStrip";
 
@@ -291,6 +298,48 @@ describe("SliceStrip waveform", () => {
     render(<SliceStrip {...stripProps({ slotIndex: 2 })} />);
     await waitFor(() => expect(api.getSampleAudioBuffer).toHaveBeenCalled());
     expect(fillRect).not.toHaveBeenCalled();
+  });
+
+  it("[UC-29] draws again in the new theme's voice color (#760)", async () => {
+    applyTheme(false);
+    const getComputedStyleSpy = vi
+      .spyOn(globalThis, "getComputedStyle")
+      .mockImplementation(
+        () =>
+          ({
+            getPropertyValue: (name: string) =>
+              name === "--voice-1" &&
+              document.documentElement.classList.contains("dark")
+                ? "#e05a60"
+                : "#d44950",
+          }) as CSSStyleDeclaration,
+      );
+    const canvas = {
+      clearRect: vi.fn(),
+      fillRect,
+      fillStyle: "",
+      globalAlpha: 1,
+    };
+    HTMLCanvasElement.prototype.getContext = vi.fn(
+      () => canvas,
+    ) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+    api.getSampleAudioBuffer.mockResolvedValue({
+      data: { bytes: new ArrayBuffer(8), version: "v1" },
+      success: true,
+    });
+    render(<SliceStrip {...stripProps({ kitName: "T760", slotIndex: 0 })} />);
+    await waitFor(() => expect(fillRect).toHaveBeenCalled());
+    expect(canvas.fillStyle).toBe("#d44950");
+    fillRect.mockClear();
+
+    act(() => {
+      applyTheme(true);
+    });
+
+    expect(fillRect).toHaveBeenCalled();
+    expect(canvas.fillStyle).toBe("#e05a60");
+    getComputedStyleSpy.mockRestore();
+    applyTheme(false);
   });
 });
 

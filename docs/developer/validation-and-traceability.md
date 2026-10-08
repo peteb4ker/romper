@@ -231,7 +231,9 @@ In rough priority order. Each new test names the use cases it covers (section 3)
 3. Cancel mid-write against the real sync service: nothing removed, nothing
    marked synced, files written so far intact, no temp files left.
 4. Sync error paths: unwritable card, card removed during the write, a source
-   deleted between the summary and the write.
+   deleted between the summary and the write. Done for #439:
+   `sync-write-errors.integration`, which also deletes a source during the
+   write.
 5. Factory-shaped import: the wizard's import functions on a generated archive
    with the factory's layouts (JUNK-first, junk between, 13+ files in a voice,
    RTF bank files), checking kits, slot order and truncation.
@@ -243,7 +245,10 @@ In rough priority order. Each new test names the use cases it covers (section 3)
    Existing tests declare the messages they expect. Done in #411:
    `tests/utils/e2e-error-guard.ts`.
 7. Editing flows: create a kit; add samples by a real drop; link and unlink
-   stereo; rename a voice; delete and undo; move a sample.
+   stereo; rename a voice; delete and undo; move a sample. Done across
+   `create-kit`, `sample-drop`, `stereo-voice`, `voice-names`,
+   `edit-menu-undo` and, for #439, `kit-lifecycle` (duplicate, make editable
+   and name, move a sample, delete a kit and write).
 8. First kit in an empty library (settles the "no Add kit card" question).
 9. Wizard happy paths assert what was imported (kits, samples, banks), not just
    that the database exists. Done for #439: `localStoreWizard.e2e` sets up

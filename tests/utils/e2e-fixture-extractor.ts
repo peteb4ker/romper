@@ -117,12 +117,14 @@ export async function extractE2EFixture(): Promise<E2ETestEnvironment> {
   const metadata: E2EFixtureMetadata = await fs.readJSON(metadataPath);
 
   // Create temporary directories
-  const testId = Date.now();
-  const localStorePath = path.join(os.tmpdir(), `romper-e2e-local-${testId}`);
-  const tempSdcardPath = path.join(os.tmpdir(), `romper-e2e-sdcard-${testId}`);
-
-  await fs.ensureDir(localStorePath);
-  await fs.ensureDir(tempSdcardPath);
+  // Unique folders: parallel workers can start in the same millisecond,
+  // and two tests sharing a store lock each other's database
+  const localStorePath = await fs.mkdtemp(
+    path.join(os.tmpdir(), "romper-e2e-local-"),
+  );
+  const tempSdcardPath = await fs.mkdtemp(
+    path.join(os.tmpdir(), "romper-e2e-sdcard-"),
+  );
 
   console.log(`[E2E Fixture] Extracting fixture to: ${localStorePath}`);
 

@@ -275,22 +275,26 @@ favorite; the Favorites filter shows only those. See
 
 ### UC-11 Filter to kits modified since the last sync
 
-The Modified filter shows the kits changed since they were last written to
-the card. See [Modified Filter](../manual/kit-browser.md#modified-filter).
+The Modified filter shows the kits the next write will change on the card
+(#566). See [Modified Filter](../manual/kit-browser.md#modified-filter).
 
 **Concepts:** [Kit](domain-model.md#kit), [The card and a write](domain-model.md#the-card-and-a-write).
 
 - **Renderer:** `app/renderer/components/hooks/kit-management/useKitFilters.ts` (`handleToggleModifiedFilter`);
   `app/renderer/components/KitGridItem.tsx` (amber border).
-- **Main:** `electron/main/db/operations/kitSyncOperations.ts` (`markKitAsModified`,
-  `flagKitModified`, `flagBankKitsModified`, `markAllKitsAsSyncedExcept`);
-  set by sample add, delete and move
-  (`electron/main/services/sampleBatchOperations.ts`, `electron/main/services/crud/sampleCrudService.ts`), by a scan
-  that adds samples, by gain, voice name and stereo link edits
-  (`electron/main/db/operations/sampleCrudOperations.ts`, `electron/main/db/operations/voiceCrudOperations.ts`), by a
-  bank rename for every kit in the bank (`electron/main/db/operations/crudOperations.ts`, `updateBank`), and on
-  every created or duplicated kit; cleared on every kit by a completed
-  write, except kits with a skipped sample (`electron/main/services/syncService.ts`).
+- **Main:** `electron/main/db/operations/kitSyncOperations.ts` (`flagKitModified`,
+  `flagBankKitsModified`, `markAllKitsAsSyncedExcept`); each writer sets it
+  once, in its transaction:
+  sample add, delete, move, replace and undo's restore
+  (`electron/main/services/sampleBatchOperations.ts`, `electron/main/services/crud/sampleCrudService.ts`,
+  `electron/main/db/operations/sampleMovement.ts`), a scan that adds samples
+  (`electron/main/db/operations/kitScanOperations.ts`), gain and stereo link, unlink and Keep mono
+  (`electron/main/db/operations/sampleCrudOperations.ts`, `electron/main/db/operations/voiceCrudOperations.ts`), a
+  bank rename for every kit in the bank (`electron/main/db/operations/crudOperations.ts`, `updateBank`), and
+  every created or duplicated kit. Voice names, the kit alias, BPM, steps,
+  trigger conditions, slicer data and settings, level and sample mode
+  don't set it: the card never sees them. Cleared on every kit by a
+  completed write, except kits with a skipped sample (`electron/main/services/syncService.ts`).
 
 ### UC-12 Name banks
 

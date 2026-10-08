@@ -21,7 +21,7 @@ Click any kit card in the Kit Browser to open it. The header shows:
 - **Kit navigation** -- Previous/Next arrows to step through kits sequentially (or use `,` and `.` keys)
 - **Kit ID and name** -- The bank/slot and editable name field
 - **Favorite** -- Click the favorite icon to add the kit to your favorites or remove it (or press `;`, the same key as in the Kit Browser)
-- **Modified** -- Shown when the kit has changed since it was last written to the SD card: samples added, moved or deleted, a gain or voice name changed, or a stereo link changed
+- **Modified** -- Shown when the kit has changed since it was last written to the SD card: samples added, moved or deleted, a gain changed, a stereo link changed, or the bank renamed
 - **Quarantined** -- A red warning octagon and **Quarantined**, shown when the kit won't be written to the card until it's fixed. The notice above the voices says what's wrong and how to fix it (see [Stereo and Mono Handling](#stereo-and-mono-handling) and [Missing and Unreadable Files](#missing-and-unreadable-files))
 
   ![Kit Editor header of a quarantined kit]({{ site.baseurl }}/images/manual/kit-editor-header-quarantined.png)

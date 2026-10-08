@@ -101,7 +101,7 @@ Click the **Favorites** toggle (favorite icon with count) to show only your favo
 
 ### Modified Filter
 
-Click the **Modified** toggle to show only kits marked as changed since they were last written to your SD card (the cards with an amber border). Adding, removing or moving samples, changing a sample's gain, renaming a voice, and linking or unlinking a stereo pair mark a kit as modified. Renaming or clearing a bank's name marks every kit in that bank, since the name is written to the card beside them. A new or duplicated kit starts marked. Writing to the card clears the mark on every kit, except a kit with a sample the write skipped.
+Click the **Modified** toggle to show only kits the next write will change on your SD card (the cards with an amber border). Adding, removing or moving samples, changing a sample's gain, and linking or unlinking a stereo pair mark a kit as modified. Renaming or clearing a bank's name marks every kit in that bank, since the name is written to the card beside them. A new or duplicated kit starts marked. Writing to the card clears the mark on every kit, except a kit with a sample the write skipped.
 
 ## Kit Status Indicators
 

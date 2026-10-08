@@ -19,6 +19,7 @@ import * as path from "node:path";
 import type { WavMetadataFields } from "./wavMetadataFields.js";
 
 import { type RomperDb, withDbTransaction } from "../utils/dbUtilities.js";
+import { flagKitModified } from "./kitSyncOperations.js";
 import { linkVoicesAutomaticallyTx } from "./voiceCrudOperations.js";
 
 export type { WavMetadataFields } from "./wavMetadataFields.js";
@@ -152,11 +153,9 @@ export function mergeKitScanTx(
   }
 
   if (plan.inserts.length > 0) {
-    // New samples aren't on the SD card yet
-    db.update(kits)
-      .set({ modified_since_sync: true })
-      .where(eq(kits.name, kitName))
-      .run();
+    // New samples aren't on the SD card yet; the voice names a scan infers
+    // never reach it (#566)
+    flagKitModified(db, kitName);
   }
 
   return plan.result;

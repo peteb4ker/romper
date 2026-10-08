@@ -168,6 +168,13 @@ fill 2 mono voices."
   after the merge: fix it forward like any red check on `main`.
   `e2e-tests-check` passes only when every shard on every platform that
   ran passed, and its job summary adds the shards up.
+- A new commit on a pull request cancels the CI runs still going for its
+  older commits (`cancel-stale-runs.yml`). Two runs for the same commit
+  don't cancel each other (GitHub sometimes delivers an event twice, and
+  editing the description reruns Lint): the workflows' concurrency groups
+  are per head commit, so the second run waits for the first and its
+  result stands, and no required check is left cancelled (#695). A push
+  to `main` never cancels the run in progress; it queues behind it.
 - On CI, Playwright retries a failed e2e test once (`retries` in
   `playwright.config.ts`), so one flaky test doesn't fail the run; locally
   it doesn't retry. A test that passed only on retry is flaky, not

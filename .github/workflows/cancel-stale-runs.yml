@@ -1,0 +1,65 @@
+name: Cancel Stale Runs
+
+# When a pull request gets a new commit, cancel its runs that are still
+# going for older commits (#695). The other workflows' concurrency groups
+# are per head commit, so two runs for the same commit never cancel each
+# other; that also means a new commit's runs don't cancel the old ones, so
+# this workflow does.
+#
+# It cancels only runs that started before this one, for a different
+# commit, on this repository's branch; and only while this push is still
+# the pull request's head, so a late run here can't cancel a newer push's
+# runs. Not a required check.
+
+on:
+  pull_request:
+    branches:
+      - "**"
+    types: [synchronize]
+
+permissions:
+  actions: write
+  pull-requests: read
+
+jobs:
+  cancel-stale-runs:
+    # A fork's token can't cancel runs, and its branch name can match ours
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Cancel runs for older commits
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          BRANCH: ${{ github.head_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          current=$(gh api "repos/$REPO/pulls/$PR" --jq .head.sha)
+          if [ "$current" != "$HEAD_SHA" ]; then
+            echo "The pull request has moved on to $current; that push cancels the stale runs."
+            exit 0
+          fi
+          STARTED=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq .created_at)
+          export STARTED
+          gh api -X GET "repos/$REPO/actions/runs" \
+            -f branch="$BRANCH" -f event=pull_request -f per_page=100 \
+            --jq '.workflow_runs[]
+              | select(.status != "completed"
+                  and .head_sha != env.HEAD_SHA
+                  and .created_at < env.STARTED
+                  and .head_repository.full_name == env.REPO)
+              | "\(.id) \(.head_sha[0:7]) \(.name)"' \
+            > stale.txt
+          if [ ! -s stale.txt ]; then
+            echo "No runs for older commits are still going."
+            exit 0
+          fi
+          while read -r id sha name; do
+            echo "Cancelling $name for $sha (run $id)"
+            gh run cancel "$id" -R "$REPO" || echo "::warning::Couldn't cancel run $id ($name for $sha); it may have just finished."
+          done < stale.txt
+        shell: bash

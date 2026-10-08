@@ -15,12 +15,18 @@ on:
   workflow_call:
 
 concurrency:
-  # Cancel superseded runs on the same branch/PR; never cancel main-push runs
-  # (they carry coverage + SonarCloud).
+  # One group per pull request head commit, so two runs for the same commit
+  # (GitHub sometimes delivers an event twice, and a description edit
+  # reruns Lint) never cancel each other: the second waits for the first,
+  # then runs, so the newer one finishes last and its result stands
+  # (#695). cancel-stale-runs.yml cancels a pull request's runs for its
+  # older commits. Other runs have no pull request head, so they share one
+  # group per ref and queue rather than cancel: main-push runs carry
+  # coverage + SonarCloud.
   # A literal name: in a workflow the release calls, github.workflow is
   # "Release", which would put all four suites in one group.
-  group: lint-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: lint-${{ github.ref }}-${{ github.event.pull_request.head.sha }}
+  cancel-in-progress: false
 
 jobs:
   lint:

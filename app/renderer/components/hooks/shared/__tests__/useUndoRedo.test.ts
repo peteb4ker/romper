@@ -3,12 +3,12 @@ import type { VoiceSnapshot } from "@romper/shared/undoTypes";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useUndoRedo } from "../useUndoRedo";
 import {
   addSampleAction,
   deleteSampleAction,
   moveSampleAction,
-} from "./undoActionFixtures";
+} from "../../../../../../tests/factories/undoAction.factory";
+import { useUndoRedo } from "../useUndoRedo";
 
 // The electronAPI calls undo and redo make (default mock from vitest.setup.ts)
 const undoMethods = [

@@ -6,7 +6,7 @@ import type {
   ReindexSamplesAction,
 } from "@romper/shared/undoTypes";
 
-/** Undo actions for the undo/redo hook tests, with realistic defaults */
+/** Factories for undo actions, with realistic defaults */
 
 const actionBase = (description: string) => ({
   description,

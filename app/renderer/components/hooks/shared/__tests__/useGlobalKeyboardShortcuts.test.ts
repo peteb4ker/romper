@@ -6,9 +6,9 @@ import type {
 import { fireEvent, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
+import { addSampleAction } from "../../../../../../tests/factories/undoAction.factory";
 import { useGlobalKeyboardShortcuts } from "../useGlobalKeyboardShortcuts";
 import { useUndoRedo } from "../useUndoRedo";
-import { addSampleAction } from "./undoActionFixtures";
 
 type UndoRedo = ReturnType<typeof useUndoRedo>;
 

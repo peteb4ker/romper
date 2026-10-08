@@ -3,14 +3,14 @@ import type { AnyUndoAction } from "@romper/shared/undoTypes";
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useRedoActionHandlers } from "../useRedoActionHandlers";
 import {
   addSampleAction,
   deleteSampleAction,
   moveSampleAction,
   moveSampleBetweenKitsAction,
   reindexSamplesAction,
-} from "./undoActionFixtures";
+} from "../../../../../../tests/factories/undoAction.factory";
+import { useRedoActionHandlers } from "../useRedoActionHandlers";
 
 // Use centralized mock from vitest.setup.ts
 

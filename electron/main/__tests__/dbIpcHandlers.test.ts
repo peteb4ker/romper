@@ -98,7 +98,6 @@ describe("dbIpcHandlers - Routing Tests", () => {
     mockIpcMain.handle.mockImplementation(
       (channel: string, handler: Function) => {
         handlerRegistry[channel] = handler;
-        return undefined as unknown;
       },
     );
 
@@ -109,7 +108,15 @@ describe("dbIpcHandlers - Routing Tests", () => {
     });
     mockSampleService.deleteSampleFromSlot.mockReturnValue({ success: true });
     mockScanService.rescanKit.mockResolvedValue({
-      data: { scannedSamples: 5, updatedVoices: 2 },
+      data: {
+        addedSamples: 0,
+        locked: false,
+        metadataUpdated: 0,
+        missingSamples: [],
+        scannedSamples: 5,
+        skippedFiles: [],
+        updatedVoices: 2,
+      },
       success: true,
     });
 
@@ -294,7 +301,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
   describe("Error Handling", () => {
     it("handles missing local store path", async () => {
       // Re-register with empty settings
-      registerDbIpcHandlers({});
+      registerDbIpcHandlers({ localStorePath: null });
 
       const handler = handlerRegistry["get-all-kits"];
       const result = await handler({});

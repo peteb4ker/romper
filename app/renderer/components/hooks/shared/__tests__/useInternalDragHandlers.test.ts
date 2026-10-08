@@ -3,6 +3,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useInternalDragHandlers } from "../useInternalDragHandlers";
 
+interface DragEventInit {
+  dataTransfer?: { types?: readonly string[] } & Partial<
+    Pick<DataTransfer, "dropEffect" | "effectAllowed" | "setData">
+  >;
+  preventDefault?: () => void;
+  stopPropagation?: () => void;
+}
+
+// jsdom has no DataTransfer, and the hook reads only these dataTransfer
+// fields and the two propagation methods, so a partial event is enough.
+function makeDragEvent(init: DragEventInit): React.DragEvent {
+  return init as React.DragEvent;
+}
+
 // Mock console methods to avoid noise in tests
 const originalConsole = { ...console };
 beforeEach(() => {
@@ -17,7 +31,10 @@ afterEach(() => {
 });
 
 describe("useInternalDragHandlers", () => {
-  const mockOnSampleMove = vi.fn();
+  const mockOnSampleMove =
+    vi.fn<
+      NonNullable<Parameters<typeof useInternalDragHandlers>[0]["onSampleMove"]>
+    >();
 
   const defaultProps = {
     isEditable: true,
@@ -59,12 +76,12 @@ describe("useInternalDragHandlers", () => {
         useInternalDragHandlers({ ...defaultProps, isEditable: false }),
       );
 
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
 
       result.current.handleSampleDragStart(mockEvent, 0, "sample1.wav");
 
@@ -77,12 +94,12 @@ describe("useInternalDragHandlers", () => {
         useInternalDragHandlers(defaultProps),
       );
 
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
 
       result.current.handleSampleDragStart(mockEvent, 2, "sample3.wav");
 
@@ -109,19 +126,19 @@ describe("useInternalDragHandlers", () => {
       );
 
       // First start a drag
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
 
       result.current.handleSampleDragStart(mockEvent, 0, "sample1.wav");
       rerender();
       expect(result.current.draggedSample).not.toBeNull();
 
       // End the drag
-      result.current.handleSampleDragEnd({} as unknown);
+      result.current.handleSampleDragEnd(makeDragEvent({}));
       rerender();
       expect(result.current.draggedSample).toBeNull();
     });
@@ -133,14 +150,14 @@ describe("useInternalDragHandlers", () => {
         useInternalDragHandlers({ ...defaultProps, isEditable: false }),
       );
 
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
-          dropEffect: "",
+          dropEffect: "none",
           types: ["application/x-romper-sample"],
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as unknown;
+      });
 
       result.current.handleSampleDragOver(mockEvent, 1);
 
@@ -152,14 +169,14 @@ describe("useInternalDragHandlers", () => {
         useInternalDragHandlers(defaultProps),
       );
 
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
-          dropEffect: "",
+          dropEffect: "none",
           types: ["application/x-romper-sample"],
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as unknown;
+      });
 
       result.current.handleSampleDragOver(mockEvent, 1);
 
@@ -172,23 +189,23 @@ describe("useInternalDragHandlers", () => {
       );
 
       // Start drag first
-      const startEvent = {
+      const startEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
 
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
-          dropEffect: "",
+          dropEffect: "none",
           types: ["application/x-romper-sample"],
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as unknown;
+      });
 
       result.current.handleSampleDragOver(mockEvent, 1);
 
@@ -203,23 +220,23 @@ describe("useInternalDragHandlers", () => {
       );
 
       // Start drag from slot 2
-      const startEvent = {
+      const startEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
       result.current.handleSampleDragStart(startEvent, 2, "sample3.wav");
       rerender();
 
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
-          dropEffect: "",
+          dropEffect: "none",
           types: ["application/x-romper-sample"],
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as unknown;
+      });
 
       // Try to drag over same slot
       result.current.handleSampleDragOver(mockEvent, 2);
@@ -228,31 +245,34 @@ describe("useInternalDragHandlers", () => {
     });
 
     it("ignores non-internal drags", () => {
-      const { result } = renderHook(() =>
+      const { rerender, result } = renderHook(() =>
         useInternalDragHandlers(defaultProps),
       );
 
-      // Start drag first
-      const startEvent = {
+      // Start drag first, so the drag over reaches the internal-drag check
+      const startEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
+      rerender();
 
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
-          dropEffect: "",
-          types: ["files"], // Not internal drag
+          dropEffect: "copy",
+          types: ["Files"], // Not internal drag
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as unknown;
+      });
 
       result.current.handleSampleDragOver(mockEvent, 1);
+      rerender();
 
-      expect(mockEvent.dataTransfer.dropEffect).toBe("");
+      expect(mockEvent.dataTransfer.dropEffect).toBe("copy");
+      expect(result.current.internalDropZone).toBeNull();
     });
   });
 
@@ -272,13 +292,13 @@ describe("useInternalDragHandlers", () => {
         useInternalDragHandlers({ ...defaultProps, isEditable: false }),
       );
 
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
           types: ["application/x-romper-sample"],
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as unknown;
+      });
 
       await result.current.handleSampleDrop(mockEvent, 1);
 
@@ -290,13 +310,13 @@ describe("useInternalDragHandlers", () => {
         useInternalDragHandlers(defaultProps),
       );
 
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
           types: ["application/x-romper-sample"],
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as unknown;
+      });
 
       await result.current.handleSampleDrop(mockEvent, 1);
 
@@ -309,21 +329,21 @@ describe("useInternalDragHandlers", () => {
       );
 
       // Start drag first
-      const startEvent = {
+      const startEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
 
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
           types: ["application/x-romper-sample"],
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as unknown;
+      });
 
       await result.current.handleSampleDrop(mockEvent, 1);
 
@@ -336,21 +356,21 @@ describe("useInternalDragHandlers", () => {
       );
 
       // Start drag first
-      const startEvent = {
+      const startEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
 
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
           types: ["files"], // Not internal drag
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as unknown;
+      });
 
       await result.current.handleSampleDrop(mockEvent, 1);
 
@@ -363,21 +383,21 @@ describe("useInternalDragHandlers", () => {
       );
 
       // Start drag from slot 2
-      const startEvent = {
+      const startEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
       result.current.handleSampleDragStart(startEvent, 2, "sample3.wav");
 
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
           types: ["application/x-romper-sample"],
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as unknown;
+      });
 
       await result.current.handleSampleDrop(mockEvent, 2);
 
@@ -390,22 +410,22 @@ describe("useInternalDragHandlers", () => {
       );
 
       // Start drag from slot 0
-      const startEvent = {
+      const startEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
 
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
           types: ["application/x-romper-sample"],
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as unknown;
+      });
 
       mockOnSampleMove.mockResolvedValue(undefined);
 
@@ -426,22 +446,22 @@ describe("useInternalDragHandlers", () => {
       );
 
       // Start drag from slot 0
-      const startEvent = {
+      const startEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
 
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
           types: ["application/x-romper-sample"],
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as unknown;
+      });
 
       mockOnSampleMove.mockResolvedValue(undefined);
 
@@ -466,23 +486,23 @@ describe("useInternalDragHandlers", () => {
       );
 
       // Start drag
-      const startEvent = {
+      const startEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
       expect(result.current.draggedSample).not.toBeNull();
 
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
           types: ["application/x-romper-sample"],
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as unknown;
+      });
 
       mockOnSampleMove.mockResolvedValue(undefined);
 
@@ -498,22 +518,22 @@ describe("useInternalDragHandlers", () => {
       );
 
       // Start drag
-      const startEvent = {
+      const startEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
 
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
           types: ["application/x-romper-sample"],
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as unknown;
+      });
 
       mockOnSampleMove.mockRejectedValue(new Error("Move failed"));
 
@@ -533,22 +553,22 @@ describe("useInternalDragHandlers", () => {
       );
 
       // Start drag from slot 0
-      const startEvent = {
+      const startEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
 
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
           types: ["application/x-romper-sample"],
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as unknown;
+      });
 
       mockOnSampleMove.mockResolvedValue(undefined);
 
@@ -597,12 +617,12 @@ describe("useInternalDragHandlers", () => {
 
       const handlers = result.current.getSampleDragHandlers(1, "test.wav");
 
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
 
       // Test onDragStart
       handlers.onDragStart!(mockEvent);
@@ -627,12 +647,12 @@ describe("useInternalDragHandlers", () => {
       );
 
       // Start drag first
-      const startEvent = {
+      const startEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
 
@@ -640,14 +660,14 @@ describe("useInternalDragHandlers", () => {
       expect(result.current.internalDropZone).toBeNull();
 
       // Drag over different slot
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
-          dropEffect: "",
+          dropEffect: "none",
           types: ["application/x-romper-sample"],
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as unknown;
+      });
 
       result.current.handleSampleDragOver(mockEvent, 1);
       rerender();
@@ -665,23 +685,23 @@ describe("useInternalDragHandlers", () => {
       );
 
       // Start drag and set up visual state
-      const startEvent = {
+      const startEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
 
-      const dragOverEvent = {
+      const dragOverEvent = makeDragEvent({
         dataTransfer: {
-          dropEffect: "",
+          dropEffect: "none",
           types: ["application/x-romper-sample"],
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as unknown;
+      });
       result.current.handleSampleDragOver(dragOverEvent, 1);
       rerender();
 
@@ -701,30 +721,30 @@ describe("useInternalDragHandlers", () => {
       );
 
       // Start drag and set up visual state
-      const startEvent = {
+      const startEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
 
-      const dragOverEvent = {
+      const dragOverEvent = makeDragEvent({
         dataTransfer: {
-          dropEffect: "",
+          dropEffect: "none",
           types: ["application/x-romper-sample"],
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as unknown;
+      });
       result.current.handleSampleDragOver(dragOverEvent, 1);
       rerender();
 
       expect(result.current.internalDragOverSlot).toBe(1);
 
       // Drag end should clear all state
-      result.current.handleSampleDragEnd({} as unknown);
+      result.current.handleSampleDragEnd(makeDragEvent({}));
       rerender();
 
       expect(result.current.draggedSample).toBeNull();
@@ -742,12 +762,12 @@ describe("useInternalDragHandlers", () => {
         useInternalDragHandlers({ ...defaultProps, voice: 3 }),
       );
 
-      const mockEvent = {
+      const mockEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
 
       result1.current.handleSampleDragStart(mockEvent, 0, "sample1.wav");
       rerender1();
@@ -763,61 +783,28 @@ describe("useInternalDragHandlers", () => {
         useInternalDragHandlers({ ...defaultProps, samples: [] }),
       );
 
-      const startEvent = {
+      const startEvent = makeDragEvent({
         dataTransfer: {
-          effectAllowed: "",
+          effectAllowed: "uninitialized",
           setData: vi.fn(),
         },
-      } as unknown;
+      });
       result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
       rerender();
 
       // Verify dragged sample is set
       expect(result.current.draggedSample).not.toBeNull();
 
-      const dropEvent = {
+      const dropEvent = makeDragEvent({
         dataTransfer: {
           types: ["application/x-romper-sample"],
         },
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-      } as unknown;
+      });
 
       mockOnSampleMove.mockResolvedValue(undefined);
 
-      await result.current.handleSampleDrop(dropEvent, 1);
-
-      expect(mockOnSampleMove).toHaveBeenCalledWith(1, 0, 1, 1);
-    });
-
-    it("handles undefined sample in samples array", async () => {
-      const { rerender, result } = renderHook(() =>
-        useInternalDragHandlers({
-          ...defaultProps,
-          samples: ["sample1.wav", undefined as unknown, "sample3.wav"],
-        }),
-      );
-
-      const startEvent = {
-        dataTransfer: {
-          effectAllowed: "",
-          setData: vi.fn(),
-        },
-      } as unknown;
-      result.current.handleSampleDragStart(startEvent, 0, "sample1.wav");
-      rerender();
-
-      const dropEvent = {
-        dataTransfer: {
-          types: ["application/x-romper-sample"],
-        },
-        preventDefault: vi.fn(),
-        stopPropagation: vi.fn(),
-      } as unknown;
-
-      mockOnSampleMove.mockResolvedValue(undefined);
-
-      // Drop on slot with undefined (should be insert mode)
       await result.current.handleSampleDrop(dropEvent, 1);
 
       expect(mockOnSampleMove).toHaveBeenCalledWith(1, 0, 1, 1);

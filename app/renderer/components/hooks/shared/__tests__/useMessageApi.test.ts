@@ -4,14 +4,15 @@ import { describe, expect, it, vi } from "vitest";
 
 import { MessageDisplayContext } from "../../../MessageDisplayContext";
 import { useMessageApi } from "../useMessageApi";
+import { type useMessageDisplay } from "../useMessageDisplay";
 
 describe("useMessageApi", () => {
   it("returns context value when used within MessageDisplayContext", () => {
-    const mockContextValue = {
-      error: vi.fn(),
-      info: vi.fn(),
-      success: vi.fn(),
-      warning: vi.fn(),
+    const mockContextValue: ReturnType<typeof useMessageDisplay> = {
+      clearMessages: vi.fn(),
+      dismissMessage: vi.fn(),
+      messages: [],
+      showMessage: vi.fn(),
     };
 
     const wrapper = ({ children }: { children: React.ReactNode }) =>
@@ -49,26 +50,6 @@ describe("useMessageApi", () => {
       React.createElement(
         MessageDisplayContext.Provider,
         { value: null },
-        children,
-      );
-
-    expect(() => {
-      renderHook(() => useMessageApi(), { wrapper });
-    }).toThrow("useMessageApi must be used within MessageDisplayContext");
-
-    consoleErrorSpy.mockRestore();
-  });
-
-  it("throws error when context value is undefined", () => {
-    // Mock console.error to avoid test noise
-    const consoleErrorSpy = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
-
-    const wrapper = ({ children }: { children: React.ReactNode }) =>
-      React.createElement(
-        MessageDisplayContext.Provider,
-        { value: undefined },
         children,
       );
 

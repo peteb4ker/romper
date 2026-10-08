@@ -60,16 +60,4 @@ describe("WizardSourceStep", () => {
     expect(setSdCardPath).toHaveBeenCalledWith("/mock/sdcard");
     expect(setSourceConfirmed).toHaveBeenCalledWith(true);
   });
-  it("shows SD card path display when localStorePath is set and no env var", () => {
-    render(
-      <WizardSourceStep
-        handleSourceSelect={() => {}}
-        localStorePath="/mock/sdcard"
-        sourceOptions={sourceOptions}
-        stateSource="sdcard"
-      />,
-    );
-    // Path should NOT be shown during source step
-    expect(screen.queryByTestId("wizard-sdcard-path-display")).toBeNull();
-  });
 });

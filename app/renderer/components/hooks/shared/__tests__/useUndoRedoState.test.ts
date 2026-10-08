@@ -3,12 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createSequenceEditAction } from "../sequenceUndo";
 import { useUndoRedoState } from "../useUndoRedoState";
+import { addSampleAction, deleteSampleAction } from "./undoActionFixtures";
 
-// Mock types for testing
-const mockAction = {
-  data: { test: "data" },
-  type: "ADD_SAMPLE" as const,
-};
+const mockAction = addSampleAction();
 
 describe("[UC-26] useUndoRedoState", () => {
   beforeEach(() => {
@@ -89,7 +86,7 @@ describe("[UC-26] useUndoRedoState", () => {
       expect(result.current.redoStack).toHaveLength(1);
 
       act(() => {
-        result.current.addAction({ ...mockAction, type: "DELETE_SAMPLE" });
+        result.current.addAction(deleteSampleAction());
       });
 
       expect(result.current.redoStack).toHaveLength(0);

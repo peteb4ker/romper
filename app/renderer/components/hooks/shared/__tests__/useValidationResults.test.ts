@@ -1,7 +1,21 @@
+import type { KitScanResult } from "@romper/shared/db/schema";
+
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import { useValidationResults } from "../useValidationResults";
+
+/** A kit rescan that changed nothing but what's given */
+const scanResult = (overrides: Partial<KitScanResult> = {}): KitScanResult => ({
+  addedSamples: 0,
+  locked: false,
+  metadataUpdated: 0,
+  missingSamples: [],
+  scannedSamples: 0,
+  skippedFiles: [],
+  updatedVoices: 0,
+  ...overrides,
+});
 
 describe("useValidationResults", () => {
   const mockLocalStorePath = "/mock/path";
@@ -35,7 +49,7 @@ describe("useValidationResults", () => {
       mockValidationResult,
     );
     vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
-      data: { scannedSamples: 5, updatedVoices: 2 },
+      data: scanResult({ scannedSamples: 5, updatedVoices: 2 }),
       success: true,
     });
   });
@@ -49,7 +63,7 @@ describe("useValidationResults", () => {
 
     // Mock the rescanKit API
     vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
-      data: { scannedSamples: 5, updatedVoices: 2 },
+      data: scanResult({ scannedSamples: 5, updatedVoices: 2 }),
       success: true,
     });
 
@@ -78,7 +92,7 @@ describe("useValidationResults", () => {
       result.current.openValidationDialog();
     });
 
-    let rescanPromise;
+    let rescanPromise: Promise<void> = Promise.resolve();
 
     // Start rescan process in a separate act
     act(() => {
@@ -256,7 +270,7 @@ describe("useValidationResults", () => {
     // Mock one success and one failure
     vi.mocked(window.electronAPI.rescanKit)
       .mockResolvedValueOnce({
-        data: { scannedSamples: 3, updatedVoices: 1 },
+        data: scanResult({ scannedSamples: 3, updatedVoices: 1 }),
         success: true,
       })
       .mockResolvedValueOnce({

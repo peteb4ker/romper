@@ -1,11 +1,31 @@
 import { renderHook } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type Mock,
+  vi,
+} from "vitest";
+
+import type { ElectronAPI } from "../../../../electron.d";
 
 import { importSetupBankNames, importSetupKit } from "../../../utils/romperDb";
 import {
   bankNamesSourcePath,
   useLocalStoreWizardFileOps,
+  type UseLocalStoreWizardFileOpsOptions,
 } from "../useLocalStoreWizardFileOps";
+import { getElectronAPI } from "../wizardInitUtils";
+
+type Options = UseLocalStoreWizardFileOpsOptions;
+
+/** The API the wizard gets when the preload bridge is missing */
+function missingBridgeApi(): ElectronAPI {
+  vi.stubGlobal("electronAPI", undefined);
+  return getElectronAPI();
+}
 
 vi.mock("../../../../config", () => ({
   config: {
@@ -21,41 +41,39 @@ vi.mock("../../../utils/romperDb", () => ({
 }));
 
 describe("useLocalStoreWizardFileOps", () => {
-  let mockApi: unknown;
-  let mockReportProgress: unknown;
-  let mockReportStepProgress: unknown;
-  let mockSetError: unknown;
-  let mockSetWizardState: unknown;
+  let mockApi: ElectronAPI;
+  let mockReportProgress: Mock<Options["reportProgress"]>;
+  let mockReportStepProgress: Mock<Options["reportStepProgress"]>;
+  let mockSetError: Mock<Options["setError"]>;
+  let mockSetWizardState: Mock<Options["setWizardState"]>;
 
   beforeEach(() => {
-    // Use centralized mocks instead of manual assignment
-    vi.mocked(window.electronAPI.createRomperDb).mockResolvedValue({
+    mockApi = globalThis.electronAPI;
+    vi.mocked(mockApi.copyDir).mockResolvedValue({ success: true });
+    vi.mocked(mockApi.downloadAndExtractArchive).mockResolvedValue({
       success: true,
     });
-    mockApi = {
-      buildPath: vi.fn((...parts) => parts.join("/")),
-      copyDir: vi.fn(() => Promise.resolve({ success: true })),
-      createFolder: vi.fn(() => Promise.resolve()),
-      downloadAndExtractArchive: vi.fn(() =>
-        Promise.resolve({ success: true }),
-      ),
-      getUserHome: vi.fn(() => "/home/user"),
-      listFilesInRoot: vi.fn(() => Promise.resolve(["A0", "B1", "file.txt"])),
-      pathExists: vi.fn(() => Promise.resolve(false)),
-    };
+    vi.mocked(mockApi.listFilesInRoot).mockResolvedValue([
+      "A0",
+      "B1",
+      "file.txt",
+    ]);
 
-    mockReportProgress = vi.fn();
-    mockReportStepProgress = vi.fn(async ({ items, onStep }) => {
-      for (let i = 0; i < items.length; i++) {
-        await onStep(items[i], i);
-      }
-    });
-    mockSetError = vi.fn();
-    mockSetWizardState = vi.fn();
+    mockReportProgress = vi.fn<Options["reportProgress"]>();
+    mockReportStepProgress = vi.fn<Options["reportStepProgress"]>(
+      async ({ items, onStep }) => {
+        for (let i = 0; i < items.length; i++) {
+          await onStep(items[i], i);
+        }
+      },
+    );
+    mockSetError = vi.fn<Options["setError"]>();
+    mockSetWizardState = vi.fn<Options["setWizardState"]>();
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
   });
 
   // --- Test validateSdCardFolder (working tests) ---
@@ -77,7 +95,7 @@ describe("useLocalStoreWizardFileOps", () => {
     });
 
     it("should return error when API is not available", async () => {
-      const apiWithoutList = { ...mockApi, listFilesInRoot: undefined };
+      const apiWithoutList = missingBridgeApi();
 
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
@@ -95,9 +113,10 @@ describe("useLocalStoreWizardFileOps", () => {
     });
 
     it("should return error when no kit folders found", async () => {
-      mockApi.listFilesInRoot = vi.fn(() =>
-        Promise.resolve(["file.txt", "README.md"]),
-      );
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue([
+        "file.txt",
+        "README.md",
+      ]);
 
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
@@ -117,9 +136,11 @@ describe("useLocalStoreWizardFileOps", () => {
     });
 
     it("should return null when kit folders are found", async () => {
-      mockApi.listFilesInRoot = vi.fn(() =>
-        Promise.resolve(["A0", "B12", "file.txt"]),
-      );
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue([
+        "A0",
+        "B12",
+        "file.txt",
+      ]);
 
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
@@ -140,26 +161,16 @@ describe("useLocalStoreWizardFileOps", () => {
   // --- Test validateAndCopySdCardKits ---
   describe("[UC-01] validateAndCopySdCardKits", () => {
     it("stops when a kit can't be copied from the card", async () => {
-      mockApi.listFilesInRoot = vi.fn(() => Promise.resolve(["A0", "B1"]));
-      mockApi.copyDir = vi.fn(() =>
-        Promise.resolve({ error: "card removed", success: false }),
-      );
-      const runSteps = vi.fn(
-        async ({
-          items,
-          onStep,
-        }: {
-          items: string[];
-          onStep: (item: string) => Promise<void>;
-        }) => {
-          for (const item of items) await onStep(item);
-        },
-      );
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(["A0", "B1"]);
+      vi.mocked(mockApi.copyDir).mockResolvedValue({
+        error: "card removed",
+        success: false,
+      });
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
           api: mockApi,
           reportProgress: mockReportProgress,
-          reportStepProgress: runSteps,
+          reportStepProgress: mockReportStepProgress,
           setError: mockSetError,
           setWizardState: mockSetWizardState,
         }),
@@ -172,10 +183,12 @@ describe("useLocalStoreWizardFileOps", () => {
     });
 
     it("should validate and copy kit folders successfully", async () => {
-      mockApi.listFilesInRoot = vi.fn(() =>
-        Promise.resolve(["A0", "B1", "file.txt"]),
-      );
-      mockApi.copyDir = vi.fn(() => Promise.resolve({ success: true }));
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue([
+        "A0",
+        "B1",
+        "file.txt",
+      ]);
+      vi.mocked(mockApi.copyDir).mockResolvedValue({ success: true });
 
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
@@ -201,10 +214,13 @@ describe("useLocalStoreWizardFileOps", () => {
     // #573: a write treats a lowercase card folder as its kit's, so setup
     // must import it, or the first write would delete a kit it never read
     it("[Q-04] copies a lowercase kit folder in as its upper-case kit", async () => {
-      mockApi.listFilesInRoot = vi.fn(() =>
-        Promise.resolve(["a5", "B1", "Ä1", "_save"]),
-      );
-      mockApi.copyDir = vi.fn(() => Promise.resolve({ success: true }));
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue([
+        "a5",
+        "B1",
+        "Ä1",
+        "_save",
+      ]);
+      vi.mocked(mockApi.copyDir).mockResolvedValue({ success: true });
 
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
@@ -229,7 +245,7 @@ describe("useLocalStoreWizardFileOps", () => {
     });
 
     it("should handle validation errors", async () => {
-      mockApi.listFilesInRoot = vi.fn(() => Promise.resolve(["file.txt"])); // No kit folders
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(["file.txt"]); // No kit folders
 
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
@@ -251,12 +267,12 @@ describe("useLocalStoreWizardFileOps", () => {
       });
     });
 
-    it("should handle missing API methods", async () => {
-      const apiWithoutCopyDir = { ...mockApi, copyDir: undefined };
+    it("should handle a missing Electron API", async () => {
+      const apiWithoutBridge = missingBridgeApi();
 
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
-          api: apiWithoutCopyDir,
+          api: apiWithoutBridge,
           reportProgress: mockReportProgress,
           reportStepProgress: mockReportStepProgress,
           setError: mockSetError,
@@ -266,7 +282,7 @@ describe("useLocalStoreWizardFileOps", () => {
 
       await expect(
         result.current.validateAndCopySdCardKits("/sd/card", "/target"),
-      ).rejects.toThrow("Missing Electron API");
+      ).rejects.toThrow("Cannot access filesystem.");
     });
 
     it("should handle empty source path", async () => {
@@ -289,9 +305,9 @@ describe("useLocalStoreWizardFileOps", () => {
   // --- Test extractSquarpArchive ---
   describe("[UC-02] extractSquarpArchive", () => {
     it("should extract archive successfully", async () => {
-      mockApi.downloadAndExtractArchive = vi.fn(() =>
-        Promise.resolve({ success: true }),
-      );
+      vi.mocked(mockApi.downloadAndExtractArchive).mockResolvedValue({
+        success: true,
+      });
 
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
@@ -316,15 +332,11 @@ describe("useLocalStoreWizardFileOps", () => {
     it("should forward progress updates and surface error-callback messages", async () => {
       // Arrange — the archive API invokes the progress and error callbacks
       // the hook passes in (the default mock never calls them).
-      mockApi.downloadAndExtractArchive = vi.fn(
-        async (
-          _target: string,
-          onProgress: (p: unknown) => void,
-          onError: (e: unknown) => void,
-        ) => {
-          onProgress({ percent: 50, phase: "Downloading" });
-          onProgress({ percent: 100, phase: "Downloading" });
-          onError(new Error("network blip"));
+      vi.mocked(mockApi.downloadAndExtractArchive).mockImplementation(
+        async (_target, onProgress, onError) => {
+          onProgress?.({ percent: 50, phase: "Downloading" });
+          onProgress?.({ percent: 100, phase: "Downloading" });
+          onError?.(new Error("network blip"));
           return { success: true };
         },
       );
@@ -369,9 +381,11 @@ describe("useLocalStoreWizardFileOps", () => {
     it("shows main's reason at once for a failure another download can't fix (RE-77)", async () => {
       const reason =
         "The downloaded factory sample archive didn't match the expected checksum, so Romper didn't install it.";
-      mockApi.downloadAndExtractArchive = vi.fn(() =>
-        Promise.resolve({ error: reason, retryable: false, success: false }),
-      );
+      vi.mocked(mockApi.downloadAndExtractArchive).mockResolvedValue({
+        error: reason,
+        retryable: false,
+        success: false,
+      });
       const { result } = renderFileOps();
 
       await expect(
@@ -386,9 +400,10 @@ describe("useLocalStoreWizardFileOps", () => {
     });
 
     it("doesn't retry a failure main doesn't mark retryable", async () => {
-      mockApi.downloadAndExtractArchive = vi.fn(() =>
-        Promise.resolve({ error: "Disk full", success: false }),
-      );
+      vi.mocked(mockApi.downloadAndExtractArchive).mockResolvedValue({
+        error: "Disk full",
+        success: false,
+      });
       const { result } = renderFileOps();
 
       await expect(
@@ -413,8 +428,8 @@ describe("useLocalStoreWizardFileOps", () => {
       };
 
       it("is retried, and the last attempt's reason is shown", async () => {
-        mockApi.downloadAndExtractArchive = vi.fn(() =>
-          Promise.resolve(networkFailure),
+        vi.mocked(mockApi.downloadAndExtractArchive).mockResolvedValue(
+          networkFailure,
         );
         const { result } = renderFileOps();
 
@@ -433,8 +448,7 @@ describe("useLocalStoreWizardFileOps", () => {
       });
 
       it("stops retrying once an attempt succeeds", async () => {
-        mockApi.downloadAndExtractArchive = vi
-          .fn()
+        vi.mocked(mockApi.downloadAndExtractArchive)
           .mockResolvedValueOnce(networkFailure)
           .mockResolvedValueOnce({ success: true });
         const { result } = renderFileOps();
@@ -448,10 +462,7 @@ describe("useLocalStoreWizardFileOps", () => {
     });
 
     it("should handle missing API method", async () => {
-      const { result } = renderFileOps({
-        ...mockApi,
-        downloadAndExtractArchive: undefined,
-      });
+      const { result } = renderFileOps(missingBridgeApi());
 
       await expect(
         result.current.extractSquarpArchive("/target/path"),
@@ -476,11 +487,7 @@ describe("useLocalStoreWizardFileOps", () => {
     });
 
     it("should create database and populate with kits", async () => {
-      mockApi.listFilesInRoot = vi
-        .fn()
-        .mockResolvedValueOnce(["A0", "B1"]) // Kit folders
-        .mockResolvedValueOnce(["sample1.wav", "sample2.wav"]) // A0 samples
-        .mockResolvedValueOnce(["sample3.wav"]); // B1 samples
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(["A0", "B1"]); // Kit folders
 
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
@@ -506,7 +513,7 @@ describe("useLocalStoreWizardFileOps", () => {
     // #564, #567: the card's or the factory archive's bank names arrive
     // with the kits
     it("[UC-12] imports the bank names in the folder it's given", async () => {
-      mockApi.listFilesInRoot = vi.fn().mockResolvedValue(["A0"]);
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(["A0"]);
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
           api: mockApi,
@@ -538,7 +545,7 @@ describe("useLocalStoreWizardFileOps", () => {
     });
 
     it("stops setup when the card's bank names can't be imported", async () => {
-      mockApi.listFilesInRoot = vi.fn().mockResolvedValue(["A0"]);
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(["A0"]);
       vi.mocked(importSetupBankNames).mockRejectedValueOnce(
         new Error("Can't read the bank names in /Volumes/SD: EIO"),
       );
@@ -558,7 +565,7 @@ describe("useLocalStoreWizardFileOps", () => {
     });
 
     it("should handle empty kit folders", async () => {
-      mockApi.listFilesInRoot = vi.fn().mockResolvedValue(["file.txt"]); // No kit folders
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(["file.txt"]); // No kit folders
 
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
@@ -577,11 +584,12 @@ describe("useLocalStoreWizardFileOps", () => {
     });
 
     it("should filter out non-kit folders", async () => {
-      mockApi.listFilesInRoot = vi
-        .fn()
-        .mockResolvedValueOnce(["A0", "invalid-folder", "B12", "README.txt"]) // Mixed content
-        .mockResolvedValueOnce(["sample1.wav"]) // A0 samples
-        .mockResolvedValueOnce(["sample2.wav"]); // B12 samples
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue([
+        "A0",
+        "invalid-folder",
+        "B12",
+        "README.txt",
+      ]); // Mixed content
 
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
@@ -600,18 +608,7 @@ describe("useLocalStoreWizardFileOps", () => {
     // RE-34: main imports each kit; its "voice full" skips become the
     // wizard's notice, one line per voice
     it("[UC-01] [UC-02] turns main's voice-full skips into one warning per voice, naming the files (#518)", async () => {
-      mockApi.listFilesInRoot = vi.fn().mockResolvedValue(["S62"]);
-      const runSteps = vi.fn(
-        async ({
-          items,
-          onStep,
-        }: {
-          items: string[];
-          onStep: (item: string) => Promise<void>;
-        }) => {
-          for (const item of items) await onStep(item);
-        },
-      );
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(["S62"]);
       vi.mocked(importSetupKit).mockResolvedValue({
         addedSamples: 24,
         locked: false,
@@ -633,7 +630,7 @@ describe("useLocalStoreWizardFileOps", () => {
         useLocalStoreWizardFileOps({
           api: mockApi,
           reportProgress: mockReportProgress,
-          reportStepProgress: runSteps,
+          reportStepProgress: mockReportStepProgress,
           setError: mockSetError,
           setWizardState: mockSetWizardState,
         }),

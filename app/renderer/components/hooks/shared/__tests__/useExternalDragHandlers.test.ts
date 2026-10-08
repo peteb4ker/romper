@@ -2,6 +2,7 @@ import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useExternalDragHandlers } from "../useExternalDragHandlers";
+import { type DroppedFileCheck } from "../useFileValidation";
 
 // Mock console methods to avoid noise in tests
 const originalConsole = { ...console };
@@ -16,21 +17,52 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+interface DragEventInit {
+  files?: ArrayLike<File>;
+  items?: ArrayLike<Pick<DataTransferItem, "kind">>;
+}
+
+type Options = Parameters<typeof useExternalDragHandlers>[0];
+
+// jsdom has no DataTransfer, and the hook reads only dataTransfer.files and
+// dataTransfer.items (through Array.from) and calls preventDefault and
+// stopPropagation, so a plain object with those stands in for the event.
+function makeDragEvent({
+  files = [],
+  items = [],
+}: DragEventInit): React.DragEvent {
+  return {
+    dataTransfer: { files, items },
+    preventDefault: vi.fn(),
+    stopPropagation: vi.fn(),
+  } as unknown as React.DragEvent;
+}
+
+/** A format check that passes, with the file's channel count */
+const validFile = (channels?: number): DroppedFileCheck => ({
+  validation: { issues: [], isValid: true, metadata: { channels } },
+});
+
 describe("useExternalDragHandlers", () => {
   const mockFileValidation = {
-    getFilePathFromDrop: vi.fn(),
-    validateDroppedFile: vi.fn(),
+    getFilePathFromDrop:
+      vi.fn<Options["fileValidation"]["getFilePathFromDrop"]>(),
+    validateDroppedFile:
+      vi.fn<Options["fileValidation"]["validateDroppedFile"]>(),
   };
 
   const mockSampleProcessing = {
-    getCurrentKitSamples: vi.fn(),
-    isDuplicateSample: vi.fn(),
-    processAssignment: vi.fn(),
+    getCurrentKitSamples:
+      vi.fn<Options["sampleProcessing"]["getCurrentKitSamples"]>(),
+    isDuplicateSample:
+      vi.fn<Options["sampleProcessing"]["isDuplicateSample"]>(),
+    processAssignment:
+      vi.fn<Options["sampleProcessing"]["processAssignment"]>(),
   };
 
-  const onMessage = vi.fn();
+  const onMessage = vi.fn<NonNullable<Options["onMessage"]>>();
 
-  const defaultProps = {
+  const defaultProps: Options = {
     fileValidation: mockFileValidation,
     isEditable: true,
     onMessage,
@@ -40,26 +72,12 @@ describe("useExternalDragHandlers", () => {
   };
 
   // Shared mock factory functions
-  const createMockFile = (name: string) => ({
-    name,
-    type: "audio/wav",
-  });
+  const createMockFile = (name: string) =>
+    new File([], name, { type: "audio/wav" });
 
-  const createMockEvent = (files: unknown[]) => {
-    // Create corresponding items array for dragover events
-    const items = files.map(() => ({ kind: "file" }));
-
-    return {
-      altKey: false,
-      dataTransfer: {
-        files,
-        items,
-      },
-      preventDefault: vi.fn(),
-      shiftKey: false,
-      stopPropagation: vi.fn(),
-    };
-  };
+  // A drop or dragover carrying files: one "file" item per file
+  const createMockEvent = (files: File[]) =>
+    makeDragEvent({ files, items: files.map(() => ({ kind: "file" })) });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -92,13 +110,7 @@ describe("useExternalDragHandlers", () => {
         useExternalDragHandlers({ ...defaultProps, isEditable: false }),
       );
 
-      const mockEvent = {
-        dataTransfer: {
-          items: [{ kind: "file" }],
-        },
-        preventDefault: vi.fn(),
-        stopPropagation: vi.fn(),
-      } as unknown;
+      const mockEvent = makeDragEvent({ items: [{ kind: "file" }] });
 
       result.current.handleDragOver(mockEvent, 1);
 
@@ -111,13 +123,7 @@ describe("useExternalDragHandlers", () => {
         useExternalDragHandlers(defaultProps),
       );
 
-      const mockEvent = {
-        dataTransfer: {
-          items: [{ kind: "file" }],
-        },
-        preventDefault: vi.fn(),
-        stopPropagation: vi.fn(),
-      } as unknown;
+      const mockEvent = makeDragEvent({ items: [{ kind: "file" }] });
 
       result.current.handleDragOver(mockEvent, 3);
       rerender();
@@ -142,13 +148,7 @@ describe("useExternalDragHandlers", () => {
         },
       };
 
-      const mockEvent = {
-        dataTransfer: {
-          items: mockItems,
-        },
-        preventDefault: vi.fn(),
-        stopPropagation: vi.fn(),
-      } as unknown;
+      const mockEvent = makeDragEvent({ items: mockItems });
 
       result.current.handleDragOver(mockEvent, 1);
 
@@ -167,13 +167,7 @@ describe("useExternalDragHandlers", () => {
         length: 1,
       };
 
-      const mockEvent = {
-        dataTransfer: {
-          items: mockItems,
-        },
-        preventDefault: vi.fn(),
-        stopPropagation: vi.fn(),
-      } as unknown;
+      const mockEvent = makeDragEvent({ items: mockItems });
 
       // Mock Array.from to return our test data
       const originalArrayFrom = Array.from;
@@ -218,9 +212,7 @@ describe("useExternalDragHandlers", () => {
       mockFileValidation.getFilePathFromDrop.mockResolvedValue(
         "/path/to/file.wav",
       );
-      mockFileValidation.validateDroppedFile.mockResolvedValue({
-        validation: { valid: true },
-      });
+      mockFileValidation.validateDroppedFile.mockResolvedValue(validFile());
       mockSampleProcessing.getCurrentKitSamples.mockResolvedValue([]);
       mockSampleProcessing.isDuplicateSample.mockResolvedValue(false);
       mockSampleProcessing.processAssignment.mockResolvedValue(true);
@@ -240,9 +232,9 @@ describe("useExternalDragHandlers", () => {
         return true;
       });
       const channels = [1, 2];
-      mockFileValidation.validateDroppedFile.mockImplementation(async () => ({
-        validation: { metadata: { channels: channels.shift() } },
-      }));
+      mockFileValidation.validateDroppedFile.mockImplementation(async () =>
+        validFile(channels.shift()),
+      );
       const { result } = renderHook(() =>
         useExternalDragHandlers({ ...defaultProps, stereoDrop }),
       );
@@ -453,15 +445,7 @@ describe("useExternalDragHandlers", () => {
         length: 1,
       };
 
-      const mockEvent = {
-        altKey: false,
-        dataTransfer: {
-          files: mockFiles,
-        },
-        preventDefault: vi.fn(),
-        shiftKey: false,
-        stopPropagation: vi.fn(),
-      } as unknown;
+      const mockEvent = makeDragEvent({ files: mockFiles });
 
       // Mock Array.from to return our test data
       const originalArrayFrom = Array.from;
@@ -492,15 +476,9 @@ describe("useExternalDragHandlers", () => {
       expect(result.current.dragOverSlot).toBe(0);
 
       // Drop
-      const dropEvent = {
-        altKey: false,
-        dataTransfer: {
-          files: [{ name: "dropped.wav", type: "audio/wav" }],
-        },
-        preventDefault: vi.fn(),
-        shiftKey: false,
-        stopPropagation: vi.fn(),
-      } as unknown;
+      const dropEvent = makeDragEvent({
+        files: [createMockFile("dropped.wav")],
+      });
 
       await result.current.handleDrop(dropEvent, 2);
       rerender(); // Force rerender to see state updates
@@ -539,13 +517,9 @@ describe("useExternalDragHandlers", () => {
         useExternalDragHandlers(defaultProps),
       );
 
-      const mockEvent = {
-        dataTransfer: {
-          items: [{ kind: "file" }, { kind: "string" }, { kind: "file" }],
-        },
-        preventDefault: vi.fn(),
-        stopPropagation: vi.fn(),
-      } as unknown;
+      const mockEvent = makeDragEvent({
+        items: [{ kind: "file" }, { kind: "string" }, { kind: "file" }],
+      });
 
       result.current.handleDragOver(mockEvent, 1);
 
@@ -557,13 +531,7 @@ describe("useExternalDragHandlers", () => {
         useExternalDragHandlers(defaultProps),
       );
 
-      const mockEvent = {
-        dataTransfer: {
-          items: [],
-        },
-        preventDefault: vi.fn(),
-        stopPropagation: vi.fn(),
-      } as unknown;
+      const mockEvent = makeDragEvent({ items: [] });
 
       result.current.handleDragOver(mockEvent, 1);
 
@@ -576,9 +544,7 @@ describe("useExternalDragHandlers", () => {
     beforeEach(() => {
       vi.clearAllMocks();
       mockFileValidation.getFilePathFromDrop.mockResolvedValue("test.wav");
-      mockFileValidation.validateDroppedFile.mockResolvedValue({
-        validation: { name: "test.wav" },
-      });
+      mockFileValidation.validateDroppedFile.mockResolvedValue(validFile());
       mockSampleProcessing.getCurrentKitSamples.mockResolvedValue([
         "sample1.wav",
       ]);
@@ -631,13 +597,7 @@ describe("useExternalDragHandlers", () => {
         useExternalDragHandlers({ ...defaultProps, samples: fullSamples }),
       );
 
-      const mockEvent = {
-        dataTransfer: {
-          items: [{ kind: "file" }],
-        },
-        preventDefault: vi.fn(),
-        stopPropagation: vi.fn(),
-      } as unknown;
+      const mockEvent = makeDragEvent({ items: [{ kind: "file" }] });
 
       result.current.handleDragOver(mockEvent, 1);
       rerender();
@@ -652,13 +612,7 @@ describe("useExternalDragHandlers", () => {
         useExternalDragHandlers({ ...defaultProps, samples: partialSamples }),
       );
 
-      const mockEvent = {
-        dataTransfer: {
-          items: [{ kind: "file" }],
-        },
-        preventDefault: vi.fn(),
-        stopPropagation: vi.fn(),
-      } as unknown;
+      const mockEvent = makeDragEvent({ items: [{ kind: "file" }] });
 
       result.current.handleDragOver(mockEvent, 3);
       rerender();
@@ -675,13 +629,7 @@ describe("useExternalDragHandlers", () => {
         useExternalDragHandlers({ ...defaultProps, samples: partialSamples }),
       );
 
-      const mockEvent = {
-        dataTransfer: {
-          items: [{ kind: "file" }],
-        },
-        preventDefault: vi.fn(),
-        stopPropagation: vi.fn(),
-      } as unknown;
+      const mockEvent = makeDragEvent({ items: [{ kind: "file" }] });
 
       result.current.handleDragOver(mockEvent, 5);
       rerender();
@@ -715,11 +663,9 @@ describe("useExternalDragHandlers", () => {
 
     beforeEach(() => {
       mockFileValidation.getFilePathFromDrop.mockImplementation(
-        async (file: { name: string }) => `/src/${file.name}`,
+        async (file: File) => `/src/${file.name}`,
       );
-      mockFileValidation.validateDroppedFile.mockResolvedValue({
-        validation: { isValid: true },
-      });
+      mockFileValidation.validateDroppedFile.mockResolvedValue(validFile());
       mockSampleProcessing.getCurrentKitSamples.mockResolvedValue([]);
       mockSampleProcessing.isDuplicateSample.mockResolvedValue(false);
       mockSampleProcessing.processAssignment.mockResolvedValue(true);
@@ -809,9 +755,7 @@ describe("useExternalDragHandlers", () => {
       );
       mockFileValidation.validateDroppedFile.mockImplementation(
         async (filePath: string) =>
-          filePath.endsWith(".txt")
-            ? { rejection: "notWav" }
-            : { validation: { isValid: true } },
+          filePath.endsWith(".txt") ? { rejection: "notWav" } : validFile(),
       );
       const onBatchDropComplete = vi.fn();
       const { result } = renderHook(() =>
@@ -852,7 +796,7 @@ describe("useExternalDragHandlers", () => {
 
     it("reports an error for the files left when the drop fails", async () => {
       mockFileValidation.validateDroppedFile
-        .mockResolvedValueOnce({ validation: { isValid: true } })
+        .mockResolvedValueOnce(validFile())
         .mockRejectedValueOnce(new Error("IPC channel closed"));
       const { result } = renderHook(() =>
         useExternalDragHandlers(defaultProps),
@@ -880,12 +824,10 @@ describe("useExternalDragHandlers", () => {
 
     beforeEach(() => {
       mockFileValidation.getFilePathFromDrop.mockImplementation(
-        async (file: { name: string }) => `/src/${file.name}`,
+        async (file: File) => `/src/${file.name}`,
       );
       mockFileValidation.validateDroppedFile.mockImplementation(
-        async (path: string) => ({
-          validation: { metadata: { channels: path.includes("pad") ? 2 : 1 } },
-        }),
+        async (path: string) => validFile(path.includes("pad") ? 2 : 1),
       );
       mockSampleProcessing.getCurrentKitSamples.mockResolvedValue([]);
       mockSampleProcessing.isDuplicateSample.mockResolvedValue(false);

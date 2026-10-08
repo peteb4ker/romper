@@ -7,7 +7,12 @@ import type { KitStereoPlan } from "@romper/shared/stereoLinkRules";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useLocalStoreWizard } from "../useLocalStoreWizard";
+import type { ElectronAPI } from "../../../../electron.d";
+
+import {
+  type ProgressEvent,
+  useLocalStoreWizard,
+} from "../useLocalStoreWizard";
 
 /** What main's setup import returns, with the given skipped files */
 function importResult(
@@ -61,16 +66,9 @@ describe("useLocalStoreWizard", () => {
     vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
       async (_path) => [],
     );
-    vi.mocked(window.electronAPI.copyDir).mockImplementation(
-      async (_src, _dest) => {},
-    );
+    vi.mocked(window.electronAPI.copyDir).mockResolvedValue({ success: true });
     vi.mocked(window.electronAPI.setupImportKit).mockImplementation(
       async () => ({ data: importResult([]), success: true }),
-    );
-    vi.mocked(window.electronAPI.updateKit).mockImplementation(
-      async (_dbDir, _kitName, _updates) => ({
-        success: true,
-      }),
     );
     vi.mocked(window.electronAPI.updateVoiceAlias).mockImplementation(
       async (_kitName, _voiceNumber, _voiceAlias) => ({
@@ -125,13 +123,14 @@ describe("useLocalStoreWizard", () => {
   });
 
   it("initialize handles errors", async () => {
+    vi.mocked(window.electronAPI.ensureDir).mockRejectedValueOnce(
+      new Error("fail"),
+    );
     const { result } = renderHook(() => useLocalStoreWizard());
-    // Patch initialize to throw
-    result.current.initialize = async () => {
-      result.current.setIsInitializing(true);
-      result.current.setError("fail");
-      result.current.setIsInitializing(false);
-    };
+    act(() => {
+      result.current.setTargetPath("/mock/home/Documents/romper");
+      result.current.setSource("blank");
+    });
     await act(async () => {
       await result.current.initialize();
     });
@@ -282,13 +281,11 @@ describe("useLocalStoreWizard", () => {
   });
 
   it("sets and clears progress during Squarp.net archive initialization", async () => {
-    let progressCb: unknown = null;
     vi.mocked(window.electronAPI.downloadAndExtractArchive).mockImplementation(
       async (_destDir, onProgress) => {
-        progressCb = onProgress;
         // Simulate progress events
-        if (progressCb) progressCb({ percent: 10, phase: "Downloading" });
-        if (progressCb) progressCb({ percent: 80, phase: "Extracting" });
+        onProgress?.({ percent: 10, phase: "Downloading" });
+        onProgress?.({ percent: 80, phase: "Extracting" });
         return { success: true };
       },
     );
@@ -388,7 +385,7 @@ describe("useLocalStoreWizard", () => {
       .mockImplementationOnce(async () => ["A0"]) // SD card
       .mockImplementationOnce(async () => ["A0"]) // local store
       .mockImplementation(async () => []); // kit folder contents
-    vi.mocked(window.electronAPI.copyDir).mockImplementation();
+    vi.mocked(window.electronAPI.copyDir).mockResolvedValue({ success: true });
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
     act(() => {
@@ -410,7 +407,9 @@ describe("useLocalStoreWizard", () => {
       .mockImplementationOnce(async () => ["A0", "B12", "notakit"]) // SD card
       .mockImplementationOnce(async () => ["A0", "B12"]) // local store
       .mockImplementation(async () => []); // kit folder contents
-    const copyDir = vi.fn();
+    const copyDir = vi
+      .fn<ElectronAPI["copyDir"]>()
+      .mockResolvedValue({ success: true });
     vi.mocked(window.electronAPI.copyDir).mockImplementation(copyDir);
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
@@ -445,7 +444,7 @@ describe("useLocalStoreWizard", () => {
   });
 
   it("persists localStorePath after successful initialization", async () => {
-    let setSettingCalled = false;
+    let setSettingCalled: unknown;
     vi.mocked(window.electronAPI.setSetting).mockImplementation(
       async (key, value) => {
         if (key === "localStorePath") setSettingCalled = value;
@@ -464,7 +463,7 @@ describe("useLocalStoreWizard", () => {
   });
 
   it("shows progress for writing to database during DB import", async () => {
-    const progressEvents: unknown[] = [];
+    const progressEvents: ProgressEvent[] = [];
     vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
       async (path) => {
         if (path === "/mock/sd") return ["A0", "B12"];
@@ -475,7 +474,7 @@ describe("useLocalStoreWizard", () => {
         return [];
       },
     );
-    vi.mocked(window.electronAPI.copyDir).mockImplementation(async () => {});
+    vi.mocked(window.electronAPI.copyDir).mockResolvedValue({ success: true });
     // Use the new progress callback for testability
     const { result } = renderHook(() =>
       useLocalStoreWizard((p) => progressEvents.push(p)),

@@ -92,7 +92,7 @@ describe("useSliceSteps", () => {
   });
 
   it("rolls back when the save fails", async () => {
-    mockElectronAPI.updateSliceSteps.mockResolvedValueOnce({
+    vi.mocked(mockElectronAPI.updateSliceSteps).mockResolvedValueOnce({
       error: "disk full",
       success: false,
     });
@@ -121,7 +121,7 @@ describe("useSliceSteps", () => {
     );
     expect(result.current.slicerDivision).toBe(8);
 
-    mockElectronAPI.updateKitSlicerDivision.mockRejectedValueOnce(
+    vi.mocked(mockElectronAPI.updateKitSlicerDivision).mockRejectedValueOnce(
       new Error("boom"),
     );
     await act(async () => {

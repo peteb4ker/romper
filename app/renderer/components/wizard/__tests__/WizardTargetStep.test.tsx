@@ -7,9 +7,8 @@ describe("WizardTargetStep", () => {
   it("renders target path input and buttons", () => {
     render(
       <WizardTargetStep
-        configSdCardPath={"/mock/sdcard"}
         defaultPath="/mock/default"
-        safeSelectLocalStorePath={() => {}}
+        safeSelectLocalStorePath={() => Promise.resolve(undefined)}
         setTargetPath={() => {}}
         stateTargetPath="/mock/target"
       />,

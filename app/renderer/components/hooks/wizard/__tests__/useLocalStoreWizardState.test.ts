@@ -4,11 +4,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useLocalStoreWizardState } from "../useLocalStoreWizardState";
 
 describe("useLocalStoreWizardState", () => {
-  const mockApi = {
-    getDefaultLocalStorePath: vi.fn(),
-    validateLocalStoreDirectory: vi.fn(),
-  } as unknown;
-
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetAllMocks();
@@ -17,7 +12,7 @@ describe("useLocalStoreWizardState", () => {
   describe("initial state", () => {
     it("should initialize with default state values", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       expect(result.current.state).toEqual({
@@ -36,7 +31,7 @@ describe("useLocalStoreWizardState", () => {
   describe("state setters", () => {
     it("should update targetPath", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       act(() => {
@@ -48,7 +43,7 @@ describe("useLocalStoreWizardState", () => {
 
     it("should update source", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       act(() => {
@@ -60,7 +55,7 @@ describe("useLocalStoreWizardState", () => {
 
     it("should update sdCardMounted", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       act(() => {
@@ -72,7 +67,7 @@ describe("useLocalStoreWizardState", () => {
 
     it("should update error", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       act(() => {
@@ -90,7 +85,7 @@ describe("useLocalStoreWizardState", () => {
 
     it("should update isInitializing", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       act(() => {
@@ -102,7 +97,7 @@ describe("useLocalStoreWizardState", () => {
 
     it("should update sdCardPath and clear validation error", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       // First set a validation error using setWizardState
@@ -127,7 +122,7 @@ describe("useLocalStoreWizardState", () => {
 
     it("should update sourceConfirmed", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       act(() => {
@@ -141,7 +136,7 @@ describe("useLocalStoreWizardState", () => {
   describe("progress tracking", () => {
     it("should initialize progress as null", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       expect(result.current.progress).toBeNull();
@@ -149,7 +144,7 @@ describe("useLocalStoreWizardState", () => {
 
     it("should update progress via setProgress", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       const progressEvent = {
@@ -167,7 +162,7 @@ describe("useLocalStoreWizardState", () => {
 
     it("should clear progress by setting to null", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       // Set progress first
@@ -189,7 +184,7 @@ describe("useLocalStoreWizardState", () => {
   describe("default path management", () => {
     it("should initialize defaultPath as empty string", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       expect(result.current.defaultPath).toBe("");
@@ -201,7 +196,7 @@ describe("useLocalStoreWizardState", () => {
   describe("direct state manipulation", () => {
     it("should allow direct state updates via setWizardState", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       act(() => {
@@ -223,7 +218,7 @@ describe("useLocalStoreWizardState", () => {
 
     it("should preserve other state properties when updating via setWizardState", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       // Set initial state
@@ -253,7 +248,7 @@ describe("useLocalStoreWizardState", () => {
   describe("state immutability", () => {
     it("should not mutate previous state when updating", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       const initialState = result.current.state;
@@ -269,7 +264,7 @@ describe("useLocalStoreWizardState", () => {
 
     it("should create new state object on each update", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       const state1 = result.current.state;
@@ -297,7 +292,7 @@ describe("useLocalStoreWizardState", () => {
   describe("return values", () => {
     it("should return all expected functions and state", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       expect(result.current).toEqual({
@@ -323,7 +318,7 @@ describe("useLocalStoreWizardState", () => {
   describe("edge cases", () => {
     it("should handle rapid successive updates", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       act(() => {
@@ -337,7 +332,7 @@ describe("useLocalStoreWizardState", () => {
 
     it("should handle setting same value multiple times", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       const initialState = result.current.state;
@@ -354,7 +349,7 @@ describe("useLocalStoreWizardState", () => {
 
     it("should handle undefined and empty string values", () => {
       const { result } = renderHook(() =>
-        useLocalStoreWizardState({ api: mockApi }),
+        useLocalStoreWizardState({ api: globalThis.electronAPI }),
       );
 
       act(() => {

@@ -73,10 +73,7 @@ export async function findStaleCardEntries(
     withFileTypes: true,
   });
   for (const entry of entries) {
-    // A kit folder by the rule setup imports by (#573): `a5` is kit A5's
-    const kitName = entry.isDirectory()
-      ? kitNameOfCardFolder(entry.name)
-      : null;
+    const kitName = kitOfFolder(entry);
     if (kitName) {
       if (keepKits.has(kitName)) continue;
       const keep = kits.get(kitName);
@@ -257,6 +254,14 @@ function isSameOrInside(child: string, parent: string): boolean {
     relative === "" ||
     (relative.split(path.sep)[0] !== ".." && !path.isAbsolute(relative))
   );
+}
+
+/**
+ * The kit a card-root entry holds, by the rule setup imports by (#573): a
+ * folder `a5` is kit A5's. Null for anything else.
+ */
+function kitOfFolder(entry: fs.Dirent): null | string {
+  return entry.isDirectory() ? kitNameOfCardFolder(entry.name) : null;
 }
 
 function lowerCaseSet(names: Iterable<string>): Set<string> {

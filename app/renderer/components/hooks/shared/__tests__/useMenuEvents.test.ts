@@ -93,4 +93,30 @@ describe("useMenuEvents", () => {
       renderHook(() => useMenuEvents(handlers));
     }).not.toThrow();
   });
+
+  describe("[Q-01] subscribes once (#462)", () => {
+    it("keeps its listeners when it gets new handlers, and calls the latest", () => {
+      const first = { onAbout: vi.fn(), onScanAll: vi.fn() };
+      const { rerender } = renderHook((handlers) => useMenuEvents(handlers), {
+        initialProps: first,
+      });
+      const subscribed = mockAddEventListener.mock.calls.length;
+      expect(subscribed).toBe(6);
+
+      // The view passes new handler objects on every render
+      const latest = { onAbout: vi.fn(), onScanAll: vi.fn() };
+      rerender({ ...first });
+      rerender(latest);
+
+      expect(mockAddEventListener).toHaveBeenCalledTimes(subscribed);
+      expect(mockRemoveEventListener).not.toHaveBeenCalled();
+
+      const scanHandler = mockAddEventListener.mock.calls.find(
+        (call) => call[0] === "menu-scan-all-kits",
+      )?.[1];
+      scanHandler?.();
+      expect(latest.onScanAll).toHaveBeenCalledTimes(1);
+      expect(first.onScanAll).not.toHaveBeenCalled();
+    });
+  });
 });

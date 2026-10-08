@@ -43,8 +43,10 @@ export function useKitSearch({
 
   // Filter kits based on search query
   const filteredKits = useMemo(() => {
+    // No search: the kits themselves, so the kit cards skip the redraw a
+    // copy would cause while the first letter is typed (#462)
     if (!searchQuery || searchQuery.length < 2) {
-      return kits.map((kit) => ({ ...kit })); // Return all kits without search matches
+      return kits;
     }
 
     return filterKitsWithSearch(kits, searchQuery, allKitSamples);

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { duplicateKit, validateKitSlot } from "../../utils/kitOperations";
 
@@ -28,14 +28,14 @@ export function useKitDuplication({ onRefreshKits }: UseKitDuplicationProps) {
     };
   }, []);
 
-  const trackNewKit = (kitName: string) => {
+  const trackNewKit = useCallback((kitName: string) => {
     setNewlyDuplicatedKit(kitName);
     if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
     clearTimerRef.current = setTimeout(
       () => setNewlyDuplicatedKit(null),
       ANIMATION_CLEAR_MS,
     );
-  };
+  }, []);
 
   const handleDuplicateKit = async () => {
     setDuplicateKitError(null);
@@ -57,22 +57,23 @@ export function useKitDuplication({ onRefreshKits }: UseKitDuplicationProps) {
     }
   };
 
-  const duplicateKitDirect = async (
-    source: string,
-    dest: string,
-  ): Promise<{ error?: string }> => {
-    if (!validateKitSlot(dest)) {
-      return { error: "Invalid destination slot. Use format A0-Z99." };
-    }
-    try {
-      await duplicateKit(source, dest);
-      trackNewKit(dest);
-      if (onRefreshKits) onRefreshKits(dest);
-      return {};
-    } catch (err) {
-      return { error: err instanceof Error ? err.message : String(err) };
-    }
-  };
+  // Stable, since it reaches every memoized kit card (#462)
+  const duplicateKitDirect = useCallback(
+    async (source: string, dest: string): Promise<{ error?: string }> => {
+      if (!validateKitSlot(dest)) {
+        return { error: "Invalid destination slot. Use format A0-Z99." };
+      }
+      try {
+        await duplicateKit(source, dest);
+        trackNewKit(dest);
+        if (onRefreshKits) onRefreshKits(dest);
+        return {};
+      } catch (err) {
+        return { error: err instanceof Error ? err.message : String(err) };
+      }
+    },
+    [onRefreshKits, trackNewKit],
+  );
 
   return {
     duplicateKitDest,

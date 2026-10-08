@@ -14,7 +14,7 @@ const NO_KITS: KitWithRelations[] = [];
 
 interface UseKitBrowserProps {
   kitListRef: RefObject<KitListComponent | null>;
-  kits: KitWithRelations[];
+  kits?: KitWithRelations[];
   localStorePath?: null | string;
   onMessage?: (text: string, type?: string, duration?: number) => void;
   onRefreshKits?: (scrollToKit?: string) => void;

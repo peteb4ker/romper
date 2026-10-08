@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import {
   deleteKit,
@@ -64,38 +64,45 @@ export function useKitDeletion({
     setDeleteSummary(null);
   };
 
-  const requestDeleteSummary = async (
-    kitName: string,
-  ): Promise<{ locked: boolean; sampleCount: number } | null> => {
-    try {
-      const summary = await getKitDeleteSummary(kitName);
-      if (summary.locked) {
-        onMessage?.(
-          "Kit is locked. Unlock it before deleting.",
-          "warning",
-          4000,
-        );
+  // Stable, like deleteKitDirect: both reach every memoized kit card (#462)
+  const requestDeleteSummary = useCallback(
+    async (
+      kitName: string,
+    ): Promise<{ locked: boolean; sampleCount: number } | null> => {
+      try {
+        const summary = await getKitDeleteSummary(kitName);
+        if (summary.locked) {
+          onMessage?.(
+            "Kit is locked. Unlock it before deleting.",
+            "warning",
+            4000,
+          );
+          return null;
+        }
+        return { locked: false, sampleCount: summary.sampleCount };
+      } catch (err) {
+        onMessage?.(formatKitOperationError(err, "delete"), "error", 5000);
         return null;
       }
-      return { locked: false, sampleCount: summary.sampleCount };
-    } catch (err) {
-      onMessage?.(formatKitOperationError(err, "delete"), "error", 5000);
-      return null;
-    }
-  };
+    },
+    [onMessage],
+  );
 
-  const deleteKitDirect = async (kitName: string): Promise<void> => {
-    try {
-      await deleteKit(kitName);
-      // Success feedback handled by exit animation — no toast needed
-      onRefreshKits?.();
-    } catch (err) {
-      onMessage?.(formatKitOperationError(err, "delete"), "error", 5000);
-      // Rethrow so the caller (KitGridItem) can roll back its exit animation —
-      // otherwise a failed delete leaves the card looking deleted.
-      throw err;
-    }
-  };
+  const deleteKitDirect = useCallback(
+    async (kitName: string): Promise<void> => {
+      try {
+        await deleteKit(kitName);
+        // Success feedback handled by exit animation — no toast needed
+        onRefreshKits?.();
+      } catch (err) {
+        onMessage?.(formatKitOperationError(err, "delete"), "error", 5000);
+        // Rethrow so the caller (KitGridItem) can roll back its exit animation —
+        // otherwise a failed delete leaves the card looking deleted.
+        throw err;
+      }
+    },
+    [onMessage, onRefreshKits],
+  );
 
   return {
     deleteKitDirect,

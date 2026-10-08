@@ -10,6 +10,7 @@ import React, {
   useState,
 } from "react";
 import {
+  areEqual,
   ListChildComponentProps,
   ListOnItemsRenderedProps,
   VariableSizeList,
@@ -169,11 +170,13 @@ function getRowExpansionExtra(
   return maxLines * MATCH_LINE_HEIGHT;
 }
 
-const GridRowRenderer: React.FC<ListChildComponentProps<GridRowData>> = ({
+// Memoized with react-window's areEqual, so a scroll renders only the rows
+// it brings into view, not every row already showing (#462)
+const GridRowRenderer = React.memo(function GridRowRenderer({
   data,
   index,
   style,
-}) => {
+}: ListChildComponentProps<GridRowData>) {
   const row = data.rows[index];
   if (!row) return null;
 
@@ -268,7 +271,7 @@ const GridRowRenderer: React.FC<ListChildComponentProps<GridRowData>> = ({
       </div>
     </div>
   );
-};
+}, areEqual);
 
 const gridRowKey = (index: number, data: GridRowData): string => {
   const row = data.rows[index];
@@ -425,28 +428,54 @@ const KitGrid = forwardRef<KitGridHandle, KitGridProps>(
       [rows, onVisibleBankChange],
     );
 
-    const itemData: GridRowData = {
-      bankNames,
-      focusedIdx,
-      gridWidth: columnCount * CARD_WIDTH + (columnCount - 1) * GAP,
-      isCreatingKit,
-      kitData,
-      kitsToDisplay,
-      newlyAnimatedKit,
-      onBankNameChange,
-      onCreateKitInBank,
-      onDelete,
-      onDeleteKit,
-      onDuplicate,
-      onDuplicateKit,
-      onFocusKit,
-      onRequestDeleteSummary,
-      onSelectKit,
-      onToggleFavorite,
-      rows,
-      sampleCounts,
-      setFocus,
-    };
+    // The same object until something a row shows changes, so the rows
+    // (memoized) skip renders their parent's re-renders would cause (#462)
+    const itemData = useMemo<GridRowData>(
+      () => ({
+        bankNames,
+        focusedIdx,
+        gridWidth: columnCount * CARD_WIDTH + (columnCount - 1) * GAP,
+        isCreatingKit,
+        kitData,
+        kitsToDisplay,
+        newlyAnimatedKit,
+        onBankNameChange,
+        onCreateKitInBank,
+        onDelete,
+        onDeleteKit,
+        onDuplicate,
+        onDuplicateKit,
+        onFocusKit,
+        onRequestDeleteSummary,
+        onSelectKit,
+        onToggleFavorite,
+        rows,
+        sampleCounts,
+        setFocus,
+      }),
+      [
+        bankNames,
+        columnCount,
+        focusedIdx,
+        isCreatingKit,
+        kitData,
+        kitsToDisplay,
+        newlyAnimatedKit,
+        onBankNameChange,
+        onCreateKitInBank,
+        onDelete,
+        onDeleteKit,
+        onDuplicate,
+        onDuplicateKit,
+        onFocusKit,
+        onRequestDeleteSummary,
+        onSelectKit,
+        onToggleFavorite,
+        rows,
+        sampleCounts,
+        setFocus,
+      ],
+    );
 
     return (
       <div

@@ -1,4 +1,4 @@
-echo "Running pre-commit checks: typecheck, lint, unit + integration tests, build"
+echo "Running pre-commit checks: typecheck, and lint + related unit tests for the staged files"
 
 CURRENT_BRANCH=$(git branch --show-current)
 if [ "$CURRENT_BRANCH" = "main" ]; then
@@ -9,12 +9,18 @@ fi
 
 # The checks run against the working tree, so unstaged edits would be
 # validated but not committed. Require the index to match the working tree.
+# That also means there are no partly staged files for lint-staged to hide,
+# so it runs with --no-stash: the stash list is shared by every worktree,
+# and other sessions use it.
 if ! git diff --quiet; then
   echo "Unstaged changes to tracked files; stage or discard them first:"
   git diff --name-only
   exit 1
 fi
 
+# The typecheck (both configs), and lint-staged.config.mjs on the staged
+# files: ESLint --fix, and the unit tests related to them. CI runs the full
+# lint, unit and integration suites and the build (#699).
 if ! npm run pre-commit; then
   echo "Pre-commit checks failed; nothing was committed. Fix the failures, stage the fixes, and commit again (not --amend)."
   exit 1

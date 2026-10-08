@@ -6,12 +6,8 @@ import {
   createTempStore,
   removeTempStore,
 } from "../../../../../tests/integration/support/tempStore.js";
-import {
-  addKit,
-  addSample,
-  getKitSamples,
-  moveSample,
-} from "../../romperDbCoreORM";
+import { addKit, addSample, getKitSamples } from "../../romperDbCoreORM";
+import { moveSampleInsertOnly } from "../sampleMovement.js";
 
 describe("[UC-21] Drag & Drop Operations - Integration Tests", () => {
   let tempDir: string;
@@ -67,7 +63,7 @@ describe("[UC-21] Drag & Drop Operations - Integration Tests", () => {
     expect(voice1Samples.map((s) => s.filename)).toEqual(sampleNames);
 
     // Perform move: sample6 (slot 5) to slot 1 (INSERT behavior)
-    const result = moveSample(
+    const result = moveSampleInsertOnly(
       dbDir,
       testKitName,
       1, // fromVoice
@@ -129,7 +125,7 @@ describe("[UC-21] Drag & Drop Operations - Integration Tests", () => {
     }
 
     // Move v1_sample2 from voice 1 slot 1 to voice 2 slot 1
-    const result = moveSample(
+    const result = moveSampleInsertOnly(
       dbDir,
       testKitName,
       1, // fromVoice
@@ -181,7 +177,7 @@ describe("[UC-21] Drag & Drop Operations - Integration Tests", () => {
     }
 
     // Move s2 from slot 1 to slot 4
-    const result = moveSample(dbDir, testKitName, 1, 1, 1, 4);
+    const result = moveSampleInsertOnly(dbDir, testKitName, 1, 1, 1, 4);
     expect(result.success).toBe(true);
 
     const samples = await getKitSamples(dbDir, testKitName);
@@ -213,7 +209,7 @@ describe("[UC-21] Drag & Drop Operations - Integration Tests", () => {
     }
 
     // Move s4 from slot 3 to slot 1
-    const result = moveSample(dbDir, testKitName, 1, 3, 1, 1);
+    const result = moveSampleInsertOnly(dbDir, testKitName, 1, 3, 1, 1);
     expect(result.success).toBe(true);
 
     const samples = await getKitSamples(dbDir, testKitName);
@@ -245,7 +241,7 @@ describe("[UC-21] Drag & Drop Operations - Integration Tests", () => {
     }
 
     // Move s3 from slot 2 to slot 0
-    const result = moveSample(dbDir, testKitName, 1, 2, 1, 0);
+    const result = moveSampleInsertOnly(dbDir, testKitName, 1, 2, 1, 0);
     expect(result.success).toBe(true);
 
     const samples = await getKitSamples(dbDir, testKitName);
@@ -275,7 +271,7 @@ describe("[UC-21] Drag & Drop Operations - Integration Tests", () => {
     }
 
     // Move s1 from slot 0 to slot 2 (which becomes an append after removal)
-    const result = moveSample(dbDir, testKitName, 1, 0, 1, 2);
+    const result = moveSampleInsertOnly(dbDir, testKitName, 1, 0, 1, 2);
     expect(result.success).toBe(true);
 
     const samples = await getKitSamples(dbDir, testKitName);

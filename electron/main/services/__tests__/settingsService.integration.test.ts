@@ -52,47 +52,6 @@ describe("[UC-35] SettingsService Integration Tests", () => {
     vi.restoreAllMocks();
   });
 
-  describe("getLocalStorePath", () => {
-    it("should return the localStorePath from settings", () => {
-      const result = settingsService.getLocalStorePath(mockInMemorySettings);
-      expect(result).toBe("/test/local/store");
-    });
-
-    it("should return environment override when provided", () => {
-      const result = settingsService.getLocalStorePath(
-        mockInMemorySettings,
-        "/override/path",
-      );
-      expect(result).toBe("/override/path");
-    });
-
-    it("should prefer environment override over settings", () => {
-      const result = settingsService.getLocalStorePath(
-        mockInMemorySettings,
-        "/env/path",
-      );
-      expect(result).toBe("/env/path");
-    });
-
-    it("should return null when no path is configured", () => {
-      const emptySettings: InMemorySettings = {
-        localStorePath: null,
-      };
-      const result = settingsService.getLocalStorePath(emptySettings);
-      expect(result).toBeNull();
-    });
-
-    it("should return null for empty string localStorePath", () => {
-      const settings: InMemorySettings = {
-        localStorePath: "",
-      };
-      // Note: SettingsService.getLocalStorePath returns envOverride || inMemorySettings.localStorePath || null
-      // Empty string is falsy so it returns null
-      const result = settingsService.getLocalStorePath(settings);
-      expect(result).toBeNull();
-    });
-  });
-
   describe("readSettings", () => {
     it("should return a copy of in-memory settings", () => {
       const result = settingsService.readSettings(mockInMemorySettings);
@@ -148,47 +107,6 @@ describe("[UC-35] SettingsService Integration Tests", () => {
 
       const result = settingsService.readSettings(settings);
       expect((result as Record<string, unknown>).customProperty).toBe("custom");
-    });
-  });
-
-  describe("validateLocalStorePath", () => {
-    it("should return success with path when localStorePath is set", () => {
-      const result =
-        settingsService.validateLocalStorePath(mockInMemorySettings);
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.path).toBe("/test/local/store");
-      }
-    });
-
-    it("should return success with environment override path", () => {
-      const emptySettings: InMemorySettings = {
-        localStorePath: null,
-      };
-
-      const result = settingsService.validateLocalStorePath(
-        emptySettings,
-        "/override/path",
-      );
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.path).toBe("/override/path");
-      }
-    });
-
-    it("should return failure when no path is configured", () => {
-      const emptySettings: InMemorySettings = {
-        localStorePath: null,
-      };
-
-      const result = settingsService.validateLocalStorePath(emptySettings);
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toContain("No local store configured");
-      }
     });
   });
 
@@ -281,26 +199,6 @@ describe("[UC-35] SettingsService Integration Tests", () => {
       // Read settings back
       const result = settingsService.readSettings(mockInMemorySettings);
       expect(result.localStorePath).toBe("/updated/path");
-    });
-
-    it("should validate a path after writing it", () => {
-      const settings: InMemorySettings = {
-        localStorePath: null,
-      };
-
-      // Initially invalid
-      const invalidResult = settingsService.validateLocalStorePath(settings);
-      expect(invalidResult.success).toBe(false);
-
-      // Write a path
-      settingsService.writeSetting(settings, "localStorePath", "/new/store");
-
-      // Now valid
-      const validResult = settingsService.validateLocalStorePath(settings);
-      expect(validResult.success).toBe(true);
-      if (validResult.success) {
-        expect(validResult.path).toBe("/new/store");
-      }
     });
 
     it("should handle multiple write-read cycles", () => {

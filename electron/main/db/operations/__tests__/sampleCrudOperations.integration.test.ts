@@ -10,8 +10,6 @@ import { addKit } from "../kitCrudOperations.js";
 import {
   addSample,
   deleteSamples,
-  deleteSamplesWithoutReindexing,
-  getAllSamples,
   getKitSamples,
   updateSampleMetadata,
 } from "../sampleCrudOperations.js";
@@ -132,37 +130,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
       expect(sample.wav_bitrate).toBe(2304000);
       expect(sample.wav_channels).toBe(2);
       expect(sample.wav_sample_rate).toBe(48000);
-    });
-  });
-
-  describe("getAllSamples", () => {
-    test("returns empty array when no samples exist", () => {
-      const result = getAllSamples(dbDir);
-      expect(result.success).toBe(true);
-      expect(result.data).toEqual([]);
-    });
-
-    test("returns samples across all kits", () => {
-      addKit(dbDir, { bank_letter: "B", name: "OtherKit" });
-
-      addSample(dbDir, {
-        filename: "kick.wav",
-        kit_name: testKitName,
-        slot_number: 0,
-        source_path: "/samples/kick.wav",
-        voice_number: 1,
-      });
-      addSample(dbDir, {
-        filename: "snare.wav",
-        kit_name: "OtherKit",
-        slot_number: 0,
-        source_path: "/samples/snare.wav",
-        voice_number: 1,
-      });
-
-      const result = getAllSamples(dbDir);
-      expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(2);
     });
   });
 
@@ -353,64 +320,6 @@ describe("Sample CRUD Operations - Integration Tests", () => {
       expect(voice1[0].filename).toBe("s0.wav");
       expect(voice1[1].filename).toBe("s2.wav");
       expect(voice1.map((s) => s.slot_number)).toEqual([0, 1]);
-    });
-  });
-
-  describe("deleteSamplesWithoutReindexing", () => {
-    test("deletes samples but does not reindex remaining slots", () => {
-      addSample(dbDir, {
-        filename: "s0.wav",
-        kit_name: testKitName,
-        slot_number: 0,
-        source_path: "/samples/s0.wav",
-        voice_number: 1,
-      });
-      addSample(dbDir, {
-        filename: "s1.wav",
-        kit_name: testKitName,
-        slot_number: 1,
-        source_path: "/samples/s1.wav",
-        voice_number: 1,
-      });
-      addSample(dbDir, {
-        filename: "s2.wav",
-        kit_name: testKitName,
-        slot_number: 2,
-        source_path: "/samples/s2.wav",
-        voice_number: 1,
-      });
-
-      const result = deleteSamplesWithoutReindexing(dbDir, testKitName, {
-        slotNumber: 1,
-        voiceNumber: 1,
-      });
-      expect(result.success).toBe(true);
-      expect(result.data!.deletedSamples).toHaveLength(1);
-
-      // Without reindexing, remaining slots keep their original numbers (gap at 1)
-      const remaining = getKitSamples(dbDir, testKitName);
-      const voice1 = remaining
-        .data!.filter((s) => s.voice_number === 1)
-        .sort((a, b) => a.slot_number - b.slot_number);
-      expect(voice1).toHaveLength(2);
-      expect(voice1[0].slot_number).toBe(0);
-      expect(voice1[1].slot_number).toBe(2); // Gap at slot 1 - no reindex
-    });
-
-    test("returns deleted samples info", () => {
-      addSample(dbDir, {
-        filename: "kick.wav",
-        kit_name: testKitName,
-        slot_number: 0,
-        source_path: "/samples/kick.wav",
-        voice_number: 1,
-      });
-
-      const result = deleteSamplesWithoutReindexing(dbDir, testKitName, {
-        voiceNumber: 1,
-      });
-      expect(result.data!.deletedSamples).toHaveLength(1);
-      expect(result.data!.deletedSamples[0].filename).toBe("kick.wav");
     });
   });
 });

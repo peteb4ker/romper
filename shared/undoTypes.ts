@@ -52,12 +52,8 @@ export interface MoveSampleAction extends UndoAction {
     }>;
     fromSlot: number;
     fromVoice: number;
-    mode?: "insert" | "overwrite";
+    mode?: "insert";
     movedSample: {
-      filename: string;
-      source_path: string;
-    };
-    replacedSample?: {
       filename: string;
       source_path: string;
     };
@@ -84,12 +80,8 @@ export interface MoveSampleBetweenKitsAction extends UndoAction {
     fromKit: string;
     fromSlot: number;
     fromVoice: number;
-    mode: "insert" | "overwrite";
+    mode: "insert";
     movedSample: {
-      filename: string;
-      source_path: string;
-    };
-    replacedSample?: {
       filename: string;
       source_path: string;
     };

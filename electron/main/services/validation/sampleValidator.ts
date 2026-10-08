@@ -1,6 +1,3 @@
-import type { DbResult } from "@romper/shared/db/schema.js";
-
-import { getErrorMessage } from "@romper/shared/errorUtils.js";
 import * as fs from "node:fs";
 
 import { getAudioMetadata } from "../../audioUtils.js";
@@ -8,7 +5,7 @@ import {
   toWavMetadataFields,
   type WavMetadataFields,
 } from "../../db/operations/wavMetadataFields.js";
-import { getKit, getKitSamples } from "../../db/romperDbCoreORM.js";
+import { getKit } from "../../db/romperDbCoreORM.js";
 
 /**
  * Service for sample validation operations
@@ -48,63 +45,6 @@ export class SampleValidator {
       isValid: true,
       metadata: toWavMetadataFields(metadata.data ?? {}),
     };
-  }
-
-  /**
-   * Task 5.2.5: Validate source_path files for existing samples
-   */
-  validateSampleSources(
-    dbPath: string,
-    kitName: string,
-  ): DbResult<{
-    invalidSamples: Array<{
-      error: string;
-      filename: string;
-      source_path: string;
-    }>;
-    totalSamples: number;
-    validSamples: number;
-  }> {
-    try {
-      const samplesResult = getKitSamples(dbPath, kitName);
-      if (!samplesResult.success) {
-        return { error: samplesResult.error, success: false };
-      }
-
-      const samples = samplesResult.data || [];
-      const invalidSamples: Array<{
-        error: string;
-        filename: string;
-        source_path: string;
-      }> = [];
-
-      for (const sample of samples) {
-        if (sample.source_path) {
-          const validation = this.validateSampleFile(sample.source_path);
-          if (!validation.isValid) {
-            invalidSamples.push({
-              error: validation.error || "Unknown validation error",
-              filename: sample.filename,
-              source_path: sample.source_path,
-            });
-          }
-        }
-      }
-
-      return {
-        data: {
-          invalidSamples,
-          totalSamples: samples.length,
-          validSamples: samples.length - invalidSamples.length,
-        },
-        success: true,
-      };
-    } catch (error) {
-      return {
-        error: `Failed to validate sample sources: ${getErrorMessage(error)}`,
-        success: false,
-      };
-    }
   }
 
   /**

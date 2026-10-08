@@ -6,10 +6,7 @@ vi.mock("../../utils/dbUtilities.js", () => ({
 }));
 
 import { withDbTransaction } from "../../utils/dbUtilities.js";
-import {
-  canVoiceAcceptSample,
-  moveSampleInsertOnly,
-} from "../sampleMovement.js";
+import { moveSampleInsertOnly } from "../sampleMovement.js";
 
 const mockWithDbTransaction = vi.mocked(withDbTransaction);
 
@@ -33,129 +30,6 @@ function createMockSample(overrides: Record<string, unknown> = {}) {
 describe("sampleMovement", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  describe("canVoiceAcceptSample", () => {
-    it("returns success with true when voice has fewer than 12 samples", () => {
-      // Mock withDbTransaction to call the callback and return DbResult
-      mockWithDbTransaction.mockImplementation((_dbDir, fn) => {
-        const mockSamples = Array.from({ length: 5 }, (_, i) =>
-          createMockSample({ id: i, slot_number: i }),
-        );
-
-        const mockDb = {
-          select: () => ({
-            from: () => ({
-              where: () => ({
-                all: () => mockSamples,
-              }),
-            }),
-          }),
-        };
-
-        const result = fn(mockDb as never, {} as never);
-        return { data: result, success: true };
-      });
-
-      const result = canVoiceAcceptSample("/tmp/db", "A0", 1);
-
-      expect(result).toEqual({ data: true, success: true });
-    });
-
-    it("returns success with false when voice has 12 samples", () => {
-      mockWithDbTransaction.mockImplementation((_dbDir, fn) => {
-        const mockSamples = Array.from({ length: 12 }, (_, i) =>
-          createMockSample({ id: i, slot_number: i }),
-        );
-
-        const mockDb = {
-          select: () => ({
-            from: () => ({
-              where: () => ({
-                all: () => mockSamples,
-              }),
-            }),
-          }),
-        };
-
-        const result = fn(mockDb as never, {} as never);
-        return { data: result, success: true };
-      });
-
-      const result = canVoiceAcceptSample("/tmp/db", "A0", 1);
-
-      expect(result).toEqual({ data: false, success: true });
-    });
-
-    it("returns success with true when voice has 0 samples", () => {
-      mockWithDbTransaction.mockImplementation((_dbDir, fn) => {
-        const mockDb = {
-          select: () => ({
-            from: () => ({
-              where: () => ({
-                all: () => [],
-              }),
-            }),
-          }),
-        };
-
-        const result = fn(mockDb as never, {} as never);
-        return { data: result, success: true };
-      });
-
-      const result = canVoiceAcceptSample("/tmp/db", "A0", 1);
-
-      expect(result).toEqual({ data: true, success: true });
-    });
-
-    it("returns success with true when voice has 11 samples", () => {
-      mockWithDbTransaction.mockImplementation((_dbDir, fn) => {
-        const mockSamples = Array.from({ length: 11 }, (_, i) =>
-          createMockSample({ id: i, slot_number: i }),
-        );
-
-        const mockDb = {
-          select: () => ({
-            from: () => ({
-              where: () => ({
-                all: () => mockSamples,
-              }),
-            }),
-          }),
-        };
-
-        const result = fn(mockDb as never, {} as never);
-        return { data: result, success: true };
-      });
-
-      const result = canVoiceAcceptSample("/tmp/db", "A0", 1);
-
-      expect(result).toEqual({ data: true, success: true });
-    });
-
-    it("passes correct dbDir to withDbTransaction", () => {
-      mockWithDbTransaction.mockImplementation((_dbDir, fn) => {
-        const mockDb = {
-          select: () => ({
-            from: () => ({
-              where: () => ({
-                all: () => [],
-              }),
-            }),
-          }),
-        };
-
-        const result = fn(mockDb as never, {} as never);
-        return { data: result, success: true };
-      });
-
-      canVoiceAcceptSample("/my/custom/path", "A0", 1);
-
-      expect(mockWithDbTransaction).toHaveBeenCalledWith(
-        "/my/custom/path",
-        expect.any(Function),
-      );
-    });
   });
 
   describe("[UC-21] moveSampleInsertOnly", () => {

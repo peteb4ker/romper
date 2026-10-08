@@ -13,6 +13,7 @@ import {
 } from "../../../../tests/integration/support/tempStore.js";
 import { addKit, getKit, getKitSamples } from "../../db/romperDbCoreORM.js";
 import { SampleService } from "../sampleService.js";
+import { sampleValidator } from "../validation/sampleValidator.js";
 
 // Test utilities
 // Each test gets its own local store under the OS temp dir (see beforeEach),
@@ -373,41 +374,6 @@ describe("SampleService Integration Tests", () => {
     });
   });
 
-  describe("deleteSampleFromSlotWithoutReindexing", () => {
-    it("should delete a sample without reindexing remaining slots", () => {
-      const wavPath1 = path.join(testWavDir, "s0.wav");
-      const wavPath2 = path.join(testWavDir, "s1.wav");
-      const wavPath3 = path.join(testWavDir, "s2.wav");
-      createTestWavFile(wavPath1);
-      createTestWavFile(wavPath2);
-      createTestWavFile(wavPath3);
-
-      sampleService.addSampleToSlot(mockInMemorySettings, "A1", 1, 0, wavPath1);
-      sampleService.addSampleToSlot(mockInMemorySettings, "A1", 1, 1, wavPath2);
-      sampleService.addSampleToSlot(mockInMemorySettings, "A1", 1, 2, wavPath3);
-
-      // Delete middle sample without reindexing
-      const deleteResult = sampleService.deleteSampleFromSlotWithoutReindexing(
-        mockInMemorySettings,
-        "A1",
-        1,
-        1,
-      );
-
-      expect(deleteResult.success).toBe(true);
-
-      // Remaining samples should have a gap at slot 1
-      const samplesResult = getKitSamples(TEST_DB_PATH, "A1");
-      const voice1 = samplesResult
-        .data!.filter((s) => s.voice_number === 1)
-        .sort((a, b) => a.slot_number - b.slot_number);
-
-      expect(voice1).toHaveLength(2);
-      expect(voice1[0].slot_number).toBe(0);
-      expect(voice1[1].slot_number).toBe(2); // Gap at slot 1
-    });
-  });
-
   describe("[UC-21] moveSampleInKit", () => {
     it("should move a sample from one voice to another within the same kit", () => {
       const wavPath = path.join(testWavDir, "kick.wav");
@@ -645,30 +611,30 @@ describe("SampleService Integration Tests", () => {
 
   describe("validateVoiceAndSlot", () => {
     it("should accept valid voice and slot combinations", () => {
-      expect(sampleService.validateVoiceAndSlot(1, 0).isValid).toBe(true);
-      expect(sampleService.validateVoiceAndSlot(4, 11).isValid).toBe(true);
-      expect(sampleService.validateVoiceAndSlot(2, 5).isValid).toBe(true);
+      expect(sampleValidator.validateVoiceAndSlot(1, 0).isValid).toBe(true);
+      expect(sampleValidator.validateVoiceAndSlot(4, 11).isValid).toBe(true);
+      expect(sampleValidator.validateVoiceAndSlot(2, 5).isValid).toBe(true);
     });
 
     it("should reject voice number below 1", () => {
-      const result = sampleService.validateVoiceAndSlot(0, 0);
+      const result = sampleValidator.validateVoiceAndSlot(0, 0);
       expect(result.isValid).toBe(false);
       expect(result.error).toContain("Voice number must be between 1 and 4");
     });
 
     it("should reject voice number above 4", () => {
-      const result = sampleService.validateVoiceAndSlot(5, 0);
+      const result = sampleValidator.validateVoiceAndSlot(5, 0);
       expect(result.isValid).toBe(false);
     });
 
     it("should reject negative slot number", () => {
-      const result = sampleService.validateVoiceAndSlot(1, -1);
+      const result = sampleValidator.validateVoiceAndSlot(1, -1);
       expect(result.isValid).toBe(false);
       expect(result.error).toContain("Slot index must be between 0 and 11");
     });
 
     it("should reject slot number >= 12", () => {
-      const result = sampleService.validateVoiceAndSlot(1, 12);
+      const result = sampleValidator.validateVoiceAndSlot(1, 12);
       expect(result.isValid).toBe(false);
     });
   });
@@ -678,12 +644,14 @@ describe("SampleService Integration Tests", () => {
       const wavPath = path.join(testWavDir, "valid.wav");
       createTestWavFile(wavPath);
 
-      const result = sampleService.validateSampleFile(wavPath);
+      const result = sampleValidator.validateSampleFile(wavPath);
       expect(result.isValid).toBe(true);
     });
 
     it("should reject a file that does not exist", () => {
-      const result = sampleService.validateSampleFile("/nonexistent/file.wav");
+      const result = sampleValidator.validateSampleFile(
+        "/nonexistent/file.wav",
+      );
       expect(result.isValid).toBe(false);
       expect(result.error).toContain("Sample file not found");
     });
@@ -692,7 +660,7 @@ describe("SampleService Integration Tests", () => {
       const mp3Path = path.join(testWavDir, "test.mp3");
       fs.writeFileSync(mp3Path, "fake data");
 
-      const result = sampleService.validateSampleFile(mp3Path);
+      const result = sampleValidator.validateSampleFile(mp3Path);
       expect(result.isValid).toBe(false);
       expect(result.error).toContain("Only WAV files are supported");
     });
@@ -701,7 +669,7 @@ describe("SampleService Integration Tests", () => {
       const tinyPath = path.join(testWavDir, "tiny.wav");
       fs.writeFileSync(tinyPath, Buffer.alloc(10)); // Less than 44 bytes
 
-      const result = sampleService.validateSampleFile(tinyPath);
+      const result = sampleValidator.validateSampleFile(tinyPath);
       expect(result.isValid).toBe(false);
       expect(result.error).toContain("Not a WAV file");
     });
@@ -712,7 +680,7 @@ describe("SampleService Integration Tests", () => {
       buffer.write("NOPE", 0); // Wrong RIFF signature
       fs.writeFileSync(fakePath, buffer);
 
-      const result = sampleService.validateSampleFile(fakePath);
+      const result = sampleValidator.validateSampleFile(fakePath);
       expect(result.isValid).toBe(false);
       expect(result.error).toContain("Not a WAV file");
     });
@@ -725,195 +693,9 @@ describe("SampleService Integration Tests", () => {
       buffer.write("AVI ", 8); // Not WAVE
       fs.writeFileSync(fakePath, buffer);
 
-      const result = sampleService.validateSampleFile(fakePath);
+      const result = sampleValidator.validateSampleFile(fakePath);
       expect(result.isValid).toBe(false);
       expect(result.error).toContain("Not a WAV file");
-    });
-  });
-
-  describe("validateSampleSources", () => {
-    it("should validate all sample sources in a kit", () => {
-      const wavPath1 = path.join(testWavDir, "kick.wav");
-      const wavPath2 = path.join(testWavDir, "snare.wav");
-      createTestWavFile(wavPath1);
-      createTestWavFile(wavPath2);
-
-      sampleService.addSampleToSlot(mockInMemorySettings, "A1", 1, 0, wavPath1);
-      sampleService.addSampleToSlot(mockInMemorySettings, "A1", 1, 1, wavPath2);
-
-      const result = sampleService.validateSampleSources(
-        mockInMemorySettings,
-        "A1",
-      );
-
-      expect(result.success).toBe(true);
-      expect(result.data!.totalSamples).toBe(2);
-      expect(result.data!.validSamples).toBe(2);
-      expect(result.data!.invalidSamples).toHaveLength(0);
-    });
-
-    it("should detect samples with missing source files", () => {
-      // Directly add sample records with paths that will be deleted
-      const wavPath = path.join(testWavDir, "temporary.wav");
-      createTestWavFile(wavPath);
-
-      sampleService.addSampleToSlot(mockInMemorySettings, "A1", 1, 0, wavPath);
-
-      // Delete the source file after adding the sample record
-      fs.unlinkSync(wavPath);
-
-      const result = sampleService.validateSampleSources(
-        mockInMemorySettings,
-        "A1",
-      );
-
-      expect(result.success).toBe(true);
-      expect(result.data!.totalSamples).toBe(1);
-      expect(result.data!.validSamples).toBe(0);
-      expect(result.data!.invalidSamples).toHaveLength(1);
-      expect(result.data!.invalidSamples[0].error).toContain(
-        "Sample file not found",
-      );
-    });
-
-    it("should return valid result for kit with no samples", () => {
-      const result = sampleService.validateSampleSources(
-        mockInMemorySettings,
-        "A1",
-      );
-
-      expect(result.success).toBe(true);
-      expect(result.data!.totalSamples).toBe(0);
-      expect(result.data!.validSamples).toBe(0);
-      expect(result.data!.invalidSamples).toHaveLength(0);
-    });
-
-    it("should fail when no local store path is configured", () => {
-      const emptySettings: InMemorySettings = {
-        localStorePath: null,
-      };
-
-      const result = sampleService.validateSampleSources(emptySettings, "A1");
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("No local store path configured");
-    });
-  });
-
-  describe("findNextAvailableSlot", () => {
-    it("should return 0 for an empty voice", () => {
-      const result = sampleService.findNextAvailableSlot(1, []);
-      expect(result).toBe(0);
-    });
-
-    it("should return the next slot after contiguous samples", () => {
-      const samples = [
-        {
-          filename: "s0.wav",
-          gain_db: 0,
-          id: 1,
-          kit_name: "A1",
-          slot_number: 0,
-          source_path: "/path/s0.wav",
-          source_status: null,
-          voice_number: 1,
-          wav_bit_depth: null,
-          wav_bitrate: null,
-          wav_channels: null,
-          wav_sample_rate: null,
-        },
-        {
-          filename: "s1.wav",
-          gain_db: 0,
-          id: 2,
-          kit_name: "A1",
-          slot_number: 1,
-          source_path: "/path/s1.wav",
-          source_status: null,
-          voice_number: 1,
-          wav_bit_depth: null,
-          wav_bitrate: null,
-          wav_channels: null,
-          wav_sample_rate: null,
-        },
-      ];
-
-      const result = sampleService.findNextAvailableSlot(1, samples);
-      expect(result).toBe(2);
-    });
-
-    it("should ignore samples from other voices", () => {
-      const samples = [
-        {
-          filename: "s0.wav",
-          gain_db: 0,
-          id: 1,
-          kit_name: "A1",
-          slot_number: 0,
-          source_path: "/path/s0.wav",
-          source_status: null,
-          voice_number: 2, // Different voice
-          wav_bit_depth: null,
-          wav_bitrate: null,
-          wav_channels: null,
-          wav_sample_rate: null,
-        },
-      ];
-
-      const result = sampleService.findNextAvailableSlot(1, samples);
-      expect(result).toBe(0); // Voice 1 is empty
-    });
-  });
-
-  describe("validateSlotBoundary", () => {
-    it("should allow moving to the next available slot", () => {
-      const samples = [
-        {
-          filename: "s0.wav",
-          gain_db: 0,
-          id: 1,
-          kit_name: "A1",
-          slot_number: 0,
-          source_path: "/path/s0.wav",
-          source_status: null,
-          voice_number: 1,
-          wav_bit_depth: null,
-          wav_bitrate: null,
-          wav_channels: null,
-          wav_sample_rate: null,
-        },
-      ];
-
-      const result = sampleService.validateSlotBoundary(1, 1, samples);
-      expect(result.success).toBe(true);
-    });
-
-    it("should reject moving beyond the next available slot", () => {
-      const samples = [
-        {
-          filename: "s0.wav",
-          gain_db: 0,
-          id: 1,
-          kit_name: "A1",
-          slot_number: 0,
-          source_path: "/path/s0.wav",
-          source_status: null,
-          voice_number: 1,
-          wav_bit_depth: null,
-          wav_bitrate: null,
-          wav_channels: null,
-          wav_sample_rate: null,
-        },
-      ];
-
-      const result = sampleService.validateSlotBoundary(1, 5, samples);
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("Cannot move to slot");
-    });
-
-    it("should allow slot 0 for an empty voice", () => {
-      const result = sampleService.validateSlotBoundary(1, 0, []);
-      expect(result.success).toBe(true);
     });
   });
 

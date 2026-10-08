@@ -166,7 +166,7 @@ describe("undoTypes", () => {
             affectedSamples: [],
             fromSlot: 7,
             fromVoice: 3,
-            mode: "overwrite",
+            mode: "insert",
             movedSample: mockSample,
             toSlot: 2,
             toVoice: 1,
@@ -220,7 +220,7 @@ describe("undoTypes", () => {
             fromKit: "DrumKit",
             fromSlot: 5,
             fromVoice: 2,
-            mode: "overwrite",
+            mode: "insert",
             movedSample: mockSample,
             toKit: "DrumKit",
             toSlot: 0,
@@ -338,9 +338,8 @@ describe("undoTypes", () => {
           ],
           fromSlot: 0,
           fromVoice: 1,
-          mode: "overwrite",
+          mode: "insert",
           movedSample: mockSample,
-          replacedSample: mockSample,
           toSlot: 1,
           toVoice: 2,
           voicesBefore: [{ samples: [], voice: 2 }],
@@ -351,7 +350,6 @@ describe("undoTypes", () => {
         type: "MOVE_SAMPLE",
       };
 
-      expect(action.data.replacedSample).toBeDefined();
       expect(action.data.voicesBefore).toBeDefined();
       expect(action.data.affectedSamples).toHaveLength(1);
     });

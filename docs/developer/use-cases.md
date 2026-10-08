@@ -479,9 +479,8 @@ the FAQ mention reordering
   (`handleSampleMove`, records `MOVE_SAMPLE` undo).
 - **IPC:** `move-sample-in-kit`.
 - **Main:** `electron/main/services/sampleService.ts` → `electron/main/services/sampleBatchOperations.ts`
-  (`moveSampleInKit`, refuses the linked partner voice) →
-  `electron/main/db/operations/sampleManagementOps.ts` (`moveSample`) →
-  `electron/main/db/operations/sampleMovement.ts` (`moveSampleInsertOnly`, one transaction).
+  (`moveSampleInKit`, refuses the linked partner voice, one transaction) →
+  `electron/main/db/operations/sampleMovement.ts` (`moveSampleTx`).
 
 ### UC-22 Move a sample to another kit
 
@@ -515,8 +514,7 @@ asks first. Undo puts it back. See
   while "Confirm destructive actions" is on) → `app/renderer/components/hooks/sample-management/useSampleActions.ts`
   (`handleDeleteSample`) → `app/renderer/components/hooks/sample-management/useSampleManagementOperations.ts`
   (`handleSampleDelete`, records `REINDEX_SAMPLES` undo).
-- **IPC:** `delete-sample-from-slot`; undo uses
-  `delete-sample-from-slot-without-reindexing`.
+- **IPC:** `delete-sample-from-slot`; undo uses `restore-kit-voices`.
 - **Main:** `electron/main/services/sampleService.ts` → `electron/main/services/crud/sampleCrudService.ts` →
   `electron/main/services/sampleBatchOperations.ts` (`deleteSampleFromSlot`) →
   `electron/main/db/operations/sampleCrudOperations.ts` (`deleteSamples`) and

@@ -142,7 +142,7 @@ describe("useRedoActionHandlers", () => {
           fromKit: "From Kit",
           fromSlot: 0,
           fromVoice: 1,
-          mode: "overwrite",
+          mode: "insert",
           toKit: "To Kit",
           toSlot: 1,
           toVoice: 2,
@@ -163,7 +163,7 @@ describe("useRedoActionHandlers", () => {
         "To Kit",
         2,
         1,
-        "overwrite",
+        "insert",
       );
       expect(redoResult).toEqual({ success: true });
     });

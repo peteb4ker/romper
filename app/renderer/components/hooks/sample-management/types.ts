@@ -6,7 +6,6 @@ export interface MoveOperationResult {
   data?: {
     affectedSamples: SampleWithOriginalSlot[];
     movedSample: Sample;
-    replacedSample?: Sample;
   };
   error?: string;
   success: boolean;

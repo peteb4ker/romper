@@ -7,7 +7,6 @@ import { useUndoRedo } from "../useUndoRedo";
 const mockElectronAPI = {
   addSampleToSlot: vi.fn(),
   deleteSampleFromSlot: vi.fn(),
-  deleteSampleFromSlotWithoutReindexing: vi.fn(),
   getAllSamplesForKit: vi.fn(),
   moveSampleBetweenKits: vi.fn(),
   moveSampleInKit: vi.fn(),
@@ -201,9 +200,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
         voicesBefore,
       );
       expect(mockElectronAPI.addSampleToSlot).not.toHaveBeenCalled();
-      expect(
-        mockElectronAPI.deleteSampleFromSlotWithoutReindexing,
-      ).not.toHaveBeenCalled();
+      expect(mockElectronAPI.deleteSampleFromSlot).not.toHaveBeenCalled();
       expect(result.current.error).toBe(null);
     });
   });

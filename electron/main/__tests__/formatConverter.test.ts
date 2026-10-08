@@ -11,7 +11,6 @@ import {
   type ConversionOptions,
   convertSampleToRampleFormat,
   convertToRampleDefault,
-  getRequiredConversionOptions,
 } from "../formatConverter";
 import { decodeWav, encodeWav } from "../wavCodec";
 
@@ -395,75 +394,6 @@ describe("formatConverter", () => {
         channels: 1,
         sampleRate: 44100,
       });
-    });
-  });
-
-  describe("getRequiredConversionOptions", () => {
-    it("returns null when no conversion is needed", () => {
-      const metadata = { bitDepth: 16, channels: 2, sampleRate: 44100 };
-      const result = getRequiredConversionOptions(metadata);
-
-      expect(result).toBeNull();
-    });
-
-    it("suggests conversion for unsupported bit depth", () => {
-      const metadata = { bitDepth: 32, channels: 2, sampleRate: 44100 };
-      const result = getRequiredConversionOptions(metadata);
-
-      expect(result).toEqual({ targetBitDepth: 16 });
-    });
-
-    it("suggests conversion for unsupported sample rate", () => {
-      const metadata = { bitDepth: 16, channels: 2, sampleRate: 96000 };
-      const result = getRequiredConversionOptions(metadata);
-
-      expect(result).toEqual({ targetSampleRate: 44100 });
-    });
-
-    it("suggests conversion for too many channels", () => {
-      const metadata = { bitDepth: 16, channels: 6, sampleRate: 44100 };
-      const result = getRequiredConversionOptions(metadata);
-
-      expect(result).toEqual({ targetChannels: 2 });
-    });
-
-    it("suggests mono conversion when forceMonoConversion is true", () => {
-      const metadata = { bitDepth: 16, channels: 2, sampleRate: 44100 };
-      const result = getRequiredConversionOptions(metadata, true);
-
-      expect(result).toEqual({
-        forceMonoConversion: true,
-        targetChannels: 1,
-      });
-    });
-
-    it("combines multiple conversion requirements", () => {
-      const metadata = { bitDepth: 32, channels: 6, sampleRate: 96000 };
-      const result = getRequiredConversionOptions(metadata);
-
-      expect(result).toEqual({
-        targetBitDepth: 16,
-        targetChannels: 2,
-        targetSampleRate: 44100,
-      });
-    });
-
-    it("handles missing metadata gracefully", () => {
-      const metadata = {};
-      const result = getRequiredConversionOptions(metadata);
-
-      expect(result).toBeNull();
-    });
-
-    it("handles undefined values in metadata", () => {
-      const metadata = {
-        bitDepth: undefined,
-        channels: undefined,
-        sampleRate: undefined,
-      };
-      const result = getRequiredConversionOptions(metadata);
-
-      expect(result).toBeNull();
     });
   });
 });

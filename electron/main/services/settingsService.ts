@@ -12,16 +12,6 @@ import { logger } from "../utils/logger.js";
  */
 export class SettingsService {
   /**
-   * Get the local store path with environment variable override support
-   */
-  getLocalStorePath(
-    inMemorySettings: InMemorySettings,
-    envOverride?: string,
-  ): null | string {
-    return envOverride || inMemorySettings.localStorePath || null;
-  }
-
-  /**
    * Read current in-memory settings with environment overrides
    */
   readSettings(inMemorySettings: InMemorySettings): InMemorySettings {
@@ -38,25 +28,6 @@ export class SettingsService {
     }
 
     return settings;
-  }
-
-  /**
-   * Validate that a local store path is configured
-   */
-  validateLocalStorePath(
-    inMemorySettings: InMemorySettings,
-    envOverride?: string,
-  ): { error: string; success: false } | { path: string; success: true } {
-    const localStorePath = this.getLocalStorePath(
-      inMemorySettings,
-      envOverride,
-    );
-
-    if (!localStorePath) {
-      return { error: "No local store configured", success: false };
-    }
-
-    return { path: localStorePath, success: true };
   }
 
   /**

@@ -12,7 +12,6 @@ import {
   getKit,
   getKitDeleteSummary,
   getKits,
-  getKitsMetadata,
   updateKit,
 } from "../kitCrudOperations.js";
 import { addSample } from "../sampleCrudOperations.js";
@@ -180,40 +179,6 @@ describe("Kit CRUD Operations - Integration Tests", () => {
       const kitB0 = result.data!.find((k) => k.name === "B0");
       expect(kitB0!.voices).toHaveLength(4);
       expect(kitB0!.samples).toHaveLength(0);
-    });
-  });
-
-  describe("getKitsMetadata", () => {
-    test("returns metadata without voices or samples", () => {
-      addKit(dbDir, {
-        alias: "Cool Kit",
-        bank_letter: "A",
-        bpm: 140,
-        editable: true,
-        is_favorite: true,
-        name: "A0",
-      });
-
-      const result = getKitsMetadata(dbDir);
-      expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(1);
-
-      const meta = result.data![0];
-      expect(meta.name).toBe("A0");
-      expect(meta.bank_letter).toBe("A");
-      expect(meta.alias).toBe("Cool Kit");
-      expect(meta.bpm).toBe(140);
-      expect(meta.editable).toBe(true);
-      expect(meta.is_favorite).toBe(true);
-      // Metadata should not include voices or samples
-      expect((meta as Record<string, unknown>).voices).toBeUndefined();
-      expect((meta as Record<string, unknown>).samples).toBeUndefined();
-    });
-
-    test("returns empty array when no kits exist", () => {
-      const result = getKitsMetadata(dbDir);
-      expect(result.success).toBe(true);
-      expect(result.data).toEqual([]);
     });
   });
 

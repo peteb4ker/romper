@@ -29,7 +29,6 @@ interface SampleOperationResult {
   data?: {
     affectedSamples: Sample[];
     movedSample: Sample;
-    replacedSample?: Sample;
   };
   success: boolean;
 }
@@ -154,12 +153,6 @@ export function useSampleManagementUndoActions({
           filename: params.result.data?.movedSample?.filename || "",
           source_path: params.result.data?.movedSample?.source_path || "",
         },
-        replacedSample: params.result.data?.replacedSample
-          ? {
-              filename: params.result.data.replacedSample.filename,
-              source_path: params.result.data.replacedSample.source_path,
-            }
-          : undefined,
         toSlot: params.toSlot,
         toVoice: params.toVoice,
         voicesBefore: params.voicesBefore,
@@ -200,13 +193,6 @@ export function useSampleManagementUndoActions({
           filename: params.result.data?.movedSample?.filename || "",
           source_path: params.result.data?.movedSample?.source_path || "",
         },
-        replacedSample: params.result.data?.replacedSample
-          ? {
-              filename: params.result.data?.replacedSample?.filename || "",
-              source_path:
-                params.result.data?.replacedSample?.source_path || "",
-            }
-          : undefined,
         toKit: params.targetKit,
         toSlot: params.toSlot,
         toVoice: params.toVoice,

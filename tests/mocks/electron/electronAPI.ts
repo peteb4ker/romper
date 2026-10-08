@@ -35,7 +35,6 @@ export const createElectronAPIMock = (
   createRomperDb: vi.fn().mockResolvedValue(undefined),
   deleteKit: vi.fn().mockResolvedValue({ success: true }),
   deleteSampleFromSlot: vi.fn().mockResolvedValue(undefined),
-  deleteSampleFromSlotWithoutReindexing: vi.fn().mockResolvedValue(undefined),
 
   // Archive operations
   downloadAndExtractArchive: vi.fn().mockResolvedValue(undefined),

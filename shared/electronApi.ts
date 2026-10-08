@@ -87,11 +87,6 @@ export interface ElectronAPI {
   ) => Promise<
     DbResult<{ affectedSamples: Sample[]; deletedSamples: Sample[] }>
   >;
-  deleteSampleFromSlotWithoutReindexing: (
-    kitName: string,
-    voiceNumber: number,
-    slotNumber: number,
-  ) => Promise<DbResult<{ deletedSamples: Sample[] }>>;
   /**
    * Installs the Squarp factory samples; main owns the archive URL.
    * `retryable` is set only when downloading again could succeed (RE-77).
@@ -145,12 +140,11 @@ export interface ElectronAPI {
     toKit: string,
     toVoice: number,
     toSlot: number,
-    mode: "insert" | "overwrite",
+    mode: "insert",
   ) => Promise<
     DbResult<{
       affectedSamples: ({ original_slot_number: number } & Sample)[];
       movedSample: Sample;
-      replacedSample?: Sample;
     }>
   >;
   moveSampleInKit: (
@@ -163,7 +157,6 @@ export interface ElectronAPI {
     DbResult<{
       affectedSamples: Sample[];
       movedSample: Sample;
-      replacedSample?: Sample;
     }>
   >;
   onSyncProgress: (callback: (progress: SyncProgress) => void) => void;

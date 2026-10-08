@@ -49,24 +49,6 @@ export function checkMigrationState(sqlite: BetterSqlite3.Database): void {
 }
 
 /**
- * Execute database migrations (and the history repair) in one transaction
- * on the connection behind `db`
- */
-export function executeMigrations(
-  db: RomperDb,
-  dbPath: string,
-  dbDir: string,
-): void {
-  const { $client } = db as { $client: BetterSqlite3.Database } & RomperDb;
-  try {
-    upgradeDatabase($client, dbPath);
-  } catch (e) {
-    logMigrationError(e, dbPath, dbDir);
-    throw e;
-  }
-}
-
-/**
  * Get the path to the bundled migrations folder.
  *
  * Only the folder that ships with the code is accepted (RE-33): beside the

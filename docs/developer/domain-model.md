@@ -184,9 +184,6 @@ Renderer paths are under `app/renderer/components/` unless they start with
     `getLocalStoreStatus` ignore a blank override; `readSettings`, the
     preload and the `validate-*` handlers don't. Test-only today; part of
     the precedence that should live in one function.
-  - `LocalStoreService.getDbPath`, `getRomperDbPath` and
-    `SettingsService.getLocalStorePath` are unused second definitions
-    (#471).
 
 ## Settings
 
@@ -810,8 +807,7 @@ voice and slot):
     `getKitDeleteSummary` (`validateKitSlot`), `listFilesInRoot`,
     `validateLocalStore*` and `openExternal` throw instead of returning a
     failure; `ensureDir`, `showItemInFolder` and `cancelKitSync` are typed
-    `unknown`; `moveSampleBetweenKits` accepts `mode: "overwrite"` and
-    ignores it; `setSetting` is the one write with no result;
+    `unknown`; `setSetting` is the one write with no result;
   - several result families (`DbResult`, `{ isValid }`, `{ exists }`,
     `{ writable }`, `{ sufficient }`, `{ granted }`, `{ removed }`, raw
     values, `void`), so callers each decide what failure looks like;
@@ -823,8 +819,7 @@ voice and slot):
     every kit row carries its bank's name (`kit.bank.artist`, which search
     reads) beside `get-all-banks`, which the browser reads; the local
     store is validated by three channels; the wizard picks a card folder
-    with the store's folder picker (`select-local-store-path`);
-  - `delete-sample-from-slot-without-reindexing` has no renderer caller.
+    with the store's folder picker (`select-local-store-path`).
 
 ## Rample manual coverage
 

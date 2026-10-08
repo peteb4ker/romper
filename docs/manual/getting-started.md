@@ -112,6 +112,8 @@ For full details on the sync process, see [Syncing](syncing).
 
 **"Cannot write to" the target** -- The target directory isn't writable. Choose a location in your Documents folder or another directory you have write access to.
 
+**"The SD card stopped responding, so setup stopped"** -- The card didn't answer for a minute while Romper was reading it. Setup removes the kits it had copied so far. Eject and reinsert the card, then click **Initialize Local Store** to try again.
+
 **"This folder already contains a Romper local store"** -- Choose another folder, or click **Choose Existing Store** to use the store that's there.
 
 **"Factory samples download failed after 3 attempts"** -- The connection dropped or stalled each time, and the message says how. Check your internet connection and click **Initialize Local Store** to try again. The factory samples download is about 313 MiB and needs a stable connection.

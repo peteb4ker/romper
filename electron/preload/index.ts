@@ -1,3 +1,4 @@
+import type { DbResult } from "@romper/shared/db/schema.js";
 import type {
   ElectronAPI,
   KitMetadataUpdates,
@@ -288,7 +289,7 @@ const electronAPI = {
     isDev && console.debug("[IPC] getUserHomeDir invoked");
     return ipcRenderer.invoke("get-user-home-dir");
   },
-  listFilesInRoot: (localStorePath: string): Promise<string[]> => {
+  listFilesInRoot: (localStorePath: string): Promise<DbResult<string[]>> => {
     isDev && console.debug("[IPC] listFilesInRoot invoked", localStorePath);
     return ipcRenderer.invoke("list-files-in-root", localStorePath);
   },

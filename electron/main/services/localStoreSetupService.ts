@@ -18,6 +18,11 @@ import {
   withDbTransaction,
 } from "../db/romperDbCoreORM.js";
 import { logger } from "../utils/logger.js";
+import {
+  CARD_NOT_RESPONDING_SETUP_MESSAGE,
+  CardNotRespondingError,
+  withCardWatchdog,
+} from "./cardWatchdog.js";
 import { bankRtfFileName } from "./rtfFileService.js";
 import { readWavMetadata } from "./scanService.js";
 
@@ -219,34 +224,42 @@ export class LocalStoreSetupService {
    * name is kept, so the result doesn't depend on the order the folder
    * lists them in.
    *
+   * The folder is listed asynchronously, under the card watchdog (#724): a
+   * card whose driver stopped responding (#653) fails the import with
+   * setup's card-not-responding message instead of blocking the main process.
+   *
    * Refuses any store this process's setup didn't create.
    */
-  importSetupBankNames(
+  async importSetupBankNames(
     dbDir: string,
     sourcePath: string,
-  ): DbResult<{ importedBanks: number }> {
+  ): Promise<DbResult<{ importedBanks: number }>> {
     const resolved = path.resolve(dbDir);
-    if (!this.createdDbDirs.has(resolved)) {
-      return {
-        error: "Setup can only import bank names into the store it is creating",
-        success: false,
-      };
-    }
+    if (!this.createdDbDirs.has(resolved)) return notThisSetupsBankNames();
 
     let fileNames: string[];
     try {
-      fileNames = fs
-        .readdirSync(sourcePath, { withFileTypes: true })
+      const entries = await withCardWatchdog(
+        fs.promises.readdir(sourcePath, { withFileTypes: true }),
+      );
+      fileNames = entries
         .filter((entry) => entry.isFile())
         .map((entry) => entry.name)
         .sort((a, b) => a.localeCompare(b));
     } catch (error) {
+      if (error instanceof CardNotRespondingError) {
+        return { error: CARD_NOT_RESPONDING_SETUP_MESSAGE, success: false };
+      }
       const message = error instanceof Error ? error.message : String(error);
       return {
         error: `Can't read the bank names in ${sourcePath}: ${message}`,
         success: false,
       };
     }
+
+    // Setup was cleaned up while the folder was listed (the app quit): don't
+    // make a database where the store was
+    if (!this.createdDbDirs.has(resolved)) return notThisSetupsBankNames();
 
     const names = new Map<string, string>();
     for (const fileName of fileNames) {
@@ -396,6 +409,14 @@ function listEntries(dirPath: string): string[] {
   } catch {
     return [];
   }
+}
+
+/** importSetupBankNames' refusal of a store this setup isn't creating */
+function notThisSetupsBankNames(): DbResult<{ importedBanks: number }> {
+  return {
+    error: "Setup can only import bank names into the store it is creating",
+    success: false,
+  };
 }
 
 export const localStoreSetupService = new LocalStoreSetupService();

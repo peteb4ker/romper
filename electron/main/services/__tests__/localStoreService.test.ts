@@ -1,12 +1,13 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fs
 vi.mock("node:fs", () => ({
   existsSync: vi.fn(),
   lstatSync: vi.fn(),
   mkdirSync: vi.fn(),
+  promises: { readdir: vi.fn() },
   readdirSync: vi.fn(),
   readFileSync: vi.fn(),
 }));
@@ -28,6 +29,11 @@ import {
   validateLocalStoreAndDb,
   validateLocalStoreBasic,
 } from "../../localStoreValidator.js";
+import {
+  CARD_NOT_RESPONDING_SETUP_MESSAGE,
+  CARD_OPERATION_TIMEOUT_MS,
+  cardWatchdogSettings,
+} from "../cardWatchdog.js";
 import { LocalStoreService } from "../localStoreService.js";
 
 const mockFs = vi.mocked(fs);
@@ -283,37 +289,59 @@ describe("LocalStoreService", () => {
   });
 
   describe("listFilesInRoot", () => {
-    it("returns list of files in directory", () => {
+    // The service calls the overload that returns file names
+    const readdir = vi.mocked<(path: fs.PathLike) => Promise<string[]>>(
+      mockFs.promises.readdir,
+    );
+
+    afterEach(() => {
+      cardWatchdogSettings.timeoutMs = CARD_OPERATION_TIMEOUT_MS;
+    });
+
+    it("returns list of files in directory", async () => {
       const mockFiles = ["file1.txt", "file2.wav", "subdirectory"];
-      // The service calls the overload that returns file names
-      vi.mocked<(path: fs.PathLike) => string[]>(
-        mockFs.readdirSync,
-      ).mockReturnValue(mockFiles);
+      readdir.mockResolvedValue(mockFiles);
 
-      const result = localStoreService.listFilesInRoot("/test/path");
+      const result = await localStoreService.listFilesInRoot("/test/path");
 
-      expect(result).toEqual(mockFiles);
-      expect(mockFs.readdirSync).toHaveBeenCalledWith("/test/path");
+      expect(result).toEqual({ data: mockFiles, success: true });
+      expect(readdir).toHaveBeenCalledWith("/test/path");
+      // [UC-01] [Q-01] Setup lists the card with it: never synchronously (#724)
+      expect(mockFs.readdirSync).not.toHaveBeenCalled();
     });
 
-    it("throws error when directory read fails", () => {
-      mockFs.readdirSync.mockImplementation(() => {
-        throw new Error("Permission denied");
-      });
+    it("reports a directory read that fails", async () => {
+      readdir.mockRejectedValue(new Error("Permission denied"));
 
-      expect(() => {
-        localStoreService.listFilesInRoot("/bad/path");
-      }).toThrow("Failed to read directory: Permission denied");
+      await expect(
+        localStoreService.listFilesInRoot("/bad/path"),
+      ).resolves.toEqual({
+        error: "Failed to read directory: Permission denied",
+        success: false,
+      });
     });
 
-    it("handles non-Error exceptions", () => {
-      mockFs.readdirSync.mockImplementation(() => {
-        throw "String error";
-      });
+    it("handles non-Error exceptions", async () => {
+      readdir.mockRejectedValue("String error");
 
-      expect(() => {
-        localStoreService.listFilesInRoot("/bad/path");
-      }).toThrow("Failed to read directory: String error");
+      await expect(
+        localStoreService.listFilesInRoot("/bad/path"),
+      ).resolves.toEqual({
+        error: "Failed to read directory: String error",
+        success: false,
+      });
+    });
+
+    it("[UC-01] [Q-01] says the card stopped responding when the listing never finishes (#724)", async () => {
+      readdir.mockReturnValue(new Promise<never>(() => undefined));
+      cardWatchdogSettings.timeoutMs = 20;
+
+      await expect(
+        localStoreService.listFilesInRoot("/Volumes/RAMPLE"),
+      ).resolves.toEqual({
+        error: CARD_NOT_RESPONDING_SETUP_MESSAGE,
+        success: false,
+      });
     });
   });
 

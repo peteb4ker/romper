@@ -4,6 +4,7 @@ import type {
 } from "@romper/shared/db/schema";
 import type { KitStereoPlan } from "@romper/shared/stereoLinkRules";
 
+import { CARD_NOT_RESPONDING_SETUP_MESSAGE } from "@romper/shared/cardMessages";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -29,6 +30,11 @@ function importResult(
     ...(stereo ? { stereo } : {}),
     updatedVoices: 1,
   };
+}
+
+/** Main's listing of a folder holding `files` */
+function listed(files: string[]) {
+  return { data: files, success: true };
 }
 
 // Replace all usage of waitFor with manual polling for async state
@@ -64,7 +70,7 @@ describe("useLocalStoreWizard", () => {
       async (_destDir, _onProgress, _onError) => ({ success: true }),
     );
     vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
-      async (_path) => [],
+      async (_path) => listed([]),
     );
     vi.mocked(window.electronAPI.copyDir).mockResolvedValue({ success: true });
     vi.mocked(window.electronAPI.setupImportKit).mockImplementation(
@@ -176,7 +182,7 @@ describe("useLocalStoreWizard", () => {
   it("[UC-01] [UC-02] returns the samples a voice over 12 left out", async () => {
     const root = "/mock/home/Documents/romper";
     vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
-      async (dir) => (dir === root ? ["A0"] : []),
+      async (dir) => listed(dir === root ? ["A0"] : []),
     );
     // Main imported the first 12 of voice 1's 13 files
     vi.mocked(window.electronAPI.setupImportKit).mockImplementation(
@@ -217,7 +223,7 @@ describe("useLocalStoreWizard", () => {
   it("[UC-01] returns the setup summary's stereo lines", async () => {
     const root = "/mock/home/Documents/romper";
     vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
-      async (dir) => (dir === root ? ["A0"] : []),
+      async (dir) => listed(dir === root ? ["A0"] : []),
     );
     vi.mocked(window.electronAPI.setupImportKit).mockImplementation(
       async () => ({
@@ -382,9 +388,9 @@ describe("useLocalStoreWizard", () => {
     });
     // SD card returns one kit folder, local store returns same kit folder
     vi.mocked(window.electronAPI.listFilesInRoot)
-      .mockImplementationOnce(async () => ["A0"]) // SD card
-      .mockImplementationOnce(async () => ["A0"]) // local store
-      .mockImplementation(async () => []); // kit folder contents
+      .mockImplementationOnce(async () => listed(["A0"])) // SD card
+      .mockImplementationOnce(async () => listed(["A0"])) // local store
+      .mockImplementation(async () => listed([])); // kit folder contents
     vi.mocked(window.electronAPI.copyDir).mockResolvedValue({ success: true });
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
@@ -404,9 +410,9 @@ describe("useLocalStoreWizard", () => {
   it("[UC-01] copies all valid kit folders from SD card to local store", async () => {
     // SD card returns two kit folders, local store returns same kit folders
     vi.mocked(window.electronAPI.listFilesInRoot)
-      .mockImplementationOnce(async () => ["A0", "B12", "notakit"]) // SD card
-      .mockImplementationOnce(async () => ["A0", "B12"]) // local store
-      .mockImplementation(async () => []); // kit folder contents
+      .mockImplementationOnce(async () => listed(["A0", "B12", "notakit"])) // SD card
+      .mockImplementationOnce(async () => listed(["A0", "B12"])) // local store
+      .mockImplementation(async () => listed([])); // kit folder contents
     const copyDir = vi
       .fn<ElectronAPI["copyDir"]>()
       .mockResolvedValue({ success: true });
@@ -466,12 +472,14 @@ describe("useLocalStoreWizard", () => {
     const progressEvents: ProgressEvent[] = [];
     vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
       async (path) => {
-        if (path === "/mock/sd") return ["A0", "B12"];
-        if (path === "/mock/home/Documents/romper") return ["A0", "B12"];
+        if (path === "/mock/sd") return listed(["A0", "B12"]);
+        if (path === "/mock/home/Documents/romper")
+          return listed(["A0", "B12"]);
         if (path === "/mock/home/Documents/romper/A0")
-          return ["kick.wav", "snare.wav"];
-        if (path === "/mock/home/Documents/romper/B12") return ["hat.wav"];
-        return [];
+          return listed(["kick.wav", "snare.wav"]);
+        if (path === "/mock/home/Documents/romper/B12")
+          return listed(["hat.wav"]);
+        return listed([]);
       },
     );
     vi.mocked(window.electronAPI.copyDir).mockResolvedValue({ success: true });
@@ -512,7 +520,7 @@ describe("useLocalStoreWizard", () => {
 
     it("asks main to import each kit folder, and nothing else", async () => {
       vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
-        async (dir) => (dir === root ? ["A0", "B12", "notakit"] : []),
+        async (dir) => listed(dir === root ? ["A0", "B12", "notakit"] : []),
       );
 
       const result = await startSetup();
@@ -536,7 +544,7 @@ describe("useLocalStoreWizard", () => {
 
     it("stops, and doesn't save the store, when main can't import a kit", async () => {
       vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
-        async (dir) => (dir === root ? ["A0"] : []),
+        async (dir) => listed(dir === root ? ["A0"] : []),
       );
       vi.mocked(window.electronAPI.setupImportKit).mockResolvedValue({
         error: "Can't read kit folder A0",
@@ -556,7 +564,7 @@ describe("useLocalStoreWizard", () => {
     // error and without saving the store
     it("stops between kits when cancelled, cleans up, and saves nothing", async () => {
       vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
-        async (dir) => (dir === root ? ["A0", "A1", "A2"] : []),
+        async (dir) => listed(dir === root ? ["A0", "A1", "A2"] : []),
       );
       const { result } = renderHook(() => useLocalStoreWizard());
       await waitForAsync(() => result.current.defaultPath !== "");
@@ -604,7 +612,7 @@ describe("useLocalStoreWizard", () => {
 
     it("imports nothing when there are no kit folders", async () => {
       vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
-        async () => [],
+        async () => listed([]),
       );
 
       await startSetup();
@@ -761,8 +769,8 @@ describe("useLocalStoreWizard", () => {
     vi.mocked(window.electronAPI.checkPathWritable).mockResolvedValue({
       writable: true,
     });
-    vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
-      async () => [],
+    vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(async () =>
+      listed([]),
     );
     const { result } = renderHook(() => useLocalStoreWizard());
     await waitForAsync(() => result.current.defaultPath !== "");
@@ -794,7 +802,7 @@ describe("useLocalStoreWizard", () => {
         sufficient: true,
       });
       vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
-        async (dir) => (dir === root ? ["A0"] : []),
+        async (dir) => listed(dir === root ? ["A0"] : []),
       );
       vi.mocked(window.electronAPI.setupImportKit).mockImplementation(
         async () => ({
@@ -947,6 +955,85 @@ describe("useLocalStoreWizard", () => {
       );
       expect(outcome).toEqual({ error: notSaved, success: false });
       expect(window.electronAPI.cleanupPartialInit).not.toHaveBeenCalled();
+    });
+  });
+  // #724: main gives up on a card operation that never finishes (the card's
+  // driver hung, #653). Setup stops with that message and cleans up what it
+  // made, as after any other failure.
+  describe("[UC-01] [Q-01] a card that stopped responding (#724)", () => {
+    const store = "/mock/home/Documents/romper";
+
+    async function setUpFromCard() {
+      const { result } = renderHook(() => useLocalStoreWizard());
+      await waitForAsync(() => result.current.defaultPath !== "");
+      act(() => {
+        result.current.setTargetPath(store);
+        result.current.setSource("sdcard");
+        result.current.setSdCardPath("/mock/sd");
+      });
+      await act(async () => {
+        await result.current.initialize();
+      });
+      return result;
+    }
+
+    it("stops when the card's kits can't be listed", async () => {
+      vi.mocked(window.electronAPI.listFilesInRoot).mockResolvedValue({
+        error: CARD_NOT_RESPONDING_SETUP_MESSAGE,
+        success: false,
+      });
+
+      const result = await setUpFromCard();
+
+      expect(result.current.state.error).toBe(
+        CARD_NOT_RESPONDING_SETUP_MESSAGE,
+      );
+      expect(window.electronAPI.copyDir).not.toHaveBeenCalled();
+      expect(window.electronAPI.cleanupPartialInit).toHaveBeenCalledWith(store);
+      expect(window.electronAPI.setSetting).not.toHaveBeenCalledWith(
+        "localStorePath",
+        expect.anything(),
+      );
+    });
+
+    it("stops when a kit can't be copied, and copies no more", async () => {
+      vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
+        async (dir) => listed(dir === "/mock/sd" ? ["A0", "B1"] : []),
+      );
+      vi.mocked(window.electronAPI.copyDir).mockResolvedValue({
+        error: CARD_NOT_RESPONDING_SETUP_MESSAGE,
+        success: false,
+      });
+
+      const result = await setUpFromCard();
+
+      expect(result.current.state.error).toContain(
+        CARD_NOT_RESPONDING_SETUP_MESSAGE,
+      );
+      expect(window.electronAPI.copyDir).toHaveBeenCalledTimes(1);
+      expect(window.electronAPI.createRomperDb).not.toHaveBeenCalled();
+      expect(window.electronAPI.cleanupPartialInit).toHaveBeenCalledWith(store);
+    });
+
+    it("stops when the card's bank names can't be read", async () => {
+      vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
+        async () => listed(["A0"]),
+      );
+      vi.mocked(window.electronAPI.copyDir).mockResolvedValue({
+        success: true,
+      });
+      vi.mocked(window.electronAPI.setupImportBankNames).mockResolvedValueOnce({
+        error: CARD_NOT_RESPONDING_SETUP_MESSAGE,
+        success: false,
+      });
+
+      const result = await setUpFromCard();
+
+      expect(result.current.state.error).toBe(
+        CARD_NOT_RESPONDING_SETUP_MESSAGE,
+      );
+      expect(window.electronAPI.finishSetup).not.toHaveBeenCalled();
+      expect(window.electronAPI.cleanupPartialInit).toHaveBeenCalledWith(store);
     });
   });
 });

@@ -10,6 +10,11 @@ import {
   extractZipEntries,
 } from "../archiveUtils.js";
 import { logger } from "../utils/logger.js";
+import {
+  CARD_NOT_RESPONDING_SETUP_MESSAGE,
+  CardNotRespondingError,
+  withCardWatchdog,
+} from "./cardWatchdog.js";
 
 /**
  * The Squarp factory sample pack. Main owns this URL: the renderer only names
@@ -55,16 +60,24 @@ const LOCAL_FS_ERROR_CODES = new Set([
  */
 export class ArchiveService {
   /**
-   * Recursively copy a directory
+   * Recursively copy a directory. Setup copies each kit folder from the
+   * card this way, so every file system call is asynchronous and under the
+   * card watchdog (#724): a card whose driver stopped responding (#653)
+   * fails the copy with setup's card-not-responding message instead of
+   * blocking the main process. Once an operation times out the copy starts
+   * no more; whatever it made in `dest` is left for setup's cleanup.
    */
-  copyDirectory(
+  async copyDirectory(
     src: string,
     dest: string,
-  ): { error?: string; success: boolean } {
+  ): Promise<{ error?: string; success: boolean }> {
     try {
-      this.copyRecursiveSync(src, dest);
+      await this.copyRecursive(src, dest);
       return { success: true };
     } catch (e) {
+      if (e instanceof CardNotRespondingError) {
+        return { error: CARD_NOT_RESPONDING_SETUP_MESSAGE, success: false };
+      }
       return {
         error: e instanceof Error ? e.message : String(e),
         success: false,
@@ -152,24 +165,26 @@ export class ArchiveService {
   }
 
   /**
-   * Internal helper for recursive directory copying
+   * copyDirectory's walk, one operation at a time, each under the card
+   * watchdog
    */
-  private copyRecursiveSync(src: string, dest: string): void {
-    fs.mkdirSync(dest);
-    for (const item of fs.readdirSync(src)) {
+  private async copyRecursive(src: string, dest: string): Promise<void> {
+    await withCardWatchdog(fs.promises.mkdir(dest));
+    const items = await withCardWatchdog(fs.promises.readdir(src));
+    for (const item of items) {
       const srcItem = path.join(src, item);
       const destItem = path.join(dest, item);
       // Use lstat (no symlink following) and skip symlinks entirely: following
       // them would copy the contents of files outside the source tree (e.g. a
       // link planted in an SD-card folder pointing at a sensitive file).
-      const stats = fs.lstatSync(srcItem);
+      const stats = await withCardWatchdog(fs.promises.lstat(srcItem)); // NOSONAR: sequential on purpose (#724)
       if (stats.isSymbolicLink()) {
         continue;
       }
       if (stats.isDirectory()) {
-        this.copyRecursiveSync(srcItem, destItem);
+        await this.copyRecursive(srcItem, destItem); // NOSONAR: sequential on purpose (#724)
       } else if (stats.isFile()) {
-        fs.copyFileSync(srcItem, destItem);
+        await withCardWatchdog(fs.promises.copyFile(srcItem, destItem)); // NOSONAR: sequential on purpose (#724)
       }
     }
   }

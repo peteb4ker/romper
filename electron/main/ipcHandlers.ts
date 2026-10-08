@@ -5,7 +5,7 @@ import type { InMemorySettings } from "./types/settings.js";
 
 import { closeAllDbConnections } from "./db/utils/dbConnections.js";
 import { requestLocalStoreAccess } from "./security/localStoreAccessPrompt.js";
-import { checkPathAccess, pathAccess } from "./security/pathAccess.js";
+import { checkSetupPathAccess, pathAccess } from "./security/pathAccess.js";
 import {
   archiveService,
   getFactorySamplesArchiveUrl,
@@ -135,10 +135,14 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
   ipcMain.handle("copy-kit", (_event, sourceKit: string, destKit: string) =>
     kitService.copyKit(inMemorySettings, sourceKit, destKit),
   );
+  // Setup lists the card's kit folders with this. The result says why a
+  // listing failed (a card that stopped responding, #724), rather than
+  // rejecting with Electron's IPC wrapping around the reason.
   ipcMain.handle(
     "list-files-in-root",
     async (_event, localStorePath: string) => {
-      await pathAccess.assertAllowed(localStorePath);
+      const access = await checkSetupPathAccess(localStorePath);
+      if (!access.ok) return { error: access.error, success: false };
       return localStoreService.listFilesInRoot(localStorePath);
     },
   );
@@ -210,7 +214,7 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
   ipcMain.handle(
     "download-and-extract-archive",
     async (event, destDir: string) => {
-      const access = await checkPathAccess(destDir, { write: true });
+      const access = await checkSetupPathAccess(destDir, { write: true });
       if (!access.ok) {
         event.sender.send("archive-error", { message: access.error });
         return { error: access.error, success: false };
@@ -244,15 +248,15 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
     },
   );
   ipcMain.handle("ensure-dir", async (_event, dir: string) => {
-    const access = await checkPathAccess(dir, { write: true });
+    const access = await checkSetupPathAccess(dir, { write: true });
     if (!access.ok) return { error: access.error, success: false };
     return archiveService.ensureDirectory(dir);
   });
 
   ipcMain.handle("copy-dir", async (_event, src: string, dest: string) => {
-    const access = await checkPathAccess(src);
+    const access = await checkSetupPathAccess(src);
     const destAccess = access.ok
-      ? await checkPathAccess(dest, { write: true })
+      ? await checkSetupPathAccess(dest, { write: true })
       : access;
     if (!destAccess.ok) return { error: destAccess.error, success: false };
     // Setup copies each kit from the card into the new store; record the
@@ -271,7 +275,7 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
   // The store setup built is complete: a quit no longer cleans it up, even
   // if saving it as the local store then fails (#616)
   ipcMain.handle("finish-setup", async (_event, targetPath: string) => {
-    const access = await checkPathAccess(targetPath, { write: true });
+    const access = await checkSetupPathAccess(targetPath, { write: true });
     if (!access.ok) return { error: access.error, success: false };
     localStoreSetupService.markSetupComplete(targetPath);
     return { success: true };
@@ -280,7 +284,7 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
   ipcMain.handle(
     "check-disk-space",
     async (_event, targetPath: string, requiredBytes: number) => {
-      const access = await checkPathAccess(targetPath);
+      const access = await checkSetupPathAccess(targetPath);
       if (!access.ok) {
         return {
           availableBytes: 0,
@@ -294,7 +298,7 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
   );
 
   ipcMain.handle("check-path-writable", async (_event, targetPath: string) => {
-    const access = await checkPathAccess(targetPath, { write: true });
+    const access = await checkSetupPathAccess(targetPath, { write: true });
     if (!access.ok) return { error: access.error, writable: false };
     return checkPathWritable(targetPath);
   });
@@ -302,7 +306,7 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
   // RE-10 decides what setup may remove; RE-03 first confines the target to
   // a folder Romper has been given.
   ipcMain.handle("cleanup-partial-init", async (_event, targetPath: string) => {
-    const access = await checkPathAccess(targetPath, { write: true });
+    const access = await checkSetupPathAccess(targetPath, { write: true });
     if (!access.ok) return { error: access.error, removed: false };
     return localStoreSetupService.cleanupFailedSetup(
       targetPath,
@@ -316,7 +320,7 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
   ipcMain.handle(
     "check-existing-local-store",
     async (_event, targetPath: string) => {
-      const access = await checkPathAccess(targetPath);
+      const access = await checkSetupPathAccess(targetPath);
       if (!access.ok) return { error: access.error, exists: true };
       return localStoreSetupService.hasExistingLocalStore(targetPath);
     },

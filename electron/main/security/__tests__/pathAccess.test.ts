@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   CARD_NOT_RESPONDING_MESSAGE,
+  CARD_NOT_RESPONDING_SETUP_MESSAGE,
   CARD_OPERATION_TIMEOUT_MS,
   CardNotRespondingError,
   cardWatchdogSettings,
@@ -14,6 +15,8 @@ import {
   canonicalizePath,
   checkDatabaseDirAccess,
   checkPathAccess,
+  checkSetupDatabaseDirAccess,
+  checkSetupPathAccess,
   getDefaultLocalStorePath,
   isSameOrInside,
   pathAccess,
@@ -422,10 +425,42 @@ describe("pathAccess (RE-03)", () => {
     it("refuses a path on the card with the card-not-responding message", async () => {
       settings.sdCardPath = hungCard;
       const result = await policy.check(path.join(hungCard, "A0"), "write");
-      expect(result).toEqual({ error: CARD_NOT_RESPONDING_MESSAGE, ok: false });
+      expect(result).toEqual({
+        cardNotResponding: true,
+        error: CARD_NOT_RESPONDING_MESSAGE,
+        ok: false,
+      });
       await expect(policy.assertAllowed(hungCard)).rejects.toThrow(
         CARD_NOT_RESPONDING_MESSAGE,
       );
+    });
+
+    it("[UC-01] says setup stopped on the setup wizard's channels (#724)", async () => {
+      pathAccess.useSettings({ sdCardPath: hungCard });
+      try {
+        await expect(
+          checkSetupPathAccess(path.join(hungCard, "A0"), { write: true }),
+        ).resolves.toEqual({
+          cardNotResponding: true,
+          error: CARD_NOT_RESPONDING_SETUP_MESSAGE,
+          ok: false,
+        });
+        await expect(
+          checkSetupDatabaseDirAccess(path.join(hungCard, ".romperdb")),
+        ).resolves.toMatchObject({
+          error: CARD_NOT_RESPONDING_SETUP_MESSAGE,
+        });
+        // The write's channels keep the write's message
+        await expect(
+          checkPathAccess(path.join(hungCard, "A0"), { write: true }),
+        ).resolves.toMatchObject({ error: CARD_NOT_RESPONDING_MESSAGE });
+        // Any other refusal is passed on as it is
+        const elsewhere = await checkSetupPathAccess("/etc/hosts");
+        expect(elsewhere.ok).toBe(false);
+        expect(elsewhere).not.toHaveProperty("cardNotResponding");
+      } finally {
+        pathAccess.reset();
+      }
     });
 
     it("keeps the event loop running while the card doesn't answer", async () => {

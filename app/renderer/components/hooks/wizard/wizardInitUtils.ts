@@ -1,3 +1,5 @@
+import { CARD_NOT_RESPONDING_SETUP_MESSAGE } from "@romper/shared/cardMessages";
+
 import type { ElectronAPI } from "../../../electron.d";
 
 import { type LocalStoreSource } from "./useLocalStoreWizardState";
@@ -57,6 +59,7 @@ export async function runPreChecks(
   if (api.checkPathWritable) {
     const writableResult = await api.checkPathWritable(targetPath);
     if (!writableResult.writable) {
+      throwIfCardNotResponding(writableResult.error);
       throw new Error(
         `Cannot write to ${targetPath}. Please choose a folder you have permission to write to.`,
       );
@@ -68,6 +71,7 @@ export async function runPreChecks(
       source === "squarp" ? 1024 * 1024 * 1024 : 500 * 1024 * 1024;
     const spaceResult = await api.checkDiskSpace(targetPath, requiredBytes);
     if (!spaceResult.sufficient) {
+      throwIfCardNotResponding(spaceResult.error);
       const availableMB = Math.round(
         spaceResult.availableBytes / (1024 * 1024),
       );
@@ -77,4 +81,12 @@ export async function runPreChecks(
       );
     }
   }
+}
+
+/**
+ * Main gave up on a folder that stopped responding (a card, #724): say so,
+ * rather than that the folder can't be written or is full
+ */
+function throwIfCardNotResponding(error: string | undefined) {
+  if (error === CARD_NOT_RESPONDING_SETUP_MESSAGE) throw new Error(error);
 }

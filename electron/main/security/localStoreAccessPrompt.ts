@@ -7,6 +7,10 @@ import {
 import * as os from "node:os";
 import * as path from "node:path";
 
+import {
+  CARD_NOT_RESPONDING_SETUP_MESSAGE,
+  CardNotRespondingError,
+} from "../services/cardWatchdog.js";
 import { canonicalizePath, isSameOrInside, pathAccess } from "./pathAccess.js";
 
 export interface LocalStoreAccessResult {
@@ -26,15 +30,27 @@ export async function requestLocalStoreAccess(
   sender: undefined | WebContents,
   targetPath: unknown,
 ): Promise<LocalStoreAccessResult> {
-  if ((await pathAccess.check(targetPath, "write")).ok) {
+  const access = await pathAccess.check(targetPath, "write");
+  if (access.ok) {
     return { granted: true };
+  }
+  // A folder that stopped responding (a card, #724) won't answer again
+  // now: setup stops and says so
+  if (access.cardNotResponding) {
+    return { error: CARD_NOT_RESPONDING_SETUP_MESSAGE, granted: false };
   }
 
   let canonical: string;
   try {
     canonical = await canonicalizePath(targetPath);
   } catch (error) {
-    return { error: (error as Error).message, granted: false };
+    return {
+      error:
+        error instanceof CardNotRespondingError
+          ? CARD_NOT_RESPONDING_SETUP_MESSAGE
+          : (error as Error).message,
+      granted: false,
+    };
   }
   const folder = targetPath as string;
 

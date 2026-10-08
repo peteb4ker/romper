@@ -11,8 +11,33 @@ import { getCommitsSinceTag, getLatestTag } from "./utils/git.js";
 const SHORT_HASH_LENGTH = 7;
 
 /**
+ * @typedef {import("./utils/git.js").GitCommit} GitCommit
+ *
+ * @typedef {object} CommitEntry
+ * @property {string} author
+ * @property {Date} date
+ * @property {string} hash
+ * @property {number[]} issues
+ * @property {string} originalSubject
+ * @property {number[]} prs
+ * @property {string | null} scope
+ * @property {string} subject
+ *
+ * @typedef {"breaking" | "features" | "fixes" | "performance" | "other"} Category
+ *
+ * @typedef {object} CommitSummary
+ * @property {Record<Category, CommitEntry[]>} categories
+ * @property {number} [commitCount] unset when there are no changes
+ * @property {string[]} contributors
+ * @property {Record<Category, string[]>} formattedCategories
+ * @property {boolean} hasChanges
+ * @property {string | null} previousTag
+ */
+
+/**
  * Parse conventional commit format
- * Returns { type, scope, subject, breaking, body, footer }
+ * @param {string} subject
+ * @returns {{ type: string, scope: string | null, subject: string, breaking: boolean }}
  */
 function parseConventionalCommit(subject) {
   // Conventional commit format: type(scope): subject
@@ -40,6 +65,7 @@ function parseConventionalCommit(subject) {
 
 /**
  * Extract PR and issue references from commit message
+ * @param {string} subject
  */
 function extractReferences(subject) {
   const prPattern = /#(\d+)/g;
@@ -65,8 +91,10 @@ function extractReferences(subject) {
 
 /**
  * Categorize commits by type
+ * @param {GitCommit[]} commits
  */
 function categorizeCommits(commits) {
+  /** @type {Record<Category, CommitEntry[]>} */
   const categories = {
     breaking: [],
     features: [],
@@ -118,6 +146,7 @@ function categorizeCommits(commits) {
 
 /**
  * Format commit entry for release notes
+ * @param {CommitEntry} entry
  */
 function formatCommitEntry(entry) {
   let formatted = entry.subject;
@@ -144,6 +173,7 @@ function formatCommitEntry(entry) {
 
 /**
  * Parse commits since last tag and return categorized data
+ * @returns {CommitSummary}
  */
 function parseCommitsSinceLastTag() {
   const latestTag = getLatestTag();

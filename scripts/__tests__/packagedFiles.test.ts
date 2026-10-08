@@ -4,10 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const require = createRequire(import.meta.url);
 const { ignorePackagedPath, SHIPPED_ENTRIES } =
-  require("../packaged-files.cjs") as {
-    ignorePackagedPath: (file: string) => boolean;
-    SHIPPED_ENTRIES: string[];
-  };
+  require("../packaged-files.cjs") as typeof import("../packaged-files.cjs");
 
 // #464: packaging listed what to leave out, so repo files nobody listed
 // (aidlc-docs/, BACKLOG.md, a local .env.local, TypeScript sources) shipped

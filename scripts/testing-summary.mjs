@@ -33,16 +33,54 @@ import {
   summarise as summariseEntries,
 } from "./traceability.mjs";
 
+/**
+ * @typedef {import("./traceability.mjs").EntrySummary} EntrySummary
+ * @typedef {import("./traceability.mjs").Status} Status
+ *
+ * @typedef {"macOS" | "Windows" | "Linux"} Platform
+ * @typedef {{ content: string, path: string }} ReportFile a report, by its
+ *   path in the artifacts folder
+ *
+ * @typedef {object} EntryGroup Use cases or qualities under one heading
+ * @property {{ followUps: string[], id: string, name: string, status: Status | null, tests: EntrySummary["tests"] }[]} entries
+ * @property {EntrySummary["kind"]} kind
+ * @property {string | null} name
+ *
+ * @typedef {object} BudgetRow A performance budget row (`budgetReportRows`
+ *   in tests/perf/budgets.ts)
+ * @property {string} [label] the action, in plain language
+ * @property {number | null} [max]
+ * @property {unknown} measured
+ * @property {string} metric
+ * @property {string} name
+ * @property {string} suite
+ * @property {number | null} [target]
+ *
+ * @typedef {"within" | "improving" | "over"} BudgetStatus
+ *
+ * @typedef {Record<keyof typeof FACTS, number>} RehearsalFacts
+ *
+ * @typedef {{ passed: number, platforms: Set<Platform>, tests: number }} LayerTally
+ * @typedef {LayerTally & { facts?: RehearsalFacts, knownIssues?: number }} RehearsalTally
+ */
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+/** @type {Record<string, Platform>} */
 const PLATFORMS = { macos: "macOS", ubuntu: "Linux", windows: "Windows" };
 
-/** "Linux" for a path through an artifact named like `x-ubuntu-latest` */
+/**
+ * "Linux" for a path through an artifact named like `x-ubuntu-latest`
+ * @param {string} file
+ * @returns {Platform | undefined}
+ */
 export function platformOf(file) {
   const match = /(ubuntu|macos|windows)-latest/.exec(file);
   return match ? PLATFORMS[match[1]] : undefined;
 }
 
+/** @type {Platform[]} */
 const ORDER = ["macOS", "Windows", "Linux"];
+/** @param {Set<Platform>} set */
 const sortPlatforms = (set) =>
   [...set].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b));
 
@@ -51,8 +89,10 @@ const sortPlatforms = (set) =>
  * order. Everything still to do is a GitHub issue labelled with the entry's ID,
  * which the page counts live; the only note kept here is a declared test gap,
  * a test that can't be automated, so readers see why there's none.
+ * @param {EntrySummary[]} entries
  */
 export function groupEntries(entries) {
+  /** @type {EntryGroup[]} */
   const groups = [];
   for (const entry of entries) {
     const followUps = entry.gap
@@ -77,7 +117,10 @@ export function groupEntries(entries) {
 /** The full-pipeline report; other scenarios get their own subfolders */
 const REHEARSAL = /(^|\/)validation-report\/report\.json$/;
 
-/** True for the full pipeline's report, not a scenario's or performance's */
+/**
+ * True for the full pipeline's report, not a scenario's or performance's
+ * @param {string} file
+ */
 export function isRehearsalReport(file) {
   return REHEARSAL.test(file.replaceAll("\\", "/"));
 }
@@ -90,15 +133,25 @@ const FACTS = {
   samples: "samples imported",
 };
 
+/** @type {(message: string) => never} */
 const fail = (message) => {
   throw new Error(`testing-summary: ${message}`);
 };
 
-/** A Vitest JSON report's run count: skipped and todo tests didn't run */
+/**
+ * A Vitest JSON report's run count: skipped and todo tests didn't run
+ * @param {{ numPassedTests?: unknown, numPendingTests?: number, numTodoTests?: number, numTotalTests?: unknown }} json
+ * @param {string} file
+ */
 function vitestCounts(json, file) {
   const total = json.numTotalTests;
   const passed = json.numPassedTests;
-  if (!Number.isInteger(total) || !Number.isInteger(passed)) {
+  if (
+    typeof total !== "number" ||
+    typeof passed !== "number" ||
+    !Number.isInteger(total) ||
+    !Number.isInteger(passed)
+  ) {
     fail(`${file} isn't a Vitest JSON report (no numTotalTests)`);
   }
   const notRun = (json.numPendingTests ?? 0) + (json.numTodoTests ?? 0);
@@ -108,24 +161,39 @@ function vitestCounts(json, file) {
 /**
  * Summarise a release run. Throws, rather than writing 0s, when a report
  * the page needs is missing or isn't in the shape it expects.
- * @param {{ path: string, content: string }[]} files report files found
- * @param entries every use case and quality, with its generated status
- *   (traceability.mjs `summarise`, given the open issues)
+ * @param {object} run
+ * @param {string} run.commit
+ * @param {string} run.date YYYY-MM-DD
+ * @param {EntrySummary[]} [run.entries] every use case and quality, with
+ *   its generated status (traceability.mjs `summarise`, given the open
+ *   issues)
+ * @param {ReportFile[]} run.files report files found
+ * @param {string} run.version
  */
 export function summarise({ commit, date, entries = [], files, version }) {
+  /** @returns {LayerTally} */
   const layer = () => ({ passed: 0, platforms: new Set(), tests: 0 });
+  /** @type {{ e2e: LayerTally, integration: LayerTally, rehearsal: RehearsalTally, unit: LayerTally }} */
   const layers = {
     e2e: layer(),
     integration: layer(),
     rehearsal: { ...layer(), facts: undefined },
     unit: layer(),
   };
+  /** @type {BudgetRow[]} */
   const budgets = [];
   const seen = { e2e: 0, integration: 0, rehearsal: 0, unit: 0 };
   // CI runs the e2e suite in shards, each with its own report: a platform's
   // results are the sum of its shards'
+  /** @type {Map<string, { file: string, passed: number, tests: number }>} */
   const e2eShards = new Map();
 
+  /**
+   * @param {LayerTally} target
+   * @param {string} file
+   * @param {number} tests
+   * @param {number} passed
+   */
   const add = (target, file, tests, passed) => {
     // Each platform runs the same tests: report one platform's count
     target.tests = Math.max(target.tests, tests);
@@ -160,6 +228,7 @@ export function summarise({ commit, date, entries = [], files, version }) {
       seen.e2e += 1;
     } else if (isRehearsalReport(file)) {
       // A "known" check is a failure tied to an open finding (knownBug)
+      /** @type {{ status?: string }[]} */
       const checks = json.checks ?? [];
       if (checks.length === 0) fail(`${file} has no checks`);
       const known = checks.filter((c) => c.status === "known").length;
@@ -182,12 +251,14 @@ export function summarise({ commit, date, entries = [], files, version }) {
     add(layers.e2e, file, tests, passed);
   }
 
-  const missing = Object.entries({
-    e2e: "results-e2e.json",
-    integration: "results-integration.json",
-    rehearsal: "validation-report/report.json",
-    unit: "results-unit.json",
-  }).filter(([kind]) => seen[kind] === 0);
+  const missing = /** @type {[keyof typeof seen, string][]} */ (
+    Object.entries({
+      e2e: "results-e2e.json",
+      integration: "results-integration.json",
+      rehearsal: "validation-report/report.json",
+      unit: "results-unit.json",
+    })
+  ).filter(([kind]) => seen[kind] === 0);
   if (missing.length > 0) {
     fail(`no ${missing.map(([, f]) => f).join(", ")} among the artifacts`);
   }
@@ -196,7 +267,9 @@ export function summarise({ commit, date, entries = [], files, version }) {
     fail("no e2e budget rows (budgets-e2e.jsonl) among the artifacts");
   }
 
-  const facts = layers.rehearsal.facts;
+  // Set by the rehearsal report, which isn't missing
+  const facts = /** @type {RehearsalFacts} */ (layers.rehearsal.facts);
+  /** @param {RehearsalTally} tally */
   const finish = ({ facts: _facts, platforms, ...rest }) => ({
     ...rest,
     platforms: sortPlatforms(platforms),
@@ -223,22 +296,32 @@ export function summarise({ commit, date, entries = [], files, version }) {
   };
 }
 
-/** The page's rehearsal figures, each a count the report must give */
+/**
+ * The page's rehearsal figures, each a count the report must give
+ * @param {Record<string, unknown> | undefined} facts the report's facts
+ * @param {string} file
+ * @returns {RehearsalFacts}
+ */
 function rehearsalFacts(facts = {}, file) {
+  /** @type {Partial<RehearsalFacts>} */
   const out = {};
-  for (const [key, label] of Object.entries(FACTS)) {
-    if (typeof facts[label] !== "number") {
+  for (const [key, label] of /** @type {[keyof RehearsalFacts, string][]} */ (
+    Object.entries(FACTS)
+  )) {
+    const count = facts[label];
+    if (typeof count !== "number") {
       fail(`${file} has no "${label}" count in its facts`);
     }
-    out[key] = facts[label];
+    out[key] = count;
   }
-  return out;
+  return /** @type {RehearsalFacts} */ (out);
 }
 
 /**
  * Use cases per status, for the page's bar. Qualities are listed with them
  * on the page but not counted. Every entry needs a status: the release reads
  * the issues, so none is unknown.
+ * @param {{ id: string, status: Status | null }[]} useCases
  */
 export function countStatuses(useCases) {
   const unknown = useCases.filter((u) => !u.status).map((u) => u.id);
@@ -247,6 +330,7 @@ export function countStatuses(useCases) {
       `No status for ${unknown.join(", ")}: summarise the entries with the open issues.`,
     );
   }
+  /** @param {Status} status */
   const count = (status) => useCases.filter((u) => u.status === status).length;
   return {
     notBuilt: count("not built"),
@@ -262,9 +346,13 @@ export function countStatuses(useCases) {
  * report writes `null` for a limit that isn't set (`budgetReportRows` in
  * tests/perf/budgets.ts): a metric with no max, such as an action's total,
  * isn't budgeted, so it doesn't count either way.
+ * @param {BudgetRow[]} rows
+ * @returns {{ action: string, status: BudgetStatus }[]}
  */
 export function summariseBudgets(rows) {
+  /** @type {Map<string, BudgetStatus>} */
   const actions = new Map();
+  /** @type {Record<BudgetStatus, number>} */
   const rank = { improving: 1, over: 2, within: 0 };
   for (const row of rows.filter((r) => r.suite === "e2e")) {
     if (typeof row.measured !== "number") {
@@ -274,9 +362,11 @@ export function summariseBudgets(rows) {
     const action =
       row.label ?? row.name.charAt(0).toUpperCase() + row.name.slice(1);
     const status = actions.get(action) ?? "within";
-    const budgeted = typeof row.max === "number";
+    const { max, measured } = row;
+    const budgeted = typeof max === "number";
+    /** @type {BudgetStatus} */
     let next = "within";
-    if (budgeted && row.measured > row.max) next = "over";
+    if (budgeted && measured > max) next = "over";
     else if (budgeted && typeof row.target === "number") next = "improving";
     actions.set(action, rank[next] > rank[status] ? next : status);
   }
@@ -286,9 +376,14 @@ export function summariseBudgets(rows) {
   }));
 }
 
-/** Every report file under `dir` */
+/**
+ * Every report file under `dir`
+ * @param {string} dir
+ */
 export function findReports(dir) {
+  /** @type {ReportFile[]} */
   const out = [];
+  /** @param {string} d */
   const walk = (d) => {
     for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
       const full = path.join(d, entry.name);
@@ -314,6 +409,7 @@ if (
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   const [dir, ...rest] = process.argv.slice(2);
+  /** @param {string} name */
   const option = (name) => {
     const i = rest.indexOf(`--${name}`);
     return i === -1 ? undefined : rest[i + 1];
@@ -336,7 +432,8 @@ if (
   let github;
   try {
     github = readGitHub({ root: ROOT });
-  } catch (error) {
+  } catch (caught) {
+    const error = /** @type {Error & { stderr?: string }} */ (caught);
     const reason = String(error.stderr || error.message)
       .trim()
       .split("\n")[0];
@@ -358,7 +455,7 @@ if (
       version: option("version") ?? "",
     });
   } catch (error) {
-    console.error(error.message);
+    console.error(/** @type {Error} */ (error).message);
     process.exit(1);
   }
   const json = `${JSON.stringify(summary, null, 2)}\n`;

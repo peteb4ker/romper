@@ -7,14 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const require = createRequire(import.meta.url);
 const { PREBUILDS_DIR, pruneSqlitePrebuilds } =
-  require("../prune-sqlite-prebuilds.cjs") as {
-    PREBUILDS_DIR: string;
-    pruneSqlitePrebuilds: (
-      buildPath: string,
-      platform: string,
-      arch: string,
-    ) => string[];
-  };
+  require("../prune-sqlite-prebuilds.cjs") as typeof import("../prune-sqlite-prebuilds.cjs");
 
 // What better-sqlite3 13's npm package ships in prebuilds/
 const ALL_PREBUILDS = [

@@ -12,7 +12,11 @@ const result = (status: string, message?: string) => ({
   ...(message ? { error: { message } } : {}),
 });
 
-const spec = (title: string, status: string, results: object[]) => ({
+const spec = (
+  title: string,
+  status: string,
+  results: ReturnType<typeof result>[],
+) => ({
   file: "tests/e2e/kit-cards.e2e.test.ts",
   line: 12,
   tests: [{ projectName: "electron", results, status }],

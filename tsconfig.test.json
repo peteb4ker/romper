@@ -1,7 +1,11 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "tsBuildInfoFile": ".test.tsbuildinfo"
+    "tsBuildInfoFile": ".test.tsbuildinfo",
+    // The build scripts the tests import are JavaScript, typed with JSDoc:
+    // check them, and the tests against their types (#766)
+    "allowJs": true,
+    "checkJs": true
   },
   "include": [
     "app/renderer/*.d.ts",
@@ -25,6 +29,7 @@
     "electron/main/**/__tests__/**/*",
     "electron/preload/__tests__/**/*",
     "electron/types/*.d.ts",
+    "scripts/__tests__/**/*",
     "shared/**/__tests__/**/*",
     "tests/**/*",
     "vitest.setup.ts",

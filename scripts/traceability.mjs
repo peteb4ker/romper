@@ -59,7 +59,64 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const REGISTER = "docs/developer/use-cases.md";
 const OUTPUT = "docs/developer/traceability.md";
 
+/**
+ * @typedef {"unit" | "integration" | "e2e" | "validation"} Layer
+ * @typedef {"supported" | "partial" | "not built"} Status
+ *
+ * @typedef {object} RegisterEntry A use case or quality in the register
+ * @property {string | null} gap its declared test gap
+ * @property {string | null} group the `## Group` it's under
+ * @property {string} id `UC-NN` or `Q-NN`
+ * @property {"use case" | "quality"} kind
+ * @property {string} name
+ * @property {boolean} notBuilt set by hand: `**Status:** not built`
+ *
+ * @typedef {object} EntryStatusFields
+ * @property {number[] | null} openIssues null when GitHub couldn't be read
+ * @property {Status | null} status null when GitHub couldn't be read
+ *
+ * @typedef {RegisterEntry & EntryStatusFields} StatusEntry A register entry
+ *   with its generated status (`deriveStatuses`)
+ *
+ * @typedef {{ id: string, line: number, title: string }} Tag
+ * @typedef {{ covered: { id: string, line: number }[], line: number, title: string }} ScannedTest
+ * @typedef {{ count: number, line: number }} FileTests tagged tests in a file
+ *   and the first one's line
+ *
+ * @typedef {object} Scan Tagged tests across the repo (`buildIndex`)
+ * @property {Map<string, Map<Layer, Map<string, FileTests>>>} index
+ *   use case ID -> layer -> file -> its tests
+ * @property {number} tagged tests with a tag
+ * @property {(Tag & { file: string })[]} tags
+ * @property {number} total tests
+ *
+ * @typedef {{ labels: string[], number: number, title: string }} OpenIssue
+ *
+ * @typedef {object} GitHubIssues What `readGitHub` reads
+ * @property {number[]} [fixing] issues the current pull request fixes
+ * @property {OpenIssue[]} issues open issues, not pull requests
+ * @property {string[]} labels every label in the repository
+ *
+ * @typedef {{ problems: string[], triage: string[] }} IssueChecks
+ *
+ * @typedef {object} EntrySummary One entry for the testing page (`summarise`)
+ * @property {string | null} gap
+ * @property {string | null} group
+ * @property {string} id
+ * @property {"use case" | "quality"} kind
+ * @property {string} name
+ * @property {number | null} openIssues
+ * @property {Status | null} status
+ * @property {Record<Layer, number>} tests
+ *
+ * @typedef {(file: string, args: string[], options: import("node:child_process").ExecFileSyncOptionsWithStringEncoding) => string} Exec
+ *   `execFileSync`, as the GitHub reads call it
+ * @typedef {{ error(message: string): void, log(message: string): void }} Log
+ */
+
+/** @type {Layer[]} */
 export const LAYERS = ["unit", "integration", "e2e", "validation"];
+/** @type {Record<Layer, string>} */
 const LAYER_LABELS = {
   e2e: "E2E",
   integration: "Integration",
@@ -68,6 +125,7 @@ const LAYER_LABELS = {
 };
 /** The only status set by hand; supported and partial come from the issues. */
 const NOT_BUILT = "not built";
+/** @type {Status[]} */
 export const STATUSES = ["supported", "partial", NOT_BUILT];
 const ISSUES_URL = "https://github.com/peteb4ker/romper/issues";
 
@@ -85,7 +143,11 @@ const SKIP_DIRS = new Set([
   "worktrees",
 ]);
 
-/** The layer a test file belongs to, from its name; null if it isn't a test. */
+/**
+ * The layer a test file belongs to, from its name; null if it isn't a test.
+ * @param {string} file
+ * @returns {Layer | null}
+ */
 export function layerOf(file) {
   const posix = file.split(path.sep).join("/");
   if (/(^|\/)tests\/validation\/[^/]+\.validation\.ts$/.test(posix)) {
@@ -97,9 +159,14 @@ export function layerOf(file) {
   return "unit";
 }
 
-/** Every test file under `root`, as sorted repo-relative POSIX paths. */
+/**
+ * Every test file under `root`, as sorted repo-relative POSIX paths.
+ * @param {string} root
+ */
 export function findTestFiles(root) {
+  /** @type {string[]} */
   const found = [];
+  /** @param {string} dir */
   const walk = (dir) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       if (entry.isDirectory()) {
@@ -120,11 +187,16 @@ export function findTestFiles(root) {
  * declared test gap, and marks the entries with `**Status:** not built`.
  * Every other status is generated (`deriveStatuses`), so the register
  * mustn't set one.
+ * @param {string} markdown
  */
 export function parseRegister(markdown) {
+  /** @type {RegisterEntry[]} */
   const useCases = [];
+  /** @type {string[]} */
   const errors = [];
+  /** @type {RegisterEntry | null} */
   let current = null;
+  /** @type {string | null} */
   let group = null;
   let inGap = false;
   for (const line of markdown.split("\n")) {
@@ -195,6 +267,8 @@ const HOOK_NAMES = new Set([
 /**
  * Name chain of a call's callee: `test.describe.serial(...)` gives
  * ["test", "describe", "serial"]; `it.each(rows)(...)` gives ["it", "each"].
+ * @param {import("typescript").Expression} expr
+ * @returns {string[] | null}
  */
 function calleeChain(expr) {
   if (ts.isIdentifier(expr)) return [expr.text];
@@ -206,6 +280,7 @@ function calleeChain(expr) {
   return null;
 }
 
+/** @param {import("typescript").Node} node */
 function titleText(node) {
   if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
     return node.text;
@@ -217,6 +292,8 @@ function titleText(node) {
 /**
  * The tests in one file and the use cases each one covers. A test is
  * covered by the tags in its own title and in every enclosing describe.
+ * @param {string} source
+ * @param {string} [fileName]
  */
 export function scanTests(source, fileName = "test.ts") {
   const sf = ts.createSourceFile(
@@ -226,8 +303,14 @@ export function scanTests(source, fileName = "test.ts") {
     true,
     fileName.endsWith("x") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
   );
+  /** @type {ScannedTest[]} */
   const tests = [];
+  /** @type {Tag[]} */
   const tags = [];
+  /**
+   * @param {import("typescript").Node} node
+   * @param {{ id: string, line: number }[]} inherited
+   */
   const visit = (node, inherited) => {
     let next = inherited;
     if (ts.isCallExpression(node) && node.arguments.length > 0) {
@@ -257,24 +340,37 @@ export function scanTests(source, fileName = "test.ts") {
   return { tags, tests };
 }
 
-/** Collect tagged tests per use case and layer. */
+/**
+ * Collect tagged tests per use case and layer.
+ * @param {string[]} files test files (`findTestFiles`)
+ * @param {(file: string) => string} readFile
+ * @returns {Scan}
+ */
 export function buildIndex(files, readFile) {
+  /** @type {Scan["index"]} */
   const index = new Map(); // id -> layer -> file -> { count, line }
+  /** @type {Scan["tags"]} */
   const tags = [];
   let total = 0;
   let tagged = 0;
   for (const file of files) {
-    const layer = layerOf(file);
+    const layer = /** @type {Layer} */ (layerOf(file));
     const scan = scanTests(readFile(file), file);
     total += scan.tests.length;
     for (const tag of scan.tags) tags.push({ ...tag, file });
     for (const test of scan.tests) {
       if (test.covered.length > 0) tagged += 1;
       for (const { id, line } of test.covered) {
-        if (!index.has(id)) index.set(id, new Map());
-        const byLayer = index.get(id);
-        if (!byLayer.has(layer)) byLayer.set(layer, new Map());
-        const byFile = byLayer.get(layer);
+        let byLayer = index.get(id);
+        if (!byLayer) {
+          byLayer = new Map();
+          index.set(id, byLayer);
+        }
+        let byFile = byLayer.get(layer);
+        if (!byFile) {
+          byFile = new Map();
+          byLayer.set(layer, byFile);
+        }
         const entry = byFile.get(file) ?? { count: 0, line };
         entry.count += 1;
         entry.line = Math.min(entry.line, line);
@@ -289,6 +385,11 @@ export function buildIndex(files, readFile) {
   return { index, tagged, tags, total };
 }
 
+/**
+ * @param {Scan["index"]} index
+ * @param {string} id
+ * @param {Layer} layer
+ */
 function countIn(index, id, layer) {
   const byFile = index.get(id)?.get(layer);
   if (!byFile) return 0;
@@ -297,10 +398,17 @@ function countIn(index, id, layer) {
   return n;
 }
 
+/**
+ * @param {Scan["index"]} index
+ * @param {string} id
+ */
 const aboveUnit = (index, id) =>
   LAYERS.slice(1).some((layer) => countIn(index, id, layer) > 0);
 
-/** GitHub's heading anchor for a heading's text. */
+/**
+ * GitHub's heading anchor for a heading's text.
+ * @param {string} text
+ */
 export function slug(text) {
   return text
     .toLowerCase()
@@ -320,6 +428,11 @@ const ID_LABEL = /^(?:UC|Q)-\d+$/;
 /** New issues wait here until someone gives them a UC/Q, kind and severity. */
 const TRIAGE = "triage";
 
+/**
+ * @param {Exec} exec
+ * @param {string} root
+ * @param {string[]} args
+ */
 function gh(exec, root, args) {
   return exec("gh", args, {
     cwd: root,
@@ -329,11 +442,16 @@ function gh(exec, root, args) {
   });
 }
 
+/** @param {string} out */
 const lines = (out) => out.split("\n").filter(Boolean);
 
 /**
  * The issues the current pull request closes when it merges (`Fixes #N`):
  * in GitHub Actions the PR being checked, locally the current branch's PR.
+ * @param {Exec} exec
+ * @param {string} root
+ * @param {NodeJS.ProcessEnv} env
+ * @returns {number[]}
  */
 function closingIssues(exec, root, env) {
   const pr = /^refs\/pull\/(\d+)\//.exec(env.GITHUB_REF ?? "")?.[1];
@@ -359,6 +477,8 @@ function closingIssues(exec, root, env) {
  * Open issues (not pull requests) with their label names, every label in
  * the repository, and the issues the current pull request fixes. Throws
  * when `gh` is missing or can't reach GitHub.
+ * @param {{ env?: NodeJS.ProcessEnv, exec?: Exec, root?: string }} [options]
+ * @returns {GitHubIssues}
  */
 export function readGitHub({
   env = process.env,
@@ -373,7 +493,7 @@ export function readGitHub({
       "--jq",
       ".[] | select(.pull_request == null) | {number, title, labels: [.labels[].name]}",
     ]),
-  ).map((line) => JSON.parse(line));
+  ).map((line) => /** @type {OpenIssue} */ (JSON.parse(line)));
   const labels = lines(
     gh(exec, root, [
       "api",
@@ -389,6 +509,7 @@ export function readGitHub({
 /**
  * The open work items: not exempt, and not fixed by the current pull
  * request (it closes them when it merges).
+ * @param {GitHubIssues} github
  */
 function workItems({ fixing = [], issues }) {
   return issues.filter(
@@ -398,23 +519,34 @@ function workItems({ fixing = [], issues }) {
   );
 }
 
-/** An issue nobody has triaged yet: labelled triage, or with no UC/Q. */
+/**
+ * An issue nobody has triaged yet: labelled triage, or with no UC/Q.
+ * @param {OpenIssue} issue
+ */
 const needsTriage = (issue) =>
   issue.labels.includes(TRIAGE) ||
   !issue.labels.some((label) => ID_LABEL.test(label));
 
-/** The open issues that count towards an entry's status: triaged work items. */
+/**
+ * The open issues that count towards an entry's status: triaged work items.
+ * @param {GitHubIssues} github
+ */
 function countedIssues(github) {
   return workItems(github).filter((issue) => !needsTriage(issue));
 }
 
-/** Open issue numbers per UC/Q label. */
+/**
+ * Open issue numbers per UC/Q label.
+ * @param {GitHubIssues} github
+ */
 export function openIssuesByEntry(github) {
+  /** @type {Map<string, number[]>} */
   const byEntry = new Map();
   for (const issue of countedIssues(github)) {
     for (const label of issue.labels.filter((l) => ID_LABEL.test(l))) {
-      if (!byEntry.has(label)) byEntry.set(label, []);
-      byEntry.get(label).push(issue.number);
+      const numbers = byEntry.get(label) ?? [];
+      numbers.push(issue.number);
+      byEntry.set(label, numbers);
     }
   }
   return byEntry;
@@ -426,6 +558,9 @@ export function openIssuesByEntry(github) {
  * an entry is partial while a triaged open issue carries its label, and
  * supported when none does. Without GitHub (`github` null) the status is
  * unknown: null, with `openIssues` null.
+ * @param {RegisterEntry[]} useCases
+ * @param {GitHubIssues | null} github
+ * @returns {StatusEntry[]}
  */
 export function deriveStatuses(useCases, github) {
   const byEntry = github ? openIssuesByEntry(github) : null;
@@ -433,6 +568,7 @@ export function deriveStatuses(useCases, github) {
     const openIssues = byEntry
       ? [...(byEntry.get(uc.id) ?? [])].sort((a, b) => a - b)
       : null;
+    /** @type {Status | null} */
     let status = null;
     if (uc.notBuilt) status = NOT_BUILT;
     else if (openIssues)
@@ -441,8 +577,13 @@ export function deriveStatuses(useCases, github) {
   });
 }
 
-/** Problems the check fails on whatever GitHub says, as messages. */
+/**
+ * Problems the check fails on whatever GitHub says, as messages.
+ * @param {RegisterEntry[]} useCases
+ * @param {Scan} scan
+ */
 export function findProblems(useCases, scan) {
+  /** @type {string[]} */
   const problems = [];
   const known = new Set(useCases.map((uc) => uc.id));
   for (const tag of scan.tags) {
@@ -472,9 +613,15 @@ export function findProblems(useCases, scan) {
  * (`--strict-issues`). `triage` lists the issues nobody has triaged yet;
  * they don't count towards a status and never fail the check, so an
  * outside issue can't block anyone.
+ * @param {RegisterEntry[]} useCases
+ * @param {GitHubIssues} github
+ * @param {Scan | null} [scan] without it, untested entries aren't checked
+ * @returns {IssueChecks}
  */
 export function issueProblems(useCases, github, scan = null) {
+  /** @type {string[]} */
   const problems = [];
+  /** @type {string[]} */
   const triage = [];
   const known = new Set(useCases.map((uc) => uc.id));
   for (const issue of workItems(github).filter(needsTriage)) {
@@ -515,7 +662,11 @@ export function issueProblems(useCases, github, scan = null) {
   return { problems, triage };
 }
 
-/** The issue checks as Markdown, for the CI job summary. */
+/**
+ * The issue checks as Markdown, for the CI job summary.
+ * @param {IssueChecks} checks
+ * @param {{ strict: boolean }} options
+ */
 export function renderIssueChecks({ problems, triage }, { strict }) {
   const out = ["", "## Issue checks", ""];
   out.push(
@@ -549,6 +700,10 @@ export function renderIssueChecks({ problems, triage }, { strict }) {
  * status, tagged tests per layer, the declared test gap, and the number of
  * open issues labelled with it (status and count are null when GitHub
  * couldn't be read).
+ * @param {RegisterEntry[]} useCases
+ * @param {Scan} scan
+ * @param {GitHubIssues | null} [github]
+ * @returns {EntrySummary[]}
  */
 export function summarise(useCases, scan, github = null) {
   return deriveStatuses(useCases, github).map((uc) => ({
@@ -559,18 +714,27 @@ export function summarise(useCases, scan, github = null) {
     name: uc.name,
     openIssues: uc.openIssues ? uc.openIssues.length : null,
     status: uc.status,
-    tests: Object.fromEntries(
-      LAYERS.map((layer) => [layer, countIn(scan.index, uc.id, layer)]),
+    tests: /** @type {Record<Layer, number>} */ (
+      Object.fromEntries(
+        LAYERS.map((layer) => [layer, countIn(scan.index, uc.id, layer)]),
+      )
     ),
   }));
 }
 
-/** The open issues labelled with an entry's ID, on GitHub. */
+/**
+ * The open issues labelled with an entry's ID, on GitHub.
+ * @param {string} id
+ */
 export const issuesLink = (id) => `${ISSUES_URL}?q=is%3Aopen+label%3A${id}`;
 
+/** @param {Status | null} status */
 const statusName = (status) => status ?? "unknown";
 
-/** Entries per status, in STATUSES order, then unknown. */
+/**
+ * Entries per status, in STATUSES order, then unknown.
+ * @param {StatusEntry[]} entries
+ */
 function byStatus(entries) {
   return [...STATUSES, null]
     .map((status) => ({
@@ -583,6 +747,7 @@ function byStatus(entries) {
 /**
  * The generated statuses as console lines (`npm run trace`): one line per
  * status, partial entries with their open issues.
+ * @param {StatusEntry[]} entries
  */
 export function statusLines(entries) {
   const out = [
@@ -591,7 +756,7 @@ export function statusLines(entries) {
   for (const { entries: list, status } of byStatus(entries)) {
     const ids = list.map((uc) =>
       status === "partial"
-        ? `${uc.id} (${uc.openIssues.map((n) => `#${n}`).join(", ")})`
+        ? `${uc.id} (${(uc.openIssues ?? []).map((n) => `#${n}`).join(", ")})`
         : uc.id,
     );
     const note = status === null ? " (can't read GitHub)" : "";
@@ -602,12 +767,20 @@ export function statusLines(entries) {
   return out;
 }
 
+/**
+ * @param {Scan["index"]} index
+ * @param {string} id
+ * @param {Layer} layer
+ */
 function cell(index, id, layer) {
   const n = countIn(index, id, layer);
   return n === 0 ? "-" : `[${n}](#${id.toLowerCase()})`;
 }
 
-/** An entry's status for the matrix, linking its open issues. */
+/**
+ * An entry's status for the matrix, linking its open issues.
+ * @param {StatusEntry} uc
+ */
 function statusCell(uc) {
   const open = uc.openIssues?.length ?? 0;
   return open === 0
@@ -620,12 +793,18 @@ function statusCell(uc) {
  * `useCases` carry their generated status (`deriveStatuses`). `base`
  * prefixes repository paths in links: relative to docs/developer by
  * default, or a blob URL for the CI summary.
+ * @param {StatusEntry[]} useCases
+ * @param {Scan} scan
+ * @param {{ base?: string }} [options]
  */
 export function render(useCases, scan, { base = "../../" } = {}) {
   const { index } = scan;
+  /** @type {string[]} */
   const out = [];
+  /** @param {string[]} lines */
   const push = (...lines) => out.push(...lines);
   const register = base === "../../" ? "use-cases.md" : `${base}${REGISTER}`;
+  /** @param {RegisterEntry} uc */
   const ucLink = (uc) =>
     `[${uc.id}](${register}#${slug(`${uc.id} ${uc.name}`)}) ${uc.name}`;
   const counts = byStatus(useCases)
@@ -730,7 +909,7 @@ export function render(useCases, scan, { base = "../../" } = {}) {
       const byFile = byLayer?.get(layer);
       if (!byFile) continue;
       for (const file of [...byFile.keys()].sort()) {
-        const { count, line } = byFile.get(file);
+        const { count, line } = /** @type {FileTests} */ (byFile.get(file));
         const tests = count === 1 ? "1 test" : `${count} tests`;
         push(
           `- ${LAYER_LABELS[layer]}: [\`${file}\`](${base}${file}#L${line}) (${tests})`,
@@ -743,6 +922,22 @@ export function render(useCases, scan, { base = "../../" } = {}) {
   return `${out.join("\n")}\n`;
 }
 
+/**
+ * @typedef {object} RunOptions
+ * @property {boolean} [check] check instead of writing the matrix
+ * @property {NodeJS.ProcessEnv} [env]
+ * @property {boolean} [strictIssues] fail on the issue checks (the release)
+ * @property {() => GitHubIssues} [github] reads the issues; throws when it can't
+ * @property {string} [json] also write the per-entry summary here
+ * @property {string} [root] the repository
+ * @property {Log} [log]
+ * @property {string} [summaryFile] the CI job summary
+ */
+
+/**
+ * `npm run trace` and `npm run trace:check`; returns the exit code.
+ * @param {RunOptions} [options]
+ */
 export function run({
   check = false,
   env = process.env,
@@ -768,10 +963,12 @@ export function run({
   const totals = `${useCases.length} use cases and qualities, ${scan.tagged} of ${scan.total} tests tagged.`;
 
   // Statuses come from the issues, so every mode reads them
+  /** @type {GitHubIssues | null} */
   let github = null;
   try {
     github = readIssues();
-  } catch (error) {
+  } catch (caught) {
+    const error = /** @type {Error & { stderr?: string }} */ (caught);
     const reason = String(error.stderr || error.message)
       .trim()
       .split("\n")[0];
@@ -785,9 +982,10 @@ export function run({
       `${env.GITHUB_ACTIONS === "true" ? "::warning title=Traceability::" : ""}Skipping the issue checks and showing statuses as unknown: can't read GitHub issues with gh (${reason}).`,
     );
   }
-  if (github?.fixing?.length > 0) {
+  const fixing = github?.fixing ?? [];
+  if (fixing.length > 0) {
     log.log(
-      `Counting ${github.fixing.map((n) => `#${n}`).join(", ")} as closed: this pull request fixes ${github.fixing.length === 1 ? "it" : "them"}.`,
+      `Counting ${fixing.map((n) => `#${n}`).join(", ")} as closed: this pull request fixes ${fixing.length === 1 ? "it" : "them"}.`,
     );
   }
   const entries = deriveStatuses(useCases, github);
@@ -825,6 +1023,11 @@ export function run({
     );
   }
   const inActions = env.GITHUB_ACTIONS === "true";
+  /**
+   * @param {"notice" | "warning"} level
+   * @param {string} title
+   * @param {string} message
+   */
   const annotate = (level, title, message) =>
     log.log(
       inActions

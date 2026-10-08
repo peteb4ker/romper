@@ -22,10 +22,25 @@ const API = "https://sonarcloud.io/api";
 const PROJECT = "peteb4ker_romper";
 
 /**
+ * The part of `fetch` the check uses, so tests can answer for SonarCloud
+ * @typedef {(url: string) => Promise<{ json(): Promise<unknown>, ok: boolean, status: number }>} Fetch
+ *
+ * @typedef {{ commit?: { sha?: string }, key: string }} SonarPullRequest
+ *
+ * @typedef {object} SonarIssue
+ * @property {string} [component] `<project>:<path>`
+ * @property {number} [line]
+ * @property {string} message
+ * @property {string} rule
+ * @property {string} severity
+ */
+
+/**
  * Check one PR; resolves to { code, lines }.
- * @param {string} pr the PR number
- * @param {{ fetchImpl?: typeof fetch, headSha?: string }} options headSha
+ * @param {string | undefined} pr the PR number
+ * @param {{ fetchImpl?: Fetch, headSha?: string }} options headSha
  *   is the PR's head commit, when known
+ * @returns {Promise<{ code: 0 | 1 | 2, lines: string[] }>}
  */
 export async function checkPullRequest(
   pr,
@@ -34,6 +49,7 @@ export async function checkPullRequest(
   if (!/^\d+$/.test(String(pr ?? ""))) {
     return { code: 2, lines: ["Usage: npm run sonar:pr -- <pr-number>"] };
   }
+  /** @param {string} path */
   const get = async (path) => {
     const response = await fetchImpl(`${API}/${path}`);
     if (!response.ok) {
@@ -42,9 +58,10 @@ export async function checkPullRequest(
     return response.json();
   };
 
-  const { pullRequests = [] } = await get(
-    `project_pull_requests/list?project=${PROJECT}`,
-  );
+  const { pullRequests = [] } =
+    /** @type {{ pullRequests?: SonarPullRequest[] }} */ (
+      await get(`project_pull_requests/list?project=${PROJECT}`)
+    );
   const analysis = pullRequests.find((p) => p.key === String(pr));
   if (!analysis) {
     return {
@@ -64,9 +81,12 @@ export async function checkPullRequest(
     };
   }
 
-  const { issues = [], total = 0 } = await get(
-    `issues/search?componentKeys=${PROJECT}&pullRequest=${pr}&resolved=false&ps=500`,
-  );
+  const { issues = [], total = 0 } =
+    /** @type {{ issues?: SonarIssue[], total?: number }} */ (
+      await get(
+        `issues/search?componentKeys=${PROJECT}&pullRequest=${pr}&resolved=false&ps=500`,
+      )
+    );
   const at = analyzed ? ` (analysis of ${analyzed.slice(0, 8)})` : "";
   if (total === 0) {
     return { code: 0, lines: [`PR #${pr}: 0 new SonarCloud issues${at}.`] };
@@ -81,14 +101,20 @@ export async function checkPullRequest(
   };
 }
 
-/** One issue as `SEVERITY rule path:line message` */
+/**
+ * One issue as `SEVERITY rule path:line message`
+ * @param {SonarIssue} issue
+ */
 export function formatIssue(issue) {
   const file = String(issue.component ?? "").replace(`${PROJECT}:`, "");
   const where = issue.line ? `${file}:${issue.line}` : file;
   return `  ${issue.severity}\t${issue.rule}\t${where}\t${issue.message}`;
 }
 
-/** The PR's head commit, from gh; undefined if gh can't say */
+/**
+ * The PR's head commit, from gh; undefined if gh can't say
+ * @param {string} pr
+ */
 function readHeadSha(pr) {
   try {
     return execFileSync(
@@ -115,7 +141,9 @@ if (
     }
     process.exit(result.code);
   } catch (error) {
-    console.error(`Couldn't read SonarCloud: ${error.message}`);
+    console.error(
+      `Couldn't read SonarCloud: ${/** @type {Error} */ (error).message}`,
+    );
     process.exit(2);
   }
 }

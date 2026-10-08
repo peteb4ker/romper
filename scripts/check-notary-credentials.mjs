@@ -19,7 +19,20 @@ import { pathToFileURL } from "node:url";
 const NOTARY_SUBMISSIONS =
   "https://appstoreconnect.apple.com/notary/v2/submissions";
 
-/** Check the key; resolves to { ok, message }. */
+/**
+ * ASC_API_KEY_JSON, as rcodesign writes it
+ * @typedef {{ issuer_id: string, key_id: string, private_key: string }} NotaryKey
+ *
+ * The part of `fetch` the check uses, so tests can answer for Apple
+ * @typedef {(url: string, init: { headers: Record<string, string> }) => Promise<{ json(): Promise<unknown>, ok: boolean, status: number }>} Fetch
+ */
+
+/**
+ * Check the key; resolves to { ok, message }.
+ * @param {string | undefined} keyJson ASC_API_KEY_JSON
+ * @param {Fetch} [fetchImpl]
+ * @returns {Promise<{ message: string, ok: boolean }>}
+ */
 export async function checkNotaryCredentials(keyJson, fetchImpl = fetch) {
   let key;
   try {
@@ -41,7 +54,7 @@ export async function checkNotaryCredentials(keyJson, fetchImpl = fetch) {
   try {
     token = notaryToken(key);
   } catch (error) {
-    return { message: error.message, ok: false };
+    return { message: /** @type {Error} */ (error).message, ok: false };
   }
 
   let response;
@@ -51,7 +64,7 @@ export async function checkNotaryCredentials(keyJson, fetchImpl = fetch) {
     });
   } catch (error) {
     return {
-      message: `Couldn't reach Apple's notary service: ${error.message}`,
+      message: `Couldn't reach Apple's notary service: ${/** @type {Error} */ (error).message}`,
       ok: false,
     };
   }
@@ -69,8 +82,13 @@ export async function checkNotaryCredentials(keyJson, fetchImpl = fetch) {
   return { message: detail ? `${reason}: ${detail}` : reason, ok: false };
 }
 
-/** An ES256 token App Store Connect accepts for 10 minutes. */
+/**
+ * An ES256 token App Store Connect accepts for 10 minutes.
+ * @param {NotaryKey} key
+ * @param {number} [now] epoch milliseconds
+ */
 export function notaryToken(key, now = Date.now()) {
+  /** @param {object} value */
   const encode = (value) =>
     Buffer.from(JSON.stringify(value)).toString("base64url");
   const issuedAt = Math.floor(now / 1000);
@@ -96,6 +114,7 @@ export const UNREADABLE_KEY =
  * The signing key from ASC_API_KEY_JSON's private_key. rcodesign stores the
  * base64 of the .p8 file's PKCS#8 DER; PEM text, raw or base64-encoded, is
  * accepted too. Throws UNREADABLE_KEY, never the key, when none of them fit.
+ * @param {string} privateKey
  */
 export function notaryPrivateKey(privateKey) {
   try {
@@ -118,9 +137,16 @@ export function notaryPrivateKey(privateKey) {
   }
 }
 
+/**
+ * What Apple's error response says went wrong; empty if it doesn't say
+ * @param {{ json(): Promise<unknown> }} response
+ */
 async function appleErrorDetail(response) {
   try {
-    const body = await response.json();
+    const body =
+      /** @type {{ errors?: { detail?: string, title?: string }[] } | null} */ (
+        await response.json()
+      );
     return (body?.errors ?? [])
       .map((error) => error.detail ?? error.title)
       .filter(Boolean)

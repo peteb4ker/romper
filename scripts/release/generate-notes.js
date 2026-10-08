@@ -17,7 +17,36 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.join(__dirname, "../..");
 
 /**
+ * @typedef {import("./fixed-issues.js").FixedIssueGroup} FixedIssueGroup
+ *
+ * @typedef {object} ReleaseData What the release notes template shows; null
+ *   leaves a section out
+ * @property {string[] | null} breaking
+ * @property {number} commitCount
+ * @property {string[] | null} contributors
+ * @property {string} date YYYY-MM-DD
+ * @property {string[] | null} features
+ * @property {FixedIssueGroup[] | null} fixed_issues
+ * @property {string[] | null} fixes
+ * @property {string | null} highlights
+ * @property {string[] | null} known_issues
+ * @property {string[] | null} other
+ * @property {string[] | null} performance
+ * @property {string} platform
+ * @property {string} previous_version
+ * @property {string} version
+ *
+ * @typedef {object} CustomReleaseData Hand-written parts of the notes
+ * @property {string | null} [highlights]
+ * @property {string[] | null} [knownIssues]
+ *
+ * @typedef {object} ReleaseDataOptions
+ * @property {(previousTag: string | null) => FixedIssueGroup[] | null} [getFixedIssues]
+ */
+
+/**
  * Load and compile a Handlebars template
+ * @param {string} templateName
  */
 function loadTemplate(templateName) {
   const templatePath = path.join(
@@ -47,6 +76,7 @@ function getPlatformIdentifier() {
  * Issues closed as completed between the previous tag's commit and HEAD
  * (the tagged commit in CI), grouped for "Fixed in this release". Null when
  * GitHub can't be queried.
+ * @param {string | null} previousTag
  */
 function getFixedIssuesSinceTag(previousTag) {
   const repo = getGitHubRepoSlug();
@@ -70,6 +100,10 @@ function getFixedIssuesSinceTag(previousTag) {
  * Generate release notes data object
  *
  * `getFixedIssues(previousTag)` is injectable so tests don't query GitHub.
+ * @param {string} version
+ * @param {CustomReleaseData} [customData]
+ * @param {ReleaseDataOptions} [options]
+ * @returns {ReleaseData}
  */
 function generateReleaseData(
   version,
@@ -91,7 +125,7 @@ function generateReleaseData(
     highlights: customData.highlights || null,
 
     // Issues closed as completed since the previous release, by use case
-    fixed_issues: fixedIssues?.length > 0 ? fixedIssues : null,
+    fixed_issues: fixedIssues && fixedIssues.length > 0 ? fixedIssues : null,
 
     // Breaking changes
     breaking:
@@ -142,6 +176,7 @@ function generateReleaseData(
 
 /**
  * Render the release notes template with a prepared data object
+ * @param {Partial<ReleaseData>} data a section left out is left out of the notes
  */
 function renderReleaseNotes(data) {
   return loadTemplate("RELEASE_NOTES_TEMPLATE.md")(data);
@@ -149,6 +184,9 @@ function renderReleaseNotes(data) {
 
 /**
  * Generate release notes from template
+ * @param {string} version
+ * @param {CustomReleaseData} [customData]
+ * @param {ReleaseDataOptions} [options]
  */
 function generateReleaseNotes(version, customData = {}, options = {}) {
   try {
@@ -156,7 +194,9 @@ function generateReleaseNotes(version, customData = {}, options = {}) {
       generateReleaseData(version, customData, options),
     );
   } catch (error) {
-    throw new Error(`Failed to generate release notes: ${error.message}`);
+    throw new Error(
+      `Failed to generate release notes: ${/** @type {Error} */ (error).message}`,
+    );
   }
 }
 

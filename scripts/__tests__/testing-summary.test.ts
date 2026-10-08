@@ -4,6 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import type { EntrySummary, Status } from "../traceability.mjs";
+
 import {
   countStatuses,
   findReports,
@@ -63,7 +65,11 @@ describe("platformOf", () => {
 
 describe("summarise", () => {
   // Statuses as traceability.mjs generates them from the open issues
-  const entry = (id: string, kind: string, status: string) => ({
+  const entry = (
+    id: string,
+    kind: EntrySummary["kind"],
+    status: Status,
+  ): EntrySummary => ({
     gap: null,
     group: kind === "quality" ? "Qualities" : "Samples",
     id,
@@ -146,10 +152,7 @@ describe("summarise", () => {
     expect(summary.version).toBe("v1.3.2");
     // The page's chips show the generated status
     expect(
-      summary.groups.flatMap(
-        (g: { entries: { id: string; status: string }[] }) =>
-          g.entries.map((e) => [e.id, e.status]),
-      ),
+      summary.groups.flatMap((g) => g.entries.map((e) => [e.id, e.status])),
     ).toEqual([
       ["UC-19", "supported"],
       ["UC-20", "not built"],
@@ -256,9 +259,9 @@ describe("groupEntries", () => {
         gap: null,
         group: "Samples",
         id: "UC-19",
-        issues: [{ id: "RE-40", text: "Some failures happen silently." }],
         kind: "use case",
         name: "Drop WAVs onto a voice",
+        openIssues: 1,
         status: "partial",
         tests: tests(30, 20, 3),
       },
@@ -266,9 +269,9 @@ describe("groupEntries", () => {
         gap: "opening `Finder` needs a real desktop.",
         group: "Samples",
         id: "UC-25",
-        issues: [],
         kind: "use case",
         name: "Reveal a sample",
+        openIssues: 0,
         status: "supported",
         tests: tests(6),
       },
@@ -276,9 +279,9 @@ describe("groupEntries", () => {
         gap: null,
         group: "Samples",
         id: "UC-22",
-        issues: [],
         kind: "use case",
         name: "Move a sample to another kit",
+        openIssues: 0,
         status: "not built",
         tests: tests(3),
       },
@@ -286,9 +289,9 @@ describe("groupEntries", () => {
         gap: null,
         group: "Qualities",
         id: "Q-06",
-        issues: [],
         kind: "quality",
         name: "Works with a keyboard",
+        openIssues: 0,
         status: "partial",
         tests: tests(0),
       },

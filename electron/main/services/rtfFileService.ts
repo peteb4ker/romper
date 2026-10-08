@@ -4,6 +4,8 @@ import { parseBankNameFile } from "@romper/shared/rampleCardLayout.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+import { withCardWatchdog } from "./cardWatchdog.js";
+
 /** A bank letter: one capital, A to Z. */
 const BANK_LETTER_PATTERN = /^[A-Z]$/;
 
@@ -32,17 +34,26 @@ export interface StagedRtfFile {
  * only when setup imports a card or the archive (#564, #567); the names'
  * owner is `banks.artist`. The Rample manual doesn't mention them, so
  * whether the module reads or shows them is unverified on hardware.
+ *
+ * The card-side methods (`writeAllBankRtfFiles`, `writeRtfFile`,
+ * `removeRtfFile`) are asynchronous, each card operation under the card
+ * watchdog (#656). `stageRtfFile` works on the local store, never the card,
+ * and stays synchronous so a bank's name and its file still change
+ * together or not at all (#567).
  */
 class RtfFileService {
   /**
-   * Remove any existing RTF file for a bank letter in a directory.
-   * Finds and removes files matching `{Letter} - *.rtf`.
+   * Remove any name file of a bank letter from the card root: files
+   * matching `{Letter} - *.rtf`. Each card operation is asynchronous and
+   * under the card watchdog (#656).
    */
-  removeRtfFile(dirPath: string, bankLetter: string): void {
+  async removeRtfFile(dirPath: string, bankLetter: string): Promise<void> {
     requireBankLetter(bankLetter);
-    for (const file of fs.readdirSync(dirPath)) {
+    const files = await withCardWatchdog(fs.promises.readdir(dirPath));
+    for (const file of files) {
       if (isRtfFileForBank(file, bankLetter)) {
-        fs.unlinkSync(path.join(dirPath, file));
+        // One at a time, so the watchdog times each removal (#656)
+        await withCardWatchdog(fs.promises.unlink(path.join(dirPath, file))); // NOSONAR: sequential on purpose (#656)
       }
     }
   }
@@ -106,15 +117,20 @@ class RtfFileService {
   }
 
   /**
-   * Write all bank RTF files to a directory (used during SD card sync).
-   * Only writes files for banks whose name can be a file name; the sync
-   * summary warns about the others.
+   * Write the name file of every named bank to the card root (`dirPath`),
+   * during a write. Only writes files for banks whose name can be a file
+   * name; the write summary warns about the others.
+   *
+   * Every card operation is asynchronous and under the card watchdog
+   * (#656): the card's driver can stop responding, and a synchronous call
+   * would then block the main process and freeze the window. A card that
+   * stops responding fails the write with the watchdog's message instead.
    */
-  writeAllBankRtfFiles(dirPath: string, banks: Bank[]): number {
+  async writeAllBankRtfFiles(dirPath: string, banks: Bank[]): Promise<number> {
     let written = 0;
     for (const bank of banks) {
       if (bank.artist && isWritableBankName(bank.artist)) {
-        this.writeRtfFile(dirPath, bank.letter, bank.artist);
+        await this.writeRtfFile(dirPath, bank.letter, bank.artist); // NOSONAR: sequential on purpose (#656)
         written++;
       }
     }
@@ -122,23 +138,30 @@ class RtfFileService {
   }
 
   /**
-   * Write an RTF file for a bank letter with a given artist name.
-   * First removes any existing RTF file for that bank letter,
-   * then creates `{Letter} - {Artist}.rtf` with minimal RTF content.
+   * Write a bank's name file, `{Letter} - {Artist}.rtf` with minimal RTF
+   * content, to the card root, replacing any name file the letter had.
+   * Each card operation is asynchronous and under the card watchdog
+   * (#656).
    */
-  writeRtfFile(dirPath: string, bankLetter: string, artistName: string): void {
+  async writeRtfFile(
+    dirPath: string,
+    bankLetter: string,
+    artistName: string,
+  ): Promise<void> {
     requireBankLetter(bankLetter);
     const nameError = bankNameError(artistName);
     if (nameError) throw new Error(nameError);
 
     // Remove any existing RTF file for this bank letter
-    this.removeRtfFile(dirPath, bankLetter);
+    await this.removeRtfFile(dirPath, bankLetter);
 
     const filePath = path.join(
       dirPath,
       bankRtfFileName(bankLetter, artistName),
     );
-    fs.writeFileSync(filePath, String.raw`{\rtf1}`, "utf-8");
+    await withCardWatchdog(
+      fs.promises.writeFile(filePath, String.raw`{\rtf1}`, "utf-8"),
+    );
   }
 }
 

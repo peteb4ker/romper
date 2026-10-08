@@ -319,10 +319,15 @@ event, so the dialog leaves the last file's count, then `removing` events
 with a count (`removal`, throttled like file progress) that the panel
 shows as "Removing old kits… 3/40", and `finalizing` again while it
 records the write; Cancel stops between
-removals, and the next write removes the rest. Each card operation (a file
-written, an entry removed) has a watchdog (`cardWatchdog.ts`, 60 s): a card
-whose driver stops responding fails the write with a message saying so,
-instead of leaving it waiting. The pending operation can't be cancelled:
+removals, and the next write removes the rest. The bank name files at the
+card root are written and replaced with `fs.promises` too (#656,
+`rtfFileService.writeAllBankRtfFiles`), and so is resolving the card's
+path when the write checks its target (`validateSdCardTarget`). Each card
+operation (resolving the card's path, a file written, a bank name file
+written or removed, an entry removed) has a watchdog (`cardWatchdog.ts`,
+60 s): a card whose driver stops responding fails the write with a
+message saying so, instead of freezing the window or leaving the write
+waiting. The pending operation can't be cancelled:
 its thread pool thread returns only when the driver does, and until then
 quitting may wait on it too.
 

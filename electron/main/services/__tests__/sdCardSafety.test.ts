@@ -38,88 +38,113 @@ describe("[UC-34] sdCardSafety", () => {
   });
 
   describe("validateSdCardTarget", () => {
-    it("accepts a separate SD card folder", () => {
-      expect(validateSdCardTarget(card, [store])).toEqual({ ok: true });
+    it("accepts a separate SD card folder", async () => {
+      expect(await validateSdCardTarget(card, [store])).toEqual({ ok: true });
     });
 
-    it("accepts a separate folder that does not exist yet", () => {
+    it("accepts a separate folder that does not exist yet", async () => {
       expect(
-        validateSdCardTarget(path.join(root, "not-yet-created"), [store]),
+        await validateSdCardTarget(path.join(root, "not-yet-created"), [store]),
       ).toEqual({ ok: true });
     });
 
-    it("ignores empty protected paths", () => {
-      expect(validateSdCardTarget(card, ["", store])).toEqual({ ok: true });
+    it("ignores empty protected paths", async () => {
+      expect(await validateSdCardTarget(card, ["", store])).toEqual({
+        ok: true,
+      });
     });
 
-    it("rejects an empty or relative path", () => {
-      expect(validateSdCardTarget("", [store]).ok).toBe(false);
-      expect(validateSdCardTarget("relative/card", [store]).ok).toBe(false);
+    it("rejects an empty or relative path", async () => {
+      expect((await validateSdCardTarget("", [store])).ok).toBe(false);
+      expect((await validateSdCardTarget("relative/card", [store])).ok).toBe(
+        false,
+      );
     });
 
-    it("rejects the filesystem root", () => {
-      const result = validateSdCardTarget(path.parse(os.homedir()).root, [
+    it("rejects the filesystem root", async () => {
+      const result = await validateSdCardTarget(path.parse(os.homedir()).root, [
         store,
       ]);
       expect(result.ok).toBe(false);
     });
 
-    it("rejects the home folder", () => {
-      const result = validateSdCardTarget(os.homedir(), [store]);
+    it("rejects the home folder", async () => {
+      const result = await validateSdCardTarget(os.homedir(), [store]);
       expect(result.ok).toBe(false);
       expect(result.reason).toMatch(/home folder/);
     });
 
-    it("rejects a folder above the home folder", () => {
-      const result = validateSdCardTarget(path.dirname(os.homedir()), [store]);
+    it("rejects a folder above the home folder", async () => {
+      const result = await validateSdCardTarget(path.dirname(os.homedir()), [
+        store,
+      ]);
       expect(result.ok).toBe(false);
     });
 
-    it("rejects the local store itself", () => {
-      const result = validateSdCardTarget(store, [store]);
+    it("rejects the local store itself", async () => {
+      const result = await validateSdCardTarget(store, [store]);
       expect(result.ok).toBe(false);
       expect(result.reason).toMatch(/overlaps the local store/);
     });
 
-    it("rejects a folder inside the local store", () => {
+    it("rejects a folder inside the local store", async () => {
       const inside = path.join(store, "A0");
       fs.mkdirSync(inside);
-      expect(validateSdCardTarget(inside, [store]).ok).toBe(false);
+      expect((await validateSdCardTarget(inside, [store])).ok).toBe(false);
     });
 
-    it("rejects a folder that contains the local store", () => {
-      expect(validateSdCardTarget(root, [store]).ok).toBe(false);
+    it("rejects a folder that contains the local store", async () => {
+      expect((await validateSdCardTarget(root, [store])).ok).toBe(false);
     });
 
-    it("checks every protected store, not just the first", () => {
+    it("checks every protected store, not just the first", async () => {
       const other = path.join(root, "other-store");
       fs.mkdirSync(other);
-      expect(validateSdCardTarget(other, [store, other]).ok).toBe(false);
+      expect((await validateSdCardTarget(other, [store, other])).ok).toBe(
+        false,
+      );
     });
 
-    it("does not treat a sibling with a shared name prefix as inside the store", () => {
+    it("does not treat a sibling with a shared name prefix as inside the store", async () => {
       const sibling = `${store}-backup`;
       fs.mkdirSync(sibling);
-      expect(validateSdCardTarget(sibling, [store])).toEqual({ ok: true });
+      expect(await validateSdCardTarget(sibling, [store])).toEqual({
+        ok: true,
+      });
     });
 
     it.skipIf(isWindows)(
       "rejects a symlink that points at the local store",
-      () => {
+      async () => {
         const link = path.join(root, "card-link");
         fs.symlinkSync(store, link);
-        expect(validateSdCardTarget(link, [store]).ok).toBe(false);
+        expect((await validateSdCardTarget(link, [store])).ok).toBe(false);
       },
     );
 
     it.skipIf(!isCaseInsensitive)(
       "compares paths case-insensitively where the filesystem does",
-      () => {
-        expect(validateSdCardTarget(store.toUpperCase(), [store]).ok).toBe(
-          false,
-        );
+      async () => {
+        expect(
+          (await validateSdCardTarget(store.toUpperCase(), [store])).ok,
+        ).toBe(false);
       },
     );
+
+    it("[UC-34] says the card stopped responding when its path never resolves (#656)", async () => {
+      const realpath = vi
+        .spyOn(fs.promises, "realpath")
+        .mockReturnValue(new Promise<string>(() => undefined));
+      cardWatchdogSettings.timeoutMs = 20;
+      try {
+        await expect(validateSdCardTarget(card, [store])).rejects.toThrow(
+          CardNotRespondingError,
+        );
+      } finally {
+        cardWatchdogSettings.timeoutMs = CARD_OPERATION_TIMEOUT_MS;
+        realpath.mockRestore();
+      }
+    });
   });
 
   describe("findStaleCardEntries", () => {

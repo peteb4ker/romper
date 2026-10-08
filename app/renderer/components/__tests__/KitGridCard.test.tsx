@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock isValidKit before importing the component
 vi.mock("@romper/shared/kitUtilsShared", () => ({
-  isValidKit: vi.fn((name: string) => /^\p{Lu}\d{1,2}$/u.test(name)),
+  isValidKit: vi.fn((name: string) => /^[A-Z]\d{1,2}$/.test(name)),
 }));
 
 // Mock KitGridItem to capture the props it receives
@@ -69,7 +69,7 @@ describe("[UC-08] KitGridCard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsValidKit.mockImplementation((name: string) =>
-      /^\p{Lu}\d{1,2}$/u.test(name),
+      /^[A-Z]\d{1,2}$/.test(name),
     );
   });
 

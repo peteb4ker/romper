@@ -1,5 +1,6 @@
 import type { Bank, KitWithRelations } from "@romper/shared/db/schema";
 
+import { isBankLetter } from "@romper/shared/rampleCardLayout";
 import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 
 import { hasCommandModifier } from "../../../utils/keyboardShortcuts";
@@ -199,7 +200,7 @@ export function useKitBankNavigation({
       // Keys pressed in a dialog are the dialog's (#500)
       if (isModalDialogOpen()) return;
 
-      if (e.key.length === 1 && /^\p{Lu}$/u.test(e.key.toUpperCase())) {
+      if (e.key.length === 1 && isBankLetter(e.key.toUpperCase())) {
         const bank = e.key.toUpperCase();
 
         // Only handle if bank has kits

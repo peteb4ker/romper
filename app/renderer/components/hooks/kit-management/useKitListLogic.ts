@@ -1,6 +1,7 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
 import { compareKitSlots } from "@romper/shared/kitUtilsShared";
+import { isKitName } from "@romper/shared/rampleCardLayout";
 import { useMemo } from "react";
 
 export function useKitListLogic(kits: KitWithRelations[]) {
@@ -14,8 +15,7 @@ export function useKitListLogic(kits: KitWithRelations[]) {
   );
 
   // Helper to determine if a kit is valid
-  const isValidKit = (kit: KitWithRelations) =>
-    /^\p{Lu}\d{1,2}$/u.test(kit.name);
+  const isValidKit = (kit: KitWithRelations) => isKitName(kit.name);
 
   // Helper to get color class
   const getColorClass = (kit: KitWithRelations) =>

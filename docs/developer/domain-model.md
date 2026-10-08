@@ -294,6 +294,11 @@ names) and an optional name (the "artist").
     `kit.bank.artist`, which the kit reload after a rename refreshes.
 - **Invariants:**
   - The `banks` table always has 26 rows (migration `0001`).
+  - A letter is one capital A to Z (`isBankLetter` in
+    `shared/rampleCardLayout.ts`, #573), which `update-bank` and the
+    renderer check. A bank name file's letter may be either case
+    (`a - Name.rtf` is bank A; Pete, #567); any other letter, such as `Ä`,
+    isn't a bank.
   - A name is never blank and holds none of `/ \ : * ? " < > |` or control
     characters (`bankNameError`), because it becomes a file name.
   - At most one name file per letter, in the store and on the card.
@@ -362,6 +367,15 @@ Kit fields, each owned by a column of `kits`:
 - **Invariants:**
   - A name is a bank letter and 0 to 99. A kit has exactly four voice rows
     and at most 12 samples per voice.
+  - One rule, in `shared/rampleCardLayout.ts`, says what a kit name is
+    (#573): `isKitName` (a capital A to Z, then 0 to 99) for the store and
+    every check in main and the renderer, and `kitNameOfCardFolder` on the
+    card, where a folder's name is compared ignoring case, as FAT32 does.
+    So setup imports a card folder `a5` as kit A5 (`cardKitFolders`), and
+    the write (`findStaleCardEntries`) treats it as A5's folder; a folder
+    that isn't a kit by the rule, such as `Ä1` or `A100`, is neither
+    imported nor removed. `A01` is a kit name distinct from `A1`; whether
+    the Rample reads it as kit 1 is unverified on hardware.
   - `bank_letter` equals the name's first character.
   - A kit the Rample can open has a voice-1 sample; a write warns when it
     doesn't (`kitsWithoutVoiceOne`).
@@ -373,10 +387,6 @@ Kit fields, each owned by a column of `kits`:
   - Main enforces `editable` only for stereo links (RE-71). Sample add,
     delete and move, gain, voice names and kit delete are refused
     only by the renderer (#572).
-  - Kit names are checked by different patterns: `isValidKit` and
-    `kitService.validateKitSlot` accept any Unicode capital
-    (`/^\p{Lu}\d{1,2}$/u`) and leading zeros (`A01`), `sdCardSafety` only
-    `[A-Z]` ignoring case (#573).
   - The step pattern and trigger conditions reload every kit on every save,
     undebounced, so a slower earlier reload can put an older pattern back
     for a moment (#452).
@@ -878,7 +888,7 @@ the issues it names.
 
 1. **Main is the guard for every rule** (small, now). Main refuses what the
    renderer refuses: read-only kits (#572) and stereo links (#541). Kit and
-   bank names have one pattern each, in `shared/` (#573). These are
+   bank names have one pattern each, in `shared/` (#573, done). These are
    preconditions for everything below: once main enforces the rules, the
    renderer's copies can be dropped without losing a check.
 2. **One owner per stored concept in main** (small, alongside 1).

@@ -168,6 +168,10 @@ describe("isValidKit", () => {
     expect(isValidKit("A100")).toBe(false);
     expect(isValidKit("")).toBe(false);
   });
+  it("[Q-04] takes only A to Z capitals, as the card's rule does (#573)", () => {
+    expect(isValidKit("a5")).toBe(false);
+    expect(isValidKit("Ä1")).toBe(false);
+  });
 });
 
 // showBankAnchor tests

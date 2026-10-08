@@ -1,16 +1,13 @@
-import { BANK_NAME_FILE_PATTERN } from "@romper/shared/rampleCardLayout.js";
+import {
+  BANK_NAME_FILE_PATTERN,
+  kitNameOfCardFolder,
+} from "@romper/shared/rampleCardLayout.js";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { setImmediate as yieldToEventLoop } from "node:timers/promises";
 
 import { CardNotRespondingError, withCardWatchdog } from "./cardWatchdog.js";
-
-/**
- * Kit folders the Rample reads at the card root: a bank letter followed by
- * a slot number (A0 to Z99).
- */
-const KIT_FOLDER_PATTERN = /^[A-Z]\d{1,2}$/i;
 
 /**
  * What a sync leaves on the card: for each kit folder the file names it
@@ -76,9 +73,13 @@ export async function findStaleCardEntries(
     withFileTypes: true,
   });
   for (const entry of entries) {
-    if (entry.isDirectory() && KIT_FOLDER_PATTERN.test(entry.name)) {
-      if (keepKits.has(entry.name.toUpperCase())) continue;
-      const keep = kits.get(entry.name.toUpperCase());
+    // A kit folder by the rule setup imports by (#573): `a5` is kit A5's
+    const kitName = entry.isDirectory()
+      ? kitNameOfCardFolder(entry.name)
+      : null;
+    if (kitName) {
+      if (keepKits.has(kitName)) continue;
+      const keep = kits.get(kitName);
       if (keep) {
         kitFolders.push({ keep, name: entry.name });
       } else {

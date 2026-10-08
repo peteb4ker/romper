@@ -1,6 +1,6 @@
 import type { KitScanResult } from "@romper/shared/db/schema";
 
-import { isValidKit } from "@romper/shared/kitUtilsShared";
+import { cardKitFolders, isKitName } from "@romper/shared/rampleCardLayout";
 import { describeSetupAutoLink } from "@romper/shared/stereoLinkRules";
 import { useCallback, useMemo } from "react";
 
@@ -71,8 +71,7 @@ export function useLocalStoreWizardFileOps({
       if (!sdCardSourcePath) return null;
       if (!api.listFilesInRoot) return "Cannot access filesystem.";
       const files = await api.listFilesInRoot(sdCardSourcePath);
-      const kitFolders = getKitFolders(files);
-      if (kitFolders.length === 0) {
+      if (cardKitFolders(files).length === 0) {
         const nonHidden = files.filter((f) => !f.startsWith("."));
         const overflow =
           nonHidden.length > 5 ? ` (+${nonHidden.length - 5} more)` : "";
@@ -104,13 +103,17 @@ export function useLocalStoreWizardFileOps({
       if (!api.listFilesInRoot || !api.copyDir)
         throw new Error("Missing Electron API");
       const files = await api.listFilesInRoot(sdCardSourcePath);
-      const kitFolders = getKitFolders(files);
+      // Each kit folder goes into the store under its kit's name: `a5` is
+      // kit A5, as a write treats it, so setup leaves none behind (#573)
+      const kitFolders = new Map(
+        cardKitFolders(files).map(({ folder, kitName }) => [kitName, folder]),
+      );
       await reportStepProgress({
-        items: kitFolders,
+        items: [...kitFolders.keys()],
         onStep: async (kit) => {
           if (!api.copyDir) throw new Error("Missing Electron API");
           const copied = await api.copyDir(
-            `${sdCardSourcePath}/${kit}`,
+            `${sdCardSourcePath}/${kitFolders.get(kit)}`,
             `${targetPath}/${kit}`,
           );
           // A failed copy used to go unnoticed and the import carried on
@@ -200,8 +203,10 @@ export function useLocalStoreWizardFileOps({
       await createRomperDb(dbDir);
       if (!api.listFilesInRoot)
         throw new Error("listFilesInRoot is not available");
-      const kitFolders = await api.listFilesInRoot(targetPath);
-      const validKits = getKitFolders(kitFolders);
+      // The store's kit folders, which setup named by their kits
+      const validKits = (await api.listFilesInRoot(targetPath)).filter(
+        isKitName,
+      );
       const truncationWarnings: TruncationWarning[] = [];
       const stereoNotices: StereoImportNotice[] = [];
       if (validKits.length > 0) {
@@ -241,11 +246,6 @@ export function useLocalStoreWizardFileOps({
 }
 
 // --- Helpers ---
-// The folders the Rample reads as kits (A0-Z99); main imports only these
-function getKitFolders(files: string[]): string[] {
-  return files.filter(isValidKit);
-}
-
 /** The setup summary's lines for the pairs setup linked (#537 rule 2) */
 function stereoImportNotices(
   kitName: string,

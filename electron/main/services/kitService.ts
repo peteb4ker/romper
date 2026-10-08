@@ -1,5 +1,7 @@
 import type { DbResult, NewKit } from "@romper/shared/db/schema.js";
 
+import { isKitName } from "@romper/shared/rampleCardLayout.js";
+
 import type { InMemorySettings } from "../types/settings.js";
 
 import { kitNotEditableError } from "../db/operations/kitEditableGuard.js";
@@ -154,7 +156,7 @@ export class KitService {
   }
 
   private validateKitSlot(kitSlot: string): void {
-    if (!/^\p{Lu}\d{1,2}$/u.test(kitSlot)) {
+    if (!isKitName(kitSlot)) {
       throw new Error("Invalid kit slot. Use format A0-Z99.");
     }
   }

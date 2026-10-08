@@ -235,6 +235,8 @@ describe("[UC-34] sdCardSafety", () => {
       write("_save/A0.rpl");
       write("Documents/1kick.wav");
       write("A100/1kick.wav");
+      // Not a kit folder by the card's rule, though Ä is a capital (#573)
+      write("Ä1/1kick.wav");
       write("notes.txt");
       write("readme.rtf");
       write("D7");

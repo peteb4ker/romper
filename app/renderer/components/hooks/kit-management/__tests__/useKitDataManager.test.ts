@@ -722,6 +722,157 @@ describe("useKitDataManager", () => {
     });
   });
 
+  // #452 step 4: kits created, copied and deleted go on and off the list
+  // without reading every kit
+  describe("[Q-01] addKit and removeKit (#452)", () => {
+    const loaded = async () => {
+      const hook = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          isLocalStoreReady: true,
+          localStorePath: "/test/path",
+        }),
+      );
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      vi.mocked(globalThis.electronAPI.getKits).mockClear();
+      return hook;
+    };
+    const newKit = createMockKitWithRelations({
+      name: "B0",
+      samples: [createMockSample({ filename: "copied.wav", kit_name: "B0" })],
+    });
+    const deferredKits = () => {
+      let answer: (value: DbResult<KitWithRelations[]>) => void = () => {};
+      vi.mocked(globalThis.electronAPI.getKits).mockReturnValueOnce(
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+      );
+      return (kits: KitWithRelations[]) =>
+        answer({ data: kits, success: true });
+    };
+
+    it("[UC-14] [UC-15] adds a new kit, samples and all, without reading the kits", async () => {
+      const { result } = await loaded();
+      const shownKits = result.current.kits;
+
+      act(() => {
+        result.current.addKit(newKit);
+      });
+
+      expect(result.current.kits.map((kit) => kit.name)).toEqual([
+        "A0",
+        "A1",
+        "B0",
+      ]);
+      expect(result.current.kits[0]).toBe(shownKits[0]);
+      expect(result.current.sampleCounts.B0).toEqual([1, 0, 0, 0]);
+      expect(globalThis.electronAPI.getKits).not.toHaveBeenCalled();
+    });
+
+    it("[UC-16] takes a deleted kit off the list without reading the kits", async () => {
+      const { result } = await loaded();
+
+      act(() => {
+        result.current.removeKit("A1");
+      });
+
+      expect(result.current.kits.map((kit) => kit.name)).toEqual(["A0"]);
+      expect(result.current.allKitSamples.A1).toBeUndefined();
+      expect(result.current.sampleCounts.A1).toBeUndefined();
+      expect(globalThis.electronAPI.getKits).not.toHaveBeenCalled();
+    });
+
+    it("keeps a new kit that a full reload sent before it doesn't list", async () => {
+      const { result } = await loaded();
+      const answer = deferredKits();
+      let reload: Promise<void>;
+      act(() => {
+        reload = result.current.refreshAllKitsAndSamples();
+      });
+      act(() => {
+        result.current.addKit(newKit);
+      });
+
+      await act(async () => {
+        answer(mockKits);
+        await reload;
+      });
+
+      expect(result.current.kits.map((kit) => kit.name)).toEqual([
+        "A0",
+        "A1",
+        "B0",
+      ]);
+      expect(result.current.allKitSamples.B0).toBeDefined();
+    });
+
+    it("doesn't bring back a kit deleted after a full reload was sent", async () => {
+      const { result } = await loaded();
+      const answer = deferredKits();
+      let reload: Promise<void>;
+      act(() => {
+        reload = result.current.refreshAllKitsAndSamples();
+      });
+      act(() => {
+        result.current.removeKit("A1");
+      });
+
+      await act(async () => {
+        answer(mockKits);
+        await reload;
+      });
+
+      expect(result.current.kits.map((kit) => kit.name)).toEqual(["A0"]);
+    });
+
+    it("doesn't bring back a deleted kit with a reload of it sent before", async () => {
+      const { result } = await loaded();
+      let answer: (value: DbResult<KitWithRelations>) => void = () => {};
+      vi.mocked(globalThis.electronAPI.getKit).mockReturnValueOnce(
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+      );
+      let reload: Promise<void>;
+      act(() => {
+        reload = result.current.refreshKit("A1");
+      });
+      act(() => {
+        result.current.removeKit("A1");
+      });
+
+      await act(async () => {
+        answer({ data: mockKits[1], success: true });
+        await reload;
+      });
+
+      expect(result.current.kits.map((kit) => kit.name)).toEqual(["A0"]);
+      expect(result.current.allKitSamples.A1).toBeUndefined();
+    });
+
+    it("shows what a full reload sent after the changes reads", async () => {
+      const { result } = await loaded();
+      act(() => {
+        result.current.addKit(newKit);
+        result.current.removeKit("A1");
+      });
+      vi.mocked(globalThis.electronAPI.getKits).mockResolvedValueOnce({
+        data: [mockKits[0], mockKits[1]],
+        success: true,
+      });
+
+      await act(async () => {
+        await result.current.refreshAllKitsAndSamples();
+      });
+
+      // A1 came back and B0 went away elsewhere: the newer read decides
+      expect(result.current.kits.map((kit) => kit.name)).toEqual(["A0", "A1"]);
+    });
+  });
+
   describe("[UC-10] a saved change and an older reload (#452)", () => {
     it("keeps a favorite saved after a full reload was sent", async () => {
       const { result } = renderHook(() =>

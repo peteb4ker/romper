@@ -71,8 +71,13 @@ export interface ElectronAPI {
     src: string,
     dest: string,
   ) => Promise<{ error?: string; success: boolean }>;
-  copyKit: (sourceKit: string, destKit: string) => Promise<DbResult>;
-  createKit: (kitSlot: string) => Promise<DbResult>;
+  /** Resolves to the new kit, samples and all, when it can be read back (#452) */
+  copyKit: (
+    sourceKit: string,
+    destKit: string,
+  ) => Promise<DbResult<KitWithRelations>>;
+  /** Resolves to the new kit, when it can be read back (#452) */
+  createKit: (kitSlot: string) => Promise<DbResult<KitWithRelations>>;
   /**
    * Setup-wizard channels (createRomperDb, setupImportKit,
    * setupImportBankNames) name the

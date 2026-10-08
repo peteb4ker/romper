@@ -158,6 +158,27 @@ test.describe("[Q-01] Performance budgets: IPC calls per action", () => {
 
     await page.locator('button[title="Back"]').click();
     await page.locator('[data-testid="kit-grid"]').waitFor();
+
+    // Kits created, copied and deleted go on and off the list without
+    // reading every kit again (#452)
+    const kitCard = (name: string) =>
+      page.locator(`[data-testid="kit-item-${name}"]`);
+    await action("e2e/create a kit", async () => {
+      await page.getByTestId("add-kit-A").click();
+      await kitCard("A1").waitFor();
+    });
+    await action("e2e/duplicate a kit", async () => {
+      await kitCard("A0").getByTitle("Duplicate kit").click();
+      await page.getByTestId("duplicate-dest-input").fill("A5");
+      await page.getByTestId("confirm-duplicate-button").click();
+      await kitCard("A5").waitFor();
+    });
+    await action("e2e/delete a kit", async () => {
+      await kitCard("A5").getByTestId("delete-kit-button").click();
+      await page.getByTestId("confirm-delete-button").click();
+      await kitCard("A5").waitFor({ state: "detached" });
+    });
+
     await action("e2e/open the write summary", async () => {
       await page.locator('[data-testid="sync-to-sd-card"]').click();
       await page.locator('[data-testid="bank-summary"]').waitFor();

@@ -1,10 +1,10 @@
 <!--
 title: Kit refresh after an edit - Specification
 priority: medium
-status: in progress
+status: done
 updated: 2026-10-08
 context_size: small
-implementation_status: step 1 in #765; step 4's failure handling in #775; step 2 in #776; step 3a in #777; step 3b in #779; the rest of 4 planned
+implementation_status: step 1 in #765; step 4's failure handling in #775; step 2 in #776; step 3a in #777; step 3b in #779; the rest of step 4 in the PR that closed #452
 -->
 
 # Kit refresh after an edit
@@ -69,11 +69,11 @@ refetches its own `sampleMetadata` copy with `get-all-samples-for-kit`.
   response older than that is dropped. A full load that lands after a newer
   single-kit read keeps that kit's newer data and replaces the rest; a full
   load older than the last full load that landed is dropped.
-- **A full reload is still right** when the list itself changes: startup and
-  store changes, setup, Scan all, a finished write (it clears modified flags
-  on many kits), a bank rename (bank names on many kits), and creating,
-  duplicating or deleting a kit (until those return what they changed, step
-  4).
+- **A full reload is still right** when the list itself changes in ways
+  only a full read shows: startup and store changes, setup, Scan all, a
+  finished write (it clears modified flags on many kits) and a bank rename
+  (bank names on many kits). Creating, duplicating or deleting a kit
+  changes one kit, so it adds or removes that kit (step 4).
 - **What the user sees doesn't change**, apart from speed. A reload that
   fails keeps what's on screen and says so (see Decisions).
 
@@ -188,20 +188,29 @@ that one's save returns. Fixing it means the sequencer keeps edits that
 are still saving over a kit that comes back, which changes what's on
 screen: tracked in #778.
 
-### 4. List changes without a full reload
+### 4. List changes without a full reload (done in the PR that closed #452)
 
-- Create and duplicate return the new kit and delete removes its kit, so
-  only Scan all, a write, a bank rename, setup and store changes reload
-  every kit.
+- Create and duplicate return the new kit, samples and all, read back
+  after it's added; the renderer adds it to the list (`addKit`). Delete
+  takes its kit off the list (`removeKit`). Only Scan all, a write, a bank
+  rename, setup and store changes reload every kit. If a new kit can't be
+  read back, the kits are read again as before.
+- Both use the read numbering from step 1: a full load sent before a kit
+  was created keeps the new kit, a full load sent before a kit was deleted
+  doesn't bring it back, and neither does a reload of the deleted kit sent
+  before. A full load sent after either shows what it reads.
 - **Done, ahead of the rest of this step:** a failed full reload (Scan all,
   a write, a bank rename, creating, duplicating or deleting a kit) keeps
   the kits on screen instead of emptying the grid, with no message.
   Approved by Pete on #452 (2026-10-08). Loading at startup or after a
   store change still empties the list when the store can't be read: the
   kits on screen may belong to another store.
-- **Verified by:** unit tests for each list change and for the failure
-  (`useKitDataManager.test.ts`, which also checks a store change still
-  empties the list); the create and delete e2e flows.
+- **Verified by:** unit tests for each list change against older and newer
+  reads, and for the failure (`useKitDataManager.test.ts`, which also
+  checks a store change still empties the list); the hooks passing on the
+  kit main returned; `kitService` returning the new kit; e2e budgets for
+  creating, duplicating and deleting a kit, with no `get-all-kits`; the
+  create, duplicate and delete e2e flows.
 
 The renderer kits store (architecture review step 8) then replaces
 `kits`, `allKitSamples` and the per-component copies, patched from step 3's

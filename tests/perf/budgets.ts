@@ -85,6 +85,21 @@ export const BUDGETS = {
       "read-settings": { max: 2 },
     },
     /**
+     * #452: a new kit main returns goes on the list, and a deleted one comes
+     * off it, without reading every kit
+     */
+    "create a kit": {
+      "create-kit": { max: 1 },
+      "get-all-kits": NO_RELOAD,
+      total: { max: 1 },
+    },
+    "delete a kit": {
+      "delete-kit": { max: 1 },
+      "get-all-kits": NO_RELOAD,
+      "get-kit-delete-summary": { max: 1 },
+      total: { max: 2 },
+    },
+    /**
      * #452: the delete returns the kit it changed and the voice as it was,
      * for undo, so nothing reads either
      */
@@ -104,6 +119,11 @@ export const BUDGETS = {
       "register-dropped-file": { max: 1 },
       total: { max: 4 },
       "validate-sample-format": { max: 1 },
+    },
+    "duplicate a kit": {
+      "copy-kit": { max: 1 },
+      "get-all-kits": NO_RELOAD,
+      total: { max: 1 },
     },
     "enable editing": {
       "get-all-samples-for-kit": NO_SAMPLES_FETCH,
@@ -309,8 +329,11 @@ export const BUDGETS = {
  */
 export const E2E_LABELS: Record<keyof typeof BUDGETS.e2e, string> = {
   "cold start to the kit grid": "Opening the app",
+  "create a kit": "Creating a kit",
+  "delete a kit": "Deleting a kit",
   "delete a sample": "Deleting a sample",
   "drop a sample": "Adding a sample",
+  "duplicate a kit": "Duplicating a kit",
   "enable editing": "Turning on editing",
   "gain: 5 wheel steps": "Changing a sample's volume",
   "next kit": "Moving to the next kit",

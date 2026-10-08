@@ -198,10 +198,12 @@ What the numbers say:
 
 ### Renderer data flow
 
-- **Edits reload everything (RE-36).** About 17 call sites end in
-  `getKits()`. Each reload changes the `kits` identity, which triggers two
-  more calls in effects: `get-all-samples-for-kit` and
-  `get-favorite-kits-count`.
+- **Edits reload everything (RE-36, fixed in #452).** About 17 call sites
+  ended in `getKits()`. Each reload changed the `kits` identity, which
+  triggered two more calls in effects: `get-all-samples-for-kit` and
+  `get-favorite-kits-count`. Now an edit returns the kit it changed, and
+  creating, copying or deleting a kit adds or removes that kit
+  ([`kit-refresh.md`](kit-refresh.md)).
 - **Sample data has four copies:**
   - `kits[].samples`;
   - `allKitSamples`, refreshed separately;
@@ -270,7 +272,7 @@ The direction, without new libraries:
   pattern). It holds kits by name and sample rows by slot, and edits patch it
   with the kit the operation returned. Selectors replace the derived copies,
   the favourites shadow map and the four sorts. `getKits` is called only at
-  startup, after scan and sync, and when kits are created, copied or deleted.
+  startup, after scan and sync, and after a bank rename (done in #452).
 - **A per-slot playback store,** so a trigger re-renders one slot.
 - **An audio buffer cache** keyed by source path and mtime, shared by the
   waveform and the slice strip. Main reads the file asynchronously and looks

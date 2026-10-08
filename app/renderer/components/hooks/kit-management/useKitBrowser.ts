@@ -17,7 +17,7 @@ interface UseKitBrowserProps {
   kits?: KitWithRelations[];
   localStorePath?: null | string;
   onMessage?: (text: string, type?: string, duration?: number) => void;
-  onRefreshKits?: (scrollToKit?: string) => void;
+  onRefreshKits?: (scrollToKit?: string, created?: KitWithRelations) => void;
 }
 
 export function useKitBrowser({

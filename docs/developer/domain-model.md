@@ -124,9 +124,10 @@ Renderer paths are under `app/renderer/components/` unless they start with
    to a kit's own fields or voices returns the kit, which patches `kits`
    (`applyKitEdit`); a sample edit returns the kit with its samples
    (`applyReadKit`); a rescan or undo reloads the kit with one `get-kit`
-   call (`refreshKit`). Reads are numbered so an older response
-   can't land over a newer one; changes to the list itself reload every kit
-   (`refreshAllKitsAndSamples`). A BPM, gain, favorite, name or editable
+   call (`refreshKit`). A kit created or copied is added as main returned
+   it (`addKit`) and a deleted one taken off (`removeKit`); Scan all, a
+   write and a bank rename reload every kit (`refreshAllKitsAndSamples`).
+   Reads are numbered so an older response can't land over a newer one. A BPM, gain, favorite, name or editable
    save patches its kit in `kits` instead, and stays over a read sent
    before it (#452; plan in [`kit-refresh.md`](kit-refresh.md)).
 2. **The kit editor isn't remounted between kits.** `KitsView` renders
@@ -913,7 +914,8 @@ the issues it names.
    `bankNames`, the two `useBpm` copies and the per-hook mirrors; per-kit
    editor state (mutes, play state, undo) is keyed by store and kit and
    resets with them (#565, #568, #575). `getKits` runs only at startup,
-   after scan and write, and when kits are created, copied or deleted.
+   after scan and write, and after a bank rename; creating, copying or
+   deleting a kit adds or removes that kit (#452).
 6. **Undo as transactional intents** (step 9). Undo operations go through
    main as one call each (`restore-kit-voices` for samples, one call for a
    sequencer snapshot) and the stack lives with the kits store, keyed by

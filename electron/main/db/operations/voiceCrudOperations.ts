@@ -199,22 +199,16 @@ export function updateVoiceVolume(
 
 /**
  * Ensure a voice row exists for the given kit/voice, creating it if needed.
+ * The unique (kit, voice) index makes an existing row win, so this never
+ * adds a second one (#510).
  */
 function ensureVoiceRow(
   db: RomperDb,
   kitName: string,
   voiceNumber: number,
 ): void {
-  const existing = db
-    .select({ id: voices.id })
-    .from(voices)
-    .where(
-      and(eq(voices.kit_name, kitName), eq(voices.voice_number, voiceNumber)),
-    )
-    .get();
-  if (!existing) {
-    db.insert(voices)
-      .values({ kit_name: kitName, voice_number: voiceNumber })
-      .run();
-  }
+  db.insert(voices)
+    .values({ kit_name: kitName, voice_number: voiceNumber })
+    .onConflictDoNothing({ target: [voices.kit_name, voices.voice_number] })
+    .run();
 }

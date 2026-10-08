@@ -206,6 +206,28 @@ describe("[UC-13] mergeKitScan - Integration Tests", () => {
     expect(alias(2)).toBe("My Snares");
   });
 
+  test("[Q-02] names a voice with no row by adding exactly one (#510)", () => {
+    const sqlite = new BetterSqlite3(join(dbDir, DB_FILENAME));
+    try {
+      sqlite
+        .prepare(
+          "DELETE FROM voices WHERE kit_name = 'A0' AND voice_number = 1",
+        )
+        .run();
+    } finally {
+      sqlite.close();
+    }
+
+    mergeKitScan(dbDir, "A0", folder(["1 kick.wav"]), io);
+    mergeKitScan(dbDir, "A0", folder(["1 kick.wav"]), io);
+
+    const voice1 = (getKit(dbDir, "A0").data?.voices ?? []).filter(
+      (v) => v.voice_number === 1,
+    );
+    expect(voice1).toHaveLength(1);
+    expect(voice1[0].voice_alias).toBe("Kick");
+  });
+
   test("rolls the whole kit back when a write fails part-way", () => {
     addSample(dbDir, {
       filename: "1 kick.wav",

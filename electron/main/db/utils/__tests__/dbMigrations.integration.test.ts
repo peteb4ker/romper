@@ -339,6 +339,138 @@ describe("[Q-02] Upgrading a library is all or nothing (RE-33)", () => {
     });
   });
 
+  // #510: nothing stopped a second row for the same voice before 0015, so
+  // the upgrade merges duplicates, keeping the row with the user's settings,
+  // and then refuses new ones
+  describe("[Q-02] merging duplicate voice rows (#510)", () => {
+    const BEFORE_0015 = CURRENT.slice(
+      0,
+      CURRENT.indexOf("0015_voice_unique_index"),
+    );
+
+    const voicesOf = (sqlite: BetterSqlite3.Database) =>
+      sqlite
+        .prepare(
+          "SELECT id, kit_name, voice_number, voice_alias, voice_volume, stereo_mode FROM voices ORDER BY kit_name, voice_number",
+        )
+        .all();
+
+    it("keeps one row per voice, preferring the one with the user's settings", () => {
+      const dbDir = libraryAt(BEFORE_0015);
+      const ids = withLibrary(dbDir, (sqlite) => {
+        const add = sqlite.prepare(
+          "INSERT INTO voices (kit_name, voice_number, voice_alias, voice_volume, stereo_mode) VALUES (?, ?, ?, ?, ?)",
+        );
+        const idOf = (kit: string, voice: number) =>
+          (
+            sqlite
+              .prepare(
+                "SELECT id FROM voices WHERE kit_name = ? AND voice_number = ? ORDER BY id LIMIT 1",
+              )
+              .get(kit, voice) as { id: number }
+          ).id;
+        const insert = (
+          ...row: [string, number, null | string, number, number]
+        ) => Number(add.run(...row).lastInsertRowid);
+        sqlite.exec("INSERT INTO kits (name) VALUES ('B1')");
+        const b1 = [1, 2, 3, 4].map((voice) =>
+          insert("B1", voice, null, 100, 0),
+        );
+        return {
+          // Voice 1 is named "Kick": a later blank copy loses to it
+          a0v1: idOf("A0", 1),
+          a0v1Blank: insert("A0", 1, null, 100, 0),
+          // Voice 2 is blank: a later copy with settings wins
+          a0v2Set: insert("A0", 2, null, 60, 1),
+          // Voice 3: two blank rows, so the older one stays
+          a0v3: idOf("A0", 3),
+          a0v3Blank: insert("A0", 3, null, 100, 0),
+          // Voice 4: the copy with more settings wins
+          a0v4Named: insert("A0", 4, "Bass", 100, 0),
+          a0v4NamedQuiet: insert("A0", 4, "Sub", 80, 0),
+          b1,
+        };
+      });
+
+      expect(upgrade(dbDir).success).toBe(true);
+
+      withLibrary(dbDir, (sqlite) => {
+        expect(voicesOf(sqlite)).toEqual([
+          {
+            id: ids.a0v1,
+            kit_name: "A0",
+            stereo_mode: 0,
+            voice_alias: "Kick",
+            voice_number: 1,
+            voice_volume: 100,
+          },
+          {
+            id: ids.a0v2Set,
+            kit_name: "A0",
+            stereo_mode: 1,
+            voice_alias: null,
+            voice_number: 2,
+            voice_volume: 60,
+          },
+          {
+            id: ids.a0v3,
+            kit_name: "A0",
+            stereo_mode: 0,
+            voice_alias: null,
+            voice_number: 3,
+            voice_volume: 100,
+          },
+          {
+            id: ids.a0v4NamedQuiet,
+            kit_name: "A0",
+            stereo_mode: 0,
+            voice_alias: "Sub",
+            voice_number: 4,
+            voice_volume: 80,
+          },
+          ...ids.b1.map((id, i) => ({
+            id,
+            kit_name: "B1",
+            stereo_mode: 0,
+            voice_alias: null,
+            voice_number: i + 1,
+            voice_volume: 100,
+          })),
+        ]);
+        expect(sqlite.prepare("SELECT filename FROM samples").all()).toEqual([
+          { filename: "kick.wav" },
+        ]);
+      });
+      expect(schemaOf(dbDir).voices.indexes).toContainEqual({
+        columns: ["kit_name", "voice_number"],
+        name: "unique_voice",
+        unique: 1,
+      });
+    });
+
+    it("refuses a second row for a voice once upgraded", () => {
+      const dbDir = libraryAt(BEFORE_0015);
+      expect(upgrade(dbDir).success).toBe(true);
+
+      withLibrary(dbDir, (sqlite) => {
+        expect(() =>
+          sqlite
+            .prepare(
+              "INSERT INTO voices (kit_name, voice_number) VALUES ('A0', 1)",
+            )
+            .run(),
+        ).toThrow(
+          /UNIQUE constraint failed: voices.kit_name, voices.voice_number/,
+        );
+        expect(
+          sqlite
+            .prepare("SELECT COUNT(*) AS n FROM voices WHERE kit_name = 'A0'")
+            .get(),
+        ).toEqual({ n: 4 });
+      });
+    });
+  });
+
   describe("an upgrade that fails part way", () => {
     it("leaves a library as it was when the history repair fails after adding its columns", () => {
       const dbDir = libraryAt(LEGACY);

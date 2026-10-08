@@ -60,6 +60,15 @@ Per-voice settings within a kit. Each kit always has exactly 4 voice records.
 | stereo_choice | TEXT | nullable | The user's own stereo choice (#537): `stereo` after linking by hand or **Link** on a drop, `mono` after **Keep mono** or an unlink; null lets setup and the write link the voice automatically. Migration `0014` set it to `stereo` on voices already linked |
 | voice_volume | INTEGER | NOT NULL, default 100 | Per-voice volume (0-100) |
 
+**Unique constraints:**
+- `(kit_name, voice_number)` — one row per voice (`unique_voice`, #510).
+  Code that may be first to touch a voice inserts with
+  `onConflictDoNothing` (or `onConflictDoUpdate`) on these columns rather
+  than checking first. Migration `0015` merged any duplicates older
+  libraries had before adding it: of each set it kept the row with the most
+  settings that differ from their defaults, the oldest row on a tie. No
+  other table refers to a voice by `id`.
+
 ### samples
 
 Individual sample file assignments to voice slots.

@@ -58,9 +58,12 @@ const StepSequencerControls: React.FC<StepSequencerControlsProps> = ({
   const [inputValue, setInputValue] = React.useState(bpmLogic.bpm.toString());
   const bpmRef = React.useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
+  // Show the BPM whenever it changes
+  const [shownBpm, setShownBpm] = React.useState(bpmLogic.bpm);
+  if (shownBpm !== bpmLogic.bpm) {
+    setShownBpm(bpmLogic.bpm);
     setInputValue(bpmLogic.bpm.toString());
-  }, [bpmLogic.bpm]);
+  }
 
   const nudgeBpm = React.useCallback(
     (delta: number) => {

@@ -9,6 +9,9 @@ import {
 import { useKitCreation } from "./useKitCreation";
 import { useKitDuplication } from "./useKitDuplication";
 
+// One empty list, so a browser with no kits passes the same one each render
+const NO_KITS: KitWithRelations[] = [];
+
 interface UseKitBrowserProps {
   kitListRef: RefObject<KitListComponent | null>;
   kits: KitWithRelations[];
@@ -19,7 +22,7 @@ interface UseKitBrowserProps {
 
 export function useKitBrowser({
   kitListRef,
-  kits: externalKits = [],
+  kits: externalKits = NO_KITS,
   localStorePath,
   onMessage,
   onRefreshKits,

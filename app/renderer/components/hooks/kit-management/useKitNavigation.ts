@@ -37,8 +37,6 @@ export function useKitNavigation({
   refreshAllKitsAndSamples,
 }: UseKitNavigationProps): UseKitNavigationReturn {
   const [selectedKit, setSelectedKit] = useState<null | string>(null);
-  const [selectedKitSamples, setSelectedKitSamples] =
-    useState<null | VoiceSamples>(null);
 
   // A kit name names a kit in one store, so when the store changes the open
   // kit closes, back to the kit browser (#568)
@@ -63,15 +61,10 @@ export function useKitNavigation({
   // Find current kit index for navigation
   const currentKitIndex = sortedKits.findIndex((k) => k.name === selectedKit);
 
-  // When a kit is selected, set its samples
-  React.useEffect(() => {
-    if (!selectedKit) {
-      setSelectedKitSamples(null);
-      return;
-    }
-    setSelectedKitSamples(
-      allKitSamples[selectedKit] ?? { 1: [], 2: [], 3: [], 4: [] },
-    );
+  // The selected kit's samples
+  const selectedKitSamples = React.useMemo((): null | VoiceSamples => {
+    if (!selectedKit) return null;
+    return allKitSamples[selectedKit] ?? { 1: [], 2: [], 3: [], 4: [] };
   }, [selectedKit, allKitSamples]);
 
   // Kit selection handler
@@ -160,7 +153,6 @@ export function useKitNavigation({
       }
 
       setSelectedKit(null);
-      setSelectedKitSamples(null);
 
       if (scrollToKitName && typeof scrollToKitName === "string") {
         scrollToKitElement(scrollToKitName);

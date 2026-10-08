@@ -63,13 +63,15 @@ export function useLocalStoreSetupFlow({
     !hasCriticalEnvironmentError;
 
   // D: Environment variable override - show test mode banner
-  const [showEnvironmentBanner, setShowEnvironmentBanner] = useState(false);
-
-  useEffect(() => {
-    if (isEnvironmentOverride) {
-      setShowEnvironmentBanner(true);
-    }
-  }, [isEnvironmentOverride]);
+  // Shown again whenever the override comes on; dismissing it hides it
+  const [showEnvironmentBanner, setShowEnvironmentBanner] = useState(
+    isEnvironmentOverride,
+  );
+  const [bannerOverride, setBannerOverride] = useState(isEnvironmentOverride);
+  if (bannerOverride !== isEnvironmentOverride) {
+    setBannerOverride(isEnvironmentOverride);
+    if (isEnvironmentOverride) setShowEnvironmentBanner(true);
+  }
 
   // Track if we just completed the wizard to prevent re-opening
   const [wizardJustCompleted, setWizardJustCompleted] = useState(false);
@@ -85,11 +87,9 @@ export function useLocalStoreSetupFlow({
   }, [needsLocalStoreSetup, setShowWizard, wizardJustCompleted]);
 
   // Reset wizardJustCompleted when needsLocalStoreSetup becomes false
-  useEffect(() => {
-    if (!needsLocalStoreSetup && wizardJustCompleted) {
-      setWizardJustCompleted(false);
-    }
-  }, [needsLocalStoreSetup, wizardJustCompleted]);
+  if (!needsLocalStoreSetup && wizardJustCompleted) {
+    setWizardJustCompleted(false);
+  }
 
   // Wizard success handler
   const handleWizardSuccess = useCallback(async () => {

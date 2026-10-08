@@ -226,7 +226,9 @@ describe("useKitListNavigation", () => {
     });
 
     it("should handle empty kits array", () => {
-      const { result } = renderHook(() => useKitListNavigation([], null));
+      // The same empty list each render, as KitGrid's memoized list is
+      const noKits: KitWithRelations[] = [];
+      const { result } = renderHook(() => useKitListNavigation(noKits, null));
 
       expect(result.current.focusedIdx).toBe(0);
 

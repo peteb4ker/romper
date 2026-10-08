@@ -427,6 +427,7 @@ export function useKitDataManager({
 
   // Load all kits and samples on mount and when dependencies change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- loadKitsData sets state only after awaiting getKits; the rule doesn't model await
     void loadKitsData();
   }, [loadKitsData]);
 

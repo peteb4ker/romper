@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import {
   createDefaultTriggerConditions,
   ensureValidTriggerConditions,
 } from "./stepPatternConstants";
+import { useLatestRef } from "./useLatestRef";
 import { useSettingSave } from "./useSettingSave";
 
 export interface UseTriggerConditionsParams {
@@ -34,26 +35,27 @@ export function useTriggerConditions({
   const [triggerConditionsState, setTriggerConditionsState] = useState<TriggerConditionsState>(() => ensureValidTriggerConditions(initialConditions)); // NOSONAR
 
   // The conditions on screen, so rapid edits each see the one before
-  const latestRef = useRef(triggerConditionsState);
-  latestRef.current = triggerConditionsState;
-  const kitRef = useRef(kitName);
-  kitRef.current = kitName;
+  const latestRef = useLatestRef(triggerConditionsState);
+  const kitRef = useLatestRef(kitName);
 
   // A failed save puts the last saved conditions back and says so (#511)
   const { reset, save } = useSettingSave<string, TriggerConditionsState>();
 
-  // Reset to defaults when kit changes, before new kit data arrives
-  const prevKitNameRef = React.useRef(kitName);
-  React.useEffect(() => {
-    if (prevKitNameRef.current !== kitName) {
-      prevKitNameRef.current = kitName;
-      setTriggerConditionsState(createDefaultTriggerConditions());
-    }
-  }, [kitName]);
-
-  // Sync from loaded kit data
+  // Show the loaded kit's conditions; when the kit changes before its data
+  // arrives, show the defaults until it does
+  const [shown, setShown] = useState({ initialConditions, kitName });
+  if (
+    shown.initialConditions !== initialConditions ||
+    shown.kitName !== kitName
+  ) {
+    setShown({ initialConditions, kitName });
+    setTriggerConditionsState(
+      shown.initialConditions === initialConditions
+        ? createDefaultTriggerConditions()
+        : ensureValidTriggerConditions(initialConditions),
+    );
+  }
   useEffect(() => {
-    setTriggerConditionsState(ensureValidTriggerConditions(initialConditions));
     reset();
   }, [initialConditions, reset]);
 
@@ -83,7 +85,7 @@ export function useTriggerConditions({
         what: `the trigger conditions for kit ${kitName}`,
       });
     },
-    [kitName, onMessage, onSaved, save],
+    [kitName, kitRef, latestRef, onMessage, onSaved, save],
   );
 
   return {

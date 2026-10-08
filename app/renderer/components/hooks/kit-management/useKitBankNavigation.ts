@@ -64,19 +64,23 @@ export function useKitBankNavigation({
     };
   }, [localStorePath, loadBankNames]);
 
-  // Focus the first kit when kits change
-  useEffect(() => {
-    if (kits && kits.length > 0) {
+  // When the kits or the selected bank change, focus the first kit in that
+  // bank, or the first kit when the kits changed and that bank has none
+  const [focusFor, setFocusFor] = useState<{
+    kits: KitWithRelations[];
+    selectedBank: string;
+  } | null>(null);
+  if (focusFor?.kits !== kits || focusFor.selectedBank !== selectedBank) {
+    setFocusFor({ kits, selectedBank });
+    const firstInBank = bankHasKits(kits, selectedBank)
+      ? getFirstKitInBank(kits, selectedBank)
+      : null;
+    if (firstInBank) {
+      setFocusedKit(firstInBank);
+    } else if (focusFor?.kits !== kits && kits && kits.length > 0) {
       setFocusedKit(kits[0].name);
     }
-  }, [kits]);
-
-  // When selectedBank changes, focus first kit in that bank
-  useEffect(() => {
-    if (!bankHasKits(kits, selectedBank)) return;
-    const firstKit = getFirstKitInBank(kits, selectedBank);
-    if (firstKit) setFocusedKit(firstKit);
-  }, [selectedBank, kits]);
+  }
 
   const scrollToBankInContainer = useCallback(
     (bank: string) => {

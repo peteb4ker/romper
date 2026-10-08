@@ -4,9 +4,10 @@ import {
   type SlicerDivision,
   type SliceStep,
 } from "@romper/shared/sliceTypes";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { createEmptySliceSteps, ensureValidSliceSteps } from "./sliceConstants";
+import { useLatestRef } from "./useLatestRef";
 import { useSettingSave } from "./useSettingSave";
 
 export interface UseSliceStepsParams {
@@ -54,12 +55,9 @@ export function useSliceSteps({
   const [slicerDivision, setSlicerDivisionState] = useState<SlicerDivision>(() => toDivision(initialDivision)); // NOSONAR
 
   // Latest value, so updater functions compose correctly across rapid edits
-  const latestRef = useRef(sliceSteps);
-  latestRef.current = sliceSteps;
-  const divisionRef = useRef(slicerDivision);
-  divisionRef.current = slicerDivision;
-  const kitRef = useRef(kitName);
-  kitRef.current = kitName;
+  const latestRef = useLatestRef(sliceSteps);
+  const divisionRef = useLatestRef(slicerDivision);
+  const kitRef = useLatestRef(kitName);
 
   const { reset: resetStepSaves, save: saveSteps } = useSettingSave<
     string,
@@ -70,24 +68,33 @@ export function useSliceSteps({
     SlicerDivision
   >();
 
-  // Reset to defaults when kit changes, before new kit data arrives
-  const prevKitNameRef = React.useRef(kitName);
-  React.useEffect(() => {
-    if (prevKitNameRef.current !== kitName) {
-      prevKitNameRef.current = kitName;
+  // Show the loaded kit's slices and division; when the kit changes before
+  // its data arrives, show the defaults until it does
+  const [shown, setShown] = useState({
+    initialDivision,
+    initialSliceSteps,
+    kitName,
+  });
+  const kitChanged = shown.kitName !== kitName;
+  const stepsChanged = shown.initialSliceSteps !== initialSliceSteps;
+  const divisionChanged = shown.initialDivision !== initialDivision;
+  if (kitChanged || stepsChanged || divisionChanged) {
+    setShown({ initialDivision, initialSliceSteps, kitName });
+    if (stepsChanged) {
+      setSliceStepsState(ensureValidSliceSteps(initialSliceSteps));
+    } else if (kitChanged) {
       setSliceStepsState(createEmptySliceSteps());
+    }
+    if (divisionChanged) {
+      setSlicerDivisionState(toDivision(initialDivision));
+    } else if (kitChanged) {
       setSlicerDivisionState(DEFAULT_SLICER_DIVISION);
     }
-  }, [kitName]);
-
-  // Sync from loaded kit data
+  }
   useEffect(() => {
-    setSliceStepsState(ensureValidSliceSteps(initialSliceSteps));
     resetStepSaves();
   }, [initialSliceSteps, resetStepSaves]);
-
   useEffect(() => {
-    setSlicerDivisionState(toDivision(initialDivision));
     resetDivisionSaves();
   }, [initialDivision, resetDivisionSaves]);
 
@@ -132,7 +139,7 @@ export function useSliceSteps({
         what: `the slices for kit ${kitName}`,
       });
     },
-    [kitName, onMessage, saveSteps, scheduleReload],
+    [kitName, kitRef, latestRef, onMessage, saveSteps, scheduleReload],
   );
 
   const setSlicerDivision = useCallback(
@@ -159,7 +166,7 @@ export function useSliceSteps({
         what: `the slice division for kit ${kitName}`,
       });
     },
-    [kitName, onMessage, saveDivision, scheduleReload],
+    [divisionRef, kitName, kitRef, onMessage, saveDivision, scheduleReload],
   );
 
   return {

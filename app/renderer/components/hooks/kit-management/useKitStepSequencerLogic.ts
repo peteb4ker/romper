@@ -169,10 +169,6 @@ export function useKitStepSequencerLogic(
     return new Blob([workerScript], { type: "application/javascript" });
   }, []);
 
-  const workerUrl = React.useMemo(() => {
-    return URL.createObjectURL(workerBlob);
-  }, [workerBlob]);
-
   // Playback state
   const [isSeqPlaying, setIsSeqPlaying] = React.useState(false);
   const [currentSeqStep, setCurrentSeqStep] = React.useState<number>(0);
@@ -185,13 +181,10 @@ export function useKitStepSequencerLogic(
   });
 
   // Worker initialization and cleanup
-  const worker = React.useMemo(() => {
-    workerRef.current ??= new Worker(workerUrl);
-    return workerRef.current;
-  }, [workerUrl]);
-
   React.useEffect(() => {
-    if (!worker) return;
+    const workerUrl = URL.createObjectURL(workerBlob);
+    const worker = new Worker(workerUrl);
+    workerRef.current = worker;
 
     worker.onmessage = (e: MessageEvent) => {
       if (e.data.type === "STEP") {
@@ -210,7 +203,7 @@ export function useKitStepSequencerLogic(
       workerRef.current = null;
       URL.revokeObjectURL(workerUrl);
     };
-  }, [worker, workerUrl]);
+  }, [workerBlob]);
 
   // Worker playback control
   React.useEffect(() => {
@@ -235,8 +228,12 @@ export function useKitStepSequencerLogic(
 
   // The editor isn't remounted when you step to another kit, so the next kit
   // starts stopped, from its first layer (#565)
-  React.useEffect(() => {
+  const [playingKit, setPlayingKit] = React.useState(kitName);
+  if (playingKit !== kitName) {
+    setPlayingKit(kitName);
     setIsSeqPlaying(false);
+  }
+  React.useEffect(() => {
     roundRobinIndexRef.current = {};
   }, [kitName]);
 

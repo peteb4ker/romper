@@ -1,6 +1,6 @@
 import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { mergeSequenceEdit } from "./sequenceUndo";
 
@@ -100,14 +100,16 @@ export function useUndoRedoState({
 
   // Clear stacks when the kit or its store changes: another store's kit of
   // the same name is a different kit (#568)
-  useEffect(() => {
+  const [stackKit, setStackKit] = useState({ kitName, storePath });
+  if (stackKit.kitName !== kitName || stackKit.storePath !== storePath) {
+    setStackKit({ kitName, storePath });
     setState((prev) => ({
       ...prev,
       error: null,
       redoStack: [],
       undoStack: [],
     }));
-  }, [kitName, storePath]);
+  }
 
   return {
     // Actions

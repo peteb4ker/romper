@@ -82,15 +82,24 @@ const getNavigationButtonState = (
   };
 };
 
-// Helper function to render kit alias input
-const renderKitAliasInput = (
-  kitAliasInput: string,
-  kitAliasInputRef: React.RefObject<HTMLInputElement>,
-  setEditingKitAlias: (v: boolean) => void,
-  setKitAliasInput: (v: string) => void,
-  handleSaveKitAlias: (alias: string) => void,
-  kit: Kit | null,
-) => (
+interface KitAliasInputProps {
+  handleSaveKitAlias: (alias: string) => void;
+  inputRef: React.RefObject<HTMLInputElement>;
+  kit: Kit | null;
+  kitAliasInput: string;
+  setEditingKitAlias: (v: boolean) => void;
+  setKitAliasInput: (v: string) => void;
+}
+
+// The kit alias field while it's being edited
+const KitAliasInput: React.FC<KitAliasInputProps> = ({
+  handleSaveKitAlias,
+  inputRef,
+  kit,
+  kitAliasInput,
+  setEditingKitAlias,
+  setKitAliasInput,
+}) => (
   <input
     aria-label="Kit name"
     className="border-b border-accent-primary bg-transparent text-base font-semibold text-text-primary focus:outline-none px-1 w-48 text-center"
@@ -108,7 +117,7 @@ const renderKitAliasInput = (
         setKitAliasInput(kit?.alias || "");
       }
     }}
-    ref={kitAliasInputRef}
+    ref={inputRef}
     value={kitAliasInput}
   />
 );
@@ -243,16 +252,18 @@ const KitHeader: React.FC<KitHeaderProps> = ({
         </span>
         <span className="text-lg font-bold text-text-primary">:</span>
         <div className="min-w-[8rem] flex justify-center">
-          {editingKitAlias
-            ? renderKitAliasInput(
-                kitAliasInput,
-                kitAliasInputRef,
-                setEditingKitAlias,
-                setKitAliasInput,
-                handleSaveKitAlias,
-                kit,
-              )
-            : renderKitAliasButton(setEditingKitAlias, kit)}
+          {editingKitAlias ? (
+            <KitAliasInput
+              handleSaveKitAlias={handleSaveKitAlias}
+              inputRef={kitAliasInputRef}
+              kit={kit}
+              kitAliasInput={kitAliasInput}
+              setEditingKitAlias={setEditingKitAlias}
+              setKitAliasInput={setKitAliasInput}
+            />
+          ) : (
+            renderKitAliasButton(setEditingKitAlias, kit)
+          )}
         </div>
 
         {/* Favorite bookmark button */}

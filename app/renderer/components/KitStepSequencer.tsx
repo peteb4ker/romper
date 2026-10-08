@@ -24,6 +24,7 @@ import {
   type TriggerCondition,
 } from "./hooks/shared/stepPatternConstants";
 import { useBpm } from "./hooks/shared/useBpm";
+import { useLatestRef } from "./hooks/shared/useLatestRef";
 import { useSettingSave } from "./hooks/shared/useSettingSave";
 import { useSliceSteps } from "./hooks/shared/useSliceSteps";
 import { SequencerKeysOverlay } from "./SequencerHelp";
@@ -79,11 +80,26 @@ interface KitStepSequencerProps {
   voices?: VoiceData[];
 }
 
+type SequencerVoices = KitStepSequencerProps["voices"];
+
 interface VoiceData extends SlicerVoiceData {
   sample_mode?: string;
   stereo_mode?: boolean;
   voice_number: number;
   voice_volume?: number;
+}
+
+/** Each voice's sample mode: the loaded voices', or "first" until they load */
+function modesFromVoices(voices: SequencerVoices): Record<number, SampleMode> {
+  const modes: Record<number, SampleMode> = {};
+  if (voices?.length) {
+    for (const voice of voices) {
+      modes[voice.voice_number] = (voice.sample_mode as SampleMode) || "first";
+    }
+    return modes;
+  }
+  for (let i = 1; i <= NUM_VOICES; i++) modes[i] = "first";
+  return modes;
 }
 
 function unmutedVoices(): Record<number, boolean> {
@@ -92,6 +108,19 @@ function unmutedVoices(): Record<number, boolean> {
     mutes[i] = false;
   }
   return mutes;
+}
+
+/** Each voice's level: the loaded voices', or 100 until they load */
+function volumesFromVoices(voices: SequencerVoices): Record<number, number> {
+  const volumes: Record<number, number> = {};
+  if (voices?.length) {
+    for (const voice of voices) {
+      volumes[voice.voice_number] = voice.voice_volume ?? 100;
+    }
+    return volumes;
+  }
+  for (let i = 1; i <= NUM_VOICES; i++) volumes[i] = 100;
+  return volumes;
 }
 
 const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
@@ -107,8 +136,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
 
   // The kit on screen, so a save that fails after you step to another kit
   // doesn't put its value back on the new kit's voice (#565)
-  const kitRef = React.useRef(kitName);
-  kitRef.current = kitName;
+  const kitRef = useLatestRef(kitName);
 
   // Manage BPM state at this level to ensure sequencer logic gets live updates
   const bpmLogic = useBpm({
@@ -122,9 +150,11 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
   // unmuted: the editor isn't remounted when you step to another kit (#565)
   const [voiceMutes, setVoiceMutes] =
     React.useState<Record<number, boolean>>(unmutedVoices);
-  React.useEffect(() => {
+  const [mutesKit, setMutesKit] = React.useState(kitName);
+  if (mutesKit !== kitName) {
+    setMutesKit(kitName);
     setVoiceMutes(unmutedVoices());
-  }, [kitName]);
+  }
 
   const handleMuteToggle = React.useCallback((voiceNumber: number) => {
     setVoiceMutes((prev) => ({ ...prev, [voiceNumber]: !prev[voiceNumber] }));
@@ -133,24 +163,12 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
   // Voice volume state — initialized from voice data, managed locally
   const [voiceVolumes, setVoiceVolumes] = React.useState<
     Record<number, number>
-  >(() => {
-    const volumes: Record<number, number> = {};
-    for (let i = 1; i <= NUM_VOICES; i++) {
-      volumes[i] = 100;
-    }
-    return volumes;
-  });
+  >(() => volumesFromVoices(props.voices));
 
   // Sample mode state — initialized from voice data, managed locally
   const [sampleModes, setSampleModes] = React.useState<
     Record<number, SampleMode>
-  >(() => {
-    const modes: Record<number, SampleMode> = {};
-    for (let i = 1; i <= NUM_VOICES; i++) {
-      modes[i] = "first";
-    }
-    return modes;
-  });
+  >(() => modesFromVoices(props.voices));
 
   // Level and sample mode saves: a failed one goes back and says so (RE-91)
   const { reset: resetVolumeSaves, save: saveVolume } = useSettingSave<
@@ -163,17 +181,16 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
   >();
 
   // Sync state from voice data when it arrives/changes
+  const [shownVoices, setShownVoices] = React.useState(props.voices);
+  if (shownVoices !== props.voices) {
+    setShownVoices(props.voices);
+    if (props.voices?.length) {
+      setVoiceVolumes(volumesFromVoices(props.voices));
+      setSampleModes(modesFromVoices(props.voices));
+    }
+  }
   React.useEffect(() => {
     if (!props.voices?.length) return;
-    const newVolumes: Record<number, number> = {};
-    const newModes: Record<number, SampleMode> = {};
-    for (const voice of props.voices) {
-      newVolumes[voice.voice_number] = voice.voice_volume ?? 100;
-      newModes[voice.voice_number] =
-        (voice.sample_mode as SampleMode) || "first";
-    }
-    setVoiceVolumes(newVolumes);
-    setSampleModes(newModes);
     resetVolumeSaves();
     resetModeSaves();
   }, [props.voices, resetVolumeSaves, resetModeSaves]);
@@ -217,7 +234,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
       });
       debouncedRefresh();
     },
-    [kitName, debouncedRefresh, onMessage, saveVolume, voiceVolumes],
+    [kitName, kitRef, debouncedRefresh, onMessage, saveVolume, voiceVolumes],
   );
 
   // Handle sample mode change — update local state + persist via IPC
@@ -248,7 +265,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
         what: `the sample mode for voice ${voiceNumber}`,
       });
     },
-    [kitName, onMessage, onVoiceSettingChanged, saveMode, sampleModes],
+    [kitName, kitRef, onMessage, onVoiceSettingChanged, saveMode, sampleModes],
   );
 
   // Compute stereo-linked voice pairs from voice data
@@ -366,8 +383,10 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
     updateSliceSettings,
     voiceVolumes,
   });
-  gridKeyRef.current = slicer.handleGridKeyDown;
-  sliceTriggeredRef.current = slicer.handleSliceTriggered;
+  React.useLayoutEffect(() => {
+    gridKeyRef.current = slicer.handleGridKeyDown;
+    sliceTriggeredRef.current = slicer.handleSliceTriggered;
+  });
 
   const sliceEnabled = React.useMemo(() => {
     const enabled: Record<number, boolean> = {};
@@ -387,16 +406,16 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
 
   // The shortcut overlay: "?" toggles it while the sequencer shows
   const [keysOpen, setKeysOpen] = React.useState(false);
-  const gridRef = props.gridRef || logic.gridRefInternal;
+  const { gridRefInternal } = logic;
+  const gridRefProp = props.gridRef;
   const closeKeys = React.useCallback(() => {
     setKeysOpen(false);
-    gridRef.current?.focus();
-  }, [gridRef]);
+    (gridRefProp || gridRefInternal).current?.focus();
+  }, [gridRefProp, gridRefInternal]);
+  // Closing the sequencer closes the overlay
+  if (!props.sequencerOpen && keysOpen) setKeysOpen(false);
   React.useEffect(() => {
-    if (!props.sequencerOpen) {
-      setKeysOpen(false);
-      return;
-    }
+    if (!props.sequencerOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "?" || e.defaultPrevented || isModalDialogOpen()) return;
       const el = e.target as HTMLElement | null;

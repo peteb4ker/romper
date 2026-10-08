@@ -1,6 +1,8 @@
-import { useCallback, useRef } from "react";
+import { useCallback } from "react";
 
 import type { ProgressEvent } from "./useLocalStoreWizardState";
+
+import { useLatestRef } from "../shared/useLatestRef";
 
 export interface StepProgressParams {
   items: string[];
@@ -18,15 +20,14 @@ export function useWizardProgress(
   setProgress: (p: null | ProgressEvent) => void,
   onProgress?: (p: ProgressEvent) => void,
 ) {
-  const progressCb = useRef(onProgress);
-  progressCb.current = onProgress;
+  const progressCb = useLatestRef(onProgress);
 
   const reportProgress = useCallback(
     (p: ProgressEvent) => {
       setProgress(p);
       if (progressCb.current) progressCb.current(p);
     },
-    [setProgress],
+    [progressCb, setProgress],
   );
 
   const reportStepProgress = useCallback(

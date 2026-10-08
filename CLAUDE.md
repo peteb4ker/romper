@@ -69,10 +69,11 @@ through a PR.
   branches `feature/<task-name>` from `origin/main` in
   `../romper-worktrees/<task-name>` (beside the main checkout, not inside
   it), writes per-worktree dev ports to `.env.local`, links Claude settings,
-  and runs `npm install`. Once merged, remove it with
-  `npm run worktree:remove <task-name>`. That finds the worktree by its
-  folder name, so it still works after you rename the branch (e.g. to
-  `fix/...`), and deletes whatever branch it's on.
+  and runs `npm ci`, which installs from the lockfile without rewriting
+  it. Once merged, remove it with `npm run worktree:remove <task-name>`.
+  That finds the worktree by its folder name, so it still works after you
+  rename the branch (e.g. to `fix/...`), and deletes whatever branch it's
+  on.
 - With raw git, always pass the base explicitly:
   `git worktree add <path> -b <branch> origin/main`. Inheriting from a
   non-main HEAD pollutes the PR with someone else's commits (see

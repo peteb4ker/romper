@@ -1,6 +1,6 @@
 import type { SliceStep } from "@romper/shared/sliceTypes";
 
-import { act, renderHook } from "@testing-library/react";
+import { act, cleanup, renderHook } from "@testing-library/react";
 import React from "react";
 import {
   afterEach,
@@ -133,6 +133,13 @@ function patternWith(steps: number[]): number[][] {
   for (const s of steps) p[0][s] = 127;
   return p;
 }
+
+// Testing Library only unmounts on its own when Vitest's globals are on, and
+// they aren't here. A hook left mounted keeps its timers (the 600 ms
+// rolled-step flash), which can then fire after jsdom is gone (#704).
+afterEach(() => {
+  cleanup();
+});
 
 describe("[UC-33] useSlicerEditor", () => {
   let api: ReturnType<typeof setupElectronAPIMock>;
@@ -348,6 +355,43 @@ describe("[UC-33] useSlicerEditor", () => {
       expect(result.current.edits).toEqual([
         { description: "Roll slices on voice 1" },
       ]);
+    });
+
+    describe("the rolled-step flash (#704)", () => {
+      beforeEach(() => {
+        vi.useFakeTimers();
+      });
+
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      function rollVoice1() {
+        const rendered = renderHook(() =>
+          useHarness(
+            { pattern: patternWith([0, 4]), voices: voice1Sliced },
+            onPlaySample,
+          ),
+        );
+        act(() => rendered.result.current.editor.roll(1));
+        expect(rendered.result.current.editor.rolledSteps).not.toBeNull();
+        return rendered;
+      }
+
+      it("clears 600 ms after a roll", () => {
+        const { result } = rollVoice1();
+        act(() => vi.advanceTimersByTime(599));
+        expect(result.current.editor.rolledSteps).not.toBeNull();
+        act(() => vi.advanceTimersByTime(1));
+        expect(result.current.editor.rolledSteps).toBeNull();
+      });
+
+      it("cancels its timer when the editor unmounts", () => {
+        const { unmount } = rollVoice1();
+        expect(vi.getTimerCount()).toBe(1);
+        unmount();
+        expect(vi.getTimerCount()).toBe(0);
+      });
     });
 
     it("explains when there is nothing to roll, and records nothing", () => {

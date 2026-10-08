@@ -61,6 +61,18 @@ describe("useKitCreation", () => {
   });
 
   describe("[UC-14] handleCreateKitInBank", () => {
+    it("[Q-01] passes on the kit main returned (#452)", async () => {
+      const created = createMockKitWithRelations({ name: "A2" });
+      mockCreateKit.mockResolvedValueOnce(created);
+      const { result } = renderHook(() => useKitCreation(defaultProps));
+
+      await act(async () => {
+        await result.current.handleCreateKitInBank("A");
+      });
+
+      expect(defaultProps.onRefreshKits).toHaveBeenCalledWith("A2", created);
+    });
+
     it("should create a kit in the next available slot for the bank", async () => {
       mockCreateKit.mockResolvedValueOnce(undefined);
       const { result } = renderHook(() => useKitCreation(defaultProps));
@@ -71,7 +83,7 @@ describe("useKitCreation", () => {
 
       expect(mockCreateKit).toHaveBeenCalledWith("A2");
       expect(mockMarkExplicitNavigation).toHaveBeenCalled();
-      expect(defaultProps.onRefreshKits).toHaveBeenCalledWith("A2");
+      expect(defaultProps.onRefreshKits).toHaveBeenCalledWith("A2", undefined);
       // Success feedback is now handled by entrance animation, not toast
       expect(result.current.newlyCreatedKit).toBe("A2");
       expect(result.current.isCreatingKit).toBe(false);
@@ -86,7 +98,7 @@ describe("useKitCreation", () => {
       });
 
       expect(mockCreateKit).toHaveBeenCalledWith("B0");
-      expect(defaultProps.onRefreshKits).toHaveBeenCalledWith("B0");
+      expect(defaultProps.onRefreshKits).toHaveBeenCalledWith("B0", undefined);
     });
 
     it("should show warning when bank is full", async () => {
@@ -174,7 +186,7 @@ describe("useKitCreation", () => {
       });
 
       expect(mockCreateKit).toHaveBeenCalledWith("A0");
-      expect(onRefreshKits).toHaveBeenCalledWith("A0");
+      expect(onRefreshKits).toHaveBeenCalledWith("A0", undefined);
       expect(result.current.newlyCreatedKit).toBe("A0");
     });
 
@@ -187,7 +199,7 @@ describe("useKitCreation", () => {
       });
 
       expect(mockCreateKit).toHaveBeenCalledWith("Z0");
-      expect(defaultProps.onRefreshKits).toHaveBeenCalledWith("Z0");
+      expect(defaultProps.onRefreshKits).toHaveBeenCalledWith("Z0", undefined);
     });
   });
 });

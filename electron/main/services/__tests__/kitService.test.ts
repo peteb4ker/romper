@@ -52,6 +52,28 @@ describe("KitService", () => {
   });
 
   describe("[UC-14] createKit", () => {
+    it("[Q-01] returns the new kit, read back after it's added (#452)", () => {
+      const created = { ...createMockKit({ name: "A5" }), samples: [] };
+      mockGetKit
+        .mockReturnValueOnce({ data: null, success: true })
+        .mockReturnValueOnce({ data: created, success: true });
+
+      expect(kitService.createKit(mockInMemorySettings, "A5")).toEqual({
+        data: created,
+        success: true,
+      });
+    });
+
+    it("succeeds without a kit when it can't be read back", () => {
+      mockGetKit
+        .mockReturnValueOnce({ data: null, success: true })
+        .mockReturnValueOnce({ error: "database is locked", success: false });
+
+      expect(kitService.createKit(mockInMemorySettings, "A5")).toEqual({
+        success: true,
+      });
+    });
+
     it("successfully creates a new kit", () => {
       const result = kitService.createKit(mockInMemorySettings, "A5");
 

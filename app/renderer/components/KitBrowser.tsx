@@ -33,6 +33,10 @@ interface KitBrowserProps {
   // Core actions
   /** Clears a Scan All result that stays because kits failed (#586) */
   onDismissBulkScan?: () => void;
+  /** Adds a kit just created or copied, as main returned it (#452) */
+  onKitAdded?: (kit: KitWithRelations) => void;
+  /** Takes a deleted kit off the list (#452) */
+  onKitDeleted?: (kitName: string) => void;
   onMessage?: (text: string, type?: string, duration?: number) => void;
   onRefreshKits?: () => Promise<void>;
 
@@ -63,6 +67,8 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
     handleToggleFavoritesFilter,
     handleToggleModifiedFilter,
     modifiedCount,
+    onKitAdded,
+    onKitDeleted,
     onMessage,
     onRefreshKits,
     showFavoritesOnly,
@@ -85,9 +91,13 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
   const filteredKits = props.kits;
 
   // Create wrapper function for async onRefreshKits with scrollToKit parameter
+  // A new kit main returned goes on the list without reading every kit
+  // (#452); otherwise the kits are read again
   const handleRefreshKitsWithScroll = useCallback(
-    (scrollToKit?: string) => {
-      if (onRefreshKits) {
+    (scrollToKit?: string, created?: KitWithRelations) => {
+      if (created && onKitAdded) {
+        onKitAdded(created);
+      } else if (onRefreshKits) {
         onRefreshKits().catch((error) => {
           console.error("Failed to refresh kits:", error);
           onMessage?.("Failed to refresh kits", "error");
@@ -100,7 +110,7 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
         }, SCROLL_DELAY_MS);
       }
     },
-    [onRefreshKits, onMessage],
+    [onKitAdded, onRefreshKits, onMessage],
   );
 
   const logic = useKitBrowser({
@@ -143,6 +153,7 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
 
   // Kit deletion hook
   const deletion = useKitDeletion({
+    onKitDeleted,
     onMessage,
     onRefreshKits: handleRefreshKits,
   });

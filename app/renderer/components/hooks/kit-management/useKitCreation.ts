@@ -9,7 +9,8 @@ import { createKit, formatKitError } from "../../utils/kitOperations";
 interface UseKitCreationProps {
   kits: KitWithRelations[];
   onMessage?: (text: string, type?: string, duration?: number) => void;
-  onRefreshKits?: (scrollToKit?: string) => void;
+  /** Shows the list with the new kit: the kit main returned, or a reload */
+  onRefreshKits?: (scrollToKit?: string, created?: KitWithRelations) => void;
 }
 
 const ANIMATION_CLEAR_MS = 1000;
@@ -42,7 +43,7 @@ export function useKitCreation({
 
       setIsCreatingKit(true);
       try {
-        await createKit(nextSlot);
+        const created = await createKit(nextSlot);
 
         // Mark as explicit navigation to prevent HMR from restoring previous kit
         markExplicitNavigation();
@@ -55,7 +56,7 @@ export function useKitCreation({
           ANIMATION_CLEAR_MS,
         );
 
-        if (onRefreshKits) onRefreshKits(nextSlot);
+        if (onRefreshKits) onRefreshKits(nextSlot, created);
       } catch (err) {
         if (onMessage) onMessage(formatKitError(err), "error", 5000);
       } finally {

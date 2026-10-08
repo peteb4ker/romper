@@ -120,6 +120,41 @@ describe("useKitDeletion", () => {
     });
   });
 
+  describe("[Q-01] [UC-16] taking a deleted kit off the list (#452)", () => {
+    it("takes the kit off without reading the kits, when it can", async () => {
+      mockDeleteKit.mockResolvedValue(undefined);
+      const onKitDeleted = vi.fn();
+      const { result } = renderHook(() =>
+        useKitDeletion({
+          onKitDeleted,
+          onMessage: mockOnMessage,
+          onRefreshKits: mockOnRefreshKits,
+        }),
+      );
+
+      await act(async () => {
+        await result.current.deleteKitDirect("A5");
+      });
+
+      expect(onKitDeleted).toHaveBeenCalledWith("A5");
+      expect(mockOnRefreshKits).not.toHaveBeenCalled();
+    });
+
+    it("doesn't take a kit off when the delete fails", async () => {
+      mockDeleteKit.mockRejectedValue(new Error("Kit not found."));
+      const onKitDeleted = vi.fn();
+      const { result } = renderHook(() =>
+        useKitDeletion({ onKitDeleted, onMessage: mockOnMessage }),
+      );
+
+      await act(async () => {
+        await expect(result.current.deleteKitDirect("A5")).rejects.toThrow();
+      });
+
+      expect(onKitDeleted).not.toHaveBeenCalled();
+    });
+  });
+
   describe("handleConfirmDelete", () => {
     it("deletes kit, shows message, and refreshes", async () => {
       mockGetKitDeleteSummary.mockResolvedValue({

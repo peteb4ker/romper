@@ -22,6 +22,10 @@ type KitBrowserContainerProps = Readonly<{
   onAboutClick?: () => void;
   /** Clears a Scan All result that stays because kits failed (#586) */
   onDismissBulkScan?: () => void;
+  /** Adds a kit just created or copied, as main returned it (#452) */
+  onKitAdded?: (kit: KitWithRelations) => void;
+  /** Takes a deleted kit off the list (#452) */
+  onKitDeleted?: (kitName: string) => void;
   onMessage: (text: string, type?: string, duration?: number) => void;
   onRefreshKits: () => Promise<void>;
   onSearchChange?: (query: string) => void;
@@ -54,6 +58,8 @@ const KitBrowserContainer: React.FC<KitBrowserContainerProps> = (props) => {
     modifiedCount,
     onAboutClick,
     onDismissBulkScan,
+    onKitAdded,
+    onKitDeleted,
     onMessage,
     onRefreshKits,
     onSearchChange,
@@ -101,6 +107,8 @@ const KitBrowserContainer: React.FC<KitBrowserContainerProps> = (props) => {
       modifiedCount={modifiedCount}
       onAboutClick={onAboutClick}
       onDismissBulkScan={onDismissBulkScan}
+      onKitAdded={onKitAdded}
+      onKitDeleted={onKitDeleted}
       onMessage={handleMessage}
       onRefreshKits={handleRefreshKits}
       onSearchChange={onSearchChange}

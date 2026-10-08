@@ -1,4 +1,8 @@
-import type { DbResult, NewKit } from "@romper/shared/db/schema.js";
+import type {
+  DbResult,
+  KitWithRelations,
+  NewKit,
+} from "@romper/shared/db/schema.js";
 
 import { isKitName } from "@romper/shared/rampleCardLayout.js";
 
@@ -27,7 +31,7 @@ export class KitService {
     inMemorySettings: InMemorySettings,
     sourceKit: string,
     destKit: string,
-  ): DbResult<void> {
+  ): DbResult<KitWithRelations> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
       return { error: "No local store path configured", success: false };
@@ -41,7 +45,11 @@ export class KitService {
     // The db layer copies kit, voices, and samples atomically with all
     // user-editable fields preserved (bpm, trigger conditions, voice
     // settings, sample gain and WAV metadata).
-    return copyKitDb(dbPath, sourceKit, destKit);
+    return this.withNewKit(
+      dbPath,
+      destKit,
+      copyKitDb(dbPath, sourceKit, destKit),
+    );
   }
 
   /**
@@ -51,7 +59,7 @@ export class KitService {
   createKit(
     inMemorySettings: InMemorySettings,
     kitSlot: string,
-  ): DbResult<void> {
+  ): DbResult<KitWithRelations> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
       return { error: "No local store path configured", success: false };
@@ -83,7 +91,7 @@ export class KitService {
       return { error: `Failed to create kit: ${result.error}`, success: false };
     }
 
-    return { success: true };
+    return this.withNewKit(dbPath, kitSlot, result);
   }
 
   /**
@@ -159,6 +167,24 @@ export class KitService {
     if (!isKitName(kitSlot)) {
       throw new Error("Invalid kit slot. Use format A0-Z99.");
     }
+  }
+
+  /**
+   * A new kit's result with the kit as it was created, samples and all, so
+   * the renderer adds it to the list instead of reading every kit again
+   * (#452). If it can't be read back, no kit comes with it and the
+   * renderer reloads the kits.
+   */
+  private withNewKit(
+    dbPath: string,
+    kitName: string,
+    result: DbResult<unknown>,
+  ): DbResult<KitWithRelations> {
+    if (!result.success) return { error: result.error, success: false };
+    const kit = getKit(dbPath, kitName);
+    return kit.success && kit.data?.samples
+      ? { data: kit.data, success: true }
+      : { success: true };
   }
 }
 

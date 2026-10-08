@@ -1,10 +1,15 @@
+import type { KitWithRelations } from "@romper/shared/db/schema";
+
 import { isKitName } from "@romper/shared/rampleCardLayout";
 // Kit operations utilities
 
 /**
  * Creates a kit at the specified slot
  */
-export async function createKit(kitSlot: string): Promise<void> {
+/** Resolves to the new kit, when main returns it (#452) */
+export async function createKit(
+  kitSlot: string,
+): Promise<KitWithRelations | undefined> {
   if (!validateKitSlot(kitSlot)) {
     throw new Error("Invalid kit slot. Use format A0-Z99.");
   }
@@ -17,6 +22,7 @@ export async function createKit(kitSlot: string): Promise<void> {
   if (!result.success) {
     throw new Error(result.error || "Failed to create kit");
   }
+  return result.data;
 }
 
 /**
@@ -36,10 +42,11 @@ export async function deleteKit(kitName: string): Promise<void> {
 /**
  * Duplicates/copies a kit from source to destination slot
  */
+/** Resolves to the copy, when main returns it (#452) */
 export async function duplicateKit(
   sourceSlot: string,
   destSlot: string,
-): Promise<void> {
+): Promise<KitWithRelations | undefined> {
   if (!validateKitSlot(destSlot)) {
     throw new Error("Invalid destination slot. Use format A0-Z99.");
   }
@@ -52,6 +59,7 @@ export async function duplicateKit(
   if (!result.success) {
     throw new Error(result.error || "Failed to copy kit");
   }
+  return result.data;
 }
 
 /**

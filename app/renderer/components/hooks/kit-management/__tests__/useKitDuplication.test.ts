@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createMockKitWithRelations } from "../../../../../../tests/factories/kit.factory";
 import { useKitDuplication } from "../useKitDuplication";
 
 // Mock the kit operations
@@ -41,6 +42,20 @@ describe("useKitDuplication", () => {
   });
 
   describe("kit duplication", () => {
+    it("[Q-01] [UC-15] passes on the copy main returned (#452)", async () => {
+      const copy = createMockKitWithRelations({ name: "B0" });
+      mockDuplicateKit.mockResolvedValueOnce(copy);
+      const { result } = renderHook(() => useKitDuplication(defaultProps));
+
+      let outcome: { error?: string } | undefined;
+      await act(async () => {
+        outcome = await result.current.duplicateKitDirect("A0", "B0");
+      });
+
+      expect(outcome).toEqual({});
+      expect(defaultProps.onRefreshKits).toHaveBeenCalledWith("B0", copy);
+    });
+
     it("should successfully duplicate a kit", async () => {
       mockDuplicateKit.mockResolvedValueOnce(undefined);
       const { result } = renderHook(() => useKitDuplication(defaultProps));
@@ -58,7 +73,7 @@ describe("useKitDuplication", () => {
       expect(result.current.duplicateKitSource).toBeNull();
       expect(result.current.duplicateKitDest).toBe("");
       expect(result.current.duplicateKitError).toBeNull();
-      expect(defaultProps.onRefreshKits).toHaveBeenCalledWith("B0");
+      expect(defaultProps.onRefreshKits).toHaveBeenCalledWith("B0", undefined);
     });
 
     it("should handle missing source kit", async () => {
@@ -185,7 +200,7 @@ describe("useKitDuplication", () => {
       });
 
       expect(mockDuplicateKit).toHaveBeenCalledWith("A0", "B0");
-      expect(mockOnRefreshKits).toHaveBeenCalledWith("B0");
+      expect(mockOnRefreshKits).toHaveBeenCalledWith("B0", undefined);
       expect(result.current.duplicateKitError).toBeNull();
     });
 
@@ -225,7 +240,7 @@ describe("useKitDuplication", () => {
 
       expect(response).toEqual({});
       expect(mockDuplicateKit).toHaveBeenCalledWith("A0", "B0");
-      expect(defaultProps.onRefreshKits).toHaveBeenCalledWith("B0");
+      expect(defaultProps.onRefreshKits).toHaveBeenCalledWith("B0", undefined);
     });
 
     it("invalid dest returns error", async () => {

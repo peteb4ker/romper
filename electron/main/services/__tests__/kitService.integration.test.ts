@@ -118,6 +118,10 @@ describe("KitService Integration Tests", () => {
       // Action: Duplicate the kit
       const copyResult = kitService.copyKit(mockInMemorySettings, "A1", "B5");
       expect(copyResult.success).toBe(true);
+      // [Q-01] The copy comes back with it, samples and all, so the
+      // renderer adds it without reading every kit (#452)
+      expect(copyResult.data?.name).toBe("B5");
+      expect(copyResult.data?.samples).toHaveLength(3);
 
       // Verification: Check destination kit exists
       const destKitResult = getKit(TEST_DB_PATH, "B5");

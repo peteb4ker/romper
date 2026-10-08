@@ -66,6 +66,7 @@ const KitsView: React.FC = () => {
 
   // Kit data management
   const {
+    addKit,
     allKitSamples,
     applyKitEdit,
     applyReadKit,
@@ -75,6 +76,7 @@ const KitsView: React.FC = () => {
     markGainSaved,
     refreshAllKitsAndSamples,
     refreshKit,
+    removeKit,
     sampleCounts,
     toggleKitEditable,
     toggleKitFavorite,
@@ -292,6 +294,8 @@ const KitsView: React.FC = () => {
             modifiedCount={kitFilters.modifiedCount}
             onAboutClick={openAbout}
             onDismissBulkScan={dismissBulkScanResult}
+            onKitAdded={addKit}
+            onKitDeleted={removeKit}
             onMessage={showMessage}
             onRefreshKits={refreshAllKitsAndSamples}
             onSearchChange={search.searchChange}

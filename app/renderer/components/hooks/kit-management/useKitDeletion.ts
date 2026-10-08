@@ -7,14 +7,26 @@ import {
 } from "../../utils/kitOperations";
 
 interface UseKitDeletionProps {
+  /** Takes the deleted kit off the list without reading every kit (#452) */
+  onKitDeleted?: (kitName: string) => void;
   onMessage?: (text: string, type?: string, duration?: number) => void;
   onRefreshKits?: () => void;
 }
 
 export function useKitDeletion({
+  onKitDeleted,
   onMessage,
   onRefreshKits,
 }: UseKitDeletionProps) {
+  // The list without the deleted kit: taken off, or else read again
+  const showDeleted = useCallback(
+    (kitName: string) => {
+      if (onKitDeleted) onKitDeleted(kitName);
+      else onRefreshKits?.();
+    },
+    [onKitDeleted, onRefreshKits],
+  );
+
   const [kitToDelete, setKitToDelete] = useState<null | string>(null);
   const [deleteSummary, setDeleteSummary] = useState<{
     sampleCount: number;
@@ -49,7 +61,7 @@ export function useKitDeletion({
     try {
       await deleteKit(kitToDelete);
       // Success feedback handled by exit animation — no toast needed
-      onRefreshKits?.();
+      showDeleted(kitToDelete);
     } catch (err) {
       onMessage?.(formatKitOperationError(err, "delete"), "error", 5000);
     } finally {
@@ -93,7 +105,7 @@ export function useKitDeletion({
       try {
         await deleteKit(kitName);
         // Success feedback handled by exit animation — no toast needed
-        onRefreshKits?.();
+        showDeleted(kitName);
       } catch (err) {
         onMessage?.(formatKitOperationError(err, "delete"), "error", 5000);
         // Rethrow so the caller (KitGridItem) can roll back its exit animation —
@@ -101,7 +113,7 @@ export function useKitDeletion({
         throw err;
       }
     },
-    [onMessage, onRefreshKits],
+    [onMessage, showDeleted],
   );
 
   return {

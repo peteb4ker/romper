@@ -1,9 +1,12 @@
+import type { KitWithRelations } from "@romper/shared/db/schema";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { duplicateKit, validateKitSlot } from "../../utils/kitOperations";
 
 interface UseKitDuplicationProps {
-  onRefreshKits?: (scrollToKit?: string) => void;
+  /** Shows the list with the copy: the kit main returned, or a reload */
+  onRefreshKits?: (scrollToKit?: string, created?: KitWithRelations) => void;
 }
 
 const ANIMATION_CLEAR_MS = 1000;
@@ -45,13 +48,13 @@ export function useKitDuplication({ onRefreshKits }: UseKitDuplicationProps) {
     }
 
     try {
-      await duplicateKit(duplicateKitSource, duplicateKitDest);
+      const created = await duplicateKit(duplicateKitSource, duplicateKitDest);
 
       const kitNameToScrollTo = duplicateKitDest;
       trackNewKit(kitNameToScrollTo);
       setDuplicateKitSource(null);
       setDuplicateKitDest("");
-      if (onRefreshKits) onRefreshKits(kitNameToScrollTo);
+      if (onRefreshKits) onRefreshKits(kitNameToScrollTo, created);
     } catch (err) {
       setDuplicateKitError(err instanceof Error ? err.message : String(err));
     }
@@ -64,9 +67,9 @@ export function useKitDuplication({ onRefreshKits }: UseKitDuplicationProps) {
         return { error: "Invalid destination slot. Use format A0-Z99." };
       }
       try {
-        await duplicateKit(source, dest);
+        const created = await duplicateKit(source, dest);
         trackNewKit(dest);
-        if (onRefreshKits) onRefreshKits(dest);
+        if (onRefreshKits) onRefreshKits(dest, created);
         return {};
       } catch (err) {
         return { error: err instanceof Error ? err.message : String(err) };

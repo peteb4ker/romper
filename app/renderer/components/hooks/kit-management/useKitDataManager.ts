@@ -32,6 +32,8 @@ interface UseKitDataManagerProps {
 }
 
 interface UseKitDataManagerReturn {
+  /** Adds a kit just created or copied, as main returned it (#452) */
+  addKit: (kit: KitWithRelations) => void;
   allKitSamples: { [kit: string]: VoiceSamples };
   /**
    * Shows the kit an edit to its own fields or voices returned, without
@@ -70,6 +72,8 @@ interface UseKitDataManagerReturn {
    * it can't be read, what's shown stays and the user is told (#605).
    */
   refreshKit: (kitName: string) => Promise<void>;
+  /** Takes a deleted kit off the list without reading every kit (#452) */
+  removeKit: (kitName: string) => void;
   sampleCounts: Record<string, [number, number, number, number]>;
   toggleKitEditable: (kitName: string) => Promise<void>;
   toggleKitFavorite: (
@@ -121,6 +125,9 @@ export function useKitDataManager({
   const lastRead = useRef(0);
   const kitReads = useRef(new Map<string, number>());
   const listRead = useRef(0);
+  // Kits deleted, with the number of the delete, until a read sent after
+  // it shows they're gone
+  const removedKits = useRef(new Map<string, number>());
   // Changes main has saved that the renderer shows without a reload (a
   // kit an edit returned, a gain, BPM, favorite, name or editable flag),
   // numbered like reads. A read sent before one can't show it, so it's
@@ -209,26 +216,41 @@ export function useKitDataManager({
   const applyAllKits = useCallback(
     (read: number, readKits: KitWithRelations[]) => {
       listRead.current = read;
-      const loadedKits = readKits.map((kit) => withSavedChanges(kit, read));
+      // A kit deleted after this read was sent stays deleted
+      const loadedKits = readKits
+        .filter((kit) => (removedKits.current.get(kit.name) ?? 0) <= read)
+        .map((kit) => withSavedChanges(kit, read));
+      for (const [name, removed] of removedKits.current) {
+        if (removed < read) removedKits.current.delete(name);
+      }
+      const loadedNames = new Set(loadedKits.map((kit) => kit.name));
       const newer = new Set<string>();
       for (const kit of loadedKits) {
         if ((kitReads.current.get(kit.name) ?? 0) > read) newer.add(kit.name);
         else kitReads.current.set(kit.name, read);
       }
-      if (newer.size === 0) {
+      // A kit created after this read was sent, so it isn't in it, stays
+      const added = [...kitReads.current]
+        .filter(([name, kitRead]) => kitRead > read && !loadedNames.has(name))
+        .map(([name]) => name);
+      if (newer.size === 0 && added.length === 0) {
         setDbKits(loadedKits);
         setAllKitSamples(groupLoadedKitSamples(loadedKits));
       } else {
-        setDbKits((prev) =>
-          loadedKits.map((kit) =>
-            newer.has(kit.name)
-              ? (prev.find((shown) => shown.name === kit.name) ?? kit)
-              : kit,
-          ),
-        );
+        setDbKits((prev) => {
+          const shown = new Map(prev.map((kit) => [kit.name, kit]));
+          const next = loadedKits.map((kit) =>
+            newer.has(kit.name) ? (shown.get(kit.name) ?? kit) : kit,
+          );
+          for (const name of added) {
+            const kit = shown.get(name);
+            if (kit) next.push(kit);
+          }
+          return next;
+        });
         setAllKitSamples((prev) => {
           const next = groupLoadedKitSamples(loadedKits);
-          for (const name of newer) {
+          for (const name of [...newer, ...added]) {
             if (prev[name]) next[name] = prev[name];
           }
           return next;
@@ -314,9 +336,10 @@ export function useKitDataManager({
     (kitName: string, kit: KitWithRelations, read: number) => {
       if (
         read < listRead.current ||
-        read < (kitReads.current.get(kitName) ?? 0)
+        read < (kitReads.current.get(kitName) ?? 0) ||
+        read < (removedKits.current.get(kitName) ?? 0)
       ) {
-        return; // Newer data is already on screen
+        return; // Newer data is already on screen, or the kit is gone
       }
       kitReads.current.set(kitName, read);
 
@@ -369,6 +392,48 @@ export function useKitDataManager({
     },
     [showReadKit],
   );
+
+  // Show a kit that was just created or copied, as main returned it, in
+  // place of reading every kit again (#452). It goes at the end, where a
+  // full load lists it too: the list is in the order kits were added.
+  const addKit = useCallback((kit: KitWithRelations) => {
+    if (!kit.samples) return;
+    const read = ++lastRead.current;
+    removedKits.current.delete(kit.name);
+    kitReads.current.set(kit.name, read);
+    const voices = groupDbSamplesByVoice(kit.samples);
+    setDbKits((prevKits) =>
+      prevKits.some((shown) => shown.name === kit.name)
+        ? prevKits.map((shown) => (shown.name === kit.name ? kit : shown))
+        : [...prevKits, kit],
+    );
+    setAllKitSamples((prev) => ({ ...prev, [kit.name]: voices }));
+  }, []);
+
+  // Take a deleted kit off the list, in place of reading every kit again
+  // (#452). A read sent before the delete doesn't bring it back.
+  const removeKit = useCallback((kitName: string) => {
+    removedKits.current.set(kitName, ++lastRead.current);
+    kitReads.current.delete(kitName);
+    savedChanges.current.delete(kitName);
+    setDbKits((prevKits) =>
+      prevKits.some((kit) => kit.name === kitName)
+        ? prevKits.filter((kit) => kit.name !== kitName)
+        : prevKits,
+    );
+    setAllKitSamples((prev) => {
+      if (!(kitName in prev)) return prev;
+      const next = { ...prev };
+      delete next[kitName];
+      return next;
+    });
+    setFailedKits((prev) => {
+      if (!prev.has(kitName)) return prev;
+      const next = new Set(prev);
+      next.delete(kitName);
+      return next;
+    });
+  }, []);
 
   // Reload one kit after any edit to it, on opening it without its samples,
   // and after an undo. If it can't be read, what's shown stays and the user
@@ -612,6 +677,7 @@ export function useKitDataManager({
   }, [loadKitsData]);
 
   return {
+    addKit,
     allKitSamples,
     applyKitEdit,
     applyReadKit,
@@ -622,6 +688,7 @@ export function useKitDataManager({
     markGainSaved,
     refreshAllKitsAndSamples,
     refreshKit,
+    removeKit,
     sampleCounts,
     toggleKitEditable,
     toggleKitFavorite,

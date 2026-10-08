@@ -1,27 +1,31 @@
-import type { Kit } from "@romper/shared/db/schema";
-
 // Test suite for KitHeader component
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
 import { useKitEditorKeyboardNav } from "../hooks/kit-management/useKitEditorKeyboardNav";
 import KitHeader from "../KitHeader";
+
+// KitHeader takes the ref as RefObject<HTMLInputElement>; start it on a
+// detached input, and React points it at the name field once that mounts
+const nameInputRef = () => ({ current: document.createElement("input") });
 
 describe("KitHeader", () => {
   const baseProps = {
     editingKitAlias: false,
     handleSaveKitAlias: vi.fn(),
     isEditable: false,
-    kit: { alias: "My Kit" } as Kit,
+    kit: createMockKitWithRelations({ alias: "My Kit", name: "A1" }),
     kitAliasInput: "My Kit",
-    kitAliasInputRef: { current: null },
+    kitAliasInputRef: nameInputRef(),
     kitIndex: 1,
     kitName: "A1",
-    kits: ["A1", "A2", "A3"],
+    kits: ["A0", "A1", "A2"].map((name) =>
+      createMockKitWithRelations({ name }),
+    ),
     onBack: vi.fn(),
-    onCreateKit: vi.fn(),
     onNextKit: vi.fn(),
     onPrevKit: vi.fn(),
     onScanKit: vi.fn(),
@@ -260,7 +264,12 @@ describe("KitHeader", () => {
   });
 
   it("shows (no name) if kit.alias is empty", () => {
-    render(<KitHeader {...baseProps} kit={{ alias: "" } as Kit} />);
+    render(
+      <KitHeader
+        {...baseProps}
+        kit={createMockKitWithRelations({ alias: "", name: "A1" })}
+      />,
+    );
     expect(screen.getByText("(no name)")).toBeInTheDocument();
   });
 
@@ -380,7 +389,11 @@ describe("KitHeader", () => {
 
   describe("Favorite Toggle - Task 17.2", () => {
     it("shows favorite bookmark button when onToggleFavorite is provided", () => {
-      const kit = { alias: "My Kit", is_favorite: false } as Kit;
+      const kit = createMockKitWithRelations({
+        alias: "My Kit",
+        is_favorite: false,
+        name: "A1",
+      });
       render(<KitHeader {...baseProps} kit={kit} onToggleFavorite={vi.fn()} />);
 
       const favoriteButton = screen.getByTitle("Add to favorites");
@@ -389,7 +402,11 @@ describe("KitHeader", () => {
     });
 
     it("shows correct visual state when kit is not favorited", () => {
-      const kit = { alias: "My Kit", is_favorite: false } as Kit;
+      const kit = createMockKitWithRelations({
+        alias: "My Kit",
+        is_favorite: false,
+        name: "A1",
+      });
       render(<KitHeader {...baseProps} kit={kit} onToggleFavorite={vi.fn()} />);
 
       const favoriteButton = screen.getByTitle("Add to favorites");
@@ -399,7 +416,11 @@ describe("KitHeader", () => {
     });
 
     it("shows correct visual state when kit is favorited", () => {
-      const kit = { alias: "My Kit", is_favorite: true } as Kit;
+      const kit = createMockKitWithRelations({
+        alias: "My Kit",
+        is_favorite: true,
+        name: "A1",
+      });
       render(<KitHeader {...baseProps} kit={kit} onToggleFavorite={vi.fn()} />);
 
       const favoriteButton = screen.getByTitle("Remove from favorites");
@@ -410,7 +431,11 @@ describe("KitHeader", () => {
 
     it("calls onToggleFavorite when clicked", () => {
       const onToggleFavorite = vi.fn();
-      const kit = { alias: "My Kit", is_favorite: false } as Kit;
+      const kit = createMockKitWithRelations({
+        alias: "My Kit",
+        is_favorite: false,
+        name: "A1",
+      });
       render(
         <KitHeader
           {...baseProps}
@@ -426,7 +451,11 @@ describe("KitHeader", () => {
     });
 
     it("does not show favorite button when onToggleFavorite is not provided", () => {
-      const kit = { alias: "My Kit", is_favorite: false } as Kit;
+      const kit = createMockKitWithRelations({
+        alias: "My Kit",
+        is_favorite: false,
+        name: "A1",
+      });
       render(<KitHeader {...baseProps} kit={kit} />);
 
       expect(screen.queryByTitle("Add to favorites")).not.toBeInTheDocument();
@@ -442,7 +471,11 @@ describe("KitHeader", () => {
       render(
         <KitHeader
           {...baseProps}
-          kit={{ alias: "My Kit", quarantined: true } as never}
+          kit={createMockKitWithRelations({
+            alias: "My Kit",
+            name: "A1",
+            quarantined: true,
+          })}
         />,
       );
       const badge = screen.getByTestId("kit-header-quarantined");
@@ -461,7 +494,7 @@ describe("KitHeader", () => {
 
   describe("[UC-17] [Q-06] kit name field focus", () => {
     it("focuses the name field when editing opens", () => {
-      const kitAliasInputRef = React.createRef<HTMLInputElement>();
+      const kitAliasInputRef = nameInputRef();
       const { rerender } = render(
         <KitHeader {...baseProps} kitAliasInputRef={kitAliasInputRef} />,
       );
@@ -476,7 +509,7 @@ describe("KitHeader", () => {
     });
 
     it("leaves focus alone while the field stays open", () => {
-      const kitAliasInputRef = React.createRef<HTMLInputElement>();
+      const kitAliasInputRef = nameInputRef();
       const { rerender } = render(
         <KitHeader
           {...baseProps}

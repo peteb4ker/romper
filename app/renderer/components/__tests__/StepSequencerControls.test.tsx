@@ -1,21 +1,42 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type Mock,
+  vi,
+} from "vitest";
 
 import StepSequencerControls from "../StepSequencerControls";
 
+type BpmLogic = Props["bpmLogic"];
+
+/** The BPM logic the controls receive, with each function a mock. */
+interface MockBpmLogic extends BpmLogic {
+  setBpm: Mock<BpmLogic["setBpm"]>;
+  setIsEditing: Mock<BpmLogic["setIsEditing"]>;
+  validateBpm: Mock<BpmLogic["validateBpm"]>;
+}
+
+type Props = React.ComponentProps<typeof StepSequencerControls>;
+
 describe("StepSequencerControls", () => {
-  let setIsSeqPlaying;
-  let mockBpmLogic;
+  let setIsSeqPlaying: Mock<Props["setIsSeqPlaying"]>;
+  let mockBpmLogic: MockBpmLogic;
 
   beforeEach(() => {
-    setIsSeqPlaying = vi.fn();
+    setIsSeqPlaying = vi.fn<Props["setIsSeqPlaying"]>();
     mockBpmLogic = {
       bpm: 120,
       isEditing: false,
-      setBpm: vi.fn(),
-      setIsEditing: vi.fn(),
-      validateBpm: vi.fn((value) => value >= 30 && value <= 180),
+      setBpm: vi.fn<BpmLogic["setBpm"]>(),
+      setIsEditing: vi.fn<BpmLogic["setIsEditing"]>(),
+      validateBpm: vi.fn<BpmLogic["validateBpm"]>(
+        (value) => value >= 30 && value <= 180,
+      ),
     };
   });
 

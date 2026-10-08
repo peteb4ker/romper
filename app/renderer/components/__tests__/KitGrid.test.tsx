@@ -2,53 +2,23 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import React, { createRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
 import KitGrid, { type KitGridHandle } from "../KitGrid";
 
+type GridProps = React.ComponentProps<typeof KitGrid>;
+
 const mockKits = [
-  {
-    alias: null,
-    artist: null,
-    bank_letter: "A",
-    editable: false,
-    locked: false,
-    modified_since_sync: false,
-    name: "AKit1",
-    samples: [],
-    step_pattern: null,
-    voices: [],
-  },
-  {
-    alias: null,
-    artist: null,
-    bank_letter: "A",
-    editable: false,
-    locked: false,
-    modified_since_sync: false,
-    name: "AKit2",
-    samples: [],
-    step_pattern: null,
-    voices: [],
-  },
-  {
-    alias: null,
-    artist: null,
-    bank_letter: "B",
-    editable: false,
-    locked: false,
-    modified_since_sync: false,
-    name: "BKit3",
-    samples: [],
-    step_pattern: null,
-    voices: [],
-  },
+  createMockKitWithRelations({ bank_letter: "A", name: "AKit1" }),
+  createMockKitWithRelations({ bank_letter: "A", name: "AKit2" }),
+  createMockKitWithRelations({ bank_letter: "B", name: "BKit3" }),
 ];
 
 const baseProps = {
   bankNames: { A: "Bank A", B: "Bank B", C: "Bank C" },
   kits: mockKits,
-  onDuplicate: vi.fn(),
-  onSelectKit: vi.fn(),
+  onDuplicate: vi.fn<GridProps["onDuplicate"]>(),
+  onSelectKit: vi.fn<GridProps["onSelectKit"]>(),
 };
 
 beforeEach(() => {
@@ -268,18 +238,8 @@ describe("KitGrid", () => {
   });
 
   describe("virtualization", () => {
-    const makeKit = (name: string) => ({
-      alias: null,
-      artist: null,
-      bank_letter: name[0],
-      editable: false,
-      locked: false,
-      modified_since_sync: false,
-      name,
-      samples: [],
-      step_pattern: null,
-      voices: [],
-    });
+    const makeKit = (name: string) =>
+      createMockKitWithRelations({ bank_letter: name[0], name });
 
     // 20 banks x 25 kits = 500 kits
     const manyKits = Array.from("ABCDEFGHIJKLMNOPQRST").flatMap((bank) =>
@@ -326,34 +286,16 @@ describe("KitGrid", () => {
   describe("favourite state", () => {
     it("reads favourite state from kitData", () => {
       const kitDataWithFavorites = [
-        {
-          alias: null,
-          artist: null,
+        createMockKitWithRelations({
           bank_letter: "A",
-          editable: false,
-          id: 1,
           is_favorite: true,
-          locked: false,
-          modified_since_sync: false,
           name: "AKit1",
-          samples: [],
-          step_pattern: null,
-          voices: [],
-        },
-        {
-          alias: null,
-          artist: null,
+        }),
+        createMockKitWithRelations({
           bank_letter: "A",
-          editable: false,
-          id: 2,
           is_favorite: false,
-          locked: false,
-          modified_since_sync: false,
           name: "AKit2",
-          samples: [],
-          step_pattern: null,
-          voices: [],
-        },
+        }),
       ];
 
       expect(() => {

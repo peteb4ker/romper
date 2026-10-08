@@ -4,19 +4,23 @@ import { render, screen } from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type KitGridItem from "../KitGridItem";
+
+import { createMockKit } from "../../../../tests/factories/kit.factory";
+
+type KitGridItemProps = React.ComponentProps<typeof KitGridItem>;
+
 // Mock isValidKit before importing the component
 vi.mock("@romper/shared/kitUtilsShared", () => ({
   isValidKit: vi.fn((name: string) => /^[A-Z]\d{1,2}$/.test(name)),
 }));
 
 // Mock KitGridItem to capture the props it receives
-const mockKitGridItem = vi.fn(() => (
-  <div data-testid="mock-kit-grid-item">MockKitGridItem</div>
-));
+const mockKitGridItem = vi.fn<(props: KitGridItemProps) => void>();
 
 vi.mock("../KitGridItem", () => ({
   __esModule: true,
-  default: (props: Record<string, unknown>) => {
+  default: (props: KitGridItemProps) => {
     mockKitGridItem(props);
     return <div data-testid={`kit-item-${props.kit}`}>MockKitGridItem</div>;
   },
@@ -28,32 +32,11 @@ import { KitGridCard } from "../KitGridCard";
 
 const mockIsValidKit = vi.mocked(isValidKit);
 
-describe("[UC-08] KitGridCard", () => {
-  const kitA0: Kit = {
-    alias: null,
-    artist: null,
-    bank_letter: "A",
-    bpm: 120,
-    editable: false,
-    is_favorite: false,
-    locked: false,
-    modified_since_sync: false,
-    name: "A0",
-    step_pattern: null,
-  };
+type CardProps = React.ComponentProps<typeof KitGridCard>;
 
-  const kitB3: Kit = {
-    alias: null,
-    artist: null,
-    bank_letter: "B",
-    bpm: 120,
-    editable: false,
-    is_favorite: false,
-    locked: false,
-    modified_since_sync: false,
-    name: "B3",
-    step_pattern: null,
-  };
+describe("[UC-08] KitGridCard", () => {
+  const kitA0 = createMockKit({ bank_letter: "A", name: "A0" });
+  const kitB3 = createMockKit({ bank_letter: "B", name: "B3" });
 
   const kitsToDisplay: Kit[] = [kitA0, kitB3];
 
@@ -64,6 +47,12 @@ describe("[UC-08] KitGridCard", () => {
     onDuplicate: vi.fn(),
     onSelectKit: vi.fn(),
     setFocus: vi.fn(),
+  };
+
+  // The props KitGridCard passed to its KitGridItem on the first render
+  const firstItemProps = () => {
+    const [props] = mockKitGridItem.mock.calls[0];
+    return props;
   };
 
   beforeEach(() => {
@@ -143,9 +132,9 @@ describe("[UC-08] KitGridCard", () => {
 
     it("passes sampleCounts for the correct kit", () => {
       const sampleCounts = {
-        A0: [4, 3, 2, 1] as [number, number, number, number],
-        B3: [1, 2, 3, 4] as [number, number, number, number],
-      };
+        A0: [4, 3, 2, 1],
+        B3: [1, 2, 3, 4],
+      } satisfies CardProps["sampleCounts"];
 
       render(<KitGridCard {...defaultProps} sampleCounts={sampleCounts} />);
 
@@ -166,8 +155,8 @@ describe("[UC-08] KitGridCard", () => {
 
     it("passes undefined sampleCounts when kit is not in the map", () => {
       const sampleCounts = {
-        B3: [1, 2, 3, 4] as [number, number, number, number],
-      };
+        B3: [1, 2, 3, 4],
+      } satisfies CardProps["sampleCounts"];
 
       render(<KitGridCard {...defaultProps} sampleCounts={sampleCounts} />);
 
@@ -315,12 +304,7 @@ describe("[UC-08] KitGridCard", () => {
       );
 
       // Get the onSelect prop that was passed to KitGridItem
-      const passedProps = mockKitGridItem.mock.calls[0][0] as Record<
-        string,
-        unknown
-      >;
-      const onSelectHandler = passedProps.onSelect as () => void;
-      onSelectHandler();
+      firstItemProps().onSelect();
 
       expect(mockOnSelectKit).toHaveBeenCalledWith("A0");
       expect(mockOnFocusKit).toHaveBeenCalledWith("A0");
@@ -340,12 +324,7 @@ describe("[UC-08] KitGridCard", () => {
         />,
       );
 
-      const passedProps = mockKitGridItem.mock.calls[0][0] as Record<
-        string,
-        unknown
-      >;
-      const onSelectHandler = passedProps.onSelect as () => void;
-      onSelectHandler();
+      firstItemProps().onSelect();
 
       expect(mockOnSelectKit).not.toHaveBeenCalled();
       expect(mockSetFocus).not.toHaveBeenCalled();
@@ -363,12 +342,7 @@ describe("[UC-08] KitGridCard", () => {
         />,
       );
 
-      const passedProps = mockKitGridItem.mock.calls[0][0] as Record<
-        string,
-        unknown
-      >;
-      const onSelectHandler = passedProps.onSelect as () => void;
-      onSelectHandler();
+      firstItemProps().onSelect();
 
       expect(mockOnSelectKit).toHaveBeenCalledWith("A0");
       expect(mockSetFocus).toHaveBeenCalledWith(0);
@@ -381,12 +355,7 @@ describe("[UC-08] KitGridCard", () => {
 
       render(<KitGridCard {...defaultProps} onDuplicate={mockOnDuplicate} />);
 
-      const passedProps = mockKitGridItem.mock.calls[0][0] as Record<
-        string,
-        unknown
-      >;
-      const onDuplicateHandler = passedProps.onDuplicate as () => void;
-      onDuplicateHandler();
+      firstItemProps().onDuplicate();
 
       expect(mockOnDuplicate).toHaveBeenCalledWith("A0");
     });
@@ -397,12 +366,7 @@ describe("[UC-08] KitGridCard", () => {
 
       render(<KitGridCard {...defaultProps} onDuplicate={mockOnDuplicate} />);
 
-      const passedProps = mockKitGridItem.mock.calls[0][0] as Record<
-        string,
-        unknown
-      >;
-      const onDuplicateHandler = passedProps.onDuplicate as () => void;
-      onDuplicateHandler();
+      firstItemProps().onDuplicate();
 
       expect(mockOnDuplicate).not.toHaveBeenCalled();
     });
@@ -416,12 +380,7 @@ describe("[UC-08] KitGridCard", () => {
         <KitGridCard {...defaultProps} kit={kitA0} setFocus={mockSetFocus} />,
       );
 
-      const passedProps = mockKitGridItem.mock.calls[0][0] as Record<
-        string,
-        unknown
-      >;
-      const onSelectHandler = passedProps.onSelect as () => void;
-      onSelectHandler();
+      firstItemProps().onSelect();
 
       expect(mockSetFocus).toHaveBeenCalledWith(0);
     });
@@ -433,12 +392,7 @@ describe("[UC-08] KitGridCard", () => {
         <KitGridCard {...defaultProps} kit={kitB3} setFocus={mockSetFocus} />,
       );
 
-      const passedProps = mockKitGridItem.mock.calls[0][0] as Record<
-        string,
-        unknown
-      >;
-      const onSelectHandler = passedProps.onSelect as () => void;
-      onSelectHandler();
+      firstItemProps().onSelect();
 
       expect(mockSetFocus).toHaveBeenCalledWith(1);
     });

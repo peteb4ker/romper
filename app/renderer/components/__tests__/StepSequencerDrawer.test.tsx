@@ -1,14 +1,22 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type Mock,
+  vi,
+} from "vitest";
 
 import StepSequencerDrawer from "../StepSequencerDrawer";
 
 describe("StepSequencerDrawer", () => {
-  let setSequencerOpen;
+  let setSequencerOpen: Mock<(open: boolean) => void>;
 
   beforeEach(() => {
-    setSequencerOpen = vi.fn();
+    setSequencerOpen = vi.fn<(open: boolean) => void>();
   });
 
   afterEach(() => {

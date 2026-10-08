@@ -11,10 +11,7 @@
  * thread blocked in the kernel only returns when the driver does.
  */
 
-import {
-  CARD_NOT_RESPONDING_MESSAGE,
-  CARD_NOT_RESPONDING_SETUP_MESSAGE,
-} from "@romper/shared/cardMessages.js";
+import { CARD_NOT_RESPONDING_MESSAGE } from "@romper/shared/cardMessages.js";
 
 /**
  * How long one card operation (writing a file, removing a kit folder) may
@@ -30,7 +27,8 @@ export const cardWatchdogSettings = { timeoutMs: CARD_OPERATION_TIMEOUT_MS };
  * Shown when the watchdog gives up: the write's message, and setup's
  * (#724), which setup's channels report instead
  */
-export { CARD_NOT_RESPONDING_MESSAGE, CARD_NOT_RESPONDING_SETUP_MESSAGE };
+export { CARD_NOT_RESPONDING_MESSAGE };
+export { CARD_NOT_RESPONDING_SETUP_MESSAGE } from "@romper/shared/cardMessages.js";
 
 /** A card operation didn't finish within the watchdog's limit */
 export class CardNotRespondingError extends Error {

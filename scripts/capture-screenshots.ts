@@ -22,11 +22,16 @@
  * with deliberately broken kits (tests/utils/broken-kit-store.ts), not the
  * user's.
  *
+ * Targets marked `store: "slicer"` are a one-time capture from a long sample
+ * on this machine, given with --slicer-sample <wav>: it's copied into a
+ * temporary store (tests/utils/slicer-store.ts), never committed.
+ *
  * Examples:
  *   npm run screenshots -- --all          # capture everything
  *   npm run screenshots -- --target kit-browser
  *   npm run screenshots -- --target kit-editor
  *   npm run screenshots -- --list          # print available targets
+ *   npm run screenshots -- --target manual-slicer --slicer-sample <wav>
  */
 
 import type { Page } from "playwright";
@@ -51,6 +56,12 @@ import {
   removeBrokenKitStore,
   UNREADABLE_FILE_KIT,
 } from "../tests/utils/broken-kit-store";
+import {
+  createSlicerStore,
+  removeSlicerStore,
+  SLICE_ROW,
+  SLICER_KIT,
+} from "../tests/utils/slicer-store";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -140,6 +151,22 @@ async function openBrokenKit(window: Page, kit: string) {
   await window.waitForTimeout(300);
 }
 
+/**
+ * Open the slicer kit with its sequencer showing, and wait for the slice
+ * strip's waveform to draw.
+ */
+async function openSlicerKit(window: Page) {
+  await window.waitForSelector('[data-testid="kit-grid"]', { timeout: 10000 });
+  await window.locator(`[data-testid="kit-item-${SLICER_KIT}"]`).click();
+  await window.waitForSelector('[data-testid="kit-editor"]', {
+    timeout: 10000,
+  });
+  await showSequencer(window);
+  await window.locator('[data-testid="slice-strip"]').waitFor();
+  // Let the long sample decode and draw
+  await window.waitForTimeout(2000);
+}
+
 function paeth(left: number, up: number, upLeft: number): number {
   const p = left + up - upLeft;
   const pa = Math.abs(p - left);
@@ -204,6 +231,12 @@ function restoreIfUnchanged(output: string): boolean {
     before.pixels.every((v, i) => v === after.pixels[i]);
   if (same) writeFileSync(file, committed);
   return same;
+}
+
+/** Select a step on the sliced row, without a focus ring. */
+async function selectSliceStep(window: Page, step: number) {
+  await window.locator(`[data-testid="seq-step-${SLICE_ROW}-${step}"]`).click();
+  await window.evaluate(() => (document.activeElement as HTMLElement)?.blur());
 }
 
 /** Open the sequencer drawer and drop the grid's keyboard focus ring. */
@@ -636,6 +669,97 @@ const SCREENSHOT_TARGETS = [
     output: "manual/missing-file.png",
     store: "broken-kits",
   },
+
+  // -- Slicer (#723): one-time capture from --slicer-sample (tests/utils/slicer-store.ts) --
+  {
+    description:
+      "Sequencer with a sliced voice: the slice strip above the grid",
+    name: "manual-slicer",
+    navigate: openSlicerKit,
+    output: "manual/slicer.png",
+    selector: '[data-testid="kit-step-sequencer"]',
+    store: "slicer",
+  },
+  {
+    captureOverride: async (window, outputPath) => {
+      // Hover another step: its slice shows dashed beside the selection.
+      // React's onMouseEnter listens for mouseover.
+      await window.evaluate((testId) => {
+        document
+          .querySelector(`[data-testid="${testId}"]`)
+          ?.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
+      }, `seq-step-${SLICE_ROW}-14`);
+      await window.waitForTimeout(300);
+      await window
+        .locator('[data-testid="slice-strip"]')
+        .screenshot({ path: outputPath });
+    },
+    description:
+      "Slice strip: waveform, slices, division, a selected step's slices and a hovered step's",
+    name: "manual-slice-strip",
+    navigate: async (window) => {
+      await openSlicerKit(window);
+      await selectSliceStep(window, 6);
+    },
+    output: "manual/slice-strip.png",
+    store: "slicer",
+  },
+  {
+    captureOverride: async (window, outputPath) => {
+      await window
+        .locator(`[data-testid="seq-step-${SLICE_ROW}-6"]`)
+        .click({ button: "right" });
+      const popover = window.locator('[data-testid="condition-popover"]');
+      await popover.waitFor({ state: "visible", timeout: 3000 });
+      await window.waitForTimeout(300);
+      await popover.screenshot({ path: outputPath });
+    },
+    description: "Right-click menu of a slice step: condition and slice",
+    name: "manual-slice-step-options",
+    navigate: openSlicerKit,
+    output: "manual/slice-step-options.png",
+    store: "slicer",
+  },
+  {
+    captureOverride: async (window, outputPath) => {
+      await window.locator('[data-testid="slice-roll-options"]').click();
+      const menu = window.locator('[data-testid="slice-roll-options-menu"]');
+      await menu.waitFor({ state: "visible", timeout: 3000 });
+      await window.evaluate(() =>
+        (document.activeElement as HTMLElement)?.blur(),
+      );
+      await window.waitForTimeout(300);
+      // From the division menu to the close button, down to the menu's foot
+      const division = await window
+        .locator('[data-testid="slice-division"]')
+        .boundingBox();
+      const close = await window
+        .locator('[data-testid="slice-close"]')
+        .boundingBox();
+      const menuBox = await menu.boundingBox();
+      if (!division || !close || !menuBox) {
+        throw new Error("Slicer controls not visible");
+      }
+      const pad = 8;
+      // The "Slices" label sits left of the menu
+      const x = division.x - 48 - pad;
+      const y = division.y - pad;
+      await window.screenshot({
+        clip: {
+          height: menuBox.y + menuBox.height - y + pad,
+          width: close.x + close.width + pad - x,
+          x,
+          y,
+        },
+        path: outputPath,
+      });
+    },
+    description: "Slice strip controls: division, Roll and its options menu",
+    name: "manual-slice-roll-options",
+    navigate: openSlicerKit,
+    output: "manual/slice-roll-options.png",
+    store: "slicer",
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -707,9 +831,27 @@ function resolveStore(): string {
 }
 
 // Targets marked `store: "broken-kits"` use a generated store with broken
-// kits (#537); the rest use --store or the installed app's
-const userTargets = targets.filter((t) => !("store" in t));
-const brokenKitTargets = targets.filter((t) => "store" in t);
+// kits (#537), and `store: "slicer"` one built around --slicer-sample (#723);
+// the rest use --store or the installed app's
+const storeOf = (t: (typeof SCREENSHOT_TARGETS)[number]) =>
+  "store" in t ? t.store : null;
+const userTargets = targets.filter((t) => storeOf(t) === null);
+const brokenKitTargets = targets.filter((t) => storeOf(t) === "broken-kits");
+const slicerTargets = targets.filter((t) => storeOf(t) === "slicer");
+
+const slicerSampleArg = args.includes("--slicer-sample")
+  ? args[args.indexOf("--slicer-sample") + 1]
+  : null;
+if (slicerTargets.length > 0 && !slicerSampleArg) {
+  // --all skips them; naming one without a sample is a mistake
+  if (!captureAll) {
+    console.error(
+      "The slicer targets need a long sample: pass --slicer-sample <wav>.",
+    );
+    process.exit(1);
+  }
+  console.warn("Skipping the slicer targets: they need --slicer-sample <wav>.");
+}
 
 const store = userTargets.length > 0 ? resolveStore() : null;
 if (store && !existsSync(path.join(store, ".romperdb"))) {
@@ -853,6 +995,14 @@ async function main() {
       await capture(brokenKits.localStorePath, brokenKitTargets);
     } finally {
       await removeBrokenKitStore(brokenKits);
+    }
+  }
+  if (slicerTargets.length > 0 && slicerSampleArg) {
+    const slicer = await createSlicerStore(path.resolve(slicerSampleArg));
+    try {
+      await capture(slicer.localStorePath, slicerTargets);
+    } finally {
+      await removeSlicerStore(slicer);
     }
   }
   console.log("\nDone.\n");

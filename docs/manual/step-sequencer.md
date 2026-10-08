@@ -81,13 +81,21 @@ The slicer plays **parts of a long sample** from each step -- a drum break, a vo
 3. A waveform strip appears above the grid, cut into slices, and every lit step in the row shows the slice it plays. Step 1 plays slice 1, step 2 plays slice 2 and so on, so a one-bar loop sliced into 16 plays back as the original loop at its own tempo.
 4. Press **Play**, then start changing things.
 
+![Slicer]({{ site.baseurl }}/images/manual/slicer.png)
+
 **To choose what a step plays**, click the step, then click a slice on the waveform. Drag across several slices for a longer hit. Hovering a step shows its slice on the waveform; while the sequencer is stopped, clicking a slice plays it so you can explore the sample by ear (hold Alt/Option while you click or drag to play it without assigning it). The line under the waveform always tells you what to do next.
+
+![Slice strip]({{ site.baseurl }}/images/manual/slice-strip.png)
+
+![Slice step options]({{ site.baseurl }}/images/manual/slice-step-options.png){: .img-right}
 
 On a slice row, clicking a lit step **selects** it; clicking the selected step again turns it off. The scroll wheel over a step moves it to the previous or next slice (Shift + scroll changes its length), and right-clicking a step lets you type a slice number, change the length, make it random, or lock it.
 
 **Slices** sets how many equal parts the sample is cut into: /8, /12, /16, /24, /32, /48, /64 or /128. It applies to the whole kit. Changing it never loses anything -- switch back and your slices are exactly where they were -- so trying another division is a quick way to find something new.
 
 ### Happy accidents
+
+![Roll options]({{ site.baseurl }}/images/manual/slice-roll-options.png){: .img-right}
 
 - **🎲 Roll** gives the row's steps random slices. The result stays put, so when something great comes up, keep it. **Undo** takes back the last roll, or any other change to steps, trigger conditions or slices.
 - **Amount** (in the ▾ menu next to Roll) decides how much a roll changes: 25% nudges the pattern, 100% rewrites it.

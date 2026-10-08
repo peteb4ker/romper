@@ -512,6 +512,31 @@ describe("preload/index.tsx", () => {
     });
   });
 
+  describe("[Q-02] onLocalStoreDatabaseMissing (#535)", () => {
+    it("calls back on the event and stops when unsubscribed", async () => {
+      await import("../index");
+      const api = mockElectron.contextBridge.exposeInMainWorld.mock.calls.find(
+        (call) => call[0] === "electronAPI",
+      )[1];
+      const callback = vi.fn();
+
+      const unsubscribe = api.onLocalStoreDatabaseMissing(callback);
+
+      const onCall = mockElectron.ipcRenderer.on.mock.calls.find(
+        (call) => call[0] === "local-store-database-missing",
+      );
+      expect(onCall).toBeDefined();
+      onCall[1]();
+      expect(callback).toHaveBeenCalledTimes(1);
+
+      unsubscribe();
+      expect(mockElectron.ipcRenderer.removeListener).toHaveBeenCalledWith(
+        "local-store-database-missing",
+        onCall[1],
+      );
+    });
+  });
+
   describe("electronAPI method coverage - parameterized tests", () => {
     // Parameterized test for simple IPC methods that just forward calls
     const simpleIpcMethods = [

@@ -16,6 +16,7 @@ import {
   closeDbConnection,
   getOpenDbConnection,
   registerDbConnection,
+  reportDatabaseMissing,
   type RomperDb,
   type StoreConnection,
 } from "./dbConnections.js";
@@ -228,6 +229,38 @@ export function withDbTransaction<T>(
   }
 }
 
+/**
+ * Check, without holding the main thread, that the file at the store's
+ * path is still the one `connection` opened. If it was deleted or moved,
+ * close the connection and report it; if another file replaced it, close
+ * the connection so the next operation opens that one.
+ */
+async function checkDatabaseFile(
+  dbDir: string,
+  connection: StoreConnection,
+): Promise<void> {
+  const dbPath = path.join(dbDir, DB_FILENAME);
+  let current: StoreConnection["file"];
+  try {
+    const { dev, ino } = await fs.promises.stat(dbPath);
+    current = { dev, ino };
+  } catch {
+    current = undefined;
+  }
+  // Closed or replaced by Romper itself while the check ran
+  if (getOpenDbConnection(dbDir) !== connection) return;
+  const opened = connection.file;
+  if (current && (!opened || isSameFile(current, opened))) return;
+
+  logger.log(
+    current
+      ? `[Main] Another database file replaced ${dbPath}`
+      : `[Main] The database file is gone: ${dbPath}`,
+  );
+  closeDbConnection(dbDir);
+  if (!current) reportDatabaseMissing(dbDir);
+}
+
 function checkSchema(sqlite: BetterSqlite3.Database): DbResult<boolean> {
   try {
     // Check that all expected tables exist
@@ -273,6 +306,7 @@ function connect(
 
   const dbPath = path.join(dbDir, DB_FILENAME);
   if (!create && !fs.existsSync(dbPath)) {
+    reportDatabaseMissing(dbDir);
     throw new Error(`Database file does not exist: ${dbPath}`);
   }
 
@@ -280,13 +314,70 @@ function connect(
   try {
     const db = drizzle(sqlite, { schema });
     migrateDatabase(sqlite, db, dbPath, dbDir);
-    const connection = { db, sqlite };
+    const connection: StoreConnection = {
+      db,
+      file: fileIdentity(dbPath),
+      sqlite,
+    };
     registerDbConnection(dbDir, connection);
+    connection.watcher = watchDatabaseFile(dbDir, connection);
     return connection;
   } catch (e) {
     sqlite.close();
     if (create) throw e;
     const error = e instanceof Error ? e.message : String(e);
     throw new Error(`Migration failed: ${error}`);
+  }
+}
+
+/** The file's device and inode, or undefined if it can't be read */
+function fileIdentity(filePath: string): StoreConnection["file"] {
+  try {
+    const { dev, ino } = fs.statSync(filePath);
+    return { dev, ino };
+  } catch {
+    return undefined;
+  }
+}
+
+function isSameFile(
+  a: NonNullable<StoreConnection["file"]>,
+  b: NonNullable<StoreConnection["file"]>,
+): boolean {
+  return a.dev === b.dev && a.ino === b.ino;
+}
+
+/**
+ * Watch the store's folder for its database file being deleted, moved or
+ * replaced (by hand or a sync tool) while the connection is open (#535).
+ * An open connection keeps writing to the file it opened, so without this
+ * edits would go to a file that's no longer in the store, with no message.
+ * Closing the connection makes the next operation fail (nothing recreates
+ * the file) or open the file now there. A watch costs nothing per
+ * operation; a check before each one would hold the main thread. If the
+ * folder can't be watched, the store works as before.
+ */
+function watchDatabaseFile(
+  dbDir: string,
+  connection: StoreConnection,
+): StoreConnection["watcher"] {
+  try {
+    const watcher = fs.watch(
+      dbDir,
+      { persistent: false },
+      (_event, filename) => {
+        // The WAL and shared-memory files change on every write
+        if (filename && filename.toString() !== DB_FILENAME) return;
+        void checkDatabaseFile(dbDir, connection);
+      },
+    );
+    watcher.on("error", () => watcher.close());
+    return watcher;
+  } catch (e) {
+    console.warn(
+      `[Main] Can't watch ${dbDir} for the database file going missing:`,
+      e instanceof Error ? e.message : String(e),
+    );
+    return undefined;
   }
 }

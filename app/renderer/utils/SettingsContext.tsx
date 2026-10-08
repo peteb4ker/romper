@@ -200,6 +200,18 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
     dispatch({ payload: status, type: "UPDATE_LOCAL_STORE_STATUS" });
   }, []);
 
+  // Main found the store's database file missing (deleted or moved while
+  // Romper runs). Check the store again, so the Invalid Local Store dialog
+  // shows instead of edits failing one by one (#535).
+  useEffect(() => {
+    const stopListening = globalThis.electronAPI?.onLocalStoreDatabaseMissing?.(
+      () => {
+        void refreshLocalStoreStatus();
+      },
+    );
+    return () => stopListening?.();
+  }, [refreshLocalStoreStatus]);
+
   // Initialize settings on mount
   const initializeSettings = useCallback(async () => {
     dispatch({ type: "INIT_START" });

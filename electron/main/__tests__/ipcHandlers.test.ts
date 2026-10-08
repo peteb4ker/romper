@@ -14,10 +14,16 @@ type IpcHandler = (
 
 // Mocks for Electron and Node APIs
 const ipcMainHandlers: Record<string, IpcHandler> = {};
+const mockWindowSend = vi.fn();
 vi.mock("electron", () => ({
   app: {
     getPath: vi.fn(() => "/mock/userData"),
     quit: vi.fn(),
+  },
+  BrowserWindow: {
+    getAllWindows: vi.fn(() => [
+      { isDestroyed: () => false, webContents: { send: mockWindowSend } },
+    ]),
   },
   dialog: {
     showOpenDialog: vi.fn(() =>
@@ -143,6 +149,7 @@ vi.mock("../security/localStoreAccessPrompt.js", () => ({
 
 vi.mock("../db/utils/dbConnections.js", () => ({
   closeAllDbConnections: vi.fn(),
+  setDatabaseMissingListener: vi.fn(),
 }));
 
 const DENIED = { error: "Access denied: outside granted folders", ok: false };
@@ -306,6 +313,19 @@ describe("registerIpcHandlers", () => {
 
     const result = await ipcMainHandlers["get-local-store-status"]();
     expect(result).toBeDefined();
+  });
+
+  it("[Q-02] tells the renderer when the store's database file is missing (#535)", async () => {
+    const { setDatabaseMissingListener } =
+      await import("../db/utils/dbConnections.js");
+    const { registerIpcHandlers } = await import("../ipcHandlers");
+    registerIpcHandlers({ localStorePath: "/mock/local/store" });
+
+    const listener = vi.mocked(setDatabaseMissingListener).mock.calls[0]?.[0];
+    expect(listener).toBeTypeOf("function");
+    listener?.("/mock/local/store/.romperdb");
+
+    expect(mockWindowSend).toHaveBeenCalledWith("local-store-database-missing");
   });
 
   it("registers close-app and quits app", async () => {

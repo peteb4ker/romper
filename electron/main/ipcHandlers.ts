@@ -1,9 +1,12 @@
-import { app, dialog, ipcMain, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
 import * as path from "node:path";
 
 import type { InMemorySettings } from "./types/settings.js";
 
-import { closeAllDbConnections } from "./db/utils/dbConnections.js";
+import {
+  closeAllDbConnections,
+  setDatabaseMissingListener,
+} from "./db/utils/dbConnections.js";
 import { requestLocalStoreAccess } from "./security/localStoreAccessPrompt.js";
 import { checkSetupPathAccess, pathAccess } from "./security/pathAccess.js";
 import {
@@ -71,6 +74,17 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
 
     logger.log("[Main] Returning local store status:", result);
     return result;
+  });
+
+  // The store's database file went missing while Romper ran (deleted or
+  // moved outside it). Tell the renderer, which checks the store again and
+  // shows the Invalid Local Store dialog (#535).
+  setDatabaseMissingListener(() => {
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (!win.isDestroyed()) {
+        win.webContents.send("local-store-database-missing");
+      }
+    }
   });
 
   // Add close app handler

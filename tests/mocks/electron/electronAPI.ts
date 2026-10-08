@@ -135,6 +135,7 @@ export const createElectronAPIMock = (
   moveSampleBetweenKits: vi.fn().mockResolvedValue({ success: true }),
   // Move operations
   moveSampleInKit: vi.fn().mockResolvedValue({ success: true }),
+  onLocalStoreDatabaseMissing: vi.fn(() => () => {}),
   onSyncProgress: vi.fn(),
 
   openExternal: vi.fn().mockResolvedValue(undefined),

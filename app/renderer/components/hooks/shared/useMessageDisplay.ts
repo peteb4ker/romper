@@ -14,6 +14,9 @@ export interface DisplayMessage {
 
 export type MessageType = "error" | "info" | "success" | "warning";
 
+// What makes two messages identical (#657).
+type MessageKey = Pick<DisplayMessage, "text" | "type">;
+
 // Default auto-dismiss durations by severity (ms). Errors linger longest;
 // 0 means "sticky until dismissed".
 const DEFAULT_DURATIONS: Record<MessageType, number> = {
@@ -40,11 +43,16 @@ export function useMessageDisplay() {
   // provider unmounts.
   const timeouts = useTimeouts();
   const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+  // The messages showing now, by ID. It changes as soon as a message is shown
+  // or dismissed, so two identical messages raised in the same tick (before
+  // `messages` updates) are still caught as duplicates (#657).
+  const showing = useRef(new Map<number, MessageKey>());
 
   const dismissMessage = useCallback(
     (id: number) => {
       timeouts.clear(timers.current.get(id) ?? null);
       timers.current.delete(id);
+      showing.current.delete(id);
       setMessages((prev) => prev.filter((m) => m.id !== id));
     },
     [timeouts],
@@ -63,7 +71,15 @@ export function useMessageDisplay() {
         log.info(text);
       }
 
+      // An identical message (same text and type) that's already showing
+      // appears once (#657), and the caller gets the showing message's ID. The
+      // duplicate doesn't restart its dismiss timer: it goes when the first
+      // one would have.
+      const duplicateId = findShowing(showing.current, text, messageType);
+      if (duplicateId !== null) return duplicateId;
+
       const id = nextId.current++;
+      showing.current.set(id, { text, type: messageType });
       const effectiveDuration = duration ?? DEFAULT_DURATIONS[messageType];
       setMessages((prev) => [
         ...prev,
@@ -83,6 +99,7 @@ export function useMessageDisplay() {
   const clearMessages = useCallback(() => {
     timers.current.forEach((timer) => timeouts.clear(timer));
     timers.current.clear();
+    showing.current.clear();
     setMessages([]);
   }, [timeouts]);
 
@@ -92,6 +109,17 @@ export function useMessageDisplay() {
     messages,
     showMessage,
   };
+}
+
+function findShowing(
+  showing: Map<number, MessageKey>,
+  text: string,
+  type: MessageType,
+): null | number {
+  for (const [id, message] of showing) {
+    if (message.text === text && message.type === type) return id;
+  }
+  return null;
 }
 
 function isMessageType(value: string): value is MessageType {

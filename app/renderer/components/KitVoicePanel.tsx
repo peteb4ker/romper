@@ -1,5 +1,9 @@
 import React from "react";
 
+import type {
+  SlotGainChange,
+  SlotGainCommit,
+} from "./hooks/voice-panels/types";
 import type { PlayOptions, SampleData } from "./kitTypes";
 
 import { useSampleActions } from "./hooks/sample-management/useSampleActions";
@@ -25,12 +29,8 @@ interface KitVoicePanelProps {
   linkedAutomatically?: boolean;
   linkedWith?: number;
   onBatchDropComplete?: () => void;
-  onGainChange?: (
-    voice: number,
-    slotNumber: number,
-    sampleName: string,
-    gainDb: number,
-  ) => void;
+  onGainChange?: SlotGainChange;
+  onGainCommit?: SlotGainCommit;
   // Tells the user about files a drop didn't add (RE-40)
   onMessage?: (text: string, type?: string, duration?: number) => void;
   onPlay: (voice: number, slot: number) => void;
@@ -118,6 +118,7 @@ const KitVoicePanel: React.FC<
   linkedWith,
   onBatchDropComplete,
   onGainChange,
+  onGainCommit,
   onMessage,
   onPlay,
   onSampleAdd,
@@ -212,6 +213,7 @@ const KitVoicePanel: React.FC<
     linkedAutomatically,
     linkedWith,
     onGainChange,
+    onGainCommit,
     onPlay,
     onSampleSelect,
     onStop,

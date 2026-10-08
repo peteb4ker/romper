@@ -10,6 +10,7 @@ import React, { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
+import { GAIN_SAVE_DELAY_MS } from "../GainKnob";
 import { MAX_SLOTS_PER_VOICE } from "../hooks/voice-panels/useVoicePanelSlots";
 import KitVoicePanels from "../KitVoicePanels";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
@@ -400,11 +401,14 @@ describe("KitVoicePanels", () => {
 
       fireEvent.wheel(knobs(1)[1], { deltaY: -100 });
 
-      expect(window.electronAPI.updateSampleGain).toHaveBeenCalledWith(
-        "Kit1",
-        1,
-        1,
-        -2,
+      // Saved once the wheel stops (RE-88)
+      await waitFor(() =>
+        expect(window.electronAPI.updateSampleGain).toHaveBeenCalledWith(
+          "Kit1",
+          1,
+          1,
+          -2,
+        ),
       );
       await waitFor(() => expect(gains(1)).toEqual(["6", "-2"]));
       expect(gains(2)).toEqual(["0"]);
@@ -584,13 +588,71 @@ describe("KitVoicePanels", () => {
 
       fireEvent.wheel(screen.getAllByRole("slider")[0], { deltaY: -100 });
 
-      expect(globalThis.electronAPI.updateSampleGain).toHaveBeenCalledWith(
+      // Saved once the wheel stops (RE-88)
+      await waitFor(() =>
+        expect(globalThis.electronAPI.updateSampleGain).toHaveBeenCalledWith(
+          "Kit1",
+          1,
+          0,
+          1,
+        ),
+      );
+      await waitFor(() => expect(onKitModified).toHaveBeenCalledWith("Kit1"));
+    });
+  });
+
+  // RE-88: each wheel notch used to be a database write
+  describe("[Q-01] [UC-24] a turn of the gain knob is saved once (RE-88)", () => {
+    const voices = [{ samples: ["kick.wav"], voice: 1, voiceName: "Kick" }];
+    const knob = () =>
+      within(screen.getByTestId("voice-panel-1")).getAllByRole("slider")[0];
+
+    const renderKnob = async () => {
+      const view = render(
+        <MultiVoicePanelsTestWrapper isEditable voices={voices} />,
+      );
+      await waitFor(() =>
+        expect(knob()).not.toHaveAttribute("aria-disabled", "true"),
+      );
+      return view;
+    };
+
+    it("saves a burst of wheel notches once, with the last gain", async () => {
+      await renderKnob();
+
+      for (let i = 0; i < 5; i++) fireEvent.wheel(knob(), { deltaY: -100 });
+
+      // Each notch shows at once; the save waits for the wheel to stop
+      expect(knob()).toHaveAttribute("aria-valuenow", "5");
+      expect(window.electronAPI.updateSampleGain).not.toHaveBeenCalled();
+      await waitFor(() =>
+        expect(window.electronAPI.updateSampleGain).toHaveBeenCalledWith(
+          "Kit1",
+          1,
+          0,
+          5,
+        ),
+      );
+      await act(
+        () => new Promise((resolve) => setTimeout(resolve, GAIN_SAVE_DELAY_MS)),
+      );
+      expect(window.electronAPI.updateSampleGain).toHaveBeenCalledTimes(1);
+    });
+
+    it("saves a turn that's under way when the kit is closed", async () => {
+      const { unmount } = await renderKnob();
+
+      fireEvent.wheel(knob(), { deltaY: -100 });
+      fireEvent.wheel(knob(), { deltaY: -100 });
+      unmount();
+
+      expect(window.electronAPI.updateSampleGain).toHaveBeenCalledTimes(1);
+      expect(window.electronAPI.updateSampleGain).toHaveBeenCalledWith(
         "Kit1",
         1,
         0,
-        1,
+        2,
       );
-      await waitFor(() => expect(onKitModified).toHaveBeenCalledWith("Kit1"));
     });
   });
 

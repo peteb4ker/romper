@@ -151,11 +151,14 @@ describe("[UC-07] [UC-24] a kit whose sample details can't be read (#628)", () =
       expect(knob()).toHaveAttribute("aria-label", "Gain: -3 dB");
       expect(knob()).not.toHaveAttribute("aria-disabled");
       fireEvent.wheel(knob(), { deltaY: -100 });
-      expect(globalThis.electronAPI.updateSampleGain).toHaveBeenCalledWith(
-        "A0",
-        1,
-        0,
-        -2,
+      // Saved once the wheel stops (RE-88)
+      await waitFor(() =>
+        expect(globalThis.electronAPI.updateSampleGain).toHaveBeenCalledWith(
+          "A0",
+          1,
+          0,
+          -2,
+        ),
       );
       expect(onMessage).toHaveBeenCalledTimes(1);
     });

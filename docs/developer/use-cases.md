@@ -543,7 +543,8 @@ applied when the kit is written to the card. See
 
 - **Renderer:** `app/renderer/components/GainKnob.tsx`, rendered by
   `app/renderer/components/hooks/voice-panels/useVoicePanelSlotRendering.tsx`;
-  saved by `app/renderer/components/KitVoicePanels.tsx` (`handleGainChange`)
+  shown as it turns by `app/renderer/components/KitVoicePanels.tsx`
+  (`handleGainChange`), and saved once the turn ends (`handleGainCommit`)
   through `app/renderer/components/hooks/shared/useSettingSave.ts`, which
   puts back a gain that isn't saved and says so.
 - **IPC:** `update-sample-gain` (`electron/main/dbIpcHandlers.ts`).

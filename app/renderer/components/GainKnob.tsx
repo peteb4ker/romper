@@ -1,4 +1,12 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+
+import { useLatestRef } from "./hooks/shared/useLatestRef";
 
 const MIN_DB = -24;
 const MAX_DB = 12;
@@ -8,11 +16,33 @@ const END_ANGLE = -45; // 5 o'clock
 const SWEEP = 270; // total degrees of arc
 const PAGE_STEP_DB = 6; // Page Up / Page Down
 
+/**
+ * How long the knob waits after the last wheel notch or key press before it
+ * saves, so a burst of them is saved once (RE-88)
+ */
+export const GAIN_SAVE_DELAY_MS = 300;
+
 interface GainKnobProps {
   disabled?: boolean;
+  /** The gain at each step of a turn, for the screen and playback; not saved */
   onChange: (db: number) => void;
+  /**
+   * The gain to save, once per turn (RE-88): when a drag is released, on a
+   * click, GAIN_SAVE_DELAY_MS after the last wheel notch or key press, or
+   * when the knob loses focus or goes away first. `fromDb` is the gain
+   * before the turn.
+   */
+  onCommit?: (db: number, fromDb: number) => void;
   /** The gain in dB, or null if it isn't known: the knob shows "–" and is disabled (#628) */
   value: null | number;
+}
+
+/** A turn not saved yet, and the save it goes to */
+interface PendingTurn {
+  /** The knob's onCommit when the turn started, so it saves to that slot */
+  commit?: (db: number, fromDb: number) => void;
+  db: number;
+  fromDb: number;
 }
 
 /** Gain change for a key on the focused knob, or null if it isn't one. */
@@ -87,6 +117,7 @@ function polarToCart(
 const GainKnob: React.FC<GainKnobProps> = ({
   disabled: disabledProp,
   onChange,
+  onCommit,
   value,
 }) => {
   const unknown = value === null;
@@ -108,13 +139,48 @@ const GainKnob: React.FC<GainKnobProps> = ({
 
   const clampDb = (db: number) => Math.max(MIN_DB, Math.min(MAX_DB, db));
 
+  // A turn shows and plays each step at once, but is saved once (RE-88)
+  const onCommitRef = useLatestRef(onCommit);
+  const dbRef = useLatestRef(localDb);
+  const pending = useRef<null | PendingTurn>(null);
+  const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const commit = useCallback(() => {
+    clearTimeout(saveTimer.current);
+    saveTimer.current = undefined;
+    const turn = pending.current;
+    pending.current = null;
+    turn?.commit?.(turn.db, turn.fromDb);
+  }, []);
+
+  const commitSoon = useCallback(() => {
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(commit, GAIN_SAVE_DELAY_MS);
+  }, [commit]);
+
+  // Save a turn the knob is in the middle of when it goes away
+  useEffect(() => commit, [commit]);
+
+  // A gain from elsewhere (another kit's slot, a reload) ends the turn, so
+  // the next step starts a new one
+  useLayoutEffect(() => {
+    if (pending.current && value !== pending.current.db) commit();
+  }, [commit, value]);
+
   const updateGain = useCallback(
     (db: number) => {
       const clamped = clampDb(db);
+      pending.current ??= {
+        commit: onCommitRef.current,
+        db: clamped,
+        fromDb: dbRef.current,
+      };
+      pending.current.db = clamped;
+      dbRef.current = clamped;
       setLocalDb(clamped);
       onChange(clamped);
     },
-    [onChange],
+    [dbRef, onChange, onCommitRef],
   );
 
   const handleMouseDown = useCallback(
@@ -136,8 +202,9 @@ const GainKnob: React.FC<GainKnobProps> = ({
       e.preventDefault();
       e.stopPropagation();
       updateGain(0);
+      commit();
     },
-    [disabled, updateGain],
+    [commit, disabled, updateGain],
   );
 
   const handleWheel = useCallback(
@@ -147,23 +214,29 @@ const GainKnob: React.FC<GainKnobProps> = ({
       const step = e.shiftKey ? 0.5 : 1;
       const delta = e.deltaY < 0 ? step : -step;
       updateGain(localDb + delta);
+      commitSoon();
     },
-    [disabled, updateGain, localDb],
+    [commitSoon, disabled, updateGain, localDb],
   );
 
   // Keyboard: arrows by 1 dB (Shift: 0.5), Page Up/Down by 6 dB, Home and
   // End to the ends, 0 to unity (Q-06, RE-48). The keys stay with the knob:
-  // the sample list and the kit editor use the arrows too.
+  // the sample list and the kit editor use the arrows too. Any other key
+  // saves the turn first, so a shortcut it triggers comes after the save.
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (disabled || e.metaKey || e.ctrlKey || e.altKey) return;
+      const modified = e.metaKey || e.ctrlKey || e.altKey;
       const next = gainForKey(e.key, localDb, e.shiftKey);
-      if (next === null) return;
+      if (disabled || modified || next === null) {
+        commit();
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
       updateGain(next);
+      commitSoon();
     },
-    [disabled, localDb, updateGain],
+    [commit, commitSoon, disabled, localDb, updateGain],
   );
 
   useEffect(() => {
@@ -178,6 +251,7 @@ const GainKnob: React.FC<GainKnobProps> = ({
 
     const handleMouseUp = () => {
       setIsDragging(false);
+      commit();
     };
 
     globalThis.addEventListener("mousemove", handleMouseMove);
@@ -186,7 +260,7 @@ const GainKnob: React.FC<GainKnobProps> = ({
       globalThis.removeEventListener("mousemove", handleMouseMove);
       globalThis.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, updateGain]);
+  }, [commit, isDragging, updateGain]);
 
   const active = isHovered || isDragging || isFocused;
   const cx = 10;
@@ -213,7 +287,12 @@ const GainKnob: React.FC<GainKnobProps> = ({
     <div
       className="relative flex items-center"
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        // Leaving the knob ends a wheel turn, so a click elsewhere (such as
+        // turning editing off) comes after the save; a drag goes on
+        if (!isDragging) commit();
+      }}
       role="presentation"
       style={{ zIndex: active ? 10 : undefined }}
     >
@@ -226,7 +305,10 @@ const GainKnob: React.FC<GainKnobProps> = ({
         aria-valuetext={shownDb}
         className="transition-transform duration-150 ease-out rounded-full focus:outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-accent-primary"
         height={20}
-        onBlur={() => setIsFocused(false)}
+        onBlur={() => {
+          setIsFocused(false);
+          commit();
+        }}
         onClick={handleClick}
         // Mouse presses don't focus the knob (handleMouseDown prevents it),
         // so focus means the keyboard: show the value as hover does

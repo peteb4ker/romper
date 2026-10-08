@@ -1,6 +1,7 @@
 import React from "react";
 
 import type { PlayOptions, SampleData } from "../../kitTypes";
+import type { SlotGainChange, SlotGainCommit } from "./types";
 
 import { useVoicePanelButtons } from "./useVoicePanelButtons";
 import { type DragHandlers, useVoicePanelSlots } from "./useVoicePanelSlots";
@@ -32,12 +33,8 @@ export interface UseVoicePanelRenderingOptions {
   /** The pair was linked by Romper, not by hand (#537): labelled */
   linkedAutomatically?: boolean;
   linkedWith?: number;
-  onGainChange?: (
-    voice: number,
-    slotNumber: number,
-    sampleName: string,
-    gainDb: number,
-  ) => void;
+  onGainChange?: SlotGainChange;
+  onGainCommit?: SlotGainCommit;
   onPlay: (voice: number, slot: number) => void;
   onSampleSelect?: (voice: number, idx: number) => void;
   onStop: (voice: number, slot: number) => void;
@@ -123,6 +120,7 @@ export function useVoicePanelRendering({
   linkedAutomatically,
   linkedWith,
   onGainChange,
+  onGainCommit,
   onPlay,
   onSampleSelect,
   onStop,
@@ -163,6 +161,7 @@ export function useVoicePanelRendering({
     kitName,
     linkedWith,
     onGainChange,
+    onGainCommit,
     onSampleSelect,
     onWaveformPlayingChange,
     playOptions,

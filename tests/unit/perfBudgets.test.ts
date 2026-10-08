@@ -73,14 +73,14 @@ describe("performance budgets", () => {
     it("checks against the named action's budgets", () => {
       expect(
         checkBudgets("e2e/gain: 5 wheel steps", {
-          total: 5,
-          "update-sample-gain": 5,
+          total: 1,
+          "update-sample-gain": 1,
         }),
       ).toEqual([]);
       expect(
-        checkBudgets("e2e/gain: 5 wheel steps", { "update-sample-gain": 6 }),
+        checkBudgets("e2e/gain: 5 wheel steps", { "update-sample-gain": 2 }),
       ).toEqual([
-        "e2e/gain: 5 wheel steps: update-sample-gain: regression: measured 6, budget 5",
+        "e2e/gain: 5 wheel steps: update-sample-gain: regression: measured 2, budget 1",
       ]);
     });
 

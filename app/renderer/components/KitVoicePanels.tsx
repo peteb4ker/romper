@@ -545,10 +545,11 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     checkSampleFilesOnce,
   ]);
 
-  // Optimistic update for gain changes so SampleWaveform gets the new
-  // gainDb immediately. Main marks the kit modified with the gain (RE-35),
-  // so the kit's card shows it too, without reloading every kit. If main
-  // doesn't save it, the knob goes back and a message says so (RE-91).
+  // Each step of a knob's turn goes on screen at once, so SampleWaveform
+  // plays it from the next trigger; the turn is saved once it ends (RE-88).
+  // Main marks the kit modified with the gain (RE-35), so the kit's card
+  // shows it too, without reloading every kit. If main doesn't save it, the
+  // knob goes back and a message says so (RE-91).
   const { onKitModified, onMessage } = props;
   // The kit on screen, so a gain that fails after you step to another kit
   // isn't put back on the new kit's slot (#565)
@@ -564,12 +565,22 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     });
   }, []);
   const handleGainChange = React.useCallback(
-    (voice: number, slotNumber: number, sampleName: string, gainDb: number) => {
+    (voice: number, slotNumber: number, _sampleName: string, gainDb: number) =>
+      setSlotGain(slotKey(voice, slotNumber), gainDb),
+    [setSlotGain],
+  );
+  const handleGainCommit = React.useCallback(
+    (
+      voice: number,
+      slotNumber: number,
+      sampleName: string,
+      gainDb: number,
+      fromDb: number,
+    ) => {
       const kitName = hookProps.kitName;
       const key = slotKey(voice, slotNumber);
-      setSlotGain(key, gainDb);
       void saveGain({
-        current: sampleMetadata[key]?.gain_db ?? 0,
+        current: fromDb,
         key,
         onSaved: () => onKitModified?.(kitName),
         report: (saved) =>
@@ -596,7 +607,6 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
       kitRef,
       onKitModified,
       onMessage,
-      sampleMetadata,
       saveGain,
       setSlotGain,
     ],
@@ -763,6 +773,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                     linkedWith={linkingStatus.linkedWith}
                     onBatchDropComplete={props.onBatchDropComplete}
                     onGainChange={handleGainChange}
+                    onGainCommit={handleGainCommit}
                     onMessage={props.onMessage}
                     onPlay={hookProps.onPlay}
                     onSampleAdd={props.onSampleAdd}

@@ -73,7 +73,7 @@ test.describe("Fixture System Validation", () => {
 
     expect(localStoreStatus.hasLocalStore).toBe(true);
     expect(localStoreStatus.isValid).toBe(true);
-    expect(localStoreStatus.error).toBe(null);
+    expect(localStoreStatus.error).toBeUndefined();
     expect(localStoreStatus.localStorePath).toEqual(
       testEnv.environment.ROMPER_LOCAL_PATH,
     );

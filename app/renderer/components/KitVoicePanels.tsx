@@ -1,4 +1,8 @@
-import type { KitWithRelations, Sample } from "@romper/shared/db/schema";
+import type {
+  KitEdit,
+  KitWithRelations,
+  Sample,
+} from "@romper/shared/db/schema";
 
 import { LinkIcon } from "@phosphor-icons/react";
 import {
@@ -55,7 +59,11 @@ interface KitVoicePanelsProps {
     slotNumber: number,
     gainDb: number,
   ) => void;
-  onKitUpdated?: () => Promise<void>; // Called after voice stereo mode changes to reload kit data
+  /**
+   * Shows the kit after its stereo links change: as the change returned
+   * it, or else read again (#452)
+   */
+  onKitUpdated?: (edited?: KitEdit) => Promise<void>;
   onMessage?: (text: string, type?: string, duration?: number) => void; // Refused links and drops (RE-40)
   onPlay: (voice: number, slot: number) => void; // Used by useKitVoicePanels hook
   // New props for drag-and-drop sample management (Task 5.2.2 & 5.2.3)
@@ -262,8 +270,12 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   // unlink, so the user hears about it (RE-40). So does no answer at all,
   // when the preload method or electronAPI is missing (#543); that isn't a
   // refusal, so it gets the general message.
+  // Resolves to the kit as the change left it, when main returns it (#452)
   const writeStereoMode = React.useCallback(
-    async (voiceNumber: number, updates: { stereo_mode?: boolean }) => {
+    async (
+      voiceNumber: number,
+      updates: { stereo_mode?: boolean },
+    ): Promise<KitEdit | undefined> => {
       const result = await globalThis.electronAPI?.updateVoiceStereoMode?.(
         hookProps.kitName,
         voiceNumber,
@@ -275,6 +287,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
       if (!result.success) {
         throw new StereoRefusal(result.error || "updateVoiceStereoMode failed");
       }
+      return result.data;
     },
     [hookProps.kitName],
   );
@@ -346,13 +359,14 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
 
       // Main's refusal is shown as it says it; any other failure isn't
       let refusal: string | undefined;
+      let edited: KitEdit | undefined;
       const result = await stereoHandling.linkVoicesForStereo(
         primaryVoice,
         voiceData,
         sampleData,
         async (voice, updates) => {
           try {
-            await writeStereoMode(voice, updates);
+            edited = (await writeStereoMode(voice, updates)) ?? edited;
           } catch (error) {
             if (error instanceof StereoRefusal) refusal = error.message;
             throw error;
@@ -366,7 +380,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
           "error",
         );
       }
-      await props.onKitUpdated?.();
+      await props.onKitUpdated?.(edited);
     },
     [
       stereoHandling,
@@ -382,10 +396,13 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   // the card, and Romper won't link the voice automatically again (#537)
   const handleVoiceUnlink = React.useCallback(
     async (primaryVoice: number) => {
+      let edited: KitEdit | undefined;
       const result = await stereoHandling.unlinkVoices(
         primaryVoice,
         voiceData,
-        writeStereoMode,
+        async (voice, updates) => {
+          edited = (await writeStereoMode(voice, updates)) ?? edited;
+        },
       );
       if (!result.success) {
         props.onMessage?.(
@@ -399,7 +416,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         describeUnlink(primaryVoice, stereo),
         stereo ? "warning" : "info",
       );
-      await props.onKitUpdated?.();
+      await props.onKitUpdated?.(edited);
     },
     [stereoHandling, voiceData, writeStereoMode, hasStereoSamples, props],
   );
@@ -470,8 +487,8 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         );
         try {
           // Link, or record Keep mono so it isn't linked automatically
-          await writeStereoMode(voice, { stereo_mode: link });
-          await onKitUpdated?.();
+          const edited = await writeStereoMode(voice, { stereo_mode: link });
+          await onKitUpdated?.(edited);
         } catch (error) {
           showMessage?.(
             error instanceof StereoRefusal

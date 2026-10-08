@@ -1,4 +1,4 @@
-import type { Sample } from "@romper/shared/db/schema";
+import type { KitEdit, Sample } from "@romper/shared/db/schema";
 import type { SliceStep } from "@romper/shared/sliceTypes";
 import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
@@ -64,7 +64,8 @@ interface KitStepSequencerProps {
     volume?: number,
     options?: PlayOptions,
   ) => void;
-  onVoiceSettingChanged?: () => void;
+  /** Called once main saved a voice setting, with the kit it returned (#452) */
+  onVoiceSettingChanged?: (edited?: KitEdit) => void;
   samples: { [voice: number]: string[] };
   /** Slot selected in the voice panels; the slice strip shows it. */
   selectedSampleIdx?: number;
@@ -176,11 +177,13 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
   // Level and sample mode saves: a failed one goes back and says so (RE-91)
   const { reset: resetVolumeSaves, save: saveVolume } = useSettingSave<
     number,
-    number
+    number,
+    KitEdit
   >();
   const { reset: resetModeSaves, save: saveMode } = useSettingSave<
     number,
-    SampleMode
+    SampleMode,
+    KitEdit
   >();
 
   // Sync state from voice data when it arrives/changes
@@ -198,17 +201,21 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
     resetModeSaves();
   }, [props.voices, resetVolumeSaves, resetModeSaves]);
 
-  // Debounce kit cache refresh for volume slider drags
+  // A level slider drag saves each step; the kit the latest save returned
+  // is shown once the drag has paused (#452)
   const timeouts = useTimeouts();
   const refreshTimerRef = React.useRef<null | ReturnType<typeof setTimeout>>(
     null,
   );
-  const debouncedRefresh = React.useCallback(() => {
-    timeouts.clear(refreshTimerRef.current);
-    refreshTimerRef.current = timeouts.set(() => {
-      onVoiceSettingChanged?.();
-    }, 500);
-  }, [onVoiceSettingChanged, timeouts]);
+  const debouncedRefresh = React.useCallback(
+    (edited?: KitEdit) => {
+      timeouts.clear(refreshTimerRef.current);
+      refreshTimerRef.current = timeouts.set(() => {
+        onVoiceSettingChanged?.(edited);
+      }, 500);
+    },
+    [onVoiceSettingChanged, timeouts],
+  );
 
   // Handle volume change — update local state + persist via IPC
   const handleVolumeChange = React.useCallback(
@@ -219,6 +226,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
       void saveVolume({
         current: voiceVolumes[voiceNumber] ?? 100,
         key: voiceNumber,
+        onSaved: debouncedRefresh,
         report: (saved) =>
           onMessage?.(
             `Couldn't save the level for voice ${voiceNumber}, so it's back to ${saved}. Try again.`,
@@ -236,7 +244,6 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
         value: volume,
         what: `the level for voice ${voiceNumber}`,
       });
-      debouncedRefresh();
     },
     [kitName, kitRef, debouncedRefresh, onMessage, saveVolume, voiceVolumes],
   );
@@ -250,7 +257,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
       void saveMode({
         current: sampleModes[voiceNumber] ?? "first",
         key: voiceNumber,
-        onSaved: () => onVoiceSettingChanged?.(),
+        onSaved: (edited) => onVoiceSettingChanged?.(edited),
         report: (saved) =>
           onMessage?.(
             `Couldn't save the sample mode for voice ${voiceNumber}, so it's back to ${SAMPLE_MODE_LABELS[saved]}. Try again.`,

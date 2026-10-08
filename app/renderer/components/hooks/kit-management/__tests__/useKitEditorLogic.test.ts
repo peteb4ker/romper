@@ -177,6 +177,17 @@ describe("useKitEditorLogic", () => {
   });
 
   describe("[Q-01] reloading after an edit (#452)", () => {
+    it("[UC-30] shows the kit an edit returned, without reading it again", async () => {
+      const { result } = renderHook(() => useKitEditorLogic(mockProps));
+      const edited = { ...mockKit, step_pattern: [[1]] };
+
+      await act(async () => {
+        await result.current.reloadKit(edited);
+      });
+
+      expect(mockProps.onKitUpdated).toHaveBeenCalledWith("TestKit", edited);
+    });
+
     it("[UC-30] reloads only the kit the edit was made in", async () => {
       const { result } = renderHook(() => useKitEditorLogic(mockProps));
 
@@ -184,7 +195,7 @@ describe("useKitEditorLogic", () => {
         await result.current.reloadKit();
       });
 
-      expect(mockProps.onKitUpdated).toHaveBeenCalledWith("TestKit");
+      expect(mockProps.onKitUpdated).toHaveBeenCalledWith("TestKit", undefined);
     });
 
     it("[UC-18] reloads the edited kit when a save finishes after a step to another", async () => {
@@ -199,7 +210,7 @@ describe("useKitEditorLogic", () => {
         await reloadEditedKit();
       });
 
-      expect(mockProps.onKitUpdated).toHaveBeenCalledWith("TestKit");
+      expect(mockProps.onKitUpdated).toHaveBeenCalledWith("TestKit", undefined);
     });
 
     it("[UC-19] reloads the kit and its samples once after a sample edit", async () => {

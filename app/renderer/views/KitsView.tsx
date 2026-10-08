@@ -1,3 +1,5 @@
+import type { KitEdit } from "@romper/shared/db/schema";
+
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 
 import CriticalErrorDialog from "../components/dialogs/CriticalErrorDialog";
@@ -65,6 +67,7 @@ const KitsView: React.FC = () => {
   // Kit data management
   const {
     allKitSamples,
+    applyKitEdit,
     getKitByName,
     kits,
     loadKitSamplesOnOpen,
@@ -200,6 +203,16 @@ const KitsView: React.FC = () => {
     [navigation.selectedKit, refreshKit],
   );
 
+  // An edit in the kit editor shows the kit it returned, or else reads the
+  // kit again; either way only that kit (#452)
+  const handleKitUpdated = useCallback(
+    async (kitName: string, edited?: KitEdit) => {
+      if (edited) applyKitEdit(kitName, edited);
+      else await refreshKit(kitName);
+    },
+    [applyKitEdit, refreshKit],
+  );
+
   // A BPM save doesn't reload the kit, so patch the loaded copy; otherwise
   // stepping back to the kit shows its old BPM (#565)
   const handleBpmSaved = useCallback(
@@ -244,7 +257,7 @@ const KitsView: React.FC = () => {
             onBack={navigation.handleBack}
             onBpmSaved={handleBpmSaved}
             onGainSaved={markGainSaved}
-            onKitUpdated={refreshKit}
+            onKitUpdated={handleKitUpdated}
             onMessage={showMessage}
             onNextKit={navigation.handleNextKit}
             onPrevKit={navigation.handlePrevKit}

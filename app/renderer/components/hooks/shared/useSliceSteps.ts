@@ -1,3 +1,5 @@
+import type { KitEdit } from "@romper/shared/db/schema";
+
 import {
   DEFAULT_SLICER_DIVISION,
   isSlicerDivision,
@@ -16,7 +18,11 @@ export interface UseSliceStepsParams {
   kitName: string;
   /** Tells the user slices or the division weren't saved */
   onMessage?: (text: string, type?: string, duration?: number) => void;
-  onSaved?: () => Promise<void> | void;
+  /**
+   * Called once main saved the slices or division, with the kit it
+   * returned; after the last of a burst of saves (#452)
+   */
+  onSaved?: (edited?: KitEdit) => Promise<void> | void;
 }
 
 export const SLICES_NOT_SAVED =
@@ -61,11 +67,13 @@ export function useSliceSteps({
 
   const { reset: resetStepSaves, save: saveSteps } = useSettingSave<
     string,
-    SliceStepsState
+    SliceStepsState,
+    KitEdit
   >();
   const { reset: resetDivisionSaves, save: saveDivision } = useSettingSave<
     string,
-    SlicerDivision
+    SlicerDivision,
+    KitEdit
   >();
 
   // Show the loaded kit's slices and division; when the kit changes before
@@ -98,14 +106,21 @@ export function useSliceSteps({
     resetDivisionSaves();
   }, [initialDivision, resetDivisionSaves]);
 
+  // The kit the latest save returned is shown once a burst of saves ends,
+  // so the slices on screen don't go back while later edits are saving
   const reloadTimerRef = useRef<null | ReturnType<typeof setTimeout>>(null);
-  const scheduleReload = useCallback(() => {
-    if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
-    reloadTimerRef.current = setTimeout(() => {
-      reloadTimerRef.current = null;
-      void onSaved?.();
-    }, RELOAD_DEBOUNCE_MS);
-  }, [onSaved]);
+  const latestEdit = useRef<KitEdit | undefined>(undefined);
+  const scheduleReload = useCallback(
+    (edited?: KitEdit) => {
+      latestEdit.current = edited;
+      if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
+      reloadTimerRef.current = setTimeout(() => {
+        reloadTimerRef.current = null;
+        void onSaved?.(latestEdit.current);
+      }, RELOAD_DEBOUNCE_MS);
+    },
+    [onSaved],
+  );
 
   useEffect(
     () => () => {

@@ -35,8 +35,8 @@ import { encodeTestWav, sine } from "../validation/support/wav";
 
 /** The channel that returns a slot's audio */
 const AUDIO = "get-sample-audio-buffer";
-/** The channel that reloads one kit after an edit (#452) */
-const GET_KIT = "get-kit";
+/** The step save, which returns the kit it changed (#452) */
+const STEP_SAVE = "update-step-pattern";
 
 test.describe("[Q-01] Performance budgets: IPC calls per action", () => {
   let app: ElectronApplication;
@@ -112,13 +112,14 @@ test.describe("[Q-01] Performance budgets: IPC calls per action", () => {
 
     await page.keyboard.press("s");
     await page.locator('[data-testid="seq-step-0-0"]').waitFor();
-    // The step's save reloads one kit, not the library (#452)
+    // The step's save returns the kit it changed, without its samples;
+    // nothing reads the kit again (#452)
     await action(
       "e2e/toggle a sequencer step",
       async () => {
         await page.locator('[data-testid="seq-step-0-0"]').click();
       },
-      [GET_KIT],
+      [STEP_SAVE],
     );
 
     await action("e2e/rename a voice", async () => {

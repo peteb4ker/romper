@@ -1,3 +1,5 @@
+import type { KitEdit } from "@romper/shared/db/schema";
+
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -27,7 +29,7 @@ import {
 import { registerDbIpcHandlers } from "../../electron/main/dbIpcHandlers.js";
 import { createStoreDb } from "./support/storeDb.js";
 
-type Result = { error?: string; success: boolean };
+type Result = { data?: KitEdit; error?: string; success: boolean };
 
 // #541: main linked any voice the renderer asked it to, so voice 4, or a
 // voice whose next voice held samples, could be linked, hiding those
@@ -123,7 +125,13 @@ describe("[UC-28] Main refuses a stereo link the kit editor would refuse (#541)"
   });
 
   it("links a pair that can be linked, and always allows unlinking", async () => {
-    expect(await link(3)).toEqual({ success: true });
+    // The change returns the kit as it left it, without its samples (#452)
+    const linkedKit = await link(3);
+    expect(linkedKit).toMatchObject({ success: true });
+    expect(
+      linkedKit.data?.voices?.find((v) => v.voice_number === 3),
+    ).toMatchObject({ stereo_mode: true });
+    expect(linkedKit.data).not.toHaveProperty("samples");
     // Linked by hand: the user's choice, so not labelled as automatic
     expect(kit().voices!.find((v) => v.voice_number === 3)).toMatchObject({
       stereo_choice: "stereo",
@@ -139,7 +147,7 @@ describe("[UC-28] Main refuses a stereo link the kit editor would refuse (#541)"
       source_path: path.join(tempDir, "hat.wav"),
       voice_number: 4,
     });
-    expect(await link(3, false)).toEqual({ success: true });
+    expect(await link(3, false)).toMatchObject({ success: true });
     expect(linked()).toEqual([]);
     // Unlinked by hand: Romper won't link it automatically again (#537)
     expect(kit().voices!.find((v) => v.voice_number === 3)?.stereo_choice).toBe(

@@ -4,7 +4,7 @@ priority: medium
 status: in progress
 updated: 2026-10-08
 context_size: small
-implementation_status: step 1 in #765; step 4's failure handling in #775; step 2 in the PR after it; step 3 and the rest of 4 planned
+implementation_status: step 1 in #765; step 4's failure handling in #775; step 2 in #776; step 3a in the PR after it; 3b and the rest of 4 planned
 -->
 
 # Kit refresh after an edit
@@ -79,8 +79,8 @@ refetches its own `sampleMetadata` copy with `get-all-samples-for-kit`.
 
 ## Steps
 
-One PR each. Earlier PRs say `Part of #452`; the PR that finishes step 3
-says `Fixes #452`. Numbers live in [`tests/perf/budgets.ts`](../../tests/perf/budgets.ts),
+One PR each (step 3 is two). Earlier PRs say `Part of #452`; the PR
+that finishes the plan, the rest of step 4, says `Fixes #452`. Numbers live in [`tests/perf/budgets.ts`](../../tests/perf/budgets.ts),
 not here.
 
 ### 1. Reload one kit, in order (done in the PR that added this file)
@@ -105,7 +105,7 @@ not here.
   budget; tighter `bytes` budgets in the validation profile for the editor
   actions.
 
-### 2. Drop the extra reloads and refetches (done in the PR after #775)
+### 2. Drop the extra reloads and refetches (done in #776)
 
 - `KitVoicePanels` builds `sampleMetadata` from `kit.samples` (full rows,
   the same columns as `get-all-samples-for-kit`) instead of fetching it on
@@ -136,18 +136,48 @@ not here.
 
 ### 3. Edits return the changed kit
 
-- Add, delete, move, step pattern, trigger conditions, slices, voice
-  settings, voice name, stereo link and rescan return the
-  `KitWithRelations` they changed, read in the same transaction. The
-  renderer patches with it, numbered like a read, and makes no `get-kit`.
+Two PRs.
+
+**3a. Edits to a kit's own fields and voices** (done in the PR after
+step 2)
+
+- The step pattern, trigger conditions, slices, slice division, voice
+  level, sample mode, slicer settings, voice name and stereo link return
+  the kit as the edit left it, without its samples (`KitEdit`), read back
+  right after the write on main's one connection. If it can't be read
+  back, the edit still succeeds and the renderer reads the kit as before.
+- The renderer shows it (`applyKitEdit`) as a saved change: everything but
+  the samples, kept over a read sent before it and replacing the
+  kit-level changes saved before it. No `get-kit`.
+- The debounced shows (level drags, slice bursts) show the kit the last
+  save of the burst returned.
+- What an edit returns holds the kit's pattern, conditions, slices and
+  voices, so it's a few KB rather than the architecture review's
+  sub-KB goal, which would need each edit to return only the fields it
+  changed.
+- **Verified by:** the step-toggle `total` reached its target and is
+  pinned at one call, with a bytes budget on the save; renaming a voice
+  reads nothing; `get-kit` is pinned at none for both. Tests cover
+  `applyKitEdit` against older and newer reads, each hook passing on the
+  kit its save returned, the debounced bursts showing the last result,
+  and main returning the kit without its samples (and none when it can't
+  be read back).
+
+**3b. Sample edits**
+
+- Add, delete, move and rescan return the kit they changed, with its
+  samples. The renderer shows it as a read, and makes no `get-kit`.
 - Delete and move also return the voices' rows as they were before, for
   the undo snapshot, so the renderer doesn't fetch them first.
-- Main serializes writes, so each result is newer than the one before; a
-  step toggle that returns while the next is saving no longer shows the
-  older pattern for a moment.
-- **Verified by:** the step-toggle `total` budget reaches its target;
-  integration budgets for each operation's statements; ordering tests with
-  results instead of reads. This PR says `Fixes #452`.
+- **Verified by:** the drop and delete budgets pin `get-kit` and
+  `get-all-samples-for-kit` at none; integration budgets for each
+  operation's statements.
+
+Still open after step 3: a step toggle whose save returns while the next
+toggle is still saving shows the pattern without the newer toggle until
+that one's save returns. Fixing it means the sequencer keeps edits that
+are still saving over a kit that comes back, which changes what's on
+screen, so it needs its own issue.
 
 ### 4. List changes without a full reload
 

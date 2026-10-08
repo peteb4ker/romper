@@ -1,3 +1,5 @@
+import type { KitEdit } from "@romper/shared/db/schema";
+
 import { useCallback, useEffect, useState } from "react";
 
 import { ensureValidStepPattern } from "./stepPatternConstants";
@@ -9,7 +11,8 @@ export interface UseStepPatternParams {
   kitName: string;
   /** Tells the user the steps weren't saved */
   onMessage?: (text: string, type?: string, duration?: number) => void;
-  onSaved?: () => Promise<void> | void;
+  /** Called once main saved the pattern, with the kit it returned (#452) */
+  onSaved?: (edited?: KitEdit) => Promise<void> | void;
 }
 
 export const STEPS_NOT_SAVED =
@@ -34,7 +37,7 @@ export function useStepPattern({
   const kitRef = useLatestRef(kitName);
 
   // A failed save puts the last saved pattern back and says so (#511)
-  const { reset, save } = useSettingSave<string, number[][]>();
+  const { reset, save } = useSettingSave<string, number[][], KitEdit>();
 
   // Show the kit's saved pattern whenever it's loaded or reloaded
   const [shownPattern, setShownPattern] = useState(initialPattern);
@@ -61,7 +64,7 @@ export function useStepPattern({
       const saved = await save({
         current,
         key: kitName,
-        onSaved: () => void onSaved?.(),
+        onSaved: (edited) => void onSaved?.(edited),
         report: () => onMessage?.(STEPS_NOT_SAVED, "error"),
         restore: (saved) => {
           // The kit changed while this was saving; its steps are on screen

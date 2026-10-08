@@ -2,6 +2,7 @@ import type { FormatValidationResult, SampleAudio } from "./audioTypes.js";
 import type {
   Bank,
   DbResult,
+  KitEdit,
   KitScanResult,
   KitWithRelations,
   LocalStoreValidationDetailedResult,
@@ -237,7 +238,7 @@ export interface ElectronAPI {
   updateKitSlicerDivision: (
     kitName: string,
     division: number,
-  ) => Promise<DbResult>;
+  ) => Promise<DbResult<KitEdit>>;
   updateSampleGain: (
     kitName: string,
     voiceNumber: number,
@@ -247,40 +248,40 @@ export interface ElectronAPI {
   updateSliceSteps: (
     kitName: string,
     sliceSteps: (null | SliceStep)[][],
-  ) => Promise<DbResult>;
+  ) => Promise<DbResult<KitEdit>>;
   updateStepPattern: (
     kitName: string,
     stepPattern: number[][],
-  ) => Promise<DbResult>;
+  ) => Promise<DbResult<KitEdit>>;
   updateTriggerConditions: (
     kitName: string,
     triggerConditions: (null | string)[][],
-  ) => Promise<DbResult>;
+  ) => Promise<DbResult<KitEdit>>;
   updateVoiceAlias: (
     kitName: string,
     voiceNumber: number,
     voiceAlias: string,
-  ) => Promise<DbResult>;
+  ) => Promise<DbResult<KitEdit>>;
   updateVoiceSampleMode: (
     kitName: string,
     voiceNumber: number,
     sampleMode: string,
-  ) => Promise<DbResult>;
+  ) => Promise<DbResult<KitEdit>>;
   updateVoiceSliceSettings: (
     kitName: string,
     voiceNumber: number,
     settings: Partial<VoiceSliceSettings>,
-  ) => Promise<DbResult>;
+  ) => Promise<DbResult<KitEdit>>;
   updateVoiceStereoMode: (
     kitName: string,
     voiceNumber: number,
     stereoMode: boolean,
-  ) => Promise<DbResult>;
+  ) => Promise<DbResult<KitEdit>>;
   updateVoiceVolume: (
     kitName: string,
     voiceNumber: number,
     volume: number,
-  ) => Promise<DbResult>;
+  ) => Promise<DbResult<KitEdit>>;
   validateLocalStore: (
     localStorePath?: string,
   ) => Promise<LocalStoreValidationDetailedResult>;

@@ -1,4 +1,8 @@
-import type { DbResult, KitWithRelations } from "@romper/shared/db/schema";
+import type {
+  DbResult,
+  KitEdit,
+  KitWithRelations,
+} from "@romper/shared/db/schema";
 
 import React from "react";
 
@@ -22,7 +26,7 @@ interface KitEditorAllProps extends KitEditorProps {
     slotNumber: number,
     gainDb: number,
   ) => void;
-  onKitUpdated?: (kitName: string) => Promise<void>; // Reloads the kit after an edit in it (#452)
+  onKitUpdated?: (kitName: string, edited?: KitEdit) => Promise<void>; // Shows the kit after an edit in it, as the edit returned it or read again (#452)
   onMessage?: (text: string, type?: string, duration?: number) => void; // Used by useKitEditorLogic hook
   onRefreshKitMetadata?: () => Promise<void>; // Targeted refresh for single kit metadata (voice aliases)
   onToggleEditableMode?: (kitName: string) => Promise<void>; // Toggle editable mode - used via useKitEditorLogic hook

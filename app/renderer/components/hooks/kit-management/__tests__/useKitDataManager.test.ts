@@ -535,6 +535,118 @@ describe("useKitDataManager", () => {
     });
   });
 
+  // #452 step 3: an edit to a kit's own fields or voices returns the kit,
+  // without its samples, and the renderer shows it instead of reading it
+  describe("[Q-01] [UC-30] applyKitEdit (#452)", () => {
+    const loaded = async () => {
+      const hook = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          isLocalStoreReady: true,
+          localStorePath: "/test/path",
+        }),
+      );
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      vi.mocked(globalThis.electronAPI.getKits).mockClear();
+      return hook;
+    };
+    const editOf = (pattern: number[][]) => {
+      const kit = createMockKitWithRelations({
+        modified_since_sync: true,
+        name: "A0",
+        step_pattern: pattern,
+      });
+      delete kit.samples;
+      return kit;
+    };
+
+    it("shows the edited kit, keeping its samples, without asking main", async () => {
+      const { result } = await loaded();
+      const samples = result.current.getKitByName("A0")?.samples;
+      const shownSamples = result.current.allKitSamples.A0;
+      const otherKit = result.current.getKitByName("A1");
+
+      act(() => {
+        result.current.applyKitEdit("A0", editOf([[1]]));
+      });
+
+      expect(result.current.getKitByName("A0")?.step_pattern).toEqual([[1]]);
+      expect(result.current.getKitByName("A0")?.samples).toBe(samples);
+      expect(result.current.allKitSamples.A0).toBe(shownSamples);
+      expect(result.current.getKitByName("A1")).toBe(otherKit);
+      expect(globalThis.electronAPI.getKit).not.toHaveBeenCalled();
+      expect(globalThis.electronAPI.getKits).not.toHaveBeenCalled();
+    });
+
+    it("ignores a kit returned for another kit's name", async () => {
+      const { result } = await loaded();
+      const kits = result.current.kits;
+
+      act(() => {
+        result.current.applyKitEdit("A1", editOf([[1]]));
+      });
+
+      expect(result.current.kits).toBe(kits);
+    });
+
+    it("keeps the latest edit over a reload sent before it", async () => {
+      const { result } = await loaded();
+      let answer: (value: DbResult<KitWithRelations>) => void = () => {};
+      vi.mocked(globalThis.electronAPI.getKit).mockReturnValueOnce(
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+      );
+      let reload: Promise<void>;
+      act(() => {
+        reload = result.current.refreshKit("A0");
+      });
+      act(() => {
+        result.current.applyKitEdit("A0", editOf([[1]]));
+        result.current.applyKitEdit("A0", editOf([[1, 1]]));
+      });
+
+      await act(async () => {
+        answer({
+          data: createMockKitWithRelations({
+            name: "A0",
+            samples: [createMockSample({ filename: "added.wav" })],
+            step_pattern: null,
+          }),
+          success: true,
+        });
+        await reload;
+      });
+
+      // The reload's samples land; the edit's pattern stays
+      expect(result.current.getKitByName("A0")?.step_pattern).toEqual([[1, 1]]);
+      expect(result.current.allKitSamples.A0[1][0]).toBe("added.wav");
+    });
+
+    it("shows what a reload sent after the edit reads", async () => {
+      const { result } = await loaded();
+      act(() => {
+        result.current.applyKitEdit("A0", editOf([[1]]));
+      });
+      vi.mocked(globalThis.electronAPI.getKit).mockResolvedValueOnce({
+        data: createMockKitWithRelations({
+          name: "A0",
+          samples: mockSamples,
+          step_pattern: [[0]],
+        }),
+        success: true,
+      });
+
+      await act(async () => {
+        await result.current.refreshKit("A0");
+      });
+
+      expect(result.current.getKitByName("A0")?.step_pattern).toEqual([[0]]);
+    });
+  });
+
   describe("[UC-10] a saved change and an older reload (#452)", () => {
     it("keeps a favorite saved after a full reload was sent", async () => {
       const { result } = renderHook(() =>

@@ -26,6 +26,24 @@ describe("useVoiceAlias", () => {
   });
 
   describe("[UC-27] updateVoiceAlias", () => {
+    it("[Q-01] passes on the kit main returned with the name (#452)", async () => {
+      const edited = { name: "A0" };
+      vi.mocked(window.electronAPI.updateVoiceAlias).mockResolvedValue({
+        data: edited as never,
+        success: true,
+      });
+      const onUpdate = vi.fn();
+      const { result } = renderHook(() =>
+        useVoiceAlias({ kitName: "A0", onUpdate }),
+      );
+
+      await act(async () => {
+        await result.current.updateVoiceAlias(1, "Kick Drum");
+      });
+
+      expect(onUpdate).toHaveBeenCalledWith(edited);
+    });
+
     it("updates voice alias successfully", async () => {
       const onUpdate = vi.fn();
       const { result } = renderHook(() =>

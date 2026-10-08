@@ -121,9 +121,10 @@ Renderer paths are under `app/renderer/components/` unless they start with
 1. **One kits array, many mirrors.** `useKitDataManager` holds `kits`
    (from `get-all-kits`) and `allKitSamples`. Everything else is derived
    from them and re-syncs only when an object's identity changes. An edit
-   in the kit editor reloads its kit with one `get-kit` call
-   (`refreshKit`), and reads are numbered so an older response can't land
-   over a newer one; changes to the list itself reload every kit
+   to a kit's own fields or voices returns the kit, which patches `kits`
+   (`applyKitEdit`); other edits in the kit editor reload the kit with one
+   `get-kit` call (`refreshKit`). Reads are numbered so an older response
+   can't land over a newer one; changes to the list itself reload every kit
    (`refreshAllKitsAndSamples`). A BPM, gain, favorite, name or editable
    save patches its kit in `kits` instead, and stays over a read sent
    before it (#452; plan in [`kit-refresh.md`](kit-refresh.md)).

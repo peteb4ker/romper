@@ -410,9 +410,14 @@ describe("KitStepSequencer", () => {
     );
   });
 
-  it("debounces onVoiceSettingChanged for volume changes", async () => {
+  it("[Q-01] debounces onVoiceSettingChanged for volume changes, with the kit the last save returned (#452)", async () => {
     vi.useFakeTimers();
     const onVoiceSettingChanged = vi.fn();
+    const edited = { name: "TestKit" };
+    vi.mocked(globalThis.electronAPI.updateVoiceVolume).mockResolvedValue({
+      data: edited as never,
+      success: true,
+    });
 
     render(
       <KitStepSequencer
@@ -442,6 +447,8 @@ describe("KitStepSequencer", () => {
       fireEvent.change(sliders[0], { target: { value: "90" } });
       fireEvent.change(sliders[0], { target: { value: "80" } });
       fireEvent.change(sliders[0], { target: { value: "70" } });
+      // Main answers the saves
+      await act(async () => {});
 
       // Should not have called yet (debounced)
       expect(onVoiceSettingChanged).not.toHaveBeenCalled();
@@ -453,12 +460,13 @@ describe("KitStepSequencer", () => {
 
       // Should have called exactly once after debounce
       expect(onVoiceSettingChanged).toHaveBeenCalledTimes(1);
+      expect(onVoiceSettingChanged).toHaveBeenCalledWith(edited);
     }
 
     vi.useRealTimers();
   });
 
-  it("[Q-07] doesn't call onVoiceSettingChanged after it unmounts (#709)", () => {
+  it("[Q-07] doesn't call onVoiceSettingChanged after it unmounts (#709)", async () => {
     vi.useFakeTimers();
     try {
       const onVoiceSettingChanged = vi.fn();
@@ -487,6 +495,8 @@ describe("KitStepSequencer", () => {
       fireEvent.change(screen.getAllByRole("slider")[0], {
         target: { value: "90" },
       });
+      // The refresh is scheduled once main saves the level
+      await act(async () => {});
       expect(vi.getTimerCount()).toBe(1);
 
       unmount();

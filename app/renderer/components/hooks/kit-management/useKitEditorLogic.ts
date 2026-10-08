@@ -1,5 +1,9 @@
 import type { KitEditorProps } from "@romper/app/renderer/components/kitTypes";
-import type { DbResult, KitWithRelations } from "@romper/shared/db/schema";
+import type {
+  DbResult,
+  KitEdit,
+  KitWithRelations,
+} from "@romper/shared/db/schema";
 
 import React from "react";
 
@@ -23,8 +27,11 @@ interface UseKitEditorLogicParams extends KitEditorProps {
   kit?: KitWithRelations; // Kit data passed from parent
   kitError?: null | string; // Error from parent kit loading
   onCreateKit?: () => void;
-  /** Reloads the kit an edit was made in, and only that kit (#452) */
-  onKitUpdated?: (kitName: string) => Promise<void>;
+  /**
+   * Shows the kit an edit was made in, and only that kit: as the edit
+   * returned it, or else read again (#452)
+   */
+  onKitUpdated?: (kitName: string, edited?: KitEdit) => Promise<void>;
   onMessage?: (text: string, type?: string, duration?: number) => void;
   onRefreshKitMetadata?: () => Promise<void>;
   onToggleEditableMode?: (kitName: string) => Promise<void>;
@@ -59,13 +66,17 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   const kitError = props.kitError ?? null; // Accept error from parent if provided
   const kitLoading = false; // Data is passed from parent
 
-  // Reload this kit after an edit. A save that finishes after a step to
-  // another kit still reloads the kit it was made in.
-  const reloadKit = React.useCallback(async () => {
-    if (onKitUpdated && kitName) {
-      await onKitUpdated(kitName);
-    }
-  }, [onKitUpdated, kitName]);
+  // Show this kit after an edit: as the edit returned it, or else read
+  // again. A save that finishes after a step to another kit still shows
+  // the kit it was made in.
+  const reloadKit = React.useCallback(
+    async (edited?: KitEdit) => {
+      if (onKitUpdated && kitName) {
+        await onKitUpdated(kitName, edited);
+      }
+    },
+    [onKitUpdated, kitName],
+  );
 
   // Toggle editable mode via parent callback. Called from a click, so a
   // failure is reported here rather than rejected into it (RE-41)
@@ -124,8 +135,8 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
   const { updateVoiceAlias } = useVoiceAlias({
     kitName,
     onMessage,
-    onUpdate: () => {
-      reloadKit().catch(console.error);
+    onUpdate: (edited) => {
+      reloadKit(edited).catch(console.error);
     },
   });
 

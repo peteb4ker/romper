@@ -56,6 +56,8 @@ const NO_RELOAD = { max: 0 } as const;
  * as loaded, so nothing asks main for a kit's samples again
  */
 const NO_SAMPLES_FETCH = { max: 0 } as const;
+/** #452: an edit to a kit's own fields or voices returns the kit */
+const NO_KIT_READ = { max: 0 } as const;
 
 const kb = (n: number) => Math.round(n * 1024);
 const mb = (n: number) => Math.round(n * 1024 * 1024);
@@ -152,24 +154,25 @@ export const BUDGETS = {
       "get-sample-audio-buffer": { max: 2 },
       "get-sample-audio-buffer bytes": { max: kb(2) },
     },
+    /** #452: the rename returns the kit it changed, so nothing reads it */
     "rename a voice": {
       "get-all-kits": NO_RELOAD,
       "get-all-samples-for-kit": NO_SAMPLES_FETCH,
-      "get-kit": { max: 1 },
+      "get-kit": NO_KIT_READ,
       "update-voice-alias": { max: 1 },
     },
     /**
-     * The reload is one kit, not the library. Its size depends on the
-     * fixture's sample paths, which differ by OS and temp folder, so the
-     * bytes budget has headroom.
+     * #452: the save returns the kit it changed, without its samples, and
+     * nothing reads the kit again: one call. What it returns holds no file
+     * paths, so its size doesn't depend on the OS.
      */
     "toggle a sequencer step": {
       "get-all-kits": NO_RELOAD,
       "get-all-samples-for-kit": NO_SAMPLES_FETCH,
-      "get-kit": { max: 1 },
-      "get-kit bytes": { max: kb(8) },
-      total: { max: 2, target: 1, until: "#452" },
+      "get-kit": NO_KIT_READ,
+      total: { max: 1 },
       "update-step-pattern": { max: 1 },
+      "update-step-pattern bytes": { max: kb(4) },
     },
   },
 
@@ -273,12 +276,17 @@ export const BUDGETS = {
      * main sends each slot's file version, not the file (#478)
      */
     "previous kit (A0)": { bytes: { max: kb(64) }, mainBusyMs: STALL },
-    "rename voice 1": { bytes: { max: kb(64) }, mainBusyMs: STALL },
+    /** #452: the rename returns the kit, without its samples */
+    "rename voice 1": { bytes: { max: kb(8) }, mainBusyMs: STALL },
     "search: clear": { bytes: SMALL, mainBusyMs: STALL },
     "search: type 'kick'": { bytes: SMALL, mainBusyMs: STALL },
     "sequencer playing, 5 s": { bytes: SMALL, mainBusyMs: STALL },
+    /**
+     * #452: each save returns the kit it changed, without its samples (its
+     * pattern, conditions, slices and voices), and nothing reads it again
+     */
     "toggle 4 sequencer steps": {
-      bytes: { max: kb(256), target: kb(4), until: "#452" },
+      bytes: { max: kb(32) },
       mainBusyMs: STALL,
     },
     "toggle a favourite": { bytes: SMALL, mainBusyMs: STALL },

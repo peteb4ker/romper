@@ -24,8 +24,6 @@ export interface StoreConnection {
    */
   file?: { dev: number; ino: number };
   sqlite: BetterSqlite3.Database;
-  /** Watches the store's folder for the file being deleted or moved */
-  watcher?: { close: () => void };
 }
 
 /** Open connections, by the store's resolved `.romperdb` folder */
@@ -55,11 +53,6 @@ export function closeDbConnection(dbDir: string): void {
   if (!connection) return;
   connections.delete(key);
   try {
-    connection.watcher?.close();
-  } catch {
-    // Closing the database matters; a watcher that won't close is harmless
-  }
-  try {
     connection.sqlite.close();
   } catch (error) {
     console.warn(
@@ -80,6 +73,11 @@ export function getOpenDbConnection(
 ): StoreConnection | undefined {
   const connection = connections.get(connectionKey(dbDir));
   return connection?.sqlite.open ? connection : undefined;
+}
+
+/** The open connections, with the `.romperdb` folder each belongs to */
+export function listOpenDbConnections(): Array<[string, StoreConnection]> {
+  return [...connections.entries()].filter(([, c]) => c.sqlite.open);
 }
 
 /** How many connections are open (for tests) */

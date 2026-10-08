@@ -14,6 +14,7 @@ import {
   setDatabaseMissingListener,
 } from "../../electron/main/db/utils/dbConnections.js";
 import {
+  checkOpenDatabaseFiles,
   openDatabase,
   withDb,
 } from "../../electron/main/db/utils/dbUtilities.js";
@@ -24,10 +25,12 @@ import { createTempStore, removeTempStore } from "./support/tempStore.js";
 // Romper keeps one connection open per store (#513). If the database file
 // is deleted or moved while it runs, that connection used to go on writing
 // to the old file, so edits were lost without a word (#535). Now main
-// notices (it watches the store's database folder), closes the connection
-// and tells the renderer, the store's status turns invalid (which shows
-// the Invalid Local Store dialog), and the next edit fails without
-// recreating the file.
+// notices (it checks the open stores' files every second), closes the
+// connection and tells the renderer, the store's status turns invalid
+// (which shows the Invalid Local Store dialog), and the next edit fails
+// without recreating the file. The tests run the check themselves
+// (checkOpenDatabaseFiles) rather than wait for it, except one that shows
+// it runs on its own.
 //
 // Windows doesn't let a file SQLite has open be deleted or moved, so this
 // can't happen there.
@@ -98,9 +101,9 @@ describe.skipIf(process.platform === "win32")(
     it("notices the file is deleted, fails the next edit, and doesn't recreate it", async () => {
       fs.rmSync(dbPath);
 
-      await vi.waitFor(() =>
-        expect(missing).toHaveBeenCalledWith(connectionKey(dbDir)),
-      );
+      await checkOpenDatabaseFiles();
+
+      expect(missing).toHaveBeenCalledWith(connectionKey(dbDir));
       expect(openDbConnectionCount()).toBe(0);
       expect(status()).toMatchObject({
         error: "Romper DB file not found",
@@ -123,15 +126,48 @@ describe.skipIf(process.platform === "win32")(
       const movedPath = path.join(tempDir, "moved.sqlite");
       fs.renameSync(dbPath, movedPath);
 
-      await vi.waitFor(() =>
-        expect(missing).toHaveBeenCalledWith(connectionKey(dbDir)),
-      );
+      await checkOpenDatabaseFiles();
+
+      expect(missing).toHaveBeenCalledWith(connectionKey(dbDir));
       expect(status().isValid).toBe(false);
 
       expect(renameKit("After").success).toBe(false);
       expect(fs.existsSync(dbPath)).toBe(false);
       // The edit didn't land anywhere: the moved file has the old name
       expect(aliasIn(movedPath)).toBe("Before");
+    });
+
+    it("notices the whole store folder is moved, and fails the next edit", async () => {
+      fs.renameSync(localStorePath, path.join(tempDir, "moved-store"));
+
+      await checkOpenDatabaseFiles();
+
+      expect(missing).toHaveBeenCalledWith(connectionKey(dbDir));
+      expect(status()).toMatchObject({
+        error: expect.stringContaining("Local store path does not exist"),
+        isValid: false,
+      });
+      expect(renameKit("After").success).toBe(false);
+      expect(fs.existsSync(localStorePath)).toBe(false);
+    });
+
+    it("checks on its own while the store is open", async () => {
+      fs.rmSync(dbPath);
+
+      // Main checks every second; allow a few
+      await vi.waitFor(
+        () => expect(missing).toHaveBeenCalledWith(connectionKey(dbDir)),
+        { interval: 50, timeout: 5000 },
+      );
+      expect(openDbConnectionCount()).toBe(0);
+    });
+
+    it("leaves a store whose file is still there alone", async () => {
+      await checkOpenDatabaseFiles();
+
+      expect(missing).not.toHaveBeenCalled();
+      expect(openDbConnectionCount()).toBe(1);
+      expect(renameKit("After").success).toBe(true);
     });
 
     it("saves to the file now at the path when another replaced it", async () => {
@@ -142,8 +178,10 @@ describe.skipIf(process.platform === "win32")(
       fs.rmSync(dbPath);
       fs.renameSync(copy, dbPath);
 
+      await checkOpenDatabaseFiles();
+
       // The old connection is closed; the file at the path is no less valid
-      await vi.waitFor(() => expect(openDbConnectionCount()).toBe(0));
+      expect(openDbConnectionCount()).toBe(0);
       expect(missing).not.toHaveBeenCalled();
       expect(status().isValid).toBe(true);
 

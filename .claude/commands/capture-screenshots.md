@@ -70,6 +70,15 @@ ROMPER_HEADLESS=true npm run screenshots -- --target manual-step-sequencer,manua
   run in a second session on a store generated from the e2e fixture by
   `tests/utils/broken-kit-store.ts`, deleted afterwards. They don't need
   `--store`, and never touch a real library.
+- **Slicer:** targets marked `store: "slicer"` (`manual-slicer`,
+  `manual-slice-strip`, `manual-slice-step-options`,
+  `manual-slice-roll-options`) were a one-time capture from a long sample
+  on Pete's machine, not a committed fixture. They need
+  `--slicer-sample <wav>`: `tests/utils/slicer-store.ts` copies that file
+  into a temporary store built from the e2e fixture (the original is only
+  read) and sets up a sliced voice. Never commit the sample; only the PNGs
+  go in. `--all` skips these targets without the flag. They draw
+  waveforms, so run them without `ROMPER_HEADLESS`.
 - **Its own settings:** the app runs with a temporary userData folder
   (`--user-data-dir` and `ROMPER_USER_DATA_DIR`) holding a fresh
   `romper-settings.json` with that store, deleted when the script ends. The

@@ -13,6 +13,8 @@ export interface BaseVoicePanelOptions {
   dragAndDropHook: DragAndDropHook;
   /** The kit's sample details couldn't be read, or not yet: gains are unknown (#628) */
   gainsUnknown?: boolean;
+  /** The kit's sample details couldn't be read, so previews don't play (#636) */
+  gainsUnreadable?: boolean;
   isActive: boolean;
   isEditable: boolean;
   kitName: string;

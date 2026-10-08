@@ -13,6 +13,8 @@ import { useVoicePanelRendering } from "./hooks/voice-panels/useVoicePanelRender
 interface KitVoicePanelProps {
   /** The kit's sample details couldn't be read, or not yet: gains are unknown (#628) */
   gainsUnknown?: boolean;
+  /** The kit's sample details couldn't be read, so previews don't play (#636) */
+  gainsUnreadable?: boolean;
   isActive?: boolean;
   isDisabled?: boolean;
   isEditable?: boolean;
@@ -105,6 +107,7 @@ const KitVoicePanel: React.FC<
 > = ({
   dataTestIdVoiceName,
   gainsUnknown = false,
+  gainsUnreadable = false,
   isActive = false,
   isDisabled = false,
   isEditable = true,
@@ -201,6 +204,7 @@ const KitVoicePanel: React.FC<
   const rendering = useVoicePanelRendering({
     dragAndDropHook: dragAndDrop,
     gainsUnknown,
+    gainsUnreadable,
     isActive,
     isEditable: effectiveEditable,
     isLinkedPrimary,

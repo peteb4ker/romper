@@ -23,6 +23,8 @@ export interface UseVoicePanelRenderingOptions {
   };
   /** The kit's sample details couldn't be read, or not yet: gains are unknown (#628) */
   gainsUnknown?: boolean;
+  /** The kit's sample details couldn't be read, so previews don't play (#636) */
+  gainsUnreadable?: boolean;
   isActive: boolean;
   isEditable: boolean;
   isLinkedPrimary?: boolean;
@@ -113,6 +115,7 @@ export interface UseVoicePanelRenderingOptions {
 export function useVoicePanelRendering({
   dragAndDropHook,
   gainsUnknown,
+  gainsUnreadable,
   isActive,
   isEditable,
   isLinkedPrimary,
@@ -153,6 +156,7 @@ export function useVoicePanelRendering({
   const slots = useVoicePanelSlots({
     dragAndDropHook,
     gainsUnknown,
+    gainsUnreadable,
     isActive,
     isEditable,
     isLinkedPrimary,

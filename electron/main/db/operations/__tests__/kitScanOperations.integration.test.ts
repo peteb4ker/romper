@@ -4,11 +4,12 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 import type { KitScanIo, WavMetadataFields } from "../kitScanOperations.js";
 
+import { createStoreDb } from "../../../../../tests/integration/support/storeDb.js";
 import {
   createTempStore,
   removeTempStore,
 } from "../../../../../tests/integration/support/tempStore.js";
-import { createRomperDbFile, DB_FILENAME } from "../../utils/dbUtilities.js";
+import { DB_FILENAME } from "../../utils/dbUtilities.js";
 import { addKit, getKit, updateKit } from "../kitCrudOperations.js";
 import { mergeKitScan } from "../kitScanOperations.js";
 import { addSample, getKitSamples } from "../sampleCrudOperations.js";
@@ -43,7 +44,7 @@ describe("[UC-13] mergeKitScan - Integration Tests", () => {
     tempDir = createTempStore("romper-kit-scan-");
     dbDir = join(tempDir, ".romperdb");
     kitPath = join(tempDir, "A0");
-    createRomperDbFile(dbDir);
+    createStoreDb(dbDir);
     addKit(dbDir, { bank_letter: "A", editable: false, name: "A0" });
 
     missingPaths = new Set();

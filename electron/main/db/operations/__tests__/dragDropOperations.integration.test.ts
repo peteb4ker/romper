@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
+import { createStoreDb } from "../../../../../tests/integration/support/storeDb.js";
 import {
   createTempStore,
   removeTempStore,
@@ -8,7 +9,6 @@ import {
 import {
   addKit,
   addSample,
-  createRomperDbFile,
   getKitSamples,
   moveSample,
 } from "../../romperDbCoreORM";
@@ -21,7 +21,7 @@ describe("[UC-21] Drag & Drop Operations - Integration Tests", () => {
   beforeEach(async () => {
     tempDir = createTempStore("romper-dragdrop-");
     dbDir = join(tempDir, ".romperdb");
-    await createRomperDbFile(dbDir);
+    createStoreDb(dbDir);
 
     // Create test kit
     await addKit(dbDir, {

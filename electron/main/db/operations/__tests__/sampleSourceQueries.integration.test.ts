@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { createRomperDbFile } from "../../utils/dbUtilities.js";
+import { createStoreDb } from "../../../../../tests/integration/support/storeDb.js";
 import { addKit } from "../kitCrudOperations.js";
 import { addSample } from "../sampleCrudOperations.js";
 import { isSourcePathReferenced } from "../sampleSourceQueries.js";
@@ -15,7 +15,7 @@ describe("[Q-01] [Q-03] isSourcePathReferenced (RE-85)", () => {
   beforeEach(() => {
     tempDir = mkdtempSync(join(tmpdir(), "romper-source-refs-"));
     dbDir = join(tempDir, ".romperdb");
-    createRomperDbFile(dbDir);
+    createStoreDb(dbDir);
     addKit(dbDir, { bank_letter: "A", name: "A0" });
     // The same setup as the other operations tests, which clean up on
     // Windows: rows added through addSample

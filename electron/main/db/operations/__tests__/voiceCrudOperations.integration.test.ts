@@ -3,11 +3,12 @@ import { eq } from "drizzle-orm";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
+import { createStoreDb } from "../../../../../tests/integration/support/storeDb.js";
 import {
   createTempStore,
   removeTempStore,
 } from "../../../../../tests/integration/support/tempStore.js";
-import { createRomperDbFile, withDb } from "../../utils/dbUtilities.js";
+import { withDb } from "../../utils/dbUtilities.js";
 import { addKit, getKit, updateKit } from "../kitCrudOperations.js";
 import { markKitAsSynced } from "../kitSyncOperations.js";
 import {
@@ -26,7 +27,7 @@ describe("Voice CRUD Operations - Integration Tests", () => {
   beforeEach(() => {
     tempDir = createTempStore("romper-voice-crud-");
     dbDir = join(tempDir, ".romperdb");
-    createRomperDbFile(dbDir);
+    createStoreDb(dbDir);
 
     addKit(dbDir, {
       bank_letter: "A",

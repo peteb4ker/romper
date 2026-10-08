@@ -12,12 +12,12 @@ vi.mock("electron", () => ({
 import {
   addKit,
   addSample,
-  createRomperDbFile,
   deleteKit,
   deleteSamples,
   getKitSamples,
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { syncService } from "../../electron/main/services/syncService.js";
+import { createStoreDb } from "./support/storeDb.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 describe("[UC-34] Sync Referenced Samples Integration Test", () => {
@@ -39,7 +39,7 @@ describe("[UC-34] Sync Referenced Samples Integration Test", () => {
     fs.mkdirSync(sdCardPath, { recursive: true });
 
     // Create database
-    createRomperDbFile(dbDir);
+    createStoreDb(dbDir);
 
     // Create an external sample file (outside local store)
     const externalDir = path.join(tempDir, "external-samples");

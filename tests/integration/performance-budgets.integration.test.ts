@@ -72,7 +72,6 @@ vi.mock("better-sqlite3", async (importOriginal) => {
 
 import {
   addKit,
-  createRomperDbFile,
   getKitSamples,
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { withDbTransaction } from "../../electron/main/db/utils/dbUtilities.js";
@@ -81,6 +80,7 @@ import { pathAccess } from "../../electron/main/security/pathAccess.js";
 import { sampleService } from "../../electron/main/services/sampleService.js";
 import { syncService } from "../../electron/main/services/syncService.js";
 import { type NewSample, samples } from "../../shared/db/schema.js";
+import { createStoreDb } from "./support/storeDb.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 const BANKS = ["A", "B", "C"];
@@ -133,7 +133,7 @@ async function expectWithinBudget(
  */
 function generateStore() {
   const dbDir = path.join(store, ".romperdb");
-  expect(createRomperDbFile(dbDir).success).toBe(true);
+  expect(createStoreDb(dbDir).success).toBe(true);
   const rows: NewSample[] = [];
   for (const bank of BANKS) {
     for (let k = 0; k < KITS_PER_BANK; k++) {

@@ -22,12 +22,12 @@ import { ipcMain } from "electron";
 
 import {
   addKit,
-  createRomperDbFile,
   getKit,
   updateKit,
   withDbTransaction,
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { registerDbIpcHandlers } from "../../electron/main/dbIpcHandlers.js";
+import { createStoreDb } from "./support/storeDb.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 type Handler = (
@@ -70,7 +70,7 @@ beforeEach(() => {
   vi.mocked(ipcMain.handle).mockClear();
   store = createTempStore("romper-sequence-undo-");
   dbDir = path.join(store, ".romperdb");
-  expect(createRomperDbFile(dbDir).success).toBe(true);
+  expect(createStoreDb(dbDir).success).toBe(true);
   expect(
     addKit(dbDir, {
       bank_letter: "A",

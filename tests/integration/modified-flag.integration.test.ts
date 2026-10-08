@@ -12,7 +12,6 @@ import {
   addKit,
   addSample,
   copyKit,
-  createRomperDbFile,
   getKit,
   markKitsAsSynced,
   toggleKitFavorite,
@@ -29,6 +28,7 @@ import { kitService } from "../../electron/main/services/kitService.js";
 import { sampleService } from "../../electron/main/services/sampleService.js";
 import { scanService } from "../../electron/main/services/scanService.js";
 import { syncService } from "../../electron/main/services/syncService.js";
+import { createStoreDb } from "./support/storeDb.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 // "Modified since sync" means the next write will change this kit on the
@@ -92,7 +92,7 @@ describe("[UC-11] Edits the next write puts on the card mark a kit modified (#56
     sdCardPath = path.join(tempDir, "card");
     fs.mkdirSync(sdCardPath, { recursive: true });
     fs.mkdirSync(localStorePath, { recursive: true });
-    createRomperDbFile(dbDir);
+    createStoreDb(dbDir);
     settings = { localStorePath };
 
     const source = wavFile(path.join(tempDir, "kick.wav"));

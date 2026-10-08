@@ -20,9 +20,9 @@ vi.mock("electron", () => ({
 }));
 
 import { getAllBanks } from "../../electron/main/db/romperDbCoreORM.js";
-import { createRomperDbFile } from "../../electron/main/db/romperDbCoreORM.js";
 import { registerDbIpcHandlers } from "../../electron/main/dbIpcHandlers.js";
 import { syncService } from "../../electron/main/services/syncService.js";
+import { createStoreDb } from "./support/storeDb.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 type Result = { error?: string; success: boolean };
@@ -58,7 +58,7 @@ describe("[UC-12] Naming and clearing a bank (RE-23)", () => {
     fs.mkdirSync(localStorePath, { recursive: true });
     fs.mkdirSync(sdCardPath, { recursive: true });
     dbDir = path.join(localStorePath, ".romperdb");
-    createRomperDbFile(dbDir);
+    createStoreDb(dbDir);
     handlers.clear();
     registerDbIpcHandlers({ localStorePath });
   });

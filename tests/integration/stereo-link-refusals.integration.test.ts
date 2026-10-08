@@ -21,11 +21,11 @@ vi.mock("electron", () => ({
 import {
   addKit,
   addSample,
-  createRomperDbFile,
   getKit,
   markKitAsSynced,
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { registerDbIpcHandlers } from "../../electron/main/dbIpcHandlers.js";
+import { createStoreDb } from "./support/storeDb.js";
 
 type Result = { error?: string; success: boolean };
 
@@ -57,7 +57,7 @@ describe("[UC-28] Main refuses a stereo link the kit editor would refuse (#541)"
     const localStorePath = path.join(tempDir, "store");
     fs.mkdirSync(localStorePath, { recursive: true });
     dbDir = path.join(localStorePath, ".romperdb");
-    createRomperDbFile(dbDir);
+    createStoreDb(dbDir);
     addKit(dbDir, {
       bank_letter: "A",
       editable: true,

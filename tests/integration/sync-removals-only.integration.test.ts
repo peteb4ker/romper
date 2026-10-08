@@ -8,8 +8,8 @@ vi.mock("electron", () => ({
   },
 }));
 
-import { createRomperDbFile } from "../../electron/main/db/romperDbCoreORM.js";
 import { syncService } from "../../electron/main/services/syncService.js";
+import { createStoreDb } from "./support/storeDb.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 // RE-76: a library with nothing left to copy can still be written, so the
@@ -25,7 +25,7 @@ describe("[UC-34] Writing a library with nothing to copy (RE-76)", () => {
     const localStorePath = path.join(tempDir, "store");
     sdCardPath = path.join(tempDir, "card");
     fs.mkdirSync(localStorePath, { recursive: true });
-    createRomperDbFile(path.join(localStorePath, ".romperdb"));
+    createStoreDb(path.join(localStorePath, ".romperdb"));
     settings = { localStorePath };
 
     // What an earlier write left: a kit and a bank name, plus the Rample's

@@ -4,6 +4,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { createStoreDb } from "../../../../tests/integration/support/storeDb.js";
 import {
   createTempStore,
   removeTempStore,
@@ -11,7 +12,6 @@ import {
 import {
   addKit,
   addSample,
-  createRomperDbFile,
   getKitSamples,
   updateVoiceStereoMode,
 } from "../../db/romperDbCoreORM.js";
@@ -82,7 +82,7 @@ describe("SampleValidation Integration Tests", () => {
   beforeEach(() => {
     TEST_DB_DIR = createTempStore("romper-sample-val-");
     TEST_DB_PATH = path.join(TEST_DB_DIR, ".romperdb");
-    createRomperDbFile(TEST_DB_PATH);
+    createStoreDb(TEST_DB_PATH);
 
     sampleValidationService = new SampleValidationService();
     sampleValidator = new SampleValidator();

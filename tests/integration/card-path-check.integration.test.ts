@@ -23,7 +23,6 @@ vi.mock("electron", () => ({
   },
 }));
 
-import { createRomperDbFile } from "../../electron/main/db/romperDbCoreORM.js";
 import { registerDbIpcHandlers } from "../../electron/main/dbIpcHandlers.js";
 import { pathAccess } from "../../electron/main/security/pathAccess.js";
 import {
@@ -32,6 +31,7 @@ import {
   cardWatchdogSettings,
 } from "../../electron/main/services/cardWatchdog.js";
 import { syncService } from "../../electron/main/services/syncService.js";
+import { createStoreDb } from "./support/storeDb.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 // #714: before a write starts, its IPC handlers check the card's path
@@ -89,7 +89,7 @@ describe("[UC-34] [Q-01] starting a write on a card that stopped responding (#71
     sdCardPath = path.join(tempDir, "card");
     fs.mkdirSync(localStorePath, { recursive: true });
     fs.mkdirSync(sdCardPath, { recursive: true });
-    createRomperDbFile(path.join(localStorePath, ".romperdb"));
+    createStoreDb(path.join(localStorePath, ".romperdb"));
 
     pathAccess.reset();
     probe.handlers.clear();

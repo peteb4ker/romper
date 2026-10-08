@@ -8,16 +8,14 @@ vi.mock("electron", () => ({
   },
 }));
 
-import {
-  createRomperDbFile,
-  updateBank,
-} from "../../electron/main/db/romperDbCoreORM.js";
+import { updateBank } from "../../electron/main/db/romperDbCoreORM.js";
 import {
   CARD_NOT_RESPONDING_MESSAGE,
   CARD_OPERATION_TIMEOUT_MS,
   cardWatchdogSettings,
 } from "../../electron/main/services/cardWatchdog.js";
 import { syncService } from "../../electron/main/services/syncService.js";
+import { createStoreDb } from "./support/storeDb.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 // #656: a write put the bank name files on the card root with synchronous
@@ -54,7 +52,7 @@ describe("[UC-34] [Q-01] writing the bank name files to the card (#656)", () => 
     fs.mkdirSync(localStorePath, { recursive: true });
     fs.mkdirSync(sdCardPath, { recursive: true });
     settings = { localStorePath };
-    createRomperDbFile(dbDir());
+    createStoreDb(dbDir());
 
     // What an earlier write left: an old name for bank A, and a kit the
     // store no longer has

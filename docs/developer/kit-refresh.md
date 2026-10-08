@@ -177,7 +177,7 @@ Still open after step 3: a step toggle whose save returns while the next
 toggle is still saving shows the pattern without the newer toggle until
 that one's save returns. Fixing it means the sequencer keeps edits that
 are still saving over a kit that comes back, which changes what's on
-screen, so it needs its own issue.
+screen: tracked in #778.
 
 ### 4. List changes without a full reload
 

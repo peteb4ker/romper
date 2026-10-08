@@ -43,8 +43,10 @@ export const EXISTING_LOCAL_STORE_MESSAGE =
  *
  * A setup that never finished (the app quit mid-import, for example after
  * Cancel on first run) is cleaned up on quit (RE-66), so the next launch can
- * set up the same folder. Saving the store as the local store marks its
- * setup finished.
+ * set up the same folder. The wizard marks a setup finished as soon as the
+ * store is fully built, before it saves the store as the local store, so a
+ * quit after that save fails keeps the store (#616). Saving the store as
+ * the local store marks it finished too.
  *
  * Setup can be cancelled (RE-66): `cancelSetup` aborts the download or
  * extraction in progress, and the wizard stops between steps. Cleanup also
@@ -337,8 +339,8 @@ export class LocalStoreSetupService {
   }
 
   /**
-   * The store at `targetPath` is now the local store: its setup finished, so
-   * nothing may clean it up any more.
+   * The store at `targetPath` is fully built (or already the local store):
+   * its setup finished, so nothing may clean it up any more (#616).
    */
   markSetupComplete(targetPath: string): void {
     this.createdDbDirs.delete(path.resolve(targetPath, ROMPER_DB_DIR));

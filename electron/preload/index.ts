@@ -243,6 +243,10 @@ const electronAPI = {
     isDev && console.debug("[IPC] ensureDir invoked", dir);
     return ipcRenderer.invoke("ensure-dir", dir);
   },
+  finishSetup: (targetPath: string) => {
+    isDev && console.debug("[IPC] finishSetup invoked", targetPath);
+    return ipcRenderer.invoke("finish-setup", targetPath);
+  },
   // Task 8.2.1: SD Card sync operations
   generateSyncChangeSummary: (sdCardPath?: string) => {
     isDev && console.debug("[IPC] generateSyncChangeSummary invoked");

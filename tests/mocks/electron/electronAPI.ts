@@ -41,6 +41,7 @@ export const createElectronAPIMock = (
   downloadAndExtractArchive: vi.fn().mockResolvedValue(undefined),
 
   ensureDir: vi.fn().mockResolvedValue(undefined),
+  finishSetup: vi.fn().mockResolvedValue({ success: true }),
   // Sync operations
   generateSyncChangeSummary: vi
     .fn()

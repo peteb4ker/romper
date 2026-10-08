@@ -90,11 +90,13 @@ pair it linked (#537, stereo rule 2). See
   `check-existing-local-store`, `check-path-writable`, `check-disk-space`,
   `list-files-in-root`, `copy-dir`, `create-romper-db`, `setup-import-kit`
   (one call per kit), `setup-import-bank-names` (the card's bank names),
-  `cleanup-partial-init`, `write-settings`.
+  `cleanup-partial-init`, `finish-setup` (the store is built, so a quit
+  keeps it, #616), `write-settings`.
 - **Main:** `electron/main/services/archiveService.ts` (`copyDirectory`);
   `electron/main/services/localStoreSetupService.ts` (`createSetupDatabase`,
   `hasExistingLocalStore`, `importSetupKit`, `importSetupBankNames`,
-  `cleanupFailedSetup`, `cleanupUnfinishedSetups` on quit), which imports
+  `cleanupFailedSetup`, `cleanupUnfinishedSetups` on quit,
+  `markSetupComplete`), which imports
   each kit with `electron/main/db/operations/kitScanOperations.ts`
   (`mergeKitScan`): up to 12 samples per voice, WAV metadata, voice names
   and stereo links (`planKitStereo` in `shared/stereoLinkRules.ts`), in one

@@ -102,6 +102,13 @@ export interface ElectronAPI {
     onError?: (e: unknown) => void,
   ) => Promise<{ cancelled?: boolean; retryable?: boolean } & DbResult>;
   ensureDir: (dir: string) => Promise<unknown>;
+  /**
+   * The store setup built at `targetPath` is complete, so quitting no longer
+   * cleans it up, even if saving it as the local store fails (#616)
+   */
+  finishSetup: (
+    targetPath: string,
+  ) => Promise<{ error?: string; success: boolean }>;
   generateSyncChangeSummary: (
     sdCardPath?: string,
   ) => Promise<DbResult<SyncChangeSummary>>;

@@ -239,6 +239,10 @@ export function useLocalStoreWizard(
       log.debug("initialize - database creation completed");
       throwIfCancelled();
 
+      // The store is fully built: mark it finished before saving the
+      // setting, so a quit after a failed save keeps it (#616)
+      await markStoreFinished(api, state.targetPath);
+
       // Set the local store path only after everything is ready
       return await saveFinishedStore({
         stereoNotices: stereoNotices ?? [],
@@ -360,6 +364,21 @@ async function cleanUpPartialStore(api: ElectronAPI, targetPath: string) {
     }
   } catch {
     // Cleanup is best-effort; don't mask the original error
+  }
+}
+
+/**
+ * Best-effort: if main isn't told, the store is still marked finished once
+ * the setting saves, so a failure here never fails a built store's setup
+ */
+async function markStoreFinished(api: ElectronAPI, targetPath: string) {
+  try {
+    const result = await api.finishSetup?.(targetPath);
+    if (result && !result.success) {
+      log.error("Couldn't mark the new local store finished:", result.error);
+    }
+  } catch (error) {
+    log.error("Couldn't mark the new local store finished:", error);
   }
 }
 

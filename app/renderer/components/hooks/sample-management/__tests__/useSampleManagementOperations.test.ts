@@ -14,7 +14,6 @@ vi.mock("../useSampleManagementUndoActions", () => ({
       data: {},
       type: "REINDEX_SAMPLES",
     })),
-    snapshotForUndo: vi.fn(),
   })),
 }));
 
@@ -32,7 +31,6 @@ const undoActionsWith = (overrides: Partial<UndoActions>): UndoActions => ({
   createCrossKitMoveAction: vi.fn(),
   createReindexSamplesAction: vi.fn(),
   createSameKitMoveAction: vi.fn(),
-  snapshotForUndo: vi.fn(),
   ...overrides,
 });
 
@@ -209,11 +207,12 @@ describe("useSampleManagementOperations", () => {
   });
 
   describe("[UC-23] handleSampleDelete", () => {
-    it("should delete sample successfully", async () => {
+    it("[Q-01] deletes a sample, records undo from what main returned and shows the kit it returned (#452)", async () => {
       const mockSampleToDelete = {
         filename: "test.wav",
         source_path: "/path/to/test.wav",
       };
+      const kit = { name: "Test Kit", samples: [] };
 
       const mockUndoActions = {
         createReindexSamplesAction: vi.fn(
@@ -223,10 +222,6 @@ describe("useSampleManagementOperations", () => {
               type: "REINDEX_SAMPLES",
             }) as ReindexSamplesAction,
         ),
-        snapshotForUndo: vi.fn().mockResolvedValue({
-          sample: mockSampleToDelete,
-          voicesBefore,
-        }),
       };
 
       // Mock the hook return
@@ -234,8 +229,14 @@ describe("useSampleManagementOperations", () => {
         undoActionsWith(mockUndoActions),
       );
 
+      // Main returns the deleted row and the voice as it was before
       const mockDeleteResult = {
-        data: { affectedSamples: [] },
+        data: {
+          affectedSamples: [],
+          deletedSamples: [mockSampleToDelete],
+          kit,
+          voicesBefore,
+        },
         success: true,
       };
       mockElectronAPI.deleteSampleFromSlot.mockResolvedValue(mockDeleteResult);
@@ -246,7 +247,7 @@ describe("useSampleManagementOperations", () => {
 
       await result.current.handleSampleDelete(1, 0);
 
-      expect(mockUndoActions.snapshotForUndo).toHaveBeenCalledWith(1, 0);
+      expect(globalThis.electronAPI.getAllSamplesForKit).not.toHaveBeenCalled();
       expect(mockElectronAPI.deleteSampleFromSlot).toHaveBeenCalledWith(
         "Test Kit",
         1,
@@ -256,7 +257,7 @@ describe("useSampleManagementOperations", () => {
         "Sample deleted from voice 1, slot 1",
         "success",
       );
-      expect(mockOptions.onSamplesChanged).toHaveBeenCalled();
+      expect(mockOptions.onSamplesChanged).toHaveBeenCalledWith(kit);
       expect(mockUndoActions.createReindexSamplesAction).toHaveBeenCalledWith(
         1,
         0,
@@ -288,15 +289,8 @@ describe("useSampleManagementOperations", () => {
     });
 
     it("should handle delete sample exception", async () => {
-      const mockUndoActions = {
-        snapshotForUndo: vi
-          .fn()
-          .mockRejectedValue(new Error("Undo prep failed")),
-      };
-
-      // Mock the hook return
-      mockUseSampleManagementUndoActions.mockReturnValue(
-        undoActionsWith(mockUndoActions),
+      mockElectronAPI.deleteSampleFromSlot.mockRejectedValue(
+        new Error("IPC closed"),
       );
 
       const { result } = renderHook(() =>
@@ -306,9 +300,25 @@ describe("useSampleManagementOperations", () => {
       await result.current.handleSampleDelete(1, 0);
 
       expect(mockOptions.onMessage).toHaveBeenCalledWith(
-        "Failed to delete sample: Undo prep failed",
+        "Failed to delete sample: IPC closed",
         "error",
       );
+    });
+
+    it("records no undo when main returns no voices from before", async () => {
+      mockElectronAPI.deleteSampleFromSlot.mockResolvedValue({
+        data: { affectedSamples: [], deletedSamples: [{ filename: "a.wav" }] },
+        success: true,
+      });
+
+      const { result } = renderHook(() =>
+        useSampleManagementOperations(mockOptions),
+      );
+
+      await result.current.handleSampleDelete(1, 0);
+
+      expect(mockOptions.onAddUndoAction).not.toHaveBeenCalled();
+      expect(mockOptions.onSamplesChanged).toHaveBeenCalledWith(undefined);
     });
 
     it("should handle missing electronAPI for delete", async () => {

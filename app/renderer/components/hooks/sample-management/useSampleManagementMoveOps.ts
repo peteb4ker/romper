@@ -1,6 +1,6 @@
+import type { KitWithRelations } from "@romper/shared/db/schema";
 import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
-import { snapshotVoices } from "@romper/shared/undoTypes";
 import { useCallback } from "react";
 
 import type { MoveOperationResult } from "./types";
@@ -11,7 +11,8 @@ export interface UseSampleManagementMoveOpsOptions {
   kitName: string;
   onAddUndoAction?: (action: AnyUndoAction) => void;
   onMessage?: (text: string, type?: string, duration?: number) => void;
-  onSamplesChanged?: () => Promise<void>;
+  /** Shows the kit after a sample edit: as the edit returned it, or read again (#452) */
+  onSamplesChanged?: (edited?: KitWithRelations) => Promise<void>;
   skipUndoRecording: boolean;
 }
 
@@ -27,10 +28,7 @@ export function useSampleManagementMoveOps({
   skipUndoRecording,
 }: UseSampleManagementMoveOpsOptions) {
   // Get undo action creators
-  const undoActions = useSampleManagementUndoActions({
-    kitName,
-    skipUndoRecording,
-  });
+  const undoActions = useSampleManagementUndoActions({ kitName });
 
   // Helper functions to reduce cognitive complexity in handleSampleMove
   const validateMoveAPI = useCallback(
@@ -49,25 +47,9 @@ export function useSampleManagementMoveOps({
     [onMessage],
   );
 
-  const captureStateSnapshot = useCallback(
-    async (fromVoice: number, toVoice: number) => {
-      // Null, not an empty list: restoring "no samples" would empty the
-      // voices, so a move whose voices couldn't be read records no undo
-      if (skipUndoRecording || !onAddUndoAction) return null;
-
-      const samplesResult =
-        await globalThis.electronAPI?.getAllSamplesForKit?.(kitName);
-      if (!samplesResult?.success || !samplesResult.data) return null;
-
-      // Full rows, so undo brings back gain and WAV details too (RE-86)
-      return snapshotVoices(samplesResult.data, [fromVoice, toVoice]);
-    },
-    [kitName, skipUndoRecording, onAddUndoAction],
-  );
-
   const handleMoveSuccess = useCallback(
     async (
-      _result: unknown,
+      result: { data?: object },
       _isCrossKit: boolean,
       _targetKit: string,
       _fromVoice: number,
@@ -77,8 +59,13 @@ export function useSampleManagementMoveOps({
     ) => {
       // Toast notifications removed per user request
 
+      // Show the kit as the move left it (#452)
       if (onSamplesChanged) {
-        await onSamplesChanged();
+        const edited =
+          result.data && "kit" in result.data
+            ? (result.data.kit as KitWithRelations | undefined)
+            : undefined;
+        await onSamplesChanged(edited);
       }
     },
     [onSamplesChanged],
@@ -111,7 +98,6 @@ export function useSampleManagementMoveOps({
             "insert",
           );
         } else {
-          const voicesBefore = await captureStateSnapshot(fromVoice, toVoice);
           result = await globalThis.electronAPI.moveSampleInKit?.(
             kitName,
             fromVoice,
@@ -120,6 +106,10 @@ export function useSampleManagementMoveOps({
             toSlot,
           );
 
+          // Main returns the voices as they were, read right before the
+          // move: full rows, so undo brings back gain and WAV details too
+          // (RE-86, #452)
+          const voicesBefore = result?.data?.voicesBefore;
           if (
             result?.success &&
             !skipUndoRecording &&
@@ -180,7 +170,6 @@ export function useSampleManagementMoveOps({
     [
       kitName,
       validateMoveAPI,
-      captureStateSnapshot,
       undoActions,
       skipUndoRecording,
       onAddUndoAction,

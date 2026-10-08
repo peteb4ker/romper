@@ -145,10 +145,11 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     kitName,
     onAddUndoAction: props.onAddUndoAction,
     onMessage: props.onMessage,
-    onSamplesChanged: async () => {
-      // One reload brings back the kit and its samples (#452)
+    onSamplesChanged: async (edited?: KitWithRelations) => {
+      // The kit the edit returned, samples and all, or else one reload
+      // (#452)
       if (onRequestSamplesReload) {
-        await onRequestSamplesReload(kitName);
+        await onRequestSamplesReload(kitName, edited);
       } else {
         await reloadKit();
       }

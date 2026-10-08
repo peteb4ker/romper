@@ -55,7 +55,6 @@ describe("useSampleManagementMoveOps", () => {
     createSameKitMoveAction: vi.fn<UndoActions["createSameKitMoveAction"]>(
       () => ({ data: {}, type: "MOVE_SAMPLE" }) as MoveSampleAction,
     ),
-    snapshotForUndo: vi.fn<UndoActions["snapshotForUndo"]>(),
   } satisfies UndoActions;
 
   beforeEach(() => {
@@ -83,13 +82,15 @@ describe("useSampleManagementMoveOps", () => {
         },
       ];
 
-      mockElectronAPI.getAllSamplesForKit.mockResolvedValue({
-        data: mockSamples,
-        success: true,
-      });
-
+      // Main returns the two voices as they were before the move (#452)
       const mockMoveResult = {
-        data: { movedSample: { id: 1 } },
+        data: {
+          movedSample: { id: 1 },
+          voicesBefore: [
+            { samples: [mockSamples[0]], voice: 1 },
+            { samples: [mockSamples[1]], voice: 2 },
+          ],
+        },
         success: true,
       };
       mockElectronAPI.moveSampleInKit.mockResolvedValue(mockMoveResult);
@@ -100,9 +101,7 @@ describe("useSampleManagementMoveOps", () => {
 
       await result.current.handleSampleMove(1, 0, 2, 1);
 
-      expect(mockElectronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
-        "Test Kit",
-      );
+      expect(mockElectronAPI.getAllSamplesForKit).not.toHaveBeenCalled();
       expect(mockElectronAPI.moveSampleInKit).toHaveBeenCalledWith(
         "Test Kit",
         1,
@@ -366,25 +365,15 @@ describe("useSampleManagementMoveOps", () => {
     });
   });
 
-  describe("[Q-02] voice snapshot for undo (RE-86)", () => {
-    it("snapshots only the two voices the move touches", async () => {
-      const row = (voice: number) => ({
-        filename: `sample${voice}.wav`,
-        gain_db: -voice,
-        slot_number: 0,
-        source_path: `/path/sample${voice}.wav`,
-        voice_number: voice,
-        wav_bit_depth: 16,
-        wav_bitrate: null,
-        wav_channels: 1,
-        wav_sample_rate: 44100,
-      });
-      mockElectronAPI.getAllSamplesForKit.mockResolvedValue({
-        data: [row(1), row(2), row(3)],
-        success: true,
-      });
+  describe("[Q-02] voice snapshot for undo (RE-86, #452)", () => {
+    it("[Q-01] records the voices main returned from before the move, and shows the kit it returned", async () => {
+      const voicesBefore = [
+        { samples: [], voice: 1 },
+        { samples: [], voice: 2 },
+      ];
+      const kit = { name: "Test Kit", samples: [] };
       mockElectronAPI.moveSampleInKit.mockResolvedValue({
-        data: { movedSample: { id: 1 } },
+        data: { kit, movedSample: { id: 1 }, voicesBefore },
         success: true,
       });
 
@@ -394,20 +383,14 @@ describe("useSampleManagementMoveOps", () => {
 
       await result.current.handleSampleMove(1, 0, 2, 1);
 
-      const { voicesBefore } =
-        mockUndoActions.createSameKitMoveAction.mock.calls[0][0];
-      expect(voicesBefore.map((v: { voice: number }) => v.voice)).toEqual([
-        1, 2,
-      ]);
-      // Full rows: gain survives an undo
-      expect(voicesBefore[0].samples[0].gain_db).toBe(-1);
+      expect(
+        mockUndoActions.createSameKitMoveAction.mock.calls[0][0].voicesBefore,
+      ).toBe(voicesBefore);
+      expect(mockOptions.onSamplesChanged).toHaveBeenCalledWith(kit);
+      expect(mockElectronAPI.getAllSamplesForKit).not.toHaveBeenCalled();
     });
 
-    it("records no undo when the voices can't be read", async () => {
-      mockElectronAPI.getAllSamplesForKit.mockResolvedValue({
-        error: "Failed to get samples",
-        success: false,
-      });
+    it("records no undo when main returns no voices from before", async () => {
       mockElectronAPI.moveSampleInKit.mockResolvedValue({
         data: { movedSample: { id: 1 } },
         success: true,
@@ -424,27 +407,7 @@ describe("useSampleManagementMoveOps", () => {
       expect(mockUndoActions.createSameKitMoveAction).not.toHaveBeenCalled();
       expect(mockOptions.onAddUndoAction).not.toHaveBeenCalled();
     });
-
-    it("records no undo when the kit read returns no data", async () => {
-      mockElectronAPI.getAllSamplesForKit.mockResolvedValue({
-        data: null,
-        success: true,
-      });
-      mockElectronAPI.moveSampleInKit.mockResolvedValue({
-        data: { movedSample: { id: 1 } },
-        success: true,
-      });
-
-      const { result } = renderHook(() =>
-        useSampleManagementMoveOps(mockOptions),
-      );
-
-      await result.current.handleSampleMove(1, 0, 2, 1);
-
-      expect(mockUndoActions.createSameKitMoveAction).not.toHaveBeenCalled();
-    });
   });
-
   describe("edge cases", () => {
     it("should not record undo when move result has no data", async () => {
       mockElectronAPI.moveSampleInKit.mockResolvedValue({

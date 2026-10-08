@@ -38,6 +38,8 @@ interface UseKitDataManagerReturn {
    * reading it again (#452)
    */
   applyKitEdit: (kitName: string, edited: KitEdit) => void;
+  /** Shows the kit a sample edit returned, samples and all (#452) */
+  applyReadKit: (kitName: string, kit: KitWithRelations) => void;
   getKitByName: (kitName: string) => KitWithRelations | undefined;
   /**
    * The kits. A kit whose samples couldn't be loaded, with none loaded
@@ -306,6 +308,34 @@ export function useKitDataManager({
     [isInitialized, isLocalStoreReady, localStorePath, readAllKits, timeouts],
   );
 
+  // Show a kit read by read number `read`, unless what's on screen came
+  // from a newer read
+  const showReadKit = useCallback(
+    (kitName: string, kit: KitWithRelations, read: number) => {
+      if (
+        read < listRead.current ||
+        read < (kitReads.current.get(kitName) ?? 0)
+      ) {
+        return; // Newer data is already on screen
+      }
+      kitReads.current.set(kitName, read);
+
+      const loaded = withSavedChanges(kit, read);
+      const voices = groupDbSamplesByVoice(loaded.samples ?? []);
+      setDbKits((prevKits) =>
+        prevKits.map((shown) => (shown.name === kitName ? loaded : shown)),
+      );
+      setAllKitSamples((prev) => ({ ...prev, [kitName]: voices }));
+      setFailedKits((prev) => {
+        if (!prev.has(kitName)) return prev;
+        const next = new Set(prev);
+        next.delete(kitName);
+        return next;
+      });
+    },
+    [withSavedChanges],
+  );
+
   // Reload one kit (its row, voices and samples) with one get-kit call,
   // instead of every kit (#452). A response older than what the kit shows
   // is dropped. If the kit can't be read, what's shown stays.
@@ -324,29 +354,20 @@ export function useKitDataManager({
         console.error(`Error loading kit ${kitName}:`, error);
       }
       if (!kit?.samples) return false;
-      if (
-        read < listRead.current ||
-        read < (kitReads.current.get(kitName) ?? 0)
-      ) {
-        return true; // Newer data is already on screen
-      }
-      kitReads.current.set(kitName, read);
-
-      const loaded = withSavedChanges(kit, read);
-      const voices = groupDbSamplesByVoice(loaded.samples ?? kit.samples);
-      setDbKits((prevKits) =>
-        prevKits.map((shown) => (shown.name === kitName ? loaded : shown)),
-      );
-      setAllKitSamples((prev) => ({ ...prev, [kitName]: voices }));
-      setFailedKits((prev) => {
-        if (!prev.has(kitName)) return prev;
-        const next = new Set(prev);
-        next.delete(kitName);
-        return next;
-      });
+      showReadKit(kitName, kit, read);
       return true;
     },
-    [withSavedChanges],
+    [showReadKit],
+  );
+
+  // Show the kit a sample edit returned, samples and all, as a read made
+  // when it arrived (#452)
+  const applyReadKit = useCallback(
+    (kitName: string, kit: KitWithRelations) => {
+      if (kit.name !== kitName || !kit.samples) return;
+      showReadKit(kitName, kit, ++lastRead.current);
+    },
+    [showReadKit],
   );
 
   // Reload one kit after any edit to it, on opening it without its samples,
@@ -593,6 +614,7 @@ export function useKitDataManager({
   return {
     allKitSamples,
     applyKitEdit,
+    applyReadKit,
     getKitByName,
     kits,
     loadKitSamplesOnOpen,

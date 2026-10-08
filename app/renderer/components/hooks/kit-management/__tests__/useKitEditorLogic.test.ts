@@ -223,7 +223,10 @@ describe("useKitEditorLogic", () => {
       });
 
       expect(mockProps.onRequestSamplesReload).toHaveBeenCalledTimes(1);
-      expect(mockProps.onRequestSamplesReload).toHaveBeenCalledWith("TestKit");
+      expect(mockProps.onRequestSamplesReload).toHaveBeenCalledWith(
+        "TestKit",
+        undefined,
+      );
       expect(mockProps.onKitUpdated).not.toHaveBeenCalled();
     });
   });

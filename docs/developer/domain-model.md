@@ -122,8 +122,9 @@ Renderer paths are under `app/renderer/components/` unless they start with
    (from `get-all-kits`) and `allKitSamples`. Everything else is derived
    from them and re-syncs only when an object's identity changes. An edit
    to a kit's own fields or voices returns the kit, which patches `kits`
-   (`applyKitEdit`); other edits in the kit editor reload the kit with one
-   `get-kit` call (`refreshKit`). Reads are numbered so an older response
+   (`applyKitEdit`); a sample edit returns the kit with its samples
+   (`applyReadKit`); a rescan or undo reloads the kit with one `get-kit`
+   call (`refreshKit`). Reads are numbered so an older response
    can't land over a newer one; changes to the list itself reload every kit
    (`refreshAllKitsAndSamples`). A BPM, gain, favorite, name or editable
    save patches its kit in `kits` instead, and stays over a read sent

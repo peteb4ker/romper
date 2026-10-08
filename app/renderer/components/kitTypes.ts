@@ -12,8 +12,14 @@ export interface KitEditorProps {
   onBack: (scrollToKit?: string) => void;
   onNextKit?: () => void;
   onPrevKit?: () => void;
-  /** Reloads a kit after its samples change: the kit named, or the open one */
-  onRequestSamplesReload?: (kitName?: string) => Promise<void>;
+  /**
+   * Shows a kit after its samples change (the kit named, or the open one):
+   * as the edit returned it, or else read again (#452)
+   */
+  onRequestSamplesReload?: (
+    kitName?: string,
+    edited?: KitWithRelations,
+  ) => Promise<void>;
   samples?: null | VoiceSamples;
   sequenceUndo?: SequenceUndo;
 }

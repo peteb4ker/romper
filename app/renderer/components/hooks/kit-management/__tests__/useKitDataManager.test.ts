@@ -647,6 +647,81 @@ describe("useKitDataManager", () => {
     });
   });
 
+  // #452 step 3b: a sample edit returns the kit, samples and all
+  describe("[Q-01] [UC-19] applyReadKit (#452)", () => {
+    const loaded = async () => {
+      const hook = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          isLocalStoreReady: true,
+          localStorePath: "/test/path",
+        }),
+      );
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      vi.mocked(globalThis.electronAPI.getKits).mockClear();
+      return hook;
+    };
+    const kitWith = (filename: string) =>
+      createMockKitWithRelations({
+        name: "A0",
+        samples: [createMockSample({ filename, voice_number: 2 })],
+      });
+
+    it("shows the kit an edit returned in both copies, without asking main", async () => {
+      const { result } = await loaded();
+      const otherKit = result.current.getKitByName("A1");
+
+      act(() => {
+        result.current.applyReadKit("A0", kitWith("added.wav"));
+      });
+
+      expect(result.current.allKitSamples.A0[2][0]).toBe("added.wav");
+      expect(result.current.getKitByName("A0")?.samples?.[0]?.filename).toBe(
+        "added.wav",
+      );
+      expect(result.current.getKitByName("A1")).toBe(otherKit);
+      expect(globalThis.electronAPI.getKit).not.toHaveBeenCalled();
+      expect(globalThis.electronAPI.getKits).not.toHaveBeenCalled();
+    });
+
+    it("isn't put back by a reload sent before it", async () => {
+      const { result } = await loaded();
+      let answer: (value: DbResult<KitWithRelations>) => void = () => {};
+      vi.mocked(globalThis.electronAPI.getKit).mockReturnValueOnce(
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+      );
+      let reload: Promise<void>;
+      act(() => {
+        reload = result.current.refreshKit("A0");
+      });
+      act(() => {
+        result.current.applyReadKit("A0", kitWith("added.wav"));
+      });
+
+      await act(async () => {
+        answer({ data: kitWith("older.wav"), success: true });
+        await reload;
+      });
+
+      expect(result.current.allKitSamples.A0[2][0]).toBe("added.wav");
+    });
+
+    it("ignores a kit returned under another kit's name", async () => {
+      const { result } = await loaded();
+      const kits = result.current.kits;
+
+      act(() => {
+        result.current.applyReadKit("A1", kitWith("added.wav"));
+      });
+
+      expect(result.current.kits).toBe(kits);
+    });
+  });
+
   describe("[UC-10] a saved change and an older reload (#452)", () => {
     it("keeps a favorite saved after a full reload was sent", async () => {
       const { result } = renderHook(() =>

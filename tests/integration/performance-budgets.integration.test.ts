@@ -102,6 +102,12 @@ let card: string;
 let sources: string;
 let settings: InMemorySettings;
 
+/** What a sample edit returns besides its own result (#452) */
+type SampleEdit = {
+  kit?: { name: string; samples?: { voice_number: number }[] };
+  voicesBefore?: { samples: unknown[]; voice: number }[];
+};
+
 /** A WAV the user dropped this session */
 async function dropped(name: string) {
   const file = path.join(sources, name);
@@ -125,6 +131,7 @@ async function expectWithinBudget(
   expect(counts.statements).toBeGreaterThan(0);
   const measured = Object.fromEntries(metrics.map((m) => [m, counts[m]]));
   expect(enforceBudgets(name, measured)).toEqual([]);
+  return result;
 }
 
 /**
@@ -245,15 +252,30 @@ describe("[Q-01] performance budgets: main-process operations", () => {
 
   it("add sample", async () => {
     const file = await dropped("added.wav");
-    await expectWithinBudget("integration/add sample", () =>
+    const result = await expectWithinBudget("integration/add sample", () =>
       invoke("add-sample-to-slot", "A0", 1, SAMPLES_PER_VOICE, file),
+    );
+    // [Q-01] The kit as the add left it comes back with it (#452)
+    const { kit } = result.data as SampleEdit;
+    expect(kit?.name).toBe("A0");
+    expect(kit?.samples?.filter((s) => s.voice_number === 1)).toHaveLength(
+      SAMPLES_PER_VOICE + 1,
     );
   });
 
   it("delete sample (with reindex)", async () => {
-    await expectWithinBudget("integration/delete sample", () =>
+    const result = await expectWithinBudget("integration/delete sample", () =>
       invoke("delete-sample-from-slot", "A0", 1, 0),
     );
+    // [Q-01] The kit as the delete left it, and the voice as it was before,
+    // for undo, come back with it (#452)
+    const { kit, voicesBefore } = result.data as SampleEdit;
+    expect(kit?.samples?.filter((s) => s.voice_number === 1)).toHaveLength(
+      SAMPLES_PER_VOICE - 1,
+    );
+    expect(voicesBefore).toHaveLength(1);
+    expect(voicesBefore?.[0].voice).toBe(1);
+    expect(voicesBefore?.[0].samples).toHaveLength(SAMPLES_PER_VOICE);
     const voiceOne = getKitSamples(path.join(store, ".romperdb"), "A0")
       .data?.filter((s) => s.voice_number === 1)
       .map((s) => s.slot_number);
@@ -261,9 +283,20 @@ describe("[Q-01] performance budgets: main-process operations", () => {
   });
 
   it("move sample within a kit", async () => {
-    await expectWithinBudget("integration/move sample within a kit", () =>
-      invoke("move-sample-in-kit", "A0", 1, 0, 2, 0),
+    const result = await expectWithinBudget(
+      "integration/move sample within a kit",
+      () => invoke("move-sample-in-kit", "A0", 1, 0, 2, 0),
     );
+    // [Q-01] The kit as the move left it, and the two voices as they were,
+    // come back with it (#452)
+    const { kit, voicesBefore } = result.data as SampleEdit;
+    expect(kit?.samples?.filter((s) => s.voice_number === 2)).toHaveLength(
+      SAMPLES_PER_VOICE + 1,
+    );
+    expect(voicesBefore?.map((v) => v.voice)).toEqual([1, 2]);
+    expect(
+      voicesBefore?.every((v) => v.samples.length === SAMPLES_PER_VOICE),
+    ).toBe(true);
   });
 
   it("move sample between kits", async () => {

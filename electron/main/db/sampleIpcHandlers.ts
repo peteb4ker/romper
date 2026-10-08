@@ -7,7 +7,11 @@ import {
   rememberKitSampleSources,
 } from "../security/sampleSourceAccess.js";
 import { sampleService } from "../services/sampleService.js";
-import { createSampleOperationHandler } from "./ipcHandlerUtils.js";
+import {
+  createSampleOperationHandler,
+  readKitRows,
+  withEditedKitSamples,
+} from "./ipcHandlerUtils.js";
 
 /**
  * Registers all sample-related IPC handlers
@@ -37,16 +41,21 @@ export function registerSampleIpcHandlers(
     ) => {
       try {
         await rememberKitSampleSources(inMemorySettings, kitName);
-        const result = sampleService.moveSampleInKit(
+        const rows = readKitRows(inMemorySettings, kitName);
+        return withEditedKitSamples(
           inMemorySettings,
           kitName,
-          fromVoice,
-          fromSlot,
-          toVoice,
-          toSlot,
-          "insert",
+          sampleService.moveSampleInKit(
+            inMemorySettings,
+            kitName,
+            fromVoice,
+            fromSlot,
+            toVoice,
+            toSlot,
+            "insert",
+          ),
+          { rows, voices: [fromVoice, toVoice] },
         );
-        return result;
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);

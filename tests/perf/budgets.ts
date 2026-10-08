@@ -96,7 +96,8 @@ export const BUDGETS = {
       "update-sample-gain": { max: 5 },
     },
     /**
-     * B1 has two filled slots; RE-83 fetches each once. Its files are
+     * B1 has two filled slots, each fetched once: the editor no longer
+     * renders B1 with the last kit's samples first (#697). Its files are
      * checked as it opens, the first time with a reload (see "open a
      * kit").
      */
@@ -104,7 +105,7 @@ export const BUDGETS = {
       "check-kit-sample-files": { max: 1 },
       "get-all-kits": { max: 1, ...NO_RELOAD },
       "get-all-samples-for-kit": { max: 2 },
-      "get-sample-audio-buffer": { max: 4, target: 2, until: "RE-83" },
+      "get-sample-audio-buffer": { max: 2 },
     },
     /**
      * #537: every open checks the kit's files in one batch

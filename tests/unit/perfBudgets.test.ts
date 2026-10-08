@@ -162,13 +162,13 @@ describe("performance budgets", () => {
         },
         {
           label: "Moving to the next kit",
-          max: 4,
+          max: 2,
           measured: 4,
           metric: "get-sample-audio-buffer",
           name: "next kit",
           suite: "e2e",
-          target: 2,
-          until: "RE-83",
+          target: null,
+          until: null,
         },
         {
           label: "Moving to the next kit",

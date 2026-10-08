@@ -55,6 +55,26 @@ function scanSuccessStatus(
   };
 }
 
+/**
+ * The voices inference names, with the name each gets: voices with samples
+ * whose first sample suggests a type. A name the user set, or one inferred
+ * earlier, is kept, as main's scan merge keeps it (RE-75).
+ */
+function voicesToName(
+  samples: VoiceSamples,
+  voiceNames: Partial<Record<number, null | string>> | undefined,
+): { alias: string; voice: number }[] {
+  const toName: { alias: string; voice: number }[] = [];
+  for (const voice of [1, 2, 3, 4] as const) {
+    const voiceSamples = samples[voice];
+    if (!voiceSamples || voiceSamples.length === 0) continue;
+    if (voiceNames?.[voice]?.trim()) continue;
+    const alias = inferVoiceTypeFromFilename(voiceSamples[0]);
+    if (alias) toName.push({ alias, voice });
+  }
+  return toName;
+}
+
 const FLASH_DURATION_MS = 1200;
 
 const SCAN_SUCCESS_CLEAR_MS = 3000;
@@ -182,19 +202,7 @@ export function useKitScanning({
     setScanStatus({ status: "scanning" });
 
     try {
-      const toName: { alias: string; voice: number }[] = [];
-
-      for (const voice of [1, 2, 3, 4] as const) {
-        const voiceSamples = samples[voice];
-        if (!voiceSamples || voiceSamples.length === 0) continue;
-        // A name the user set, or one inferred earlier, is kept, as main's
-        // scan merge keeps it (RE-75)
-        if (voiceNames?.[voice]?.trim()) continue;
-
-        const inferredType = inferVoiceTypeFromFilename(voiceSamples[0]);
-        if (!inferredType) continue;
-        toName.push({ alias: inferredType, voice });
-      }
+      const toName = voicesToName(samples, voiceNames);
 
       // Each call names a different voice, so they don't depend on each
       // other. A name main didn't save isn't counted or flashed, and is

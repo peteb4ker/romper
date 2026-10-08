@@ -6,10 +6,10 @@ on:
     paths:
       - 'docs/**'
 
-  # The testing page shows the latest release's results
-  release:
-    types: [published]
-
+  # The release job starts this after publishing, so the testing page shows
+  # the new release's results; run it by hand to republish them. (A
+  # `release` trigger never fires: the release is published with
+  # GITHUB_TOKEN, whose events don't start workflows.)
   workflow_dispatch:
 
 permissions:
@@ -34,13 +34,19 @@ jobs:
         uses: actions/configure-pages@v6
 
       - name: Get the latest release's testing summary
-        # Published by the release workflow; the page says so when it's
-        # missing (releases before it existed)
+        # Published by the release workflow (scripts/testing-summary.mjs).
+        # Fail rather than deploy a testing page with no results.
         run: |
           mkdir -p docs/_data
           gh release download --repo "$GITHUB_REPOSITORY" \
-            --pattern testing-summary.json --output docs/_data/testing.json \
-            || echo "The latest release has no testing summary"
+            --pattern testing-summary.json --output docs/_data/testing.json
+          if ! jq -e '(.version | type == "string" and length > 0)
+              and (.layers.unit.tests > 0) and (.groups | length > 0)' \
+              docs/_data/testing.json > /dev/null; then
+            echo "::error::The latest release's testing-summary.json has no results"
+            exit 1
+          fi
+          echo "Testing summary: $(jq -r .version docs/_data/testing.json)"
         env:
           GH_TOKEN: ${{ github.token }}
 

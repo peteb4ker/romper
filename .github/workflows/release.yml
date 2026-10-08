@@ -485,6 +485,7 @@ jobs:
     permissions:
       contents: write # create the release
       issues: read # list the issues the release fixed, for its notes
+      actions: write # start the Pages build for the testing page
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
 
     steps:
@@ -566,3 +567,13 @@ jobs:
           prerelease: ${{ contains(github.ref_name, '-') }}
           makeLatest: ${{ !contains(github.ref_name, '-') && 'true' || 'false' }}
           draft: false
+
+      # The website's testing page shows the latest release's summary.
+      # A release published with GITHUB_TOKEN doesn't trigger the Pages
+      # workflow's own `release` event (GitHub doesn't start workflows from
+      # GITHUB_TOKEN events), so start it here. Prereleases aren't latest.
+      - name: Publish the testing page
+        if: ${{ !contains(github.ref_name, '-') }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main

@@ -9,6 +9,7 @@ import React, {
 } from "react";
 
 import { config } from "../config";
+import { applyTheme } from "./appliedTheme";
 
 interface Settings {
   confirmDestructiveActions: boolean;
@@ -193,11 +194,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [state, dispatch] = useReducer(settingsReducer, initialState);
 
-  // Apply theme to DOM
-  const applyTheme = useCallback((isDark: boolean) => {
-    document.documentElement.classList.toggle("dark", isDark);
-  }, []);
-
   // Refresh local store status
   const refreshLocalStoreStatus = useCallback(async () => {
     const status = await fetchLocalStoreStatus();
@@ -232,7 +228,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
           : "Failed to initialize settings";
       dispatch({ payload: errorMessage, type: "INIT_ERROR" });
     }
-  }, [applyTheme, refreshLocalStoreStatus]);
+  }, [refreshLocalStoreStatus]);
 
   // Update local store path
   const setLocalStorePath = useCallback(async (path: null | string) => {
@@ -256,24 +252,21 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   // Update theme mode setting
-  const setThemeMode = useCallback(
-    async (mode: ThemeMode) => {
-      try {
-        await globalThis.electronAPI.setSetting("themeMode", mode);
-        dispatch({ payload: mode, type: "UPDATE_THEME_MODE" });
-        applyTheme(shouldUseDarkMode(mode));
-        return true;
-      } catch (error) {
-        console.error("Failed to update theme mode:", error);
-        dispatch({
-          payload: describeError("Failed to save theme mode", error),
-          type: "SET_ERROR",
-        });
-        return false;
-      }
-    },
-    [applyTheme],
-  );
+  const setThemeMode = useCallback(async (mode: ThemeMode) => {
+    try {
+      await globalThis.electronAPI.setSetting("themeMode", mode);
+      dispatch({ payload: mode, type: "UPDATE_THEME_MODE" });
+      applyTheme(shouldUseDarkMode(mode));
+      return true;
+    } catch (error) {
+      console.error("Failed to update theme mode:", error);
+      dispatch({
+        payload: describeError("Failed to save theme mode", error),
+        type: "SET_ERROR",
+      });
+      return false;
+    }
+  }, []);
 
   // Update confirm destructive actions setting
   const setConfirmDestructiveActions = useCallback(async (enabled: boolean) => {
@@ -334,7 +327,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
         mediaQuery.removeEventListener("change", handleSystemThemeChange);
       };
     }
-  }, [state.settings.themeMode, applyTheme]);
+  }, [state.settings.themeMode]);
 
   const contextValue: SettingsContextProps = useMemo(
     () => ({

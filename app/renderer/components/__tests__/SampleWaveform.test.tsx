@@ -4,6 +4,8 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
+import { applyTheme } from "../../utils/appliedTheme";
+import { SettingsProvider, useSettings } from "../../utils/SettingsContext";
 import { clearAllLevels, getVoiceLevel } from "../led-icon/audioLevels";
 import SampleWaveform from "../SampleWaveform";
 
@@ -1710,5 +1712,200 @@ describe("[Q-01] [UC-29] drawing while a sample plays (RE-46)", () => {
     expect(mockCanvasContext.stroke).not.toHaveBeenCalled();
     expect(getChannelData).not.toHaveBeenCalled();
     expect(frames.size).toBe(0);
+  });
+});
+
+describe("[UC-29] switching theme redraws the waveform (#760)", () => {
+  const LIGHT_RED = "#d44950";
+  const DARK_RED = "#e05a60";
+  let getComputedStyleSpy: ReturnType<typeof vi.spyOn>;
+  // Frames run only when the test steps them
+  let frames: Map<number, FrameRequestCallback>;
+  let nextFrame: number;
+  let ctx: ReturnType<typeof createMockAudioContext>;
+
+  function stepFrame() {
+    const due = [...frames.values()];
+    frames.clear();
+    for (const cb of due) cb(performance.now());
+  }
+
+  const waveform = (kitName: string, playTrigger = 0) => (
+    <SampleWaveform
+      kitName={kitName}
+      playTrigger={playTrigger}
+      slotNumber={1}
+      voiceColor="var(--voice-1)"
+      voiceNumber={1}
+    />
+  );
+
+  /** The `prefers-color-scheme: dark` query, which the test can flip */
+  function stubSystemScheme(dark: boolean) {
+    const listeners = new Set<() => void>();
+    const query = {
+      addEventListener: vi.fn((_: string, listener: () => void) =>
+        listeners.add(listener),
+      ),
+      matches: dark,
+      removeEventListener: vi.fn((_: string, listener: () => void) =>
+        listeners.delete(listener),
+      ),
+    };
+    globalThis.matchMedia = vi.fn(
+      () => query as unknown as MediaQueryList,
+    ) as typeof globalThis.matchMedia;
+    return {
+      change(nowDark: boolean) {
+        query.matches = nowDark;
+        for (const listener of [...listeners]) listener();
+      },
+    };
+  }
+
+  beforeEach(() => {
+    applyTheme(false);
+    // Voice 1's color comes from the theme on screen, as the CSS tokens do
+    getComputedStyleSpy = vi.spyOn(globalThis, "getComputedStyle");
+    getComputedStyleSpy.mockImplementation(
+      () =>
+        ({
+          getPropertyValue: (name: string) => {
+            if (name !== "--voice-1") return "";
+            return document.documentElement.classList.contains("dark")
+              ? DARK_RED
+              : LIGHT_RED;
+          },
+        }) as CSSStyleDeclaration,
+    );
+    frames = new Map();
+    nextFrame = 0;
+    global.requestAnimationFrame = vi.fn((cb: FrameRequestCallback) => {
+      frames.set(++nextFrame, cb);
+      return nextFrame;
+    });
+    global.cancelAnimationFrame = vi.fn((id: number) => {
+      frames.delete(id);
+    });
+    ctx = createMockAudioContext({
+      decodeAudioData: vi.fn(async () => ({
+        duration: 1,
+        getChannelData: vi.fn(() => new Float32Array(44100)),
+        length: 44100,
+        numberOfChannels: 1,
+        sampleRate: 44100,
+      })),
+    });
+    global.AudioContext = vi.fn(function () {
+      return ctx;
+    });
+    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
+      data: { bytes: new ArrayBuffer(1024), version: "v1" },
+      success: true,
+    });
+  });
+
+  afterEach(() => {
+    getComputedStyleSpy.mockRestore();
+    applyTheme(false);
+  });
+
+  it("redraws a waveform that isn't playing in the new theme's color", async () => {
+    vi.mocked(window.electronAPI.readSettings).mockResolvedValue({
+      themeMode: "light",
+    });
+    stubSystemScheme(false);
+    let settings: ReturnType<typeof useSettings> | undefined;
+    function Capture() {
+      settings = useSettings();
+      return null;
+    }
+    render(
+      <SettingsProvider>
+        <Capture />
+        {waveform("T760-setting")}
+      </SettingsProvider>,
+    );
+    await waitFor(() => expect(mockCanvasContext.fill).toHaveBeenCalled());
+    expect(mockCanvasContext.fillStyle).toBe(LIGHT_RED);
+    vi.clearAllMocks();
+
+    await act(async () => {
+      await settings?.setThemeMode("dark");
+    });
+
+    // The envelope is drawn again, in the dark theme's voice color
+    expect(mockCanvasContext.fill).toHaveBeenCalledTimes(1);
+    expect(mockCanvasContext.fillStyle).toBe(DARK_RED);
+    expect(mockCanvasContext.strokeStyle).toBe(DARK_RED);
+    expect(mockCanvasContext.drawImage).toHaveBeenCalledTimes(1);
+  });
+
+  it("redraws when the system scheme changes and the theme follows it", async () => {
+    vi.mocked(window.electronAPI.readSettings).mockResolvedValue({
+      themeMode: "system",
+    });
+    const system = stubSystemScheme(false);
+    render(<SettingsProvider>{waveform("T760-system")}</SettingsProvider>);
+    await waitFor(() => expect(mockCanvasContext.fill).toHaveBeenCalled());
+    expect(mockCanvasContext.fillStyle).toBe(LIGHT_RED);
+    vi.clearAllMocks();
+
+    act(() => {
+      system.change(true);
+    });
+
+    expect(mockCanvasContext.fill).toHaveBeenCalledTimes(1);
+    expect(mockCanvasContext.fillStyle).toBe(DARK_RED);
+  });
+
+  it("doesn't redraw when the theme it's in is applied again", async () => {
+    render(waveform("T760-same"));
+    await waitFor(() => expect(mockCanvasContext.fill).toHaveBeenCalled());
+    vi.clearAllMocks();
+
+    act(() => {
+      applyTheme(false);
+    });
+
+    expect(mockCanvasContext.drawImage).not.toHaveBeenCalled();
+    expect(getComputedStyleSpy).not.toHaveBeenCalled();
+  });
+
+  it("recolors a playing waveform once, then reads no styles per frame", async () => {
+    const { rerender } = render(waveform("T760-playing"));
+    await waitFor(() => expect(mockCanvasContext.fill).toHaveBeenCalled());
+    await act(async () => {
+      rerender(waveform("T760-playing", 1));
+    });
+    ctx.currentTime = 0.25;
+    await act(async () => {
+      stepFrame();
+    });
+    vi.clearAllMocks();
+
+    act(() => {
+      applyTheme(true);
+    });
+
+    // The theme change reads the color once and draws the envelope again,
+    // with the playhead where it was
+    expect(getComputedStyleSpy).toHaveBeenCalledTimes(1);
+    expect(mockCanvasContext.fill).toHaveBeenCalledTimes(1);
+    expect(mockCanvasContext.fillStyle).toBe(DARK_RED);
+    expect(mockCanvasContext.moveTo).toHaveBeenLastCalledWith(20, 0);
+    vi.clearAllMocks();
+
+    for (let i = 1; i <= 10; i++) {
+      ctx.currentTime = 0.25 + i * 0.016;
+      await act(async () => {
+        stepFrame();
+      });
+    }
+
+    // Later frames copy the new envelope: no styles read, nothing redrawn
+    expect(getComputedStyleSpy).not.toHaveBeenCalled();
+    expect(mockCanvasContext.fill).not.toHaveBeenCalled();
+    expect(mockCanvasContext.drawImage).toHaveBeenCalledTimes(10);
   });
 });

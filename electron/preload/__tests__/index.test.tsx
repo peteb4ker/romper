@@ -590,6 +590,11 @@ describe("preload/index.tsx", () => {
         method: "cleanupPartialInit",
       },
       {
+        args: ["/target"],
+        ipcChannel: "finish-setup",
+        method: "finishSetup",
+      },
+      {
         args: ["/path/to/db"],
         ipcChannel: "create-romper-db",
         method: "createRomperDb",

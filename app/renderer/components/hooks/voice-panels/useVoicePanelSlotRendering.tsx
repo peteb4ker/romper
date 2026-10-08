@@ -72,6 +72,7 @@ export function useVoicePanelSlotRendering({
   kitName,
   linkedWith,
   onGainChange,
+  onGainCommit,
   onSampleSelect,
   onWaveformPlayingChange,
   playOptions,
@@ -248,8 +249,11 @@ export function useVoicePanelSlotRendering({
           {isEditable && (
             <GainKnob
               onChange={(db) =>
-                // The parent saves it and reports a failure (RE-91)
                 onGainChange?.(voice, slotNumber, sampleName, db)
+              }
+              onCommit={(db, fromDb) =>
+                // The parent saves it and reports a failure (RE-91)
+                onGainCommit?.(voice, slotNumber, sampleName, db, fromDb)
               }
               value={gainsUnknown ? null : (sampleData?.gain_db ?? 0)}
             />
@@ -309,6 +313,7 @@ export function useVoicePanelSlotRendering({
       handleCombinedDragOver,
       handleCombinedDrop,
       onGainChange,
+      onGainCommit,
       slotRenderingHook,
       isLinkedPrimary,
       gainsUnknown,

@@ -18,12 +18,10 @@ export interface BaseVoicePanelOptions {
   isActive: boolean;
   isEditable: boolean;
   kitName: string;
-  onGainChange?: (
-    voice: number,
-    slotNumber: number,
-    sampleName: string,
-    gainDb: number,
-  ) => void;
+  /** A slot's gain at each step of a turn of its knob; not saved */
+  onGainChange?: SlotGainChange;
+  /** A slot's gain to save, once a turn of its knob ends (RE-88) */
+  onGainCommit?: SlotGainCommit;
   onSampleSelect?: (voice: number, idx: number) => void;
   onWaveformPlayingChange: (
     voice: number,
@@ -57,3 +55,20 @@ export interface BaseVoicePanelOptions {
   stopTriggers: { [key: string]: number };
   voice: number;
 }
+
+/** A slot's gain as its knob turns */
+export type SlotGainChange = (
+  voice: number,
+  slotNumber: number,
+  sampleName: string,
+  gainDb: number,
+) => void;
+
+/** A slot's gain once a turn ends, and the gain before the turn */
+export type SlotGainCommit = (
+  voice: number,
+  slotNumber: number,
+  sampleName: string,
+  gainDb: number,
+  fromDb: number,
+) => void;

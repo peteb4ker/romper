@@ -1,8 +1,8 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import React, { useState } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import GainKnob, { gainForKey } from "../GainKnob";
+import GainKnob, { GAIN_SAVE_DELAY_MS, gainForKey } from "../GainKnob";
 
 describe("[UC-24] GainKnob", () => {
   const defaultProps = {
@@ -321,6 +321,199 @@ describe("[UC-24] GainKnob", () => {
 
     it("gainForKey ignores other keys", () => {
       expect(gainForKey("a", 0, false)).toBeNull();
+    });
+  });
+
+  // RE-88: every wheel notch and mouse move used to be saved
+  describe("[Q-01] saves once per turn (RE-88)", () => {
+    /** A knob whose parent shows each step, as KitVoicePanels does */
+    function Knob({
+      onCommit,
+      start = 0,
+    }: {
+      onCommit: (db: number, fromDb: number) => void;
+      start?: number;
+    }) {
+      const [db, setDb] = useState(start);
+      return <GainKnob onChange={setDb} onCommit={onCommit} value={db} />;
+    }
+
+    const slider = () => screen.getByRole("slider");
+    const wheelUp = (times: number) => {
+      for (let i = 0; i < times; i++) {
+        fireEvent.wheel(slider(), { deltaY: -100 });
+      }
+    };
+    const waitOut = () =>
+      act(() => {
+        vi.advanceTimersByTime(GAIN_SAVE_DELAY_MS);
+      });
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("saves a burst of wheel notches once, after the last", () => {
+      const onCommit = vi.fn();
+      render(<Knob onCommit={onCommit} start={-3} />);
+
+      wheelUp(5);
+      act(() => {
+        vi.advanceTimersByTime(GAIN_SAVE_DELAY_MS - 1);
+      });
+      wheelUp(5);
+
+      expect(slider()).toHaveAttribute("aria-valuenow", "7");
+      expect(onCommit).not.toHaveBeenCalled();
+      waitOut();
+      expect(onCommit).toHaveBeenCalledTimes(1);
+      expect(onCommit).toHaveBeenCalledWith(7, -3);
+    });
+
+    it("shows and reports each step as it turns", () => {
+      const onChange = vi.fn();
+      render(<GainKnob onChange={onChange} onCommit={vi.fn()} value={0} />);
+
+      wheelUp(3);
+
+      expect(onChange.mock.calls).toEqual([[1], [2], [3]]);
+    });
+
+    it("saves a drag once, when it's released", () => {
+      const onCommit = vi.fn();
+      render(<Knob onCommit={onCommit} />);
+
+      fireEvent.mouseDown(slider(), { clientY: 100 });
+      for (let y = 98; y >= 80; y -= 2) {
+        fireEvent.mouseMove(globalThis.window, { clientY: y });
+      }
+      waitOut();
+      expect(onCommit).not.toHaveBeenCalled();
+      // The pointer leaves the small knob as it drags; the drag goes on
+      fireEvent.mouseLeave(screen.getByRole("presentation"));
+      expect(onCommit).not.toHaveBeenCalled();
+
+      fireEvent.mouseUp(globalThis.window);
+
+      expect(onCommit).toHaveBeenCalledTimes(1);
+      expect(onCommit).toHaveBeenCalledWith(10, 0);
+    });
+
+    it("saves a turn it's in the middle of when it goes away", () => {
+      const onCommit = vi.fn();
+      const { unmount } = render(<Knob onCommit={onCommit} />);
+
+      wheelUp(4);
+      unmount();
+
+      expect(onCommit).toHaveBeenCalledTimes(1);
+      expect(onCommit).toHaveBeenCalledWith(4, 0);
+      waitOut();
+      expect(onCommit).toHaveBeenCalledTimes(1);
+    });
+
+    it("saves a drag it's in the middle of when it goes away", () => {
+      const onCommit = vi.fn();
+      const { unmount } = render(<Knob onCommit={onCommit} />);
+
+      fireEvent.mouseDown(slider(), { clientY: 100 });
+      fireEvent.mouseMove(globalThis.window, { clientY: 90 });
+      unmount();
+
+      expect(onCommit).toHaveBeenCalledTimes(1);
+      expect(onCommit).toHaveBeenCalledWith(5, 0);
+    });
+
+    it("saves key presses once, and at once when focus leaves", () => {
+      const onCommit = vi.fn();
+      render(<Knob onCommit={onCommit} />);
+
+      fireEvent.keyDown(slider(), { key: "ArrowUp" });
+      fireEvent.keyDown(slider(), { key: "ArrowUp" });
+      waitOut();
+      expect(onCommit).toHaveBeenCalledTimes(1);
+      expect(onCommit).toHaveBeenLastCalledWith(2, 0);
+
+      fireEvent.keyDown(slider(), { key: "PageDown" });
+      fireEvent.blur(slider());
+      expect(onCommit).toHaveBeenCalledTimes(2);
+      expect(onCommit).toHaveBeenLastCalledWith(-4, 2);
+    });
+
+    it("saves before another key's shortcut", () => {
+      const onCommit = vi.fn();
+      const onParentKey = vi.fn(() =>
+        expect(onCommit).toHaveBeenCalledWith(1, 0),
+      );
+      render(
+        <div onKeyDown={onParentKey}>
+          <Knob onCommit={onCommit} />
+        </div>,
+      );
+
+      fireEvent.keyDown(slider(), { key: "ArrowUp" });
+      fireEvent.keyDown(slider(), { key: "z", metaKey: true });
+
+      expect(onParentKey).toHaveBeenCalledTimes(1);
+      expect(onCommit).toHaveBeenCalledTimes(1);
+    });
+
+    it("saves a wheel turn at once when the pointer leaves", () => {
+      const onCommit = vi.fn();
+      render(<Knob onCommit={onCommit} />);
+
+      wheelUp(2);
+      fireEvent.mouseLeave(screen.getByRole("presentation"));
+
+      expect(onCommit).toHaveBeenCalledWith(2, 0);
+      waitOut();
+      expect(onCommit).toHaveBeenCalledTimes(1);
+    });
+
+    it("saves a click to unity at once", () => {
+      const onCommit = vi.fn();
+      render(<Knob onCommit={onCommit} start={-6} />);
+
+      fireEvent.click(slider());
+
+      expect(onCommit).toHaveBeenCalledWith(0, -6);
+    });
+
+    it("saves to the slot the turn started on", () => {
+      const first = vi.fn();
+      const second = vi.fn();
+      const { rerender } = render(
+        <GainKnob onChange={vi.fn()} onCommit={first} value={0} />,
+      );
+
+      fireEvent.wheel(slider(), { deltaY: -100 });
+      rerender(<GainKnob onChange={vi.fn()} onCommit={second} value={1} />);
+      waitOut();
+
+      expect(first).toHaveBeenCalledWith(1, 0);
+      expect(second).not.toHaveBeenCalled();
+    });
+
+    it("ends the turn when the gain changes from elsewhere", () => {
+      const first = vi.fn();
+      const second = vi.fn();
+      const { rerender } = render(
+        <GainKnob onChange={vi.fn()} onCommit={first} value={0} />,
+      );
+      fireEvent.wheel(slider(), { deltaY: -100 });
+
+      // Another kit's slot in the same place, with its own gain
+      rerender(<GainKnob onChange={vi.fn()} onCommit={second} value={5} />);
+      expect(first).toHaveBeenCalledWith(1, 0);
+
+      fireEvent.wheel(slider(), { deltaY: -100 });
+      waitOut();
+      expect(first).toHaveBeenCalledTimes(1);
+      expect(second).toHaveBeenCalledWith(6, 5);
     });
   });
 });

@@ -92,8 +92,9 @@ export const BUDGETS = {
       "get-all-samples-for-kit": { max: 1 },
       "update-kit-metadata": { max: 1 },
     },
+    /** RE-88: a burst of wheel notches is saved once, after the last */
     "gain: 5 wheel steps": {
-      "update-sample-gain": { max: 5 },
+      "update-sample-gain": { max: 1 },
     },
     /**
      * B1 has two filled slots, each fetched once: the editor no longer

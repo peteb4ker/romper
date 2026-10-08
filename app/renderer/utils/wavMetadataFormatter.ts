@@ -15,51 +15,6 @@ const RAMPLE_FORMAT_REQUIREMENTS = {
 };
 
 /**
- * Creates enhanced formatted tooltip with better visual hierarchy
- * Alternative format emphasizing technical specifications
- * @param metadata Sample metadata
- * @param sourcePath File path to display
- * @param filename Sample filename to display
- * @returns Enhanced tooltip with visual structure
- */
-export function formatEnhancedTooltip(
-  metadata: SampleData,
-  sourcePath: string,
-  filename: string,
-): string {
-  const parts: string[] = [`📄 ${filename}`, `📁 ${sourcePath}`];
-
-  if (
-    metadata.wav_sample_rate ||
-    metadata.wav_bit_depth ||
-    metadata.wav_channels
-  ) {
-    const techSpecs: string[] = [];
-
-    if (metadata.wav_sample_rate) {
-      techSpecs.push(`⚡ ${formatSampleRate(metadata.wav_sample_rate)}`);
-    }
-    if (metadata.wav_bit_depth) {
-      techSpecs.push(`🔢 ${metadata.wav_bit_depth}-bit`);
-    }
-    if (metadata.wav_channels) {
-      techSpecs.push(`🎛️ ${formatChannels(metadata.wav_channels)}`);
-    }
-
-    parts.push(techSpecs.join(" • "));
-
-    const compatibility = getCompatibilityStatus(metadata);
-    const display = getCompatibilityDisplay(compatibility);
-    const statusText = display.emoji
-      ? `${display.emoji} ${display.text}`
-      : `✅ ${display.text}`;
-    parts.push(`🎯 Status: ${statusText}`);
-  }
-
-  return parts.join("\n");
-}
-
-/**
  * Creates complete formatted tooltip content with metadata and compatibility
  * Uses enhanced visual formatting for better information hierarchy
  * @param metadata Sample metadata

@@ -59,7 +59,6 @@ function Panels({
           kitName={kitName}
           onMessage={onMessage}
           onPlay={vi.fn()}
-          onSampleKeyNav={vi.fn()}
           onSampleSelect={vi.fn()}
           onSaveVoiceName={vi.fn()}
           onStop={vi.fn()}

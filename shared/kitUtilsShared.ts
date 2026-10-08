@@ -88,19 +88,6 @@ export function compareKitSlots(a: string, b: string): number {
 }
 
 // Get the next available kit slot (e.g. 'A0', 'A1', ..., 'B0', ...)
-export function getNextKitSlot(existing: string[]): null | string {
-  const banks = Array.from({ length: 26 }, (_, i) =>
-    String.fromCodePoint(65 + i),
-  ); // 'A' to 'Z'
-  for (const bank of banks) {
-    for (let num = 0; num <= 99; num++) {
-      const slot = `${bank}${num}`;
-      if (!existing.includes(slot)) return slot;
-    }
-  }
-  return null;
-}
-
 // Get the next available slot within a specific bank letter (e.g. 'A0', 'A1', ...)
 export function getNextSlotInBank(
   bankLetter: string,
@@ -127,30 +114,6 @@ export function inferVoiceTypeFromFilename(filename: string): null | string {
 /** A kit name as Romper stores it, A0 to Z99 (`isKitName`, #573) */
 export function isValidKit(kit: string): boolean {
   return isKitName(kit);
-}
-
-export function showBankAnchor(
-  kit: string,
-  idx: number,
-  kits: string[],
-): boolean {
-  // Show anchor if this is the first kit in a bank or the first kit overall
-  if (idx === 0) return true;
-  const prevKit = kits[idx - 1];
-  return !prevKit.startsWith(kit[0]);
-}
-
-export function uniqueVoiceLabels(
-  voiceNames: Record<number, string>,
-): string[] {
-  const seen = new Set<string>();
-  return Object.values(voiceNames)
-    .filter((label) => label && label.trim() !== "")
-    .filter((label) => {
-      if (seen.has(label)) return false;
-      seen.add(label);
-      return true;
-    });
 }
 
 // Helper function to check flexible keyword matches

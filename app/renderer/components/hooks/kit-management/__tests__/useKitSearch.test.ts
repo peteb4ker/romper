@@ -48,7 +48,6 @@ describe("[UC-09] useKitSearch", () => {
 
     expect(result.current.searchQuery).toBe("");
     expect(result.current.isSearching).toBe(false);
-    expect(result.current.searchResultCount).toBe(0);
     expect(result.current.filteredKits).toHaveLength(3);
   });
 
@@ -75,7 +74,6 @@ describe("[UC-09] useKitSearch", () => {
     expect(result.current.searchQuery).toBe("A0");
     expect(result.current.filteredKits).toHaveLength(1);
     expect(result.current.filteredKits[0].name).toBe("A0");
-    expect(result.current.searchResultCount).toBe(1);
   });
 
   it("should return all kits for queries shorter than 2 characters", () => {
@@ -89,7 +87,6 @@ describe("[UC-09] useKitSearch", () => {
 
     expect(result.current.searchQuery).toBe("A");
     expect(result.current.filteredKits).toHaveLength(3);
-    expect(result.current.searchResultCount).toBe(0);
   });
 
   it("should handle search state transitions", () => {
@@ -124,7 +121,6 @@ describe("[UC-09] useKitSearch", () => {
 
     expect(result.current.searchQuery).toBe("A0");
     expect(result.current.filteredKits).toHaveLength(1);
-    expect(result.current.searchResultCount).toBe(1);
 
     // Then clear it
     act(() => {
@@ -134,7 +130,6 @@ describe("[UC-09] useKitSearch", () => {
     expect(result.current.searchQuery).toBe("");
     expect(result.current.isSearching).toBe(false);
     expect(result.current.filteredKits).toHaveLength(3);
-    expect(result.current.searchResultCount).toBe(0);
   });
 
   it("should update results when kits prop changes", () => {
@@ -172,7 +167,6 @@ describe("[UC-09] useKitSearch", () => {
     });
 
     expect(result.current.filteredKits).toHaveLength(0);
-    expect(result.current.searchResultCount).toBe(0);
   });
 
   it("should use allKitSamples in search", () => {
@@ -187,6 +181,6 @@ describe("[UC-09] useKitSearch", () => {
     });
 
     // The mock should have received allKitSamples
-    expect(result.current.searchResultCount).toBe(0); // No matches with "test"
+    expect(result.current.filteredKits).toHaveLength(0); // No matches with "test"
   });
 });

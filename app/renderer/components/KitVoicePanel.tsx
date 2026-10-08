@@ -42,10 +42,6 @@ interface KitVoicePanelProps {
     filePath: string,
   ) => Promise<boolean>;
   onSampleDelete?: (voice: number, slotNumber: number) => Promise<void>;
-  // Dead prop: keyboard nav moved to the parent (see line 114). Retained
-  // for API stability; removing would cascade through KitVoicePanels,
-  // KitEditor, and several tests. NOSONAR suppresses S6767 here.
-  onSampleKeyNav?: (direction: "down" | "up") => void; // NOSONAR
   // Task 22.2: Sample move operations with contiguity
   onSampleMove?: (
     fromVoice: number,
@@ -117,7 +113,6 @@ const KitVoicePanel: React.FC<
   onSampleAdd,
   onSampleDelete,
   onSampleMove,
-  // onSampleKeyNav, // Note: Keyboard navigation now handled by parent component
   onSampleSelect,
   onSaveVoiceName,
   onStop,

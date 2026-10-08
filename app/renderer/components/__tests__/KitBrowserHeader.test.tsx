@@ -17,7 +17,6 @@ import KitBrowserHeader from "../KitBrowserHeader";
 
 describe("KitBrowserHeader", () => {
   const defaultProps = {
-    onShowLocalStoreWizard: vi.fn(),
     onShowSettings: vi.fn(),
   };
 

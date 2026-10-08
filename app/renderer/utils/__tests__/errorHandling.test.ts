@@ -6,32 +6,6 @@ import { ErrorPatterns } from "../errorHandling";
 const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
 describe("ErrorPatterns", () => {
-  describe("apiOperation", () => {
-    it("should handle errors without throwing", () => {
-      expect(() => {
-        ErrorPatterns.apiOperation(
-          new Error("Test API error"),
-          "test operation",
-        );
-      }).not.toThrow();
-
-      expect(consoleSpy).toHaveBeenCalled();
-    });
-  });
-
-  describe("kitOperation", () => {
-    it("should handle errors without throwing", () => {
-      expect(() => {
-        ErrorPatterns.kitOperation(
-          new Error("Test kit error"),
-          "test operation",
-        );
-      }).not.toThrow();
-
-      expect(consoleSpy).toHaveBeenCalled();
-    });
-  });
-
   describe("sampleOperation", () => {
     it("should handle errors without throwing", () => {
       expect(() => {

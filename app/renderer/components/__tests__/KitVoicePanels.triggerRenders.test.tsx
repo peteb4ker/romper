@@ -77,7 +77,6 @@ function Editor() {
           kit={kit}
           kitName="A0"
           onPlay={handlePlay}
-          onSampleKeyNav={noop}
           onSampleSelect={noop}
           onSaveVoiceName={noop}
           onStop={handleStop}

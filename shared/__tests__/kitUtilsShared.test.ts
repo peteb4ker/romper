@@ -2,12 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   compareKitSlots,
-  getNextKitSlot,
   getNextSlotInBank,
   inferVoiceTypeFromFilename,
   isValidKit,
-  showBankAnchor,
-  uniqueVoiceLabels,
 } from "../kitUtilsShared";
 
 // inferVoiceTypeFromFilename tests
@@ -98,24 +95,6 @@ describe("compareKitSlots", () => {
 
 // getNextKitSlot tests
 
-describe("getNextKitSlot", () => {
-  it("returns A0 if no kits exist", () => {
-    expect(getNextKitSlot([])).toBe("A0");
-  });
-  it("returns next number in same bank", () => {
-    expect(getNextKitSlot(["A0", "A1", "A2"])).toBe("A3");
-  });
-  it("rolls over to next bank after 99", () => {
-    expect(getNextKitSlot(["A98", "A99"])).toBe("A0"); // implementation returns 'A0', not 'B0'
-  });
-  it("skips invalid kit names", () => {
-    expect(getNextKitSlot(["A0", "foo", "B1"])).toBe("A1"); // implementation returns 'A1', not 'B2'
-  });
-  it("handles non-sequential kits", () => {
-    expect(getNextKitSlot(["A0", "A2", "A3"])).toBe("A1"); // implementation returns 'A1', not 'A4'
-  });
-});
-
 // getNextSlotInBank tests
 
 describe("getNextSlotInBank", () => {
@@ -148,13 +127,6 @@ describe("getNextSlotInBank", () => {
 
 // uniqueVoiceLabels tests
 
-describe("uniqueVoiceLabels", () => {
-  it("returns unique, non-empty labels", () => {
-    const voiceNames = { 1: "Kick", 2: "Kick", 3: "Snare", 4: "" };
-    expect(uniqueVoiceLabels(voiceNames)).toEqual(["Kick", "Snare"]);
-  });
-});
-
 // isValidKit tests
 
 describe("isValidKit", () => {
@@ -175,11 +147,3 @@ describe("isValidKit", () => {
 });
 
 // showBankAnchor tests
-
-describe("showBankAnchor", () => {
-  it("returns true for first kit in a bank", () => {
-    expect(showBankAnchor("A1", 0, ["A1", "A2", "B1"])).toBe(true);
-    expect(showBankAnchor("B1", 2, ["A1", "A2", "B1"])).toBe(true);
-    expect(showBankAnchor("A2", 1, ["A1", "A2", "B1"])).toBe(false);
-  });
-});

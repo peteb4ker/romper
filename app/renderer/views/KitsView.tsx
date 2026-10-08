@@ -284,8 +284,6 @@ const KitsView: React.FC = () => {
             sampleCounts={sampleCounts}
             // Search props
             searchQuery={search.searchQuery}
-            searchResultCount={search.searchResultCount}
-            setLocalStorePath={setLocalStorePath}
             showFavoritesOnly={kitFilters.showFavoritesOnly}
             showModifiedOnly={kitFilters.showModifiedOnly}
           />

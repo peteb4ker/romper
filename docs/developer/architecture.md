@@ -41,8 +41,8 @@ invokes has a matching `ipcMain.handle` in main. Handlers are registered in
 `electron/main/ipcHandlers.ts`, `dbIpcHandlers.ts`, and `electron/main/db/*IpcHandlers.ts`.
 
 Database operations return `DbResult<T>` (`{ success, data?, error? }`);
-`shared/errorUtils.ts` has `createErrorResult`, `getErrorMessage` and
-`logError` for building them.
+`shared/errorUtils.ts` has `getErrorMessage`, which turns a caught error
+into the `error` text.
 
 ### The renderer is untrusted
 

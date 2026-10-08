@@ -65,8 +65,8 @@ fill 2 mono voices."
 
   `ipcChannelParity.test.ts` fails if the preload and main channels drift.
 - Database functions return `DbResult<T>` (`{ success, data?, error? }`).
-  Build failures with `createErrorResult` / `getErrorMessage` from
-  `@romper/shared/errorUtils`.
+  Build a failure as `{ error, success: false }`, with `getErrorMessage`
+  from `@romper/shared/errorUtils` for a caught error's text.
 - Drizzle runs on synchronous better-sqlite3. Always end a query with
   `.all()`, `.get()`, `.run()`, or `.values()`, and never `await` a query or
   pass an `async` callback to `db.transaction`.

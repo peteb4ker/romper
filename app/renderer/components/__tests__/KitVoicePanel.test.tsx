@@ -8,23 +8,6 @@ import KitVoicePanel from "../KitVoicePanel";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 import { MockSettingsProvider } from "./MockSettingsProvider";
 
-// Mock the hooks used by KitVoicePanel
-vi.mock("../hooks/sample-management/useStereoHandling", () => ({
-  useStereoHandling: vi.fn(() => ({
-    analyzeStereoAssignment: vi.fn().mockReturnValue({
-      assignAsMono: false,
-      conflictInfo: null,
-      requiresConfirmation: false,
-    }),
-    applyStereoAssignment: vi.fn().mockResolvedValue(true),
-    handleStereoConflict: vi.fn().mockResolvedValue({
-      cancel: false,
-      forceMono: false,
-      replaceExisting: false,
-    }),
-  })),
-}));
-
 const baseProps = {
   isActive: false,
   isEditable: true,
@@ -37,6 +20,7 @@ const baseProps = {
   onSaveVoiceName: vi.fn(),
   onStop: vi.fn(),
   onWaveformPlayingChange: vi.fn(),
+  playsStereo: false,
   samples: ["kick.wav", "snare.wav"],
   slotPlayback: createSlotPlaybackStore(),
   voice: 1,
@@ -183,6 +167,7 @@ describe("KitVoicePanel", () => {
         onSaveVoiceName: vi.fn(),
         onStop: vi.fn(),
         onWaveformPlayingChange: vi.fn(),
+        playsStereo: false,
         samples: [],
         slotPlayback: createSlotPlaybackStore(),
         voice: 1,

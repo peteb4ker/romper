@@ -1,3 +1,5 @@
+import type { KitWithRelations } from "@romper/shared/db/schema";
+
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import {
@@ -10,6 +12,8 @@ import {
   vi,
 } from "vitest";
 
+import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
+import { createMockVoice } from "../../../../tests/factories/voice.factory";
 import { TestSettingsProvider } from "../../../../tests/providers/TestSettingsProvider";
 import { render } from "../../../../tests/utils/renderWithProviders";
 import KitEditor from "../KitEditor";
@@ -24,42 +28,54 @@ vi.mock("../hooks/kit-management/useKitEditorLogic", () => ({
 import { createSlotPlaybackStore } from "../hooks/kit-management/slotPlaybackStore";
 // Import after mocking and access the mocked function
 import { useKitEditorLogic } from "../hooks/kit-management/useKitEditorLogic";
-const mockUseKitEditorLogic = useKitEditorLogic as ReturnType<typeof vi.fn>;
+import { createDefaultTriggerConditions } from "../hooks/shared/stepPatternConstants";
+const mockUseKitEditorLogic = vi.mocked(useKitEditorLogic);
 
-// Add Mock type for TypeScript
-type Mock = ReturnType<typeof vi.fn>;
+type KitEditorLogic = ReturnType<typeof useKitEditorLogic>;
 
 // Helper to create default mock logic
-function createMockLogic(overrides = {}) {
+function createMockLogic(
+  overrides: Partial<KitEditorLogic> = {},
+): KitEditorLogic {
+  const kit = createTestKit();
+  const samples = { 1: [], 2: [], 3: [], 4: [] };
+  const slotPlayback = createSlotPlaybackStore();
   return {
+    flashVoices: new Set(),
+    handleInferVoiceNames: vi.fn(),
     handleScanKit: vi.fn(),
     // Kit data from useKitEditorLogic
-    kit: {
-      alias: null,
-      artist: null,
-      bank_letter: "T",
-      editable: false,
-      locked: false,
-      name: "TestKit",
-      step_pattern: null,
-      voices: [
-        { id: 1, kit_name: "TestKit", voice_alias: null, voice_number: 1 },
-        { id: 2, kit_name: "TestKit", voice_alias: null, voice_number: 2 },
-        { id: 3, kit_name: "TestKit", voice_alias: null, voice_number: 3 },
-        { id: 4, kit_name: "TestKit", voice_alias: null, voice_number: 4 },
-      ],
-    },
+    kit,
     kitError: null,
     kitLoading: false,
+    kitVoicePanels: {
+      kit,
+      kitName: "TestKit",
+      onPlay: vi.fn(),
+      onSampleKeyNav: vi.fn(),
+      onSampleSelect: vi.fn(),
+      onSaveVoiceName: vi.fn(),
+      onStop: vi.fn(),
+      onWaveformPlayingChange: vi.fn(),
+      samples,
+      selectedSampleIdx: 0,
+      selectedVoice: 1,
+      slotPlayback,
+    },
     playback: {
       handlePlay: vi.fn(),
       handleStop: vi.fn(),
       handleWaveformPlayingChange: vi.fn(),
       playbackError: null,
-      slotPlayback: createSlotPlaybackStore(),
+      slotPlayback,
     },
     reloadKit: vi.fn(),
-    samples: { 1: [], 2: [], 3: [], 4: [] },
+    sampleManagement: {
+      handleSampleAdd: vi.fn(),
+      handleSampleDelete: vi.fn(),
+      handleSampleMove: vi.fn(),
+    },
+    samples,
     scanStatus: { status: "idle" },
     selectedSampleIdx: 0,
     selectedVoice: 1,
@@ -69,19 +85,35 @@ function createMockLogic(overrides = {}) {
     setSelectedVoice: vi.fn(),
     setSequencerOpen: vi.fn(),
     setStepPattern: vi.fn(),
+    setTriggerConditions: vi.fn(),
     stepPattern: Array.from({ length: 4 }, () => Array(16).fill(0)),
     toggleEditableMode: vi.fn(),
+    toggleFavorite: vi.fn(),
+    triggerConditions: createDefaultTriggerConditions(),
     updateKitAlias: vi.fn(),
     updateVoiceAlias: vi.fn(),
     ...overrides,
-    kitVoicePanels: {
-      onSampleKeyNav: vi.fn(),
-    },
-    sampleManagement: {
-      handleSampleAdd: vi.fn(),
-      handleSampleDelete: vi.fn(),
-    },
   };
+}
+
+// The test kit, with its four voices named by `aliases`
+function createTestKit(
+  overrides: Partial<KitWithRelations> = {},
+  aliases: (null | string)[] = [null, null, null, null],
+): KitWithRelations {
+  return createMockKitWithRelations({
+    bank_letter: "T",
+    name: "TestKit",
+    voices: aliases.map((voice_alias, i) =>
+      createMockVoice({
+        id: i + 1,
+        kit_name: "TestKit",
+        voice_alias,
+        voice_number: i + 1,
+      }),
+    ),
+    ...overrides,
+  });
 }
 
 // Helper to render components with TestSettingsProvider
@@ -91,24 +123,20 @@ function renderWithSettings(component: React.ReactElement) {
 
 // Helper to set up specific mock behaviors for this test
 function setupElectronAPIMocks() {
-  vi.mocked(window.electronAPI.getKit).mockResolvedValue({
-    data: null,
+  vi.mocked(globalThis.electronAPI.updateKit).mockResolvedValue({
     success: true,
   });
-  vi.mocked(window.electronAPI.updateKit).mockResolvedValue({ success: true });
-  vi.mocked(window.electronAPI.updateVoiceAlias).mockResolvedValue({
+  vi.mocked(globalThis.electronAPI.updateVoiceAlias).mockResolvedValue({
     success: true,
   });
-  vi.mocked(window.electronAPI.updateStepPattern).mockResolvedValue({
+  vi.mocked(globalThis.electronAPI.updateStepPattern).mockResolvedValue({
     success: true,
   });
 }
 
 describe("KitEditor", () => {
   beforeAll(() => {
-    HTMLCanvasElement.prototype.getContext = function () {
-      return null;
-    } as unknown;
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
   });
 
   beforeEach(() => {
@@ -142,11 +170,10 @@ describe("KitEditor", () => {
 
     it("shows edit buttons when kit is in editable mode", async () => {
       // Mock kit with editable: true
-      const mockLogic = {
-        ...createMockLogic(),
-        kit: { ...createMockLogic().kit, editable: true },
-      };
-      (useKitEditorLogic as Mock).mockReturnValue(mockLogic);
+      const mockLogic = createMockLogic({
+        kit: createTestKit({ editable: true }),
+      });
+      mockUseKitEditorLogic.mockReturnValue(mockLogic);
 
       renderWithSettings(
         <KitEditor
@@ -167,34 +194,9 @@ describe("KitEditor", () => {
 
     it("displays voice names from kit voices", async () => {
       // Create a new mock with explicit voice names
-      const mockLogic = {
-        ...createMockLogic(),
-        kit: {
-          alias: null,
-          artist: null,
-          bank_letter: "T",
-          editable: false,
-          locked: false,
-          name: "TestKit",
-          step_pattern: null,
-          voices: [
-            {
-              id: 1,
-              kit_name: "TestKit",
-              voice_alias: "Kick",
-              voice_number: 1,
-            },
-            {
-              id: 2,
-              kit_name: "TestKit",
-              voice_alias: "Snare",
-              voice_number: 2,
-            },
-            { id: 3, kit_name: "TestKit", voice_alias: "Hat", voice_number: 3 },
-            { id: 4, kit_name: "TestKit", voice_alias: "Tom", voice_number: 4 },
-          ],
-        },
-      };
+      const mockLogic = createMockLogic({
+        kit: createTestKit({}, ["Kick", "Snare", "Hat", "Tom"]),
+      });
 
       // Ensure our mock is correctly set up
       console.log("Mock kit:", mockLogic.kit);
@@ -243,12 +245,11 @@ describe("KitEditor", () => {
   describe("Editable Mode Integration - Task 5.1", () => {
     it("passes editable mode toggle function to KitHeader", async () => {
       const mockToggleEditableMode = vi.fn();
-      const mockLogic = {
-        ...createMockLogic(),
-        kit: { ...createMockLogic().kit, editable: true },
+      const mockLogic = createMockLogic({
+        kit: createTestKit({ editable: true }),
         toggleEditableMode: mockToggleEditableMode,
-      };
-      (useKitEditorLogic as Mock).mockReturnValue(mockLogic);
+      });
+      mockUseKitEditorLogic.mockReturnValue(mockLogic);
 
       renderWithSettings(
         <KitEditor
@@ -272,11 +273,10 @@ describe("KitEditor", () => {
     });
 
     it("passes correct editable state to KitVoicePanels", async () => {
-      const mockLogic = {
-        ...createMockLogic(),
-        kit: { ...createMockLogic().kit, editable: true },
-      };
-      (useKitEditorLogic as Mock).mockReturnValue(mockLogic);
+      const mockLogic = createMockLogic({
+        kit: createTestKit({ editable: true }),
+      });
+      mockUseKitEditorLogic.mockReturnValue(mockLogic);
 
       renderWithSettings(
         <KitEditor
@@ -297,11 +297,10 @@ describe("KitEditor", () => {
     });
 
     it("disables editing when editable mode is off", async () => {
-      const mockLogic = {
-        ...createMockLogic(),
-        kit: { ...createMockLogic().kit, editable: false },
-      };
-      (useKitEditorLogic as Mock).mockReturnValue(mockLogic);
+      const mockLogic = createMockLogic({
+        kit: createTestKit({ editable: false }),
+      });
+      mockUseKitEditorLogic.mockReturnValue(mockLogic);
 
       renderWithSettings(
         <KitEditor
@@ -320,11 +319,10 @@ describe("KitEditor", () => {
     });
 
     it("shows editable toggle in header when kit is loaded", async () => {
-      const mockLogic = {
-        ...createMockLogic(),
-        kit: { ...createMockLogic().kit, editable: false },
-      };
-      (useKitEditorLogic as Mock).mockReturnValue(mockLogic);
+      const mockLogic = createMockLogic({
+        kit: createTestKit({ editable: false }),
+      });
+      mockUseKitEditorLogic.mockReturnValue(mockLogic);
 
       renderWithSettings(
         <KitEditor
@@ -344,11 +342,8 @@ describe("KitEditor", () => {
     });
 
     it("handles null kit gracefully", async () => {
-      const mockLogic = {
-        ...createMockLogic(),
-        kit: null,
-      };
-      (useKitEditorLogic as Mock).mockReturnValue(mockLogic);
+      const mockLogic = createMockLogic({ kit: null });
+      mockUseKitEditorLogic.mockReturnValue(mockLogic);
 
       renderWithSettings(
         <KitEditor
@@ -364,13 +359,11 @@ describe("KitEditor", () => {
     });
 
     it("reflects editable state changes through rerendering", async () => {
-      const mockLogic = {
-        ...createMockLogic(),
-        kit: { ...createMockLogic().kit, editable: false },
-      };
-      const mockUseKitEditorLogicInstance = (
-        useKitEditorLogic as Mock
-      ).mockReturnValue(mockLogic);
+      const mockLogic = createMockLogic({
+        kit: createTestKit({ editable: false }),
+      });
+      const mockUseKitEditorLogicInstance =
+        mockUseKitEditorLogic.mockReturnValue(mockLogic);
 
       const { rerender } = renderWithSettings(
         <KitEditor
@@ -385,10 +378,9 @@ describe("KitEditor", () => {
       expect(screen.getByText("Locked")).toBeInTheDocument();
 
       // Update mock to return editable: true
-      const updatedMockLogic = {
-        ...mockLogic,
-        kit: { ...mockLogic.kit, editable: true },
-      };
+      const updatedMockLogic = createMockLogic({
+        kit: createTestKit({ editable: true }),
+      });
       mockUseKitEditorLogicInstance.mockReturnValue(updatedMockLogic);
 
       rerender(

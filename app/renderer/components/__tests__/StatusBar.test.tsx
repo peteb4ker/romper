@@ -2,16 +2,21 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { SettingsContextProps } from "../../utils/SettingsContext";
+
+import { createMockSettings } from "../../../../tests/mocks/settings";
 import StatusBar from "../StatusBar";
 
 // Mock the useSettings hook
-const mockSetThemeMode = vi.fn().mockResolvedValue(true);
-const mockSettings = {
+const mockSetThemeMode = vi
+  .fn<SettingsContextProps["setThemeMode"]>()
+  .mockResolvedValue(true);
+const mockSettings = createMockSettings({
   isDarkMode: false,
   localStorePath: "/test/path",
   setThemeMode: mockSetThemeMode,
-  themeMode: "light" as "dark" | "light" | "system",
-};
+  themeMode: "light",
+});
 
 vi.mock("../../utils/SettingsContext", () => ({
   useSettings: () => mockSettings,

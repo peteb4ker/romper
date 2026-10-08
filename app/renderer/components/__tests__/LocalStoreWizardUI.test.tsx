@@ -1,36 +1,59 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { RomperConfig } from "../../config";
+import type { useLocalStoreWizard } from "../hooks/wizard/useLocalStoreWizard";
+import type { LocalStoreWizardState } from "../hooks/wizard/useLocalStoreWizardState";
+
+type WizardHook = ReturnType<typeof useLocalStoreWizard>;
+
 // DRY: Common mock for useLocalStoreWizard
-const getMockUseLocalStoreWizard = (overrides = {}) => ({
+const getMockUseLocalStoreWizard = ({
+  state,
+  ...overrides
+}: {
+  state?: Partial<LocalStoreWizardState>;
+} & Partial<Omit<WizardHook, "state">> = {}): WizardHook => ({
+  cancelSetup: vi.fn(),
   canInitialize: false,
   defaultPath: "/mock/path/romper",
   errorMessage: null,
   handleSourceSelect: vi.fn(),
   initialize: vi.fn(),
   isSdCardSource: false,
-  progress: undefined,
+  progress: null,
   setError: vi.fn(),
   setIsInitializing: vi.fn(),
   setSdCardMounted: vi.fn(),
   setSdCardPath: vi.fn(),
   setSource: vi.fn(),
+  setSourceConfirmed: vi.fn(),
   setTargetPath: vi.fn(),
-  state: { error: null, isInitializing: false, ...overrides.state },
+  state: {
+    error: null,
+    isInitializing: false,
+    sdCardMounted: false,
+    source: null,
+    targetPath: "",
+    ...state,
+  },
   validateSdCardFolder: vi.fn(),
   ...overrides,
 });
 
-let configMock = { localStorePath: undefined };
+let configMock: Partial<RomperConfig> = {};
 
 beforeEach(() => {
   vi.resetModules();
   vi.doMock("../../config", async (importOriginal) => {
-    const actual = await importOriginal();
+    const actual = await importOriginal<typeof import("../../config")>();
+    // `config` is a Proxy with no own keys, so copy its fields by name
     return {
       ...actual,
       config: {
-        ...actual.config,
+        localStorePath: actual.config.localStorePath,
+        sdCardPath: actual.config.sdCardPath,
+        squarpArchiveUrl: actual.config.squarpArchiveUrl,
         ...configMock,
       },
     };
@@ -39,7 +62,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
-  configMock = { localStorePath: undefined };
+  configMock = {};
 });
 
 describe("LocalStoreWizardUI", () => {
@@ -50,7 +73,9 @@ describe("LocalStoreWizardUI", () => {
     }));
     const { default: LocalStoreWizardUI } =
       await import("../LocalStoreWizardUI");
-    render(<LocalStoreWizardUI onClose={() => {}} />);
+    render(
+      <LocalStoreWizardUI onClose={() => {}} setLocalStorePath={vi.fn()} />,
+    );
     expect(screen.queryByTestId("wizard-progress-bar")).toBeNull();
   });
 
@@ -66,7 +91,9 @@ describe("LocalStoreWizardUI", () => {
     }));
     const { default: LocalStoreWizardUI } =
       await import("../LocalStoreWizardUI");
-    render(<LocalStoreWizardUI onClose={() => {}} />);
+    render(
+      <LocalStoreWizardUI onClose={() => {}} setLocalStorePath={vi.fn()} />,
+    );
     expect(screen.getByTestId("wizard-error")).toHaveTextContent("fail");
   });
 
@@ -81,7 +108,9 @@ describe("LocalStoreWizardUI", () => {
     }));
     const { default: LocalStoreWizardUI } =
       await import("../LocalStoreWizardUI");
-    render(<LocalStoreWizardUI onClose={() => {}} />);
+    render(
+      <LocalStoreWizardUI onClose={() => {}} setLocalStorePath={vi.fn()} />,
+    );
     expect(screen.getByTestId("wizard-progress-bar")).toBeInTheDocument();
     expect(screen.getByText("Downloading")).toBeInTheDocument();
     expect(screen.getByTestId("wizard-progress-file")).toHaveTextContent(
@@ -105,7 +134,9 @@ describe("LocalStoreWizardUI", () => {
     }));
     const { default: LocalStoreWizardUI } =
       await import("../LocalStoreWizardUI");
-    render(<LocalStoreWizardUI onClose={() => {}} />);
+    render(
+      <LocalStoreWizardUI onClose={() => {}} setLocalStorePath={vi.fn()} />,
+    );
     expect(screen.getAllByText(/choose source/i).length).toBeGreaterThan(0);
     expect(screen.queryByLabelText(/local store path/i)).toBeNull();
   });
@@ -127,39 +158,47 @@ describe("LocalStoreWizardUI", () => {
     }));
     const { default: LocalStoreWizardUI } =
       await import("../LocalStoreWizardUI");
-    render(<LocalStoreWizardUI onClose={() => {}} />);
+    render(
+      <LocalStoreWizardUI onClose={() => {}} setLocalStorePath={vi.fn()} />,
+    );
     // The input should be present in step 2 (target selection)
     expect(screen.getByLabelText(/local store path/i)).toBeInTheDocument();
   });
 
-  it("should auto-fill SD card path and not show picker when config.localStorePath is set", async () => {
-    configMock.localStorePath = "/mock/sdcard";
+  it("should auto-fill SD card path and not show picker when config.sdCardPath is set", async () => {
+    configMock.sdCardPath = "/mock/sdcard";
+    const setSdCardPath = vi.fn();
+    const setSourceConfirmed = vi.fn();
     vi.doMock("../hooks/wizard/useLocalStoreWizard", () => ({
       useLocalStoreWizard: () =>
         getMockUseLocalStoreWizard({
-          setSdCardPath: vi.fn(),
-          setSourceConfirmed: vi.fn(),
+          setSdCardPath,
+          setSourceConfirmed,
           state: {
-            error: null,
-            isInitializing: false,
-            localStorePath: "/mock/sdcard",
             sdCardMounted: true,
             source: "sdcard",
             sourceConfirmed: false, // must be false so Source step is rendered
-            targetPath: "",
           },
         }),
     }));
     const { default: LocalStoreWizardUI } =
       await import("../LocalStoreWizardUI");
-    render(<LocalStoreWizardUI onClose={() => {}} />);
-    // Should NOT show the SD card path display during the source step
-    expect(screen.queryByTestId("wizard-sdcard-path-env")).toBeNull();
+    render(
+      <LocalStoreWizardUI onClose={() => {}} setLocalStorePath={vi.fn()} />,
+    );
+
+    fireEvent.click(screen.getByTestId("wizard-source-sdcard"));
+
+    await waitFor(() =>
+      expect(setSdCardPath).toHaveBeenCalledWith("/mock/sdcard"),
+    );
+    expect(setSourceConfirmed).toHaveBeenCalledWith(true);
+    expect(globalThis.electronAPI.selectSdCard).not.toHaveBeenCalled();
   });
   // RE-42: the notice comes from this run's result, not from wizard state
   // captured before the run (which never had the warnings)
   describe("[UC-01] [UC-02] after setup", () => {
-    const readyToInitialize = (initialize: () => Promise<unknown>) =>
+    const readyToInitialize = (initialize: WizardHook["initialize"]) =>
       getMockUseLocalStoreWizard({
         canInitialize: true,
         initialize,
@@ -175,6 +214,7 @@ describe("LocalStoreWizardUI", () => {
       vi.resetModules();
       const onSuccess = vi.fn();
       const mockHook = readyToInitialize(async () => ({
+        stereoNotices: [],
         success: true,
         truncationWarnings: [
           {
@@ -195,7 +235,13 @@ describe("LocalStoreWizardUI", () => {
       }));
       const { default: LocalStoreWizardUI } =
         await import("../LocalStoreWizardUI");
-      render(<LocalStoreWizardUI onClose={() => {}} onSuccess={onSuccess} />);
+      render(
+        <LocalStoreWizardUI
+          onClose={() => {}}
+          onSuccess={onSuccess}
+          setLocalStorePath={vi.fn()}
+        />,
+      );
 
       fireEvent.click(screen.getByTestId("wizard-initialize-btn"));
 
@@ -222,7 +268,13 @@ describe("LocalStoreWizardUI", () => {
       }));
       const { default: LocalStoreWizardUI } =
         await import("../LocalStoreWizardUI");
-      render(<LocalStoreWizardUI onClose={() => {}} onSuccess={onSuccess} />);
+      render(
+        <LocalStoreWizardUI
+          onClose={() => {}}
+          onSuccess={onSuccess}
+          setLocalStorePath={vi.fn()}
+        />,
+      );
 
       fireEvent.click(screen.getByTestId("wizard-initialize-btn"));
 
@@ -236,6 +288,7 @@ describe("LocalStoreWizardUI", () => {
       vi.resetModules();
       const onSuccess = vi.fn();
       const mockHook = readyToInitialize(async () => ({
+        stereoNotices: [],
         success: true,
         truncationWarnings: [],
       }));
@@ -244,7 +297,13 @@ describe("LocalStoreWizardUI", () => {
       }));
       const { default: LocalStoreWizardUI } =
         await import("../LocalStoreWizardUI");
-      render(<LocalStoreWizardUI onClose={() => {}} onSuccess={onSuccess} />);
+      render(
+        <LocalStoreWizardUI
+          onClose={() => {}}
+          onSuccess={onSuccess}
+          setLocalStorePath={vi.fn()}
+        />,
+      );
 
       fireEvent.click(screen.getByTestId("wizard-initialize-btn"));
 
@@ -274,7 +333,9 @@ describe("LocalStoreWizardUI", () => {
       vi.spyOn(globalThis, "confirm").mockReturnValue(true);
       const { default: LocalStoreWizardUI } =
         await import("../LocalStoreWizardUI");
-      const { rerender } = render(<LocalStoreWizardUI onClose={onClose} />);
+      const { rerender } = render(
+        <LocalStoreWizardUI onClose={onClose} setLocalStorePath={vi.fn()} />,
+      );
 
       fireEvent.click(screen.getByTestId("wizard-cancel-btn"));
 
@@ -291,6 +352,7 @@ describe("LocalStoreWizardUI", () => {
         <LocalStoreWizardUI
           onClose={onClose}
           onInitializationChange={vi.fn()}
+          setLocalStorePath={vi.fn()}
         />,
       );
       await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
@@ -310,7 +372,9 @@ describe("LocalStoreWizardUI", () => {
       vi.spyOn(globalThis, "confirm").mockReturnValue(false);
       const { default: LocalStoreWizardUI } =
         await import("../LocalStoreWizardUI");
-      render(<LocalStoreWizardUI onClose={onClose} />);
+      render(
+        <LocalStoreWizardUI onClose={onClose} setLocalStorePath={vi.fn()} />,
+      );
 
       fireEvent.click(screen.getByTestId("wizard-cancel-btn"));
 

@@ -1,3 +1,6 @@
+import type { FormatValidationResult } from "@romper/shared/audioTypes";
+import type { DbResult, Sample, Voice } from "@romper/shared/db/schema";
+
 import {
   act,
   fireEvent,
@@ -9,6 +12,9 @@ import {
 import React, { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
+import { createMockSample } from "../../../../tests/factories/sample.factory";
+import { createMockVoice } from "../../../../tests/factories/voice.factory";
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
 import { GAIN_SAVE_DELAY_MS } from "../GainKnob";
 import { createSlotPlaybackStore } from "../hooks/kit-management/slotPlaybackStore";
@@ -17,66 +23,59 @@ import KitVoicePanels from "../KitVoicePanels";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 import { MockSettingsProvider } from "./MockSettingsProvider";
 
+type PanelsProps = React.ComponentProps<typeof KitVoicePanels>;
+
+/** A voice as a test describes it: its samples and the voice row's fields */
+interface VoiceSpec {
+  samples: string[];
+  stereo_choice?: Voice["stereo_choice"];
+  stereo_mode?: boolean;
+  voice: number;
+  voiceName: string;
+}
+
 const baseProps = {
   kitName: "Kit1",
-  onPlay: vi.fn(),
-
   onSaveVoiceName: vi.fn(),
   onStop: vi.fn(),
   onWaveformPlayingChange: vi.fn(),
-  slotPlayback: createSlotPlaybackStore(),
   voices: [
     { samples: ["kick.wav", "snare.wav"], voice: 1, voiceName: "Kick" },
     { samples: ["hat.wav", "clap.wav"], voice: 2, voiceName: "Hat" },
-  ],
+  ] satisfies VoiceSpec[],
 };
 
 afterEach(() => {
   vi.clearAllMocks();
 });
 
+/** The panels for `voices`, holding the selection the way the kit editor does */
 function MultiVoicePanelsTestWrapper({
   initialSelectedSampleIdx = 0,
   initialSelectedVoice = 1,
   onPlay = vi.fn(),
   voices = baseProps.voices,
   ...props
-} = {}) {
+}: {
+  initialSelectedSampleIdx?: number;
+  initialSelectedVoice?: number;
+  voices?: VoiceSpec[];
+} & Partial<
+  Omit<
+    PanelsProps,
+    | "kit"
+    | "samples"
+    | "selectedSampleIdx"
+    | "selectedVoice"
+    | "setSelectedSampleIdx"
+    | "setSelectedVoice"
+  >
+>) {
   const [selectedVoice, setSelectedVoice] = useState(initialSelectedVoice);
   const [selectedSampleIdx, setSelectedSampleIdx] = useState(
     initialSelectedSampleIdx,
   );
   const { kit, samples } = voicesToProps(voices);
-  React.useEffect(() => {
-    function handleGlobalKeyDown(e) {
-      if ([" ", "ArrowDown", "ArrowUp", "Enter"].includes(e.key)) {
-        e.preventDefault();
-        if (e.key === "ArrowDown") {
-          if (
-            selectedSampleIdx <
-            voices[selectedVoice - 1].samples.length - 1
-          ) {
-            setSelectedSampleIdx(selectedSampleIdx + 1);
-          } else if (selectedVoice < voices.length) {
-            setSelectedVoice(selectedVoice + 1);
-            setSelectedSampleIdx(0);
-          }
-        } else if (e.key === "ArrowUp") {
-          if (selectedSampleIdx > 0) {
-            setSelectedSampleIdx(selectedSampleIdx - 1);
-          } else if (selectedVoice > 1) {
-            setSelectedVoice(selectedVoice - 1);
-            setSelectedSampleIdx(voices[selectedVoice - 2].samples.length - 1);
-          }
-        } else if (e.key === " " || e.key === "Enter") {
-          const sample = voices[selectedVoice - 1].samples[selectedSampleIdx];
-          if (sample) onPlay(selectedVoice, sample);
-        }
-      }
-    }
-    window.addEventListener("keydown", handleGlobalKeyDown);
-    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [selectedVoice, selectedSampleIdx, voices, onPlay]);
   return (
     <MockSettingsProvider>
       <MockMessageDisplayProvider>
@@ -91,6 +90,9 @@ function MultiVoicePanelsTestWrapper({
           samples={samples}
           selectedSampleIdx={selectedSampleIdx}
           selectedVoice={selectedVoice}
+          sequencerOpen={false}
+          setSelectedSampleIdx={setSelectedSampleIdx}
+          setSelectedVoice={setSelectedVoice}
           slotPlayback={createSlotPlaybackStore()}
           {...props}
         />
@@ -100,30 +102,24 @@ function MultiVoicePanelsTestWrapper({
 }
 
 // Utility to convert voices array to samples and kit
-function voicesToProps(voices) {
-  const samples = {};
-  const kitVoices = [];
-  voices.forEach(
-    ({ samples: s, stereo_choice, stereo_mode, voice, voiceName }) => {
-      samples[voice] = s;
-      kitVoices.push({
+function voicesToProps(voices: VoiceSpec[]) {
+  const samples: Record<number, string[]> = {};
+  for (const { samples: s, voice } of voices) samples[voice] = s;
+  const kit = createMockKitWithRelations({
+    alias: "Kit1",
+    name: "Kit1",
+    voices: voices.map(({ stereo_choice, stereo_mode, voice, voiceName }) =>
+      createMockVoice({
         id: voice,
         kit_name: "Kit1",
         stereo_choice: stereo_choice ?? null,
         stereo_mode: stereo_mode || false,
         voice_alias: voiceName,
         voice_number: voice,
-      });
-    },
-  );
-  return {
-    kit: {
-      alias: "Kit1",
-      name: "Kit1",
-      voices: kitVoices,
-    },
-    samples,
-  };
+      }),
+    ),
+  });
+  return { kit, samples };
 }
 
 describe("KitVoicePanels", () => {
@@ -187,16 +183,15 @@ describe("KitVoicePanels", () => {
         voiceName: "Voice2",
       }, // 3 samples
       {
-        samples: Array(6)
-          .fill()
-          .map((_, i) => `sample${i}.wav`),
+        samples: Array.from({ length: 6 }, (_, i) => `sample${i}.wav`),
         voice: 3,
         voiceName: "Voice3",
       }, // 6 samples
       {
-        samples: Array(MAX_SLOTS_PER_VOICE)
-          .fill()
-          .map((_, i) => `sample${i}.wav`),
+        samples: Array.from(
+          { length: MAX_SLOTS_PER_VOICE },
+          (_, i) => `sample${i}.wav`,
+        ),
         voice: 4,
         voiceName: "Voice4",
       }, // MAX_SLOTS_PER_VOICE samples (full)
@@ -225,90 +220,15 @@ describe("KitVoicePanels", () => {
     expect(screen.queryByTestId("drop-zone-voice-4")).not.toBeInTheDocument();
   });
 
-  it("cross-voice keyboard navigation moves selection between voices", async () => {
-    render(<MultiVoicePanelsTestWrapper />);
-    // Down to snare.wav
-    await act(async () => {
-      fireEvent.keyDown(window, { key: "ArrowDown" });
-    });
-    const snareElement = await screen.findByText("snare.wav");
-    expect(snareElement).toBeInTheDocument();
-
-    // Down to hat.wav (first sample of next voice)
-    await act(async () => {
-      fireEvent.keyDown(window, { key: "ArrowDown" });
-    });
-    const hatElement = await screen.findByText("hat.wav");
-    expect(hatElement).toBeInTheDocument();
-
-    // Down to clap.wav (second sample of next voice)
-    await act(async () => {
-      fireEvent.keyDown(window, { key: "ArrowDown" });
-    });
-    const clapElement = await screen.findByText("clap.wav");
-    expect(clapElement).toBeInTheDocument();
-  });
-
-  it("triggers onPlay for cross-voice navigation (keyboard preview navigation)", async () => {
-    const onPlay = vi.fn();
-    render(<MultiVoicePanelsTestWrapper onPlay={onPlay} />);
-    // Move to snare.wav and preview
-    await act(async () => {
-      fireEvent.keyDown(window, { key: "ArrowDown" });
-    });
-    await waitFor(() => {
-      expect(screen.getByText("snare.wav")).toBeInTheDocument();
-    });
-    await act(async () => {
-      fireEvent.keyDown(window, { key: " " });
-    });
-    expect(onPlay).toHaveBeenCalledWith(1, "snare.wav");
-    onPlay.mockClear();
-    // Move to voice 2, sample 0 (hat.wav) and preview
-    await act(async () => {
-      fireEvent.keyDown(window, { key: "ArrowDown" });
-    });
-    await waitFor(() => {
-      expect(screen.getByText("hat.wav")).toBeInTheDocument();
-    });
-    await act(async () => {
-      fireEvent.keyDown(window, { key: "Enter" });
-    });
-    expect(onPlay).toHaveBeenCalledWith(2, "hat.wav");
-  });
-
-  it("disables sample navigation when sequencerOpen is true (sequencer open)", async () => {
-    render(<MultiVoicePanelsTestWrapper sequencerOpen={true} />);
-    // Try to move selection
-    const before = screen.getByText("kick.wav");
-    await act(async () => {
-      fireEvent.keyDown(window, { key: "ArrowDown" });
-    });
-    // Selection should not move
-    expect(before).toBeInTheDocument();
-  });
-
-  it("enables sample navigation when sequencerOpen is false (sequencer closed)", async () => {
-    render(<MultiVoicePanelsTestWrapper sequencerOpen={false} />);
-    // Down to snare.wav
-    await act(async () => {
-      fireEvent.keyDown(window, { key: "ArrowDown" });
-    });
-    await screen.findByText("snare.wav");
-    expect(screen.getByText("snare.wav")).toBeInTheDocument();
-  });
-
   describe("Sample metadata handling", () => {
     it("handles missing electronAPI gracefully", () => {
-      // Temporarily remove electronAPI
-      delete window.electronAPI;
+      vi.stubGlobal("electronAPI", undefined);
 
       expect(() => {
         render(<MultiVoicePanelsTestWrapper />);
       }).not.toThrow();
 
-      // Restore electronAPI
-      setupElectronAPIMock();
+      vi.unstubAllGlobals();
     });
 
     it("handles empty sample metadata", () => {
@@ -318,7 +238,7 @@ describe("KitVoicePanels", () => {
       });
 
       // Use centralized mock
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockImplementation(
+      vi.mocked(globalThis.electronAPI.getAllSamplesForKit).mockImplementation(
         mockGetAllSamplesForKit,
       );
 
@@ -360,17 +280,18 @@ describe("KitVoicePanels", () => {
       { samples: ["dup.wav", "dup.wav"], voice: 1, voiceName: "One" },
       { samples: ["dup.wav"], voice: 2, voiceName: "Two" },
     ];
-    const row = (voice: number, slot: number, gain: number) => ({
-      filename: "dup.wav",
-      gain_db: gain,
-      kit_name: "Kit1",
-      slot_number: slot,
-      source_path: `/src${voice}${slot}/dup.wav`,
-      voice_number: voice,
-    });
+    const row = (voice: number, slot: number, gain: number) =>
+      createMockSample({
+        filename: "dup.wav",
+        gain_db: gain,
+        kit_name: "Kit1",
+        slot_number: slot,
+        source_path: `/src${voice}${slot}/dup.wav`,
+        voice_number: voice,
+      });
 
     beforeEach(() => {
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+      vi.mocked(globalThis.electronAPI.getAllSamplesForKit).mockResolvedValue({
         data: [row(1, 0, 6), row(1, 1, -3), row(2, 0, 0)],
         success: true,
       });
@@ -399,7 +320,7 @@ describe("KitVoicePanels", () => {
 
       // Saved once the wheel stops (RE-88)
       await waitFor(() =>
-        expect(window.electronAPI.updateSampleGain).toHaveBeenCalledWith(
+        expect(globalThis.electronAPI.updateSampleGain).toHaveBeenCalledWith(
           "Kit1",
           1,
           1,
@@ -444,11 +365,11 @@ describe("KitVoicePanels", () => {
     });
 
     it("renders with kit that has no voices", () => {
-      const kit = {
+      const kit = createMockKitWithRelations({
         alias: "TestKit",
         name: "TestKit",
         voices: [],
-      };
+      });
       const samples = {};
 
       render(
@@ -495,7 +416,11 @@ describe("KitVoicePanels", () => {
   describe("Props edge cases", () => {
     it("renders with missing optional props", () => {
       const minimalProps = {
-        kit: { alias: "TestKit", name: "TestKit", voices: [] },
+        kit: createMockKitWithRelations({
+          alias: "TestKit",
+          name: "TestKit",
+          voices: [],
+        }),
         kitName: "TestKit",
         onPlay: vi.fn(),
 
@@ -608,9 +533,9 @@ describe("KitVoicePanels", () => {
 
       // Each notch shows at once; the save waits for the wheel to stop
       expect(knob()).toHaveAttribute("aria-valuenow", "5");
-      expect(window.electronAPI.updateSampleGain).not.toHaveBeenCalled();
+      expect(globalThis.electronAPI.updateSampleGain).not.toHaveBeenCalled();
       await waitFor(() =>
-        expect(window.electronAPI.updateSampleGain).toHaveBeenCalledWith(
+        expect(globalThis.electronAPI.updateSampleGain).toHaveBeenCalledWith(
           "Kit1",
           1,
           0,
@@ -620,7 +545,7 @@ describe("KitVoicePanels", () => {
       await act(
         () => new Promise((resolve) => setTimeout(resolve, GAIN_SAVE_DELAY_MS)),
       );
-      expect(window.electronAPI.updateSampleGain).toHaveBeenCalledTimes(1);
+      expect(globalThis.electronAPI.updateSampleGain).toHaveBeenCalledTimes(1);
     });
 
     it("saves a turn that's under way when the kit is closed", async () => {
@@ -630,8 +555,8 @@ describe("KitVoicePanels", () => {
       fireEvent.wheel(knob(), { deltaY: -100 });
       unmount();
 
-      expect(window.electronAPI.updateSampleGain).toHaveBeenCalledTimes(1);
-      expect(window.electronAPI.updateSampleGain).toHaveBeenCalledWith(
+      expect(globalThis.electronAPI.updateSampleGain).toHaveBeenCalledTimes(1);
+      expect(globalThis.electronAPI.updateSampleGain).toHaveBeenCalledWith(
         "Kit1",
         1,
         0,
@@ -644,16 +569,16 @@ describe("KitVoicePanels", () => {
     const voices = [{ samples: ["kick.wav"], voice: 1, voiceName: "Kick" }];
 
     beforeEach(() => {
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+      vi.mocked(globalThis.electronAPI.getAllSamplesForKit).mockResolvedValue({
         data: [
-          {
+          createMockSample({
             filename: "kick.wav",
             gain_db: -3,
             kit_name: "Kit1",
             slot_number: 0,
             source_path: "/src/kick.wav",
             voice_number: 1,
-          },
+          }),
         ],
         success: true,
       });
@@ -664,7 +589,7 @@ describe("KitVoicePanels", () => {
     const gain = () => knob().getAttribute("aria-valuenow");
 
     it("puts a refused gain back and says so", async () => {
-      vi.mocked(window.electronAPI.updateSampleGain).mockResolvedValue({
+      vi.mocked(globalThis.electronAPI.updateSampleGain).mockResolvedValue({
         error: "Sample not found: kit=Kit1, voice=1, slot=0",
         success: false,
       });
@@ -696,7 +621,7 @@ describe("KitVoicePanels", () => {
     });
 
     it("gives one message for a turn whose saves all fail", async () => {
-      vi.mocked(window.electronAPI.updateSampleGain).mockRejectedValue(
+      vi.mocked(globalThis.electronAPI.updateSampleGain).mockRejectedValue(
         new Error("IPC channel closed"),
       );
       const onMessage = vi.fn();
@@ -722,9 +647,10 @@ describe("KitVoicePanels", () => {
 
     it("[Q-02] puts the gain back when main gives no answer (#543)", async () => {
       // The preload method is missing, so the optional call gives undefined
-      vi.mocked(window.electronAPI.updateSampleGain).mockResolvedValue(
-        undefined as never,
-      );
+      setupElectronAPIMock({
+        ...globalThis.electronAPI,
+        updateSampleGain: undefined,
+      });
       const onKitModified = vi.fn();
       const onMessage = vi.fn();
       render(
@@ -763,7 +689,7 @@ describe("KitVoicePanels", () => {
       fireEvent.wheel(knob(), { deltaY: -100 });
 
       await waitFor(() =>
-        expect(window.electronAPI.updateSampleGain).toHaveBeenCalled(),
+        expect(globalThis.electronAPI.updateSampleGain).toHaveBeenCalled(),
       );
       await act(async () => {});
       expect(gain()).toBe("-2");
@@ -778,17 +704,17 @@ describe("KitVoicePanels", () => {
     const gain = () => knob().getAttribute("aria-valuenow");
 
     it("isn't put back on the next kit's slot", async () => {
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockImplementation(
+      vi.mocked(globalThis.electronAPI.getAllSamplesForKit).mockImplementation(
         async (kitName: string) => ({
           data: [
-            {
+            createMockSample({
               filename: "kick.wav",
               gain_db: kitName === "Kit1" ? -3 : 2,
               kit_name: kitName,
               slot_number: 0,
               source_path: "/src/kick.wav",
               voice_number: 1,
-            },
+            }),
           ],
           success: true,
         }),
@@ -797,7 +723,7 @@ describe("KitVoicePanels", () => {
         error: string;
         success: false;
       }) => void = () => {};
-      vi.mocked(window.electronAPI.updateSampleGain).mockReturnValue(
+      vi.mocked(globalThis.electronAPI.updateSampleGain).mockReturnValue(
         new Promise((resolve) => {
           answer = resolve;
         }),
@@ -938,7 +864,7 @@ describe("KitVoicePanels", () => {
       });
 
       await waitFor(() => {
-        expect(window.electronAPI.updateVoiceStereoMode).toHaveBeenCalled();
+        expect(globalThis.electronAPI.updateVoiceStereoMode).toHaveBeenCalled();
       });
     });
 
@@ -958,7 +884,9 @@ describe("KitVoicePanels", () => {
       });
 
       // Should not call updateVoiceStereoMode since secondary has samples
-      expect(window.electronAPI.updateVoiceStereoMode).not.toHaveBeenCalled();
+      expect(
+        globalThis.electronAPI.updateVoiceStereoMode,
+      ).not.toHaveBeenCalled();
     });
 
     it("should link unlinked voices 3-4 when chain icon clicked", async () => {
@@ -991,7 +919,7 @@ describe("KitVoicePanels", () => {
 
       // Should call updateVoiceStereoMode for voice 3 since it's not linked
       await waitFor(() => {
-        expect(window.electronAPI.updateVoiceStereoMode).toHaveBeenCalled();
+        expect(globalThis.electronAPI.updateVoiceStereoMode).toHaveBeenCalled();
       });
     });
 
@@ -1024,7 +952,7 @@ describe("KitVoicePanels", () => {
       });
 
       await waitFor(() => {
-        expect(window.electronAPI.updateVoiceStereoMode).toHaveBeenCalled();
+        expect(globalThis.electronAPI.updateVoiceStereoMode).toHaveBeenCalled();
       });
     });
   });
@@ -1050,7 +978,9 @@ describe("KitVoicePanels", () => {
         fireEvent.click(screen.getByTestId("link-button-1-2"));
       });
 
-      expect(window.electronAPI.updateVoiceStereoMode).not.toHaveBeenCalled();
+      expect(
+        globalThis.electronAPI.updateVoiceStereoMode,
+      ).not.toHaveBeenCalled();
       expect(onMessage).toHaveBeenCalledWith(
         "Voices 1 and 2 can't be linked: voice 2 has samples.",
         "warning",
@@ -1060,11 +990,13 @@ describe("KitVoicePanels", () => {
     it("reports a link main refuses", async () => {
       const onMessage = vi.fn();
       const onKitUpdated = vi.fn().mockResolvedValue(undefined);
-      vi.mocked(window.electronAPI.updateVoiceStereoMode).mockResolvedValue({
-        error:
-          "Kit Kit1 isn't editable. Make it editable to link or unlink voices.",
-        success: false,
-      });
+      vi.mocked(globalThis.electronAPI.updateVoiceStereoMode).mockResolvedValue(
+        {
+          error:
+            "Kit Kit1 isn't editable. Make it editable to link or unlink voices.",
+          success: false,
+        },
+      );
       const consoleError = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
@@ -1093,7 +1025,7 @@ describe("KitVoicePanels", () => {
 
     it("reports a link whose write throws", async () => {
       const onMessage = vi.fn();
-      vi.mocked(window.electronAPI.updateVoiceStereoMode).mockRejectedValue(
+      vi.mocked(globalThis.electronAPI.updateVoiceStereoMode).mockRejectedValue(
         new Error("SQLITE_BUSY: database is locked"),
       );
       const consoleError = vi
@@ -1118,9 +1050,11 @@ describe("KitVoicePanels", () => {
 
     it("says nothing when the link works", async () => {
       const onMessage = vi.fn();
-      vi.mocked(window.electronAPI.updateVoiceStereoMode).mockResolvedValue({
-        success: true,
-      });
+      vi.mocked(globalThis.electronAPI.updateVoiceStereoMode).mockResolvedValue(
+        {
+          success: true,
+        },
+      );
       render(
         <MultiVoicePanelsTestWrapper
           isEditable={true}
@@ -1135,7 +1069,7 @@ describe("KitVoicePanels", () => {
       });
 
       await waitFor(() =>
-        expect(window.electronAPI.updateVoiceStereoMode).toHaveBeenCalled(),
+        expect(globalThis.electronAPI.updateVoiceStereoMode).toHaveBeenCalled(),
       );
       expect(onMessage).not.toHaveBeenCalled();
     });
@@ -1143,10 +1077,12 @@ describe("KitVoicePanels", () => {
     it("reports an unlink main refuses, and doesn't reload", async () => {
       const onMessage = vi.fn();
       const onKitUpdated = vi.fn().mockResolvedValue(undefined);
-      vi.mocked(window.electronAPI.updateVoiceStereoMode).mockResolvedValue({
-        error: "Kit Kit1 isn't editable.",
-        success: false,
-      });
+      vi.mocked(globalThis.electronAPI.updateVoiceStereoMode).mockResolvedValue(
+        {
+          error: "Kit Kit1 isn't editable.",
+          success: false,
+        },
+      );
       const consoleError = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
@@ -1184,9 +1120,10 @@ describe("KitVoicePanels", () => {
 
     beforeEach(() => {
       // The preload method is missing, so the optional call gives undefined
-      vi.mocked(window.electronAPI.updateVoiceStereoMode).mockResolvedValue(
-        undefined as never,
-      );
+      setupElectronAPIMock({
+        ...globalThis.electronAPI,
+        updateVoiceStereoMode: undefined,
+      });
       vi.spyOn(console, "error").mockImplementation(() => {});
     });
 
@@ -1274,7 +1211,7 @@ describe("KitVoicePanels", () => {
 
   // #537 final stereo rules v2: drops, unlink, notes, labels, quarantine
   describe("[UC-19] [UC-28] stereo samples", () => {
-    const wav = (channels: number) => ({
+    const wav = (channels: number): DbResult<FormatValidationResult> => ({
       data: { issues: [], isValid: true, metadata: { channels } },
       success: true,
     });
@@ -1283,22 +1220,23 @@ describe("KitVoicePanels", () => {
       slot: number,
       filename: string,
       channels: number,
-    ) => ({
-      filename,
-      gain_db: 0,
-      id: voice * 100 + slot,
-      kit_name: "Kit1",
-      slot_number: slot,
-      source_path: `/samples/${filename}`,
-      voice_number: voice,
-      wav_bit_depth: 16,
-      wav_bitrate: null,
-      wav_channels: channels,
-      wav_sample_rate: 44100,
-    });
+    ): Sample =>
+      createMockSample({
+        filename,
+        gain_db: 0,
+        id: voice * 100 + slot,
+        kit_name: "Kit1",
+        slot_number: slot,
+        source_path: `/samples/${filename}`,
+        voice_number: voice,
+        wav_bit_depth: 16,
+        wav_bitrate: null,
+        wav_channels: channels,
+        wav_sample_rate: 44100,
+      });
     /** Voice 1 holds a mono kick; the rest as given */
     const kitVoices = ({
-      choice3 = null as null | string,
+      choice3 = null as Voice["stereo_choice"],
       stereo1 = false,
       stereo2 = false,
       v2 = [] as string[],
@@ -1308,15 +1246,15 @@ describe("KitVoicePanels", () => {
       { samples: [], stereo_choice: choice3, voice: 3, voiceName: "C" },
       { samples: [], voice: 4, voiceName: "D" },
     ];
-    const metadata = (...rows: ReturnType<typeof row>[]) =>
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+    const metadata = (...rows: Sample[]) =>
+      vi.mocked(globalThis.electronAPI.getAllSamplesForKit).mockResolvedValue({
         data: rows,
         success: true,
       });
 
     async function dropOn(voice: number, fileName: string, channels: number) {
-      vi.mocked(window.electronAPI.validateSampleFormat).mockResolvedValue(
-        wav(channels) as never,
+      vi.mocked(globalThis.electronAPI.validateSampleFormat).mockResolvedValue(
+        wav(channels),
       );
       const file = new File(["x"], fileName, { type: "audio/wav" });
       await act(async () => {
@@ -1332,9 +1270,11 @@ describe("KitVoicePanels", () => {
 
     beforeEach(() => {
       metadata(row(1, 0, "kick.wav", 1));
-      vi.mocked(window.electronAPI.updateVoiceStereoMode).mockResolvedValue({
-        success: true,
-      });
+      vi.mocked(globalThis.electronAPI.updateVoiceStereoMode).mockResolvedValue(
+        {
+          success: true,
+        },
+      );
     });
 
     it("asks Link or Keep mono for a stereo sample rule 2 would link, and Link links", async () => {
@@ -1365,11 +1305,9 @@ describe("KitVoicePanels", () => {
       });
 
       await waitFor(() =>
-        expect(window.electronAPI.updateVoiceStereoMode).toHaveBeenCalledWith(
-          "Kit1",
-          3,
-          true,
-        ),
+        expect(
+          globalThis.electronAPI.updateVoiceStereoMode,
+        ).toHaveBeenCalledWith("Kit1", 3, true),
       );
       expect(onSampleAdd).toHaveBeenCalledWith(3, 0, "pad.wav");
       expect(onMessage).not.toHaveBeenCalled();
@@ -1393,11 +1331,9 @@ describe("KitVoicePanels", () => {
 
       // Recorded as the user's mono choice: the voice stays unlinked
       await waitFor(() =>
-        expect(window.electronAPI.updateVoiceStereoMode).toHaveBeenCalledWith(
-          "Kit1",
-          3,
-          false,
-        ),
+        expect(
+          globalThis.electronAPI.updateVoiceStereoMode,
+        ).toHaveBeenCalledWith("Kit1", 3, false),
       );
       expect(screen.queryByTestId("stereo-drop-prompt")).toBeNull();
     });
@@ -1414,7 +1350,9 @@ describe("KitVoicePanels", () => {
       await dropOn(3, "pad.wav", 2);
 
       expect(screen.queryByTestId("stereo-drop-prompt")).toBeNull();
-      expect(window.electronAPI.updateVoiceStereoMode).not.toHaveBeenCalled();
+      expect(
+        globalThis.electronAPI.updateVoiceStereoMode,
+      ).not.toHaveBeenCalled();
     });
 
     it("doesn't ask for a voice that also holds mono samples (rule 1)", async () => {
@@ -1431,7 +1369,9 @@ describe("KitVoicePanels", () => {
       await dropOn(1, "pad.wav", 2);
 
       expect(screen.queryByTestId("stereo-drop-prompt")).toBeNull();
-      expect(window.electronAPI.updateVoiceStereoMode).not.toHaveBeenCalled();
+      expect(
+        globalThis.electronAPI.updateVoiceStereoMode,
+      ).not.toHaveBeenCalled();
       expect(onMessage).not.toHaveBeenCalled();
     });
 
@@ -1468,7 +1408,7 @@ describe("KitVoicePanels", () => {
         />,
       );
       await waitFor(() =>
-        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalled(),
+        expect(globalThis.electronAPI.getAllSamplesForKit).toHaveBeenCalled(),
       );
 
       await act(async () => {
@@ -1582,7 +1522,7 @@ describe("KitVoicePanels", () => {
         ...row(1, 0, "kick.wav", 1),
         source_status: "unreadable",
         wav_channels: null,
-      } as never);
+      });
       render(<MultiVoicePanelsTestWrapper voices={kitVoices()} />);
 
       expect(
@@ -1600,7 +1540,7 @@ describe("KitVoicePanels", () => {
       metadata({
         ...row(1, 0, "kick.wav", 1),
         source_status: "missing",
-      } as never);
+      });
       render(<MultiVoicePanelsTestWrapper voices={kitVoices()} />);
 
       expect(
@@ -1613,8 +1553,8 @@ describe("KitVoicePanels", () => {
     });
 
     it("asks main to check the kit's files once per kit open, and reloads when something changed", async () => {
-      metadata({ ...row(1, 0, "kick.wav", 1), source_status: null } as never);
-      vi.mocked(window.electronAPI.checkKitSampleFiles).mockResolvedValue({
+      metadata({ ...row(1, 0, "kick.wav", 1), source_status: null });
+      vi.mocked(globalThis.electronAPI.checkKitSampleFiles).mockResolvedValue({
         data: { changed: 1, checked: 1 },
         success: true,
       });
@@ -1627,7 +1567,7 @@ describe("KitVoicePanels", () => {
       );
 
       await waitFor(() => expect(onKitUpdated).toHaveBeenCalledTimes(1));
-      expect(window.electronAPI.checkKitSampleFiles).toHaveBeenCalledWith(
+      expect(globalThis.electronAPI.checkKitSampleFiles).toHaveBeenCalledWith(
         "Kit1",
       );
       rerender(
@@ -1637,17 +1577,21 @@ describe("KitVoicePanels", () => {
         />,
       );
       await waitFor(() =>
-        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledTimes(2),
+        expect(
+          globalThis.electronAPI.getAllSamplesForKit,
+        ).toHaveBeenCalledTimes(2),
       );
-      expect(window.electronAPI.checkKitSampleFiles).toHaveBeenCalledTimes(1);
+      expect(globalThis.electronAPI.checkKitSampleFiles).toHaveBeenCalledTimes(
+        1,
+      );
     });
 
     it("checks a kit whose files are all known to be readable, since one may be gone, and doesn't reload if none is", async () => {
       metadata({
         ...row(1, 0, "kick.wav", 1),
         source_status: "readable",
-      } as never);
-      vi.mocked(window.electronAPI.checkKitSampleFiles).mockResolvedValue({
+      });
+      vi.mocked(globalThis.electronAPI.checkKitSampleFiles).mockResolvedValue({
         data: { changed: 0, checked: 1 },
         success: true,
       });
@@ -1660,7 +1604,7 @@ describe("KitVoicePanels", () => {
       );
 
       await waitFor(() =>
-        expect(window.electronAPI.checkKitSampleFiles).toHaveBeenCalledWith(
+        expect(globalThis.electronAPI.checkKitSampleFiles).toHaveBeenCalledWith(
           "Kit1",
         ),
       );

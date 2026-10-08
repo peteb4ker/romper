@@ -1,11 +1,10 @@
-import type { KitWithRelations } from "@romper/shared/db/schema";
-
 import { render, screen } from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { VoiceSamples } from "../kitTypes";
 
+import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
 import KitEditorContainer from "../KitEditorContainer";
 
 // Mock KitEditor component
@@ -22,29 +21,21 @@ vi.mock("../KitEditor", () => ({
 }));
 
 describe("KitEditorContainer", () => {
-  const mockKit: KitWithRelations = {
-    alias: null,
-    artist: null,
-    bank_letter: "A",
-    editable: false,
-    locked: false,
-    modified_since_sync: false,
-    name: "TestKit",
-    step_pattern: null,
-    voices: [],
-  };
+  const mockKit = createMockKitWithRelations({ name: "TestKit", voices: [] });
 
   const mockSamples: VoiceSamples = {
     1: ["kick.wav"],
     2: ["snare.wav"],
   };
 
-  const defaultProps = {
+  const defaultProps: React.ComponentProps<typeof KitEditorContainer> = {
+    kit: mockKit,
     kitIndex: 0,
     kitName: "TestKit",
     kits: [mockKit],
     onAddUndoAction: vi.fn(),
     onBack: vi.fn().mockResolvedValue(undefined),
+    onKitUpdated: vi.fn().mockResolvedValue(undefined),
     onMessage: vi.fn(),
     onNextKit: vi.fn(),
     onPrevKit: vi.fn(),

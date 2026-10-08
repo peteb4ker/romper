@@ -2,6 +2,9 @@ import { render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
+import { createMockSample } from "../../../../tests/factories/sample.factory";
+import { createMockVoice } from "../../../../tests/factories/voice.factory";
 import { createSlotPlaybackStore } from "../hooks/kit-management/slotPlaybackStore";
 import KitVoicePanels from "../KitVoicePanels";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
@@ -35,24 +38,26 @@ interface VoiceSpec {
 function renderPanels(voices: VoiceSpec[]) {
   const samples: Record<number, string[]> = {};
   for (const v of voices) samples[v.voice] = v.samples;
-  const kit = {
+  const kit = createMockKitWithRelations({
     alias: "Kit1",
     name: "Kit1",
-    voices: voices.map((v) => ({
-      id: v.voice,
-      kit_name: "Kit1",
-      stereo_choice: v.stereo_choice ?? null,
-      stereo_mode: v.stereo_mode ?? false,
-      voice_alias: null,
-      voice_number: v.voice,
-    })),
-  };
+    voices: voices.map((v) =>
+      createMockVoice({
+        id: v.voice,
+        kit_name: "Kit1",
+        stereo_choice: v.stereo_choice ?? null,
+        stereo_mode: v.stereo_mode ?? false,
+        voice_alias: null,
+        voice_number: v.voice,
+      }),
+    ),
+  });
   return render(
     <MockSettingsProvider>
       <MockMessageDisplayProvider>
         <KitVoicePanels
           isEditable
-          kit={kit as never}
+          kit={kit}
           kitName="Kit1"
           onPlay={vi.fn()}
           onSampleSelect={vi.fn()}
@@ -62,6 +67,9 @@ function renderPanels(voices: VoiceSpec[]) {
           samples={samples}
           selectedSampleIdx={0}
           selectedVoice={1}
+          sequencerOpen={false}
+          setSelectedSampleIdx={vi.fn()}
+          setSelectedVoice={vi.fn()}
           slotPlayback={createSlotPlaybackStore()}
         />
       </MockMessageDisplayProvider>
@@ -71,18 +79,20 @@ function renderPanels(voices: VoiceSpec[]) {
 
 /** The kit's samples as main stores them, with each file's channel count */
 function storedSamples(rows: Array<[number, string, number]>) {
-  vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-    data: rows.map(([voice, filename, channels]) => ({
-      filename,
-      gain_db: 0,
-      kit_name: "Kit1",
-      slot_number: 0,
-      source_path: `/src/${filename}`,
-      voice_number: voice,
-      wav_channels: channels,
-    })),
+  vi.mocked(globalThis.electronAPI.getAllSamplesForKit).mockResolvedValue({
+    data: rows.map(([voice, filename, channels]) =>
+      createMockSample({
+        filename,
+        gain_db: 0,
+        kit_name: "Kit1",
+        slot_number: 0,
+        source_path: `/src/${filename}`,
+        voice_number: voice,
+        wav_channels: channels,
+      }),
+    ),
     success: true,
-  } as never);
+  });
 }
 
 const playsStereo = (voice: number) =>

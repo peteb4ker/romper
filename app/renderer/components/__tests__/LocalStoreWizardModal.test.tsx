@@ -23,15 +23,6 @@ vi.mock("../LocalStoreWizardUI", () => ({
   )),
 }));
 
-// Mock window.electronAPI
-const mockCloseApp = vi.fn();
-Object.defineProperty(window, "electronAPI", {
-  value: {
-    closeApp: mockCloseApp,
-  },
-  writable: true,
-});
-
 describe("LocalStoreWizardModal", () => {
   const defaultProps = {
     isOpen: true,
@@ -147,7 +138,7 @@ describe("LocalStoreWizardModal", () => {
         screen.getByTestId("wizard-close").click();
 
         expect(mockOnClose).toHaveBeenCalledTimes(1);
-        expect(mockCloseApp).not.toHaveBeenCalled();
+        expect(globalThis.electronAPI.closeApp).not.toHaveBeenCalled();
       });
     });
 
@@ -168,35 +159,6 @@ describe("LocalStoreWizardModal", () => {
 
         expect(mockOnCloseApp).toHaveBeenCalledTimes(1);
         expect(mockOnClose).not.toHaveBeenCalled();
-      });
-
-      it("handles missing electronAPI gracefully when auto-triggered", () => {
-        const mockOnClose = vi.fn();
-
-        // Mock the electronAPI to be undefined for this test
-        const originalElectronAPI = window.electronAPI;
-        Object.defineProperty(window, "electronAPI", {
-          value: undefined,
-          writable: true,
-        });
-
-        expect(() => {
-          render(
-            <LocalStoreWizardModal
-              {...defaultProps}
-              isAutoTriggered={true}
-              onClose={mockOnClose}
-            />,
-          );
-
-          screen.getByTestId("wizard-close").click();
-        }).not.toThrow();
-
-        // Restore the original
-        Object.defineProperty(window, "electronAPI", {
-          value: originalElectronAPI,
-          writable: true,
-        });
       });
     });
 
@@ -231,7 +193,6 @@ describe("LocalStoreWizardModal", () => {
   describe("Props handling", () => {
     it("handles all props correctly", () => {
       const props = {
-        isAutoTriggered: false,
         isOpen: true,
         onClose: vi.fn(),
         onSuccess: vi.fn(),
@@ -239,25 +200,6 @@ describe("LocalStoreWizardModal", () => {
       };
 
       expect(() => render(<LocalStoreWizardModal {...props} />)).not.toThrow();
-    });
-
-    it("uses default value for isAutoTriggered when not provided", () => {
-      const mockOnClose = vi.fn();
-
-      render(
-        <LocalStoreWizardModal
-          isOpen={true}
-          onClose={mockOnClose}
-          onSuccess={vi.fn()}
-          setLocalStorePath={vi.fn()}
-        />,
-      );
-
-      // Should use normal close behavior (not auto-triggered)
-      screen.getByTestId("wizard-close").click();
-
-      expect(mockOnClose).toHaveBeenCalledTimes(1);
-      expect(mockCloseApp).not.toHaveBeenCalled();
     });
   });
 

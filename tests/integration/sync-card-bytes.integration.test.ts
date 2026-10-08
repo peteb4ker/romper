@@ -11,7 +11,6 @@ vi.mock("electron", () => ({
 import {
   addKit,
   addSample,
-  createRomperDbFile,
   updateVoiceStereoMode,
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { syncService } from "../../electron/main/services/syncService.js";
@@ -25,6 +24,7 @@ import {
   sine,
   type WavFormat,
 } from "../validation/support/wav";
+import { createStoreDb } from "./support/storeDb.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 // RE-67: Romper's main promise, checked on the bytes. A kit of generated
@@ -193,7 +193,7 @@ describe("[UC-28] [UC-34] [Q-07] What reaches the card, byte for byte (RE-67)", 
     sdCardPath = path.join(tempDir, "card");
     fs.mkdirSync(sdCardPath, { recursive: true });
     fs.mkdirSync(localStorePath, { recursive: true });
-    createRomperDbFile(dbDir);
+    createStoreDb(dbDir);
     settings = { localStorePath };
 
     const samplesDir = path.join(tempDir, "samples");

@@ -111,6 +111,19 @@ jobs:
           Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
           sleep 2
 
+      # Windows runners keep the default temp folder on C:, where SQLite's
+      # flushes are slow and slower still while the other test workers write;
+      # D: (RUNNER_TEMP) flushes quickly. Measured in #635 with the suite on
+      # each: it took about half the time on D:, and its slowest database
+      # tests went from seconds to under one. Every integration test makes
+      # its stores under os.tmpdir(), which reads TEMP and TMP on Windows.
+      - name: Keep temp files on the runner's D drive (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          "TEMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
+          "TMP=$env:RUNNER_TEMP" >> $env:GITHUB_ENV
+
       - name: Run integration tests
         run: npm run test:integration -- --reporter=json --outputFile.json=reports/results-integration.json
         env:

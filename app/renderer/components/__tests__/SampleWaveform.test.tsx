@@ -1817,6 +1817,7 @@ describe("[UC-29] switching theme redraws the waveform (#760)", () => {
   const waveform = (kitName: string, playTrigger = 0) => (
     <SampleWaveform
       kitName={kitName}
+      playsStereo={false}
       playTrigger={playTrigger}
       slotNumber={1}
       voiceColor="var(--voice-1)"
@@ -1836,9 +1837,12 @@ describe("[UC-29] switching theme redraws the waveform (#760)", () => {
         listeners.delete(listener),
       ),
     };
-    globalThis.matchMedia = vi.fn(
-      () => query as unknown as MediaQueryList,
-    ) as typeof globalThis.matchMedia;
+    // The theme code reads only matches and adds or removes a change
+    // listener, so a plain object stands in for the MediaQueryList
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn(() => query),
+    );
     return {
       change(nowDark: boolean) {
         query.matches = nowDark;
@@ -1864,13 +1868,19 @@ describe("[UC-29] switching theme redraws the waveform (#760)", () => {
     );
     frames = new Map();
     nextFrame = 0;
-    global.requestAnimationFrame = vi.fn((cb: FrameRequestCallback) => {
-      frames.set(++nextFrame, cb);
-      return nextFrame;
-    });
-    global.cancelAnimationFrame = vi.fn((id: number) => {
-      frames.delete(id);
-    });
+    vi.stubGlobal(
+      "requestAnimationFrame",
+      vi.fn((cb: FrameRequestCallback) => {
+        frames.set(++nextFrame, cb);
+        return nextFrame;
+      }),
+    );
+    vi.stubGlobal(
+      "cancelAnimationFrame",
+      vi.fn((id: number) => {
+        frames.delete(id);
+      }),
+    );
     ctx = createMockAudioContext({
       decodeAudioData: vi.fn(async () => ({
         duration: 1,
@@ -1880,10 +1890,13 @@ describe("[UC-29] switching theme redraws the waveform (#760)", () => {
         sampleRate: 44100,
       })),
     });
-    global.AudioContext = vi.fn(function () {
-      return ctx;
-    });
-    vi.mocked(window.electronAPI.getSampleAudioBuffer).mockResolvedValue({
+    vi.stubGlobal(
+      "AudioContext",
+      vi.fn(function () {
+        return ctx;
+      }),
+    );
+    vi.mocked(globalThis.electronAPI.getSampleAudioBuffer).mockResolvedValue({
       data: { bytes: new ArrayBuffer(1024), version: "v1" },
       success: true,
     });
@@ -1892,10 +1905,11 @@ describe("[UC-29] switching theme redraws the waveform (#760)", () => {
   afterEach(() => {
     getComputedStyleSpy.mockRestore();
     applyTheme(false);
+    vi.unstubAllGlobals();
   });
 
   it("redraws a waveform that isn't playing in the new theme's color", async () => {
-    vi.mocked(window.electronAPI.readSettings).mockResolvedValue({
+    vi.mocked(globalThis.electronAPI.readSettings).mockResolvedValue({
       themeMode: "light",
     });
     stubSystemScheme(false);
@@ -1926,7 +1940,7 @@ describe("[UC-29] switching theme redraws the waveform (#760)", () => {
   });
 
   it("redraws when the system scheme changes and the theme follows it", async () => {
-    vi.mocked(window.electronAPI.readSettings).mockResolvedValue({
+    vi.mocked(globalThis.electronAPI.readSettings).mockResolvedValue({
       themeMode: "system",
     });
     const system = stubSystemScheme(false);

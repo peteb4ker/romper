@@ -424,7 +424,10 @@ describe("useKitDataManager", () => {
     });
   });
 
-  describe("[UC-11] markKitModified (RE-35)", () => {
+  // RE-35: main flags the kit with the gain. #452: the gain goes into the
+  // loaded kit's rows too, which the voice panels read instead of asking
+  // main again.
+  describe("[UC-11] [UC-24] markGainSaved (RE-35, #452)", () => {
     const loaded = async () => {
       const hook = renderHook(() =>
         useKitDataManager({
@@ -438,34 +441,132 @@ describe("useKitDataManager", () => {
       });
       return hook;
     };
+    const kickGain = (
+      result: { current: ReturnType<typeof useKitDataManager> },
+      kit = "A0",
+    ) =>
+      result.current
+        .getKitByName(kit)
+        ?.samples?.find((s) => s.voice_number === 1 && s.slot_number === 0)
+        ?.gain_db;
 
-    it("shows the kit as modified without reloading the kits", async () => {
+    it("shows the gain and the kit as modified without reloading anything", async () => {
       const { result } = await loaded();
       vi.mocked(globalThis.electronAPI.getKits).mockClear();
+      const otherKit = result.current.getKitByName("A1");
 
       act(() => {
-        result.current.markKitModified("A0");
+        result.current.markGainSaved("A0", 1, 0, 4);
       });
 
+      expect(kickGain(result)).toBe(4);
       expect(result.current.getKitByName("A0")?.modified_since_sync).toBe(true);
-      expect(result.current.getKitByName("A1")?.modified_since_sync).toBe(
-        false,
-      );
+      expect(result.current.getKitByName("A1")).toBe(otherKit);
       expect(globalThis.electronAPI.getKits).not.toHaveBeenCalled();
+      expect(globalThis.electronAPI.getKit).not.toHaveBeenCalled();
     });
 
-    it("keeps the same kits when the kit is already modified, so a gain knob re-renders once", async () => {
+    it("keeps the same kits when the gain and the flag already show", async () => {
       const { result } = await loaded();
       act(() => {
-        result.current.markKitModified("A0");
+        result.current.markGainSaved("A0", 1, 0, 4);
       });
       const kits = result.current.kits;
 
       act(() => {
-        result.current.markKitModified("A0");
+        result.current.markGainSaved("A0", 1, 0, 4);
       });
 
       expect(result.current.kits).toBe(kits);
+    });
+
+    it("[Q-01] keeps a saved gain over a reload sent before it", async () => {
+      const { result } = await loaded();
+      let answer: (value: DbResult<KitWithRelations>) => void = () => {};
+      vi.mocked(globalThis.electronAPI.getKit).mockReturnValueOnce(
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+      );
+      let reload: Promise<void>;
+      act(() => {
+        reload = result.current.refreshKit("A0");
+      });
+      act(() => {
+        result.current.markGainSaved("A0", 1, 0, 4);
+      });
+
+      await act(async () => {
+        answer({
+          data: createMockKitWithRelations({
+            alias: "Added a sample",
+            name: "A0",
+            samples: mockSamples,
+          }),
+          success: true,
+        });
+        await reload;
+      });
+
+      // The reload's other changes land, and the gain stays
+      expect(result.current.getKitByName("A0")?.alias).toBe("Added a sample");
+      expect(kickGain(result)).toBe(4);
+      expect(result.current.getKitByName("A0")?.modified_since_sync).toBe(true);
+    });
+
+    it("shows what a reload sent after the save reads", async () => {
+      const { result } = await loaded();
+      act(() => {
+        result.current.markGainSaved("A0", 1, 0, 4);
+      });
+      vi.mocked(globalThis.electronAPI.getKit).mockResolvedValueOnce({
+        data: createMockKitWithRelations({
+          name: "A0",
+          samples: [createMockSample({ gain_db: -2 })],
+        }),
+        success: true,
+      });
+
+      await act(async () => {
+        await result.current.refreshKit("A0");
+      });
+
+      expect(kickGain(result)).toBe(-2);
+    });
+  });
+
+  describe("[UC-10] a saved change and an older reload (#452)", () => {
+    it("keeps a favorite saved after a full reload was sent", async () => {
+      const { result } = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          isLocalStoreReady: true,
+          localStorePath: "/test/path",
+        }),
+      );
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      let answer: (value: DbResult<KitWithRelations[]>) => void = () => {};
+      vi.mocked(globalThis.electronAPI.getKits).mockReturnValueOnce(
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+      );
+      let reload: Promise<void>;
+      act(() => {
+        reload = result.current.refreshAllKitsAndSamples();
+      });
+      await act(async () => {
+        await result.current.toggleKitFavorite("A0");
+      });
+
+      await act(async () => {
+        answer({ data: mockKits, success: true });
+        await reload;
+      });
+
+      expect(result.current.getKitByName("A0")?.is_favorite).toBe(true);
     });
   });
 

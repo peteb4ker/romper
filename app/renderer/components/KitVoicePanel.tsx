@@ -1,3 +1,5 @@
+import type { Sample } from "@romper/shared/db/schema";
+
 import React from "react";
 
 import type { SlotPlaybackStore } from "./hooks/kit-management/slotPlaybackStore";
@@ -26,10 +28,11 @@ interface KitVoicePanelProps {
   isFlashing?: boolean;
   isLinkedPrimary?: boolean;
   kitName: string;
+  /** The kit's sample rows as loaded, for a drop's duplicate check (#452) */
+  kitSamples?: Sample[];
   /** The pair was linked by Romper, not by hand (#537): labelled */
   linkedAutomatically?: boolean;
   linkedWith?: number;
-  onBatchDropComplete?: () => void;
   onGainChange?: SlotGainChange;
   onGainCommit?: SlotGainCommit;
   // Tells the user about files a drop didn't add (RE-40)
@@ -103,9 +106,9 @@ const KitVoicePanel: React.FC<
   isFlashing = false,
   isLinkedPrimary = false,
   kitName,
+  kitSamples,
   linkedAutomatically = false,
   linkedWith,
-  onBatchDropComplete,
   onGainChange,
   onGainCommit,
   onMessage,
@@ -153,7 +156,7 @@ const KitVoicePanel: React.FC<
     isDisabled,
     isEditable: effectiveEditable,
     kitName,
-    onBatchDropComplete,
+    kitSamples,
     onMessage,
     onSampleAdd,
     onSampleMove,

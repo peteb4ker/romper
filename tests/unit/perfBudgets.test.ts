@@ -152,7 +152,7 @@ describe("performance budgets", () => {
         },
         {
           label: "Moving to the next kit",
-          max: 2,
+          max: 0,
           measured: 0,
           metric: "get-all-samples-for-kit",
           name: "next kit",

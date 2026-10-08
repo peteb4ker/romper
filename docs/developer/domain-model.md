@@ -124,9 +124,9 @@ Renderer paths are under `app/renderer/components/` unless they start with
    in the kit editor reloads its kit with one `get-kit` call
    (`refreshKit`), and reads are numbered so an older response can't land
    over a newer one; changes to the list itself reload every kit
-   (`refreshAllKitsAndSamples`). A BPM save patches its kit in `kits`
-   instead, and a gain save doesn't reach it at all (#452; plan in
-   [`kit-refresh.md`](kit-refresh.md)).
+   (`refreshAllKitsAndSamples`). A BPM, gain, favorite, name or editable
+   save patches its kit in `kits` instead, and stays over a read sent
+   before it (#452; plan in [`kit-refresh.md`](kit-refresh.md)).
 2. **The kit editor isn't remounted between kits.** `KitsView` renders
    `KitEditorContainer` without a `key`, and the error boundary's
    `resetKey` only clears its error. Every `useState` and `useRef` in the
@@ -330,7 +330,7 @@ Kit fields, each owned by a column of `kits`:
 | `editable` | Whether sample, gain, voice-name and stereo edits are allowed | none | `update-kit-metadata`; on for created and duplicated kits, off for imported ones | `kits[i]`, patched; `useKitEditorLogic.isEditable`; gates undo of sample edits (`applyUndoRedo`) |
 | `locked` | Protection from scan and delete | none | nothing in the UI | `kits[i]` (`KitGridItem` `canDelete`) |
 | `is_favorite` | Starred | none | `toggleKitFavorite` (`toggle-kit-favorite`): flips the stored value and returns the new one | `kits[i]`, set from the returned value (#453 removed the shadow map) |
-| `modified_since_sync` | The next write will change this kit on the card (#566) | none | see below | `kits[i]`; `markKitModified` patches it locally after a gain save; the Modified filter and count (`useKitFilters`), card border, header badge |
+| `modified_since_sync` | The next write will change this kit on the card (#566) | none | see below | `kits[i]`; `markGainSaved` patches it locally after a gain save; the Modified filter and count (`useKitFilters`), card border, header badge |
 | `bpm` | Sequencer tempo, 30 to 180 | none | `updateKit` via `update-kit-bpm`; no reload after, but `KitsView` patches the kit's `bpm` in `kits` once it's saved (`useBpm` `onSaved`) | `KitStepSequencer`'s `useBpm`, which drives playback and resets on the kit name as well as the loaded BPM |
 | `step_pattern` | 4 voices × 16 steps | none | `updateKit` via `update-step-pattern`, then a full reload; undo and redo write it with the conditions and slices via `restore-kit-sequence` | `useStepPattern` state and `latestRef`; `useSequenceHistory` |
 | `trigger_conditions` | A:B condition per step | none | `updateKit` via `update-trigger-conditions`, then a full reload | `useTriggerConditions` state and ref |
@@ -552,7 +552,7 @@ voice and slot):
 | `slot_number` | Position in the voice, 0 to 11 (shown 1 to 12) | writes (the `-NN` in the card name sets the layer order) | add, move, delete with reindex, restore (`sampleCrudService`, `sampleBatchOperations`, `sampleMovement`, `restoreVoicesTx`) | `allKitSamples[kit][voice][slot]` (file name only, `""` for gaps); `sampleMetadata` keyed by `slotKey(voice, slot)` |
 | `source_path` | The file Romper reads: outside the store for samples you add, inside it for imported ones | none | add; scan inserts | `sampleMetadata`; undo snapshots |
 | `filename` | The readable part of the card name | writes (`cardSampleFileName`) | add, scan | `allKitSamples`; `kits[i].samples` |
-| `gain_db` | Trim from -24 to +12 dB, baked in at write | writes (no counterpart: the Rample's level is per voice) | `updateSampleGain` (`update-sample-gain`, flags the kit) | `sampleMetadata` only; `kits[i].samples[].gain_db` isn't refreshed after a save |
+| `gain_db` | Trim from -24 to +12 dB, baked in at write | writes (no counterpart: the Rample's level is per voice) | `updateSampleGain` (`update-sample-gain`, flags the kit) | `kits[i].samples[].gain_db`, patched after a save (`markGainSaved`); `sampleMetadata`, built from it |
 | `wav_bit_depth`, `wav_channels`, `wav_sample_rate`, `wav_bitrate` | The file's format when it was added or last scanned | none (the write reads the header) | add (from the validation read), scan only when null | `sampleMetadata` → tooltip and format badge (`wavMetadataFormatter`) |
 | `source_status` | What Romper found when it last read the file: `readable`, `missing`, `unreadable`, or null (never checked, as in older libraries) | none | add (`readable`); scan (`mergeKitScanTx`); the kit editor's check when a kit opens (`check-kit-sample-files` → `checkKitSampleFiles`, #537); a completed write (`completeWrite`: `missing`, `unreadable`, or null once a problem file is fine) | `kits[i].quarantined` (`isKitQuarantined`, in main); `sampleMetadata` → the slot labels "File not found" and "Can't be read", the missing-files notice, and the quarantine notice |
 
@@ -591,8 +591,8 @@ voice and slot):
     characters (`cardSampleFileName`).
 - **Disagreements on main:**
   - `kits[i].samples` and `allKitSamples` refresh together (`refreshKit`),
-    but `sampleMetadata` refetches its own copy whenever the kit object
-    changes (#452, target step 8).
+    and `sampleMetadata` is built from `kits[i].samples` with the gains
+    being turned on top (#452); it's still a separate copy until step 8.
   - Search reads `allKitSamples` as objects, but its values are file-name
     strings, so that input matches nothing; search works from
     `kit.samples` only.

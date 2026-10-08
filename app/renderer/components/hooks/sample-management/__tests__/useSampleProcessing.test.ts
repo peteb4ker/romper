@@ -1,6 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createMockSample } from "../../../../../../tests/factories/sample.factory";
 import { useSampleProcessing } from "../useSampleProcessing";
 
 describe("useSampleProcessing", () => {
@@ -32,7 +33,19 @@ describe("useSampleProcessing", () => {
   });
 
   describe("[Q-07] getCurrentKitSamples", () => {
-    it("returns the kit's samples", async () => {
+    it("[Q-01] [UC-19] returns the kit's rows as loaded, without asking main (#452)", async () => {
+      const kitSamples = [
+        createMockSample({ source_path: "/path/held.wav", voice_number: 1 }),
+      ];
+      const { result } = renderHook(() =>
+        useSampleProcessing({ ...makeOptions(), kitSamples }),
+      );
+
+      expect(await result.current.getCurrentKitSamples()).toBe(kitSamples);
+      expect(globalThis.electronAPI.getAllSamplesForKit).not.toHaveBeenCalled();
+    });
+
+    it("returns the kit's samples from main for a kit loaded without them", async () => {
       const { result } = renderHook(() => useSampleProcessing(makeOptions()));
 
       const samples = await result.current.getCurrentKitSamples();

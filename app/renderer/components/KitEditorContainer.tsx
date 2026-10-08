@@ -16,7 +16,12 @@ interface KitEditorContainerProps {
   onAddUndoAction: (action: AnyUndoAction) => void;
   onBack: (scrollToKit?: string) => Promise<void>;
   onBpmSaved?: (kitName: string, bpm: number) => void;
-  onKitModified?: (kitName: string) => void;
+  onGainSaved?: (
+    kitName: string,
+    voiceNumber: number,
+    slotNumber: number,
+    gainDb: number,
+  ) => void;
   onKitUpdated: (kitName: string) => Promise<void>;
   onMessage: (text: string, type?: string, duration?: number) => void;
   onNextKit: () => void;
@@ -46,7 +51,7 @@ const KitEditorContainer: React.FC<KitEditorContainerProps> = (props) => {
     onAddUndoAction,
     onBack,
     onBpmSaved,
-    onKitModified,
+    onGainSaved,
     onKitUpdated,
     onMessage,
     onNextKit,
@@ -92,7 +97,7 @@ const KitEditorContainer: React.FC<KitEditorContainerProps> = (props) => {
       onAddUndoAction={onAddUndoAction}
       onBack={handleBack}
       onBpmSaved={onBpmSaved}
-      onKitModified={onKitModified}
+      onGainSaved={onGainSaved}
       onKitUpdated={onKitUpdated}
       onMessage={handleMessage}
       onNextKit={onNextKit}

@@ -4,7 +4,7 @@ priority: medium
 status: in progress
 updated: 2026-10-08
 context_size: small
-implementation_status: step 1 in #765; step 4s failure handling in the PR after it; steps 2, 3 and the rest of 4 planned
+implementation_status: step 1 in #765; step 4's failure handling in #775; step 2 in the PR after it; step 3 and the rest of 4 planned
 -->
 
 # Kit refresh after an edit
@@ -105,18 +105,34 @@ not here.
   budget; tighter `bytes` budgets in the validation profile for the editor
   actions.
 
-### 2. Drop the extra reloads and refetches
+### 2. Drop the extra reloads and refetches (done in the PR after #775)
 
 - `KitVoicePanels` builds `sampleMetadata` from `kit.samples` (full rows,
-  the same columns as `get-all-samples-for-kit`) instead of fetching on
-  every kit change.
+  the same columns as `get-all-samples-for-kit`) instead of fetching it on
+  every kit change. A kit listed without its rows shows unknown gains, as
+  a failed read did, until reopening it loads them (#605).
+- For that, a gain main saved goes into the loaded kit's row
+  (`markGainSaved`, which replaces `markKitModified`), and a gain being
+  turned stays on screen over a reload until main answers for it.
+- **Saved changes outlive older reads.** A change main has saved and the
+  renderer shows without a reload (a gain, BPM, favorite, name or editable
+  flag) is numbered like a read. A read sent before it is shown with the
+  change applied; a read sent after it supersedes it.
 - A drop reloads once: each add already reloads, so the reload when the drop
-  finishes (`onBatchDropComplete`) goes.
-- The drop's duplicate check and the undo snapshots before a delete or move
-  read the open kit's rows the renderer already holds, or main returns the
-  rows it replaced, instead of another `get-all-samples-for-kit`.
-- **Verified by:** the drop, delete and step-toggle budgets fall and are
-  tightened; tests for the metadata copy following a reload.
+  finishes (`onBatchDropComplete`) is gone.
+- The drop's duplicate check reads the kit's rows as loaded.
+- The undo snapshot before a delete or move moves to step 3: main returns
+  the rows it replaced, read in the same transaction. A snapshot from the
+  renderer's copy could be stale while a reload is on its way, and undo
+  would then put back the wrong rows.
+- **Verified by:** the `get-all-samples-for-kit` budgets are pinned at none
+  for opening, stepping, editing, renaming, toggling and dropping, and the
+  drop's `total` reached its target; delete keeps one fetch, the undo
+  snapshot, with a target of none. Tests cover the details following the
+  kit's rows, a saved gain going into the rows, a gain kept over an older
+  reload, a favorite kept over an older full load, and the duplicate check
+  reading the held rows. The validation profile's byte budgets are
+  tightened.
 
 ### 3. Edits return the changed kit
 
@@ -124,6 +140,8 @@ not here.
   settings, voice name, stereo link and rescan return the
   `KitWithRelations` they changed, read in the same transaction. The
   renderer patches with it, numbered like a read, and makes no `get-kit`.
+- Delete and move also return the voices' rows as they were before, for
+  the undo snapshot, so the renderer doesn't fetch them first.
 - Main serializes writes, so each result is newer than the one before; a
   step toggle that returns while the next is saving no longer shows the
   older pattern for a moment.

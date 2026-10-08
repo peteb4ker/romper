@@ -1,3 +1,4 @@
+import { isKitName } from "@romper/shared/rampleCardLayout";
 // Kit operations utilities
 
 /**
@@ -133,5 +134,5 @@ export function isVoiceAtSampleLimit(samples: string[]): boolean {
  * Validates kit slot format (A0-Z99)
  */
 export function validateKitSlot(slot: string): boolean {
-  return /^\p{Lu}\d{1,2}$/u.test(slot);
+  return isKitName(slot);
 }

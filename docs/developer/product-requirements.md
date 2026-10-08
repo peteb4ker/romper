@@ -761,7 +761,7 @@ See [romper-db.md](romper-db.md).
 - Only one local store and associated DB are active at a time, as set in application settings.
 - **Immutable Baseline Architecture**: The local store can be initialized from SD card, Squarp.net archive (https://data.squarp.net/RampleSamplesV1-2.zip), or a blank folder. Once initialized, this becomes an immutable baseline that is never modified - it preserves the exact initial state chosen during setup.
 - **Local Store Initialization Sources**:
-  - **SD Card Source**: Any folder can be chosen. It is valid if it contains at least one subfolder matching ^[A-Z].\*?(?:[1-9]?\d)$; otherwise, a warning is shown and the user chooses another folder. _Built differently (2026-10-01): only folders named like kits, a letter and 0 to 99 (`A0` to `Z99`, `isValidKit`), count and are imported (RE-32)._
+  - **SD Card Source**: Any folder can be chosen. It is valid if it contains at least one subfolder matching ^[A-Z].\*?(?:[1-9]?\d)$; otherwise, a warning is shown and the user chooses another folder. _Built differently (2026-10-01): only folders named like kits, a letter A to Z in either case and 0 to 99 (`A0` to `Z99`; `cardKitFolders`), count and are imported (RE-32). A lowercase folder such as `a5` is imported as kit A5 (#573)._
   - **Factory Samples**: Downloads and extracts official Squarp factory samples as the baseline.
   - **Empty Folder**: Creates minimal structure for users starting from scratch.
 - **Reference-Only Sample Management**: User-added samples are referenced by `source_path` in the database but never copied to the local store. This prevents bloat and maintains the immutable baseline concept.

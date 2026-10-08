@@ -2,7 +2,11 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import {
+  cardKitFolders,
   cardSampleFileName,
+  isBankLetter,
+  isKitName,
+  kitNameOfCardFolder,
   MAX_CARD_FILE_NAME_LENGTH,
   parseBankNameFile,
   voiceOfCardFile,
@@ -180,6 +184,65 @@ describe("[UC-34] rampleCardLayout", () => {
       "A0",
     ])("isn't a bank name file: %s", (fileName) => {
       expect(parseBankNameFile(fileName)).toBeNull();
+    });
+  });
+
+  // #573: one rule for kit names and bank letters, which setup, the write
+  // and every kit or bank check use
+  describe("[Q-04] kit names and bank letters", () => {
+    it.each(["A0", "A1", "B10", "Z99", "A01"])("%s is a kit name", (name) => {
+      expect(isKitName(name)).toBe(true);
+    });
+
+    it.each(["a0", "Ä1", "A100", "A", "0A", "AA1", "A-1", "", " A1", "A1 "])(
+      "%s isn't a kit name",
+      (name) => {
+        expect(isKitName(name)).toBe(false);
+      },
+    );
+
+    it("isn't fooled by a value that isn't a string", () => {
+      expect(isKitName(undefined)).toBe(false);
+      expect(isBankLetter(65)).toBe(false);
+    });
+
+    it("takes one capital A to Z as a bank letter", () => {
+      expect(isBankLetter("A")).toBe(true);
+      expect(isBankLetter("Z")).toBe(true);
+      for (const letter of ["a", "Ä", "É", "AA", "1", "", ".*"]) {
+        expect(isBankLetter(letter)).toBe(false);
+      }
+    });
+
+    it("reads a kit folder in either case as the kit's upper-case name", () => {
+      expect(kitNameOfCardFolder("A5")).toBe("A5");
+      expect(kitNameOfCardFolder("a5")).toBe("A5");
+      expect(kitNameOfCardFolder("z99")).toBe("Z99");
+    });
+
+    it.each(["Ä1", "A100", "Drums", "_save", "A - ALWIS.rtf"])(
+      "%s isn't a kit folder",
+      (folder) => {
+        expect(kitNameOfCardFolder(folder)).toBeNull();
+      },
+    );
+
+    it("lists a card's kit folders with their kits, in the order given", () => {
+      expect(
+        cardKitFolders(["_save", "b1", "A0", "Ä1", "notes.txt", "A100"]),
+      ).toEqual([
+        { folder: "b1", kitName: "B1" },
+        { folder: "A0", kitName: "A0" },
+      ]);
+    });
+
+    it("takes the upper-case folder when two hold one kit", () => {
+      expect(cardKitFolders(["a5", "A5"])).toEqual([
+        { folder: "A5", kitName: "A5" },
+      ]);
+      expect(cardKitFolders(["A5", "a5"])).toEqual([
+        { folder: "A5", kitName: "A5" },
+      ]);
     });
   });
 });

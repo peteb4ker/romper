@@ -5,6 +5,8 @@ export interface BankNames {
 
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
+import { isBankLetter } from "@romper/shared/rampleCardLayout";
+
 /**
  * Checks if a bank has any kits
  */
@@ -40,5 +42,5 @@ export function getFirstKitInBank(
  * Validates bank letter (A-Z)
  */
 export function validateBankLetter(bank: string): boolean {
-  return /^\p{Lu}$/u.test(bank.toUpperCase());
+  return isBankLetter(bank.toUpperCase());
 }

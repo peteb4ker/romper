@@ -1,6 +1,6 @@
 // Shared kit utilities for both main and renderer
 
-import { voiceOfCardFile } from "./rampleCardLayout.js";
+import { isKitName, voiceOfCardFile } from "./rampleCardLayout.js";
 
 // For a list of a kit folder's files, map them to the voice the Rample
 // assigns each one (the first character of the name; see rampleCardLayout)
@@ -124,11 +124,9 @@ export function inferVoiceTypeFromFilename(filename: string): null | string {
   );
 }
 
+/** A kit name as Romper stores it, A0 to Z99 (`isKitName`, #573) */
 export function isValidKit(kit: string): boolean {
-  // Valid kit: 1 uppercase letter A-Z, followed by 1-2 digits 0-99
-  return (
-    /^\p{Lu}\d{1,2}$/u.test(kit) && Number.parseInt(kit.slice(1), 10) <= 99
-  );
+  return isKitName(kit);
 }
 
 export function showBankAnchor(

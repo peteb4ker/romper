@@ -198,6 +198,36 @@ describe("useLocalStoreWizardFileOps", () => {
       });
     });
 
+    // #573: a write treats a lowercase card folder as its kit's, so setup
+    // must import it, or the first write would delete a kit it never read
+    it("[Q-04] copies a lowercase kit folder in as its upper-case kit", async () => {
+      mockApi.listFilesInRoot = vi.fn(() =>
+        Promise.resolve(["a5", "B1", "Ä1", "_save"]),
+      );
+      mockApi.copyDir = vi.fn(() => Promise.resolve({ success: true }));
+
+      const { result } = renderHook(() =>
+        useLocalStoreWizardFileOps({
+          api: mockApi,
+          reportProgress: mockReportProgress,
+          reportStepProgress: mockReportStepProgress,
+          setError: mockSetError,
+          setWizardState: mockSetWizardState,
+        }),
+      );
+
+      await result.current.validateAndCopySdCardKits("/sd/card", "/target");
+
+      expect(mockApi.copyDir).toHaveBeenCalledWith("/sd/card/a5", "/target/A5");
+      expect(mockApi.copyDir).toHaveBeenCalledWith("/sd/card/B1", "/target/B1");
+      expect(mockApi.copyDir).toHaveBeenCalledTimes(2);
+      expect(mockReportStepProgress).toHaveBeenCalledWith({
+        items: ["A5", "B1"],
+        onStep: expect.any(Function),
+        phase: "Copying kits...",
+      });
+    });
+
     it("should handle validation errors", async () => {
       mockApi.listFilesInRoot = vi.fn(() => Promise.resolve(["file.txt"])); // No kit folders
 

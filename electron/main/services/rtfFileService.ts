@@ -1,13 +1,19 @@
 import type { Bank } from "@romper/shared/db/schema.js";
 
-import { parseBankNameFile } from "@romper/shared/rampleCardLayout.js";
+import {
+  isBankLetter,
+  parseBankNameFile,
+} from "@romper/shared/rampleCardLayout.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
 import { withCardWatchdog } from "./cardWatchdog.js";
 
+// The bank letter rule lives with the card layout (#573); update-bank checks
+// it through this module
+export { isBankLetter } from "@romper/shared/rampleCardLayout.js";
+
 /** A bank letter: one capital, A to Z. */
-const BANK_LETTER_PATTERN = /^[A-Z]$/;
 
 /**
  * Characters a bank name can't hold, because it becomes a file name on the
@@ -185,11 +191,6 @@ export function bankRtfFileName(
   artistName: string,
 ): string {
   return `${bankLetter} - ${artistName}.rtf`;
-}
-
-/** True for a bank letter Romper accepts: one capital, A to Z. */
-export function isBankLetter(value: unknown): value is string {
-  return typeof value === "string" && BANK_LETTER_PATTERN.test(value);
 }
 
 /** True when a stored bank name can be written as a file. */

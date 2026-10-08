@@ -16,6 +16,25 @@ export const MAX_CARD_FILE_NAME_LENGTH = 64;
 
 const WAV_EXTENSION = /\.wav$/i;
 
+// Kit names and bank letters (#573). The Rample manual (How to make your own
+// sample kits) names a kit folder by its bank, a letter "from A to Z", and a
+// number "from 0 to 99". Romper stores both in upper case. On the card, names
+// are compared ignoring case, as FAT32 compares them: a folder named `a5` is
+// kit A5's folder, so setup imports it as A5 and a write keeps it as A5's.
+// Setup, the write's stale-entry check and every kit or bank check use these.
+
+/** A bank letter as Romper stores it: one capital, A to Z. */
+const BANK_LETTER_PATTERN = /^[A-Z]$/;
+
+/** A kit name as Romper stores it: a bank letter and a number, A0 to Z99. */
+const KIT_NAME_PATTERN = /^[A-Z]\d{1,2}$/;
+
+/**
+ * A kit folder at the card root: a kit name, the letter in either case
+ * (see {@link kitNameOfCardFolder}).
+ */
+export const KIT_FOLDER_PATTERN = /^[A-Z]\d{1,2}$/i;
+
 /**
  * A bank name file at the card root: `<letter> - <name>.rtf`, the letter A
  * to Z in either case. The factory card has them; whether the Rample shows
@@ -29,6 +48,26 @@ const VOICE_PREFIX = /^[1-4](?:-\d{2}(?=[ ._-]|$))?[ ._-]*/;
 
 // Characters FAT32 file names can't contain, plus control characters.
 const FAT_FORBIDDEN = /[\u0000-\u001f"*/:<>?\\|]/g;
+
+/**
+ * The kit folders among the names at a card's root, in the order given,
+ * each with the kit it holds (see {@link kitNameOfCardFolder}). Setup copies
+ * and imports these, so it takes every folder a write treats as a kit's. One
+ * folder per kit: should two names hold one kit, which only a
+ * case-sensitive file system allows, the upper-case one is taken.
+ */
+export function cardKitFolders(
+  names: readonly string[],
+): { folder: string; kitName: string }[] {
+  const byKit = new Map<string, string>();
+  for (const folder of names) {
+    const kitName = kitNameOfCardFolder(folder);
+    if (kitName && (!byKit.has(kitName) || folder === kitName)) {
+      byKit.set(kitName, folder);
+    }
+  }
+  return [...byKit].map(([kitName, folder]) => ({ folder, kitName }));
+}
 
 /**
  * The name sync gives a sample on the card: `<voice>-<slot> <name>.wav`.
@@ -68,6 +107,25 @@ export function cardSampleFileName(
   );
 
   return name ? `${prefix} ${name}${extension}` : `${prefix}${extension}`;
+}
+
+/** True for a bank letter as Romper stores it: one capital, A to Z. */
+export function isBankLetter(value: unknown): value is string {
+  return typeof value === "string" && BANK_LETTER_PATTERN.test(value);
+}
+
+/** True for a kit name as Romper stores it: A0 to Z99, the letter a capital. */
+export function isKitName(value: unknown): value is string {
+  return typeof value === "string" && KIT_NAME_PATTERN.test(value);
+}
+
+/**
+ * The kit a folder at the card root holds, by the name Romper stores it
+ * under (`a5` holds kit A5), or null when the folder isn't a kit folder
+ * (see {@link KIT_FOLDER_PATTERN}).
+ */
+export function kitNameOfCardFolder(folderName: string): null | string {
+  return KIT_FOLDER_PATTERN.test(folderName) ? folderName.toUpperCase() : null;
 }
 
 /**

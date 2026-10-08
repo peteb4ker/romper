@@ -1,6 +1,7 @@
 import type { Kit } from "@romper/shared/db/schema.js";
 
 import { isValidKit } from "@romper/shared/kitUtilsShared";
+import { isBankLetter } from "@romper/shared/rampleCardLayout";
 import { RefObject, useCallback, useMemo } from "react";
 
 import { hasCommandModifier } from "../../utils/keyboardShortcuts";
@@ -217,7 +218,7 @@ export function useKitGridKeyboard({
       if (isModalDialogOpen()) return;
 
       // A-Z hotkey: select first kit in bank
-      if (e.key.length === 1 && /^\p{Lu}$/u.test(e.key.toUpperCase())) {
+      if (e.key.length === 1 && isBankLetter(e.key.toUpperCase())) {
         handleBankSelection(e);
         return;
       }

@@ -1,9 +1,12 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  addSampleAction,
+  deleteSampleAction,
+} from "../../../../../../tests/factories/undoAction.factory";
 import { createSequenceEditAction } from "../sequenceUndo";
 import { useUndoRedoState } from "../useUndoRedoState";
-import { addSampleAction, deleteSampleAction } from "./undoActionFixtures";
 
 const mockAction = addSampleAction();
 

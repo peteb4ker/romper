@@ -17,6 +17,7 @@ import type {
 
 import { useKitItem } from "./hooks/kit-management/useKitItem";
 import { useKitItemActions } from "./hooks/kit-management/useKitItemActions";
+import { useTimeouts } from "./hooks/shared/useTimeouts";
 import StereoIcon from "./icons/StereoIcon";
 import { KitVoiceStrip } from "./KitVoiceStrip";
 import ActionPopover from "./shared/ActionPopover";
@@ -77,6 +78,7 @@ const KitGridItem = React.memo(
 
       // Favorite pulse animation state
       const [isPulsing, setIsPulsing] = useState(false);
+      const timeouts = useTimeouts();
 
       // Delete/duplicate popover state machines and exit animation
       const actions = useKitItemActions({
@@ -219,7 +221,7 @@ const KitGridItem = React.memo(
                     // Pulse on favorite add (not remove)
                     if (!isFavorite) {
                       setIsPulsing(true);
-                      setTimeout(() => setIsPulsing(false), 200);
+                      timeouts.set(() => setIsPulsing(false), 200);
                     }
                     onToggleFavorite(kit);
                   }}

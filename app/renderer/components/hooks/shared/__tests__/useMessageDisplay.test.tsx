@@ -122,4 +122,30 @@ describe("[UC-36] useMessageDisplay", () => {
     expect(consoleErrorSpy).toHaveBeenCalledWith("[message] Boom");
     consoleErrorSpy.mockRestore();
   });
+
+  describe("[Q-07] dismiss timers after unmount (#709)", () => {
+    it("clears every pending dismiss timer when it unmounts", () => {
+      const { result, unmount } = renderHook(() => useMessageDisplay());
+
+      act(() => {
+        result.current.showMessage("A", "info", 5000);
+        result.current.showMessage("B", "error");
+      });
+      expect(vi.getTimerCount()).toBe(2);
+
+      unmount();
+
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("schedules no dismiss timer for a message shown after unmount", () => {
+      const { result, unmount } = renderHook(() => useMessageDisplay());
+      const { showMessage } = result.current;
+      unmount();
+
+      showMessage("Late", "info", 5000);
+
+      expect(vi.getTimerCount()).toBe(0);
+    });
+  });
 });

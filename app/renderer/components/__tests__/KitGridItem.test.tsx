@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import KitGridItem from "../KitGridItem";
 
@@ -1283,6 +1283,43 @@ describe("KitGridItem", () => {
     it("shows nothing for a kit that isn't", () => {
       render(<KitGridItem {...defaultProps} />);
       expect(screen.queryByTestId("quarantine-indicator")).toBeNull();
+    });
+  });
+
+  describe("[Q-07] favorite pulse timer (#709)", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const pulseIcon = () =>
+      screen.getByTitle("Add to favorites").querySelector("svg");
+
+    it("pulses for 200 ms after adding a favorite", () => {
+      render(<KitGridItem {...defaultProps} onToggleFavorite={vi.fn()} />);
+
+      fireEvent.click(screen.getByTitle("Add to favorites"));
+      expect(pulseIcon()).toHaveClass("animate-favorite-pulse");
+
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+      expect(pulseIcon()).not.toHaveClass("animate-favorite-pulse");
+    });
+
+    it("leaves no pulse timer running after it unmounts", () => {
+      const { unmount } = render(
+        <KitGridItem {...defaultProps} onToggleFavorite={vi.fn()} />,
+      );
+      fireEvent.click(screen.getByTitle("Add to favorites"));
+      expect(vi.getTimerCount()).toBe(1);
+
+      unmount();
+
+      expect(vi.getTimerCount()).toBe(0);
     });
   });
 });

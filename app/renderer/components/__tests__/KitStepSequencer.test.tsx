@@ -386,6 +386,45 @@ describe("KitStepSequencer", () => {
     vi.useRealTimers();
   });
 
+  it("[Q-07] doesn't call onVoiceSettingChanged after it unmounts (#709)", () => {
+    vi.useFakeTimers();
+    try {
+      const onVoiceSettingChanged = vi.fn();
+
+      const { unmount } = render(
+        <KitStepSequencer
+          bpm={120}
+          kitName="TestKit"
+          onPlaySample={onPlaySample}
+          onVoiceSettingChanged={onVoiceSettingChanged}
+          samples={defaultSamples}
+          sequencerOpen={true}
+          setSequencerOpen={setSequencerOpen}
+          setStepPattern={setStepPattern}
+          stepPattern={stepPattern}
+          voices={[
+            { sample_mode: "first", voice_number: 1, voice_volume: 100 },
+            { sample_mode: "first", voice_number: 2, voice_volume: 100 },
+            { sample_mode: "first", voice_number: 3, voice_volume: 100 },
+            { sample_mode: "first", voice_number: 4, voice_volume: 100 },
+          ]}
+        />,
+      );
+      fireEvent.change(screen.getAllByRole("slider")[0], {
+        target: { value: "90" },
+      });
+      expect(vi.getTimerCount()).toBe(1);
+
+      unmount();
+
+      expect(vi.getTimerCount()).toBe(0);
+      vi.advanceTimersByTime(600);
+      expect(onVoiceSettingChanged).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("passes voiceMutes to the logic hook", () => {
     render(
       <KitStepSequencer

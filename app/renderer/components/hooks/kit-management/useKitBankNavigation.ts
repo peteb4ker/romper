@@ -9,6 +9,7 @@ import {
   type BankNames,
   getFirstKitInBank,
 } from "../../utils/bankOperations";
+import { useTimeouts } from "../shared/useTimeouts";
 
 export interface KitListComponent {
   scrollAndFocusKitByIndex: (index: number) => void;
@@ -37,6 +38,7 @@ export function useKitBankNavigation({
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const isProgrammaticScrollRef = useRef(false);
   const scrollTargetBankRef = useRef<null | string>(null);
+  const timeouts = useTimeouts();
   // Counts bank-name loads, so only the latest one's answer is shown
   const bankNamesLoadRef = useRef({ latest: 0 });
 
@@ -133,19 +135,22 @@ export function useKitBankNavigation({
 
   // Select a bank and keep it selected while the grid scrolls to it, so
   // visible-bank updates fired mid-scroll don't override the choice
-  const holdSelectedBankWhileScrolling = useCallback((bank: string) => {
-    isProgrammaticScrollRef.current = true;
-    scrollTargetBankRef.current = bank;
-    setSelectedBank(bank);
-    setTimeout(() => {
-      isProgrammaticScrollRef.current = false;
-      // Restore correct bank in case IO fired during scroll
-      if (scrollTargetBankRef.current) {
-        setSelectedBank(scrollTargetBankRef.current);
-        scrollTargetBankRef.current = null;
-      }
-    }, 1000);
-  }, []);
+  const holdSelectedBankWhileScrolling = useCallback(
+    (bank: string) => {
+      isProgrammaticScrollRef.current = true;
+      scrollTargetBankRef.current = bank;
+      setSelectedBank(bank);
+      timeouts.set(() => {
+        isProgrammaticScrollRef.current = false;
+        // Restore correct bank in case IO fired during scroll
+        if (scrollTargetBankRef.current) {
+          setSelectedBank(scrollTargetBankRef.current);
+          scrollTargetBankRef.current = null;
+        }
+      }, 1000);
+    },
+    [timeouts],
+  );
 
   // Virtualization-based bank focus/scroll logic
   const focusBankInKitList = useCallback(

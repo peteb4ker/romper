@@ -27,6 +27,7 @@ import { useBpm } from "./hooks/shared/useBpm";
 import { useLatestRef } from "./hooks/shared/useLatestRef";
 import { useSettingSave } from "./hooks/shared/useSettingSave";
 import { useSliceSteps } from "./hooks/shared/useSliceSteps";
+import { useTimeouts } from "./hooks/shared/useTimeouts";
 import { SequencerKeysOverlay } from "./SequencerHelp";
 import {
   PAD_GAP,
@@ -196,15 +197,16 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
   }, [props.voices, resetVolumeSaves, resetModeSaves]);
 
   // Debounce kit cache refresh for volume slider drags
+  const timeouts = useTimeouts();
   const refreshTimerRef = React.useRef<null | ReturnType<typeof setTimeout>>(
     null,
   );
   const debouncedRefresh = React.useCallback(() => {
-    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-    refreshTimerRef.current = setTimeout(() => {
+    timeouts.clear(refreshTimerRef.current);
+    refreshTimerRef.current = timeouts.set(() => {
       onVoiceSettingChanged?.();
     }, 500);
-  }, [onVoiceSettingChanged]);
+  }, [onVoiceSettingChanged, timeouts]);
 
   // Handle volume change — update local state + persist via IPC
   const handleVolumeChange = React.useCallback(

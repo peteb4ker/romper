@@ -37,25 +37,28 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
     settingsService.readSettings(inMemorySettings),
   );
 
-  ipcMain.handle("write-settings", (_event, key: string, value: unknown) => {
-    const clearing = value === null || value === undefined || value === "";
-    if (PATH_SETTING_KEYS.has(key) && !clearing) {
-      pathAccess.assertAllowed(value, { write: true });
-    }
-    const previousStore = inMemorySettings.localStorePath;
-    settingsService.writeSetting(inMemorySettings, key, value);
-    // A different store: close the old one's connection (RE-81). The new
-    // store's connection opens on its first use.
-    if (key === "localStorePath" && value !== previousStore) {
-      closeAllDbConnections();
-    }
-    // The wizard saves the store as the last step of a successful setup. It
-    // marked the store finished already (finish-setup); this covers any
-    // other caller that saves a store setup built.
-    if (key === "localStorePath" && typeof value === "string" && !clearing) {
-      localStoreSetupService.markSetupComplete(value);
-    }
-  });
+  ipcMain.handle(
+    "write-settings",
+    async (_event, key: string, value: unknown) => {
+      const clearing = value === null || value === undefined || value === "";
+      if (PATH_SETTING_KEYS.has(key) && !clearing) {
+        await pathAccess.assertAllowed(value, { write: true });
+      }
+      const previousStore = inMemorySettings.localStorePath;
+      settingsService.writeSetting(inMemorySettings, key, value);
+      // A different store: close the old one's connection (RE-81). The new
+      // store's connection opens on its first use.
+      if (key === "localStorePath" && value !== previousStore) {
+        closeAllDbConnections();
+      }
+      // The wizard saves the store as the last step of a successful setup. It
+      // marked the store finished already (finish-setup); this covers any
+      // other caller that saves a store setup built.
+      if (key === "localStorePath" && typeof value === "string" && !clearing) {
+        localStoreSetupService.markSetupComplete(value);
+      }
+    },
+  );
 
   // Add local store status handler
   ipcMain.handle("get-local-store-status", (_) => {
@@ -132,10 +135,13 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
   ipcMain.handle("copy-kit", (_event, sourceKit: string, destKit: string) =>
     kitService.copyKit(inMemorySettings, sourceKit, destKit),
   );
-  ipcMain.handle("list-files-in-root", (_event, localStorePath: string) => {
-    pathAccess.assertAllowed(localStorePath);
-    return localStoreService.listFilesInRoot(localStorePath);
-  });
+  ipcMain.handle(
+    "list-files-in-root",
+    async (_event, localStorePath: string) => {
+      await pathAccess.assertAllowed(localStorePath);
+      return localStoreService.listFilesInRoot(localStorePath);
+    },
+  );
   // Secure method - get audio buffer by sample identifier
   ipcMain.handle(
     "get-sample-audio-buffer",
@@ -187,16 +193,16 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
 
   // The preload reports each file path it resolved from a real user drop
   // (webUtils.getPathForFile), so main can allow reading that file.
-  ipcMain.handle("register-dropped-file", (_event, filePath: string) => {
-    pathAccess.grantRead(filePath);
-  });
+  ipcMain.handle("register-dropped-file", (_event, filePath: string) =>
+    pathAccess.grantRead(filePath),
+  );
 
   // Installs the Squarp factory samples into destDir. The archive URL is
   // fixed in main (getFactorySamplesArchiveUrl); the renderer can't choose it.
   ipcMain.handle(
     "download-and-extract-archive",
     async (event, destDir: string) => {
-      const access = checkPathAccess(destDir, { write: true });
+      const access = await checkPathAccess(destDir, { write: true });
       if (!access.ok) {
         event.sender.send("archive-error", { message: access.error });
         return { error: access.error, success: false };
@@ -229,16 +235,16 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
       }
     },
   );
-  ipcMain.handle("ensure-dir", (_event, dir: string) => {
-    const access = checkPathAccess(dir, { write: true });
+  ipcMain.handle("ensure-dir", async (_event, dir: string) => {
+    const access = await checkPathAccess(dir, { write: true });
     if (!access.ok) return { error: access.error, success: false };
     return archiveService.ensureDirectory(dir);
   });
 
-  ipcMain.handle("copy-dir", (_event, src: string, dest: string) => {
-    const access = checkPathAccess(src);
+  ipcMain.handle("copy-dir", async (_event, src: string, dest: string) => {
+    const access = await checkPathAccess(src);
     const destAccess = access.ok
-      ? checkPathAccess(dest, { write: true })
+      ? await checkPathAccess(dest, { write: true })
       : access;
     if (!destAccess.ok) return { error: destAccess.error, success: false };
     // Setup copies each kit from the card into the new store; record the
@@ -256,8 +262,8 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
 
   // The store setup built is complete: a quit no longer cleans it up, even
   // if saving it as the local store then fails (#616)
-  ipcMain.handle("finish-setup", (_event, targetPath: string) => {
-    const access = checkPathAccess(targetPath, { write: true });
+  ipcMain.handle("finish-setup", async (_event, targetPath: string) => {
+    const access = await checkPathAccess(targetPath, { write: true });
     if (!access.ok) return { error: access.error, success: false };
     localStoreSetupService.markSetupComplete(targetPath);
     return { success: true };
@@ -265,8 +271,8 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
 
   ipcMain.handle(
     "check-disk-space",
-    (_event, targetPath: string, requiredBytes: number) => {
-      const access = checkPathAccess(targetPath);
+    async (_event, targetPath: string, requiredBytes: number) => {
+      const access = await checkPathAccess(targetPath);
       if (!access.ok) {
         return {
           availableBytes: 0,
@@ -279,16 +285,16 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
     },
   );
 
-  ipcMain.handle("check-path-writable", (_event, targetPath: string) => {
-    const access = checkPathAccess(targetPath, { write: true });
+  ipcMain.handle("check-path-writable", async (_event, targetPath: string) => {
+    const access = await checkPathAccess(targetPath, { write: true });
     if (!access.ok) return { error: access.error, writable: false };
     return checkPathWritable(targetPath);
   });
 
   // RE-10 decides what setup may remove; RE-03 first confines the target to
   // a folder Romper has been given.
-  ipcMain.handle("cleanup-partial-init", (_event, targetPath: string) => {
-    const access = checkPathAccess(targetPath, { write: true });
+  ipcMain.handle("cleanup-partial-init", async (_event, targetPath: string) => {
+    const access = await checkPathAccess(targetPath, { write: true });
     if (!access.ok) return { error: access.error, removed: false };
     return localStoreSetupService.cleanupFailedSetup(
       targetPath,
@@ -299,9 +305,12 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
   // Read-only probe, but it still reveals whether a folder holds a store, so
   // it is confined too. Fails closed: if Romper may not look, the wizard is
   // told to stop (with the access error) rather than that the folder is free.
-  ipcMain.handle("check-existing-local-store", (_event, targetPath: string) => {
-    const access = checkPathAccess(targetPath);
-    if (!access.ok) return { error: access.error, exists: true };
-    return localStoreSetupService.hasExistingLocalStore(targetPath);
-  });
+  ipcMain.handle(
+    "check-existing-local-store",
+    async (_event, targetPath: string) => {
+      const access = await checkPathAccess(targetPath);
+      if (!access.ok) return { error: access.error, exists: true };
+      return localStoreSetupService.hasExistingLocalStore(targetPath);
+    },
+  );
 }

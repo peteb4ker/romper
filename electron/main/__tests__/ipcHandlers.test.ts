@@ -126,10 +126,10 @@ vi.mock("../services/archiveService.js", () => ({
 // Path authorization is unit-tested in security/__tests__; here it is a
 // switch so each guarded channel can be checked allowed and denied.
 vi.mock("../security/pathAccess.js", () => ({
-  checkPathAccess: vi.fn(() => ({ ok: true })),
+  checkPathAccess: vi.fn(() => Promise.resolve({ ok: true })),
   pathAccess: {
-    assertAllowed: vi.fn(),
-    grantRead: vi.fn(),
+    assertAllowed: vi.fn(() => Promise.resolve()),
+    grantRead: vi.fn(() => Promise.resolve()),
     grantRoot: vi.fn(),
     useSettings: vi.fn(),
   },
@@ -657,7 +657,7 @@ describe("registerIpcHandlers - path authorization (RE-03)", () => {
     const { archiveService } = await import("../services/archiveService.js");
     const { checkPathAccess } = await setup();
 
-    checkPathAccess.mockReturnValueOnce(DENIED);
+    checkPathAccess.mockResolvedValueOnce(DENIED);
     const denied = await ipcMainHandlers["ensure-dir"](
       {},
       "/Users/me/Library/LaunchAgents",
@@ -684,7 +684,7 @@ describe("registerIpcHandlers - path authorization (RE-03)", () => {
     );
 
     vi.mocked(archiveService.copyDirectory).mockClear();
-    checkPathAccess.mockReturnValueOnce(DENIED); // source
+    checkPathAccess.mockResolvedValueOnce(DENIED); // source
     const deniedSource = await ipcMainHandlers["copy-dir"](
       {},
       "/Users/me/.ssh",
@@ -693,8 +693,8 @@ describe("registerIpcHandlers - path authorization (RE-03)", () => {
     expect(deniedSource.success).toBe(false);
 
     checkPathAccess
-      .mockReturnValueOnce({ ok: true }) // source
-      .mockReturnValueOnce(DENIED); // destination
+      .mockResolvedValueOnce({ ok: true }) // source
+      .mockResolvedValueOnce(DENIED); // destination
     const deniedDest = await ipcMainHandlers["copy-dir"](
       {},
       "/sd/A0",
@@ -706,7 +706,7 @@ describe("registerIpcHandlers - path authorization (RE-03)", () => {
 
   it("check-path-writable refuses to write its probe outside the roots", async () => {
     const { checkPathAccess } = await setup();
-    checkPathAccess.mockReturnValueOnce(DENIED);
+    checkPathAccess.mockResolvedValueOnce(DENIED);
     const result = await ipcMainHandlers["check-path-writable"]({}, "/etc");
     expect(checkPathAccess).toHaveBeenCalledWith("/etc", { write: true });
     expect(result).toEqual({ error: DENIED.error, writable: false });
@@ -714,7 +714,7 @@ describe("registerIpcHandlers - path authorization (RE-03)", () => {
 
   it("check-disk-space needs read access", async () => {
     const { checkPathAccess } = await setup();
-    checkPathAccess.mockReturnValueOnce(DENIED);
+    checkPathAccess.mockResolvedValueOnce(DENIED);
     const result = await ipcMainHandlers["check-disk-space"]({}, "/etc", 100);
     expect(checkPathAccess).toHaveBeenCalledWith("/etc");
     expect(result).toEqual({
@@ -727,7 +727,7 @@ describe("registerIpcHandlers - path authorization (RE-03)", () => {
 
   it("cleanup-partial-init needs write access to the target", async () => {
     const { checkPathAccess } = await setup();
-    checkPathAccess.mockReturnValueOnce(DENIED);
+    checkPathAccess.mockResolvedValueOnce(DENIED);
     const { localStoreSetupService } =
       await import("../services/localStoreSetupService.js");
     const result = await ipcMainHandlers["cleanup-partial-init"]({}, "/other");
@@ -752,7 +752,7 @@ describe("registerIpcHandlers - path authorization (RE-03)", () => {
 
   it("finish-setup needs write access to the target", async () => {
     const { checkPathAccess } = await setup();
-    checkPathAccess.mockReturnValueOnce(DENIED);
+    checkPathAccess.mockResolvedValueOnce(DENIED);
     const { localStoreSetupService } =
       await import("../services/localStoreSetupService.js");
 
@@ -764,7 +764,7 @@ describe("registerIpcHandlers - path authorization (RE-03)", () => {
 
   it("check-existing-local-store needs read access and fails closed", async () => {
     const { checkPathAccess } = await setup();
-    checkPathAccess.mockReturnValueOnce(DENIED);
+    checkPathAccess.mockResolvedValueOnce(DENIED);
     const { localStoreSetupService } =
       await import("../services/localStoreSetupService.js");
     const result = await ipcMainHandlers["check-existing-local-store"](
@@ -781,13 +781,9 @@ describe("registerIpcHandlers - path authorization (RE-03)", () => {
     const { localStoreService } =
       await import("../services/localStoreService.js");
     const { assertAllowed } = await setup();
-    assertAllowed.mockImplementationOnce(() => {
-      throw new Error(DENIED.error);
-    });
+    assertAllowed.mockRejectedValueOnce(new Error(DENIED.error));
     await expect(
-      Promise.resolve().then(() =>
-        ipcMainHandlers["list-files-in-root"]({}, "/Users/me"),
-      ),
+      ipcMainHandlers["list-files-in-root"]({}, "/Users/me"),
     ).rejects.toThrow(DENIED.error);
     expect(assertAllowed).toHaveBeenCalledWith("/Users/me");
     expect(localStoreService.listFilesInRoot).not.toHaveBeenCalled();
@@ -804,7 +800,7 @@ describe("registerIpcHandlers - path authorization (RE-03)", () => {
     const { archiveService } = await import("../services/archiveService.js");
     const { checkPathAccess } = await setup();
     const event = { sender: { send: vi.fn() } };
-    checkPathAccess.mockReturnValueOnce(DENIED);
+    checkPathAccess.mockResolvedValueOnce(DENIED);
 
     const result = await ipcMainHandlers["download-and-extract-archive"](
       event,
@@ -825,12 +821,10 @@ describe("registerIpcHandlers - path authorization (RE-03)", () => {
   it("write-settings refuses a path setting outside the roots", async () => {
     const { settingsService } = await import("../services/settingsService.js");
     const { assertAllowed } = await setup();
-    assertAllowed.mockImplementationOnce(() => {
-      throw new Error(DENIED.error);
-    });
-    expect(() =>
+    assertAllowed.mockRejectedValueOnce(new Error(DENIED.error));
+    await expect(
       ipcMainHandlers["write-settings"]({}, "localStorePath", "/elsewhere"),
-    ).toThrow(DENIED.error);
+    ).rejects.toThrow(DENIED.error);
     expect(assertAllowed).toHaveBeenCalledWith("/elsewhere", { write: true });
     expect(settingsService.writeSetting).not.toHaveBeenCalled();
   });
@@ -839,16 +833,20 @@ describe("registerIpcHandlers - path authorization (RE-03)", () => {
     const { settingsService } = await import("../services/settingsService.js");
     const { assertAllowed } = await setup();
 
-    ipcMainHandlers["write-settings"]({}, "sdCardPath", "/Volumes/RAMPLE");
+    await ipcMainHandlers["write-settings"](
+      {},
+      "sdCardPath",
+      "/Volumes/RAMPLE",
+    );
     expect(assertAllowed).toHaveBeenCalledWith("/Volumes/RAMPLE", {
       write: true,
     });
 
     assertAllowed.mockClear();
-    ipcMainHandlers["write-settings"]({}, "themeMode", "dark");
-    ipcMainHandlers["write-settings"]({}, "localStorePath", null);
-    ipcMainHandlers["write-settings"]({}, "sdCardPath", undefined);
-    ipcMainHandlers["write-settings"]({}, "sdCardPath", "");
+    await ipcMainHandlers["write-settings"]({}, "themeMode", "dark");
+    await ipcMainHandlers["write-settings"]({}, "localStorePath", null);
+    await ipcMainHandlers["write-settings"]({}, "sdCardPath", undefined);
+    await ipcMainHandlers["write-settings"]({}, "sdCardPath", "");
     expect(assertAllowed).not.toHaveBeenCalled();
     expect(settingsService.writeSetting).toHaveBeenCalledTimes(5);
   });
@@ -858,11 +856,19 @@ describe("registerIpcHandlers - path authorization (RE-03)", () => {
       await import("../services/localStoreSetupService.js");
     await setup();
 
-    ipcMainHandlers["write-settings"]({}, "sdCardPath", "/Volumes/RAMPLE");
-    ipcMainHandlers["write-settings"]({}, "localStorePath", null);
+    await ipcMainHandlers["write-settings"](
+      {},
+      "sdCardPath",
+      "/Volumes/RAMPLE",
+    );
+    await ipcMainHandlers["write-settings"]({}, "localStorePath", null);
     expect(localStoreSetupService.markSetupComplete).not.toHaveBeenCalled();
 
-    ipcMainHandlers["write-settings"]({}, "localStorePath", "/Users/me/store");
+    await ipcMainHandlers["write-settings"](
+      {},
+      "localStorePath",
+      "/Users/me/store",
+    );
     expect(localStoreSetupService.markSetupComplete).toHaveBeenCalledWith(
       "/Users/me/store",
     );

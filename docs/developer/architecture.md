@@ -69,6 +69,11 @@ in `electron/main/security/`.
     path `webUtils.getPathForFile` returns, over `register-dropped-file`).
   - `write-settings` checks `localStorePath` and `sdCardPath`, so the
     renderer can't grant itself a root.
+
+  The check is asynchronous (`fs.promises`) and runs under the card
+  watchdog (`withCardWatchdog`), so a path on a card whose driver stopped
+  responding is refused with the card-not-responding message instead of
+  blocking the main process (#714). Await it.
 - **Typed wizard targets** (`localStoreAccessPrompt.ts`). A target folder the
   user typed rather than picked needs their OK in a native prompt shown by
   main (`requestLocalStoreAccess`). The filesystem root and the home folder

@@ -53,14 +53,14 @@ vi.mock("../services/localStoreService.js", () => ({
 // Path authorization is unit-tested in security/__tests__; here it is a
 // switch so each guarded channel can be checked allowed and denied.
 vi.mock("../security/pathAccess.js", () => ({
-  checkDatabaseDirAccess: vi.fn(() => ({ ok: true })),
-  checkPathAccess: vi.fn(() => ({ ok: true })),
+  checkDatabaseDirAccess: vi.fn(() => Promise.resolve({ ok: true })),
+  checkPathAccess: vi.fn(() => Promise.resolve({ ok: true })),
   pathAccess: { useSettings: vi.fn() },
 }));
 
 vi.mock("../security/sampleSourceAccess.js", () => ({
-  checkSampleSourceAccess: vi.fn(() => ({ ok: true })),
-  rememberKitSampleSources: vi.fn(),
+  checkSampleSourceAccess: vi.fn(() => Promise.resolve({ ok: true })),
+  rememberKitSampleSources: vi.fn(() => Promise.resolve()),
 }));
 
 import { ipcMain } from "electron";
@@ -373,7 +373,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
         localStoreSetupService,
         "createSetupDatabase",
       );
-      vi.mocked(checkDatabaseDirAccess).mockReturnValueOnce(DENIED);
+      vi.mocked(checkDatabaseDirAccess).mockResolvedValueOnce(DENIED);
       const result = await handlerRegistry["create-romper-db"](
         {},
         "/Users/me/Library/.romperdb",
@@ -391,7 +391,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
       const { localStoreSetupService } =
         await import("../services/localStoreSetupService.js");
       const importSetupKit = vi.spyOn(localStoreSetupService, "importSetupKit");
-      vi.mocked(checkDatabaseDirAccess).mockReturnValueOnce(DENIED);
+      vi.mocked(checkDatabaseDirAccess).mockResolvedValueOnce(DENIED);
       const result = await handlerRegistry["setup-import-kit"](
         {},
         "/Users/me/Library/.romperdb",
@@ -431,7 +431,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
         localStoreSetupService,
         "importSetupBankNames",
       );
-      vi.mocked(checkDatabaseDirAccess).mockReturnValueOnce(DENIED);
+      vi.mocked(checkDatabaseDirAccess).mockResolvedValueOnce(DENIED);
       expect(
         await handlerRegistry["setup-import-bank-names"](
           {},
@@ -439,7 +439,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
           "/Volumes/RAMPLE",
         ),
       ).toEqual({ error: DENIED.error, success: false });
-      vi.mocked(checkPathAccess).mockReturnValueOnce(DENIED);
+      vi.mocked(checkPathAccess).mockResolvedValueOnce(DENIED);
       expect(
         await handlerRegistry["setup-import-bank-names"](
           {},
@@ -460,7 +460,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
     it.each(["validate-local-store", "validate-local-store-basic"])(
       "%s refuses a renderer path outside the roots",
       async (channel) => {
-        vi.mocked(checkPathAccess).mockReturnValueOnce(DENIED);
+        vi.mocked(checkPathAccess).mockResolvedValueOnce(DENIED);
         const result = await handlerRegistry[channel]({}, "/Users/me");
         expect(checkPathAccess).toHaveBeenCalledWith("/Users/me");
         expect(result).toEqual({ error: DENIED.error, isValid: false });
@@ -483,7 +483,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
     });
 
     it("validate-sample-format only reads sample sources the user gave Romper", async () => {
-      vi.mocked(checkSampleSourceAccess).mockReturnValueOnce(DENIED);
+      vi.mocked(checkSampleSourceAccess).mockResolvedValueOnce(DENIED);
       const result = await handlerRegistry["validate-sample-format"](
         {},
         "/etc/passwd",
@@ -515,7 +515,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
     it.each(["add-sample-to-slot", "replace-sample-in-slot"])(
       "%s refuses a source file the user never gave Romper",
       async (channel) => {
-        vi.mocked(checkSampleSourceAccess).mockReturnValueOnce(DENIED);
+        vi.mocked(checkSampleSourceAccess).mockResolvedValueOnce(DENIED);
         const result = await handlerRegistry[channel](
           {},
           "A0",

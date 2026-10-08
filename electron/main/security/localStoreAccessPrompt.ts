@@ -26,19 +26,19 @@ export async function requestLocalStoreAccess(
   sender: undefined | WebContents,
   targetPath: unknown,
 ): Promise<LocalStoreAccessResult> {
-  if (pathAccess.check(targetPath, "write").ok) {
+  if ((await pathAccess.check(targetPath, "write")).ok) {
     return { granted: true };
   }
 
   let canonical: string;
   try {
-    canonical = canonicalizePath(targetPath);
+    canonical = await canonicalizePath(targetPath);
   } catch (error) {
     return { error: (error as Error).message, granted: false };
   }
   const folder = targetPath as string;
 
-  if (isProtectedLocation(canonical)) {
+  if (await isProtectedLocation(canonical)) {
     return {
       error: `Romper can't use ${folder} as a local store. Choose a folder of its own, such as one inside Documents.`,
       granted: false,
@@ -70,11 +70,11 @@ export async function requestLocalStoreAccess(
   return { granted: true };
 }
 
-function isProtectedLocation(canonical: string): boolean {
+async function isProtectedLocation(canonical: string): Promise<boolean> {
   if (path.dirname(canonical) === canonical) return true; // filesystem root
   let home: string;
   try {
-    home = canonicalizePath(os.homedir());
+    home = await canonicalizePath(os.homedir());
   } catch {
     return false;
   }

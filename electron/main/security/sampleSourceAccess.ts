@@ -26,11 +26,11 @@ import { pathAccess, type PathAccessResult } from "./pathAccess.js";
 
 type Settings = Record<string, unknown>;
 
-export function checkSampleSourceAccess(
+export async function checkSampleSourceAccess(
   settings: Settings,
   filePath: unknown,
-): PathAccessResult {
-  const direct = pathAccess.check(filePath, "read");
+): Promise<PathAccessResult> {
+  const direct = await pathAccess.check(filePath, "read");
   if (direct.ok) return direct;
   if (typeof filePath === "string" && isReferencedByStore(settings, filePath)) {
     return { ok: true };
@@ -43,23 +43,26 @@ export function checkSampleSourceAccess(
  * handler deletes, replaces or moves samples, so undo can re-add them.
  * Best effort: a lookup failure only means undo may be refused later.
  */
-export function rememberKitSampleSources(
+export async function rememberKitSampleSources(
   settings: Settings,
   ...kitNames: unknown[]
-): void {
+): Promise<void> {
   const dbDir = getStoreDbDir(settings);
   if (!dbDir) return;
+  const sourcePaths: string[] = [];
   for (const kitName of kitNames) {
     if (typeof kitName !== "string" || kitName === "") continue;
     try {
       const result = getKitSamples(dbDir, kitName);
       for (const sample of result.data ?? []) {
-        pathAccess.grantRead(sample.source_path);
+        sourcePaths.push(sample.source_path);
       }
     } catch {
       // Ignore: the edit itself will report any database problem.
     }
   }
+  // grantRead never rejects: a file it can't resolve grants nothing
+  await Promise.all(sourcePaths.map((p) => pathAccess.grantRead(p)));
 }
 
 function getStoreDbDir(settings: Settings): null | string {

@@ -32,8 +32,13 @@ export function registerSampleIpcHandlers(
 
   ipcMain.handle(
     "delete-sample-from-slot-without-reindexing",
-    (_event, kitName: string, voiceNumber: number, slotNumber: number) => {
-      rememberKitSampleSources(inMemorySettings, kitName);
+    async (
+      _event,
+      kitName: string,
+      voiceNumber: number,
+      slotNumber: number,
+    ) => {
+      await rememberKitSampleSources(inMemorySettings, kitName);
       return sampleService.deleteSampleFromSlotWithoutReindexing(
         inMemorySettings,
         kitName,
@@ -45,7 +50,7 @@ export function registerSampleIpcHandlers(
 
   ipcMain.handle(
     "move-sample-in-kit",
-    (
+    async (
       _event,
       kitName: string,
       fromVoice: number,
@@ -54,7 +59,7 @@ export function registerSampleIpcHandlers(
       toSlot: number,
     ) => {
       try {
-        rememberKitSampleSources(inMemorySettings, kitName);
+        await rememberKitSampleSources(inMemorySettings, kitName);
         const result = sampleService.moveSampleInKit(
           inMemorySettings,
           kitName,
@@ -78,7 +83,7 @@ export function registerSampleIpcHandlers(
 
   ipcMain.handle(
     "move-sample-between-kits",
-    (
+    async (
       _event,
       params: {
         fromKit: string;
@@ -91,7 +96,7 @@ export function registerSampleIpcHandlers(
       },
     ) => {
       try {
-        rememberKitSampleSources(
+        await rememberKitSampleSources(
           inMemorySettings,
           params?.fromKit,
           params?.toKit,
@@ -117,21 +122,21 @@ export function registerSampleIpcHandlers(
   // undone remembered the kit's files before it removed them.
   ipcMain.handle(
     "restore-kit-voices",
-    (_event, kitName: string, voices: VoiceSnapshot[]) => {
+    async (_event, kitName: string, voices: VoiceSnapshot[]) => {
       if (!Array.isArray(voices)) {
         return { error: "No voices to restore", success: false };
       }
-      for (const voice of voices) {
-        for (const sample of voice?.samples ?? []) {
-          const access = checkSampleSourceAccess(
-            inMemorySettings,
-            sample?.source_path,
-          );
-          if (!access.ok) return { error: access.error, success: false };
-        }
-      }
+      const sourcePaths = voices.flatMap((voice) =>
+        (voice?.samples ?? []).map((sample) => sample?.source_path),
+      );
+      const checks = await Promise.all(
+        sourcePaths.map((p) => checkSampleSourceAccess(inMemorySettings, p)),
+      );
+      // The first refusal, as checking one file at a time would report
+      const denied = checks.find((access) => !access.ok);
+      if (denied && !denied.ok) return { error: denied.error, success: false };
       // Redo removes what this restores; let it read those files again
-      rememberKitSampleSources(inMemorySettings, kitName);
+      await rememberKitSampleSources(inMemorySettings, kitName);
       return sampleService.restoreVoices(inMemorySettings, kitName, voices);
     },
   );

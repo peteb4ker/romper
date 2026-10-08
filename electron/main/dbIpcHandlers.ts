@@ -73,16 +73,16 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   // already holds a store (RE-10), and setup-import-kit and
   // setup-import-bank-names only import into a store this setup created
   // (RE-34).
-  ipcMain.handle("create-romper-db", (_event, dbDir: string) => {
-    const access = checkDatabaseDirAccess(dbDir);
+  ipcMain.handle("create-romper-db", async (_event, dbDir: string) => {
+    const access = await checkDatabaseDirAccess(dbDir);
     if (!access.ok) return { error: access.error, success: false };
     return localStoreSetupService.createSetupDatabase(dbDir);
   });
 
   ipcMain.handle(
     "setup-import-kit",
-    (_event, dbDir: string, kitName: string) => {
-      const access = checkDatabaseDirAccess(dbDir);
+    async (_event, dbDir: string, kitName: string) => {
+      const access = await checkDatabaseDirAccess(dbDir);
       if (!access.ok) return { error: access.error, success: false };
       return localStoreSetupService.importSetupKit(dbDir, kitName);
     },
@@ -94,9 +94,11 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   // it
   ipcMain.handle(
     "setup-import-bank-names",
-    (_event, dbDir: string, sourcePath: string) => {
-      const access = checkDatabaseDirAccess(dbDir);
-      const sourceAccess = access.ok ? checkPathAccess(sourcePath) : access;
+    async (_event, dbDir: string, sourcePath: string) => {
+      const access = await checkDatabaseDirAccess(dbDir);
+      const sourceAccess = access.ok
+        ? await checkPathAccess(sourcePath)
+        : access;
       if (!sourceAccess.ok)
         return { error: sourceAccess.error, success: false };
       return localStoreSetupService.importSetupBankNames(dbDir, sourcePath);
@@ -335,25 +337,9 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     ),
   );
 
-  ipcMain.handle("validate-local-store", (_event, localStorePath?: string) => {
-    // Check environment override first, then provided path, then settings
-    const settingsPath =
-      typeof inMemorySettings.localStorePath === "string"
-        ? inMemorySettings.localStorePath
-        : undefined;
-    const pathToValidate =
-      process.env.ROMPER_LOCAL_PATH || localStorePath || settingsPath;
-    if (!pathToValidate) {
-      throw new Error("No local store path provided or configured");
-    }
-    const access = checkPathAccess(pathToValidate);
-    if (!access.ok) return { error: access.error, isValid: false };
-    return localStoreService.validateLocalStore(pathToValidate);
-  });
-
   ipcMain.handle(
-    "validate-local-store-basic",
-    (_event, localStorePath?: string) => {
+    "validate-local-store",
+    async (_event, localStorePath?: string) => {
       // Check environment override first, then provided path, then settings
       const settingsPath =
         typeof inMemorySettings.localStorePath === "string"
@@ -364,7 +350,26 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
       if (!pathToValidate) {
         throw new Error("No local store path provided or configured");
       }
-      const access = checkPathAccess(pathToValidate);
+      const access = await checkPathAccess(pathToValidate);
+      if (!access.ok) return { error: access.error, isValid: false };
+      return localStoreService.validateLocalStore(pathToValidate);
+    },
+  );
+
+  ipcMain.handle(
+    "validate-local-store-basic",
+    async (_event, localStorePath?: string) => {
+      // Check environment override first, then provided path, then settings
+      const settingsPath =
+        typeof inMemorySettings.localStorePath === "string"
+          ? inMemorySettings.localStorePath
+          : undefined;
+      const pathToValidate =
+        process.env.ROMPER_LOCAL_PATH || localStorePath || settingsPath;
+      if (!pathToValidate) {
+        throw new Error("No local store path provided or configured");
+      }
+      const access = await checkPathAccess(pathToValidate);
       if (!access.ok) return { error: access.error, isValid: false };
       return localStoreService.validateLocalStoreBasic(pathToValidate);
     },
@@ -434,8 +439,8 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   );
 
   // Audio format validation
-  ipcMain.handle("validate-sample-format", (_event, filePath: string) => {
-    const access = checkSampleSourceAccess(inMemorySettings, filePath);
+  ipcMain.handle("validate-sample-format", async (_event, filePath: string) => {
+    const access = await checkSampleSourceAccess(inMemorySettings, filePath);
     if (!access.ok) return { error: access.error, success: false };
     return validateSampleFormat(filePath);
   });

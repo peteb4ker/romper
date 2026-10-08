@@ -43,8 +43,9 @@ import {
 } from "./ipcValidation.js";
 import { parseKitMetadataUpdates } from "./kitMetadataUpdates.js";
 import {
-  checkDatabaseDirAccess,
   checkPathAccess,
+  checkSetupDatabaseDirAccess,
+  checkSetupPathAccess,
   pathAccess,
 } from "./security/pathAccess.js";
 import { checkSampleSourceAccess } from "./security/sampleSourceAccess.js";
@@ -75,7 +76,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   // setup-import-bank-names only import into a store this setup created
   // (RE-34).
   ipcMain.handle("create-romper-db", async (_event, dbDir: string) => {
-    const access = await checkDatabaseDirAccess(dbDir);
+    const access = await checkSetupDatabaseDirAccess(dbDir);
     if (!access.ok) return { error: access.error, success: false };
     return localStoreSetupService.createSetupDatabase(dbDir);
   });
@@ -83,7 +84,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   ipcMain.handle(
     "setup-import-kit",
     async (_event, dbDir: string, kitName: string) => {
-      const access = await checkDatabaseDirAccess(dbDir);
+      const access = await checkSetupDatabaseDirAccess(dbDir);
       if (!access.ok) return { error: access.error, success: false };
       return localStoreSetupService.importSetupKit(dbDir, kitName);
     },
@@ -96,9 +97,9 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   ipcMain.handle(
     "setup-import-bank-names",
     async (_event, dbDir: string, sourcePath: string) => {
-      const access = await checkDatabaseDirAccess(dbDir);
+      const access = await checkSetupDatabaseDirAccess(dbDir);
       const sourceAccess = access.ok
-        ? await checkPathAccess(sourcePath)
+        ? await checkSetupPathAccess(sourcePath)
         : access;
       if (!sourceAccess.ok)
         return { error: sourceAccess.error, success: false };

@@ -73,7 +73,9 @@ in `electron/main/security/`.
   The check is asynchronous (`fs.promises`) and runs under the card
   watchdog (`withCardWatchdog`), so a path on a card whose driver stopped
   responding is refused with the card-not-responding message instead of
-  blocking the main process (#714). Await it.
+  blocking the main process (#714). Await it. The setup wizard's channels
+  use `checkSetupPathAccess` / `checkSetupDatabaseDirAccess`, which give
+  setup's version of the message (#724).
 - **Typed wizard targets** (`localStoreAccessPrompt.ts`). A target folder the
   user typed rather than picked needs their OK in a native prompt shown by
   main (`requestLocalStoreAccess`). The filesystem root and the home folder
@@ -349,7 +351,14 @@ written or removed, an entry removed) has a watchdog (`cardWatchdog.ts`,
 message saying so, instead of freezing the window or leaving the write
 waiting. The pending operation can't be cancelled:
 its thread pool thread returns only when the driver does, and until then
-quitting may wait on it too.
+quitting may wait on it too. Setting up a local store from the card reads
+it the same way (#724): listing its kit folders (`list-files-in-root`),
+copying each kit (`archiveService.copyDirectory`), reading its bank name
+files (`importSetupBankNames`) and the wizard's writable and disk space
+checks use `fs.promises`, each operation under the watchdog, so setup
+stops with setup's message (`CARD_NOT_RESPONDING_SETUP_MESSAGE` in
+`shared/cardMessages.ts`, beside the write's) and cleans up what it made,
+as after any other failure.
 
 On a FAT or exFAT card, macOS keeps extended attributes in an AppleDouble
 file (`._<name>`) beside each file. It tags every file a downloaded app

@@ -40,6 +40,11 @@ vi.mock("../../../utils/romperDb", () => ({
   importSetupKit: vi.fn(),
 }));
 
+/** Main's listing of a folder holding `files` */
+function listed(files: string[]) {
+  return { data: files, success: true };
+}
+
 describe("useLocalStoreWizardFileOps", () => {
   let mockApi: ElectronAPI;
   let mockReportProgress: Mock<Options["reportProgress"]>;
@@ -53,11 +58,9 @@ describe("useLocalStoreWizardFileOps", () => {
     vi.mocked(mockApi.downloadAndExtractArchive).mockResolvedValue({
       success: true,
     });
-    vi.mocked(mockApi.listFilesInRoot).mockResolvedValue([
-      "A0",
-      "B1",
-      "file.txt",
-    ]);
+    vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(
+      listed(["A0", "B1", "file.txt"]),
+    );
 
     mockReportProgress = vi.fn<Options["reportProgress"]>();
     mockReportStepProgress = vi.fn<Options["reportStepProgress"]>(
@@ -113,10 +116,9 @@ describe("useLocalStoreWizardFileOps", () => {
     });
 
     it("should return error when no kit folders found", async () => {
-      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue([
-        "file.txt",
-        "README.md",
-      ]);
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(
+        listed(["file.txt", "README.md"]),
+      );
 
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
@@ -136,11 +138,9 @@ describe("useLocalStoreWizardFileOps", () => {
     });
 
     it("should return null when kit folders are found", async () => {
-      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue([
-        "A0",
-        "B12",
-        "file.txt",
-      ]);
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(
+        listed(["A0", "B12", "file.txt"]),
+      );
 
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
@@ -161,7 +161,9 @@ describe("useLocalStoreWizardFileOps", () => {
   // --- Test validateAndCopySdCardKits ---
   describe("[UC-01] validateAndCopySdCardKits", () => {
     it("stops when a kit can't be copied from the card", async () => {
-      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(["A0", "B1"]);
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(
+        listed(["A0", "B1"]),
+      );
       vi.mocked(mockApi.copyDir).mockResolvedValue({
         error: "card removed",
         success: false,
@@ -183,11 +185,9 @@ describe("useLocalStoreWizardFileOps", () => {
     });
 
     it("should validate and copy kit folders successfully", async () => {
-      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue([
-        "A0",
-        "B1",
-        "file.txt",
-      ]);
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(
+        listed(["A0", "B1", "file.txt"]),
+      );
       vi.mocked(mockApi.copyDir).mockResolvedValue({ success: true });
 
       const { result } = renderHook(() =>
@@ -214,12 +214,9 @@ describe("useLocalStoreWizardFileOps", () => {
     // #573: a write treats a lowercase card folder as its kit's, so setup
     // must import it, or the first write would delete a kit it never read
     it("[Q-04] copies a lowercase kit folder in as its upper-case kit", async () => {
-      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue([
-        "a5",
-        "B1",
-        "Ä1",
-        "_save",
-      ]);
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(
+        listed(["a5", "B1", "Ä1", "_save"]),
+      );
       vi.mocked(mockApi.copyDir).mockResolvedValue({ success: true });
 
       const { result } = renderHook(() =>
@@ -245,7 +242,9 @@ describe("useLocalStoreWizardFileOps", () => {
     });
 
     it("should handle validation errors", async () => {
-      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(["file.txt"]); // No kit folders
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(
+        listed(["file.txt"]),
+      ); // No kit folders
 
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
@@ -487,7 +486,9 @@ describe("useLocalStoreWizardFileOps", () => {
     });
 
     it("should create database and populate with kits", async () => {
-      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(["A0", "B1"]); // Kit folders
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(
+        listed(["A0", "B1"]),
+      ); // Kit folders
 
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
@@ -513,7 +514,7 @@ describe("useLocalStoreWizardFileOps", () => {
     // #564, #567: the card's or the factory archive's bank names arrive
     // with the kits
     it("[UC-12] imports the bank names in the folder it's given", async () => {
-      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(["A0"]);
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(listed(["A0"]));
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
           api: mockApi,
@@ -545,7 +546,7 @@ describe("useLocalStoreWizardFileOps", () => {
     });
 
     it("stops setup when the card's bank names can't be imported", async () => {
-      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(["A0"]);
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(listed(["A0"]));
       vi.mocked(importSetupBankNames).mockRejectedValueOnce(
         new Error("Can't read the bank names in /Volumes/SD: EIO"),
       );
@@ -565,7 +566,9 @@ describe("useLocalStoreWizardFileOps", () => {
     });
 
     it("should handle empty kit folders", async () => {
-      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(["file.txt"]); // No kit folders
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(
+        listed(["file.txt"]),
+      ); // No kit folders
 
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
@@ -584,12 +587,9 @@ describe("useLocalStoreWizardFileOps", () => {
     });
 
     it("should filter out non-kit folders", async () => {
-      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue([
-        "A0",
-        "invalid-folder",
-        "B12",
-        "README.txt",
-      ]); // Mixed content
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(
+        listed(["A0", "invalid-folder", "B12", "README.txt"]),
+      ); // Mixed content
 
       const { result } = renderHook(() =>
         useLocalStoreWizardFileOps({
@@ -608,7 +608,7 @@ describe("useLocalStoreWizardFileOps", () => {
     // RE-34: main imports each kit; its "voice full" skips become the
     // wizard's notice, one line per voice
     it("[UC-01] [UC-02] turns main's voice-full skips into one warning per voice, naming the files (#518)", async () => {
-      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(["S62"]);
+      vi.mocked(mockApi.listFilesInRoot).mockResolvedValue(listed(["S62"]));
       vi.mocked(importSetupKit).mockResolvedValue({
         addedSamples: 24,
         locked: false,

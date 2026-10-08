@@ -42,14 +42,16 @@ describe("[Q-04] [UC-01] setup and the write agree on which card folders are kit
   let dbDir: string;
 
   /** Setup from the card, as the wizard runs it: copy, then import */
-  function setUpFromCard() {
+  async function setUpFromCard() {
     const setup = new LocalStoreSetupService();
     expect(setup.createSetupDatabase(dbDir).success).toBe(true);
     for (const { folder, kitName } of cardKitFolders(fs.readdirSync(card))) {
       expect(
-        archiveService.copyDirectory(
-          path.join(card, folder),
-          path.join(store, kitName),
+        (
+          await archiveService.copyDirectory(
+            path.join(card, folder),
+            path.join(store, kitName),
+          )
         ).success,
       ).toBe(true);
     }
@@ -83,8 +85,8 @@ describe("[Q-04] [UC-01] setup and the write agree on which card folders are kit
     removeTempStore(work);
   });
 
-  it("imports a lowercase kit folder as its upper-case kit, and skips a non-kit folder", () => {
-    expect(setUpFromCard()).toEqual(["A5", "B0"]);
+  it("imports a lowercase kit folder as its upper-case kit, and skips a non-kit folder", async () => {
+    expect(await setUpFromCard()).toEqual(["A5", "B0"]);
 
     const kit = getKit(dbDir, "A5").data;
     expect(kit?.bank_letter).toBe("A");
@@ -93,7 +95,7 @@ describe("[Q-04] [UC-01] setup and the write agree on which card folders are kit
   });
 
   it("the first write keeps the lowercase folder's kit, and leaves the non-kit folder alone", async () => {
-    setUpFromCard();
+    await setUpFromCard();
 
     const result = await syncService.startKitSync(
       { localStorePath: store },

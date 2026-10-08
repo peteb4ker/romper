@@ -23,17 +23,17 @@ describe("fileSystemUtils Integration Tests", () => {
   });
 
   describe("checkDiskSpace", () => {
-    it("should return available bytes for an existing directory", () => {
-      const result = checkDiskSpace(TEST_DIR);
+    it("should return available bytes for an existing directory", async () => {
+      const result = await checkDiskSpace(TEST_DIR);
 
       expect(result.sufficient).toBe(true);
       expect(result.availableBytes).toBeGreaterThan(0);
       expect(result.error).toBeUndefined();
     });
 
-    it("should resolve to parent directory for non-existent child path", () => {
+    it("should resolve to parent directory for non-existent child path", async () => {
       // TEST_DIR exists, so a non-existent child should resolve to parent
-      const result = checkDiskSpace(
+      const result = await checkDiskSpace(
         path.join(TEST_DIR, "nonexistent-subdir", "file.txt"),
       );
 
@@ -46,8 +46,8 @@ describe("fileSystemUtils Integration Tests", () => {
       expect(result.error).toBe("Path does not exist");
     });
 
-    it("should return error for a completely non-existent path", () => {
-      const result = checkDiskSpace(
+    it("should return error for a completely non-existent path", async () => {
+      const result = await checkDiskSpace(
         "/completely/fake/path/that/does/not/exist",
       );
 
@@ -56,11 +56,11 @@ describe("fileSystemUtils Integration Tests", () => {
       expect(result.availableBytes).toBe(0);
     });
 
-    it("should work for an existing file path", () => {
+    it("should work for an existing file path", async () => {
       const filePath = path.join(TEST_DIR, "test-file.txt");
       fs.writeFileSync(filePath, "content");
 
-      const result = checkDiskSpace(filePath);
+      const result = await checkDiskSpace(filePath);
 
       expect(result.sufficient).toBe(true);
       expect(result.availableBytes).toBeGreaterThan(0);
@@ -68,17 +68,17 @@ describe("fileSystemUtils Integration Tests", () => {
   });
 
   describe("checkDiskSpaceSufficient", () => {
-    it("should report sufficient for a small required amount", () => {
-      const result = checkDiskSpaceSufficient(TEST_DIR, 1); // 1 byte
+    it("should report sufficient for a small required amount", async () => {
+      const result = await checkDiskSpaceSufficient(TEST_DIR, 1); // 1 byte
 
       expect(result.sufficient).toBe(true);
       expect(result.requiredBytes).toBe(1);
       expect(result.availableBytes).toBeGreaterThan(0);
     });
 
-    it("should report insufficient for an impossibly large required amount", () => {
+    it("should report insufficient for an impossibly large required amount", async () => {
       // 1 exabyte - no real disk has this
-      const result = checkDiskSpaceSufficient(
+      const result = await checkDiskSpaceSufficient(
         TEST_DIR,
         1024 * 1024 * 1024 * 1024 * 1024 * 1024,
       );
@@ -89,8 +89,11 @@ describe("fileSystemUtils Integration Tests", () => {
       );
     });
 
-    it("should propagate error for non-existent path", () => {
-      const result = checkDiskSpaceSufficient("/nonexistent/path/xyz", 1024);
+    it("should propagate error for non-existent path", async () => {
+      const result = await checkDiskSpaceSufficient(
+        "/nonexistent/path/xyz",
+        1024,
+      );
 
       expect(result.sufficient).toBe(false);
       expect(result.requiredBytes).toBe(1024);
@@ -98,23 +101,23 @@ describe("fileSystemUtils Integration Tests", () => {
   });
 
   describe("checkPathWritable", () => {
-    it("should confirm a writable directory is writable", () => {
-      const result = checkPathWritable(TEST_DIR);
+    it("should confirm a writable directory is writable", async () => {
+      const result = await checkPathWritable(TEST_DIR);
 
       expect(result.writable).toBe(true);
       expect(result.error).toBeUndefined();
     });
 
-    it("should confirm writability when given a file path in a writable directory", () => {
+    it("should confirm writability when given a file path in a writable directory", async () => {
       // Pass a path to a non-existent file inside an existing writable directory
       const filePath = path.join(TEST_DIR, "future-file.txt");
-      const result = checkPathWritable(filePath);
+      const result = await checkPathWritable(filePath);
 
       expect(result.writable).toBe(true);
     });
 
-    it("should report not writable for a non-existent directory", () => {
-      const result = checkPathWritable(
+    it("should report not writable for a non-existent directory", async () => {
+      const result = await checkPathWritable(
         "/completely/nonexistent/directory/file.txt",
       );
 
@@ -122,8 +125,8 @@ describe("fileSystemUtils Integration Tests", () => {
       expect(result.error).toContain("Directory does not exist");
     });
 
-    it("should clean up the temp test file after checking", () => {
-      checkPathWritable(TEST_DIR);
+    it("should clean up the temp test file after checking", async () => {
+      await checkPathWritable(TEST_DIR);
 
       // The write test file should be cleaned up
       const files = fs.readdirSync(TEST_DIR);

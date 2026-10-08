@@ -120,6 +120,7 @@ async function invokeWithArchiveUrl(handler: unknown, url: string) {
 
 vi.mock("../../security/pathAccess.js", () => ({
   checkPathAccess: vi.fn(() => ({ ok: true })),
+  checkSetupPathAccess: vi.fn(() => ({ ok: true })),
   pathAccess: {
     assertAllowed: vi.fn(),
     grantRead: vi.fn(),

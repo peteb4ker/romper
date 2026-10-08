@@ -70,7 +70,7 @@ export function useLocalStoreWizardFileOps({
     async (sdCardSourcePath: string) => {
       if (!sdCardSourcePath) return null;
       if (!api.listFilesInRoot) return "Cannot access filesystem.";
-      const files = await api.listFilesInRoot(sdCardSourcePath);
+      const files = await listFolder(api, sdCardSourcePath);
       if (cardKitFolders(files).length === 0) {
         const nonHidden = files.filter((f) => !f.startsWith("."));
         const overflow =
@@ -102,7 +102,7 @@ export function useLocalStoreWizardFileOps({
       }
       if (!api.listFilesInRoot || !api.copyDir)
         throw new Error("Missing Electron API");
-      const files = await api.listFilesInRoot(sdCardSourcePath);
+      const files = await listFolder(api, sdCardSourcePath);
       // Each kit folder goes into the store under its kit's name: `a5` is
       // kit A5, as a write treats it, so setup leaves none behind (#573)
       const kitFolders = new Map(
@@ -201,12 +201,8 @@ export function useLocalStoreWizardFileOps({
       const dbDir = `${targetPath}/.romperdb`;
       if (api.ensureDir) await api.ensureDir(dbDir);
       await createRomperDb(dbDir);
-      if (!api.listFilesInRoot)
-        throw new Error("listFilesInRoot is not available");
       // The store's kit folders, which setup named by their kits
-      const validKits = (await api.listFilesInRoot(targetPath)).filter(
-        isKitName,
-      );
+      const validKits = (await listFolder(api, targetPath)).filter(isKitName);
       const truncationWarnings: TruncationWarning[] = [];
       const stereoNotices: StereoImportNotice[] = [];
       if (validKits.length > 0) {
@@ -246,6 +242,19 @@ export function useLocalStoreWizardFileOps({
 }
 
 // --- Helpers ---
+/**
+ * A folder's entries, from main. A listing that failed (a card that stopped
+ * responding, #724) fails setup with main's reason.
+ */
+async function listFolder(api: ElectronAPI, folder: string): Promise<string[]> {
+  if (!api.listFilesInRoot) throw new Error("listFilesInRoot is not available");
+  const listed = await api.listFilesInRoot(folder);
+  if (!listed.success || !listed.data) {
+    throw new Error(listed.error ?? `Failed to read directory: ${folder}`);
+  }
+  return listed.data;
+}
+
 /** The setup summary's lines for the pairs setup linked (#537 rule 2) */
 function stereoImportNotices(
   kitName: string,

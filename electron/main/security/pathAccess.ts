@@ -3,6 +3,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 
 import {
+  CARD_NOT_RESPONDING_SETUP_MESSAGE,
   CardNotRespondingError,
   withCardWatchdog,
 } from "../services/cardWatchdog.js";
@@ -49,7 +50,14 @@ import { ServicePathManager } from "../utils/fileSystemUtils.js";
 
 export type PathAccessMode = "read" | "write";
 
-export type PathAccessResult = { error: string; ok: false } | { ok: true };
+/**
+ * `cardNotResponding` marks a refusal because the path's filesystem didn't
+ * answer within the card watchdog's limit (#714), so a setup channel can
+ * say setup stopped rather than the write (#724).
+ */
+export type PathAccessResult =
+  | { cardNotResponding?: true; error: string; ok: false }
+  | { ok: true };
 
 export interface PathAccessSettings {
   localStorePath?: unknown;
@@ -103,7 +111,9 @@ export class PathAccessPolicy {
     try {
       target = await canonicalizePath(p);
     } catch (error) {
-      // Includes a card that stopped responding (#714)
+      if (error instanceof CardNotRespondingError) {
+        return { cardNotResponding: true, error: error.message, ok: false };
+      }
       return { error: (error as Error).message, ok: false };
     }
 
@@ -380,4 +390,36 @@ export function checkPathAccess(
   options: { write?: boolean } = {},
 ): Promise<PathAccessResult> {
   return pathAccess.check(p, options.write ? "write" : "read");
+}
+
+/**
+ * {@link checkDatabaseDirAccess} for the setup wizard: a card that stopped
+ * responding gets setup's message (#724).
+ */
+export async function checkSetupDatabaseDirAccess(
+  dbDir: unknown,
+): Promise<PathAccessResult> {
+  return forSetup(await checkDatabaseDirAccess(dbDir));
+}
+
+/**
+ * {@link checkPathAccess} for the setup wizard's channels: a card that
+ * stopped responding gets setup's message, not the write's (#724).
+ */
+export async function checkSetupPathAccess(
+  p: unknown,
+  options: { write?: boolean } = {},
+): Promise<PathAccessResult> {
+  return forSetup(await checkPathAccess(p, options));
+}
+
+/** A refusal because a card stopped responding, in setup's words (#724) */
+function forSetup(result: PathAccessResult): PathAccessResult {
+  return !result.ok && result.cardNotResponding
+    ? {
+        cardNotResponding: true,
+        error: CARD_NOT_RESPONDING_SETUP_MESSAGE,
+        ok: false,
+      }
+    : result;
 }

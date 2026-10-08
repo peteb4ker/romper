@@ -124,15 +124,13 @@ export const createElectronAPIMock = (
       path === "/mock/local/store" ||
       path.includes("local")
     ) {
-      return Promise.resolve(["A0", "A1", "B0"]);
+      return Promise.resolve({ data: ["A0", "A1", "B0"], success: true });
     }
     // When called with specific kit paths, return WAV files
-    return Promise.resolve([
-      "1 kick.wav",
-      "2 snare.wav",
-      "3 hat.wav",
-      "4 tom.wav",
-    ]);
+    return Promise.resolve({
+      data: ["1 kick.wav", "2 snare.wav", "3 hat.wav", "4 tom.wav"],
+      success: true,
+    });
   }),
   moveSampleBetweenKits: vi.fn().mockResolvedValue({ success: true }),
   // Move operations

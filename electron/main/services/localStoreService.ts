@@ -1,4 +1,7 @@
-import type { LocalStoreValidationDetailedResult } from "@romper/shared/db/schema.js";
+import type {
+  DbResult,
+  LocalStoreValidationDetailedResult,
+} from "@romper/shared/db/schema.js";
 
 import * as fs from "node:fs";
 
@@ -8,6 +11,11 @@ import {
   validateLocalStoreBasic,
 } from "../localStoreValidator.js";
 import { logger } from "../utils/logger.js";
+import {
+  CARD_NOT_RESPONDING_SETUP_MESSAGE,
+  CardNotRespondingError,
+  withCardWatchdog,
+} from "./cardWatchdog.js";
 
 /**
  * Service for local store validation and management operations
@@ -86,15 +94,26 @@ export class LocalStoreService {
   }
 
   /**
-   * List files in the root of a local store directory
+   * List the files in a folder's root. Setup lists the card's kit folders
+   * this way, so the listing is asynchronous and under the card watchdog
+   * (#724): a card whose driver stopped responding (#653) fails it with
+   * setup's card-not-responding message instead of blocking the main
+   * process.
    */
-  listFilesInRoot(localStorePath: string): string[] {
+  async listFilesInRoot(localStorePath: string): Promise<DbResult<string[]>> {
     try {
-      return fs.readdirSync(localStorePath);
+      return {
+        data: await withCardWatchdog(fs.promises.readdir(localStorePath)),
+        success: true,
+      };
     } catch (error) {
-      throw new Error(
-        `Failed to read directory: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      if (error instanceof CardNotRespondingError) {
+        return { error: CARD_NOT_RESPONDING_SETUP_MESSAGE, success: false };
+      }
+      return {
+        error: `Failed to read directory: ${error instanceof Error ? error.message : String(error)}`,
+        success: false,
+      };
     }
   }
 

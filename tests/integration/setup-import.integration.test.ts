@@ -154,7 +154,7 @@ describe("[UC-01] [UC-12] Setup imports the card's bank names (#564)", () => {
     removeTempStore(card);
   });
 
-  it("names each bank from its file, flags no kit and copies no file", () => {
+  it("names each bank from its file, flags no kit and copies no file", async () => {
     fs.writeFileSync(path.join(card, "A - ALWIS.rtf"), String.raw`{\rtf1}`);
     fs.writeFileSync(path.join(card, "c - Lower Case.rtf"), "");
     // Not bank name files: a folder, no letter, no " - ", another extension
@@ -163,7 +163,7 @@ describe("[UC-01] [UC-12] Setup imports the card's bank names (#564)", () => {
     fs.writeFileSync(path.join(card, "E-Dash.rtf"), "");
     fs.writeFileSync(path.join(card, "F - Text.txt"), "");
 
-    const result = setup.importSetupBankNames(dbDir, card);
+    const result = await setup.importSetupBankNames(dbDir, card);
 
     expect(result).toEqual({ data: { importedBanks: 2 }, success: true });
     expect(bankNames()).toEqual({
@@ -178,13 +178,13 @@ describe("[UC-01] [UC-12] Setup imports the card's bank names (#564)", () => {
 
   // #567: the factory archive's bank name files are extracted into the
   // store, and setup reads them once from there
-  it("[UC-02] names the banks from the factory archive's files in the store", () => {
+  it("[UC-02] names the banks from the factory archive's files in the store", async () => {
     const archiveRtf = String.raw`{\rtf1\ansi ALWIS}`;
     fs.writeFileSync(path.join(store, "A - ALWIS.rtf"), archiveRtf);
     // A bank with no kits
     fs.writeFileSync(path.join(store, "D - RICHARD DEVINE.rtf"), archiveRtf);
 
-    const result = setup.importSetupBankNames(dbDir, store);
+    const result = await setup.importSetupBankNames(dbDir, store);
 
     expect(result).toEqual({ data: { importedBanks: 2 }, success: true });
     expect(bankNames()).toEqual({
@@ -198,25 +198,25 @@ describe("[UC-01] [UC-12] Setup imports the card's bank names (#564)", () => {
     );
   });
 
-  it("keeps the first file by name when a card has two for one letter", () => {
+  it("keeps the first file by name when a card has two for one letter", async () => {
     fs.writeFileSync(path.join(card, "B - Second.rtf"), "");
     fs.writeFileSync(path.join(card, "B - First.rtf"), "");
 
-    expect(setup.importSetupBankNames(dbDir, card).success).toBe(true);
+    expect((await setup.importSetupBankNames(dbDir, card)).success).toBe(true);
     expect(bankNames()).toEqual({ B: ["First", "B - First.rtf"] });
   });
 
-  it("imports nothing from a card without bank name files", () => {
-    expect(setup.importSetupBankNames(dbDir, card)).toEqual({
+  it("imports nothing from a card without bank name files", async () => {
+    expect(await setup.importSetupBankNames(dbDir, card)).toEqual({
       data: { importedBanks: 0 },
       success: true,
     });
     expect(bankNames()).toEqual({});
   });
 
-  it("refuses a store this setup didn't create", () => {
+  it("refuses a store this setup didn't create", async () => {
     fs.writeFileSync(path.join(card, "A - ALWIS.rtf"), "");
-    const result = new LocalStoreSetupService().importSetupBankNames(
+    const result = await new LocalStoreSetupService().importSetupBankNames(
       dbDir,
       card,
     );
@@ -224,8 +224,36 @@ describe("[UC-01] [UC-12] Setup imports the card's bank names (#564)", () => {
     expect(bankNames()).toEqual({});
   });
 
-  it("reports a card folder it can't read", () => {
-    const result = setup.importSetupBankNames(
+  it("[Q-01] makes no database when setup was cleaned up while the card was listed (#724)", async () => {
+    fs.writeFileSync(path.join(card, "A - ALWIS.rtf"), "");
+    const original = fs.promises.readdir;
+    let listCard: () => void = () => undefined;
+    const listed = new Promise<void>((resolve) => {
+      listCard = resolve;
+    });
+    vi.spyOn(fs.promises, "readdir").mockImplementationOnce((async (
+      ...args: Parameters<typeof original>
+    ) => {
+      await listed;
+      return original(...args);
+    }) as typeof original);
+
+    const importing = setup.importSetupBankNames(dbDir, card);
+    // The app quits while the card is slow to answer
+    expect(setup.cleanupFailedSetup(store).removed).toBe(true);
+    listCard();
+    const result = await importing;
+
+    vi.restoreAllMocks();
+    expect(result).toEqual({
+      error: "Setup can only import bank names into the store it is creating",
+      success: false,
+    });
+    expect(fs.existsSync(dbDir)).toBe(false);
+  });
+
+  it("reports a card folder it can't read", async () => {
+    const result = await setup.importSetupBankNames(
       dbDir,
       path.join(card, "missing"),
     );

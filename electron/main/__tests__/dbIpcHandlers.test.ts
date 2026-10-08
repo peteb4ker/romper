@@ -52,8 +52,9 @@ vi.mock("../services/localStoreService.js", () => ({
 // Path authorization is unit-tested in security/__tests__; here it is a
 // switch so each guarded channel can be checked allowed and denied.
 vi.mock("../security/pathAccess.js", () => ({
-  checkDatabaseDirAccess: vi.fn(() => Promise.resolve({ ok: true })),
   checkPathAccess: vi.fn(() => Promise.resolve({ ok: true })),
+  checkSetupDatabaseDirAccess: vi.fn(() => Promise.resolve({ ok: true })),
+  checkSetupPathAccess: vi.fn(() => Promise.resolve({ ok: true })),
   pathAccess: { useSettings: vi.fn() },
 }));
 
@@ -68,8 +69,9 @@ import { getAudioMetadata, validateSampleFormat } from "../audioUtils.js";
 import * as romperDbCore from "../db/romperDbCoreORM";
 import { registerDbIpcHandlers } from "../dbIpcHandlers";
 import {
-  checkDatabaseDirAccess,
   checkPathAccess,
+  checkSetupDatabaseDirAccess,
+  checkSetupPathAccess,
 } from "../security/pathAccess.js";
 import {
   checkSampleSourceAccess,
@@ -365,12 +367,12 @@ describe("dbIpcHandlers - Routing Tests", () => {
         localStoreSetupService,
         "createSetupDatabase",
       );
-      vi.mocked(checkDatabaseDirAccess).mockResolvedValueOnce(DENIED);
+      vi.mocked(checkSetupDatabaseDirAccess).mockResolvedValueOnce(DENIED);
       const result = await handlerRegistry["create-romper-db"](
         {},
         "/Users/me/Library/.romperdb",
       );
-      expect(checkDatabaseDirAccess).toHaveBeenCalledWith(
+      expect(checkSetupDatabaseDirAccess).toHaveBeenCalledWith(
         "/Users/me/Library/.romperdb",
       );
       expect(result).toEqual({ error: DENIED.error, success: false });
@@ -383,13 +385,13 @@ describe("dbIpcHandlers - Routing Tests", () => {
       const { localStoreSetupService } =
         await import("../services/localStoreSetupService.js");
       const importSetupKit = vi.spyOn(localStoreSetupService, "importSetupKit");
-      vi.mocked(checkDatabaseDirAccess).mockResolvedValueOnce(DENIED);
+      vi.mocked(checkSetupDatabaseDirAccess).mockResolvedValueOnce(DENIED);
       const result = await handlerRegistry["setup-import-kit"](
         {},
         "/Users/me/Library/.romperdb",
         "A0",
       );
-      expect(checkDatabaseDirAccess).toHaveBeenCalledWith(
+      expect(checkSetupDatabaseDirAccess).toHaveBeenCalledWith(
         "/Users/me/Library/.romperdb",
       );
       expect(result).toEqual({ error: DENIED.error, success: false });
@@ -402,7 +404,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
         await import("../services/localStoreSetupService.js");
       const importSetupBankNames = vi
         .spyOn(localStoreSetupService, "importSetupBankNames")
-        .mockReturnValue({ data: { importedBanks: 1 }, success: true });
+        .mockResolvedValue({ data: { importedBanks: 1 }, success: true });
       const result = await handlerRegistry["setup-import-bank-names"](
         {},
         "/test/path/.romperdb",
@@ -423,7 +425,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
         localStoreSetupService,
         "importSetupBankNames",
       );
-      vi.mocked(checkDatabaseDirAccess).mockResolvedValueOnce(DENIED);
+      vi.mocked(checkSetupDatabaseDirAccess).mockResolvedValueOnce(DENIED);
       expect(
         await handlerRegistry["setup-import-bank-names"](
           {},
@@ -431,7 +433,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
           "/Volumes/RAMPLE",
         ),
       ).toEqual({ error: DENIED.error, success: false });
-      vi.mocked(checkPathAccess).mockResolvedValueOnce(DENIED);
+      vi.mocked(checkSetupPathAccess).mockResolvedValueOnce(DENIED);
       expect(
         await handlerRegistry["setup-import-bank-names"](
           {},
@@ -439,7 +441,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
           "/Users/me/Library",
         ),
       ).toEqual({ error: DENIED.error, success: false });
-      expect(checkPathAccess).toHaveBeenCalledWith("/Users/me/Library");
+      expect(checkSetupPathAccess).toHaveBeenCalledWith("/Users/me/Library");
       expect(importSetupBankNames).not.toHaveBeenCalled();
       importSetupBankNames.mockRestore();
     });

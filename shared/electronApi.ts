@@ -132,7 +132,8 @@ export interface ElectronAPI {
     knownVersion?: string,
   ) => Promise<DbResult<null | SampleAudio>>;
   getUserHomeDir: () => Promise<string>;
-  listFilesInRoot: (localStorePath: string) => Promise<string[]>;
+  /** A folder's entries; setup lists the card with it (#724) */
+  listFilesInRoot: (localStorePath: string) => Promise<DbResult<string[]>>;
   moveSampleBetweenKits: (
     fromKit: string,
     fromVoice: number,

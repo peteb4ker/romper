@@ -1,3 +1,4 @@
+import { CARD_NOT_RESPONDING_SETUP_MESSAGE } from "@romper/shared/cardMessages";
 import { describe, expect, it, vi } from "vitest";
 
 import type { ElectronAPI } from "../../../../electron.d";
@@ -180,6 +181,37 @@ describe("wizardInitUtils", () => {
 
       await runPreChecks(api, "/target", "blank");
       expect(checkDiskSpace).not.toHaveBeenCalled();
+    });
+
+    // #724: main gives up on a folder that stops responding (a card whose
+    // driver hung, #653); setup says so, not that it's unwritable or full
+    it("[Q-01] says the card stopped responding when the writable check gave up", async () => {
+      const api = {
+        checkPathWritable: vi.fn().mockResolvedValue({
+          error: CARD_NOT_RESPONDING_SETUP_MESSAGE,
+          writable: false,
+        }),
+      } as unknown as ElectronAPI;
+
+      await expect(runPreChecks(api, "/target", "sdcard")).rejects.toThrow(
+        new Error(CARD_NOT_RESPONDING_SETUP_MESSAGE),
+      );
+    });
+
+    it("[Q-01] says the card stopped responding when the disk space check gave up", async () => {
+      const api = {
+        checkDiskSpace: vi.fn().mockResolvedValue({
+          availableBytes: 0,
+          error: CARD_NOT_RESPONDING_SETUP_MESSAGE,
+          requiredBytes: 500 * 1024 * 1024,
+          sufficient: false,
+        }),
+        checkPathWritable: writable,
+      } as unknown as ElectronAPI;
+
+      await expect(runPreChecks(api, "/target", "sdcard")).rejects.toThrow(
+        new Error(CARD_NOT_RESPONDING_SETUP_MESSAGE),
+      );
     });
 
     it("skips checks the API does not provide", async () => {

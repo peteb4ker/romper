@@ -3,6 +3,11 @@ import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  CARD_NOT_RESPONDING_SETUP_MESSAGE,
+  CARD_OPERATION_TIMEOUT_MS,
+  cardWatchdogSettings,
+} from "../../services/cardWatchdog";
+import {
   checkDiskSpace,
   checkDiskSpaceSufficient,
   checkPathWritable,
@@ -17,8 +22,15 @@ vi.mock("node:path", async (importOriginal) =>
   vi.mockObject(await importOriginal<typeof import("node:path")>()),
 );
 
-const mockFs = vi.mocked(fs);
 const mockPath = vi.mocked(path);
+
+const aDirectory = { isDirectory: () => true } as unknown as fs.Stats;
+
+function enoent() {
+  return Object.assign(new Error("ENOENT: no such file or directory"), {
+    code: "ENOENT",
+  });
+}
 
 describe("fileSystemUtils", () => {
   describe("ServicePathManager", () => {
@@ -132,36 +144,34 @@ describe("fileSystemUtils", () => {
       vi.clearAllMocks();
     });
 
-    it("should return available bytes when path exists", () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statfsSync.mockReturnValue({
+    it("should return available bytes when path exists", async () => {
+      vi.mocked(fs.promises.stat).mockResolvedValue(aDirectory);
+      vi.mocked(fs.promises.statfs).mockResolvedValue({
         bavail: 1000000,
         bsize: 4096,
       } as unknown as fs.StatsFs);
 
-      const result = checkDiskSpace("/some/path");
+      const result = await checkDiskSpace("/some/path");
 
       expect(result.sufficient).toBe(true);
       expect(result.availableBytes).toBe(1000000 * 4096);
     });
 
-    it("should return error when path does not exist", () => {
-      mockFs.existsSync.mockReturnValue(false);
+    it("should return error when path does not exist", async () => {
+      vi.mocked(fs.promises.stat).mockRejectedValue(enoent());
       mockPath.dirname.mockReturnValue("/some");
 
-      const result = checkDiskSpace("/some/nonexistent");
+      const result = await checkDiskSpace("/some/nonexistent");
 
       expect(result.sufficient).toBe(false);
       expect(result.error).toBe("Path does not exist");
     });
 
-    it("should return error when statfsSync throws", () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statfsSync.mockImplementation(() => {
-        throw new Error("I/O error");
-      });
+    it("should return error when statfs fails", async () => {
+      vi.mocked(fs.promises.stat).mockResolvedValue(aDirectory);
+      vi.mocked(fs.promises.statfs).mockRejectedValue(new Error("I/O error"));
 
-      const result = checkDiskSpace("/some/path");
+      const result = await checkDiskSpace("/some/path");
 
       expect(result.sufficient).toBe(false);
       expect(result.error).toContain("Disk space check failed");
@@ -173,27 +183,30 @@ describe("fileSystemUtils", () => {
       vi.clearAllMocks();
     });
 
-    it("should return sufficient when enough space", () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statfsSync.mockReturnValue({
+    it("should return sufficient when enough space", async () => {
+      vi.mocked(fs.promises.stat).mockResolvedValue(aDirectory);
+      vi.mocked(fs.promises.statfs).mockResolvedValue({
         bavail: 1000000,
         bsize: 4096,
       } as unknown as fs.StatsFs);
 
-      const result = checkDiskSpaceSufficient("/path", 1024);
+      const result = await checkDiskSpaceSufficient("/path", 1024);
 
       expect(result.sufficient).toBe(true);
       expect(result.requiredBytes).toBe(1024);
     });
 
-    it("should return insufficient when not enough space", () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statfsSync.mockReturnValue({
+    it("should return insufficient when not enough space", async () => {
+      vi.mocked(fs.promises.stat).mockResolvedValue(aDirectory);
+      vi.mocked(fs.promises.statfs).mockResolvedValue({
         bavail: 1,
         bsize: 1,
       } as unknown as fs.StatsFs);
 
-      const result = checkDiskSpaceSufficient("/path", 1024 * 1024 * 1024);
+      const result = await checkDiskSpaceSufficient(
+        "/path",
+        1024 * 1024 * 1024,
+      );
 
       expect(result.sufficient).toBe(false);
       expect(result.availableBytes).toBe(1);
@@ -206,44 +219,112 @@ describe("fileSystemUtils", () => {
       vi.clearAllMocks();
     });
 
-    it("should return writable when write and delete succeed", () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({
-        isDirectory: () => true,
-      } as unknown as fs.Stats);
-      mockFs.writeFileSync.mockImplementation(() => {});
-      mockFs.unlinkSync.mockImplementation(() => {});
+    it("should return writable when write and delete succeed", async () => {
+      vi.mocked(fs.promises.stat).mockResolvedValue(aDirectory);
+      vi.mocked(fs.promises.writeFile).mockResolvedValue(undefined);
+      vi.mocked(fs.promises.unlink).mockResolvedValue(undefined);
       mockPath.join.mockReturnValue("/path/.romper-write-test-123");
 
-      const result = checkPathWritable("/path");
+      const result = await checkPathWritable("/path");
 
       expect(result.writable).toBe(true);
+      expect(fs.promises.unlink).toHaveBeenCalledWith(
+        "/path/.romper-write-test-123",
+      );
     });
 
-    it("should return not writable when write fails", () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({
-        isDirectory: () => true,
-      } as unknown as fs.Stats);
-      mockFs.writeFileSync.mockImplementation(() => {
-        throw new Error("Permission denied");
-      });
+    it("should return not writable when write fails", async () => {
+      vi.mocked(fs.promises.stat).mockResolvedValue(aDirectory);
+      vi.mocked(fs.promises.writeFile).mockRejectedValue(
+        new Error("Permission denied"),
+      );
       mockPath.join.mockReturnValue("/path/.romper-write-test-123");
 
-      const result = checkPathWritable("/path");
+      const result = await checkPathWritable("/path");
 
       expect(result.writable).toBe(false);
       expect(result.error).toContain("Cannot write to path");
     });
 
-    it("should return not writable when directory does not exist", () => {
-      mockFs.existsSync.mockReturnValue(false);
+    it("should return not writable when directory does not exist", async () => {
+      vi.mocked(fs.promises.stat).mockRejectedValue(enoent());
       mockPath.dirname.mockReturnValue("/nonexistent");
 
-      const result = checkPathWritable("/nonexistent/sub");
+      const result = await checkPathWritable("/nonexistent/sub");
 
       expect(result.writable).toBe(false);
       expect(result.error).toContain("Directory does not exist");
+    });
+  });
+
+  // #724: the setup wizard checks the folder it sets up in, which could be
+  // on a card whose driver stopped responding (#653). A synchronous call
+  // would block the main process, so each check is asynchronous and the
+  // card watchdog gives up on one that never finishes.
+  describe("[UC-01] [Q-01] a folder that stops responding (#724)", () => {
+    const never = <T>() => new Promise<T>(() => undefined);
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      cardWatchdogSettings.timeoutMs = 20;
+    });
+
+    afterEach(() => {
+      cardWatchdogSettings.timeoutMs = CARD_OPERATION_TIMEOUT_MS;
+    });
+
+    it("the writable check says the card stopped responding", async () => {
+      vi.mocked(fs.promises.stat).mockReturnValue(never());
+
+      await expect(checkPathWritable("/card")).resolves.toEqual({
+        error: CARD_NOT_RESPONDING_SETUP_MESSAGE,
+        writable: false,
+      });
+    });
+
+    it("the writable check gives up on a test file that's never written", async () => {
+      vi.mocked(fs.promises.stat).mockResolvedValue(aDirectory);
+      vi.mocked(fs.promises.writeFile).mockReturnValue(never());
+
+      await expect(checkPathWritable("/card")).resolves.toEqual({
+        error: CARD_NOT_RESPONDING_SETUP_MESSAGE,
+        writable: false,
+      });
+    });
+
+    it("the disk space check says the card stopped responding", async () => {
+      vi.mocked(fs.promises.stat).mockResolvedValue(aDirectory);
+      vi.mocked(fs.promises.statfs).mockReturnValue(never());
+
+      await expect(
+        checkDiskSpaceSufficient("/card", 1024),
+      ).resolves.toMatchObject({
+        error: CARD_NOT_RESPONDING_SETUP_MESSAGE,
+        sufficient: false,
+      });
+    });
+
+    it("touches the folder only through fs.promises", async () => {
+      vi.mocked(fs.promises.stat).mockResolvedValue(aDirectory);
+      vi.mocked(fs.promises.statfs).mockResolvedValue({
+        bavail: 1,
+        bsize: 1,
+      } as unknown as fs.StatsFs);
+      vi.mocked(fs.promises.writeFile).mockResolvedValue(undefined);
+      vi.mocked(fs.promises.unlink).mockResolvedValue(undefined);
+
+      await checkPathWritable("/card");
+      await checkDiskSpaceSufficient("/card", 1);
+
+      for (const sync of [
+        fs.existsSync,
+        fs.statSync,
+        fs.statfsSync,
+        fs.writeFileSync,
+        fs.unlinkSync,
+      ]) {
+        expect(sync).not.toHaveBeenCalled();
+      }
     });
   });
 });

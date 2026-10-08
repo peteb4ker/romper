@@ -321,3 +321,4 @@ process.on("unhandledRejection", (reason: unknown) => {
     reason instanceof Error ? reason.message : String(reason),
   );
 });
+// proof for #702

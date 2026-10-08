@@ -1,3 +1,4 @@
+// Proof for #702, not for merging: an app-code change runs e2e on Linux only.
 import "./styles/index.css";
 
 import React, { useEffect, useState } from "react";

@@ -25,6 +25,12 @@ import LocalStoreWizardModal from "../components/LocalStoreWizardModal";
 import { saveSelectedKitState } from "../utils/hmrStateManager";
 import { useSettings } from "../utils/SettingsContext";
 
+// Opens the About dialog (main.tsx listens). One function, not an inline
+// one, so the memoized kit browser isn't redrawn on every message (#462)
+const openAbout = () => {
+  globalThis.dispatchEvent(new CustomEvent("menu-about"));
+};
+
 /**
  * Main view component for kit management
  * Orchestrates kit browsing, selection, and editing functionality
@@ -267,9 +273,7 @@ const KitsView: React.FC = () => {
             // names load when it comes back (#553)
             localStorePath={setupFlow.isLocalStoreReady ? localStorePath : null}
             modifiedCount={kitFilters.modifiedCount}
-            onAboutClick={() =>
-              globalThis.dispatchEvent(new CustomEvent("menu-about"))
-            }
+            onAboutClick={openAbout}
             onDismissBulkScan={dismissBulkScanResult}
             onMessage={showMessage}
             onRefreshKits={refreshAllKitsAndSamples}

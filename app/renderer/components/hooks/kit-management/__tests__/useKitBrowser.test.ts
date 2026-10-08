@@ -134,7 +134,6 @@ describe("useKitBrowser", () => {
       onRefreshKits: vi.fn(),
     };
 
-    // @ts-expect-error Testing runtime behavior with partial props
     const { result } = renderHook(() => useKitBrowser(propsWithoutKits));
 
     expect(result.current.kits).toEqual([]);

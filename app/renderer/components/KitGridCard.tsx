@@ -1,7 +1,7 @@
 import type { Kit, KitWithRelations } from "@romper/shared/db/schema.js";
 
 import { isValidKit } from "@romper/shared/kitUtilsShared";
-import React from "react";
+import React, { useCallback } from "react";
 
 import type { KitWithSearchMatch } from "./shared/kitItemUtils";
 
@@ -39,7 +39,9 @@ function hasSearchSampleMatches(
   return !!byVoice && Object.keys(byVoice).length > 0;
 }
 
-export const KitGridCard: React.FC<KitGridCardProps> = ({
+// Memoized, and its handlers are stable, so the card under it (also
+// memoized) renders only when what it shows changes (#462)
+export const KitGridCard = React.memo(function KitGridCard({
   focusedIdx,
   isNew,
   kit,
@@ -55,7 +57,7 @@ export const KitGridCard: React.FC<KitGridCardProps> = ({
   onToggleFavorite,
   sampleCounts,
   setFocus,
-}) => {
+}: KitGridCardProps) {
   const globalIndex = kitsToDisplay.findIndex((k) => k.name === kit.name);
   const isValid = isValidKit(kit.name);
   const isSelected = focusedIdx === globalIndex;
@@ -64,13 +66,22 @@ export const KitGridCard: React.FC<KitGridCardProps> = ({
   // The kit list is the one source of favourite state (RE-37)
   const isFavorite = kitDataItem?.is_favorite ?? kit.is_favorite;
 
-  const handleSelectKit = () => {
+  const kitName = kit.name;
+  const handleSelectKit = useCallback(() => {
     if (isValid) {
-      onSelectKit(kit.name);
-      if (onFocusKit) onFocusKit(kit.name);
+      onSelectKit(kitName);
+      if (onFocusKit) onFocusKit(kitName);
       setFocus(globalIndex);
     }
-  };
+  }, [globalIndex, isValid, kitName, onFocusKit, onSelectKit, setFocus]);
+
+  const handleDelete = useCallback(() => {
+    if (isValid) onDelete?.(kitName);
+  }, [isValid, kitName, onDelete]);
+
+  const handleDuplicate = useCallback(() => {
+    if (isValid) onDuplicate(kitName);
+  }, [isValid, kitName, onDuplicate]);
 
   const expanded = hasSearchSampleMatches(kitDataItem);
 
@@ -88,9 +99,9 @@ export const KitGridCard: React.FC<KitGridCardProps> = ({
         isValid={isValid}
         kit={kit.name}
         kitData={kitDataItem}
-        onDelete={onDelete ? () => isValid && onDelete(kit.name) : undefined}
+        onDelete={onDelete ? handleDelete : undefined}
         onDeleteKit={onDeleteKit}
-        onDuplicate={() => isValid && onDuplicate(kit.name)}
+        onDuplicate={handleDuplicate}
         onDuplicateKit={onDuplicateKit}
         onRequestDeleteSummary={onRequestDeleteSummary}
         onSelect={handleSelectKit}
@@ -99,4 +110,4 @@ export const KitGridCard: React.FC<KitGridCardProps> = ({
       />
     </div>
   );
-};
+});

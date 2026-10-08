@@ -55,6 +55,10 @@ interface KitBrowserProps {
 // Constants
 const SCROLL_DELAY_MS = 100;
 
+// The grid's card duplicate action is its own popover (onDuplicateKit); one
+// no-op, so the memoized grid gets the same prop each render (#462)
+const noop = () => {};
+
 const KitBrowser: React.FC<KitBrowserProps> = (props) => {
   const {
     // Use props from parent instead of duplicate hook
@@ -81,8 +85,9 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
     }
   }, [onRefreshKits, onMessage]);
 
-  // Use kits directly from props since filtering is done by the parent useKitFilters hook
-  const filteredKits = props.kits ?? [];
+  // Use kits directly from props since filtering is done by the parent
+  // useKitFilters hook. useKitBrowser gives no kits one shared empty list.
+  const filteredKits = props.kits;
 
   // Create wrapper function for async onRefreshKits with scrollToKit parameter
   const handleRefreshKitsWithScroll = useCallback(
@@ -178,20 +183,15 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
     onToggleFavorite: handleToggleFavorite,
   });
 
-  // Handler for KitBankNav and KitGrid keyboard navigation
-  const focusBankInKitGrid = (bank: string) => {
-    if (logic.focusBankInKitList) logic.focusBankInKitList(bank);
-  };
-
-  // Handler for KitBankNav (renamed to avoid conflict)
-  const onBankClickWithScroll = (bank: string) => {
-    focusBankInKitGrid(bank);
-  };
-
-  // Handler for KitGrid keyboard navigation to update selectedBank
-  const handleBankFocus = (bank: string) => {
-    focusBankInKitGrid(bank);
-  };
+  // Handler for KitBankNav clicks and KitGrid keyboard navigation. Stable,
+  // so typing a search or a scroll doesn't redraw the memoized grid (#462)
+  const { focusBankInKitList } = logic;
+  const focusBankInKitGrid = useCallback(
+    (bank: string) => {
+      if (focusBankInKitList) focusBankInKitList(bank);
+    },
+    [focusBankInKitList],
+  );
 
   return (
     <div
@@ -222,7 +222,7 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
         <KitBankNav
           bankNames={bankNames}
           kits={kits}
-          onBankClick={onBankClickWithScroll}
+          onBankClick={focusBankInKitGrid}
           onEmptyBankClick={isFiltered ? undefined : showEmptyBank}
           selectedBank={selectedBank}
         />
@@ -235,11 +235,11 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
           kitData={kits}
           kits={kits}
           newlyAnimatedKit={logic.newlyAnimatedKit}
-          onBankFocus={handleBankFocus}
+          onBankFocus={focusBankInKitGrid}
           onBankNameChange={handleBankNameChange}
           onCreateKitInBank={handleCreateKitInBank}
           onDeleteKit={deletion.deleteKitDirect}
-          onDuplicate={() => {}}
+          onDuplicate={noop}
           onDuplicateKit={duplicateKitDirect}
           onFocusKit={setFocusedKit}
           onRequestDeleteSummary={deletion.requestDeleteSummary}

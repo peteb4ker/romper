@@ -8,6 +8,7 @@ import {
   usesSpaceItself,
 } from "../../../utils/keyboardShortcuts";
 import { isModalDialogOpen } from "../../../utils/modalDialog";
+import { useLatestRef } from "../shared/useLatestRef";
 
 type SampleNavParams = Pick<
   UseKitEditorKeyboardNavParams,
@@ -40,23 +41,27 @@ interface UseKitEditorKeyboardNavParams {
  * (arrows + space) while the sequencer is closed. Space on a focused button
  * or field is the control's, not the preview's.
  */
-export function useKitEditorKeyboardNav({
-  isEditable,
-  onInferVoiceNames,
-  onNextKit,
-  onPlaySample,
-  onPrevKit,
-  onSampleKeyNav,
-  onScanKit,
-  onToggleFavorite,
-  samples,
-  selectedSampleIdx,
-  selectedVoice,
-  sequencerOpen,
-  setSequencerOpen,
-}: UseKitEditorKeyboardNavParams) {
+export function useKitEditorKeyboardNav(params: UseKitEditorKeyboardNavParams) {
+  // The listener reads the latest params, so it subscribes once rather than
+  // on every render, when the editor passes new callbacks (#462)
+  const paramsRef = useLatestRef(params);
   React.useEffect(() => {
     function handleGlobalKeyDown(e: KeyboardEvent) {
+      const {
+        isEditable,
+        onInferVoiceNames,
+        onNextKit,
+        onPlaySample,
+        onPrevKit,
+        onSampleKeyNav,
+        onScanKit,
+        onToggleFavorite,
+        samples,
+        selectedSampleIdx,
+        selectedVoice,
+        sequencerOpen,
+        setSequencerOpen,
+      } = paramsRef.current;
       // Ignore if a modal, input, textarea, or contenteditable is focused
       if (isTypingTarget(document.activeElement)) {
         return;
@@ -121,21 +126,7 @@ export function useKitEditorKeyboardNav({
     }
     globalThis.addEventListener("keydown", handleGlobalKeyDown);
     return () => globalThis.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [
-    sequencerOpen,
-    selectedVoice,
-    selectedSampleIdx,
-    samples,
-    onPlaySample,
-    onSampleKeyNav,
-    onPrevKit,
-    onNextKit,
-    isEditable,
-    onInferVoiceNames,
-    onScanKit,
-    onToggleFavorite,
-    setSequencerOpen,
-  ]);
+  }, [paramsRef]);
 }
 
 /** Handle the sample navigation/preview keys (arrows + space). */

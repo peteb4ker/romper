@@ -235,10 +235,13 @@ What the numbers say:
   it and draws only the playhead, without rendering. The LED icon's loop
   still runs while idle: its idle drift is visible, so pausing it is a
   product decision.
-- **RE-47 is unchanged:**
-  - the message context value changes on every toast;
-  - `itemData` is rebuilt on every render;
-  - search copies every kit object, so per-card memoisation can't work.
+- **RE-47: the kit browser is fixed (#462).** A toast, the first letter of
+  a search, a scroll or a focus move used to redraw every kit card. The
+  message context value still changes on every toast, but the props below
+  it are stable, so the memoized browser, grid rows and cards skip it. The
+  grid's `itemData` is memoized, a search with no query keeps the kit
+  objects, and the menu and editor key listeners subscribe once. A search
+  that matches still redraws the cards it matches, to highlight the match.
 - **Logging is on in packaged builds** (the register's Low "Settings and
   logging" item). `logger.log` treats an undefined `NODE_ENV` as
   development, and nothing sets `NODE_ENV` in a packaged app. Settings objects and whole sync summaries are logged.

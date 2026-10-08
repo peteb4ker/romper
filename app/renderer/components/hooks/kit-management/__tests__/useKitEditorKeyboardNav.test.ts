@@ -73,6 +73,35 @@ describe("useKitEditorKeyboardNav", () => {
     expect(removeSpy).toHaveBeenCalledWith("keydown", expect.any(Function));
   });
 
+  describe("[Q-01] [UC-18] subscribes once (#462)", () => {
+    it("keeps its listener across renders and acts on the latest props", () => {
+      const { addSpy, fire, props, removeSpy, view } = setup();
+      const keydownSubscriptions = () =>
+        addSpy.mock.calls.filter(([type]) => type === "keydown").length;
+      expect(keydownSubscriptions()).toBe(1);
+
+      // The editor passes new callbacks and a new selection on its renders
+      const onPlaySample = vi.fn();
+      const onPrevKit = vi.fn();
+      view.rerender({ ...props, onPrevKit: vi.fn() });
+      view.rerender({
+        ...props,
+        onPlaySample,
+        onPrevKit,
+        selectedSampleIdx: 1,
+      });
+
+      expect(keydownSubscriptions()).toBe(1);
+      expect(removeSpy).not.toHaveBeenCalled();
+
+      fire(",");
+      fire(" ");
+      expect(onPrevKit).toHaveBeenCalledTimes(1);
+      expect(props.onPrevKit).not.toHaveBeenCalled();
+      expect(onPlaySample).toHaveBeenCalledWith(1, 1);
+    });
+  });
+
   describe("isTypingTarget guard", () => {
     it.each([
       ["INPUT (text)", () => document.createElement("input")],

@@ -15,7 +15,13 @@ interface KitEditorAllProps extends KitEditorProps {
   kitError?: null | string; // Error from parent kit loading - used via useKitEditorLogic hook
   onBpmSaved?: (kitName: string, bpm: number) => void; // Patches the loaded kit after a BPM save (#565)
   onCreateKit?: () => void; // Used by useKitEditorLogic hook
-  onKitModified?: (kitName: string) => void; // Shows an edit main flagged without a reload (RE-35)
+  /** Shows a gain main saved, and the kit as modified, without a reload (RE-35, #452) */
+  onGainSaved?: (
+    kitName: string,
+    voiceNumber: number,
+    slotNumber: number,
+    gainDb: number,
+  ) => void;
   onKitUpdated?: (kitName: string) => Promise<void>; // Reloads the kit after an edit in it (#452)
   onMessage?: (text: string, type?: string, duration?: number) => void; // Used by useKitEditorLogic hook
   onRefreshKitMetadata?: () => Promise<void>; // Targeted refresh for single kit metadata (voice aliases)
@@ -128,8 +134,7 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
           isEditable={logic.kit?.editable ?? false}
           kit={logic.kit}
           kitName={props.kitName}
-          onBatchDropComplete={logic.reloadKit}
-          onKitModified={props.onKitModified}
+          onGainSaved={props.onGainSaved}
           onKitUpdated={logic.reloadKit}
           onMessage={props.onMessage}
           onPlay={logic.playback.handlePlay}

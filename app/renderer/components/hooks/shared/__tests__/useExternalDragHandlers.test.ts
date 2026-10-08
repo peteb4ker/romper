@@ -757,9 +757,8 @@ describe("useExternalDragHandlers", () => {
         async (filePath: string) =>
           filePath.endsWith(".txt") ? { rejection: "notWav" } : validFile(),
       );
-      const onBatchDropComplete = vi.fn();
       const { result } = renderHook(() =>
-        useExternalDragHandlers({ ...defaultProps, onBatchDropComplete }),
+        useExternalDragHandlers(defaultProps),
       );
 
       await result.current.handleDrop(
@@ -768,7 +767,6 @@ describe("useExternalDragHandlers", () => {
       );
 
       expect(mockSampleProcessing.processAssignment).toHaveBeenCalledTimes(1);
-      expect(onBatchDropComplete).toHaveBeenCalled();
       expect(onMessage).toHaveBeenCalledTimes(1);
       expect(onMessage).toHaveBeenCalledWith(
         "kick.wav wasn't added: it's already in voice 2. " +
@@ -837,14 +835,9 @@ describe("useExternalDragHandlers", () => {
       mockSampleProcessing.processAssignment.mockImplementation(
         async (filePath: string) => !filePath.includes("refused"),
       );
-      const onBatchDropComplete = vi.fn();
       const stereoDrop = { report: vi.fn().mockResolvedValue(undefined) };
       const { result } = renderHook(() =>
-        useExternalDragHandlers({
-          ...defaultProps,
-          onBatchDropComplete,
-          stereoDrop,
-        }),
+        useExternalDragHandlers({ ...defaultProps, stereoDrop }),
       );
 
       await result.current.handleDrop(
@@ -856,7 +849,6 @@ describe("useExternalDragHandlers", () => {
       expect(stereoDrop.report).toHaveBeenCalledWith(2, [
         { channels: 2, fileName: "pad.wav" },
       ]);
-      expect(onBatchDropComplete).toHaveBeenCalledTimes(1);
       // The refused file's slot stays free for the next file
       expect(mockSampleProcessing.processAssignment.mock.calls).toEqual([
         ["/src/refused.wav", 0],
@@ -868,14 +860,9 @@ describe("useExternalDragHandlers", () => {
 
     it("reports nothing as added when every add is refused", async () => {
       mockSampleProcessing.processAssignment.mockResolvedValue(false);
-      const onBatchDropComplete = vi.fn();
       const stereoDrop = { report: vi.fn().mockResolvedValue(undefined) };
       const { result } = renderHook(() =>
-        useExternalDragHandlers({
-          ...defaultProps,
-          onBatchDropComplete,
-          stereoDrop,
-        }),
+        useExternalDragHandlers({ ...defaultProps, stereoDrop }),
       );
 
       await result.current.handleDrop(
@@ -885,7 +872,6 @@ describe("useExternalDragHandlers", () => {
 
       expect(mockSampleProcessing.processAssignment).toHaveBeenCalledTimes(2);
       expect(stereoDrop.report).not.toHaveBeenCalled();
-      expect(onBatchDropComplete).not.toHaveBeenCalled();
       expect(onMessage).not.toHaveBeenCalled();
     });
   });

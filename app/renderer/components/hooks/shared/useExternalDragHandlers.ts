@@ -37,7 +37,6 @@ export interface UseExternalDragHandlersOptions {
     validateDroppedFile: (filePath: string) => Promise<DroppedFileCheck>;
   };
   isEditable: boolean;
-  onBatchDropComplete?: () => void;
   /** Tells the user which dropped files weren't added, and why */
   onMessage?: (text: string, type?: string, duration?: number) => void;
   sampleProcessing: {
@@ -66,7 +65,6 @@ export interface UseExternalDragHandlersOptions {
 export function useExternalDragHandlers({
   fileValidation,
   isEditable,
-  onBatchDropComplete,
   onMessage,
   sampleProcessing,
   samples,
@@ -237,14 +235,9 @@ export function useExternalDragHandlers({
           log.error("Error reporting a stereo drop:", error);
         }
       }
-
-      if (added.length > 0) {
-        onBatchDropComplete?.();
-      }
     },
     [
       isEditable,
-      onBatchDropComplete,
       fileValidation,
       reportRejections,
       sampleProcessing,

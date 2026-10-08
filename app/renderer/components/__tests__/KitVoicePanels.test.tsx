@@ -45,14 +45,26 @@ const baseProps = {
   ] satisfies VoiceSpec[],
 };
 
+/**
+ * The rows the wrapper's kit is loaded with, for all kits or by kit name.
+ * Unset, each sample in `voices` gets a row with no gain.
+ */
+let kitRows: ((kitName: string) => Sample[]) | Sample[] | undefined;
+const setKitRows = (rows: ((kitName: string) => Sample[]) | Sample[]) => {
+  kitRows = rows;
+};
+
 afterEach(() => {
   vi.clearAllMocks();
+  kitRows = undefined;
 });
 
 /** The panels for `voices`, holding the selection the way the kit editor does */
 function MultiVoicePanelsTestWrapper({
   initialSelectedSampleIdx = 0,
   initialSelectedVoice = 1,
+  kitName = baseProps.kitName,
+  onGainSaved,
   onPlay = vi.fn(),
   voices = baseProps.voices,
   ...props
@@ -75,13 +87,28 @@ function MultiVoicePanelsTestWrapper({
   const [selectedSampleIdx, setSelectedSampleIdx] = useState(
     initialSelectedSampleIdx,
   );
-  const { kit, samples } = voicesToProps(voices);
+  // Gains main saved, put in the loaded kit's rows as the kits store does
+  const [savedGains, setSavedGains] = useState<Record<string, number>>({});
+  const { kit, samples } = voicesToProps(voices, kitName, savedGains);
+  const handleGainSaved = (
+    savedKit: string,
+    voice: number,
+    slot: number,
+    gainDb: number,
+  ) => {
+    setSavedGains((prev) => ({
+      ...prev,
+      [`${savedKit}:${voice}:${slot}`]: gainDb,
+    }));
+    onGainSaved?.(savedKit, voice, slot, gainDb);
+  };
   return (
     <MockSettingsProvider>
       <MockMessageDisplayProvider>
         <KitVoicePanels
           kit={kit}
-          kitName={baseProps.kitName}
+          kitName={kitName}
+          onGainSaved={handleGainSaved}
           onPlay={onPlay}
           onSampleSelect={() => {}}
           onSaveVoiceName={baseProps.onSaveVoiceName}
@@ -101,17 +128,46 @@ function MultiVoicePanelsTestWrapper({
   );
 }
 
-// Utility to convert voices array to samples and kit
-function voicesToProps(voices: VoiceSpec[]) {
+/**
+ * Utility to convert voices array to samples and kit, with the kit's rows
+ * and any gains main saved in them
+ */
+function voicesToProps(
+  voices: VoiceSpec[],
+  kitName = baseProps.kitName,
+  savedGains: Record<string, number> = {},
+) {
   const samples: Record<number, string[]> = {};
   for (const { samples: s, voice } of voices) samples[voice] = s;
+  const defaultRows = voices.flatMap(({ samples: s, voice }) =>
+    s.flatMap((filename, slot) =>
+      filename
+        ? [
+            createMockSample({
+              filename,
+              kit_name: kitName,
+              slot_number: slot,
+              source_path: `/src/${filename}`,
+              voice_number: voice,
+            }),
+          ]
+        : [],
+    ),
+  );
+  const rows =
+    typeof kitRows === "function" ? kitRows(kitName) : (kitRows ?? defaultRows);
   const kit = createMockKitWithRelations({
-    alias: "Kit1",
-    name: "Kit1",
+    alias: kitName,
+    name: kitName,
+    samples: rows.map((row) => {
+      const saved =
+        savedGains[`${kitName}:${row.voice_number}:${row.slot_number}`];
+      return saved === undefined ? row : { ...row, gain_db: saved };
+    }),
     voices: voices.map(({ stereo_choice, stereo_mode, voice, voiceName }) =>
       createMockVoice({
         id: voice,
-        kit_name: "Kit1",
+        kit_name: kitName,
         stereo_choice: stereo_choice ?? null,
         stereo_mode: stereo_mode || false,
         voice_alias: voiceName,
@@ -231,45 +287,26 @@ describe("KitVoicePanels", () => {
       vi.unstubAllGlobals();
     });
 
-    it("handles empty sample metadata", () => {
-      const mockGetAllSamplesForKit = vi.fn().mockResolvedValue({
-        data: [],
-        success: true,
-      });
+    it("[Q-01] reads the details from the kit's rows, without asking main (#452)", () => {
+      setKitRows([
+        createMockSample({
+          filename: "kick.wav",
+          gain_db: 4,
+          kit_name: "Kit1",
+          slot_number: 0,
+          source_path: "/src/kick.wav",
+          voice_number: 1,
+        }),
+      ]);
 
-      // Use centralized mock
-      vi.mocked(globalThis.electronAPI.getAllSamplesForKit).mockImplementation(
-        mockGetAllSamplesForKit,
-      );
+      render(<MultiVoicePanelsTestWrapper isEditable />);
 
-      render(<MultiVoicePanelsTestWrapper />);
-      expect(mockGetAllSamplesForKit).toHaveBeenCalledWith("Kit1");
-    });
-
-    it("handles sample metadata loading error", async () => {
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
-      const mockGetAllSamplesForKit = vi
-        .fn()
-        .mockRejectedValue(new Error("API Error"));
-
-      // Use centralized mock with override
-      setupElectronAPIMock({
-        getAllSamplesForKit: mockGetAllSamplesForKit,
-      });
-
-      render(<MultiVoicePanelsTestWrapper />);
-
-      // Wait for effect to run
-      await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalledWith(
-          "Failed to load sample metadata:",
-          expect.any(Error),
-        );
-      });
-
-      consoleSpy.mockRestore();
+      expect(
+        within(screen.getByTestId("voice-panel-1"))
+          .getAllByRole("slider")[0]
+          .getAttribute("aria-valuenow"),
+      ).toBe("4");
+      expect(globalThis.electronAPI.getAllSamplesForKit).not.toHaveBeenCalled();
     });
   });
 
@@ -291,10 +328,7 @@ describe("KitVoicePanels", () => {
       });
 
     beforeEach(() => {
-      vi.mocked(globalThis.electronAPI.getAllSamplesForKit).mockResolvedValue({
-        data: [row(1, 0, 6), row(1, 1, -3), row(2, 0, 0)],
-        success: true,
-      });
+      setKitRows([row(1, 0, 6), row(1, 1, -3), row(2, 0, 0)]);
     });
 
     // The gain knob in each sample slot of a voice
@@ -479,12 +513,12 @@ describe("KitVoicePanels", () => {
   });
 
   describe("[UC-11] [UC-24] Gain changes (RE-35)", () => {
-    it("writes the gain and shows the kit as modified", async () => {
-      const onKitModified = vi.fn();
+    it("[Q-01] writes the gain, then shows it and the kit as modified in the loaded kit (#452)", async () => {
+      const onGainSaved = vi.fn();
       render(
         <MultiVoicePanelsTestWrapper
           isEditable={true}
-          onKitModified={onKitModified}
+          onGainSaved={onGainSaved}
         />,
       );
       // The knob turns once the kit's gains are read (#628)
@@ -506,7 +540,16 @@ describe("KitVoicePanels", () => {
           1,
         ),
       );
-      await waitFor(() => expect(onKitModified).toHaveBeenCalledWith("Kit1"));
+      await waitFor(() =>
+        expect(onGainSaved).toHaveBeenCalledWith("Kit1", 1, 0, 1),
+      );
+      // The knob shows the saved gain from the kit's rows; main isn't asked
+      // for the details again
+      expect(screen.getAllByRole("slider")[0]).toHaveAttribute(
+        "aria-valuenow",
+        "1",
+      );
+      expect(globalThis.electronAPI.getAllSamplesForKit).not.toHaveBeenCalled();
     });
   });
 
@@ -569,19 +612,16 @@ describe("KitVoicePanels", () => {
     const voices = [{ samples: ["kick.wav"], voice: 1, voiceName: "Kick" }];
 
     beforeEach(() => {
-      vi.mocked(globalThis.electronAPI.getAllSamplesForKit).mockResolvedValue({
-        data: [
-          createMockSample({
-            filename: "kick.wav",
-            gain_db: -3,
-            kit_name: "Kit1",
-            slot_number: 0,
-            source_path: "/src/kick.wav",
-            voice_number: 1,
-          }),
-        ],
-        success: true,
-      });
+      setKitRows([
+        createMockSample({
+          filename: "kick.wav",
+          gain_db: -3,
+          kit_name: "Kit1",
+          slot_number: 0,
+          source_path: "/src/kick.wav",
+          voice_number: 1,
+        }),
+      ]);
     });
 
     const knob = () =>
@@ -593,12 +633,12 @@ describe("KitVoicePanels", () => {
         error: "Sample not found: kit=Kit1, voice=1, slot=0",
         success: false,
       });
-      const onKitModified = vi.fn();
+      const onGainSaved = vi.fn();
       const onMessage = vi.fn();
       render(
         <MultiVoicePanelsTestWrapper
           isEditable
-          onKitModified={onKitModified}
+          onGainSaved={onGainSaved}
           onMessage={onMessage}
           voices={voices}
         />,
@@ -617,7 +657,7 @@ describe("KitVoicePanels", () => {
       // restored gain once React renders it
       await waitFor(() => expect(gain()).toBe("-3"));
       expect(onMessage.mock.calls[0][0]).not.toMatch(/not found|Error:/);
-      expect(onKitModified).not.toHaveBeenCalled();
+      expect(onGainSaved).not.toHaveBeenCalled();
     });
 
     it("gives one message for a turn whose saves all fail", async () => {
@@ -651,12 +691,12 @@ describe("KitVoicePanels", () => {
         ...globalThis.electronAPI,
         updateSampleGain: undefined,
       });
-      const onKitModified = vi.fn();
+      const onGainSaved = vi.fn();
       const onMessage = vi.fn();
       render(
         <MultiVoicePanelsTestWrapper
           isEditable
-          onKitModified={onKitModified}
+          onGainSaved={onGainSaved}
           onMessage={onMessage}
           voices={voices}
         />,
@@ -672,7 +712,7 @@ describe("KitVoicePanels", () => {
         ),
       );
       await waitFor(() => expect(gain()).toBe("-3"));
-      expect(onKitModified).not.toHaveBeenCalled();
+      expect(onGainSaved).not.toHaveBeenCalled();
     });
 
     it("says nothing when the gain is saved", async () => {
@@ -704,21 +744,16 @@ describe("KitVoicePanels", () => {
     const gain = () => knob().getAttribute("aria-valuenow");
 
     it("isn't put back on the next kit's slot", async () => {
-      vi.mocked(globalThis.electronAPI.getAllSamplesForKit).mockImplementation(
-        async (kitName: string) => ({
-          data: [
-            createMockSample({
-              filename: "kick.wav",
-              gain_db: kitName === "Kit1" ? -3 : 2,
-              kit_name: kitName,
-              slot_number: 0,
-              source_path: "/src/kick.wav",
-              voice_number: 1,
-            }),
-          ],
-          success: true,
+      setKitRows((kitName: string) => [
+        createMockSample({
+          filename: "kick.wav",
+          gain_db: kitName === "Kit1" ? -3 : 2,
+          kit_name: kitName,
+          slot_number: 0,
+          source_path: "/src/kick.wav",
+          voice_number: 1,
         }),
-      );
+      ]);
       let answer: (result: {
         error: string;
         success: false;
@@ -1246,11 +1281,7 @@ describe("KitVoicePanels", () => {
       { samples: [], stereo_choice: choice3, voice: 3, voiceName: "C" },
       { samples: [], voice: 4, voiceName: "D" },
     ];
-    const metadata = (...rows: Sample[]) =>
-      vi.mocked(globalThis.electronAPI.getAllSamplesForKit).mockResolvedValue({
-        data: rows,
-        success: true,
-      });
+    const metadata = (...rows: Sample[]) => setKitRows(rows);
 
     async function dropOn(voice: number, fileName: string, channels: number) {
       vi.mocked(globalThis.electronAPI.validateSampleFormat).mockResolvedValue(
@@ -1407,10 +1438,6 @@ describe("KitVoicePanels", () => {
           voices={kitVoices({ stereo1: true })}
         />,
       );
-      await waitFor(() =>
-        expect(globalThis.electronAPI.getAllSamplesForKit).toHaveBeenCalled(),
-      );
-
       await act(async () => {
         fireEvent.click(screen.getByTestId("stereo-badge-1"));
       });
@@ -1576,11 +1603,7 @@ describe("KitVoicePanels", () => {
           voices={kitVoices()}
         />,
       );
-      await waitFor(() =>
-        expect(
-          globalThis.electronAPI.getAllSamplesForKit,
-        ).toHaveBeenCalledTimes(2),
-      );
+      await act(async () => {});
       expect(globalThis.electronAPI.checkKitSampleFiles).toHaveBeenCalledTimes(
         1,
       );

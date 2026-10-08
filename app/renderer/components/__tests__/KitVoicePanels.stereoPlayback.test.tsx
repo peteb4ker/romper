@@ -1,3 +1,5 @@
+import type { Sample } from "@romper/shared/db/schema";
+
 import { render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -35,12 +37,16 @@ interface VoiceSpec {
   voice: number;
 }
 
+/** The kit's rows, as main stores them */
+let kitRows: Sample[] = [];
+
 function renderPanels(voices: VoiceSpec[]) {
   const samples: Record<number, string[]> = {};
   for (const v of voices) samples[v.voice] = v.samples;
   const kit = createMockKitWithRelations({
     alias: "Kit1",
     name: "Kit1",
+    samples: kitRows,
     voices: voices.map((v) =>
       createMockVoice({
         id: v.voice,
@@ -79,20 +85,17 @@ function renderPanels(voices: VoiceSpec[]) {
 
 /** The kit's samples as main stores them, with each file's channel count */
 function storedSamples(rows: Array<[number, string, number]>) {
-  vi.mocked(globalThis.electronAPI.getAllSamplesForKit).mockResolvedValue({
-    data: rows.map(([voice, filename, channels]) =>
-      createMockSample({
-        filename,
-        gain_db: 0,
-        kit_name: "Kit1",
-        slot_number: 0,
-        source_path: `/src/${filename}`,
-        voice_number: voice,
-        wav_channels: channels,
-      }),
-    ),
-    success: true,
-  });
+  kitRows = rows.map(([voice, filename, channels]) =>
+    createMockSample({
+      filename,
+      gain_db: 0,
+      kit_name: "Kit1",
+      slot_number: 0,
+      source_path: `/src/${filename}`,
+      voice_number: voice,
+      wav_channels: channels,
+    }),
+  );
 }
 
 const playsStereo = (voice: number) =>

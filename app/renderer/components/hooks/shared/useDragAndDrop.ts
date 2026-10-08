@@ -1,3 +1,5 @@
+import type { Sample } from "@romper/shared/db/schema";
+
 import { useSampleProcessing } from "../sample-management/useSampleProcessing";
 import {
   type StereoDropHandlers,
@@ -10,7 +12,11 @@ export interface UseDragAndDropOptions {
   isDisabled?: boolean;
   isEditable: boolean;
   kitName: string;
-  onBatchDropComplete?: () => void;
+  /**
+   * The kit's sample rows as loaded, for the duplicate check, so a drop
+   * doesn't ask main for them again (#452)
+   */
+  kitSamples?: Sample[];
   /** Tells the user about files a drop didn't add */
   onMessage?: (text: string, type?: string, duration?: number) => void;
   /** Resolves true when the sample was added */
@@ -53,7 +59,7 @@ export function useDragAndDrop({
   isDisabled = false,
   isEditable,
   kitName,
-  onBatchDropComplete,
+  kitSamples,
   onMessage,
   onSampleAdd,
   onSampleMove,
@@ -69,6 +75,7 @@ export function useDragAndDrop({
   // Sample processing hook
   const sampleProcessing = useSampleProcessing({
     kitName,
+    kitSamples,
     onSampleAdd,
     voice,
   });
@@ -80,7 +87,6 @@ export function useDragAndDrop({
   const externalDragHandlers = useExternalDragHandlers({
     fileValidation,
     isEditable: effectiveEditable,
-    onBatchDropComplete,
     onMessage,
     sampleProcessing,
     samples,

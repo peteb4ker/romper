@@ -8,6 +8,11 @@ const log = createLogger("SampleProcessing");
 
 export interface UseSampleProcessingOptions {
   kitName: string;
+  /**
+   * The kit's sample rows as loaded. Each edit reloads them, so the
+   * duplicate check reads them instead of asking main (#452).
+   */
+  kitSamples?: Sample[];
   /** Adds a file to a slot; resolves true when the sample was added */
   onSampleAdd?: (
     voice: number,
@@ -23,11 +28,14 @@ export interface UseSampleProcessingOptions {
  */
 export function useSampleProcessing({
   kitName,
+  kitSamples,
   onSampleAdd,
   voice,
 }: UseSampleProcessingOptions) {
-  // Null when the kit's samples can't be read; the drop reports it (RE-40)
+  // The kit's rows as loaded; asks main only for a kit loaded without them.
+  // Null when they can't be read; the drop reports it (RE-40).
   const getCurrentKitSamples = useCallback(async () => {
+    if (kitSamples) return kitSamples;
     if (!globalThis.electronAPI?.getAllSamplesForKit) {
       return null;
     }
@@ -39,7 +47,7 @@ export function useSampleProcessing({
     }
 
     return result.data || [];
-  }, [kitName]);
+  }, [kitName, kitSamples]);
 
   const isDuplicateSample = useCallback(
     (allSamples: unknown[], filePath: string): Promise<boolean> => {

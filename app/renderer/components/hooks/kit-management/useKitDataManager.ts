@@ -38,7 +38,16 @@ interface UseKitDataManagerReturn {
   /** Loads a kit's samples on opening it, if none loaded or the last load failed (#605) */
   loadKitSamplesOnOpen: (kitName: string) => Promise<void>;
   loadKitsData: (scrollToKit?: string) => Promise<void>;
-  markKitModified: (kitName: string) => void;
+  /**
+   * Shows a sample gain main has saved, and the kit as modified since the
+   * last write (main flags it with the gain, RE-35), on the loaded kit
+   */
+  markGainSaved: (
+    kitName: string,
+    voiceNumber: number,
+    slotNumber: number,
+    gainDb: number,
+  ) => void;
   /**
    * Reloads every kit. For changes to the list itself (scan, write, setup,
    * kits created, copied or deleted); an edit to one kit uses refreshKit.
@@ -101,6 +110,52 @@ export function useKitDataManager({
   const lastRead = useRef(0);
   const kitReads = useRef(new Map<string, number>());
   const listRead = useRef(0);
+  // Changes main has saved that the renderer shows without a reload (a
+  // gain, BPM, favorite, name or editable flag), numbered like reads. A
+  // read sent before one can't show it, so it's applied over that read; a
+  // read sent after it supersedes it.
+  const savedChanges = useRef(
+    new Map<
+      string,
+      { apply: (kit: KitWithRelations) => KitWithRelations; read: number }[]
+    >(),
+  );
+
+  // A kit as read by read number `read`, with the saved changes it can't
+  // show. Forgets the changes it already shows.
+  const withSavedChanges = useCallback(
+    (kit: KitWithRelations, read: number) => {
+      const changes = savedChanges.current.get(kit.name);
+      if (!changes) return kit;
+      const later = changes.filter((change) => change.read > read);
+      if (later.length === 0) savedChanges.current.delete(kit.name);
+      else savedChanges.current.set(kit.name, later);
+      return later.reduce((shown, change) => change.apply(shown), kit);
+    },
+    [],
+  );
+
+  // Show a change main has saved on the loaded kit, and keep it over any
+  // read sent before it. `apply` returns the kit itself when it changes
+  // nothing, so nothing re-renders.
+  const applySavedChange = useCallback(
+    (kitName: string, apply: (kit: KitWithRelations) => KitWithRelations) => {
+      const read = ++lastRead.current;
+      const changes = savedChanges.current.get(kitName) ?? [];
+      savedChanges.current.set(kitName, [...changes, { apply, read }]);
+      setDbKits((prevKits) => {
+        let changed = false;
+        const next = prevKits.map((kit) => {
+          if (kit.name !== kitName) return kit;
+          const updated = apply(kit);
+          changed = updated !== kit;
+          return updated;
+        });
+        return changed ? next : prevKits;
+      });
+    },
+    [],
+  );
 
   // Read through a ref so the reload callbacks stay stable
   const onMessageRef = useRef(onMessage);
@@ -127,8 +182,9 @@ export function useKitDataManager({
   // Show a full load's kits: the list it read, with any kit a later
   // single-kit read already refreshed kept as that read showed it
   const applyAllKits = useCallback(
-    (read: number, loadedKits: KitWithRelations[]) => {
+    (read: number, readKits: KitWithRelations[]) => {
       listRead.current = read;
+      const loadedKits = readKits.map((kit) => withSavedChanges(kit, read));
       const newer = new Set<string>();
       for (const kit of loadedKits) {
         if ((kitReads.current.get(kit.name) ?? 0) > read) newer.add(kit.name);
@@ -156,7 +212,7 @@ export function useKitDataManager({
       clearFailedKits();
       return loadedKits;
     },
-    [groupLoadedKitSamples, clearFailedKits],
+    [groupLoadedKitSamples, clearFailedKits, withSavedChanges],
   );
 
   // Reads every kit. Resolves to the kits loaded, or null when a newer full
@@ -230,42 +286,45 @@ export function useKitDataManager({
   // Reload one kit (its row, voices and samples) with one get-kit call,
   // instead of every kit (#452). A response older than what the kit shows
   // is dropped. If the kit can't be read, what's shown stays.
-  const readKit = useCallback(async (kitName: string) => {
-    const read = ++lastRead.current;
-    let kit: KitWithRelations | null = null;
-    try {
-      const kitResult = await globalThis.electronAPI?.getKit?.(kitName);
-      if (kitResult?.success && kitResult.data?.samples) {
-        kit = kitResult.data;
-      } else {
-        console.error(`Failed to load kit ${kitName}:`, kitResult?.error);
+  const readKit = useCallback(
+    async (kitName: string) => {
+      const read = ++lastRead.current;
+      let kit: KitWithRelations | null = null;
+      try {
+        const kitResult = await globalThis.electronAPI?.getKit?.(kitName);
+        if (kitResult?.success && kitResult.data?.samples) {
+          kit = kitResult.data;
+        } else {
+          console.error(`Failed to load kit ${kitName}:`, kitResult?.error);
+        }
+      } catch (error) {
+        console.error(`Error loading kit ${kitName}:`, error);
       }
-    } catch (error) {
-      console.error(`Error loading kit ${kitName}:`, error);
-    }
-    if (!kit?.samples) return false;
-    if (
-      read < listRead.current ||
-      read < (kitReads.current.get(kitName) ?? 0)
-    ) {
-      return true; // Newer data is already on screen
-    }
-    kitReads.current.set(kitName, read);
+      if (!kit?.samples) return false;
+      if (
+        read < listRead.current ||
+        read < (kitReads.current.get(kitName) ?? 0)
+      ) {
+        return true; // Newer data is already on screen
+      }
+      kitReads.current.set(kitName, read);
 
-    const loaded = kit;
-    const voices = groupDbSamplesByVoice(kit.samples);
-    setDbKits((prevKits) =>
-      prevKits.map((shown) => (shown.name === kitName ? loaded : shown)),
-    );
-    setAllKitSamples((prev) => ({ ...prev, [kitName]: voices }));
-    setFailedKits((prev) => {
-      if (!prev.has(kitName)) return prev;
-      const next = new Set(prev);
-      next.delete(kitName);
-      return next;
-    });
-    return true;
-  }, []);
+      const loaded = withSavedChanges(kit, read);
+      const voices = groupDbSamplesByVoice(loaded.samples ?? kit.samples);
+      setDbKits((prevKits) =>
+        prevKits.map((shown) => (shown.name === kitName ? loaded : shown)),
+      );
+      setAllKitSamples((prev) => ({ ...prev, [kitName]: voices }));
+      setFailedKits((prev) => {
+        if (!prev.has(kitName)) return prev;
+        const next = new Set(prev);
+        next.delete(kitName);
+        return next;
+      });
+      return true;
+    },
+    [withSavedChanges],
+  );
 
   // Reload one kit after any edit to it, on opening it without its samples,
   // and after an undo. If it can't be read, what's shown stays and the user
@@ -331,30 +390,47 @@ export function useKitDataManager({
     [kits],
   );
 
-  // Update kit data in local state (optimistic update)
+  // Show fields main has saved on the loaded kit, without a reload
   const updateKit = useCallback(
     (kitName: string, updates: Partial<KitWithRelations>) => {
-      setDbKits((prevKits) =>
-        prevKits.map((kit) =>
-          kit.name === kitName ? { ...kit, ...updates } : kit,
-        ),
-      );
+      applySavedChange(kitName, (kit) => ({ ...kit, ...updates }));
     },
-    [],
+    [applySavedChange],
   );
 
-  // Show a kit as modified since the last write after an edit main has
-  // already flagged (RE-35). Leaves state alone when it's already flagged,
-  // so a gain knob turned step by step re-renders once.
-  const markKitModified = useCallback((kitName: string) => {
-    setDbKits((prevKits) =>
-      prevKits.some((kit) => kit.name === kitName && !kit.modified_since_sync)
-        ? prevKits.map((kit) =>
-            kit.name === kitName ? { ...kit, modified_since_sync: true } : kit,
-          )
-        : prevKits,
-    );
-  }, []);
+  // Show a gain main has saved in the kit's sample row, and the kit as
+  // modified since the last write, which main flagged with it (RE-35). The
+  // kit's rows then stay what main holds, so the voice panels read the
+  // gains from them instead of asking main again (#452). Leaves state alone
+  // when both already show, so nothing re-renders.
+  const markGainSaved = useCallback(
+    (
+      kitName: string,
+      voiceNumber: number,
+      slotNumber: number,
+      gainDb: number,
+    ) => {
+      applySavedChange(kitName, (kit) => {
+        const row = kit.samples?.find(
+          (sample) =>
+            sample.voice_number === voiceNumber &&
+            sample.slot_number === slotNumber,
+        );
+        const gainChanged = row !== undefined && row.gain_db !== gainDb;
+        if (!gainChanged && kit.modified_since_sync) return kit;
+        return {
+          ...kit,
+          modified_since_sync: true,
+          samples: gainChanged
+            ? kit.samples?.map((sample) =>
+                sample === row ? { ...sample, gain_db: gainDb } : sample,
+              )
+            : kit.samples,
+        };
+      });
+    },
+    [applySavedChange],
+  );
 
   // Toggle kit favorite status
   const toggleKitFavorite = useCallback(
@@ -477,7 +553,7 @@ export function useKitDataManager({
     kits,
     loadKitSamplesOnOpen,
     loadKitsData,
-    markKitModified,
+    markGainSaved,
     refreshAllKitsAndSamples,
     refreshKit,
     sampleCounts,

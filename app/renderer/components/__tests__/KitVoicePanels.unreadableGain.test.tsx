@@ -1,8 +1,4 @@
-import type {
-  DbResult,
-  KitWithRelations,
-  Sample,
-} from "@romper/shared/db/schema";
+import type { KitWithRelations, Sample } from "@romper/shared/db/schema";
 
 import {
   act,
@@ -70,23 +66,22 @@ function createAudio() {
   return { ctx, gains, started };
 }
 
-const failedA0 = "Couldn't load the samples for kit A0. Try reopening it.";
-
 // kick.wav in voice 1 slot 1, with its saved gain
-const kickWithGain = (gainDb: number): DbResult<Sample[]> => ({
-  data: [
-    createMockSample({
-      filename: "kick.wav",
-      gain_db: gainDb,
-      kit_name: "A0",
-      source_path: "/store/A0/kick.wav",
-    }),
-  ],
-  success: true,
-});
+const kickWithGain = (gainDb: number): Sample[] => [
+  createMockSample({
+    filename: "kick.wav",
+    gain_db: gainDb,
+    kit_name: "A0",
+    source_path: "/store/A0/kick.wav",
+  }),
+];
 
-/** Kit A0; each call is a new object, as a reload of the kit gives */
-const kitA0 = () => createMockKitWithRelations({ editable: true, name: "A0" });
+/**
+ * Kit A0 with its rows, or listed without them (#605); each call is a new
+ * object, as a reload of the kit gives
+ */
+const kitA0 = (rows?: Sample[]) =>
+  createMockKitWithRelations({ editable: true, name: "A0", samples: rows });
 
 const samples = { 1: ["kick.wav"], 2: [], 3: [], 4: [] };
 const noop = () => {};
@@ -146,10 +141,10 @@ const pressSpace = () => fireEvent.keyDown(document.body, { key: " " });
 /** Linear gain for a gain in dB, as the preview sets it */
 const linear = (db: number) => Math.pow(10, db / 20);
 
+// The gains come from the kit's rows (#452). A kit listed without them
+// has no gains to play until reopening it loads them (#605).
 describe("[UC-29] previewing a sample whose gain can't be read (#636)", () => {
   const onMessage = vi.fn();
-  const getAllSamplesForKit = () =>
-    vi.mocked(globalThis.electronAPI.getAllSamplesForKit);
 
   beforeEach(() => {
     audio = createAudio();
@@ -172,18 +167,8 @@ describe("[UC-29] previewing a sample whose gain can't be read (#636)", () => {
   const waitForAudio = () =>
     waitFor(() => expect(audio.ctx.decodeAudioData).toHaveBeenCalled());
 
-  const failRead = () =>
-    getAllSamplesForKit().mockResolvedValue({
-      error: "database is locked",
-      success: false,
-    });
-
-  it("plays nothing on a click or Space once the read has failed", async () => {
-    failRead();
+  it("plays nothing on a click or Space for a kit listed without its rows", async () => {
     render(<Editor kit={kitA0()} onMessage={onMessage} />);
-    await waitFor(() =>
-      expect(onMessage).toHaveBeenCalledWith(failedA0, "error"),
-    );
     await waitForAudio();
 
     await act(async () => {
@@ -197,9 +182,8 @@ describe("[UC-29] previewing a sample whose gain can't be read (#636)", () => {
     expect(screen.queryByRole("button", { name: "Stop" })).toBeNull();
   });
 
-  it("plays at 0 dB while the kit's details are being read", async () => {
-    getAllSamplesForKit().mockReturnValue(new Promise(() => {}));
-    render(<Editor kit={kitA0()} onMessage={onMessage} />);
+  it("[Q-01] plays the saved gain as soon as the kit opens with its rows", async () => {
+    render(<Editor kit={kitA0(kickWithGain(-6))} onMessage={onMessage} />);
     await waitForAudio();
 
     await act(async () => {
@@ -207,26 +191,22 @@ describe("[UC-29] previewing a sample whose gain can't be read (#636)", () => {
     });
 
     expect(audio.started).toHaveLength(1);
-    expect(audio.gains).toEqual([linear(0)]);
+    expect(audio.gains).toEqual([linear(-6)]);
+    expect(globalThis.electronAPI.getAllSamplesForKit).not.toHaveBeenCalled();
   });
 
-  it("plays the saved gain once a reload reads the details", async () => {
-    failRead();
+  it("plays the saved gain once the kit's rows load", async () => {
     const { rerender } = render(<Editor kit={kitA0()} onMessage={onMessage} />);
-    await waitFor(() =>
-      expect(onMessage).toHaveBeenCalledWith(failedA0, "error"),
-    );
     await waitForAudio();
     await act(async () => {
       clickPlay();
     });
     expect(audio.started).toHaveLength(0);
 
-    getAllSamplesForKit().mockResolvedValue(kickWithGain(-6));
-    rerender(<Editor kit={kitA0()} onMessage={onMessage} />);
+    rerender(<Editor kit={kitA0(kickWithGain(-6))} onMessage={onMessage} />);
     await waitFor(() => expect(knob()).toHaveAttribute("aria-valuenow", "-6"));
 
-    // The click made while it failed doesn't play now; a new one does
+    // The click made before doesn't play now; a new one does
     expect(audio.started).toHaveLength(0);
     await act(async () => {
       pressSpace();

@@ -1,10 +1,11 @@
-import { act, render, waitFor } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { PlayOptions } from "../kitTypes";
 
 import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
+import { createMockSample } from "../../../../tests/factories/sample.factory";
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
 import { useKitPlayback } from "../hooks/kit-management/useKitPlayback";
 import KitVoicePanels from "../KitVoicePanels";
@@ -54,7 +55,21 @@ const samples = Object.fromEntries(
     Array.from({ length: 12 }, (_, i) => `v${voice}-${i}.wav`),
   ]),
 );
-const kit = createMockKitWithRelations({ editable: true, name: "A0" });
+const kit = createMockKitWithRelations({
+  editable: true,
+  name: "A0",
+  samples: Object.entries(samples).flatMap(([voice, names]) =>
+    names.map((filename, slot) =>
+      createMockSample({
+        filename,
+        kit_name: "A0",
+        slot_number: slot,
+        source_path: `/store/A0/${filename}`,
+        voice_number: Number(voice),
+      }),
+    ),
+  ),
+});
 const noop = () => {};
 
 let playback: ReturnType<typeof useKitPlayback>;
@@ -110,10 +125,7 @@ describe("[Q-01] [UC-29] a trigger re-renders only the slots it plays or stops (
     setupElectronAPIMock();
     waveformProps.clear();
     render(<Editor />);
-    // Let the panels load the kit's sample details
-    await waitFor(() =>
-      expect(globalThis.electronAPI.getAllSamplesForKit).toHaveBeenCalled(),
-    );
+    // Let the panels settle (their details come with the kit, #452)
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 20));
     });

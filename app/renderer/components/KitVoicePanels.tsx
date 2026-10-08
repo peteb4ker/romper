@@ -22,7 +22,6 @@ import React, { useId, useState } from "react";
 import type { SlotPlaybackStore } from "./hooks/kit-management/slotPlaybackStore";
 import type { SampleData, VoiceSamples } from "./kitTypes";
 
-import { samplesFailedMessage } from "../utils/kitLoadMessages";
 import { slotKey } from "../utils/slotKey";
 import { useKitVoicePanels } from "./hooks/kit-management/useKitVoicePanels";
 import { useStereoHandling } from "./hooks/sample-management/useStereoHandling";
@@ -35,13 +34,27 @@ import { useSettingSave } from "./hooks/shared/useSettingSave";
 import KitVoicePanel from "./KitVoicePanel";
 import ModalDialog from "./shared/ModalDialog";
 
+/**
+ * Gains turned on screen that main hasn't saved yet, by slotKey(voice,
+ * slot), for one kit, so they never show on another (#628)
+ */
+interface GainEdits {
+  gains: { [slotKey: string]: number };
+  kitName: string;
+}
+
 interface KitVoicePanelsProps {
   flashVoices?: Set<number>; // Voices currently showing flash animation
   isEditable?: boolean; // Used directly in KitVoicePanel
   kit: KitWithRelations | null; // Used by useKitVoicePanels hook
   kitName: string; // Used by useKitVoicePanels hook
-  onBatchDropComplete?: () => void;
-  onKitModified?: (kitName: string) => void; // Gain changes mark the kit modified without a reload (RE-35)
+  /** Shows a gain main saved, and the kit as modified, without a reload (RE-35, #452) */
+  onGainSaved?: (
+    kitName: string,
+    voiceNumber: number,
+    slotNumber: number,
+    gainDb: number,
+  ) => void;
   onKitUpdated?: () => Promise<void>; // Called after voice stereo mode changes to reload kit data
   onMessage?: (text: string, type?: string, duration?: number) => void; // Refused links and drops (RE-40)
   onPlay: (voice: number, slot: number) => void; // Used by useKitVoicePanels hook
@@ -78,22 +91,32 @@ interface KitVoicePanelsProps {
   slotPlayback: SlotPlaybackStore;
 }
 
-/**
- * A kit's sample details (gain, WAV header) per slot, keyed by slotKey(voice,
- * slot), as last read from main. Not by file name: two slots can hold files
- * with the same name, and each has its own gain (RE-45). They belong to one
- * kit, so they never show on another (#628).
- */
-type SampleDetails =
-  | {
-      kitName: string;
-      metadata: { [slotKey: string]: SampleData };
-      status: "loaded";
-    }
-  | { kitName: string; status: "failed" };
-
 /** Main refused a link or unlink; its message says why (#541, RE-71) */
 class StereoRefusal extends Error {}
+
+/**
+ * A kit's sample details (gain, WAV header) per slot, keyed by slotKey(voice,
+ * slot), from the kit's sample rows. Not by file name: two slots can hold
+ * files with the same name, and each has its own gain (RE-45).
+ */
+function sampleMetadataOf(rows: Sample[]): { [slotKey: string]: SampleData } {
+  const metadata: { [slotKey: string]: SampleData } = {};
+  for (const sample of rows) {
+    metadata[slotKey(sample.voice_number, sample.slot_number)] = {
+      filename: sample.filename,
+      gain_db: sample.gain_db ?? 0,
+      slot_number: sample.slot_number,
+      source_path: sample.source_path,
+      source_status: sample.source_status,
+      voice_number: sample.voice_number,
+      wav_bit_depth: sample.wav_bit_depth ?? undefined,
+      wav_bitrate: sample.wav_bitrate ?? undefined,
+      wav_channels: sample.wav_channels ?? undefined,
+      wav_sample_rate: sample.wav_sample_rate ?? undefined,
+    };
+  }
+  return metadata;
+}
 
 const NO_METADATA: { [slotKey: string]: SampleData } = {};
 
@@ -114,24 +137,55 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   // Stereo handling hook for voice linking
   const stereoHandling = useStereoHandling();
 
-  // The details on screen are this kit's, once they're read. Until then,
-  // or if they can't be, the gains are unknown (#628).
-  const [sampleDetails, setSampleDetails] = useState<null | SampleDetails>(
-    null,
+  // The details on screen come from the kit's sample rows, which every
+  // reload of the kit brings, so they aren't asked for again (#452). A kit
+  // listed without its rows has none to show: its gains are unknown and
+  // previews don't play until reopening it loads them (#605, #636).
+  const kitRows =
+    props.kit?.name === hookProps.kitName ? props.kit.samples : undefined;
+  const loadedMetadata = React.useMemo(
+    () => (kitRows ? sampleMetadataOf(kitRows) : null),
+    [kitRows],
   );
-  const kitDetails =
-    sampleDetails?.kitName === hookProps.kitName ? sampleDetails : null;
-  const sampleMetadata =
-    kitDetails?.status === "loaded" ? kitDetails.metadata : NO_METADATA;
-  const gainsUnknown = kitDetails?.status !== "loaded";
-  // While they're read, previews play at 0 dB; once they've failed, previews
-  // don't play until a read succeeds (#636)
-  const gainsUnreadable = kitDetails?.status === "failed";
-  // Gain saves; reset when the metadata is reloaded from main (RE-91)
+  const [gainEdits, setGainEdits] = useState<GainEdits | null>(null);
+  // Slots whose latest gain on screen main hasn't answered for yet, with
+  // that gain. A reload of the kit's rows keeps only these edits.
+  const pendingGains = React.useRef(new Map<string, number>());
+  const [shownRows, setShownRows] = useState(kitRows);
+  if (shownRows !== kitRows) {
+    setShownRows(kitRows);
+    setGainEdits((prev) => {
+      if (!prev) return prev;
+      const kept = Object.entries(prev.gains).filter(
+        ([key, gainDb]) => pendingGains.current.get(key) === gainDb,
+      );
+      if (kept.length === Object.keys(prev.gains).length) return prev;
+      return kept.length > 0
+        ? { gains: Object.fromEntries(kept), kitName: prev.kitName }
+        : null;
+    });
+  }
+  const kitGainEdits =
+    gainEdits?.kitName === hookProps.kitName ? gainEdits.gains : null;
+  const sampleMetadata = React.useMemo(() => {
+    if (!loadedMetadata) return NO_METADATA;
+    if (!kitGainEdits) return loadedMetadata;
+    const metadata = { ...loadedMetadata };
+    for (const [key, gainDb] of Object.entries(kitGainEdits)) {
+      if (metadata[key]) metadata[key] = { ...metadata[key], gain_db: gainDb };
+    }
+    return metadata;
+  }, [loadedMetadata, kitGainEdits]);
+  const gainsUnknown = !loadedMetadata;
+  const gainsUnreadable = !loadedMetadata;
+  // Gain saves; reset when the kit's rows are reloaded from main (RE-91)
   const { reset: resetGainSaves, save: saveGain } = useSettingSave<
     string,
     number
   >();
+  React.useEffect(() => {
+    resetGainSaves();
+  }, [kitRows, resetGainSaves]);
 
   // Get voice data from kit with fallback defaults
   const kitVoices = props.kit?.voices;
@@ -466,100 +520,53 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     [hookProps.kitName, reloadKitAfterCheck],
   );
 
-  // Load sample metadata when kit changes. If it can't be read, the kit's
-  // gains are unknown and the user is told; reopening the kit reads it
-  // again (#628).
-  const reportLoadFailure = useLatestRef(props.onMessage);
+  // Check the kit's files once its rows are on screen
   React.useEffect(() => {
-    const kitName = hookProps.kitName;
-    // A read for a kit that's no longer on screen is dropped
-    let current = true;
-    const loadFailed = () => {
-      if (!current) return;
-      setSampleDetails({ kitName, status: "failed" });
-      resetGainSaves();
-      reportLoadFailure.current?.(samplesFailedMessage(kitName), "error");
-    };
-    const loadSampleMetadata = async () => {
-      if (!kitName) {
-        setSampleDetails({ kitName, metadata: {}, status: "loaded" });
-        return;
-      }
-
-      try {
-        const samplesResult =
-          await globalThis.electronAPI?.getAllSamplesForKit?.(kitName);
-        if (samplesResult?.success && samplesResult.data) {
-          if (!current) return;
-          const metadata: { [slotKey: string]: SampleData } = {};
-          samplesResult.data.forEach((sample: Sample) => {
-            metadata[slotKey(sample.voice_number, sample.slot_number)] = {
-              filename: sample.filename,
-              gain_db: sample.gain_db ?? 0,
-              slot_number: sample.slot_number,
-              source_path: sample.source_path,
-              source_status: sample.source_status,
-              voice_number: sample.voice_number,
-              wav_bit_depth: sample.wav_bit_depth ?? undefined,
-              wav_bitrate: sample.wav_bitrate ?? undefined,
-              wav_channels: sample.wav_channels ?? undefined,
-              wav_sample_rate: sample.wav_sample_rate ?? undefined,
-            };
-          });
-          setSampleDetails({ kitName, metadata, status: "loaded" });
-          resetGainSaves();
-          void checkSampleFilesOnce(samplesResult.data);
-        } else {
-          // A failure result clears the last kit's details too, as a
-          // throw does, and so does no answer at all
-          console.error(
-            "Failed to load sample metadata:",
-            samplesResult?.error ?? "no answer",
-          );
-          loadFailed();
-        }
-      } catch (error) {
-        console.error("Failed to load sample metadata:", error);
-        loadFailed();
-      }
-    };
-
-    void loadSampleMetadata();
-    return () => {
-      current = false;
-    };
-  }, [
-    hookProps.kitName,
-    props.kit,
-    reportLoadFailure,
-    resetGainSaves,
-    checkSampleFilesOnce,
-  ]);
+    if (kitRows) void checkSampleFilesOnce(kitRows);
+  }, [kitRows, checkSampleFilesOnce]);
 
   // Each step of a knob's turn goes on screen at once, so SampleWaveform
   // plays it from the next trigger; the turn is saved once it ends (RE-88).
-  // Main marks the kit modified with the gain (RE-35), so the kit's card
-  // shows it too, without reloading every kit. If main doesn't save it, the
-  // knob goes back and a message says so (RE-91).
-  const { onKitModified, onMessage } = props;
+  // Main marks the kit modified with the gain (RE-35); the saved gain and
+  // the flag go into the loaded kit, so its card and its rows show them
+  // without a reload (#452). If main doesn't save it, the knob goes back
+  // and a message says so (RE-91).
+  const { onGainSaved, onMessage } = props;
   // The kit on screen, so a gain that fails after you step to another kit
   // isn't put back on the new kit's slot (#565)
   const kitRef = useLatestRef(hookProps.kitName);
-  const setSlotGain = React.useCallback((key: string, gainDb: number) => {
-    setSampleDetails((prev) => {
-      const existing = prev?.status === "loaded" ? prev.metadata[key] : null;
-      if (prev?.status !== "loaded" || !existing) return prev;
-      return {
-        ...prev,
-        metadata: { ...prev.metadata, [key]: { ...existing, gain_db: gainDb } },
-      };
-    });
-  }, []);
+  const setSlotGain = React.useCallback(
+    (key: string, gainDb: number) => {
+      const kitName = hookProps.kitName;
+      setGainEdits((prev) => ({
+        gains: {
+          ...(prev?.kitName === kitName ? prev.gains : {}),
+          [key]: gainDb,
+        },
+        kitName,
+      }));
+    },
+    [hookProps.kitName],
+  );
   const handleGainChange = React.useCallback(
-    (voice: number, slotNumber: number, _sampleName: string, gainDb: number) =>
-      setSlotGain(slotKey(voice, slotNumber), gainDb),
+    (
+      voice: number,
+      slotNumber: number,
+      _sampleName: string,
+      gainDb: number,
+    ) => {
+      const key = slotKey(voice, slotNumber);
+      pendingGains.current.set(key, gainDb);
+      setSlotGain(key, gainDb);
+    },
     [setSlotGain],
   );
+  // Main answered for the slot's latest gain: it's no longer waiting
+  const settleGain = React.useCallback((key: string, gainDb: number) => {
+    if (pendingGains.current.get(key) === gainDb) {
+      pendingGains.current.delete(key);
+    }
+  }, []);
   const handleGainCommit = React.useCallback(
     (
       voice: number,
@@ -573,14 +580,19 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
       void saveGain({
         current: fromDb,
         key,
-        onSaved: () => onKitModified?.(kitName),
+        onSaved: () => {
+          if (kitRef.current === kitName) settleGain(key, gainDb);
+          onGainSaved?.(kitName, voice, slotNumber, gainDb);
+        },
         report: (saved) =>
           onMessage?.(
             `Couldn't save the gain for ${sampleName}, so it's back to ${formatGain(saved)}. Try again.`,
             "error",
           ),
         restore: (saved) => {
-          if (kitRef.current === kitName) setSlotGain(key, saved);
+          if (kitRef.current !== kitName) return;
+          settleGain(key, gainDb);
+          setSlotGain(key, saved);
         },
         send: () =>
           globalThis.electronAPI?.updateSampleGain?.(
@@ -596,10 +608,11 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     [
       hookProps.kitName,
       kitRef,
-      onKitModified,
+      onGainSaved,
       onMessage,
       saveGain,
       setSlotGain,
+      settleGain,
     ],
   );
 
@@ -754,6 +767,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                     isFlashing={props.flashVoices?.has(voice) ?? false}
                     isLinkedPrimary={isPrimary}
                     kitName={hookProps.kitName}
+                    kitSamples={kitRows}
                     linkedAutomatically={
                       isPrimary &&
                       voiceData.some(
@@ -762,7 +776,6 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                       )
                     }
                     linkedWith={linkingStatus.linkedWith}
-                    onBatchDropComplete={props.onBatchDropComplete}
                     onGainChange={handleGainChange}
                     onGainCommit={handleGainCommit}
                     onMessage={props.onMessage}

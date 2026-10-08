@@ -68,7 +68,7 @@ const KitsView: React.FC = () => {
     getKitByName,
     kits,
     loadKitSamplesOnOpen,
-    markKitModified,
+    markGainSaved,
     refreshAllKitsAndSamples,
     refreshKit,
     sampleCounts,
@@ -243,7 +243,7 @@ const KitsView: React.FC = () => {
             onAddUndoAction={keyboardShortcuts.addUndoAction}
             onBack={navigation.handleBack}
             onBpmSaved={handleBpmSaved}
-            onKitModified={markKitModified}
+            onGainSaved={markGainSaved}
             onKitUpdated={refreshKit}
             onMessage={showMessage}
             onNextKit={navigation.handleNextKit}

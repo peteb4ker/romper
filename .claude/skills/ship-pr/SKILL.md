@@ -113,7 +113,9 @@ in the PR description. Each item has sent PRs back after handover (#658).
 
 - Branch protection on `main` requires branches to be up to date
   (`strict: true`) and these checks: build, lint, typecheck, unit-tests,
-  integration-tests on ubuntu, windows and macos, and e2e-tests-check.
+  integration-tests on ubuntu and windows, e2e-tests-check and analysis.
+  Pull requests don't run macOS integration or e2e, so neither is
+  required; `main` pushes and releases run them (#698, #745).
   `enforce_admins` is on, so `--admin` can't skip them. After each merge,
   every other open PR is *behind* and can't merge until it is rebased.
 - Merge serially, oldest-green first. For the next PR: rebase onto

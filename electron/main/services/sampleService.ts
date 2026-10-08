@@ -2,15 +2,12 @@ import type { SampleAudio } from "@romper/shared/audioTypes.js";
 import type { DbResult, Sample } from "@romper/shared/db/schema.js";
 import type { VoiceSnapshot } from "@romper/shared/undoTypes.js";
 
-import { ServicePathManager } from "../utils/fileSystemUtils.js";
 import { sampleCrudService } from "./crud/sampleCrudService.js";
 import { sampleMetadataService } from "./metadata/sampleMetadataService.js";
-import { sampleSlotService } from "./slot/sampleSlotService.js";
-import { sampleValidator } from "./validation/sampleValidator.js";
 
 /**
  * Orchestrating service for sample operations
- * Delegates to specialized services for validation, CRUD, metadata, and slot management
+ * Delegates to the CRUD and metadata services
  */
 export class SampleService {
   /**
@@ -46,37 +43,6 @@ export class SampleService {
       kitName,
       voiceNumber,
       slotNumber,
-    );
-  }
-
-  /**
-   * Delete a sample from a specific voice slot WITHOUT automatic reindexing
-   * Used for undo operations where we want precise control over slot positions
-   */
-  deleteSampleFromSlotWithoutReindexing(
-    inMemorySettings: Record<string, unknown>,
-    kitName: string,
-    voiceNumber: number,
-    slotNumber: number,
-  ): DbResult<{ affectedSamples: Sample[]; deletedSamples: Sample[] }> {
-    return sampleCrudService.deleteSampleFromSlotWithoutReindexing(
-      inMemorySettings,
-      kitName,
-      voiceNumber,
-      slotNumber,
-    );
-  }
-
-  /**
-   * Find the next available slot in a voice
-   */
-  findNextAvailableSlot(
-    voiceNumber: number,
-    existingSamples: Sample[],
-  ): number {
-    return sampleSlotService.findNextAvailableSlot(
-      voiceNumber,
-      existingSamples,
     );
   }
 
@@ -118,7 +84,6 @@ export class SampleService {
   ): DbResult<{
     affectedSamples: ({ original_slot_number: number } & Sample)[];
     movedSample: Sample;
-    replacedSample?: Sample;
   }> {
     return sampleCrudService.moveSampleBetweenKits(inMemorySettings, params);
   }
@@ -138,7 +103,6 @@ export class SampleService {
   ): DbResult<{
     affectedSamples: ({ original_slot_number: number } & Sample)[];
     movedSample: Sample;
-    replacedSample?: Sample;
   }> {
     return sampleCrudService.moveSampleInKit(
       inMemorySettings,
@@ -160,78 +124,6 @@ export class SampleService {
     voices: VoiceSnapshot[],
   ): DbResult<void> {
     return sampleCrudService.restoreVoices(inMemorySettings, kitName, voices);
-  }
-
-  /**
-   * Validates a sample file for format and accessibility
-   */
-  validateSampleFile(filePath: string): {
-    error?: string;
-    isValid: boolean;
-  } {
-    return sampleValidator.validateSampleFile(filePath);
-  }
-
-  /**
-   * Task 5.2.5: Validate source_path files for existing samples
-   */
-  validateSampleSources(
-    inMemorySettings: Record<string, unknown>,
-    kitName: string,
-  ): DbResult<{
-    invalidSamples: Array<{
-      error: string;
-      filename: string;
-      source_path: string;
-    }>;
-    totalSamples: number;
-    validSamples: number;
-  }> {
-    const localStorePath = this.getLocalStorePath(inMemorySettings);
-    if (!localStorePath) {
-      return { error: "No local store path configured", success: false };
-    }
-
-    const dbPath = this.getDbPath(localStorePath);
-    return sampleValidator.validateSampleSources(dbPath, kitName);
-  }
-
-  // Slot service delegations
-  /**
-   * Validate that a move target doesn't exceed the next available slot boundary
-   */
-  validateSlotBoundary(
-    toVoice: number,
-    toSlot: number,
-    existingSamples: Sample[],
-  ): DbResult<void> {
-    return sampleSlotService.validateSlotBoundary(
-      toVoice,
-      toSlot,
-      existingSamples,
-    );
-  }
-
-  /**
-   * Task 5.2.4: Validates voice number and slot index for sample operations
-   * 12-slot limit per voice using voice_number field validation
-   */
-  validateVoiceAndSlot(
-    voiceNumber: number,
-    slotNumber: number,
-  ): { error?: string; isValid: boolean } {
-    return sampleValidator.validateVoiceAndSlot(voiceNumber, slotNumber);
-  }
-
-  // Utility methods
-  private getDbPath(localStorePath: string): string {
-    return ServicePathManager.getDbPath(localStorePath);
-  }
-
-  private getLocalStorePath(
-    inMemorySettings: Record<string, unknown>,
-  ): null | string {
-    return ServicePathManager.getLocalStorePath(inMemorySettings);
   }
 }
 

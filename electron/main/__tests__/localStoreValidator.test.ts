@@ -6,7 +6,6 @@ import { createMockKitWithRelations } from "../../../tests/factories/kit.factory
 import { createMockSample } from "../../../tests/factories/sample.factory";
 import * as romperDbCore from "../db/romperDbCoreORM.js";
 import {
-  getRomperDbPath,
   validateLocalStoreAgainstDb,
   validateLocalStoreAndDb,
 } from "../localStoreValidator";
@@ -38,13 +37,6 @@ describe("localStoreValidator", () => {
     if (fs.existsSync(testDir)) {
       fs.rmSync(testDir, { force: true, recursive: true });
     }
-  });
-
-  describe("getRomperDbPath", () => {
-    it("should derive the correct DB path from local store path", () => {
-      const result = getRomperDbPath("/path/to/store");
-      expect(result).toBe("/path/to/store/.romperdb/romper.sqlite");
-    });
   });
 
   describe("[UC-04] [UC-05] validateLocalStoreAndDb", () => {

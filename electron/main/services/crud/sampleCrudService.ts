@@ -113,24 +113,6 @@ export class SampleCrudService {
   }
 
   /**
-   * Delete a sample from a specific voice slot WITHOUT automatic reindexing
-   * Used for undo operations where we want precise control over slot positions
-   */
-  deleteSampleFromSlotWithoutReindexing(
-    inMemorySettings: Record<string, unknown>,
-    kitName: string,
-    voiceNumber: number,
-    slotNumber: number,
-  ): DbResult<{ affectedSamples: Sample[]; deletedSamples: Sample[] }> {
-    return sampleBatchOperationsService.deleteSampleFromSlotWithoutReindexing(
-      inMemorySettings,
-      kitName,
-      voiceNumber,
-      slotNumber,
-    );
-  }
-
-  /**
    * Move a sample from one kit to another with source reindexing
    * Task: Cross-kit sample movement with gap prevention
    */
@@ -148,7 +130,6 @@ export class SampleCrudService {
   ): DbResult<{
     affectedSamples: ({ original_slot_number: number } & Sample)[];
     movedSample: Sample;
-    replacedSample?: Sample;
   }> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
@@ -204,10 +185,7 @@ export class SampleCrudService {
         success: false,
       };
     }
-    return {
-      data: { ...moved.data, replacedSample: undefined },
-      success: true,
-    };
+    return { data: moved.data, success: true };
   }
 
   /**
@@ -225,7 +203,6 @@ export class SampleCrudService {
   ): DbResult<{
     affectedSamples: ({ original_slot_number: number } & Sample)[];
     movedSample: Sample;
-    replacedSample?: Sample;
   }> {
     return sampleBatchOperationsService.moveSampleInKit(
       inMemorySettings,

@@ -15,30 +15,6 @@ type SampleWithOriginalPosition = {
 } & Sample;
 
 /**
- * Validate voice can accept a new sample (not at 12-sample limit)
- */
-export function canVoiceAcceptSample(
-  dbDir: string,
-  kitName: string,
-  voiceNumber: number,
-): DbResult<boolean> {
-  return withDbTransaction(dbDir, (db) => {
-    const sampleCount = db
-      .select()
-      .from(samples)
-      .where(
-        and(
-          eq(samples.kit_name, kitName),
-          eq(samples.voice_number, voiceNumber),
-        ),
-      )
-      .all().length;
-
-    return sampleCount < 12;
-  });
-}
-
-/**
  * Move a sample to another kit as one unit of work, on the caller's
  * transaction (RE-27). The row itself moves, so it keeps its id, gain and
  * WAV metadata. The source voice closes its gap; the destination voice

@@ -1,7 +1,6 @@
 import type { LocalStoreValidationDetailedResult } from "@romper/shared/db/schema.js";
 
 import * as fs from "node:fs";
-import * as path from "node:path";
 
 import {
   validateLocalStoreAgainstDb,
@@ -30,20 +29,6 @@ export class LocalStoreService {
         success: false,
       };
     }
-  }
-
-  /**
-   * Get the database directory path for a local store
-   */
-  getDbPath(localStorePath: string): string {
-    return this.getLocalStorePath(localStorePath, ".romperdb");
-  }
-
-  /**
-   * Get the absolute path to a subdirectory within the local store
-   */
-  getLocalStorePath(localStorePath: string, ...subPaths: string[]): string {
-    return path.join(localStorePath, ...subPaths);
   }
 
   /**
@@ -101,32 +86,6 @@ export class LocalStoreService {
   }
 
   /**
-   * Check if database directory exists within local store
-   */
-  hasRomperDb(localStorePath: string): boolean {
-    const dbPath = this.getDbPath(localStorePath);
-    try {
-      return fs.existsSync(dbPath) && fs.lstatSync(dbPath).isDirectory();
-    } catch {
-      return false;
-    }
-  }
-
-  /**
-   * Check if local store directory exists and is accessible
-   */
-  isLocalStoreAccessible(localStorePath: string): boolean {
-    try {
-      return (
-        fs.existsSync(localStorePath) &&
-        fs.lstatSync(localStorePath).isDirectory()
-      );
-    } catch {
-      return false;
-    }
-  }
-
-  /**
    * List files in the root of a local store directory
    */
   listFilesInRoot(localStorePath: string): string[] {
@@ -178,16 +137,6 @@ export class LocalStoreService {
         success: false,
       };
     }
-  }
-
-  /**
-   * Validate file sync between database and filesystem
-   * Returns detailed validation with file-level errors for warnings/reporting
-   */
-  validateFileSyncStatus(
-    localStorePath: string,
-  ): LocalStoreValidationDetailedResult {
-    return validateLocalStoreAgainstDb(localStorePath);
   }
 
   /**

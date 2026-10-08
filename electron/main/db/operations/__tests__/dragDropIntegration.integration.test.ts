@@ -16,7 +16,7 @@ import {
   removeTempStore,
 } from "../../../../../tests/integration/support/tempStore.js";
 import { ensureDatabaseMigrations } from "../../utils/dbUtilities.js";
-import { moveSample } from "../sampleManagementOps.js";
+import { moveSampleInsertOnly } from "../sampleMovement.js";
 
 const { kits, samples } = schema;
 
@@ -166,7 +166,7 @@ describe("[UC-21] Drag and Drop Integration Tests", () => {
       // Move sample2 from slot 1 to slot 3
       // Expected: [sample1, sample3, sample4, sample2, sample5] at slots [0,1,2,3,4]
 
-      const result = moveSample(testDbDir, "TEST", 1, 1, 1, 3);
+      const result = moveSampleInsertOnly(testDbDir, "TEST", 1, 1, 1, 3);
       expect(result.success).toBe(true);
 
       verifyContiguousSlots(1, [
@@ -183,7 +183,7 @@ describe("[UC-21] Drag and Drop Integration Tests", () => {
       // Move sample4 from slot 3 to slot 1
       // Expected: [sample1, sample4, sample2, sample3, sample5] at slots [0,1,2,3,4]
 
-      const result = moveSample(testDbDir, "TEST", 1, 3, 1, 1);
+      const result = moveSampleInsertOnly(testDbDir, "TEST", 1, 3, 1, 1);
       expect(result.success).toBe(true);
 
       verifyContiguousSlots(1, [
@@ -200,7 +200,7 @@ describe("[UC-21] Drag and Drop Integration Tests", () => {
       // Move sample1 from slot 0 to slot 2
       // Expected: [sample2, sample3, sample1, sample4, sample5] at slots [0,1,2,3,4]
 
-      const result = moveSample(testDbDir, "TEST", 1, 0, 1, 2);
+      const result = moveSampleInsertOnly(testDbDir, "TEST", 1, 0, 1, 2);
       expect(result.success).toBe(true);
 
       verifyContiguousSlots(1, [
@@ -217,7 +217,7 @@ describe("[UC-21] Drag and Drop Integration Tests", () => {
       // Move sample5 from slot 4 to slot 0
       // Expected: [sample5, sample1, sample2, sample3, sample4] at slots [0,1,2,3,4]
 
-      const result = moveSample(testDbDir, "TEST", 1, 4, 1, 0);
+      const result = moveSampleInsertOnly(testDbDir, "TEST", 1, 4, 1, 0);
       expect(result.success).toBe(true);
 
       verifyContiguousSlots(1, [
@@ -231,7 +231,7 @@ describe("[UC-21] Drag and Drop Integration Tests", () => {
 
     it("should handle no-op move (same position)", () => {
       // Move sample3 from slot 3 to slot 3 (no change)
-      const result = moveSample(testDbDir, "TEST", 1, 3, 1, 3);
+      const result = moveSampleInsertOnly(testDbDir, "TEST", 1, 3, 1, 3);
       expect(result.success).toBe(true);
 
       // Should remain unchanged
@@ -248,7 +248,7 @@ describe("[UC-21] Drag and Drop Integration Tests", () => {
   describe("Cross Voice Moves", () => {
     it("should move sample from voice 1 to voice 2 (append)", () => {
       // Move sample4 from voice 1 slot 3 to voice 2 slot 3 (append)
-      const result = moveSample(testDbDir, "TEST", 1, 3, 2, 3);
+      const result = moveSampleInsertOnly(testDbDir, "TEST", 1, 3, 2, 3);
       expect(result.success).toBe(true);
 
       // Voice 1 should compact: [sample1, sample2, sample3, sample5] at slots [0,1,2,3]
@@ -270,7 +270,7 @@ describe("[UC-21] Drag and Drop Integration Tests", () => {
 
     it("should move sample from voice 1 to voice 2 (insert)", () => {
       // Move sample3 from voice 1 slot 2 to voice 2 slot 1 (insert)
-      const result = moveSample(testDbDir, "TEST", 1, 2, 2, 1);
+      const result = moveSampleInsertOnly(testDbDir, "TEST", 1, 2, 2, 1);
       expect(result.success).toBe(true);
 
       // Voice 1 should compact: [sample1, sample2, sample4, sample5] at slots [0,1,2,3]
@@ -292,7 +292,7 @@ describe("[UC-21] Drag and Drop Integration Tests", () => {
 
     it("should move sample from voice 2 to voice 1 (insert at beginning)", () => {
       // Move voice2_2 from voice 2 slot 1 to voice 1 slot 0 (insert at beginning)
-      const result = moveSample(testDbDir, "TEST", 2, 1, 1, 0);
+      const result = moveSampleInsertOnly(testDbDir, "TEST", 2, 1, 1, 0);
       expect(result.success).toBe(true);
 
       // Voice 2 should compact: [voice2_1, voice2_3] at slots [0,1]
@@ -311,7 +311,7 @@ describe("[UC-21] Drag and Drop Integration Tests", () => {
 
     it("should move between empty slot ranges", () => {
       // Move from voice 1 to voice 3 (empty voice)
-      const result = moveSample(testDbDir, "TEST", 1, 1, 3, 0);
+      const result = moveSampleInsertOnly(testDbDir, "TEST", 1, 1, 3, 0);
       expect(result.success).toBe(true);
 
       // Voice 1 should compact: [sample1, sample3, sample4, sample5] at slots [0,1,2,3]
@@ -330,14 +330,14 @@ describe("[UC-21] Drag and Drop Integration Tests", () => {
   describe("Edge Cases", () => {
     it("should handle move from invalid slot", () => {
       // Try to move from slot 12 (invalid in 0-11 system)
-      const result = moveSample(testDbDir, "TEST", 1, 12, 1, 1);
+      const result = moveSampleInsertOnly(testDbDir, "TEST", 1, 12, 1, 1);
       expect(result.success).toBe(false);
       expect(result.error).toContain("Invalid slot numbers. Must be 0-11");
     });
 
     it("should handle move to invalid slot", () => {
       // Move sample1 from slot 0 to slot 12 (invalid in 0-11 system)
-      const result = moveSample(testDbDir, "TEST", 1, 0, 1, 12);
+      const result = moveSampleInsertOnly(testDbDir, "TEST", 1, 0, 1, 12);
       expect(result.success).toBe(false);
       expect(result.error).toContain("Invalid slot numbers. Must be 0-11");
     });
@@ -345,7 +345,7 @@ describe("[UC-21] Drag and Drop Integration Tests", () => {
     it("should maintain database constraints throughout move", () => {
       // This test ensures no temporary constraint violations occur
       // Move sample that would cause cascading shifts
-      const result = moveSample(testDbDir, "TEST", 1, 4, 1, 0);
+      const result = moveSampleInsertOnly(testDbDir, "TEST", 1, 4, 1, 0);
       expect(result.success).toBe(true);
 
       verifyContiguousSlots(1, [
@@ -379,9 +379,9 @@ describe("[UC-21] Drag and Drop Integration Tests", () => {
   describe("Contiguity Verification", () => {
     it("should maintain contiguity after multiple moves", () => {
       // Perform several moves in sequence
-      moveSample(testDbDir, "TEST", 1, 1, 1, 5); // Move first to last
-      moveSample(testDbDir, "TEST", 1, 3, 1, 1); // Move middle to first
-      moveSample(testDbDir, "TEST", 1, 4, 2, 1); // Move cross-voice
+      moveSampleInsertOnly(testDbDir, "TEST", 1, 1, 1, 5); // Move first to last
+      moveSampleInsertOnly(testDbDir, "TEST", 1, 3, 1, 1); // Move middle to first
+      moveSampleInsertOnly(testDbDir, "TEST", 1, 4, 2, 1); // Move cross-voice
 
       // Verify both voices have contiguous slots
       const voice1Samples = getSamplesInVoice(1);
@@ -400,7 +400,7 @@ describe("[UC-21] Drag and Drop Integration Tests", () => {
 
     it("should handle moves that create temporary gaps", () => {
       // Move sample from middle, then move another to fill the gap
-      moveSample(testDbDir, "TEST", 1, 3, 2, 1); // Move sample4 to voice 2
+      moveSampleInsertOnly(testDbDir, "TEST", 1, 3, 2, 1); // Move sample4 to voice 2
 
       // Voice 1 should compact automatically
       verifyContiguousSlots(1, [

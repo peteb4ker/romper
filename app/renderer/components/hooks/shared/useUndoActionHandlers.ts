@@ -69,7 +69,7 @@ export function useUndoActionHandlers({
     action: MoveSampleBetweenKitsAction,
   ) => {
     try {
-      const result = await globalThis.electronAPI?.moveSampleBetweenKits?.(
+      return await globalThis.electronAPI?.moveSampleBetweenKits?.(
         action.data.toKit,
         action.data.toVoice,
         action.data.toSlot,
@@ -78,18 +78,6 @@ export function useUndoActionHandlers({
         action.data.fromSlot,
         action.data.mode,
       );
-
-      // Restore replaced sample if any
-      if (action.data.replacedSample && result?.success) {
-        await globalThis.electronAPI?.addSampleToSlot?.(
-          action.data.toKit,
-          action.data.toVoice,
-          action.data.toSlot,
-          action.data.replacedSample.source_path,
-        );
-      }
-
-      return result;
     } catch (error) {
       return {
         error: error instanceof Error ? error.message : String(error),

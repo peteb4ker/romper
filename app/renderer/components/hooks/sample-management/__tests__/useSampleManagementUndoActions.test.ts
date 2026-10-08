@@ -255,7 +255,6 @@ describe("useSampleManagementUndoActions", () => {
         data: {
           affectedSamples: [mockSample],
           movedSample: mockSample,
-          replacedSample: undefined,
         },
         success: true,
       };
@@ -290,7 +289,6 @@ describe("useSampleManagementUndoActions", () => {
             filename: "test.wav",
             source_path: "/path/to/test.wav",
           },
-          replacedSample: undefined,
           toSlot: 1,
           toVoice: 2,
           voicesBefore,
@@ -313,7 +311,6 @@ describe("useSampleManagementUndoActions", () => {
         data: {
           affectedSamples: [{ ...mockSample, original_slot_number: 0 }],
           movedSample: { ...mockSample, original_slot_number: 0 },
-          replacedSample: undefined,
         },
         success: true,
       };
@@ -348,7 +345,6 @@ describe("useSampleManagementUndoActions", () => {
             filename: "test.wav",
             source_path: "/path/to/test.wav",
           },
-          replacedSample: undefined,
           toKit: "TargetKit",
           toSlot: 1,
           toVoice: 2,

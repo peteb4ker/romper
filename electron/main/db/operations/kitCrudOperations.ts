@@ -1,6 +1,5 @@
 import type {
   DbResult,
-  Kit,
   KitWithRelations,
   NewKit,
 } from "@romper/shared/db/schema.js";
@@ -22,11 +21,7 @@ import {
 } from "./kitRelationalHelpers.js";
 
 // Re-export operations from extracted modules
-export {
-  getFavoriteKits,
-  getFavoriteKitsCount,
-  toggleKitFavorite,
-} from "./kitFavoritesOperations.js";
+export { toggleKitFavorite } from "./kitFavoritesOperations.js";
 
 export {
   getSyncPlanData,
@@ -270,28 +265,6 @@ export function getKits(dbDir: string): DbResult<KitWithRelations[]> {
 
     // Combine into relational structure using helper function
     return allKits.map((kit) => combineKitWithRelations(kit, lookups));
-  });
-}
-
-/**
- * Get metadata for all kits (name, bank_letter, etc. but no samples/voices)
- */
-export function getKitsMetadata(dbDir: string): DbResult<Partial<Kit>[]> {
-  return withDb(dbDir, (db) => {
-    return db
-      .select({
-        alias: kits.alias,
-        bank_letter: kits.bank_letter,
-        bpm: kits.bpm,
-        editable: kits.editable,
-        is_favorite: kits.is_favorite,
-        locked: kits.locked,
-        modified_since_sync: kits.modified_since_sync,
-        name: kits.name,
-        step_pattern: kits.step_pattern,
-      })
-      .from(kits)
-      .all();
   });
 }
 

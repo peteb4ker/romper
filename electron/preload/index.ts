@@ -203,25 +203,6 @@ const electronAPI = {
       slotNumber,
     );
   },
-  deleteSampleFromSlotWithoutReindexing: (
-    kitName: string,
-    voiceNumber: number,
-    slotNumber: number,
-  ) => {
-    isDev &&
-      console.debug(
-        "[IPC] deleteSampleFromSlotWithoutReindexing invoked",
-        kitName,
-        voiceNumber,
-        slotNumber,
-      );
-    return ipcRenderer.invoke(
-      "delete-sample-from-slot-without-reindexing",
-      kitName,
-      voiceNumber,
-      slotNumber,
-    );
-  },
   downloadAndExtractArchive: (
     destDir: string,
     onProgress?: (p: unknown) => void,
@@ -319,7 +300,7 @@ const electronAPI = {
     toKit: string,
     toVoice: number,
     toSlot: number,
-    mode: "insert" | "overwrite",
+    mode: "insert",
   ) => {
     isDev &&
       console.debug(

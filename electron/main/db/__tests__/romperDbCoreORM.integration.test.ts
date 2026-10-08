@@ -10,20 +10,18 @@ import {
   createTempStore,
   removeTempStore,
 } from "../../../../tests/integration/support/tempStore.js";
+import { moveSampleInsertOnly } from "../operations/sampleMovement.js";
 import {
   addKit,
   addSample,
   createRomperDbFile,
   deleteSamples,
-  deleteSamplesWithoutReindexing,
-  getAllSamples,
   getKit,
   getKits,
   getKitSamples,
   markKitAsModified,
   markKitAsSynced,
   markKitsAsSynced,
-  moveSample,
   updateKit,
   updateVoiceAlias,
   validateDatabaseSchema,
@@ -438,9 +436,9 @@ describe("Drizzle ORM Database Operations", () => {
       // Move sample6 from slot 5 to slot 3 (0-based indexing)
       // Expected: [sample1, sample2, sample3, sample6, sample4, sample5]
 
-      const result = moveSample(TEST_DB_DIR, "TestKit", 1, 5, 1, 3);
+      const result = moveSampleInsertOnly(TEST_DB_DIR, "TestKit", 1, 5, 1, 3);
       if (!result.success) {
-        console.error("moveSample failed:", result.error);
+        console.error("moveSampleInsertOnly failed:", result.error);
       }
       expect(result.success).toBe(true);
 
@@ -466,7 +464,7 @@ describe("Drizzle ORM Database Operations", () => {
       // Move sample2 from slot 2 to slot 5
       // After reindexing: [sample1, sample3, sample4, sample2, sample5, sample6]
 
-      const result = moveSample(TEST_DB_DIR, "TestKit", 1, 1, 1, 4);
+      const result = moveSampleInsertOnly(TEST_DB_DIR, "TestKit", 1, 1, 1, 4);
       expect(result.success).toBe(true);
       if (!result.success) {
         throw new Error(`Forward move failed: ${result.error}`);
@@ -500,7 +498,7 @@ describe("Drizzle ORM Database Operations", () => {
       });
 
       // Move sample4 from voice 1 slot 3 to voice 2 slot 0 (0-based indexing)
-      const result = moveSample(TEST_DB_DIR, "TestKit", 1, 3, 2, 0);
+      const result = moveSampleInsertOnly(TEST_DB_DIR, "TestKit", 1, 3, 2, 0);
       expect(result.success).toBe(true);
 
       // Verify voice 1 was reindexed (sample4 removed, others shifted up)
@@ -607,14 +605,6 @@ describe("Drizzle ORM Database Operations", () => {
       });
     });
 
-    it("should get all samples from database", () => {
-      const result = getAllSamples(TEST_DB_DIR);
-      expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(2);
-      expect(result.data![0].filename).toBe("sample1.wav");
-      expect(result.data![1].filename).toBe("sample2.wav");
-    });
-
     it("should get single kit with relations", () => {
       const result = getKit(TEST_DB_DIR, "TestKit");
       expect(result.success).toBe(true);
@@ -628,37 +618,6 @@ describe("Drizzle ORM Database Operations", () => {
       const result = getKit(TEST_DB_DIR, "NonExistentKit");
       expect(result.success).toBe(true);
       expect(result.data).toBeNull();
-    });
-
-    it("should delete samples without reindexing", () => {
-      // Add a third sample to make reindexing behavior visible
-      addSample(TEST_DB_DIR, {
-        filename: "sample3.wav",
-        kit_name: "TestKit",
-        slot_number: 2,
-        source_path: "/test/sample3.wav",
-        voice_number: 1,
-      });
-
-      // Delete the middle sample (slot 1, which contains sample2.wav in 0-based indexing)
-      const result = deleteSamplesWithoutReindexing(TEST_DB_DIR, "TestKit", {
-        slotNumber: 1,
-        voiceNumber: 1,
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.data!.deletedSamples).toHaveLength(1);
-      expect(result.data!.deletedSamples[0].filename).toBe("sample2.wav");
-
-      // Verify remaining samples still have their original slot numbers (no reindexing)
-      const remainingSamples = getKitSamples(TEST_DB_DIR, "TestKit");
-      expect(remainingSamples.success).toBe(true);
-      const samples = remainingSamples.data!.sort(
-        (a, b) => a.slot_number - b.slot_number,
-      );
-      expect(samples).toHaveLength(2);
-      expect(samples[0].slot_number).toBe(0); // sample1 unchanged
-      expect(samples[1].slot_number).toBe(2); // sample3 unchanged (gap at slot 1)
     });
 
     it("should automatically reindex slots after delete using reindexing", () => {

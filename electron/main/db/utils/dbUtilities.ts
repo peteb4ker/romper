@@ -34,7 +34,6 @@ export {
 export {
   checkMigrationState,
   DB_FILENAME,
-  executeMigrations,
   getMigrationsPath,
   logMigrationError,
   repairMigrationHistory,

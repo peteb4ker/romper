@@ -4,7 +4,6 @@ import { getErrorMessage } from "@romper/shared/errorUtils.js";
 
 import {
   deleteSamplesTx,
-  deleteSamplesWithoutReindexingTx,
   flagKitModified,
   getKitSamples,
   moveSampleTx,
@@ -70,63 +69,6 @@ export class SampleBatchOperationsService {
   }
 
   /**
-   * Delete a sample from a specific voice slot WITHOUT automatic reindexing
-   * Used for undo operations where we want precise control over slot positions
-   */
-  deleteSampleFromSlotWithoutReindexing(
-    inMemorySettings: Record<string, unknown>,
-    kitName: string,
-    voiceNumber: number,
-    slotNumber: number,
-  ): DbResult<{ affectedSamples: Sample[]; deletedSamples: Sample[] }> {
-    const localStorePath = this.getLocalStorePath(inMemorySettings);
-    if (!localStorePath) {
-      return { error: "No local store path configured", success: false };
-    }
-
-    const dbPath = this.getDbPath(localStorePath);
-
-    // Validate voice and slot
-    const voiceSlotValidation = sampleValidationService.validateVoiceAndSlot(
-      voiceNumber,
-      slotNumber,
-    );
-    if (!voiceSlotValidation.isValid) {
-      return { error: voiceSlotValidation.error, success: false };
-    }
-
-    try {
-      // Delete WITHOUT automatic contiguity maintenance (for undo
-      // operations), flagging the kit in the same transaction, and only on
-      // an editable kit (#572)
-      const deleteResult = withDbTransaction(dbPath, (db) => {
-        requireEditableKitTx(db, kitName);
-        const result = deleteSamplesWithoutReindexingTx(db, kitName, {
-          slotNumber: slotNumber, // Database stores 0-11 directly
-          voiceNumber,
-        });
-        // An empty slot deletes nothing, so the card wouldn't change (#566)
-        if (result.deletedSamples.length > 0) flagKitModified(db, kitName);
-        return result;
-      });
-
-      if (!deleteResult.success) {
-        return { error: deleteResult.error, success: false };
-      }
-      const deletedSamples = deleteResult.data?.deletedSamples ?? [];
-      return {
-        data: { affectedSamples: deletedSamples, deletedSamples },
-        success: true,
-      };
-    } catch (error) {
-      return {
-        error: `Failed to delete sample: ${getErrorMessage(error)}`,
-        success: false,
-      };
-    }
-  }
-
-  /**
    * Move a sample from one slot to another with contiguity maintenance
    * Task 22.2: Cross-voice sample movement within same kit
    */
@@ -141,7 +83,6 @@ export class SampleBatchOperationsService {
   ): DbResult<{
     affectedSamples: ({ original_slot_number: number } & Sample)[];
     movedSample: Sample;
-    replacedSample?: Sample;
   }> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
@@ -202,7 +143,7 @@ export class SampleBatchOperationsService {
           toSlot,
         );
         flagKitModified(db, kitName);
-        return { ...moved, replacedSample: undefined };
+        return moved;
       });
     } catch (error) {
       return {

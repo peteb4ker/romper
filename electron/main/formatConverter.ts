@@ -172,54 +172,6 @@ export async function convertToRampleDefault(
 }
 
 /**
- * Checks if a file needs conversion to meet Rample requirements
- * Returns the conversion options needed, or null if no conversion is required
- */
-export function getRequiredConversionOptions(
-  metadata: { bitDepth?: number; channels?: number; sampleRate?: number },
-  forceMonoConversion = false,
-): ConversionOptions | null {
-  const options: ConversionOptions = {};
-  let needsConversion = false;
-
-  // Check bit depth
-  if (
-    metadata.bitDepth &&
-    !RAMPLE_FORMAT_REQUIREMENTS.bitDepths.includes(metadata.bitDepth)
-  ) {
-    options.targetBitDepth = 16; // Default to 16-bit
-    needsConversion = true;
-  }
-
-  // Check sample rate
-  if (
-    metadata.sampleRate &&
-    !RAMPLE_FORMAT_REQUIREMENTS.sampleRates.includes(metadata.sampleRate)
-  ) {
-    options.targetSampleRate = RAMPLE_FORMAT_REQUIREMENTS.sampleRates[0]; // 44100 Hz
-    needsConversion = true;
-  }
-
-  // Check channels
-  if (
-    metadata.channels &&
-    metadata.channels > RAMPLE_FORMAT_REQUIREMENTS.maxChannels
-  ) {
-    options.targetChannels = RAMPLE_FORMAT_REQUIREMENTS.maxChannels; // Convert to stereo
-    needsConversion = true;
-  }
-
-  // Apply force mono conversion if requested
-  if (forceMonoConversion && metadata.channels && metadata.channels > 1) {
-    options.targetChannels = 1;
-    options.forceMonoConversion = true;
-    needsConversion = true;
-  }
-
-  return needsConversion ? options : null;
-}
-
-/**
  * Adjust channel count by truncating or padding
  */
 function adjustChannelCount(

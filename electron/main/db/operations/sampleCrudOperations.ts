@@ -95,19 +95,6 @@ export function deleteSamplesTx(
   return { affectedSamples, deletedSamples };
 }
 
-/**
- * Delete samples without automatic reindexing (for manual control)
- */
-export function deleteSamplesWithoutReindexing(
-  dbDir: string,
-  kitName: string,
-  filter?: { slotNumber?: number; voiceNumber?: number },
-): DbResult<{ deletedSamples: Sample[] }> {
-  return withDbTransaction(dbDir, (db) =>
-    deleteSamplesWithoutReindexingTx(db, kitName, filter),
-  );
-}
-
 /** Delete samples, leaving their slots empty, on the caller's handle */
 export function deleteSamplesWithoutReindexingTx(
   db: RomperDb,
@@ -118,15 +105,6 @@ export function deleteSamplesWithoutReindexingTx(
   const deletedSamples = getSamplesToDelete(db, whereCondition);
   db.delete(samples).where(whereCondition).run();
   return { deletedSamples };
-}
-
-/**
- * Get all samples from the database
- */
-export function getAllSamples(dbDir: string): DbResult<Sample[]> {
-  return withDb(dbDir, (db) => {
-    return db.select().from(samples).all();
-  });
 }
 
 /**

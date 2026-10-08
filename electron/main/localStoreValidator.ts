@@ -16,15 +16,6 @@ import {
 } from "./db/romperDbCoreORM.js";
 import { logger } from "./utils/logger.js";
 
-/**
- * Derives the Romper database path from a local store path.
- * @param localStorePath - The path to the local store directory
- * @returns The path to the Romper database file
- */
-export function getRomperDbPath(localStorePath: string): string {
-  return path.join(localStorePath, ".romperdb", "romper.sqlite");
-}
-
 export function validateLocalStoreAgainstDb(
   localStorePath: string,
 ): LocalStoreValidationDetailedResult {

@@ -15,9 +15,7 @@ import {
 
 import { type RomperDb, withDb } from "../../utils/dbUtilities.js";
 import {
-  getSampleToMove,
   groupSamplesByVoice,
-  moveSample,
   performVoiceReindexing,
 } from "../sampleManagementOps";
 
@@ -72,7 +70,6 @@ type MockDb = Record<
 describe("sampleManagementOps unit tests", () => {
   let mockDb: MockDb;
   let consoleLogSpy: MockInstance<typeof console.log>;
-  const testDbDir = "/test/db/dir";
   const testKitName = "Test Kit";
 
   beforeEach(() => {
@@ -160,50 +157,6 @@ describe("sampleManagementOps unit tests", () => {
     consoleLogSpy.mockRestore();
   });
 
-  describe("getSampleToMove", () => {
-    const testFromVoice = 1;
-    const testFromSlot = 2;
-
-    it("should return sample when found", () => {
-      const mockSample = {
-        filename: "test.wav",
-        id: 1,
-        kit_name: testKitName,
-        slot_number: testFromSlot,
-        voice_number: testFromVoice,
-      };
-
-      mockDb.get.mockReturnValue(mockSample);
-
-      const result = getSampleToMove(
-        mockDb as unknown as RomperDb,
-        testKitName,
-        testFromVoice,
-        testFromSlot,
-      );
-
-      expect(result).toEqual(mockSample);
-      expect(mockDb.select).toHaveBeenCalled();
-      expect(mockDb.where).toHaveBeenCalled();
-    });
-
-    it("should return null when sample not found", () => {
-      mockDb.get.mockReturnValue(null);
-
-      const result = getSampleToMove(
-        mockDb as unknown as RomperDb,
-        testKitName,
-        testFromVoice,
-        testFromSlot,
-      );
-
-      expect(result).toBe(null);
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        `[Main] No sample found at voice ${testFromVoice}, slot ${testFromSlot}`,
-      );
-    });
-  });
-
   describe("groupSamplesByVoice", () => {
     it("should group samples by voice number", () => {
       const samplesToDelete: Sample[] = [
@@ -226,80 +179,6 @@ describe("sampleManagementOps unit tests", () => {
       const result = groupSamplesByVoice([]);
 
       expect(result.size).toBe(0);
-    });
-  });
-
-  // Legacy functions removed - only atomic moveSample() and performVoiceReindexing() remain
-
-  describe("moveSample", () => {
-    const testFromVoice = 1;
-    const testFromSlot = 2; // 0-based slot indexing (0-11) - slot 3 in UI
-    const testToVoice = 2;
-    const testToSlot = 3; // 0-based slot indexing (0-11) - slot 4 in UI
-
-    it("should successfully move sample", () => {
-      const mockSample = {
-        id: 1,
-        slot_number: testFromSlot,
-        voice_number: testFromVoice,
-      } as Sample;
-
-      const expectedMovedSample = {
-        id: 1,
-        slot_number: testToSlot,
-        voice_number: testToVoice,
-      } as Sample;
-
-      // Mock the database calls to simulate the move operation
-      mockDb.get.mockReturnValue(mockSample); // Initial sample lookup
-      mockDb.all.mockReturnValue([]); // No samples to shift/reindex
-
-      // Mock the update operation to return the updated sample
-      mockDb.update.mockReturnValue({
-        set: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            run: vi.fn().mockReturnValue({ changes: 1 }),
-          }),
-        }),
-      });
-
-      // Mock the final sample lookup to return the updated sample
-      mockDb.get
-        .mockReturnValueOnce(mockSample) // First call for finding sample
-        .mockReturnValueOnce(expectedMovedSample); // Second call for returning moved sample
-
-      const result = moveSample(
-        testDbDir,
-        testKitName,
-        testFromVoice,
-        testFromSlot,
-        testToVoice,
-        testToSlot,
-      );
-
-      if (!result.success) {
-        console.error("Move failed with error:", result.error);
-      }
-      expect(result.success).toBe(true);
-      expect(result.data?.movedSample).toEqual(expectedMovedSample);
-    });
-
-    it("should handle sample not found", () => {
-      mockDb.get.mockReturnValue(null);
-
-      const result = moveSample(
-        testDbDir,
-        testKitName,
-        testFromVoice,
-        testFromSlot,
-        testToVoice,
-        testToSlot,
-      );
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe(
-        `No sample found at voice ${testFromVoice}, slot ${testFromSlot}`,
-      );
     });
   });
 

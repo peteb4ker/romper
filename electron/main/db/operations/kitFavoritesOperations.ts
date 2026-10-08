@@ -1,62 +1,11 @@
-import type { DbResult, KitWithRelations } from "@romper/shared/db/schema.js";
+import type { DbResult } from "@romper/shared/db/schema.js";
 
 import * as schema from "@romper/shared/db/schema.js";
-import { count, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
-import { withDb, withDbTransaction } from "../utils/dbUtilities.js";
-import {
-  combineKitWithRelations,
-  createKitLookups,
-  fetchKitRelatedData,
-} from "./kitRelationalHelpers.js";
+import { withDbTransaction } from "../utils/dbUtilities.js";
 
 const { kits } = schema;
-
-/**
- * Get favorite kits with their related samples and voices
- * Uses efficient manual batch queries to eliminate N+1 problem
- */
-export function getFavoriteKits(dbDir: string): DbResult<KitWithRelations[]> {
-  return withDb(dbDir, (db) => {
-    // Get favorite kits
-    const favoriteKits = db
-      .select()
-      .from(kits)
-      .where(eq(kits.is_favorite, true))
-      .all();
-
-    if (favoriteKits.length === 0) {
-      return [];
-    }
-
-    // Get all related data efficiently using helper functions
-    const kitNames = favoriteKits.map((k) => k.name);
-    const relatedData = fetchKitRelatedData(db, kitNames);
-    const lookups = createKitLookups(relatedData);
-
-    // Combine into relational structure using helper function
-    return favoriteKits.map((kit) => combineKitWithRelations(kit, lookups));
-  });
-}
-
-/**
- * Get count of favorite kits
- */
-export function getFavoriteKitsCount(dbDir: string): DbResult<number> {
-  return withDb(dbDir, (db) => {
-    const result = db
-      .select({ count: count() })
-      .from(kits)
-      .where(eq(kits.is_favorite, true))
-      .get();
-
-    if (!result) {
-      return 0;
-    }
-
-    return result.count || 0;
-  });
-}
 
 /**
  * Toggle favorite status of a kit

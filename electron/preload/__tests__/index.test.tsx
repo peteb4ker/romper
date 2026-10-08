@@ -25,12 +25,6 @@ const mockElectron = {
 vi.mock("electron", () => mockElectron);
 vi.doMock("electron", () => mockElectron);
 
-vi.mock("@romper/shared/db/types.js", () => ({
-  Kit: {},
-  NewKit: {},
-  NewSample: {},
-}));
-
 describe("preload/index.tsx", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -109,6 +103,7 @@ describe("preload/index.tsx", () => {
     )?.[1];
     expect(api).toBeDefined();
     for (const removed of [
+      "deleteSampleFromSlotWithoutReindexing",
       "getAllSamples",
       "getAudioMetadata",
       "getFavoriteKits",
@@ -654,11 +649,6 @@ describe("preload/index.tsx", () => {
         ipcChannel: "delete-sample-from-slot",
         method: "deleteSampleFromSlot",
       },
-      {
-        args: ["TestKit", 1, 0],
-        ipcChannel: "delete-sample-from-slot-without-reindexing",
-        method: "deleteSampleFromSlotWithoutReindexing",
-      },
     ];
 
     it.each(simpleIpcMethods)(
@@ -799,14 +789,14 @@ describe("preload/index.tsx", () => {
 
       mockElectron.ipcRenderer.invoke.mockResolvedValue("mock-result");
 
-      await api.moveSampleBetweenKits("Kit1", 1, 0, "Kit2", 2, 1, "overwrite");
+      await api.moveSampleBetweenKits("Kit1", 1, 0, "Kit2", 2, 1, "insert");
       expect(mockElectron.ipcRenderer.invoke).toHaveBeenCalledWith(
         "move-sample-between-kits",
         {
           fromKit: "Kit1",
           fromSlot: 0,
           fromVoice: 1,
-          mode: "overwrite",
+          mode: "insert",
           toKit: "Kit2",
           toSlot: 1,
           toVoice: 2,

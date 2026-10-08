@@ -1,47 +1,11 @@
-import type { DbResult, Sample } from "@romper/shared/db/schema.js";
+import type { Sample } from "@romper/shared/db/schema.js";
 
 import * as schema from "@romper/shared/db/schema.js";
 import { and, eq } from "drizzle-orm";
 
-import { logger } from "../../utils/logger.js";
 import { type RomperDb } from "../utils/dbUtilities.js";
-import { moveSampleInsertOnly } from "./sampleMovement.js";
-
-// Type for samples that track their original position during moves
-type SampleWithOriginalSlot = { original_slot_number: number } & Sample;
 
 const { samples } = schema;
-
-/**
- * Get the sample to move for move operations
- */
-export function getSampleToMove(
-  db: RomperDb,
-  kitName: string,
-  fromVoice: number,
-  fromSlot: number,
-): null | Sample {
-  const sampleToMove = db
-    .select()
-    .from(samples)
-    .where(
-      and(
-        eq(samples.kit_name, kitName),
-        eq(samples.voice_number, fromVoice),
-        eq(samples.slot_number, fromSlot),
-      ),
-    )
-    .get();
-
-  if (!sampleToMove) {
-    logger.log(
-      `[Main] No sample found at voice ${fromVoice}, slot ${fromSlot}`,
-    );
-    return null;
-  }
-
-  return sampleToMove;
-}
 
 /**
  * Group samples by voice number for batch processing
@@ -59,59 +23,6 @@ export function groupSamplesByVoice(
   }
   return groupedSamples;
 }
-
-/**
- * Move sample with simple 1-12 slot system
- * Uses insert-only behavior with automatic reindexing for contiguity
- */
-/**
- * Move sample using insert-only drag and drop behavior
- * Simplified API: frontend passes drag source and drop target, backend handles all complexity
- * Uses 0-based slot indexing throughout (0-11 for 12 slots per voice)
- */
-export function moveSample(
-  dbDir: string,
-  kitName: string,
-  fromVoice: number,
-  fromSlot: number,
-  toVoice: number,
-  toSlot: number,
-): DbResult<{
-  affectedSamples: SampleWithOriginalSlot[];
-  movedSample: Sample;
-  replacedSample: null | Sample;
-}> {
-  const result = moveSampleInsertOnly(
-    dbDir,
-    kitName,
-    fromVoice,
-    fromSlot,
-    toVoice,
-    toSlot,
-  );
-
-  if (!result.success) {
-    return {
-      error: result.error,
-      success: false,
-    };
-  }
-
-  // Convert to expected return format for backward compatibility
-  return {
-    data: {
-      affectedSamples: result.data!.affectedSamples.map((s) => ({
-        ...s,
-        original_slot_number: s.original_slot_number, // Keep same field name
-      })) as SampleWithOriginalSlot[],
-      movedSample: result.data!.movedSample,
-      replacedSample: null, // Insert-only behavior never replaces samples
-    },
-    success: true,
-  };
-}
-
-// Atomic helper functions removed - functionality integrated into main moveSample function
 
 /**
  * Close the gaps a deletion left: each voice that lost samples gets its
@@ -164,9 +75,3 @@ export function reindexVoiceTx(
     slot_number: index,
   }));
 }
-
-/**
- * DEPRECATED: Legacy functions removed
- * The atomic moveSample() function now handles moves without temporary slots
- * to avoid unique constraint violations.
- */

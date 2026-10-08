@@ -156,53 +156,6 @@ describe("SampleBatchOperationsService", () => {
     });
   });
 
-  describe("deleteSampleFromSlotWithoutReindexing", () => {
-    it("should successfully delete without reindexing", () => {
-      mockORM.deleteSamplesWithoutReindexingTx.mockReturnValue({
-        deletedSamples: [mockSample],
-      });
-
-      const result = service.deleteSampleFromSlotWithoutReindexing(
-        mockSettings,
-        "TestKit",
-        1,
-        2,
-      );
-
-      expect(result.success).toBe(true);
-      expect(result.data?.deletedSamples).toEqual([mockSample]);
-      expect(result.data?.affectedSamples).toEqual([mockSample]);
-      expect(mockORM.deleteSamplesWithoutReindexingTx).toHaveBeenCalledWith(
-        mockDb,
-        "TestKit",
-        {
-          slotNumber: 2,
-          voiceNumber: 1,
-        },
-      );
-      expect(mockORM.flagKitModified).toHaveBeenCalledWith(mockDb, "TestKit");
-    });
-
-    it("should handle validation error", () => {
-      mockSampleValidation.sampleValidationService.validateVoiceAndSlot.mockReturnValue(
-        {
-          error: "Invalid parameters",
-          isValid: false,
-        },
-      );
-
-      const result = service.deleteSampleFromSlotWithoutReindexing(
-        mockSettings,
-        "TestKit",
-        1,
-        2,
-      );
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("Invalid parameters");
-    });
-  });
-
   describe("[UC-21] moveSampleInKit", () => {
     const mockMoveResult = {
       affectedSamples: [
@@ -241,7 +194,6 @@ describe("SampleBatchOperationsService", () => {
 
       expect(result.success).toBe(true);
       expect(result.data?.movedSample).toEqual(mockSample);
-      expect(result.data?.replacedSample).toBeUndefined();
       // The move and the modified flag are one transaction (RE-28)
       expect(mockORM.moveSampleTx).toHaveBeenCalledWith(
         mockDb,

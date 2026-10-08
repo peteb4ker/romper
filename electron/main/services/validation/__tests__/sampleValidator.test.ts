@@ -1,5 +1,3 @@
-import type { Sample } from "@romper/shared/db/schema.js";
-
 import * as fs from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -143,91 +141,6 @@ describe("SampleValidator", () => {
           wav_sample_rate: 48000,
         },
       });
-    });
-  });
-
-  describe("validateSampleSources", () => {
-    it("should return validation results for all samples", () => {
-      const samples: Sample[] = [
-        {
-          filename: "valid.wav",
-          gain_db: 0,
-          id: 1,
-          kit_name: "TestKit",
-          slot_number: 0,
-          source_path: "/path/to/valid.wav",
-          source_status: null,
-          voice_number: 1,
-          wav_bit_depth: null,
-          wav_bitrate: null,
-          wav_channels: null,
-          wav_sample_rate: null,
-        },
-        {
-          filename: "invalid.wav",
-          gain_db: 0,
-          id: 2,
-          kit_name: "TestKit",
-          slot_number: 1,
-          source_path: "/path/to/invalid.wav",
-          source_status: null,
-          voice_number: 1,
-          wav_bit_depth: null,
-          wav_bitrate: null,
-          wav_channels: null,
-          wav_sample_rate: null,
-        },
-      ];
-
-      mockORM.getKitSamples.mockReturnValue({
-        data: samples,
-        success: true,
-      });
-
-      // Mock validation - first file valid (all file operations), second invalid
-      mockFs.existsSync.mockImplementation((path) => {
-        return path === "/path/to/valid.wav";
-      });
-
-      vi.mocked(getAudioMetadata).mockReturnValue({
-        data: { bitDepth: 16, channels: 1, sampleRate: 44100 },
-        success: true,
-      });
-
-      const result = validator.validateSampleSources("/db/path", "TestKit");
-
-      expect(result.success).toBe(true);
-      expect(result.data?.totalSamples).toBe(2);
-      expect(result.data?.validSamples).toBe(1);
-      expect(result.data?.invalidSamples).toHaveLength(1);
-      expect(result.data?.invalidSamples[0]).toEqual({
-        error: "Sample file not found",
-        filename: "invalid.wav",
-        source_path: "/path/to/invalid.wav",
-      });
-    });
-
-    it("should handle database errors", () => {
-      mockORM.getKitSamples.mockReturnValue({
-        error: "Database error",
-        success: false,
-      });
-
-      const result = validator.validateSampleSources("/db/path", "TestKit");
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("Database error");
-    });
-
-    it("should handle exceptions during validation", () => {
-      mockORM.getKitSamples.mockImplementation(() => {
-        throw new Error("Unexpected error");
-      });
-
-      const result = validator.validateSampleSources("/db/path", "TestKit");
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("Failed to validate sample sources");
     });
   });
 

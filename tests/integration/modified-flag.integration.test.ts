@@ -188,20 +188,6 @@ describe("[UC-11] Edits the next write puts on the card mark a kit modified (#56
     expect(modified("A0")).toBe(true);
   });
 
-  it("an undo's delete does, unless the slot was already empty", () => {
-    expect(
-      sampleService.deleteSampleFromSlotWithoutReindexing(settings, "A0", 1, 5)
-        .success,
-    ).toBe(true);
-    expect(modified("A0")).toBe(false);
-
-    expect(
-      sampleService.deleteSampleFromSlotWithoutReindexing(settings, "A0", 1, 0)
-        .success,
-    ).toBe(true);
-    expect(modified("A0")).toBe(true);
-  });
-
   it("moving a sample within a kit does", () => {
     expect(
       sampleService.moveSampleInKit(settings, "A0", 1, 0, 2, 0, "insert")

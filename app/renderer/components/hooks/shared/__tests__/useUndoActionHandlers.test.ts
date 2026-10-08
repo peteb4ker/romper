@@ -56,11 +56,6 @@ describe("useUndoActionHandlers", () => {
           success: true,
         });
       }
-      if (window.electronAPI.deleteSampleFromSlotWithoutReindexing) {
-        vi.mocked(
-          window.electronAPI.deleteSampleFromSlotWithoutReindexing,
-        ).mockResolvedValue({ success: true });
-      }
       vi.mocked(window.electronAPI.restoreKitVoices).mockResolvedValue({
         success: true,
       });
@@ -212,7 +207,6 @@ describe("useUndoActionHandlers", () => {
               filename: "moved.wav",
               source_path: "/path/to/moved.wav",
             },
-            replacedSample: undefined,
             toKit: "TargetKit",
             toSlot: 1,
             toVoice: 2,
@@ -236,44 +230,6 @@ describe("useUndoActionHandlers", () => {
         );
       });
 
-      it("should restore replaced sample after moving back", async () => {
-        const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
-
-        const action: MoveSampleBetweenKitsAction = {
-          data: {
-            affectedSamples: [],
-            fromKit: "SourceKit",
-            fromSlot: 0,
-            fromVoice: 1,
-            mode: "insert",
-            movedSample: {
-              filename: "moved.wav",
-              source_path: "/path/to/moved.wav",
-            },
-            replacedSample: {
-              filename: "replaced.wav",
-              source_path: "/path/to/replaced.wav",
-            },
-            toKit: "TargetKit",
-            toSlot: 1,
-            toVoice: 2,
-          },
-          description: "Move sample between kits",
-          id: "test-id",
-          timestamp: new Date(),
-          type: "MOVE_SAMPLE_BETWEEN_KITS",
-        };
-
-        await result.current.executeUndoAction(action);
-
-        expect(window.electronAPI?.addSampleToSlot).toHaveBeenCalledWith(
-          "TargetKit",
-          2,
-          1,
-          "/path/to/replaced.wav",
-        );
-      });
-
       it("should handle errors during cross-kit move undo", async () => {
         const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
 
@@ -294,7 +250,6 @@ describe("useUndoActionHandlers", () => {
               filename: "moved.wav",
               source_path: "/path/to/moved.wav",
             },
-            replacedSample: undefined,
             toKit: "TargetKit",
             toSlot: 1,
             toVoice: 2,

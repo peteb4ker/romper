@@ -102,56 +102,17 @@ describe("Type Interfaces for Sample Management", () => {
         wav_sample_rate: null,
       });
 
-      const mockReplacedSample = createMockSample({
-        filename: "replaced.wav",
-        id: 2,
-        kit_name: "TestKit",
-        slot_number: 1,
-        source_path: "/path/to/replaced.wav",
-        voice_number: 1,
-        wav_bitrate: null,
-        wav_sample_rate: null,
-      });
-
       const sampleResult: SampleOperationResult = {
         data: {
           affectedSamples: [mockMovedSample],
           movedSample: mockMovedSample,
-          replacedSample: mockReplacedSample,
         },
         success: true,
       };
 
       expect(sampleResult.success).toBe(true);
       expect(sampleResult.data?.movedSample.filename).toBe("moved.wav");
-      expect(sampleResult.data?.replacedSample?.filename).toBe("replaced.wav");
       expect(sampleResult.data?.affectedSamples).toHaveLength(1);
-    });
-
-    test("should handle sample operation without replaced sample", () => {
-      const mockMovedSample = createMockSample({
-        filename: "moved.wav",
-        id: 1,
-        kit_name: "TestKit",
-        slot_number: 0,
-        source_path: "/path/to/moved.wav",
-        voice_number: 1,
-        wav_bitrate: null,
-        wav_sample_rate: null,
-      });
-
-      const sampleResult: SampleOperationResult = {
-        data: {
-          affectedSamples: [],
-          movedSample: mockMovedSample,
-          replacedSample: undefined,
-        },
-        success: true,
-      };
-
-      expect(sampleResult.success).toBe(true);
-      expect(sampleResult.data?.movedSample.filename).toBe("moved.wav");
-      expect(sampleResult.data?.replacedSample).toBeUndefined();
     });
 
     test("should handle failed sample operation", () => {

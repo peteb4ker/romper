@@ -119,16 +119,6 @@ describe("[UC-17] main refuses edits to a read-only kit (#572)", () => {
       () => sampleService.deleteSampleFromSlot(settings, READ_ONLY, 1, 0),
     ],
     [
-      "delete-sample-from-slot-without-reindexing",
-      () =>
-        sampleService.deleteSampleFromSlotWithoutReindexing(
-          settings,
-          READ_ONLY,
-          1,
-          0,
-        ),
-    ],
-    [
       "move-sample-in-kit",
       () =>
         sampleService.moveSampleInKit(

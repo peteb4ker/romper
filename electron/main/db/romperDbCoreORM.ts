@@ -12,18 +12,12 @@ export {
   deleteKit,
   deleteSamples,
   deleteSamplesTx,
-  deleteSamplesWithoutReindexing,
-  deleteSamplesWithoutReindexingTx,
   flagKitModified,
   getAllBanks,
-  getAllSamples,
-  getFavoriteKits,
-  getFavoriteKitsCount,
   getKit,
   getKitDeleteSummary,
   getKits,
   getKitSamples,
-  getKitsMetadata,
   getSamplesToDelete,
   getSyncPlanData,
   linkVoicesAutomaticallyTx,
@@ -50,8 +44,6 @@ export {
   updateVoiceVolume,
 } from "./operations/crudOperations.js";
 
-// Import and re-export sample management operations
-export { moveSample } from "./operations/sampleManagementOps.js";
 export {
   moveSampleBetweenKitsTx,
   moveSampleTx,

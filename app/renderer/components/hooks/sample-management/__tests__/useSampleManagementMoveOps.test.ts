@@ -239,7 +239,7 @@ describe("useSampleManagementMoveOps", () => {
   describe("handleSampleMove - cross-kit", () => {
     it("should handle successful cross-kit move with undo recording", async () => {
       const mockMoveResult = {
-        data: { movedSample: { id: 1 }, replacedSample: null },
+        data: { movedSample: { id: 1 } },
         success: true,
       };
       mockElectronAPI.moveSampleBetweenKits.mockResolvedValue(mockMoveResult);

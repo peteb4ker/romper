@@ -144,7 +144,7 @@ describe("useDragAndDrop", () => {
     it("maps external drag handler properties correctly", () => {
       const mockExternalHandlers = {
         dragOverSlot: 3,
-        dropZone: { mode: "overwrite", slot: 3 },
+        dropZone: { mode: "insert", slot: 3 },
         handleDragLeave: vi.fn(),
         handleDragOver: vi.fn(),
         handleDrop: vi.fn(),

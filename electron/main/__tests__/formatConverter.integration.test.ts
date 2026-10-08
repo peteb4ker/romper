@@ -3,11 +3,10 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { getAudioMetadata } from "../audioUtils.js";
+import { getAudioMetadata, RAMPLE_FORMAT_REQUIREMENTS } from "../audioUtils.js";
 import {
   convertSampleToRampleFormat,
   convertToRampleDefault,
-  getRequiredConversionOptions,
 } from "../formatConverter.js";
 import { decodeWav, type EncodeBitDepth, encodeWav } from "../wavCodec.js";
 
@@ -555,130 +554,6 @@ describe("[UC-34] formatConverter integration tests", () => {
     });
   });
 
-  describe("getRequiredConversionOptions - with real RAMPLE_FORMAT_REQUIREMENTS", () => {
-    it("should return null for Rample-compatible format (16-bit 44.1kHz mono)", () => {
-      const result = getRequiredConversionOptions({
-        bitDepth: 16,
-        channels: 1,
-        sampleRate: 44100,
-      });
-      expect(result).toBeNull();
-    });
-
-    it("should return null for Rample-compatible format (16-bit 44.1kHz stereo)", () => {
-      const result = getRequiredConversionOptions({
-        bitDepth: 16,
-        channels: 2,
-        sampleRate: 44100,
-      });
-      expect(result).toBeNull();
-    });
-
-    it("should return null for 8-bit 44.1kHz mono", () => {
-      const result = getRequiredConversionOptions({
-        bitDepth: 8,
-        channels: 1,
-        sampleRate: 44100,
-      });
-      expect(result).toBeNull();
-    });
-
-    it("should detect unsupported bit depth (24-bit)", () => {
-      const result = getRequiredConversionOptions({
-        bitDepth: 24,
-        channels: 1,
-        sampleRate: 44100,
-      });
-      expect(result).not.toBeNull();
-      expect(result!.targetBitDepth).toBe(16);
-    });
-
-    it("should detect unsupported bit depth (32-bit)", () => {
-      const result = getRequiredConversionOptions({
-        bitDepth: 32,
-        channels: 1,
-        sampleRate: 44100,
-      });
-      expect(result).not.toBeNull();
-      expect(result!.targetBitDepth).toBe(16);
-    });
-
-    it("should detect unsupported sample rate (48000)", () => {
-      const result = getRequiredConversionOptions({
-        bitDepth: 16,
-        channels: 1,
-        sampleRate: 48000,
-      });
-      expect(result).not.toBeNull();
-      expect(result!.targetSampleRate).toBe(44100);
-    });
-
-    it("should detect unsupported sample rate (96000)", () => {
-      const result = getRequiredConversionOptions({
-        bitDepth: 16,
-        channels: 1,
-        sampleRate: 96000,
-      });
-      expect(result).not.toBeNull();
-      expect(result!.targetSampleRate).toBe(44100);
-    });
-
-    it("should detect too many channels (surround 5.1)", () => {
-      const result = getRequiredConversionOptions({
-        bitDepth: 16,
-        channels: 6,
-        sampleRate: 44100,
-      });
-      expect(result).not.toBeNull();
-      expect(result!.targetChannels).toBe(2); // maxChannels
-    });
-
-    it("should force mono conversion for stereo when requested", () => {
-      const result = getRequiredConversionOptions(
-        { bitDepth: 16, channels: 2, sampleRate: 44100 },
-        true,
-      );
-      expect(result).not.toBeNull();
-      expect(result!.targetChannels).toBe(1);
-      expect(result!.forceMonoConversion).toBe(true);
-    });
-
-    it("should not force mono for already-mono audio", () => {
-      const result = getRequiredConversionOptions(
-        { bitDepth: 16, channels: 1, sampleRate: 44100 },
-        true,
-      );
-      // Mono file + forceMonoConversion should not need conversion
-      expect(result).toBeNull();
-    });
-
-    it("should combine multiple conversion requirements", () => {
-      const result = getRequiredConversionOptions({
-        bitDepth: 24,
-        channels: 6,
-        sampleRate: 96000,
-      });
-      expect(result).not.toBeNull();
-      expect(result!.targetBitDepth).toBe(16);
-      expect(result!.targetSampleRate).toBe(44100);
-      expect(result!.targetChannels).toBe(2);
-    });
-
-    it("should return null for empty metadata", () => {
-      expect(getRequiredConversionOptions({})).toBeNull();
-    });
-
-    it("should return null for undefined metadata fields", () => {
-      expect(
-        getRequiredConversionOptions({
-          bitDepth: undefined,
-          channels: undefined,
-          sampleRate: undefined,
-        }),
-      ).toBeNull();
-    });
-  });
-
   describe("end-to-end roundtrip", () => {
     it("should produce a valid WAV file that can be read back with getAudioMetadata", async () => {
       const inputPath = path.join(TEST_DIR, "roundtrip-in.wav");
@@ -718,7 +593,7 @@ describe("[UC-34] formatConverter integration tests", () => {
       expect(outputMeta.data!.duration).toBeGreaterThan(0);
     });
 
-    it("should produce output that passes getRequiredConversionOptions as null (already compatible)", async () => {
+    it("should produce output in a format the Rample plays as-is", async () => {
       const inputPath = path.join(TEST_DIR, "compat-in.wav");
       const outputPath = path.join(TEST_DIR, "compat-out.wav");
 
@@ -746,13 +621,15 @@ describe("[UC-34] formatConverter integration tests", () => {
       // Read output metadata and check it needs no further conversion
       const outputMeta = getAudioMetadata(outputPath);
       expect(outputMeta.success).toBe(true);
-
-      const conversionNeeded = getRequiredConversionOptions({
-        bitDepth: outputMeta.data!.bitDepth,
-        channels: outputMeta.data!.channels,
-        sampleRate: outputMeta.data!.sampleRate,
-      });
-      expect(conversionNeeded).toBeNull();
+      expect(RAMPLE_FORMAT_REQUIREMENTS.bitDepths).toContain(
+        outputMeta.data!.bitDepth,
+      );
+      expect(RAMPLE_FORMAT_REQUIREMENTS.sampleRates).toContain(
+        outputMeta.data!.sampleRate,
+      );
+      expect(outputMeta.data!.channels).toBeLessThanOrEqual(
+        RAMPLE_FORMAT_REQUIREMENTS.maxChannels,
+      );
     });
   });
 });

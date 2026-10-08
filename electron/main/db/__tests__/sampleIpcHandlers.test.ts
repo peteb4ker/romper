@@ -9,7 +9,6 @@ vi.mock("electron", () => ({
 
 vi.mock("../../services/sampleService.js", () => ({
   sampleService: {
-    deleteSampleFromSlotWithoutReindexing: vi.fn(),
     moveSampleBetweenKits: vi.fn(),
     moveSampleInKit: vi.fn(),
     restoreVoices: vi.fn(() => ({ success: true })),
@@ -53,7 +52,7 @@ describe("registerSampleIpcHandlers - Unit Tests", () => {
     it("[Q-03] should register all 7 sample IPC handlers", () => {
       registerSampleIpcHandlers(mockInMemorySettings);
 
-      expect(mockIpcMain.handle).toHaveBeenCalledTimes(6);
+      expect(mockIpcMain.handle).toHaveBeenCalledTimes(5);
     });
 
     it("should register handlers with correct IPC channel names", () => {
@@ -66,7 +65,6 @@ describe("registerSampleIpcHandlers - Unit Tests", () => {
       expect(registeredHandlers).toEqual([
         "add-sample-to-slot",
         "delete-sample-from-slot",
-        "delete-sample-from-slot-without-reindexing",
         "move-sample-in-kit",
         "move-sample-between-kits",
         "restore-kit-voices",
@@ -124,16 +122,6 @@ describe("registerSampleIpcHandlers - undo source grants (RE-03)", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  it("remembers the kit's sources before deleting without reindexing", async () => {
-    await handlerFor("delete-sample-from-slot-without-reindexing")(
-      {},
-      "A0",
-      1,
-      0,
-    );
-    expect(rememberKitSampleSources).toHaveBeenCalledWith(settings, "A0");
   });
 
   it("remembers the kit's sources before moving within a kit", async () => {

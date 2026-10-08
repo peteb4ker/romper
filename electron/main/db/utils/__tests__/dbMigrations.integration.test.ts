@@ -5,7 +5,15 @@ import crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "vitest";
 
 import {
   DB_FILENAME,
@@ -76,6 +84,13 @@ function historicalVersions(): { name: string; tags: string[] }[] {
 
 let tempDir: string;
 
+// The migrations folders and the current schema are the same for every test,
+// so they're made once per file. Building them per test made each test write
+// dozens of files and two whole libraries before it started, and on Windows
+// that setup alone came close to the hook timeout (#635).
+let sharedDir: string;
+const migrationsFolders = new Map<string, string>();
+
 /** Make recording one migration fail, as a crash at that point would */
 function failWhenRecording(dbDir: string, tag: string) {
   withLibrary(dbDir, (sqlite) =>
@@ -129,25 +144,17 @@ function libraryAt(tags: string[]): string {
   return dbDir;
 }
 
-/** A migrations folder holding just these migrations, as a release shipped */
+/**
+ * A migrations folder holding just these migrations, as a release shipped.
+ * Tests only read it, so each set of migrations is written once per file.
+ */
 function migrationsFolderFor(tags: string[]): string {
-  const folder = fs.mkdtempSync(path.join(tempDir, "migrations-"));
-  fs.mkdirSync(path.join(folder, "meta"));
-  const entries = tags.map((tag, idx) => {
-    if (tag === LEGACY_0008.entry.tag) {
-      fs.writeFileSync(path.join(folder, `${tag}.sql`), LEGACY_0008.sql);
-      return { ...LEGACY_0008.entry, idx };
-    }
-    fs.copyFileSync(
-      path.join(MIGRATIONS, `${tag}.sql`),
-      path.join(folder, `${tag}.sql`),
-    );
-    return { ...journal.entries.find((e) => e.tag === tag)!, idx };
-  });
-  fs.writeFileSync(
-    path.join(folder, "meta", "_journal.json"),
-    JSON.stringify({ ...journal, entries }),
-  );
+  const key = tags.join("\n");
+  let folder = migrationsFolders.get(key);
+  if (!folder) {
+    folder = writeMigrationsFolder(tags);
+    migrationsFolders.set(key, folder);
+  }
   return folder;
 }
 
@@ -214,6 +221,27 @@ function withLibrary<T>(
   }
 }
 
+function writeMigrationsFolder(tags: string[]): string {
+  const folder = fs.mkdtempSync(path.join(sharedDir, "migrations-"));
+  fs.mkdirSync(path.join(folder, "meta"));
+  const entries = tags.map((tag, idx) => {
+    if (tag === LEGACY_0008.entry.tag) {
+      fs.writeFileSync(path.join(folder, `${tag}.sql`), LEGACY_0008.sql);
+      return { ...LEGACY_0008.entry, idx };
+    }
+    fs.copyFileSync(
+      path.join(MIGRATIONS, `${tag}.sql`),
+      path.join(folder, `${tag}.sql`),
+    );
+    return { ...journal.entries.find((e) => e.tag === tag)!, idx };
+  });
+  fs.writeFileSync(
+    path.join(folder, "meta", "_journal.json"),
+    JSON.stringify({ ...journal, entries }),
+  );
+  return folder;
+}
+
 const CURRENT = journal.entries.map((e) => e.tag);
 const LEGACY = historicalVersions().find((v) =>
   v.tags.includes(LEGACY_0008.entry.tag),
@@ -222,9 +250,22 @@ const LEGACY = historicalVersions().find((v) =>
 describe("[Q-02] Upgrading a library is all or nothing (RE-33)", () => {
   let currentSchema: ReturnType<typeof schemaOf>;
 
+  beforeAll(() => {
+    sharedDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), "romper-upgrade-shared-"),
+    );
+    tempDir = sharedDir;
+    currentSchema = schemaOf(libraryAt(CURRENT));
+  });
+
+  afterAll(() => {
+    closeAllDbConnections();
+    fs.rmSync(sharedDir, { force: true, recursive: true });
+    migrationsFolders.clear();
+  });
+
   beforeEach(() => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "romper-upgrade-"));
-    currentSchema = schemaOf(libraryAt(CURRENT));
   });
 
   afterEach(() => {

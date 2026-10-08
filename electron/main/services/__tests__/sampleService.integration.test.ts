@@ -6,16 +6,12 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type { InMemorySettings } from "../../types/settings.js";
 
+import { createStoreDb } from "../../../../tests/integration/support/storeDb.js";
 import {
   createTempStore,
   removeTempStore,
 } from "../../../../tests/integration/support/tempStore.js";
-import {
-  addKit,
-  createRomperDbFile,
-  getKit,
-  getKitSamples,
-} from "../../db/romperDbCoreORM.js";
+import { addKit, getKit, getKitSamples } from "../../db/romperDbCoreORM.js";
 import { SampleService } from "../sampleService.js";
 
 // Test utilities
@@ -93,7 +89,7 @@ describe("SampleService Integration Tests", () => {
     TEST_DB_PATH = path.join(TEST_DB_DIR, ".romperdb");
 
     // Create fresh database
-    createRomperDbFile(TEST_DB_PATH);
+    createStoreDb(TEST_DB_PATH);
 
     sampleService = new SampleService();
     mockInMemorySettings = {

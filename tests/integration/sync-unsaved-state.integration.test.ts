@@ -10,11 +10,11 @@ import {
   addKit,
   addSample,
   clearMigrationCache,
-  createRomperDbFile,
   getKit,
   markKitAsModified,
   markKitsAsSynced,
 } from "../../electron/main/db/romperDbCoreORM";
+import { createStoreDb } from "./support/storeDb.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 describe("[UC-11] [UC-34] Sync Unsaved State Integration", () => {
@@ -26,11 +26,8 @@ describe("[UC-11] [UC-34] Sync Unsaved State Integration", () => {
     clearMigrationCache();
     TEST_DB_DIR = createTempStore("romper-sync-state-");
 
-    // Create a fresh database
-    const dbResult = createRomperDbFile(TEST_DB_DIR);
-    if (!dbResult.success) {
-      throw new Error("Database setup failed: " + dbResult.error);
-    }
+    // Create a fresh database (throws if it can't)
+    createStoreDb(TEST_DB_DIR);
   });
 
   afterEach(() => {

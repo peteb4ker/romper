@@ -27,7 +27,6 @@ vi.mock("electron", () => ({
 
 import {
   addKit,
-  createRomperDbFile,
   updateSampleGain,
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { withDbTransaction } from "../../electron/main/db/utils/dbUtilities.js";
@@ -35,6 +34,7 @@ import { syncService } from "../../electron/main/services/syncService.js";
 import { type NewSample, samples } from "../../shared/db/schema.js";
 import { type BudgetName, enforceBudgets } from "../perf/budgets";
 import { encodeTestWav, sine } from "../validation/support/wav";
+import { createStoreDb } from "./support/storeDb.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 /** Setup writes a store and a card; Windows runners are slow */
@@ -77,7 +77,7 @@ function expectWithinBudget(name: BudgetName, measured: object) {
 
 function generateStore(): number {
   const dbDir = path.join(store, ".romperdb");
-  expect(createRomperDbFile(dbDir).success).toBe(true);
+  expect(createStoreDb(dbDir).success).toBe(true);
   const rows: NewSample[] = [];
   KITS.forEach((kit, index) => {
     expect(

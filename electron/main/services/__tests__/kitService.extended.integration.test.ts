@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type { InMemorySettings } from "../../types/settings.js";
 
+import { createStoreDb } from "../../../../tests/integration/support/storeDb.js";
 import {
   createTempStore,
   removeTempStore,
@@ -12,7 +13,6 @@ import {
 import {
   addKit,
   addSample,
-  createRomperDbFile,
   getKit,
   getKitSamples,
 } from "../../db/romperDbCoreORM.js";
@@ -41,7 +41,7 @@ describe("KitService Extended Integration Tests", () => {
     TEST_DB_DIR = createTempStore("romper-kit-extended-");
     TEST_LOCAL_STORE_PATH = TEST_DB_DIR;
     TEST_DB_PATH = path.join(TEST_DB_DIR, ".romperdb");
-    createRomperDbFile(TEST_DB_PATH);
+    createStoreDb(TEST_DB_PATH);
 
     kitService = new KitService();
     mockInMemorySettings = {

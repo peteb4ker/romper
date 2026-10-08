@@ -5,6 +5,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { createStoreDb } from "../../../../tests/integration/support/storeDb.js";
 import {
   createTempStore,
   removeTempStore,
@@ -71,7 +72,7 @@ describe("Drizzle ORM Database Operations", () => {
 
   describe("Kit Operations with ORM", () => {
     beforeEach(async () => {
-      createRomperDbFile(TEST_DB_DIR);
+      createStoreDb(TEST_DB_DIR);
     });
 
     it("should insert kit record with editable mode mapping", async () => {
@@ -137,7 +138,7 @@ describe("Drizzle ORM Database Operations", () => {
 
   describe("Sample Operations with Reference Architecture", () => {
     beforeEach(async () => {
-      await createRomperDbFile(TEST_DB_DIR);
+      createStoreDb(TEST_DB_DIR);
 
       // Insert a test kit first
       const testKit: NewKit = {
@@ -243,7 +244,7 @@ describe("Drizzle ORM Database Operations", () => {
 
   describe("[UC-27] Voice Operations with ORM", () => {
     beforeEach(async () => {
-      await createRomperDbFile(TEST_DB_DIR);
+      createStoreDb(TEST_DB_DIR);
 
       const testKit: NewKit = { editable: true, name: "A0" };
       await addKit(TEST_DB_DIR, testKit);
@@ -296,7 +297,7 @@ describe("Drizzle ORM Database Operations", () => {
 
   describe("[UC-30] Step Pattern Operations with ORM", () => {
     beforeEach(async () => {
-      await createRomperDbFile(TEST_DB_DIR);
+      createStoreDb(TEST_DB_DIR);
 
       const testKit: NewKit = { editable: true, name: "A0" };
       await addKit(TEST_DB_DIR, testKit);
@@ -360,7 +361,7 @@ describe("Drizzle ORM Database Operations", () => {
     });
 
     it("should handle constraint violations gracefully", async () => {
-      await createRomperDbFile(TEST_DB_DIR);
+      createStoreDb(TEST_DB_DIR);
 
       const testKit: NewKit = { editable: true, name: "A0" };
 
@@ -378,7 +379,7 @@ describe("Drizzle ORM Database Operations", () => {
   describe("[UC-21] Sample Move Operations", () => {
     beforeEach(() => {
       // Create database and kit
-      createRomperDbFile(TEST_DB_DIR);
+      createStoreDb(TEST_DB_DIR);
       addKit(TEST_DB_DIR, { editable: true, locked: false, name: "TestKit" });
 
       // Add test samples to voice 1
@@ -530,7 +531,7 @@ describe("Drizzle ORM Database Operations", () => {
 
   describe("Database Schema Validation", () => {
     beforeEach(() => {
-      createRomperDbFile(TEST_DB_DIR);
+      createStoreDb(TEST_DB_DIR);
     });
 
     it("should validate database schema successfully", () => {
@@ -549,7 +550,7 @@ describe("Drizzle ORM Database Operations", () => {
 
   describe("withDb Function", () => {
     beforeEach(() => {
-      createRomperDbFile(TEST_DB_DIR);
+      createStoreDb(TEST_DB_DIR);
     });
 
     it("should execute database operation successfully", () => {
@@ -580,7 +581,7 @@ describe("Drizzle ORM Database Operations", () => {
 
   describe("Sample Operations - Additional Functions", () => {
     beforeEach(() => {
-      createRomperDbFile(TEST_DB_DIR);
+      createStoreDb(TEST_DB_DIR);
       addKit(TEST_DB_DIR, { editable: true, locked: false, name: "TestKit" });
 
       // Add test samples
@@ -704,7 +705,7 @@ describe("Drizzle ORM Database Operations", () => {
 
   describe("Kit Modification Tracking", () => {
     beforeEach(() => {
-      createRomperDbFile(TEST_DB_DIR);
+      createStoreDb(TEST_DB_DIR);
       addKit(TEST_DB_DIR, {
         editable: true,
         locked: false,

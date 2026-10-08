@@ -18,12 +18,9 @@ vi.mock("electron", () => ({
   },
 }));
 
-import {
-  addKit,
-  createRomperDbFile,
-  getKit,
-} from "../../electron/main/db/romperDbCoreORM.js";
+import { addKit, getKit } from "../../electron/main/db/romperDbCoreORM.js";
 import { registerDbIpcHandlers } from "../../electron/main/dbIpcHandlers.js";
+import { createStoreDb } from "./support/storeDb.js";
 
 type Result = { error?: string; success: boolean };
 
@@ -46,7 +43,7 @@ describe("[Q-02] Editing a kit's details changes only its alias and editable fla
     localStorePath = path.join(tempDir, "store");
     fs.mkdirSync(localStorePath, { recursive: true });
     dbDir = path.join(localStorePath, ".romperdb");
-    createRomperDbFile(dbDir);
+    createStoreDb(dbDir);
     addKit(dbDir, {
       alias: null,
       bank_letter: "A",

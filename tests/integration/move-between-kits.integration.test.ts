@@ -19,7 +19,6 @@ vi.mock("electron", () => ({
 import {
   addKit,
   addSample,
-  createRomperDbFile,
   getKit,
   getKitSamples,
   updateSampleGain,
@@ -28,6 +27,7 @@ import {
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { sampleService } from "../../electron/main/services/sampleService.js";
 import { encodeTestWav, sine } from "../validation/support/wav.js";
+import { createStoreDb } from "./support/storeDb.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 let work: string;
@@ -113,7 +113,7 @@ beforeEach(() => {
   work = createTempStore("romper-move-between-kits-");
   store = path.join(work, "store");
   dbDir = path.join(store, ".romperdb");
-  expect(createRomperDbFile(dbDir).success).toBe(true);
+  expect(createStoreDb(dbDir).success).toBe(true);
   settings = { localStorePath: store };
   newKit("A0");
   newKit("B0");

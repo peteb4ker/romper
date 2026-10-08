@@ -1,11 +1,11 @@
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
+import { createStoreDb } from "../../../../../tests/integration/support/storeDb.js";
 import {
   createTempStore,
   removeTempStore,
 } from "../../../../../tests/integration/support/tempStore.js";
-import { createRomperDbFile } from "../../utils/dbUtilities.js";
 import { addKit } from "../kitCrudOperations.js";
 import {
   getFavoriteKits,
@@ -21,7 +21,7 @@ describe("[UC-10] Kit Favorites Operations - Integration Tests", () => {
   beforeEach(() => {
     tempDir = createTempStore("romper-kit-favs-");
     dbDir = join(tempDir, ".romperdb");
-    createRomperDbFile(dbDir);
+    createStoreDb(dbDir);
   });
 
   afterEach(() => {

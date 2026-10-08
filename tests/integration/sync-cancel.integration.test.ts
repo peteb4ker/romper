@@ -12,13 +12,13 @@ vi.mock("electron", () => ({
 import {
   addKit,
   addSample,
-  createRomperDbFile,
   getKit,
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { closeAllDbConnections } from "../../electron/main/db/utils/dbConnections.js";
 import { syncProgressManager } from "../../electron/main/services/syncProgressManager.js";
 import { syncService } from "../../electron/main/services/syncService.js";
 import { encodeTestWav, sine } from "../validation/support/wav.js";
+import { createStoreDb } from "./support/storeDb.js";
 
 const KITS = ["A0", "A1"];
 const VOICES = [1, 2, 3];
@@ -53,7 +53,7 @@ describe("[UC-34] Cancelling a write to the card", () => {
     dbDir = path.join(store, ".romperdb");
     card = path.join(tempDir, "card");
     fs.mkdirSync(store, { recursive: true });
-    createRomperDbFile(dbDir);
+    createStoreDb(dbDir);
     settings = { localStorePath: store };
 
     // Two edited kits, a tone on voices 1-3 of each: six files to write

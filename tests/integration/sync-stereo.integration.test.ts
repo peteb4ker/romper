@@ -11,11 +11,11 @@ vi.mock("electron", () => ({
 import {
   addKit,
   addSample,
-  createRomperDbFile,
   deleteSamples,
   updateVoiceStereoMode,
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { syncService } from "../../electron/main/services/syncService.js";
+import { createStoreDb } from "./support/storeDb.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 // RE-29: stereo is a voice setting. A stereo file on a voice linked as stereo
@@ -71,7 +71,7 @@ describe("[UC-28] [UC-34] Writing stereo files to the card (RE-29)", () => {
     sdCardPath = path.join(tempDir, "card");
     fs.mkdirSync(sdCardPath, { recursive: true });
     fs.mkdirSync(localStorePath, { recursive: true });
-    createRomperDbFile(dbDir);
+    createStoreDb(dbDir);
     settings = { localStorePath };
 
     const files: Record<string, Buffer> = {

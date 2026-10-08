@@ -21,7 +21,6 @@ vi.mock("electron", () => ({
 import {
   addKit,
   addSample,
-  createRomperDbFile,
   getKit,
   getKitSamples,
   updateKit,
@@ -31,6 +30,7 @@ import {
 import { kitService } from "../../electron/main/services/kitService.js";
 import { sampleService } from "../../electron/main/services/sampleService.js";
 import { encodeTestWav, sine } from "../validation/support/wav.js";
+import { createStoreDb } from "./support/storeDb.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 let work: string;
@@ -82,7 +82,7 @@ beforeEach(() => {
   work = createTempStore("romper-read-only-kit-");
   const store = path.join(work, "store");
   dbDir = path.join(store, ".romperdb");
-  expect(createRomperDbFile(dbDir).success).toBe(true);
+  expect(createStoreDb(dbDir).success).toBe(true);
   settings = { localStorePath: store };
   for (const [name, editable] of [
     [READ_ONLY, false],

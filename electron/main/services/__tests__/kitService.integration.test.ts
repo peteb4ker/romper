@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type { InMemorySettings } from "../../types/settings.js";
 
+import { createStoreDb } from "../../../../tests/integration/support/storeDb.js";
 import {
   createTempStore,
   removeTempStore,
@@ -12,7 +13,6 @@ import {
 import {
   addKit,
   addSample,
-  createRomperDbFile,
   getKit,
   getKitSamples,
   updateKit,
@@ -42,7 +42,7 @@ describe("KitService Integration Tests", () => {
     TEST_DB_PATH = path.join(TEST_DB_DIR, ".romperdb");
 
     // Create fresh database
-    createRomperDbFile(TEST_DB_PATH);
+    createStoreDb(TEST_DB_PATH);
 
     kitService = new KitService();
     scanService = new ScanService();

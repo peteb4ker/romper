@@ -21,11 +21,11 @@ vi.mock("electron", () => ({
 import {
   addKit,
   addSample,
-  createRomperDbFile,
   getKit,
   getKitSamples,
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { registerDbIpcHandlers } from "../../electron/main/dbIpcHandlers.js";
+import { createStoreDb } from "./support/storeDb.js";
 
 type Result = { error?: string; success: boolean };
 
@@ -51,7 +51,7 @@ describe("[Q-02] Out-of-range settings are refused and change nothing (RE-25)", 
     localStorePath = path.join(tempDir, "store");
     fs.mkdirSync(localStorePath, { recursive: true });
     dbDir = path.join(localStorePath, ".romperdb");
-    createRomperDbFile(dbDir);
+    createStoreDb(dbDir);
     addKit(dbDir, {
       alias: null,
       bank_letter: "A",

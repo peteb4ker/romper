@@ -8,12 +8,9 @@ vi.mock("electron", () => ({
   },
 }));
 
-import {
-  addKit,
-  addSample,
-  createRomperDbFile,
-} from "../../electron/main/db/romperDbCoreORM.js";
+import { addKit, addSample } from "../../electron/main/db/romperDbCoreORM.js";
 import { syncService } from "../../electron/main/services/syncService.js";
+import { createStoreDb } from "./support/storeDb.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 // RE-08: WAV files whose fmt chunk isn't the first 16 bytes after the RIFF
@@ -85,7 +82,7 @@ describe("[UC-34] Syncing WAV files with unusual headers (RE-08)", () => {
     sdCardPath = path.join(tempDir, "card");
     fs.mkdirSync(sdCardPath, { recursive: true });
     fs.mkdirSync(localStorePath, { recursive: true });
-    createRomperDbFile(dbDir);
+    createStoreDb(dbDir);
     settings = { localStorePath };
 
     const files: Record<string, Buffer> = {

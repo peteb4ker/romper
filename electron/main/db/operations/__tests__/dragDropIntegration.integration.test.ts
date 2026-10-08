@@ -10,14 +10,12 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { createStoreDb } from "../../../../../tests/integration/support/storeDb.js";
 import {
   createTempStore,
   removeTempStore,
 } from "../../../../../tests/integration/support/tempStore.js";
-import {
-  createRomperDbFile,
-  ensureDatabaseMigrations,
-} from "../../utils/dbUtilities.js";
+import { ensureDatabaseMigrations } from "../../utils/dbUtilities.js";
 import { moveSample } from "../sampleManagementOps.js";
 
 const { kits, samples } = schema;
@@ -34,7 +32,7 @@ describe("[UC-21] Drag and Drop Integration Tests", () => {
     testDbPath = path.join(testDbDir, "romper.sqlite");
 
     // Create fresh database
-    const createResult = createRomperDbFile(testDbDir);
+    const createResult = createStoreDb(testDbDir);
     expect(createResult.success).toBe(true);
 
     // Initialize Drizzle

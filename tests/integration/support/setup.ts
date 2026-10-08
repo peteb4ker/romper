@@ -6,8 +6,14 @@
 // connections before deleting its temp store, the integration runner
 // (runner.ts) closes them all when each test's body ends, before any
 // afterEach hook runs. This file gives the runner this test file's copy of
-// the connection registry to close.
+// the connection registry to close, and deletes the folders the file's
+// helpers kept for all its tests (tempDirs.ts).
+import { afterAll } from "vitest";
+
 import { closeAllDbConnections } from "../../../electron/main/db/utils/dbConnections.js";
 import { registerDbConnectionCloser } from "./dbConnectionCloser.js";
+import { removeRegisteredTempDirs } from "./tempDirs.js";
 
 registerDbConnectionCloser(closeAllDbConnections);
+
+afterAll(removeRegisteredTempDirs);

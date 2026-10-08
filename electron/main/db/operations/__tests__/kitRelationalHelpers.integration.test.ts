@@ -3,11 +3,11 @@ import type { Voice } from "@romper/shared/db/schema.js";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
+import { createStoreDb } from "../../../../../tests/integration/support/storeDb.js";
 import {
   createTempStore,
   removeTempStore,
 } from "../../../../../tests/integration/support/tempStore.js";
-import { createRomperDbFile } from "../../utils/dbUtilities.js";
 import { addKit, getKit, getKits } from "../kitCrudOperations.js";
 import {
   combineKitWithRelations,
@@ -42,7 +42,7 @@ describe("Kit Relational Helpers - Integration Tests", () => {
   beforeEach(() => {
     tempDir = createTempStore("romper-kit-rel-");
     dbDir = join(tempDir, ".romperdb");
-    createRomperDbFile(dbDir);
+    createStoreDb(dbDir);
   });
 
   afterEach(() => {

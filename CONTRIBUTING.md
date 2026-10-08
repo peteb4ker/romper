@@ -8,7 +8,7 @@ Thanks for your interest in contributing. This is the short version; the
 Requires Node.js 22 and npm.
 
 ```bash
-npm install   # postinstall rebuilds better-sqlite3 for Electron's Node ABI
+npm ci        # installs exactly what package-lock.json lists
 npm run dev   # builds, then runs Vite + Electron; renderer edits hot-reload
 ```
 
@@ -23,7 +23,8 @@ Environment variables are listed under Configuration in the [README](README.md).
 1. Branch from `origin/main`. For parallel work,
    `npm run worktree:create <task-name>` creates a worktree on
    `feature/<task-name>` in `../romper-worktrees/<task-name>`, with its own
-   dev ports. Once its PR merges, `npm run worktree:remove <task-name>`
+   dev ports, and installs dependencies with `npm ci`, so the lockfile stays
+   as committed. Once its PR merges, `npm run worktree:remove <task-name>`
    deletes the worktree and its branch, even if you renamed the branch.
 2. Commit. The pre-commit hook runs the typecheck, and lints the staged
    files and runs the unit tests related to them; fix anything it reports

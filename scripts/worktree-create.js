@@ -230,15 +230,17 @@ function main() {
     const offset = getWorktreeOffset(mainRoot);
     const ports = setupEnvLocal(worktreePath, offset - 1); // -1 because the new worktree is already counted
 
-    // Phase 3: Install dependencies
+    // Phase 3: Install dependencies. npm ci installs exactly what the
+    // lockfile lists and never rewrites it; npm install would, and an npm
+    // older than the one that wrote the lockfile changes its format (#721).
     let depsInstalled = false;
     if (!skipInstall) {
       console.log("\nInstalling dependencies (this may take a minute)...");
       try {
-        runCommand("npm install", { cwd: worktreePath });
+        runCommand("npm ci", { cwd: worktreePath });
         depsInstalled = true;
       } catch {
-        console.error("npm install failed — you can retry manually");
+        console.error("npm ci failed — you can retry manually");
       }
     }
 

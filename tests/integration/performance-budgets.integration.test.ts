@@ -102,10 +102,10 @@ let sources: string;
 let settings: InMemorySettings;
 
 /** A WAV the user dropped this session */
-function dropped(name: string) {
+async function dropped(name: string) {
   const file = path.join(sources, name);
   wav(file, 330);
-  pathAccess.grantRead(file);
+  await pathAccess.grantRead(file);
   return file;
 }
 
@@ -243,7 +243,7 @@ describe("[Q-01] performance budgets: main-process operations", () => {
   });
 
   it("add sample", async () => {
-    const file = dropped("added.wav");
+    const file = await dropped("added.wav");
     await expectWithinBudget("integration/add sample", () =>
       invoke("add-sample-to-slot", "A0", 1, SAMPLES_PER_VOICE, file),
     );
@@ -266,7 +266,7 @@ describe("[Q-01] performance budgets: main-process operations", () => {
   });
 
   it("replace sample", async () => {
-    const file = dropped("replacement.wav");
+    const file = await dropped("replacement.wav");
     await expectWithinBudget("integration/replace sample", () =>
       invoke("replace-sample-in-slot", "A0", 1, 0, file),
     );
@@ -305,7 +305,7 @@ describe("[Q-01] performance budgets: main-process operations", () => {
         "B1",
         2,
         SAMPLES_PER_VOICE,
-        dropped("new.wav"),
+        await dropped("new.wav"),
       );
       // Load anything planning imports lazily, outside the measured call
       await invoke("generateSyncChangeSummary", card);

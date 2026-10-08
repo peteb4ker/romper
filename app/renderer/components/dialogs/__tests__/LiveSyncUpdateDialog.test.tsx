@@ -1,15 +1,11 @@
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import React from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { createSyncProgressStore } from "../../hooks/shared/syncProgressStore";
 import LiveSyncUpdateDialog from "../LiveSyncUpdateDialog";
 
 describe("LiveSyncUpdateDialog", () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   it("shows progress from the store as it changes", () => {
     const store = createSyncProgressStore();
     render(

@@ -1,5 +1,5 @@
 import * as kitUtilsShared from "@romper/shared/kitUtilsShared";
-import { cleanup, fireEvent, render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -48,7 +48,6 @@ describe("useVoicePanelUI", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
-    cleanup();
   });
 
   describe("initialization", () => {

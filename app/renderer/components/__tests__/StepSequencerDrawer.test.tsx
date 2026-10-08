@@ -12,7 +12,6 @@ describe("StepSequencerDrawer", () => {
   });
 
   afterEach(() => {
-    cleanup();
     vi.clearAllMocks();
   });
 

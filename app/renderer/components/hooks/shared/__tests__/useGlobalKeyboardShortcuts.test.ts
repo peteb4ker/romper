@@ -1,5 +1,5 @@
-import { cleanup, fireEvent, renderHook } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, renderHook } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useGlobalKeyboardShortcuts } from "../useGlobalKeyboardShortcuts";
 import { useUndoRedo } from "../useUndoRedo";
@@ -8,10 +8,6 @@ import { useUndoRedo } from "../useUndoRedo";
 vi.mock("../useUndoRedo");
 
 describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
-  // Unmount each test's hook so its document listener can't handle (and
-  // mark handled) the next test's key events
-  afterEach(() => cleanup());
-
   // Create fresh mocks for each test
   let mockUndo: unknown;
   let mockRedo: unknown;

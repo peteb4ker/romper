@@ -1,14 +1,10 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import React from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import Spinner from "../Spinner";
 
 describe("Spinner", () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   describe("rendering", () => {
     it("should render without crashing", () => {
       const { container } = render(<Spinner />);

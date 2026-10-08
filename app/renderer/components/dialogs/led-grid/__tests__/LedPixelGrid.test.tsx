@@ -1,6 +1,6 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { LED_COLS, LED_COUNT, LED_ROWS } from "../ledConstants";
 
@@ -32,10 +32,6 @@ describe("LedPixelGrid", () => {
       (cb) => setTimeout(cb, 16) as unknown as number,
     );
     global.cancelAnimationFrame = vi.fn((id: number) => clearTimeout(id));
-  });
-
-  afterEach(() => {
-    cleanup();
   });
 
   it("renders the grid container", () => {

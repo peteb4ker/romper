@@ -1,6 +1,6 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   SettingsContext,
@@ -34,10 +34,6 @@ function renderButton(
 }
 
 describe("[UC-23] [UC-35] SampleDeleteButton (RE-44)", () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   it("deletes at once when Confirm destructive actions is off", () => {
     const { onDelete, onRowClick } = renderButton(false);
 

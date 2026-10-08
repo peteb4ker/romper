@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import {
   afterEach,
@@ -121,7 +121,6 @@ describe("KitEditor", () => {
   });
 
   afterEach(() => {
-    cleanup();
     vi.clearAllMocks();
   });
 

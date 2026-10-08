@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -42,7 +42,6 @@ describe("[UC-34] SyncUpdateDialog", () => {
 
   afterEach(() => {
     vi.useRealTimers();
-    cleanup();
   });
 
   describe("when dialog is closed", () => {

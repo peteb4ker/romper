@@ -2,7 +2,6 @@ import type { DbResult, Sample } from "@romper/shared/db/schema";
 
 import {
   act,
-  cleanup,
   fireEvent,
   render,
   screen,
@@ -99,7 +98,6 @@ describe("[UC-07] [UC-24] a kit whose sample details can't be read (#628)", () =
   });
 
   afterEach(() => {
-    cleanup();
     vi.restoreAllMocks();
     onMessage.mockReset();
   });

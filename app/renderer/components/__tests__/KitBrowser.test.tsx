@@ -1,5 +1,5 @@
 // Test suite for KitBrowser component
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { render } from "../../../../tests/utils/renderWithProviders";
@@ -169,7 +169,6 @@ describe("KitBrowser", () => {
     });
   });
   afterEach(() => {
-    cleanup();
     vi.restoreAllMocks();
   });
 

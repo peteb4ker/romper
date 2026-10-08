@@ -1,12 +1,8 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import WizardPostInitGuidance from "../WizardPostInitGuidance";
-
-afterEach(() => {
-  cleanup();
-});
 
 describe("WizardPostInitGuidance", () => {
   it("[UC-03] renders blank folder guidance when isBlankFolder is true", () => {

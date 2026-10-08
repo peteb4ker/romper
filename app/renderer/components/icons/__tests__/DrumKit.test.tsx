@@ -1,14 +1,10 @@
-import { cleanup, render } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import React from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { DrumKit } from "../DrumKit";
 
 describe("DrumKit", () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   it("renders an svg element", () => {
     const { container } = render(<DrumKit />);
     expect(container.querySelector("svg")).not.toBeNull();

@@ -118,6 +118,10 @@ fill 2 mono voices."
   `npm run test:integration:fast -- <path>` yourself when you change code
   an integration test covers, and `npm run test:fast` when a change reaches
   further than the files it touches (shared types, IPC, the schema).
+- `vitest.setup.ts` unmounts everything a test rendered after each test
+  (`afterEach(cleanup)`), after the file's own `afterEach` hooks, so a
+  test file doesn't call `cleanup()` itself. Call it only to unmount part
+  way through a test.
 - An integration test that needs a store on disk makes it with
   `createTempStore("<prefix>-")` and deletes it with `removeTempStore(dir)`
   in `afterEach` (`tests/integration/support/tempStore.ts`). Don't close

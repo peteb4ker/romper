@@ -1,6 +1,6 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
 import KitVoicePanel from "../KitVoicePanel";
@@ -15,10 +15,6 @@ describe("KitVoicePanel Drag & Drop Integration", () => {
   beforeEach(() => {
     setupElectronAPIMock();
     vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    cleanup();
   });
 
   const createBaseProps = (overrides = {}) => ({

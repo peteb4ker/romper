@@ -1,14 +1,8 @@
 import type { DbResult, KitWithRelations } from "@romper/shared/db/schema";
 
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-} from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
@@ -84,10 +78,6 @@ describe("[UC-10] KitEditor favorite (#554)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setupElectronAPIMock();
-  });
-
-  afterEach(() => {
-    cleanup();
   });
 
   describe.each([

@@ -1,6 +1,6 @@
 import type { SliceStep } from "@romper/shared/sliceTypes";
 
-import { act, cleanup, renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import React from "react";
 import {
   afterEach,
@@ -133,13 +133,6 @@ function patternWith(steps: number[]): number[][] {
   for (const s of steps) p[0][s] = 127;
   return p;
 }
-
-// Testing Library only unmounts on its own when Vitest's globals are on, and
-// they aren't here. A hook left mounted keeps its timers (the 600 ms
-// rolled-step flash), which can then fire after jsdom is gone (#704).
-afterEach(() => {
-  cleanup();
-});
 
 describe("[UC-33] useSlicerEditor", () => {
   let api: ReturnType<typeof setupElectronAPIMock>;

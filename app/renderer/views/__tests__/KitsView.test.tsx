@@ -1,6 +1,5 @@
 // Test suite for KitsView component
 import {
-  cleanup,
   fireEvent,
   render,
   screen,
@@ -228,7 +227,6 @@ describe("KitsView", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
-    cleanup();
     globalMenuCallbacks = null;
   });
 

@@ -1,15 +1,11 @@
 import type { Kit } from "@romper/shared/db/schema";
 
 // Test suite for KitForm component
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import KitForm from "../KitForm";
-
-afterEach(() => {
-  cleanup();
-});
 
 describe("KitForm", () => {
   const baseKit = {

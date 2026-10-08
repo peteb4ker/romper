@@ -1,8 +1,8 @@
 import type { LocalStoreValidationDetailedResult } from "@romper/shared/db/schema";
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import AdvancedTab from "../AdvancedTab";
 
@@ -28,10 +28,6 @@ describe("AdvancedTab", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    cleanup();
   });
 
   describe("Component rendering", () => {

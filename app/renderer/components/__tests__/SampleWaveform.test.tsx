@@ -624,6 +624,101 @@ describe("SampleWaveform", () => {
       expect(sources[0].stop).not.toHaveBeenCalled();
     });
 
+    describe("[UC-29] a gain that couldn't be read (#636)", () => {
+      /** Slot 1 (gain known) and slot 2 (gain `gainDb`), both on voice 1 */
+      async function renderWithSlot2Gain() {
+        const pair = (a: number, b: number, gainDb: null | number) => (
+          <>
+            <SampleWaveform
+              kitName="A1"
+              playsStereo={false}
+              playTrigger={a}
+              slotNumber={1}
+              voiceNumber={1}
+            />
+            <SampleWaveform
+              gainDb={gainDb}
+              kitName="A1"
+              playsStereo={false}
+              playTrigger={b}
+              slotNumber={2}
+              voiceNumber={1}
+            />
+          </>
+        );
+        const { rerender } = render(pair(0, 0, null));
+        await act(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        });
+        return async (a: number, b: number, gainDb: null | number) => {
+          await act(async () => {
+            rerender(pair(a, b, gainDb));
+          });
+        };
+      }
+
+      it("plays nothing, and doesn't choke the voice", async () => {
+        const { sources } = setupRegionMocks();
+        const play = await renderWithSlot2Gain();
+
+        await play(1, 0, null); // slot 1 plays
+        await play(1, 1, null); // slot 2 is triggered
+
+        expect(sources).toHaveLength(1);
+        expect(sources[0].stop).not.toHaveBeenCalled();
+      });
+
+      it("doesn't play a trigger that arrived before its audio loaded", async () => {
+        const { sources } = setupRegionMocks();
+        const { rerender } = render(
+          <SampleWaveform
+            gainDb={null}
+            kitName="A1"
+            playsStereo={false}
+            playTrigger={0}
+            slotNumber={1}
+            voiceNumber={1}
+          />,
+        );
+        rerender(
+          <SampleWaveform
+            gainDb={null}
+            kitName="A1"
+            playsStereo={false}
+            playTrigger={1}
+            slotNumber={1}
+            voiceNumber={1}
+          />,
+        );
+        await act(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        });
+
+        expect(sources).toHaveLength(0);
+      });
+
+      it("plays at the gain once it's read, and chokes the voice again", async () => {
+        const { gainNodes, sources } = setupRegionMocks();
+        const play = await renderWithSlot2Gain();
+        await play(1, 0, null);
+        await play(1, 1, null);
+
+        await play(1, 1, -6); // the gain is read: the old trigger stays silent
+        expect(sources).toHaveLength(1);
+        await play(1, 2, -6);
+
+        expect(sources).toHaveLength(2);
+        expect(sources[0].stop).toHaveBeenCalled();
+        const slot2Volume = gainNodes.find((n) =>
+          sources[1].connect.mock.calls.some(([target]) => target === n),
+        )!;
+        expect(slot2Volume.gain.setValueAtTime).toHaveBeenCalledWith(
+          Math.pow(10, -6 / 20),
+          expect.any(Number),
+        );
+      });
+    });
+
     it("releases a finished slice's source and envelope", async () => {
       const { gainNodes, sources } = setupRegionMocks();
       await renderAndPlay({ length: 0.125, start: 0.25 });

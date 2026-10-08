@@ -18,7 +18,11 @@ import { claimVoice } from "./voiceChoke";
 const ANTI_CLICK_SECONDS = 0.002;
 
 interface SampleWaveformProps {
-  gainDb?: number; // Per-sample gain trim in dB (-24 to +12, 0 = unity)
+  /**
+   * Per-sample gain trim in dB (-24 to +12, 0 = unity); unset plays at 0 dB.
+   * Null means the gain couldn't be read, so the sample doesn't play (#636).
+   */
+  gainDb?: null | number;
   // Secure API - uses kit/voice/slot identifiers
   kitName: string;
   onError?: (error: string) => void;
@@ -434,6 +438,11 @@ const SampleWaveform: React.FC<SampleWaveformProps> = ({
 
   // Play sample and animate playhead (triggered by playTrigger prop)
   useEffect(() => {
+    // A gain that couldn't be read plays nothing, then or later (#636)
+    if (gainDb === null) {
+      handledPlayTriggerRef.current = playTrigger;
+      return;
+    }
     if (!playBuffer || !audioCtxRef.current) return;
     // Play only on a new trigger: not on mount, and not again when the
     // buffer reloads

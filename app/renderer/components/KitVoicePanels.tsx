@@ -133,6 +133,9 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
   const sampleMetadata =
     kitDetails?.status === "loaded" ? kitDetails.metadata : NO_METADATA;
   const gainsUnknown = kitDetails?.status !== "loaded";
+  // While they're read, previews play at 0 dB; once they've failed, previews
+  // don't play until a read succeeds (#636)
+  const gainsUnreadable = kitDetails?.status === "failed";
   // Gain saves; reset when the metadata is reloaded from main (RE-91)
   const { reset: resetGainSaves, save: saveGain } = useSettingSave<
     string,
@@ -743,6 +746,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                   <KitVoicePanel
                     dataTestIdVoiceName={`voice-name-${voice}`}
                     gainsUnknown={gainsUnknown}
+                    gainsUnreadable={gainsUnreadable}
                     isActive={voice === hookProps.selectedVoice}
                     isDisabled={isSecondary}
                     isEditable={props.isEditable ?? false}

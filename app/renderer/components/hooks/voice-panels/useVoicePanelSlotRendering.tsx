@@ -62,6 +62,7 @@ export interface UseVoicePanelSlotRenderingOptions extends BaseVoicePanelOptions
 export function useVoicePanelSlotRendering({
   dragAndDropHook,
   gainsUnknown,
+  gainsUnreadable,
   handleCombinedDragLeave,
   handleCombinedDragOver,
   handleCombinedDrop,
@@ -255,7 +256,8 @@ export function useVoicePanelSlotRendering({
           )}
           {isEditable && renderDeleteButton(slotNumber, sampleName)}
           <SampleWaveform
-            gainDb={sampleData?.gain_db}
+            // Unread, the gain plays at 0 dB; unreadable, nothing plays (#636)
+            gainDb={gainsUnreadable ? null : sampleData?.gain_db}
             key={`${kitName}-${voice}-${uiSlotNumber}-${sampleName}`}
             kitName={kitName}
             onError={(err) => {
@@ -310,6 +312,7 @@ export function useVoicePanelSlotRendering({
       slotRenderingHook,
       isLinkedPrimary,
       gainsUnknown,
+      gainsUnreadable,
     ],
   );
 

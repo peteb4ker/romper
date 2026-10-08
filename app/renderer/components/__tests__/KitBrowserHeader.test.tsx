@@ -57,7 +57,7 @@ describe("KitBrowserHeader", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders modified toggle when handler provided", () => {
+  it("[UC-11] renders modified toggle when handler provided", () => {
     render(
       <KitBrowserHeader
         {...defaultProps}
@@ -66,8 +66,10 @@ describe("KitBrowserHeader", () => {
       />,
     );
     expect(
-      screen.getByRole("button", { name: "Show only modified kits" }),
-    ).toBeInTheDocument();
+      screen.getByRole("button", {
+        name: "Show kits with changes not yet on the SD card",
+      }),
+    ).toHaveAttribute("title", "Show kits with changes not yet on the SD card");
   });
 
   it("renders LedIconGrid instead of static image", () => {

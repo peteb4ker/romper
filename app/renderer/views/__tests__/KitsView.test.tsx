@@ -1492,7 +1492,9 @@ describe("KitsView", () => {
       });
 
       fireEvent.click(
-        screen.getByRole("button", { name: "Show only modified kits" }),
+        screen.getByRole("button", {
+          name: "Show kits with changes not yet on the SD card",
+        }),
       );
 
       // A1 is the only kit the filter leaves out

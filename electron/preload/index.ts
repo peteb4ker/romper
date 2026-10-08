@@ -342,6 +342,15 @@ const electronAPI = {
       toSlot,
     );
   },
+  onLocalStoreDatabaseMissing: (callback: () => void) => {
+    isDev &&
+      console.debug("[IPC] onLocalStoreDatabaseMissing listener registered");
+    const listener = () => callback();
+    ipcRenderer.on("local-store-database-missing", listener);
+    return () => {
+      ipcRenderer.removeListener("local-store-database-missing", listener);
+    };
+  },
   onSyncProgress: (callback: (progress: SyncProgress) => void) => {
     isDev && console.debug("[IPC] onSyncProgress listener registered");
     ipcRenderer.removeAllListeners("sync-progress");

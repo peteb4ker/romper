@@ -92,7 +92,7 @@ If samples do not produce sound when you click play or use the step sequencer:
 
 ## Local store became invalid
 
-If Romper can't open your local store (for example, you moved or deleted the folder, or it's on a drive that isn't connected), it shows the **Invalid Local Store** dialog, at launch or while it's running. Romper keeps the store's location, so nothing is lost:
+If Romper can't open your local store (for example, you moved or deleted the folder or the database inside it, or it's on a drive that isn't connected), it shows the **Invalid Local Store** dialog, at launch or while it's running. Romper keeps the store's location, so nothing is lost. An edit made after the database went missing isn't saved; make it again once the store is back:
 
 - **Try Again** -- If the store is on a drive that isn't connected, connect it (or put the folder back where it was) and click **Try Again**. Romper opens the store as usual.
 - **Choose another directory** -- Click **Choose Another Local Store Directory**, pick a folder that holds a local store, and click **Use This Directory**.

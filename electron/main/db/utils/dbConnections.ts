@@ -18,11 +18,21 @@ export type RomperDb = BetterSQLite3Database<typeof schema>;
 
 export interface StoreConnection {
   db: RomperDb;
+  /**
+   * The database file the connection opened (device and inode), to tell
+   * when the file at the store's path is no longer that file (#535)
+   */
+  file?: { dev: number; ino: number };
   sqlite: BetterSqlite3.Database;
+  /** Watches the store's folder for the file being deleted or moved */
+  watcher?: { close: () => void };
 }
 
 /** Open connections, by the store's resolved `.romperdb` folder */
 const connections = new Map<string, StoreConnection>();
+
+/** Told when a store's database file is missing (#535) */
+let databaseMissingListener: ((dbDir: string) => void) | null = null;
 
 /**
  * Close every open connection. Runs at quit, when the local store changes,
@@ -44,6 +54,11 @@ export function closeDbConnection(dbDir: string): void {
   const connection = connections.get(key);
   if (!connection) return;
   connections.delete(key);
+  try {
+    connection.watcher?.close();
+  } catch {
+    // Closing the database matters; a watcher that won't close is harmless
+  }
   try {
     connection.sqlite.close();
   } catch (error) {
@@ -78,4 +93,30 @@ export function registerDbConnection(
   connection: StoreConnection,
 ): void {
   connections.set(connectionKey(dbDir), connection);
+}
+
+/**
+ * Report that the store in `dbDir` has no database file, so whoever listens
+ * (main tells the renderer, which shows the Invalid Local Store dialog) can
+ * react. A listener that throws doesn't fail the database operation.
+ */
+export function reportDatabaseMissing(dbDir: string): void {
+  try {
+    databaseMissingListener?.(connectionKey(dbDir));
+  } catch (error) {
+    console.warn(
+      "[Main] Couldn't report the missing database:",
+      error instanceof Error ? error.message : String(error),
+    );
+  }
+}
+
+/**
+ * Set the one listener told when a store's database file is missing, or
+ * clear it with null. Setting replaces any earlier listener.
+ */
+export function setDatabaseMissingListener(
+  listener: ((dbDir: string) => void) | null,
+): void {
+  databaseMissingListener = listener;
 }

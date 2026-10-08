@@ -160,6 +160,12 @@ export interface ElectronAPI {
       movedSample: Sample;
     }>
   >;
+  /**
+   * Call `callback` when main finds the local store's database file missing
+   * (deleted or moved while Romper runs, #535). Returns a function that
+   * stops listening.
+   */
+  onLocalStoreDatabaseMissing: (callback: () => void) => () => void;
   onSyncProgress: (callback: (progress: SyncProgress) => void) => void;
   openExternal: (url: string) => Promise<{ error?: string; success: boolean }>;
   readSettings: () => Promise<SettingsData>;

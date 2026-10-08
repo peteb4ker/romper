@@ -74,12 +74,16 @@ condensed checklist for these steps.
       results, rehearsal reports and performance budget results into
       `testing-summary.json`, attached to the release. It reads the open
       issues with `GH_TOKEN` too, to generate each use case's status as
-      the release ships. Publishing the
-      release rebuilds the website, whose
+      the release ships. After publishing a
+      stable release, the job starts the Pages workflow, which rebuilds the
+      website so its
       [testing page](https://peteb4ker.github.io/romper/testing/) shows the
-      latest release's summary.
+      latest release's summary. The Pages build fails if that summary is
+      missing or has no results. To republish it by hand:
+      `gh workflow run pages.yml --ref main`.
 5. **Verify** the release page: all six artifacts and `testing-summary.json`
-   are attached, and **Latest** points where you expect.
+   are attached, and **Latest** points where you expect. Check the testing
+   page shows the new version.
 
 Only a tag-triggered run exercises macOS signing
 (`electron/resources/rcodesign.toml`). PR CI doesn't, so treat any change to

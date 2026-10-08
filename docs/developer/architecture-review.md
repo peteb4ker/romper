@@ -227,8 +227,12 @@ What the numbers say:
   Play state is keyed by voice and filename (RE-45).
 - **Gain writes on every input event (RE-88).** Each wheel step or mousemove
   of the knob writes to the database and re-renders all four voice panels.
-- **RE-46 is unchanged.** A playing waveform rebuilds its whole envelope and
-  calls `getComputedStyle` on every frame.
+- **RE-46: the waveform is fixed (#461).** A playing waveform used to
+  rebuild its whole envelope and call `getComputedStyle` on every frame. It
+  now draws the envelope once per sample and color, and each frame copies
+  it and draws only the playhead, without rendering. The LED icon's loop
+  still runs while idle: its idle drift is visible, so pausing it is a
+  product decision.
 - **RE-47 is unchanged:**
   - the message context value changes on every toast;
   - `itemData` is rebuilt on every render;

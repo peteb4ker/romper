@@ -16,7 +16,7 @@ export function applyTheme(isDark: boolean): void {
   const before = getAppliedTheme();
   document.documentElement.classList.toggle("dark", isDark);
   if (getAppliedTheme() === before) return;
-  for (const listener of [...listeners]) listener();
+  for (const listener of listeners) listener();
 }
 
 /** The theme on screen now */

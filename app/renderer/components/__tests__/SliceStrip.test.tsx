@@ -327,7 +327,7 @@ describe("SliceStrip waveform", () => {
     HTMLCanvasElement.prototype.getContext = vi.fn(
       () => canvas,
     ) as unknown as typeof HTMLCanvasElement.prototype.getContext;
-    api.getSampleAudioBuffer.mockResolvedValue({
+    vi.mocked(api.getSampleAudioBuffer).mockResolvedValue({
       data: { bytes: new ArrayBuffer(8), version: "v1" },
       success: true,
     });

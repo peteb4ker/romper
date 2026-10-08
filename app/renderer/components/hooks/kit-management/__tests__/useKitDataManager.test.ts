@@ -36,6 +36,13 @@ describe("useKitDataManager", () => {
         data: mockSamples,
         success: true,
       }),
+      // One kit with its samples, as main's get-kit returns it
+      getKit: vi.fn((name: string) =>
+        Promise.resolve({
+          data: createMockKitWithRelations({ name, samples: mockSamples }),
+          success: true,
+        }),
+      ),
       getKits: vi.fn().mockResolvedValue({
         data: mockKits,
         success: true,
@@ -178,17 +185,18 @@ describe("useKitDataManager", () => {
         voice_number: 1,
       }),
     ];
-    vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-      data: newSamples,
+    vi.mocked(window.electronAPI.getKit).mockResolvedValue({
+      data: createMockKitWithRelations({ name: "A0", samples: newSamples }),
       success: true,
     });
 
-    // Reload samples for A0
+    // Reload samples for A0: the kit and its samples come in one call
     await act(async () => {
       await result.current.reloadCurrentKitSamples("A0");
     });
 
-    expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith("A0");
+    expect(window.electronAPI.getKit).toHaveBeenCalledWith("A0");
+    expect(window.electronAPI.getAllSamplesForKit).not.toHaveBeenCalled();
   });
 
   it("should refresh all kits and samples", async () => {
@@ -265,17 +273,6 @@ describe("useKitDataManager", () => {
   });
 
   it("should handle empty kit name in reloadCurrentKitSamples", async () => {
-    // Fresh mock for isolated test
-    const freshMock = vi.fn().mockResolvedValue({
-      data: mockSamples,
-      success: true,
-    });
-
-    globalThis.electronAPI = {
-      getAllSamplesForKit: freshMock,
-      getKits: vi.fn().mockResolvedValue({ data: mockKits, success: true }),
-    } as unknown as typeof globalThis.electronAPI;
-
     const { result } = renderHook(() =>
       useKitDataManager({
         isInitialized: true,
@@ -289,7 +286,7 @@ describe("useKitDataManager", () => {
     });
 
     // The function will still call the API with empty string
-    expect(freshMock).toHaveBeenCalledWith("");
+    expect(window.electronAPI.getKit).toHaveBeenCalledWith("");
   });
 
   it("should update state when props change", () => {
@@ -880,8 +877,9 @@ describe("useKitDataManager", () => {
       return rendered;
     };
 
+    // The kit, samples and all, is read with one get-kit call (#452)
     const failSamples = () =>
-      vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
+      vi.mocked(window.electronAPI.getKit).mockResolvedValue({
         error: "database is locked",
         success: false,
       });
@@ -911,7 +909,7 @@ describe("useKitDataManager", () => {
       it("keeps them when the call throws", async () => {
         const { result } = await renderLoaded();
         const shown = result.current.allKitSamples.A0;
-        vi.mocked(window.electronAPI.getAllSamplesForKit).mockRejectedValue(
+        vi.mocked(window.electronAPI.getKit).mockRejectedValue(
           new Error("IPC closed"),
         );
 
@@ -949,8 +947,8 @@ describe("useKitDataManager", () => {
         const newSamples = [
           createMockSample({ filename: "new.wav", voice_number: 3 }),
         ];
-        vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-          data: newSamples,
+        vi.mocked(window.electronAPI.getKit).mockResolvedValue({
+          data: createMockKitWithRelations({ name: "A0", samples: newSamples }),
           success: true,
         });
 
@@ -971,9 +969,7 @@ describe("useKitDataManager", () => {
           await result.current.loadKitSamplesOnOpen("A0");
         });
 
-        expect(window.electronAPI.getAllSamplesForKit).toHaveBeenCalledWith(
-          "A0",
-        );
+        expect(window.electronAPI.getKit).toHaveBeenCalledWith("A0");
         expect(onMessage).toHaveBeenCalledWith(FAILED_A0, "error");
         expect(result.current.allKitSamples.A0).toBeUndefined();
         expect(result.current.getKitByName("A0")?.editable).toBe(false);
@@ -1007,8 +1003,8 @@ describe("useKitDataManager", () => {
         await act(async () => {
           await result.current.loadKitSamplesOnOpen("A0");
         });
-        vi.mocked(window.electronAPI.getAllSamplesForKit).mockResolvedValue({
-          data: mockSamples,
+        vi.mocked(window.electronAPI.getKit).mockResolvedValue({
+          data: { ...unloadedA0, samples: mockSamples },
           success: true,
         });
 
@@ -1041,6 +1037,10 @@ describe("useKitDataManager", () => {
 
       it("loads the samples on opening when they can be loaded", async () => {
         const { result } = await renderLoaded([unloadedA0]);
+        vi.mocked(window.electronAPI.getKit).mockResolvedValue({
+          data: { ...unloadedA0, samples: mockSamples },
+          success: true,
+        });
 
         await act(async () => {
           await result.current.loadKitSamplesOnOpen("A0");
@@ -1059,7 +1059,7 @@ describe("useKitDataManager", () => {
         await result.current.loadKitSamplesOnOpen("A0");
       });
 
-      expect(window.electronAPI.getAllSamplesForKit).not.toHaveBeenCalled();
+      expect(window.electronAPI.getKit).not.toHaveBeenCalled();
     });
 
     it("doesn't fetch for a kit that isn't in the list", async () => {
@@ -1069,7 +1069,7 @@ describe("useKitDataManager", () => {
         await result.current.loadKitSamplesOnOpen("Z9");
       });
 
-      expect(window.electronAPI.getAllSamplesForKit).not.toHaveBeenCalled();
+      expect(window.electronAPI.getKit).not.toHaveBeenCalled();
     });
   });
 
@@ -1348,6 +1348,222 @@ describe("useKitDataManager", () => {
 
         expect(result.current.sampleCounts).toEqual({});
       });
+    });
+  });
+
+  // #452: an edit reloads only its kit, and a slower, older response can't
+  // put older data back over newer
+  describe("[Q-01] reloading one kit (#452)", () => {
+    type KitResult = DbResult<KitWithRelations>;
+    type KitsResult = DbResult<KitWithRelations[]>;
+
+    /** A promise the test resolves when it chooses */
+    function deferred<T>() {
+      let resolve!: (value: T) => void;
+      const promise = new Promise<T>((r) => {
+        resolve = r;
+      });
+      return { promise, resolve };
+    }
+
+    const kitWith = (name: string, filename: string, voice = 1) =>
+      createMockKitWithRelations({
+        name,
+        samples: [createMockSample({ filename, voice_number: voice })],
+        step_pattern: null,
+      });
+    const ok = <T>(data: T) => ({ data, success: true as const });
+
+    const renderLoaded = async () => {
+      const rendered = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          isLocalStoreReady: true,
+          localStorePath: "/test/path",
+        }),
+      );
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      vi.mocked(window.electronAPI.getKits).mockClear();
+      return rendered;
+    };
+    const voice1 = (
+      result: { current: ReturnType<typeof useKitDataManager> },
+      kit: string,
+    ) => result.current.allKitSamples[kit]?.[1]?.[0];
+
+    it("[UC-19] reloads the kit with one get-kit call, not every kit", async () => {
+      const { result } = await renderLoaded();
+      const otherKit = result.current.getKitByName("A1");
+      vi.mocked(window.electronAPI.getKit).mockResolvedValue(
+        ok(kitWith("A0", "added.wav")),
+      );
+
+      let reloaded: boolean | undefined;
+      await act(async () => {
+        reloaded = await result.current.refreshKit("A0");
+      });
+
+      expect(reloaded).toBe(true);
+      expect(window.electronAPI.getKit).toHaveBeenCalledTimes(1);
+      expect(window.electronAPI.getKits).not.toHaveBeenCalled();
+      expect(window.electronAPI.getAllSamplesForKit).not.toHaveBeenCalled();
+      // Both copies of the kit's samples change together
+      expect(voice1(result, "A0")).toBe("added.wav");
+      expect(result.current.getKitByName("A0")?.samples?.[0]?.filename).toBe(
+        "added.wav",
+      );
+      // Other kits keep their objects, so they don't redraw
+      expect(result.current.getKitByName("A1")).toBe(otherKit);
+    });
+
+    it("[UC-30] drops an older response that arrives after a newer one", async () => {
+      const { result } = await renderLoaded();
+      const first = deferred<KitResult>();
+      const second = deferred<KitResult>();
+      vi.mocked(window.electronAPI.getKit)
+        .mockReturnValueOnce(first.promise)
+        .mockReturnValueOnce(second.promise);
+
+      let older: Promise<boolean>;
+      let newer: Promise<boolean>;
+      act(() => {
+        older = result.current.refreshKit("A0");
+        newer = result.current.refreshKit("A0");
+      });
+      await act(async () => {
+        second.resolve(ok(kitWith("A0", "newer.wav")));
+        await newer;
+      });
+      await act(async () => {
+        first.resolve(ok(kitWith("A0", "older.wav")));
+        await older;
+      });
+
+      expect(voice1(result, "A0")).toBe("newer.wav");
+    });
+
+    it("keeps a kit read sent after a full load that arrives later", async () => {
+      const { result } = await renderLoaded();
+      const full = deferred<KitsResult>();
+      vi.mocked(window.electronAPI.getKits).mockReturnValueOnce(full.promise);
+      vi.mocked(window.electronAPI.getKit).mockResolvedValue(
+        ok(kitWith("A0", "edited.wav")),
+      );
+
+      let fullLoad: Promise<void>;
+      act(() => {
+        fullLoad = result.current.refreshAllKitsAndSamples();
+      });
+      await act(async () => {
+        await result.current.refreshKit("A0");
+      });
+      await act(async () => {
+        full.resolve(
+          ok([kitWith("A0", "stale.wav"), kitWith("A1", "fresh.wav")]),
+        );
+        await fullLoad;
+      });
+
+      expect(voice1(result, "A0")).toBe("edited.wav");
+      expect(result.current.getKitByName("A0")?.samples?.[0]?.filename).toBe(
+        "edited.wav",
+      );
+      // The rest of the full load lands
+      expect(voice1(result, "A1")).toBe("fresh.wav");
+    });
+
+    it("drops a kit read sent before a full load that landed first", async () => {
+      const { result } = await renderLoaded();
+      const kitRead = deferred<KitResult>();
+      vi.mocked(window.electronAPI.getKit).mockReturnValueOnce(kitRead.promise);
+      vi.mocked(window.electronAPI.getKits).mockResolvedValue(
+        ok([kitWith("A0", "fresh.wav"), kitWith("A1", "fresh.wav")]),
+      );
+
+      let read: Promise<boolean>;
+      act(() => {
+        read = result.current.refreshKit("A0");
+      });
+      await act(async () => {
+        await result.current.refreshAllKitsAndSamples();
+      });
+      await act(async () => {
+        kitRead.resolve(ok(kitWith("A0", "stale.wav")));
+        await read;
+      });
+
+      expect(voice1(result, "A0")).toBe("fresh.wav");
+    });
+
+    it("drops an older full load that arrives after a newer one", async () => {
+      const { result } = await renderLoaded();
+      const older = deferred<KitsResult>();
+      vi.mocked(window.electronAPI.getKits)
+        .mockReturnValueOnce(older.promise)
+        .mockResolvedValueOnce(ok([kitWith("B0", "newer.wav")]));
+
+      let olderLoad: Promise<void>;
+      act(() => {
+        olderLoad = result.current.refreshAllKitsAndSamples();
+      });
+      await act(async () => {
+        await result.current.refreshAllKitsAndSamples();
+      });
+      await act(async () => {
+        older.resolve(ok([kitWith("A0", "older.wav")]));
+        await olderLoad;
+      });
+
+      expect(result.current.kits.map((kit) => kit.name)).toEqual(["B0"]);
+    });
+
+    it("keeps what's shown, without a message, when the kit can't be read", async () => {
+      const onMessage = vi.fn();
+      const rendered = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          isLocalStoreReady: true,
+          localStorePath: "/test/path",
+          onMessage,
+        }),
+      );
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      const { result } = rendered;
+      const kitsShown = result.current.kits;
+      const samplesShown = result.current.allKitSamples;
+      vi.mocked(window.electronAPI.getKit).mockResolvedValue({
+        error: "database is locked",
+        success: false,
+      });
+
+      let reloaded: boolean | undefined;
+      await act(async () => {
+        reloaded = await result.current.refreshKit("A0");
+      });
+
+      expect(reloaded).toBe(false);
+      expect(result.current.kits).toBe(kitsShown);
+      expect(result.current.allKitSamples).toBe(samplesShown);
+      expect(onMessage).not.toHaveBeenCalled();
+    });
+
+    it("treats a kit that's no longer there as unreadable", async () => {
+      const { result } = await renderLoaded();
+      const kitsShown = result.current.kits;
+      // Main answers a kit it can't find with no kit
+      vi.mocked(window.electronAPI.getKit).mockResolvedValue({ success: true });
+
+      let reloaded: boolean | undefined;
+      await act(async () => {
+        reloaded = await result.current.refreshKit("A0");
+      });
+
+      expect(reloaded).toBe(false);
+      expect(result.current.kits).toBe(kitsShown);
     });
   });
 });

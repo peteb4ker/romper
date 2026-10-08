@@ -120,11 +120,13 @@ Renderer paths are under `app/renderer/components/` unless they start with
 
 1. **One kits array, many mirrors.** `useKitDataManager` holds `kits`
    (from `get-all-kits`) and `allKitSamples`. Everything else is derived
-   from them and re-syncs only when an object's identity changes. Most edits
-   end in a full `getKits` reload (`refreshAllKitsAndSamples`, #452); a
-   BPM save patches its kit in `kits` instead, a gain save doesn't reach it
-   at all, and nothing sequences concurrent reloads, so an older response
-   can land last.
+   from them and re-syncs only when an object's identity changes. An edit
+   in the kit editor reloads its kit with one `get-kit` call
+   (`refreshKit`), and reads are numbered so an older response can't land
+   over a newer one; changes to the list itself reload every kit
+   (`refreshAllKitsAndSamples`). A BPM save patches its kit in `kits`
+   instead, and a gain save doesn't reach it at all (#452; plan in
+   [`kit-refresh.md`](kit-refresh.md)).
 2. **The kit editor isn't remounted between kits.** `KitsView` renders
    `KitEditorContainer` without a `key`, and the error boundary's
    `resetKey` only clears its error. Every `useState` and `useRef` in the
@@ -384,9 +386,10 @@ Kit fields, each owned by a column of `kits`:
   - Main enforces `editable` only for stereo links (RE-71). Sample add,
     delete and move, gain, voice names and kit delete are refused
     only by the renderer (#572).
-  - The step pattern and trigger conditions reload every kit on every save,
-    undebounced, so a slower earlier reload can put an older pattern back
-    for a moment (#452).
+  - The step pattern and trigger conditions reload their kit on every
+    save, undebounced. An older reload can't land over a newer one, but a
+    reload that returns while the next toggle is still saving shows the
+    pattern without it for a moment (#452).
   - `updateKit` still accepts `name` and `bank_letter`; only
     `parseKitMetadataUpdates` stops a renderer rename
     (RE-22). Six channels reach it with different validation.
@@ -587,11 +590,9 @@ voice and slot):
   - The card name is `<voice>-<slot+1, two digits> <name>.wav`, at most 64
     characters (`cardSampleFileName`).
 - **Disagreements on main:**
-  - Three sample copies refresh through different calls:
-    `refreshSingleKitMetadata` updates `kits[i].samples` but not
-    `allKitSamples`; `reloadCurrentKitSamples` does the opposite;
-    `sampleMetadata` refetches only when the kit object changes (#452,
-    target step 8).
+  - `kits[i].samples` and `allKitSamples` refresh together (`refreshKit`),
+    but `sampleMetadata` refetches its own copy whenever the kit object
+    changes (#452, target step 8).
   - Search reads `allKitSamples` as objects, but its values are file-name
     strings, so that input matches nothing; search works from
     `kit.samples` only.

@@ -65,8 +65,34 @@ describe("[UC-13] useKitScanning", () => {
         sampleCount: 12,
         status: "success",
       });
-      expect(onRequestSamplesReload).toHaveBeenCalled();
-      expect(reloadKit).toHaveBeenCalled();
+      // One reload brings back the samples and the voice names (#452)
+      expect(onRequestSamplesReload).toHaveBeenCalledTimes(1);
+      expect(onRequestSamplesReload).toHaveBeenCalledWith("A0");
+      expect(reloadKit).not.toHaveBeenCalled();
+    });
+
+    it("[Q-01] reloads the kit itself when no samples reload is provided", async () => {
+      vi.mocked(window.electronAPI.rescanKit).mockResolvedValue({
+        data: {
+          addedSamples: 0,
+          locked: false,
+          metadataUpdated: 0,
+          missingSamples: [],
+          scannedSamples: 1,
+          skippedFiles: [],
+          updatedVoices: 0,
+        },
+        success: true,
+      });
+      const { result } = renderHook(() =>
+        useKitScanning({ ...defaultParams, onRequestSamplesReload: undefined }),
+      );
+
+      await act(async () => {
+        await result.current.handleScanKit();
+      });
+
+      expect(reloadKit).toHaveBeenCalledTimes(1);
     });
 
     it("says a locked kit was left unchanged", async () => {

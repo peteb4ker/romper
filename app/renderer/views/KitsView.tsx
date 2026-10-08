@@ -70,7 +70,7 @@ const KitsView: React.FC = () => {
     loadKitSamplesOnOpen,
     markKitModified,
     refreshAllKitsAndSamples,
-    refreshSingleKitMetadata,
+    refreshKit,
     reloadCurrentKitSamples,
     sampleCounts,
     toggleKitEditable,
@@ -166,10 +166,9 @@ const KitsView: React.FC = () => {
     }
   }, [navigation.selectedKit]);
 
-  // Reload the selected kit's samples and data (its sequence) when undo
+  // Reload the selected kit, its samples and data (its sequence), when undo
   // operations request it
   useSampleRefreshListener({
-    refreshKitMetadata: refreshSingleKitMetadata,
     reloadCurrentKitSamples,
     selectedKit: navigation.selectedKit,
   });
@@ -192,12 +191,24 @@ const KitsView: React.FC = () => {
     [nextUndo, undo],
   );
 
-  // Handle samples reload request
-  const handleRequestSamplesReload = useCallback(async () => {
-    if (navigation.selectedKit) {
-      await reloadCurrentKitSamples(navigation.selectedKit);
-    }
-  }, [navigation.selectedKit, reloadCurrentKitSamples]);
+  // Reload a kit after its samples changed: the kit the edit was made in,
+  // or else the open one
+  const handleRequestSamplesReload = useCallback(
+    async (kitName?: string) => {
+      const kit = kitName ?? navigation.selectedKit;
+      if (kit) await reloadCurrentKitSamples(kit);
+    },
+    [navigation.selectedKit, reloadCurrentKitSamples],
+  );
+
+  // An edit in the kit editor reloads only the kit it was made in, not
+  // every kit (#452)
+  const handleKitUpdated = useCallback(
+    async (kitName: string) => {
+      await refreshKit(kitName);
+    },
+    [refreshKit],
+  );
 
   // A BPM save doesn't reload the kit, so patch the loaded copy; otherwise
   // stepping back to the kit shows its old BPM (#565)
@@ -206,12 +217,12 @@ const KitsView: React.FC = () => {
     [updateKit],
   );
 
-  // Handle targeted kit metadata refresh (voice aliases only, no sample reload)
+  // Reload the open kit after its voice names change
   const handleRefreshKitMetadata = useCallback(async () => {
     if (navigation.selectedKit) {
-      await refreshSingleKitMetadata(navigation.selectedKit);
+      await refreshKit(navigation.selectedKit);
     }
-  }, [navigation.selectedKit, refreshSingleKitMetadata]);
+  }, [navigation.selectedKit, refreshKit]);
 
   return (
     <div className="flex flex-col h-full min-h-0" data-testid="kits-view">
@@ -243,7 +254,7 @@ const KitsView: React.FC = () => {
             onBack={navigation.handleBack}
             onBpmSaved={handleBpmSaved}
             onKitModified={markKitModified}
-            onKitUpdated={refreshAllKitsAndSamples}
+            onKitUpdated={handleKitUpdated}
             onMessage={showMessage}
             onNextKit={navigation.handleNextKit}
             onPrevKit={navigation.handlePrevKit}

@@ -82,7 +82,7 @@ const SCAN_SUCCESS_CLEAR_MS = 3000;
 interface UseKitScanningParams {
   kitName: string;
   onRefreshKitMetadata?: () => Promise<void>;
-  onRequestSamplesReload?: () => Promise<void>;
+  onRequestSamplesReload?: (kitName?: string) => Promise<void>;
   reloadKit: () => Promise<void>;
   samples: VoiceSamples;
   /**
@@ -166,13 +166,13 @@ export function useKitScanning({
           flashVoicePanels([1, 2, 3, 4]);
         }
 
-        // Trigger sample reload in parent component
+        // Reload the kit: its samples and the voice names the rescan
+        // found, in one call (#452)
         if (onRequestSamplesReload) {
-          await onRequestSamplesReload();
+          await onRequestSamplesReload(kitName);
+        } else {
+          await reloadKit();
         }
-
-        // Reload kit to show updated voice names from rescan
-        await reloadKit();
       } else {
         setScanStatus({
           message: result.error || "Rescan failed",

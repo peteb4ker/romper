@@ -17,12 +17,12 @@ interface KitEditorContainerProps {
   onBack: (scrollToKit?: string) => Promise<void>;
   onBpmSaved?: (kitName: string, bpm: number) => void;
   onKitModified?: (kitName: string) => void;
-  onKitUpdated: () => Promise<void>;
+  onKitUpdated: (kitName: string) => Promise<void>;
   onMessage: (text: string, type?: string, duration?: number) => void;
   onNextKit: () => void;
   onPrevKit: () => void;
   onRefreshKitMetadata?: () => Promise<void>;
-  onRequestSamplesReload: () => Promise<void>;
+  onRequestSamplesReload: (kitName?: string) => Promise<void>;
   onToggleEditableMode?: (kitName: string) => Promise<void>;
   onToggleFavorite?: (
     kitName: string,
@@ -75,9 +75,12 @@ const KitEditorContainer: React.FC<KitEditorContainerProps> = (props) => {
     [onMessage],
   );
 
-  const handleRequestSamplesReload = React.useCallback(() => {
-    return onRequestSamplesReload();
-  }, [onRequestSamplesReload]);
+  const handleRequestSamplesReload = React.useCallback(
+    (forKit?: string) => {
+      return onRequestSamplesReload(forKit);
+    },
+    [onRequestSamplesReload],
+  );
 
   return (
     <KitEditor

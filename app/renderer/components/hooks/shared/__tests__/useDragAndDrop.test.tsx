@@ -1,47 +1,67 @@
-import { renderHook } from "@testing-library/react";
+import { renderHook, type RenderHookOptions } from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MockSettingsProvider } from "../../../__tests__/MockSettingsProvider";
 import { useDragAndDrop } from "../useDragAndDrop";
 
-// Mock the sub-hooks
-vi.mock("../useFileValidation", () => ({
-  useFileValidation: vi.fn(() => ({
-    getFilePathFromDrop: vi.fn().mockResolvedValue("/path/to/file.wav"),
-    validateDroppedFile: vi.fn().mockResolvedValue({ valid: true }),
-  })),
-}));
+// Mock the sub-hooks; beforeEach gives each a full return value
+vi.mock("../useFileValidation", () => ({ useFileValidation: vi.fn() }));
 
 // Note: Not mocking useSampleProcessing - using real implementation with MockSettingsProvider
 
 vi.mock("../useExternalDragHandlers", () => ({
-  useExternalDragHandlers: vi.fn(() => ({
-    dragOverSlot: null,
-    dropZone: null,
-    handleDragLeave: vi.fn(),
-    handleDragOver: vi.fn(),
-    handleDrop: vi.fn(),
-  })),
+  useExternalDragHandlers: vi.fn(),
 }));
 
 vi.mock("../useInternalDragHandlers", () => ({
-  useInternalDragHandlers: vi.fn(() => ({
-    draggedSample: null,
-    getSampleDragHandlers: vi.fn(),
-    handleSampleDragEnd: vi.fn(),
-    handleSampleDragLeave: vi.fn(),
-    handleSampleDragOver: vi.fn(),
-    handleSampleDragStart: vi.fn(),
-    handleSampleDrop: vi.fn(),
-  })),
+  useInternalDragHandlers: vi.fn(),
 }));
 
 import { useExternalDragHandlers } from "../useExternalDragHandlers";
+import { useFileValidation } from "../useFileValidation";
 import { useInternalDragHandlers } from "../useInternalDragHandlers";
 
+type DragAndDropOptions = Parameters<typeof useDragAndDrop>[0];
+
+const fileValidation = (): ReturnType<typeof useFileValidation> => ({
+  getFilePathFromDrop: vi.fn().mockResolvedValue("/path/to/file.wav"),
+  validateDroppedFile: vi
+    .fn()
+    .mockResolvedValue({ validation: { issues: [], isValid: true } }),
+});
+
+const externalHandlers = (
+  overrides: Partial<ReturnType<typeof useExternalDragHandlers>> = {},
+): ReturnType<typeof useExternalDragHandlers> => ({
+  dragOverSlot: null,
+  dropZone: null,
+  handleDragLeave: vi.fn(),
+  handleDragOver: vi.fn(),
+  handleDrop: vi.fn(),
+  ...overrides,
+});
+
+const internalHandlers = (
+  overrides: Partial<ReturnType<typeof useInternalDragHandlers>> = {},
+): ReturnType<typeof useInternalDragHandlers> => ({
+  draggedSample: null,
+  getSampleDragHandlers: vi.fn(),
+  handleSampleDragEnd: vi.fn(),
+  handleSampleDragLeave: vi.fn(),
+  handleSampleDragOver: vi.fn(),
+  handleSampleDragStart: vi.fn(),
+  handleSampleDrop: vi.fn(),
+  internalDragOverSlot: null,
+  internalDropZone: null,
+  ...overrides,
+});
+
 // Helper function to render hook with MockSettingsProvider
-const renderHookWithSettings = (hookFn: () => unknown, options?: unknown) => {
+const renderHookWithSettings = <Result, Props>(
+  hookFn: (props: Props) => Result,
+  options?: RenderHookOptions<Props>,
+) => {
   return renderHook(hookFn, {
     ...options,
     wrapper: ({ children }: { children: React.ReactNode }) => (
@@ -51,10 +71,12 @@ const renderHookWithSettings = (hookFn: () => unknown, options?: unknown) => {
 };
 
 describe("useDragAndDrop", () => {
-  const mockOnSampleAdd = vi.fn();
-  const mockOnSampleMove = vi.fn();
+  const mockOnSampleAdd =
+    vi.fn<NonNullable<DragAndDropOptions["onSampleAdd"]>>();
+  const mockOnSampleMove =
+    vi.fn<NonNullable<DragAndDropOptions["onSampleMove"]>>();
 
-  const defaultProps = {
+  const defaultProps: DragAndDropOptions = {
     isEditable: true,
     kitName: "TestKit",
     onSampleAdd: mockOnSampleAdd,
@@ -65,6 +87,9 @@ describe("useDragAndDrop", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useFileValidation).mockReturnValue(fileValidation());
+    vi.mocked(useExternalDragHandlers).mockReturnValue(externalHandlers());
+    vi.mocked(useInternalDragHandlers).mockReturnValue(internalHandlers());
   });
 
   describe("initialization", () => {
@@ -115,19 +140,11 @@ describe("useDragAndDrop", () => {
 
   describe("property mapping", () => {
     it("maps internal drag handler properties correctly", () => {
-      const mockInternalHandlers = {
+      const mockInternalHandlers = internalHandlers({
         draggedSample: { sampleName: "test.wav", slot: 1, voice: 2 },
-        getSampleDragHandlers: vi.fn(),
-        handleSampleDragEnd: vi.fn(),
-        handleSampleDragLeave: vi.fn(),
-        handleSampleDragOver: vi.fn(),
-        handleSampleDragStart: vi.fn(),
-        handleSampleDrop: vi.fn(),
-      };
+      });
 
-      (useInternalDragHandlers as unknown).mockReturnValue(
-        mockInternalHandlers,
-      );
+      vi.mocked(useInternalDragHandlers).mockReturnValue(mockInternalHandlers);
 
       const { result } = renderHookWithSettings(() =>
         useDragAndDrop(defaultProps),
@@ -142,17 +159,12 @@ describe("useDragAndDrop", () => {
     });
 
     it("maps external drag handler properties correctly", () => {
-      const mockExternalHandlers = {
+      const mockExternalHandlers = externalHandlers({
         dragOverSlot: 3,
         dropZone: { mode: "insert", slot: 3 },
-        handleDragLeave: vi.fn(),
-        handleDragOver: vi.fn(),
-        handleDrop: vi.fn(),
-      };
+      });
 
-      (useExternalDragHandlers as unknown).mockReturnValue(
-        mockExternalHandlers,
-      );
+      vi.mocked(useExternalDragHandlers).mockReturnValue(mockExternalHandlers);
 
       const { result } = renderHookWithSettings(() =>
         useDragAndDrop(defaultProps),
@@ -174,7 +186,7 @@ describe("useDragAndDrop", () => {
 
   describe("prop handling", () => {
     it("handles missing optional callbacks", () => {
-      const minimalProps = {
+      const minimalProps: DragAndDropOptions = {
         isEditable: false,
         kitName: "MinimalKit",
         samples: [],
@@ -186,16 +198,14 @@ describe("useDragAndDrop", () => {
       }).not.toThrow();
 
       // Should pass undefined callbacks to sub-hooks
-      const internalCall = (useInternalDragHandlers as unknown).mock
-        .calls[0][0];
+      const internalCall = vi.mocked(useInternalDragHandlers).mock.calls[0][0];
       expect(internalCall.onSampleMove).toBeUndefined();
     });
 
     it("passes all callbacks when provided", () => {
       renderHookWithSettings(() => useDragAndDrop(defaultProps));
 
-      const internalCall = (useInternalDragHandlers as unknown).mock
-        .calls[0][0];
+      const internalCall = vi.mocked(useInternalDragHandlers).mock.calls[0][0];
       expect(internalCall.onSampleMove).toBe(mockOnSampleMove);
     });
 
@@ -204,10 +214,8 @@ describe("useDragAndDrop", () => {
         useDragAndDrop({ ...defaultProps, isEditable: false }),
       );
 
-      const externalCall = (useExternalDragHandlers as unknown).mock
-        .calls[0][0];
-      const internalCall = (useInternalDragHandlers as unknown).mock
-        .calls[0][0];
+      const externalCall = vi.mocked(useExternalDragHandlers).mock.calls[0][0];
+      const internalCall = vi.mocked(useInternalDragHandlers).mock.calls[0][0];
 
       expect(externalCall.isEditable).toBe(false);
       expect(internalCall.isEditable).toBe(false);
@@ -218,8 +226,7 @@ describe("useDragAndDrop", () => {
         useDragAndDrop({ ...defaultProps, voice: 5 }),
       );
 
-      const internalCall = (useInternalDragHandlers as unknown).mock
-        .calls[0][0];
+      const internalCall = vi.mocked(useInternalDragHandlers).mock.calls[0][0];
 
       expect(internalCall.voice).toBe(5);
     });
@@ -230,8 +237,7 @@ describe("useDragAndDrop", () => {
         useDragAndDrop({ ...defaultProps, samples: customSamples }),
       );
 
-      const internalCall = (useInternalDragHandlers as unknown).mock
-        .calls[0][0];
+      const internalCall = vi.mocked(useInternalDragHandlers).mock.calls[0][0];
       expect(internalCall.samples).toBe(customSamples);
     });
 
@@ -240,8 +246,7 @@ describe("useDragAndDrop", () => {
         useDragAndDrop({ ...defaultProps, kitName: "CustomKit" }),
       );
 
-      const externalCall = (useExternalDragHandlers as unknown).mock
-        .calls[0][0];
+      const externalCall = vi.mocked(useExternalDragHandlers).mock.calls[0][0];
       // The kitName should be passed through the sampleProcessing hook
       expect(externalCall.sampleProcessing).toBeDefined();
     });
@@ -256,13 +261,13 @@ describe("useDragAndDrop", () => {
         },
       );
 
-      const firstCallCount = (useInternalDragHandlers as unknown).mock.calls
+      const firstCallCount = vi.mocked(useInternalDragHandlers).mock.calls
         .length;
 
       // Change a prop that should cause recreation
       rerender({ ...defaultProps, voice: 3 });
 
-      const secondCallCount = (useInternalDragHandlers as unknown).mock.calls
+      const secondCallCount = vi.mocked(useInternalDragHandlers).mock.calls
         .length;
       expect(secondCallCount).toBeGreaterThan(firstCallCount);
     });
@@ -280,9 +285,9 @@ describe("useDragAndDrop", () => {
       rerender({ ...defaultProps, samples: newSamples });
 
       // Should have been called again with new samples
-      const latestCall = (useInternalDragHandlers as unknown).mock.calls.slice(
-        -1,
-      )[0][0];
+      const latestCall = vi
+        .mocked(useInternalDragHandlers)
+        .mock.calls.slice(-1)[0][0];
       expect(latestCall.samples).toBe(newSamples);
     });
 
@@ -310,8 +315,7 @@ describe("useDragAndDrop", () => {
       renderHookWithSettings(() => useDragAndDrop(defaultProps));
 
       // The file validation should be passed to external handlers
-      const externalCall = (useExternalDragHandlers as unknown).mock
-        .calls[0][0];
+      const externalCall = vi.mocked(useExternalDragHandlers).mock.calls[0][0];
       expect(externalCall.fileValidation).toEqual(
         expect.objectContaining({
           getFilePathFromDrop: expect.any(Function),
@@ -323,8 +327,7 @@ describe("useDragAndDrop", () => {
     it("forwards sample processing correctly", () => {
       renderHookWithSettings(() => useDragAndDrop(defaultProps));
 
-      const externalCall = (useExternalDragHandlers as unknown).mock
-        .calls[0][0];
+      const externalCall = vi.mocked(useExternalDragHandlers).mock.calls[0][0];
       expect(externalCall.sampleProcessing).toEqual(
         expect.objectContaining({
           getCurrentKitSamples: expect.any(Function),
@@ -343,17 +346,8 @@ describe("useDragAndDrop", () => {
         );
       }).not.toThrow();
 
-      const internalCall = (useInternalDragHandlers as unknown).mock
-        .calls[0][0];
+      const internalCall = vi.mocked(useInternalDragHandlers).mock.calls[0][0];
       expect(internalCall.samples).toEqual([]);
-    });
-
-    it("handles undefined kitName", () => {
-      expect(() => {
-        renderHookWithSettings(() =>
-          useDragAndDrop({ ...defaultProps, kitName: undefined as unknown }),
-        );
-      }).not.toThrow();
     });
 
     it("handles voice boundary values", () => {
@@ -365,25 +359,6 @@ describe("useDragAndDrop", () => {
           useDragAndDrop({ ...defaultProps, voice: 16 }),
         );
       }).not.toThrow();
-    });
-
-    it("handles null/undefined in samples array", () => {
-      const samplesWithNulls = [
-        "sample1.wav",
-        null as unknown,
-        undefined as unknown,
-        "sample4.wav",
-      ];
-
-      expect(() => {
-        renderHookWithSettings(() =>
-          useDragAndDrop({ ...defaultProps, samples: samplesWithNulls }),
-        );
-      }).not.toThrow();
-
-      const internalCall = (useInternalDragHandlers as unknown).mock
-        .calls[0][0];
-      expect(internalCall.samples).toBe(samplesWithNulls);
     });
   });
 

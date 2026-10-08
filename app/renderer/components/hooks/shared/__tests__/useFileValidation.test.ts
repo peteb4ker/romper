@@ -1,29 +1,39 @@
-import { renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { FormatValidationResult } from "@romper/shared/audioTypes";
 
+import { renderHook } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { defaultElectronFileAPIMock } from "../../../../../../tests/mocks/electron/electronFileAPI";
 import { rejectionForIssues, useFileValidation } from "../useFileValidation";
+
+/** The getDroppedFilePath mock vitest.setup.ts installs */
+const getDroppedFilePath = vi.mocked(
+  defaultElectronFileAPIMock.getDroppedFilePath,
+);
+
+/** A file dropped from the desktop, with the path Electron gives it */
+const droppedFile = (name: string, path?: string) =>
+  Object.assign(new File([], name), path === undefined ? {} : { path });
 
 describe("useFileValidation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
     // Reset centralized mocks to default state
-    if (window.electronFileAPI) {
-      vi.mocked(window.electronFileAPI.getDroppedFilePath).mockResolvedValue(
-        "/default/path.wav",
-      );
-    }
+    getDroppedFilePath.mockResolvedValue("/default/path.wav");
 
-    if (window.electronAPI) {
-      vi.mocked(window.electronAPI.validateSampleFormat).mockResolvedValue({
-        data: {
-          issues: [],
-          isValid: true,
-          metadata: { channels: 2, sampleRate: 44100 },
-        },
-        success: true,
-      });
-    }
+    vi.mocked(globalThis.electronAPI.validateSampleFormat).mockResolvedValue({
+      data: {
+        issues: [],
+        isValid: true,
+        metadata: { channels: 2, sampleRate: 44100 },
+      },
+      success: true,
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   describe("getFilePathFromDrop", () => {
@@ -33,74 +43,50 @@ describe("useFileValidation", () => {
       });
       const expectedPath = "/path/to/test.wav";
 
-      vi.mocked(window.electronFileAPI.getDroppedFilePath).mockResolvedValue(
-        expectedPath,
-      );
+      getDroppedFilePath.mockResolvedValue(expectedPath);
 
       const { result } = renderHook(() => useFileValidation());
 
       const filePath = await result.current.getFilePathFromDrop(mockFile);
 
-      expect(window.electronFileAPI.getDroppedFilePath).toHaveBeenCalledWith(
-        mockFile,
-      );
+      expect(getDroppedFilePath).toHaveBeenCalledWith(mockFile);
       expect(filePath).toBe(expectedPath);
     });
 
     it("should fallback to file.path when electronFileAPI not available", async () => {
-      const originalAPI = (window as unknown).electronFileAPI;
-      (window as unknown).electronFileAPI = undefined;
+      vi.stubGlobal("electronFileAPI", undefined);
 
-      const mockFile = {
-        name: "test.wav",
-        path: "/fallback/path/test.wav",
-      } as File;
+      const mockFile = droppedFile("test.wav", "/fallback/path/test.wav");
 
       const { result } = renderHook(() => useFileValidation());
 
       const filePath = await result.current.getFilePathFromDrop(mockFile);
 
       expect(filePath).toBe("/fallback/path/test.wav");
-
-      // Restore
-      (window as unknown).electronFileAPI = originalAPI;
     });
 
     it("should fallback to file.name when file.path not available", async () => {
-      const originalAPI = (window as unknown).electronFileAPI;
-      (window as unknown).electronFileAPI = undefined;
+      vi.stubGlobal("electronFileAPI", undefined);
 
-      const mockFile = {
-        name: "test.wav",
-      } as File;
+      const mockFile = droppedFile("test.wav");
 
       const { result } = renderHook(() => useFileValidation());
 
       const filePath = await result.current.getFilePathFromDrop(mockFile);
 
       expect(filePath).toBe("test.wav");
-
-      // Restore
-      (window as unknown).electronFileAPI = originalAPI;
     });
 
     it("should handle electronFileAPI method not available", async () => {
-      const originalAPI = window.electronFileAPI;
-      (window as unknown).electronFileAPI = {}; // Missing getDroppedFilePath
+      vi.stubGlobal("electronFileAPI", {}); // Missing getDroppedFilePath
 
-      const mockFile = {
-        name: "test.wav",
-        path: "/fallback/path/test.wav",
-      } as File;
+      const mockFile = droppedFile("test.wav", "/fallback/path/test.wav");
 
       const { result } = renderHook(() => useFileValidation());
 
       const filePath = await result.current.getFilePathFromDrop(mockFile);
 
       expect(filePath).toBe("/fallback/path/test.wav");
-
-      // Restore
-      (window as unknown).electronFileAPI = originalAPI;
     });
   });
 
@@ -140,13 +126,13 @@ describe("useFileValidation", () => {
     const testFilePath = "/path/to/test.wav";
 
     it("should validate file successfully", async () => {
-      const mockValidation = {
+      const mockValidation: FormatValidationResult = {
         issues: [],
         isValid: true,
         metadata: { channels: 2, sampleRate: 44100 },
       };
 
-      vi.mocked(window.electronAPI.validateSampleFormat).mockResolvedValue({
+      vi.mocked(globalThis.electronAPI.validateSampleFormat).mockResolvedValue({
         data: mockValidation,
         success: true,
       });
@@ -155,20 +141,20 @@ describe("useFileValidation", () => {
 
       const check = await result.current.validateDroppedFile(testFilePath);
 
-      expect(window.electronAPI.validateSampleFormat).toHaveBeenCalledWith(
+      expect(globalThis.electronAPI.validateSampleFormat).toHaveBeenCalledWith(
         testFilePath,
       );
       expect(check).toEqual({ validation: mockValidation });
     });
 
     it("should handle invalid file with resolvable issues", async () => {
-      const mockValidation = {
-        issues: [{ message: "High bitrate", type: "bitrate" }],
+      const mockValidation: FormatValidationResult = {
+        issues: [{ message: "High bit depth", type: "bitDepth" }],
         isValid: false,
         metadata: { channels: 2, sampleRate: 44100 },
       };
 
-      vi.mocked(window.electronAPI.validateSampleFormat).mockResolvedValue({
+      vi.mocked(globalThis.electronAPI.validateSampleFormat).mockResolvedValue({
         data: mockValidation,
         success: true,
       });
@@ -181,13 +167,12 @@ describe("useFileValidation", () => {
     });
 
     it("rejects a file with critical issues as not a WAV", async () => {
-      const mockValidation = {
+      const mockValidation: FormatValidationResult = {
         issues: [{ message: "Unsupported extension", type: "extension" }],
         isValid: false,
-        metadata: null,
       };
 
-      vi.mocked(window.electronAPI.validateSampleFormat).mockResolvedValue({
+      vi.mocked(globalThis.electronAPI.validateSampleFormat).mockResolvedValue({
         data: mockValidation,
         success: true,
       });
@@ -200,10 +185,11 @@ describe("useFileValidation", () => {
     });
 
     it("can't check the file when electronAPI isn't available", async () => {
-      const originalAPI = (window as unknown).electronAPI;
-      (window as unknown).electronAPI = undefined;
+      vi.stubGlobal("electronAPI", undefined);
 
-      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation();
+      const consoleWarnSpy = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
 
       const { result } = renderHook(() => useFileValidation());
 
@@ -215,14 +201,17 @@ describe("useFileValidation", () => {
       );
 
       consoleWarnSpy.mockRestore();
-      (window as unknown).electronAPI = originalAPI;
     });
 
     it("can't check the file when validateSampleFormat isn't available", async () => {
-      const originalAPI = (window as unknown).electronAPI;
-      (window as unknown).electronAPI = {}; // Missing validateSampleFormat
+      vi.stubGlobal("electronAPI", {
+        ...globalThis.electronAPI,
+        validateSampleFormat: undefined,
+      }); // Missing validateSampleFormat
 
-      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation();
+      const consoleWarnSpy = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
 
       const { result } = renderHook(() => useFileValidation());
 
@@ -234,16 +223,17 @@ describe("useFileValidation", () => {
       );
 
       consoleWarnSpy.mockRestore();
-      (window as unknown).electronAPI = originalAPI;
     });
 
     it("can't check the file when the validation call fails", async () => {
-      vi.mocked(window.electronAPI.validateSampleFormat).mockResolvedValue({
+      vi.mocked(globalThis.electronAPI.validateSampleFormat).mockResolvedValue({
         error: "Validation service unavailable",
         success: false,
       });
 
-      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation();
+      const consoleWarnSpy = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
 
       const { result } = renderHook(() => useFileValidation());
 
@@ -259,12 +249,13 @@ describe("useFileValidation", () => {
     });
 
     it("can't check the file when validation returns no data", async () => {
-      vi.mocked(window.electronAPI.validateSampleFormat).mockResolvedValue({
-        data: null,
+      vi.mocked(globalThis.electronAPI.validateSampleFormat).mockResolvedValue({
         success: true,
       });
 
-      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation();
+      const consoleWarnSpy = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
 
       const { result } = renderHook(() => useFileValidation());
 

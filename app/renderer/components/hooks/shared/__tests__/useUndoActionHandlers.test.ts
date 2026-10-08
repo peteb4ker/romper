@@ -1,5 +1,6 @@
 import type {
   AddSampleAction,
+  AnyUndoAction,
   DeleteSampleAction,
   MoveSampleAction,
   MoveSampleBetweenKitsAction,
@@ -15,6 +16,18 @@ import { useUndoActionHandlers } from "../useUndoActionHandlers";
 
 // Use centralized mocks from vitest.setup.ts
 
+// An action from outside AnyUndoAction, to reach the handler's defensive
+// default branch: the type mismatch is what the test is about.
+function unknownAction(): AnyUndoAction {
+  return {
+    data: {},
+    description: "Unknown action",
+    id: "test-id",
+    timestamp: new Date(),
+    type: "UNKNOWN_ACTION",
+  } as unknown as AnyUndoAction;
+}
+
 describe("useUndoActionHandlers", () => {
   const mockOptions = {
     kitName: "TestKit",
@@ -27,6 +40,7 @@ describe("useUndoActionHandlers", () => {
         gain_db: -6,
         slot_number: 0,
         source_path: "/kick.wav",
+        source_status: "readable",
         wav_bit_depth: 24,
         wav_bitrate: 2304000,
         wav_channels: 2,
@@ -100,7 +114,9 @@ describe("useUndoActionHandlers", () => {
           type: "ADD_SAMPLE",
         };
 
-        const consoleSpy = vi.spyOn(console, "log").mockImplementation();
+        const consoleSpy = vi
+          .spyOn(console, "log")
+          .mockImplementation(() => {});
 
         await result.current.executeUndoAction(action);
 
@@ -133,7 +149,9 @@ describe("useUndoActionHandlers", () => {
           type: "DELETE_SAMPLE",
         };
 
-        const consoleSpy = vi.spyOn(console, "log").mockImplementation();
+        const consoleSpy = vi
+          .spyOn(console, "log")
+          .mockImplementation(() => {});
 
         await result.current.executeUndoAction(action);
 
@@ -301,16 +319,8 @@ describe("useUndoActionHandlers", () => {
       it("should throw error for unknown action type", async () => {
         const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
 
-        const unknownAction = {
-          data: {},
-          description: "Unknown action",
-          id: "test-id",
-          timestamp: new Date(),
-          type: "UNKNOWN_ACTION",
-        } as unknown;
-
         await expect(
-          result.current.executeUndoAction(unknownAction),
+          result.current.executeUndoAction(unknownAction()),
         ).rejects.toThrow("Unknown action type: UNKNOWN_ACTION");
       });
     });

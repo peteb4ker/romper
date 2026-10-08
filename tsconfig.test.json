@@ -10,12 +10,15 @@
     "app/renderer/components/hooks/__tests__/**/*",
     "app/renderer/components/hooks/kit-management/__tests__/**/*",
     "app/renderer/components/hooks/sample-management/__tests__/**/*",
+    "app/renderer/components/hooks/shared/__tests__/**/*",
     "app/renderer/components/hooks/voice-panels/__tests__/**/*",
+    "app/renderer/components/hooks/wizard/__tests__/**/*",
     "app/renderer/components/icons/__tests__/**/*",
     "app/renderer/components/led-icon/__tests__/**/*",
     "app/renderer/components/preferences/__tests__/**/*",
     "app/renderer/components/shared/__tests__/**/*",
     "app/renderer/components/utils/__tests__/**/*",
+    "app/renderer/components/wizard/__tests__/**/*",
     "app/renderer/utils/__tests__/**/*",
     "app/renderer/views/__tests__/**/*",
     "electron/main/**/__tests__/**/*",
@@ -29,7 +32,6 @@
   "exclude": [
     "node_modules",
     "dist",
-    "coverage",
-    "electron/main/__tests__/dbIpcHandlers.test.ts"
+    "coverage"
   ]
 }

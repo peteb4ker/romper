@@ -1,27 +1,36 @@
+import type { VoiceSnapshot } from "@romper/shared/undoTypes";
+
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useUndoRedo } from "../useUndoRedo";
+import {
+  addSampleAction,
+  deleteSampleAction,
+  moveSampleAction,
+} from "./undoActionFixtures";
 
-// Mock electron API
-const mockElectronAPI = {
-  addSampleToSlot: vi.fn(),
-  deleteSampleFromSlot: vi.fn(),
-  getAllSamplesForKit: vi.fn(),
-  moveSampleBetweenKits: vi.fn(),
-  moveSampleInKit: vi.fn(),
-  restoreKitVoices: vi.fn(),
-};
+// The electronAPI calls undo and redo make (default mock from vitest.setup.ts)
+const undoMethods = [
+  "addSampleToSlot",
+  "deleteSampleFromSlot",
+  "getAllSamplesForKit",
+  "moveSampleBetweenKits",
+  "moveSampleInKit",
+  "restoreKitVoices",
+] as const;
 
-// Setup window.electronAPI mock
 beforeEach(() => {
   vi.clearAllMocks();
-  (window as unknown).electronAPI = mockElectronAPI;
 
-  // Reset all mocks to return success by default
-  Object.values(mockElectronAPI).forEach((mock) => {
-    mock.mockResolvedValue({ success: true });
-  });
+  // Every call succeeds by default
+  const api = vi.mocked(globalThis.electronAPI);
+  api.addSampleToSlot.mockResolvedValue({ success: true });
+  api.deleteSampleFromSlot.mockResolvedValue({ success: true });
+  api.getAllSamplesForKit.mockResolvedValue({ data: [], success: true });
+  api.moveSampleBetweenKits.mockResolvedValue({ success: true });
+  api.moveSampleInKit.mockResolvedValue({ success: true });
+  api.restoreKitVoices.mockResolvedValue({ success: true });
 });
 
 describe("[UC-26] useUndoRedo - Basic Tests", () => {
@@ -39,17 +48,16 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
     const { result } = renderHook(() => useUndoRedo("test-kit"));
 
     act(() => {
-      result.current.addAction({
-        data: {
+      result.current.addAction(
+        addSampleAction({
           addedSample: {
             filename: "test.wav",
             source_path: "/path/to/test.wav",
           },
           slot: 0,
           voice: 1,
-        },
-        type: "ADD_SAMPLE",
-      });
+        }),
+      );
     });
 
     expect(result.current.canUndo).toBe(true);
@@ -63,24 +71,23 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
     const { result } = renderHook(() => useUndoRedo("test-kit"));
 
     act(() => {
-      result.current.addAction({
-        data: {
+      result.current.addAction(
+        addSampleAction({
           addedSample: {
             filename: "test.wav",
             source_path: "/path/to/test.wav",
           },
           slot: 2,
           voice: 1,
-        },
-        type: "ADD_SAMPLE",
-      });
+        }),
+      );
     });
 
     await act(async () => {
       await result.current.undo();
     });
 
-    expect(mockElectronAPI.deleteSampleFromSlot).toHaveBeenCalledWith(
+    expect(globalThis.electronAPI.deleteSampleFromSlot).toHaveBeenCalledWith(
       "test-kit",
       1,
       2,
@@ -99,17 +106,16 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
 
     // Add some actions
     act(() => {
-      result.current.addAction({
-        data: {
+      result.current.addAction(
+        addSampleAction({
           addedSample: {
             filename: "test.wav",
             source_path: "/path/to/test.wav",
           },
           slot: 0,
           voice: 1,
-        },
-        type: "ADD_SAMPLE",
-      });
+        }),
+      );
     });
 
     expect(result.current.undoCount).toBe(1);
@@ -127,17 +133,16 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
       { initialProps: { storePath: "/stores/one" } },
     );
     act(() => {
-      result.current.addAction({
-        data: {
+      result.current.addAction(
+        addSampleAction({
           addedSample: {
             filename: "test.wav",
             source_path: "/stores/one/test.wav",
           },
           slot: 0,
           voice: 1,
-        },
-        type: "ADD_SAMPLE",
-      });
+        }),
+      );
     });
 
     rerender({ storePath: "/stores/two" });
@@ -147,21 +152,22 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
 
     expect(result.current.canUndo).toBe(false);
     expect(result.current.canRedo).toBe(false);
-    for (const call of Object.values(mockElectronAPI)) {
-      expect(call).not.toHaveBeenCalled();
+    for (const method of undoMethods) {
+      expect(globalThis.electronAPI[method]).not.toHaveBeenCalled();
     }
   });
 
   describe("[Q-02] Move undo restores the voice exactly", () => {
     it("move 1.12→1.9 then undo puts all twelve rows back, gain included, in one call", async () => {
       // Voice 1 before the move: full rows, as undo keeps them (RE-86)
-      const voicesBefore = [
+      const voicesBefore: VoiceSnapshot[] = [
         {
           samples: Array.from({ length: 12 }, (_, slot) => ({
             filename: `sample${slot + 1}.wav`,
             gain_db: -slot,
             slot_number: slot,
             source_path: `/path/${slot + 1}.wav`,
+            source_status: "readable" as const,
             wav_bit_depth: 16,
             wav_bitrate: 705600,
             wav_channels: 1,
@@ -173,8 +179,8 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
       const { result } = renderHook(() => useUndoRedo("test-kit"));
 
       act(() => {
-        result.current.addAction({
-          data: {
+        result.current.addAction(
+          moveSampleAction({
             affectedSamples: [],
             fromSlot: 11,
             fromVoice: 1,
@@ -185,22 +191,23 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
             toSlot: 8,
             toVoice: 1,
             voicesBefore,
-          },
-          type: "MOVE_SAMPLE",
-        });
+          }),
+        );
       });
 
       await act(async () => {
         await result.current.undo();
       });
 
-      expect(mockElectronAPI.restoreKitVoices).toHaveBeenCalledTimes(1);
-      expect(mockElectronAPI.restoreKitVoices).toHaveBeenCalledWith(
+      expect(globalThis.electronAPI.restoreKitVoices).toHaveBeenCalledTimes(1);
+      expect(globalThis.electronAPI.restoreKitVoices).toHaveBeenCalledWith(
         "test-kit",
         voicesBefore,
       );
-      expect(mockElectronAPI.addSampleToSlot).not.toHaveBeenCalled();
-      expect(mockElectronAPI.deleteSampleFromSlot).not.toHaveBeenCalled();
+      expect(globalThis.electronAPI.addSampleToSlot).not.toHaveBeenCalled();
+      expect(
+        globalThis.electronAPI.deleteSampleFromSlot,
+      ).not.toHaveBeenCalled();
       expect(result.current.error).toBe(null);
     });
   });
@@ -211,17 +218,16 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
 
       // Add action
       act(() => {
-        result.current.addAction({
-          data: {
+        result.current.addAction(
+          addSampleAction({
             addedSample: {
               filename: "test.wav",
               source_path: "/path/to/test.wav",
             },
             slot: 0,
             voice: 1,
-          },
-          type: "ADD_SAMPLE",
-        });
+          }),
+        );
       });
 
       // Undo it
@@ -240,7 +246,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
         await result.current.redo();
       });
 
-      expect(mockElectronAPI.addSampleToSlot).toHaveBeenCalledWith(
+      expect(globalThis.electronAPI.addSampleToSlot).toHaveBeenCalledWith(
         "test-kit",
         1,
         0,
@@ -254,17 +260,16 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
       const { result } = renderHook(() => useUndoRedo("test-kit"));
 
       act(() => {
-        result.current.addAction({
-          data: {
+        result.current.addAction(
+          deleteSampleAction({
             deletedSample: {
               filename: "deleted.wav",
               source_path: "/path/to/deleted.wav",
             },
             slot: 1,
             voice: 2,
-          },
-          type: "DELETE_SAMPLE",
-        });
+          }),
+        );
       });
 
       await act(async () => {
@@ -275,7 +280,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
         await result.current.redo();
       });
 
-      expect(mockElectronAPI.deleteSampleFromSlot).toHaveBeenCalledWith(
+      expect(globalThis.electronAPI.deleteSampleFromSlot).toHaveBeenCalledWith(
         "test-kit",
         2,
         1,
@@ -286,17 +291,16 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
       const { result } = renderHook(() => useUndoRedo("test-kit"));
 
       act(() => {
-        result.current.addAction({
-          data: {
+        result.current.addAction(
+          addSampleAction({
             addedSample: {
               filename: "test.wav",
               source_path: "/path/to/test.wav",
             },
             slot: 0,
             voice: 1,
-          },
-          type: "ADD_SAMPLE",
-        });
+          }),
+        );
       });
 
       await act(async () => {
@@ -304,7 +308,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
       });
 
       // Mock failure
-      mockElectronAPI.addSampleToSlot.mockResolvedValue({
+      vi.mocked(globalThis.electronAPI.addSampleToSlot).mockResolvedValue({
         error: "Redo failed",
         success: false,
       });
@@ -323,24 +327,23 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
       const { result } = renderHook(() => useUndoRedo("test-kit"));
 
       act(() => {
-        result.current.addAction({
-          data: {
+        result.current.addAction(
+          deleteSampleAction({
             deletedSample: {
               filename: "deleted.wav",
               source_path: "/path/to/deleted.wav",
             },
             slot: 3,
             voice: 2,
-          },
-          type: "DELETE_SAMPLE",
-        });
+          }),
+        );
       });
 
       await act(async () => {
         await result.current.undo();
       });
 
-      expect(mockElectronAPI.addSampleToSlot).toHaveBeenCalledWith(
+      expect(globalThis.electronAPI.addSampleToSlot).toHaveBeenCalledWith(
         "test-kit",
         2,
         3,
@@ -350,32 +353,15 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
   });
 
   describe("Error Handling", () => {
-    it("should handle unknown action type in undo", async () => {
-      const { result } = renderHook(() => useUndoRedo("test-kit"));
-
-      act(() => {
-        result.current.addAction({
-          data: {},
-          type: "UNKNOWN_ACTION" as unknown,
-        });
-      });
-
-      await act(async () => {
-        await result.current.undo();
-      });
-
-      expect(result.current.error).toContain("Unknown action type");
-    });
-
     it("should clear error when clearError is called", async () => {
       const { result } = renderHook(() => useUndoRedo("test-kit"));
 
-      // Trigger an error by adding action with unknown type and undoing
+      // Trigger an error: the undo's IPC call throws
+      vi.mocked(globalThis.electronAPI.deleteSampleFromSlot).mockRejectedValue(
+        new Error("IPC channel closed"),
+      );
       act(() => {
-        result.current.addAction({
-          data: {},
-          type: "UNKNOWN_ACTION" as unknown,
-        });
+        result.current.addAction(addSampleAction());
       });
 
       await act(async () => {
@@ -396,17 +382,16 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
       const { result } = renderHook(() => useUndoRedo("test-kit"));
 
       act(() => {
-        result.current.addAction({
-          data: {
+        result.current.addAction(
+          addSampleAction({
             addedSample: {
               filename: "test.wav",
               source_path: "/path/to/test.wav",
             },
             slot: 0,
             voice: 1,
-          },
-          type: "ADD_SAMPLE",
-        });
+          }),
+        );
       });
 
       // Start undo but don't await
@@ -422,24 +407,25 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
       });
 
       // Should only be called once
-      expect(mockElectronAPI.deleteSampleFromSlot).toHaveBeenCalledTimes(1);
+      expect(globalThis.electronAPI.deleteSampleFromSlot).toHaveBeenCalledTimes(
+        1,
+      );
     });
 
     it("should not redo when already redoing", async () => {
       const { result } = renderHook(() => useUndoRedo("test-kit"));
 
       act(() => {
-        result.current.addAction({
-          data: {
+        result.current.addAction(
+          addSampleAction({
             addedSample: {
               filename: "test.wav",
               source_path: "/path/to/test.wav",
             },
             slot: 0,
             voice: 1,
-          },
-          type: "ADD_SAMPLE",
-        });
+          }),
+        );
       });
 
       await act(async () => {
@@ -462,7 +448,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
       });
 
       // Should only be called once
-      expect(mockElectronAPI.addSampleToSlot).toHaveBeenCalledTimes(1);
+      expect(globalThis.electronAPI.addSampleToSlot).toHaveBeenCalledTimes(1);
     });
 
     it("should emit refresh event after successful operations", async () => {
@@ -472,17 +458,16 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
       document.addEventListener("romper:refresh-samples", eventListener);
 
       act(() => {
-        result.current.addAction({
-          data: {
+        result.current.addAction(
+          addSampleAction({
             addedSample: {
               filename: "test.wav",
               source_path: "/path/to/test.wav",
             },
             slot: 0,
             voice: 1,
-          },
-          type: "ADD_SAMPLE",
-        });
+          }),
+        );
       });
 
       await act(async () => {

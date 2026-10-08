@@ -43,6 +43,7 @@ describe("useStepPattern", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   describe("initialization", () => {
@@ -121,7 +122,7 @@ describe("useStepPattern", () => {
     });
 
     it("does not call API when electronAPI is not available", async () => {
-      (window as unknown).electronAPI = undefined;
+      vi.stubGlobal("electronAPI", undefined);
 
       const { result } = renderHook(() => useStepPattern({ kitName: "A0" }));
 
@@ -144,7 +145,10 @@ describe("useStepPattern", () => {
     });
 
     it("does not call API when updateStepPattern method is not available", async () => {
-      (window as unknown).electronAPI = {};
+      vi.stubGlobal("electronAPI", {
+        ...globalThis.electronAPI,
+        updateStepPattern: undefined,
+      });
 
       const { result } = renderHook(() => useStepPattern({ kitName: "A0" }));
 

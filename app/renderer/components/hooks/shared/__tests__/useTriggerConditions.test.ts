@@ -107,7 +107,7 @@ describe("useTriggerConditions", () => {
 
   describe("updateTriggerConditions", () => {
     it("should update conditions and call electronAPI on success", async () => {
-      mockElectronAPI.updateTriggerConditions.mockResolvedValue({
+      vi.mocked(mockElectronAPI.updateTriggerConditions).mockResolvedValue({
         success: true,
       });
 
@@ -232,7 +232,7 @@ describe("useTriggerConditions", () => {
       );
       initial[0][0] = "1:4";
 
-      mockElectronAPI.updateTriggerConditions.mockResolvedValue({
+      vi.mocked(mockElectronAPI.updateTriggerConditions).mockResolvedValue({
         success: false,
       });
 
@@ -261,7 +261,7 @@ describe("useTriggerConditions", () => {
       );
       initial[0][0] = "1:4";
 
-      mockElectronAPI.updateTriggerConditions.mockRejectedValue(
+      vi.mocked(mockElectronAPI.updateTriggerConditions).mockRejectedValue(
         new Error("Network error"),
       );
 
@@ -285,7 +285,7 @@ describe("useTriggerConditions", () => {
     });
 
     it("should revert to defaults when no initial conditions and API fails", async () => {
-      mockElectronAPI.updateTriggerConditions.mockResolvedValue({
+      vi.mocked(mockElectronAPI.updateTriggerConditions).mockResolvedValue({
         success: false,
       });
 
@@ -367,7 +367,7 @@ describe("useTriggerConditions", () => {
   describe("onSaved callback", () => {
     it("should call onSaved after successful save", async () => {
       const onSaved = vi.fn();
-      mockElectronAPI.updateTriggerConditions.mockResolvedValue({
+      vi.mocked(mockElectronAPI.updateTriggerConditions).mockResolvedValue({
         success: true,
       });
 
@@ -393,7 +393,7 @@ describe("useTriggerConditions", () => {
 
     it("should not call onSaved after failed save", async () => {
       const onSaved = vi.fn();
-      mockElectronAPI.updateTriggerConditions.mockResolvedValue({
+      vi.mocked(mockElectronAPI.updateTriggerConditions).mockResolvedValue({
         success: false,
       });
 
@@ -419,7 +419,7 @@ describe("useTriggerConditions", () => {
 
     it("should not call onSaved after API exception", async () => {
       const onSaved = vi.fn();
-      mockElectronAPI.updateTriggerConditions.mockRejectedValue(
+      vi.mocked(mockElectronAPI.updateTriggerConditions).mockRejectedValue(
         new Error("Network error"),
       );
 

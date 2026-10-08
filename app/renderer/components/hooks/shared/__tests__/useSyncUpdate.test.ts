@@ -1,36 +1,46 @@
+import type { DbResult } from "@romper/shared/db/schema";
+import type {
+  ElectronAPI,
+  SyncChangeSummary,
+  SyncOutcome,
+  SyncProgress,
+} from "@romper/shared/electronApi";
+
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { SyncChangeSummary } from "../../dialogs/SyncUpdateDialog";
-
+import { createElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
 import { useSyncUpdate } from "../useSyncUpdate";
 
+/** An electronAPI for the hook's dependency; overrides can leave a method out */
+const createAPI = (overrides: Partial<ElectronAPI> = {}): ElectronAPI =>
+  createElectronAPIMock(overrides);
+
+/** What a write reports when it finishes */
+const syncOutcome = (overrides: Partial<SyncOutcome> = {}): SyncOutcome => ({
+  cancelled: false,
+  skippedFiles: [],
+  syncedFiles: 0,
+  warnings: [],
+  ...overrides,
+});
+
 describe("useSyncUpdate", () => {
-  const mockElectronAPI = {
-    cancelKitSync: vi.fn(),
-    generateSyncChangeSummary: vi.fn(),
-    onSyncProgress: vi.fn(),
-    startKitSync: vi.fn(),
-  };
+  let mockElectronAPI = vi.mocked(createAPI());
 
   const mockChangeSummary: SyncChangeSummary = {
-    estimatedSize: 1024000,
-    estimatedTime: 10,
-    filesToConvert: [],
-    filesToCopy: [
-      {
-        destinationPath: "/sd/A0/kick.wav",
-        filename: "kick.wav",
-        operation: "copy",
-        sourcePath: "/path/to/kick.wav",
-      },
-    ],
-    hasFormatWarnings: false,
+    banks: [{ bank: "A", fileCount: 1, hasConversions: false, kitCount: 1 }],
+    fileCount: 1,
+    kitCount: 1,
+    removals: [],
+    stereo: { autoLinks: [], mixdowns: [], quarantined: [] },
+    validationErrors: [],
     warnings: [],
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockElectronAPI = vi.mocked(createAPI());
   });
 
   describe("initialization", () => {
@@ -115,8 +125,7 @@ describe("useSyncUpdate", () => {
     });
 
     it("should handle missing API method", async () => {
-      const incompleteAPI = { ...mockElectronAPI };
-      delete incompleteAPI.generateSyncChangeSummary;
+      const incompleteAPI = createAPI({ generateSyncChangeSummary: undefined });
 
       const { result } = renderHook(() =>
         useSyncUpdate({ electronAPI: incompleteAPI }),
@@ -132,8 +141,10 @@ describe("useSyncUpdate", () => {
     });
 
     it("should set loading state during operation", async () => {
-      let resolvePromise: (value: unknown) => void;
-      const promise = new Promise((resolve) => {
+      let resolvePromise: (
+        value: DbResult<SyncChangeSummary>,
+      ) => void = () => {};
+      const promise = new Promise<DbResult<SyncChangeSummary>>((resolve) => {
         resolvePromise = resolve;
       });
       mockElectronAPI.generateSyncChangeSummary.mockReturnValue(promise);
@@ -160,7 +171,7 @@ describe("useSyncUpdate", () => {
   describe("startSync", () => {
     it("should start sync successfully", async () => {
       mockElectronAPI.startKitSync.mockResolvedValue({
-        data: { syncedFiles: 1 },
+        data: syncOutcome({ syncedFiles: 1 }),
         success: true,
       });
 
@@ -195,7 +206,7 @@ describe("useSyncUpdate", () => {
 
       let success = true;
       await act(async () => {
-        success = await result.current.startSync(mockChangeSummary);
+        success = await result.current.startSync({ sdCardPath: "/path/to/sd" });
       });
 
       expect(success).toBe(false);
@@ -205,7 +216,7 @@ describe("useSyncUpdate", () => {
 
     it("should initialize sync progress", async () => {
       mockElectronAPI.startKitSync.mockResolvedValue({
-        data: {},
+        data: syncOutcome(),
         success: true,
       });
 
@@ -231,7 +242,7 @@ describe("useSyncUpdate", () => {
 
     it("should set up progress listener if available", async () => {
       mockElectronAPI.startKitSync.mockResolvedValue({
-        data: {},
+        data: syncOutcome(),
         success: true,
       });
 
@@ -240,15 +251,14 @@ describe("useSyncUpdate", () => {
       );
 
       await act(async () => {
-        await result.current.startSync(mockChangeSummary);
+        await result.current.startSync({ sdCardPath: "/path/to/sd" });
       });
 
       expect(mockElectronAPI.onSyncProgress).toHaveBeenCalled();
     });
 
     it("should handle missing API method", async () => {
-      const incompleteAPI = { ...mockElectronAPI };
-      delete incompleteAPI.startKitSync;
+      const incompleteAPI = createAPI({ startKitSync: undefined });
 
       const { result } = renderHook(() =>
         useSyncUpdate({ electronAPI: incompleteAPI }),
@@ -256,7 +266,7 @@ describe("useSyncUpdate", () => {
 
       let success = true;
       await act(async () => {
-        success = await result.current.startSync(mockChangeSummary);
+        success = await result.current.startSync({ sdCardPath: "/path/to/sd" });
       });
 
       expect(success).toBe(false);
@@ -280,17 +290,12 @@ describe("useSyncUpdate", () => {
     });
 
     it("ignores progress events delivered after the write's result", async () => {
-      let onProgress: ((progress: unknown) => void) | undefined;
-      mockElectronAPI.onSyncProgress = vi.fn((callback) => {
+      let onProgress: ((progress: SyncProgress) => void) | undefined;
+      mockElectronAPI.onSyncProgress.mockImplementation((callback) => {
         onProgress = callback;
       });
       mockElectronAPI.startKitSync.mockResolvedValue({
-        data: {
-          cancelled: true,
-          skippedFiles: [],
-          syncedFiles: 2,
-          warnings: [],
-        },
+        data: syncOutcome({ cancelled: true, syncedFiles: 2 }),
         success: true,
       });
       const { result } = renderHook(() =>
@@ -316,13 +321,13 @@ describe("useSyncUpdate", () => {
     });
 
     it("delivers progress through the store without re-rendering the hook's owner (RE-61)", async () => {
-      let onProgress: ((progress: unknown) => void) | undefined;
-      mockElectronAPI.onSyncProgress = vi.fn((callback) => {
+      let onProgress: ((progress: SyncProgress) => void) | undefined;
+      mockElectronAPI.onSyncProgress.mockImplementation((callback) => {
         onProgress = callback;
       });
-      let finishWrite: (value: unknown) => void = () => {};
+      let finishWrite: (value: DbResult<SyncOutcome>) => void = () => {};
       mockElectronAPI.startKitSync.mockReturnValue(
-        new Promise((resolve) => {
+        new Promise<DbResult<SyncOutcome>>((resolve) => {
           finishWrite = resolve;
         }),
       );
@@ -355,7 +360,7 @@ describe("useSyncUpdate", () => {
 
       await act(async () => {
         finishWrite({
-          data: { skippedFiles: [], syncedFiles: 100, warnings: [] },
+          data: syncOutcome({ syncedFiles: 100 }),
           success: true,
         });
         await write;
@@ -365,12 +370,7 @@ describe("useSyncUpdate", () => {
 
     it("shows a cancelled write as cancelled, not failed or complete", async () => {
       mockElectronAPI.startKitSync.mockResolvedValue({
-        data: {
-          cancelled: true,
-          skippedFiles: [],
-          syncedFiles: 2,
-          warnings: [],
-        },
+        data: syncOutcome({ cancelled: true, syncedFiles: 2 }),
         success: true,
       });
       const { result } = renderHook(() =>
@@ -389,8 +389,7 @@ describe("useSyncUpdate", () => {
     });
 
     it("should handle missing cancel method gracefully", () => {
-      const incompleteAPI = { ...mockElectronAPI };
-      delete incompleteAPI.cancelKitSync;
+      const incompleteAPI = createAPI({ cancelKitSync: undefined });
 
       const { result } = renderHook(() =>
         useSyncUpdate({ electronAPI: incompleteAPI }),
@@ -424,14 +423,14 @@ describe("useSyncUpdate", () => {
   });
 
   describe("dependency injection", () => {
-    it("should use default window.electronAPI when no deps provided", () => {
+    it("should use default globalThis.electronAPI when no deps provided", () => {
       // Mock the specific method we're testing
-      vi.mocked(window.electronAPI.generateSyncChangeSummary).mockResolvedValue(
-        {
-          data: mockChangeSummary,
-          success: true,
-        },
-      );
+      vi.mocked(
+        globalThis.electronAPI.generateSyncChangeSummary,
+      ).mockResolvedValue({
+        data: mockChangeSummary,
+        success: true,
+      });
 
       const { result } = renderHook(() => useSyncUpdate());
 
@@ -439,9 +438,9 @@ describe("useSyncUpdate", () => {
         result.current.generateChangeSummary();
       });
 
-      expect(window.electronAPI.generateSyncChangeSummary).toHaveBeenCalledWith(
-        undefined,
-      );
+      expect(
+        globalThis.electronAPI.generateSyncChangeSummary,
+      ).toHaveBeenCalledWith(undefined);
     });
   });
 });

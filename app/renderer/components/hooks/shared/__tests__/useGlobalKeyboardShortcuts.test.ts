@@ -1,18 +1,46 @@
+import type {
+  AnyUndoAction,
+  SequenceEditAction,
+} from "@romper/shared/undoTypes";
+
 import { fireEvent, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 import { useGlobalKeyboardShortcuts } from "../useGlobalKeyboardShortcuts";
 import { useUndoRedo } from "../useUndoRedo";
+import { addSampleAction } from "./undoActionFixtures";
+
+type UndoRedo = ReturnType<typeof useUndoRedo>;
 
 // Mock the useUndoRedo hook
 vi.mock("../useUndoRedo");
 
 describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
   // Create fresh mocks for each test
-  let mockUndo: unknown;
-  let mockRedo: unknown;
-  let mockAddAction: unknown;
-  let mockOnBackNavigation: unknown;
+  let mockUndo: Mock<UndoRedo["undo"]>;
+  let mockRedo: Mock<UndoRedo["redo"]>;
+  let mockAddAction: Mock<UndoRedo["addAction"]>;
+  let mockOnBackNavigation: Mock<() => void>;
+
+  /** useUndoRedo's value: something to undo and redo, nothing running */
+  const undoRedoState = (overrides: Partial<UndoRedo> = {}): UndoRedo => ({
+    addAction: mockAddAction,
+    canRedo: true,
+    canUndo: true,
+    clearError: vi.fn(),
+    error: null,
+    isRedoing: false,
+    isUndoing: false,
+    nextRedo: addSampleAction(),
+    nextUndo: addSampleAction(),
+    redo: mockRedo,
+    redoCount: 0,
+    redoDescription: "Redo last action",
+    undo: mockUndo,
+    undoCount: 1,
+    undoDescription: "Undo last action",
+    ...overrides,
+  });
 
   beforeEach(() => {
     // Create fresh mocks for each test
@@ -26,21 +54,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     vi.resetAllMocks();
 
     // Setup default mock implementation with fresh mocks
-    vi.mocked(useUndoRedo).mockReturnValue({
-      addAction: mockAddAction,
-      canRedo: true,
-      canUndo: true,
-      clearError: vi.fn(),
-      error: null,
-      isRedoing: false,
-      isUndoing: false,
-      redo: mockRedo,
-      redoCount: 0,
-      redoDescription: "Redo last action",
-      undo: mockUndo,
-      undoCount: 1,
-      undoDescription: "Undo last action",
-    });
+    vi.mocked(useUndoRedo).mockReturnValue(undoRedoState());
   });
 
   describe("basic functionality", () => {
@@ -107,21 +121,13 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     });
 
     it("should not undo when canUndo is false", () => {
-      vi.mocked(useUndoRedo).mockReturnValue({
-        addAction: mockAddAction,
-        canRedo: true,
-        canUndo: false,
-        clearError: vi.fn(),
-        error: null,
-        isRedoing: false,
-        isUndoing: false,
-        redo: mockRedo,
-        redoCount: 0,
-        redoDescription: "Redo last action",
-        undo: mockUndo,
-        undoCount: 0,
-        undoDescription: "Nothing to undo",
-      });
+      vi.mocked(useUndoRedo).mockReturnValue(
+        undoRedoState({
+          canUndo: false,
+          undoCount: 0,
+          undoDescription: "Nothing to undo",
+        }),
+      );
 
       renderHook(() =>
         useGlobalKeyboardShortcuts({
@@ -140,21 +146,9 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     });
 
     it("should not undo when isUndoing is true", () => {
-      vi.mocked(useUndoRedo).mockReturnValue({
-        addAction: mockAddAction,
-        canRedo: true,
-        canUndo: true,
-        clearError: vi.fn(),
-        error: null,
-        isRedoing: false,
-        isUndoing: true,
-        redo: mockRedo,
-        redoCount: 0,
-        redoDescription: "Redo last action",
-        undo: mockUndo,
-        undoCount: 1,
-        undoDescription: "Undo last action",
-      });
+      vi.mocked(useUndoRedo).mockReturnValue(
+        undoRedoState({ isUndoing: true }),
+      );
 
       renderHook(() =>
         useGlobalKeyboardShortcuts({
@@ -224,21 +218,9 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     });
 
     it("should not redo when canRedo is false", () => {
-      vi.mocked(useUndoRedo).mockReturnValue({
-        addAction: mockAddAction,
-        canRedo: false,
-        canUndo: true,
-        clearError: vi.fn(),
-        error: null,
-        isRedoing: false,
-        isUndoing: false,
-        redo: mockRedo,
-        redoCount: 0,
-        redoDescription: "Nothing to redo",
-        undo: mockUndo,
-        undoCount: 1,
-        undoDescription: "Undo last action",
-      });
+      vi.mocked(useUndoRedo).mockReturnValue(
+        undoRedoState({ canRedo: false, redoDescription: "Nothing to redo" }),
+      );
 
       renderHook(() =>
         useGlobalKeyboardShortcuts({
@@ -257,21 +239,9 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     });
 
     it("should not redo when isRedoing is true", () => {
-      vi.mocked(useUndoRedo).mockReturnValue({
-        addAction: mockAddAction,
-        canRedo: true,
-        canUndo: true,
-        clearError: vi.fn(),
-        error: null,
-        isRedoing: true,
-        isUndoing: false,
-        redo: mockRedo,
-        redoCount: 0,
-        redoDescription: "Redo last action",
-        undo: mockUndo,
-        undoCount: 1,
-        undoDescription: "Undo last action",
-      });
+      vi.mocked(useUndoRedo).mockReturnValue(
+        undoRedoState({ isRedoing: true }),
+      );
 
       renderHook(() =>
         useGlobalKeyboardShortcuts({
@@ -389,7 +359,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
   });
 
   describe("key ownership", () => {
-    const sequenceEdit = {
+    const sequenceEdit: SequenceEditAction = {
       data: {
         after: { sliceSteps: [], stepPattern: [], triggerConditions: [] },
         before: { sliceSteps: [], stepPattern: [], triggerConditions: [] },
@@ -397,15 +367,11 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
       description: "Turn step 1 on voice 1 on",
       id: "seq-1",
       timestamp: new Date(),
-      type: "SEQUENCE_EDIT" as const,
+      type: "SEQUENCE_EDIT",
     };
 
-    function mockNextUndo(nextUndo: unknown) {
-      vi.mocked(useUndoRedo).mockReturnValue({
-        ...vi.mocked(useUndoRedo)(""),
-        nextRedo: null,
-        nextUndo,
-      } as ReturnType<typeof useUndoRedo>);
+    function mockNextUndo(nextUndo: AnyUndoAction) {
+      vi.mocked(useUndoRedo).mockReturnValue(undoRedoState({ nextUndo }));
     }
 
     it("undoes a sequencer edit in a locked kit", () => {
@@ -423,7 +389,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     });
 
     it("does not undo a sample edit in a locked kit", () => {
-      mockNextUndo({ ...sequenceEdit, type: "ADD_SAMPLE" });
+      mockNextUndo(addSampleAction());
       renderHook(() =>
         useGlobalKeyboardShortcuts({
           currentKitName: "test-kit",

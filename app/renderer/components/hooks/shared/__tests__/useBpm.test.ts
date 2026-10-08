@@ -1,22 +1,33 @@
+import type { ElectronAPI } from "@romper/shared/electronApi";
+
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type Mock,
+  vi,
+} from "vitest";
 
 import { bpmNotSaved, useBpm } from "../useBpm";
 import { REPEAT_FAILURE_MS } from "../useSettingSave";
 
 describe("useBpm", () => {
-  let mockUpdateKitBpm: unknown;
+  let mockUpdateKitBpm: Mock<ElectronAPI["updateKitBpm"]>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     // Get the global electronAPI mock (set up by test setup)
-    mockUpdateKitBpm = (window as unknown).electronAPI?.updateKitBpm;
+    mockUpdateKitBpm = vi.mocked(globalThis.electronAPI.updateKitBpm);
     // Reset the mock to default behavior
-    mockUpdateKitBpm?.mockResolvedValue({ success: true });
+    mockUpdateKitBpm.mockResolvedValue({ success: true });
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it("initializes with provided BPM value", () => {
@@ -89,7 +100,7 @@ describe("useBpm", () => {
   });
 
   it("reverts BPM on API failure", async () => {
-    mockUpdateKitBpm?.mockRejectedValue(new Error("API Error"));
+    mockUpdateKitBpm.mockRejectedValue(new Error("API Error"));
 
     const { result } = renderHook(() =>
       useBpm({ initialBpm: 120, kitName: "A1" }),
@@ -107,7 +118,7 @@ describe("useBpm", () => {
   it("reverts BPM when the DbResult reports failure (no rejection)", async () => {
     // updateKitBpm returns a DbResult and does NOT reject on a DB failure;
     // the hook must inspect result.success rather than only catching.
-    mockUpdateKitBpm?.mockResolvedValue({
+    mockUpdateKitBpm.mockResolvedValue({
       error: "disk full",
       success: false,
     });
@@ -126,7 +137,7 @@ describe("useBpm", () => {
   });
 
   it("reverts BPM on API exception", async () => {
-    mockUpdateKitBpm?.mockRejectedValue(new Error("Network error"));
+    mockUpdateKitBpm.mockRejectedValue(new Error("Network error"));
 
     const { result } = renderHook(() =>
       useBpm({ initialBpm: 120, kitName: "A1" }),
@@ -155,8 +166,7 @@ describe("useBpm", () => {
 
   it("does not call API when electronAPI is not available", async () => {
     // Temporarily remove electronAPI
-    const originalElectronAPI = (window as unknown).electronAPI;
-    delete (window as unknown).electronAPI;
+    vi.stubGlobal("electronAPI", undefined);
 
     const { result } = renderHook(() =>
       useBpm({ initialBpm: 120, kitName: "A1" }),
@@ -167,7 +177,7 @@ describe("useBpm", () => {
     });
 
     // Restore electronAPI
-    (window as unknown).electronAPI = originalElectronAPI;
+    vi.unstubAllGlobals();
 
     expect(mockUpdateKitBpm).not.toHaveBeenCalled();
   });
@@ -341,22 +351,19 @@ describe("useBpm", () => {
 
   describe("[Q-02] a BPM with nowhere to save (#543)", () => {
     it("leaves the BPM as it was when updateKitBpm is missing", async () => {
-      const api = globalThis.electronAPI as unknown as Record<string, unknown>;
-      const original = api.updateKitBpm;
-      api.updateKitBpm = undefined;
-      try {
-        const { result } = renderHook(() =>
-          useBpm({ initialBpm: 120, kitName: "A0" }),
-        );
+      vi.stubGlobal("electronAPI", {
+        ...globalThis.electronAPI,
+        updateKitBpm: undefined,
+      });
+      const { result } = renderHook(() =>
+        useBpm({ initialBpm: 120, kitName: "A0" }),
+      );
 
-        await act(async () => {
-          await result.current.setBpm(140);
-        });
+      await act(async () => {
+        await result.current.setBpm(140);
+      });
 
-        expect(result.current.bpm).toBe(120);
-      } finally {
-        api.updateKitBpm = original;
-      }
+      expect(result.current.bpm).toBe(120);
     });
 
     it("leaves the BPM as it was when there's no kit", async () => {

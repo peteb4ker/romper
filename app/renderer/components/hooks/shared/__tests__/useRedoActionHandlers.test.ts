@@ -1,10 +1,27 @@
+import type { AnyUndoAction } from "@romper/shared/undoTypes";
+
 import { renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useRedoActionHandlers } from "../useRedoActionHandlers";
+import {
+  addSampleAction,
+  deleteSampleAction,
+  moveSampleAction,
+  moveSampleBetweenKitsAction,
+  reindexSamplesAction,
+} from "./undoActionFixtures";
 
 // Use centralized mock from vitest.setup.ts
-// No need to define local mockElectronAPI - use window.electronAPI from centralized mocks
+
+// An action from outside AnyUndoAction, to reach the handler's defensive
+// default branch: the type mismatch is what the test is about.
+function unknownAction(): AnyUndoAction {
+  return {
+    ...addSampleAction(),
+    type: "UNKNOWN_ACTION",
+  } as unknown as AnyUndoAction;
+}
 
 describe("useRedoActionHandlers", () => {
   const testKitName = "Test Kit";
@@ -14,30 +31,32 @@ describe("useRedoActionHandlers", () => {
     vi.resetAllMocks();
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   describe("executeRedoAction", () => {
     it("should handle ADD_SAMPLE redo action", async () => {
       const { result } = renderHook(() =>
         useRedoActionHandlers({ kitName: testKitName }),
       );
 
-      const addAction = {
-        data: {
-          addedSample: {
-            source_path: "/path/to/sample.wav",
-          },
-          slot: 0,
-          voice: 1,
+      const addAction = addSampleAction({
+        addedSample: {
+          filename: "sample.wav",
+          source_path: "/path/to/sample.wav",
         },
-        type: "ADD_SAMPLE" as const,
-      };
+        slot: 0,
+        voice: 1,
+      });
 
-      vi.mocked(window.electronAPI.addSampleToSlot).mockResolvedValue({
+      vi.mocked(globalThis.electronAPI.addSampleToSlot).mockResolvedValue({
         success: true,
       });
 
       const redoResult = await result.current.executeRedoAction(addAction);
 
-      expect(window.electronAPI.addSampleToSlot).toHaveBeenCalledWith(
+      expect(globalThis.electronAPI.addSampleToSlot).toHaveBeenCalledWith(
         testKitName,
         1,
         0,
@@ -51,21 +70,15 @@ describe("useRedoActionHandlers", () => {
         useRedoActionHandlers({ kitName: testKitName }),
       );
 
-      const deleteAction = {
-        data: {
-          slot: 0,
-          voice: 1,
-        },
-        type: "DELETE_SAMPLE" as const,
-      };
+      const deleteAction = deleteSampleAction({ slot: 0, voice: 1 });
 
-      vi.mocked(window.electronAPI.deleteSampleFromSlot).mockResolvedValue({
+      vi.mocked(globalThis.electronAPI.deleteSampleFromSlot).mockResolvedValue({
         success: true,
       });
 
       const redoResult = await result.current.executeRedoAction(deleteAction);
 
-      expect(window.electronAPI.deleteSampleFromSlot).toHaveBeenCalledWith(
+      expect(globalThis.electronAPI.deleteSampleFromSlot).toHaveBeenCalledWith(
         testKitName,
         1,
         0,
@@ -78,21 +91,15 @@ describe("useRedoActionHandlers", () => {
         useRedoActionHandlers({ kitName: testKitName }),
       );
 
-      const reindexAction = {
-        data: {
-          deletedSlot: 2,
-          voice: 1,
-        },
-        type: "REINDEX_SAMPLES" as const,
-      };
+      const reindexAction = reindexSamplesAction({ deletedSlot: 2, voice: 1 });
 
-      vi.mocked(window.electronAPI.deleteSampleFromSlot).mockResolvedValue({
+      vi.mocked(globalThis.electronAPI.deleteSampleFromSlot).mockResolvedValue({
         success: true,
       });
 
       const redoResult = await result.current.executeRedoAction(reindexAction);
 
-      expect(window.electronAPI.deleteSampleFromSlot).toHaveBeenCalledWith(
+      expect(globalThis.electronAPI.deleteSampleFromSlot).toHaveBeenCalledWith(
         testKitName,
         1,
         2,
@@ -105,24 +112,21 @@ describe("useRedoActionHandlers", () => {
         useRedoActionHandlers({ kitName: testKitName }),
       );
 
-      const moveAction = {
-        data: {
-          fromSlot: 0,
-          fromVoice: 1,
-          mode: "insert",
-          toSlot: 1,
-          toVoice: 2,
-        },
-        type: "MOVE_SAMPLE" as const,
-      };
+      const moveAction = moveSampleAction({
+        fromSlot: 0,
+        fromVoice: 1,
+        mode: "insert",
+        toSlot: 1,
+        toVoice: 2,
+      });
 
-      vi.mocked(window.electronAPI.moveSampleInKit).mockResolvedValue({
+      vi.mocked(globalThis.electronAPI.moveSampleInKit).mockResolvedValue({
         success: true,
       });
 
       const redoResult = await result.current.executeRedoAction(moveAction);
 
-      expect(window.electronAPI.moveSampleInKit).toHaveBeenCalledWith(
+      expect(globalThis.electronAPI.moveSampleInKit).toHaveBeenCalledWith(
         testKitName,
         1,
         0,
@@ -137,26 +141,25 @@ describe("useRedoActionHandlers", () => {
         useRedoActionHandlers({ kitName: testKitName }),
       );
 
-      const moveAction = {
-        data: {
-          fromKit: "From Kit",
-          fromSlot: 0,
-          fromVoice: 1,
-          mode: "insert",
-          toKit: "To Kit",
-          toSlot: 1,
-          toVoice: 2,
-        },
-        type: "MOVE_SAMPLE_BETWEEN_KITS" as const,
-      };
-
-      vi.mocked(window.electronAPI.moveSampleBetweenKits).mockResolvedValue({
-        success: true,
+      const moveAction = moveSampleBetweenKitsAction({
+        fromKit: "From Kit",
+        fromSlot: 0,
+        fromVoice: 1,
+        mode: "insert",
+        toKit: "To Kit",
+        toSlot: 1,
+        toVoice: 2,
       });
+
+      vi.mocked(globalThis.electronAPI.moveSampleBetweenKits).mockResolvedValue(
+        {
+          success: true,
+        },
+      );
 
       const redoResult = await result.current.executeRedoAction(moveAction);
 
-      expect(window.electronAPI.moveSampleBetweenKits).toHaveBeenCalledWith(
+      expect(globalThis.electronAPI.moveSampleBetweenKits).toHaveBeenCalledWith(
         "From Kit",
         1,
         0,
@@ -173,68 +176,54 @@ describe("useRedoActionHandlers", () => {
         useRedoActionHandlers({ kitName: testKitName }),
       );
 
-      const unknownAction = {
-        data: {},
-        type: "UNKNOWN_ACTION" as unknown,
-      };
-
       await expect(
-        result.current.executeRedoAction(unknownAction),
+        result.current.executeRedoAction(unknownAction()),
       ).rejects.toThrow("Unknown action type: UNKNOWN_ACTION");
     });
 
     it("should handle missing electronAPI gracefully", async () => {
-      const originalAPI = (window as unknown).electronAPI;
-      (window as unknown).electronAPI = undefined;
+      vi.stubGlobal("electronAPI", undefined);
 
       const { result } = renderHook(() =>
         useRedoActionHandlers({ kitName: testKitName }),
       );
 
-      const addAction = {
-        data: {
-          addedSample: {
-            source_path: "/path/to/sample.wav",
-          },
-          slot: 0,
-          voice: 1,
+      const addAction = addSampleAction({
+        addedSample: {
+          filename: "sample.wav",
+          source_path: "/path/to/sample.wav",
         },
-        type: "ADD_SAMPLE" as const,
-      };
+        slot: 0,
+        voice: 1,
+      });
 
       const redoResult = await result.current.executeRedoAction(addAction);
 
       expect(redoResult).toBeUndefined();
-
-      // Restore
-      (window as unknown).electronAPI = originalAPI;
     });
 
     it("should handle missing specific API method", async () => {
-      const originalAPI = (window as unknown).electronAPI;
-      (window as unknown).electronAPI = {}; // Missing addSampleToSlot
+      vi.stubGlobal("electronAPI", {
+        ...globalThis.electronAPI,
+        addSampleToSlot: undefined,
+      }); // Missing addSampleToSlot
 
       const { result } = renderHook(() =>
         useRedoActionHandlers({ kitName: testKitName }),
       );
 
-      const addAction = {
-        data: {
-          addedSample: {
-            source_path: "/path/to/sample.wav",
-          },
-          slot: 0,
-          voice: 1,
+      const addAction = addSampleAction({
+        addedSample: {
+          filename: "sample.wav",
+          source_path: "/path/to/sample.wav",
         },
-        type: "ADD_SAMPLE" as const,
-      };
+        slot: 0,
+        voice: 1,
+      });
 
       const redoResult = await result.current.executeRedoAction(addAction);
 
       expect(redoResult).toBeUndefined();
-
-      // Restore
-      (window as unknown).electronAPI = originalAPI;
     });
 
     it("should handle API call failures", async () => {
@@ -242,15 +231,9 @@ describe("useRedoActionHandlers", () => {
         useRedoActionHandlers({ kitName: testKitName }),
       );
 
-      const deleteAction = {
-        data: {
-          slot: 0,
-          voice: 1,
-        },
-        type: "DELETE_SAMPLE" as const,
-      };
+      const deleteAction = deleteSampleAction({ slot: 0, voice: 1 });
 
-      vi.mocked(window.electronAPI.deleteSampleFromSlot).mockResolvedValue({
+      vi.mocked(globalThis.electronAPI.deleteSampleFromSlot).mockResolvedValue({
         error: "Delete failed",
         success: false,
       });
@@ -268,18 +251,15 @@ describe("useRedoActionHandlers", () => {
         useRedoActionHandlers({ kitName: testKitName }),
       );
 
-      const moveAction = {
-        data: {
-          fromSlot: 0,
-          fromVoice: 1,
-          mode: "insert",
-          toSlot: 1,
-          toVoice: 2,
-        },
-        type: "MOVE_SAMPLE" as const,
-      };
+      const moveAction = moveSampleAction({
+        fromSlot: 0,
+        fromVoice: 1,
+        mode: "insert",
+        toSlot: 1,
+        toVoice: 2,
+      });
 
-      vi.mocked(window.electronAPI.moveSampleInKit).mockRejectedValue(
+      vi.mocked(globalThis.electronAPI.moveSampleInKit).mockRejectedValue(
         new Error("Network error"),
       );
 

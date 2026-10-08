@@ -75,8 +75,9 @@ describe("KitStepSequencer", () => {
 
     onPlaySample = vi.fn();
     stepPattern = defaultStepPattern.map((row) => [...row]);
-    setStepPattern = vi.fn((pattern) => {
+    setStepPattern = vi.fn(async (pattern) => {
       stepPattern = pattern;
+      return true;
     });
     sequencerOpen = false;
     setSequencerOpen = vi.fn();
@@ -134,7 +135,7 @@ describe("KitStepSequencer", () => {
     );
   });
 
-  it("[UC-26] [UC-30] records step edits on the kit's undo stack", () => {
+  it("[UC-26] [UC-30] records step edits on the kit's undo stack", async () => {
     const onAddUndoAction = vi.fn();
     render(
       <KitStepSequencer
@@ -155,7 +156,7 @@ describe("KitStepSequencer", () => {
       mockUseKitStepSequencerLogic.mock.calls.at(-1)![0];
     const original = stepPattern;
     const next = stepPattern.map((row) => row.map(() => 127));
-    recordingSetter(next, { description: "Turn step 1 on voice 1 on" });
+    await recordingSetter(next, { description: "Turn step 1 on voice 1 on" });
 
     expect(setStepPattern).toHaveBeenCalledWith(next);
     expect(onAddUndoAction).toHaveBeenCalledWith(
@@ -168,6 +169,33 @@ describe("KitStepSequencer", () => {
         type: "SEQUENCE_EDIT",
       }),
     );
+  });
+
+  // #570: the entry used to go on the stack before main answered
+  it("[UC-26] [Q-02] leaves a step edit main refused off the undo stack", async () => {
+    const onAddUndoAction = vi.fn();
+    setStepPattern.mockResolvedValue(false);
+    render(
+      <KitStepSequencer
+        bpm={120}
+        kitName="TestKit"
+        onAddUndoAction={onAddUndoAction}
+        onPlaySample={onPlaySample}
+        samples={defaultSamples}
+        sequencerOpen={sequencerOpen}
+        setSequencerOpen={setSequencerOpen}
+        setStepPattern={setStepPattern}
+        stepPattern={stepPattern}
+      />,
+    );
+
+    const { setStepPattern: recordingSetter } =
+      mockUseKitStepSequencerLogic.mock.calls.at(-1)![0];
+    const next = stepPattern.map((row) => row.map(() => 127));
+    await recordingSetter(next, { description: "Turn step 1 on voice 1 on" });
+
+    expect(setStepPattern).toHaveBeenCalledWith(next);
+    expect(onAddUndoAction).not.toHaveBeenCalled();
   });
 
   it("initializes voice state from voice data prop", () => {

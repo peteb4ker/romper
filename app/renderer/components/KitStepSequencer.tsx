@@ -72,8 +72,10 @@ interface KitStepSequencerProps {
   sequencerOpen: boolean;
   sequenceUndo?: SequenceUndo;
   setSequencerOpen: (open: boolean) => void;
-  setStepPattern: (pattern: number[][]) => void;
-  setTriggerConditions: (conditions: (null | string)[][]) => void;
+  /** Resolves to whether main saved the pattern */
+  setStepPattern: (pattern: number[][]) => Promise<boolean>;
+  /** Resolves to whether main saved the conditions */
+  setTriggerConditions: (conditions: (null | string)[][]) => Promise<boolean>;
   slicerDivision?: null | number;
   sliceSteps?: (null | SliceStep)[][] | null;
   stepPattern: null | number[][];
@@ -317,7 +319,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
           ? row.map((c, s) => (s === stepIdx ? condition : c))
           : row,
       );
-      setHistoryTriggerConditions(newConditions, {
+      void setHistoryTriggerConditions(newConditions, {
         description: `Set step ${stepIdx + 1} on voice ${voiceIdx + 1} to ${condition ?? "always"}`,
       });
     },

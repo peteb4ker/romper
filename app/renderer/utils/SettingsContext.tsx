@@ -44,7 +44,11 @@ interface SettingsContextProps {
   localStoreStatus: LocalStoreValidationDetailedResult | null;
 
   refreshLocalStoreStatus: () => Promise<void>;
-  setConfirmDestructiveActions: (enabled: boolean) => Promise<void>;
+  /**
+   * Save whether to confirm destructive actions. Resolves to whether the
+   * save worked; the setting changes only once it has (#570).
+   */
+  setConfirmDestructiveActions: (enabled: boolean) => Promise<boolean>;
   // Actions
   /**
    * Save the local store path (null forgets it, which opens the setup
@@ -52,7 +56,11 @@ interface SettingsContextProps {
    * the context's error.
    */
   setLocalStorePath: (path: null | string) => Promise<boolean>;
-  setThemeMode: (mode: ThemeMode) => Promise<void>;
+  /**
+   * Save the theme. Resolves to whether the save worked; the theme changes
+   * only once it has (#570).
+   */
+  setThemeMode: (mode: ThemeMode) => Promise<boolean>;
   themeMode: ThemeMode;
 }
 
@@ -254,12 +262,14 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
         await globalThis.electronAPI.setSetting("themeMode", mode);
         dispatch({ payload: mode, type: "UPDATE_THEME_MODE" });
         applyTheme(shouldUseDarkMode(mode));
+        return true;
       } catch (error) {
         console.error("Failed to update theme mode:", error);
         dispatch({
           payload: describeError("Failed to save theme mode", error),
           type: "SET_ERROR",
         });
+        return false;
       }
     },
     [applyTheme],
@@ -276,6 +286,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
         payload: enabled,
         type: "UPDATE_CONFIRM_DESTRUCTIVE_ACTIONS",
       });
+      return true;
     } catch (error) {
       console.error(
         "Failed to update confirmDestructiveActions setting:",
@@ -288,6 +299,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
         ),
         type: "SET_ERROR",
       });
+      return false;
     }
   }, []);
 

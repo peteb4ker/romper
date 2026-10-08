@@ -7,13 +7,16 @@ import {
 import React from "react";
 
 import { useSettings } from "../utils/SettingsContext";
+import { usePreferenceSaves } from "./hooks/shared/usePreferenceSaves";
 
 interface StatusBarProps {
   progress?: null | number; // 0-100, or null for none
 }
 
 const StatusBar: React.FC<StatusBarProps> = ({ progress = null }) => {
-  const { isDarkMode, localStorePath, setThemeMode, themeMode } = useSettings();
+  const { isDarkMode, localStorePath, themeMode } = useSettings();
+  // A theme that wasn't saved is reported (#570)
+  const { saveThemeMode } = usePreferenceSaves();
 
   // Extract nested ternary operations into independent statements
   const getThemeDisplayText = () => {
@@ -80,11 +83,11 @@ const StatusBar: React.FC<StatusBarProps> = ({ progress = null }) => {
           onClick={() => {
             // Cycle through: light -> dark -> system
             if (themeMode === "light") {
-              void setThemeMode("dark");
+              void saveThemeMode("dark");
             } else if (themeMode === "dark") {
-              void setThemeMode("system");
+              void saveThemeMode("system");
             } else {
-              void setThemeMode("light");
+              void saveThemeMode("light");
             }
           }}
           title={`Current: ${themeMode}${getThemeDisplayText()}`}

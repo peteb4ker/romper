@@ -9,7 +9,7 @@ import type {
 } from "./db/schema.js";
 import type { SliceStep, VoiceSliceSettings } from "./sliceTypes.js";
 import type { WriteStereoSummary } from "./stereoLinkRules.js";
-import type { VoiceSnapshot } from "./undoTypes.js";
+import type { SequenceSnapshot, VoiceSnapshot } from "./undoTypes.js";
 
 /**
  * THE canonical contract for the preload bridge (window.electronAPI).
@@ -184,6 +184,14 @@ export interface ElectronAPI {
     targetPath: string,
   ) => Promise<{ error?: string; granted: boolean }>;
   rescanKit: (kitName: string) => Promise<DbResult<KitScanResult>>;
+  /**
+   * Put back the given parts of a kit's sequence (steps, trigger conditions,
+   * slices) for undo and redo, in one write: all of them or none (#570).
+   */
+  restoreKitSequence: (
+    kitName: string,
+    parts: Partial<SequenceSnapshot>,
+  ) => Promise<DbResult<void>>;
   /**
    * Put a kit's voices back as an undo snapshot had them: rows, slots,
    * gain and WAV details, in one transaction (RE-86).

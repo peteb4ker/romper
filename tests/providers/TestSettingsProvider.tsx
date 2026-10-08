@@ -24,11 +24,13 @@ export const TestSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const setThemeModeFunc = useCallback(async (mode: ThemeMode) => {
     setThemeMode(mode);
+    return true;
   }, []);
 
   const setConfirmDestructiveActionsFunc = useCallback(
     async (enabled: boolean) => {
       setConfirmDestructiveActions(enabled);
+      return true;
     },
     [],
   );

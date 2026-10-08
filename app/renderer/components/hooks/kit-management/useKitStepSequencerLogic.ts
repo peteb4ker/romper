@@ -56,7 +56,10 @@ interface UseKitStepSequencerLogicParams {
   samples: { [voice: number]: string[] };
   sequencerOpen: boolean;
   setSequencerOpen: (open: boolean) => void;
-  setStepPattern: (pattern: number[][], meta?: SequenceEditMeta) => void;
+  setStepPattern: (
+    pattern: number[][],
+    meta?: SequenceEditMeta,
+  ) => Promise<void> | void;
   slicerDivision?: number;
   sliceSettings?: Record<number, VoiceSliceSettings>;
   sliceSteps?: (null | SliceStep)[][];
@@ -389,7 +392,7 @@ export function useKitStepSequencerLogic(
       );
 
       log.debug(`New pattern for voice ${voiceIdx + 1}:`, newPattern[voiceIdx]);
-      setStepPattern(newPattern, {
+      void setStepPattern(newPattern, {
         description: `Turn step ${stepIdx + 1} on voice ${voiceIdx + 1} ${newVelocity > 0 ? "on" : "off"}`,
         // A slice click can toggle a step and assign its slice: one undo
         mergeKey: `step:${voiceIdx}:${stepIdx}`,

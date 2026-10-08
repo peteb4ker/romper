@@ -114,16 +114,18 @@ export function useSliceSteps({
     [],
   );
 
+  // Resolves to whether main saved the slices and the kit is still open,
+  // so the sequencer's undo history only keeps saved edits (#570)
   const setSliceSteps = useCallback(
-    async (update: SliceStepsUpdate) => {
-      if (!globalThis.electronAPI?.updateSliceSteps || !kitName) return;
+    async (update: SliceStepsUpdate): Promise<boolean> => {
+      if (!globalThis.electronAPI?.updateSliceSteps || !kitName) return false;
 
       const current = latestRef.current;
       const next = typeof update === "function" ? update(current) : update;
       latestRef.current = next;
       setSliceStepsState(next);
 
-      await saveSteps({
+      const saved = await saveSteps({
         current,
         key: kitName,
         onSaved: scheduleReload,
@@ -138,6 +140,7 @@ export function useSliceSteps({
         value: next,
         what: `the slices for kit ${kitName}`,
       });
+      return saved && kitRef.current === kitName;
     },
     [kitName, kitRef, latestRef, onMessage, saveSteps, scheduleReload],
   );

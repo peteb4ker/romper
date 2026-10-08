@@ -67,13 +67,8 @@ describe("mergeSequenceEdit", () => {
 
 describe("writeSequenceSnapshot", () => {
   beforeEach(() => {
-    vi.mocked(globalThis.electronAPI.updateStepPattern).mockResolvedValue({
-      success: true,
-    });
-    vi.mocked(globalThis.electronAPI.updateTriggerConditions).mockResolvedValue(
-      { success: true },
-    );
-    vi.mocked(globalThis.electronAPI.updateSliceSteps).mockResolvedValue({
+    vi.clearAllMocks();
+    vi.mocked(globalThis.electronAPI.restoreKitSequence).mockResolvedValue({
       success: true,
     });
   });
@@ -84,19 +79,51 @@ describe("writeSequenceSnapshot", () => {
     const result = await writeSequenceSnapshot("A0", target, snapshot(0));
 
     expect(result).toEqual({ success: true });
-    expect(globalThis.electronAPI.updateStepPattern).toHaveBeenCalledWith(
+    expect(globalThis.electronAPI.restoreKitSequence).toHaveBeenCalledWith(
       "A0",
-      target.stepPattern,
+      { stepPattern: target.stepPattern },
     );
+  });
+
+  it("writes nothing when nothing changes", async () => {
+    const result = await writeSequenceSnapshot("A0", snapshot(0), snapshot(0));
+
+    expect(result).toEqual({ success: true });
+    expect(globalThis.electronAPI.restoreKitSequence).not.toHaveBeenCalled();
+  });
+
+  // #570: three parallel saves could leave the kit part undone
+  it("[UC-26] [Q-02] writes every changed part in one call, so a failure applies none", async () => {
+    vi.mocked(globalThis.electronAPI.restoreKitSequence).mockResolvedValue({
+      error: "disk full",
+      success: false,
+    });
+    const target = snapshot(127, "1:2");
+    target.sliceSteps[0][0] = {
+      length: 24,
+      locked: false,
+      random: false,
+      start: 0,
+    };
+
+    const result = await writeSequenceSnapshot("A0", target, snapshot(0));
+
+    expect(result).toEqual({ error: "disk full", success: false });
+    expect(globalThis.electronAPI.restoreKitSequence).toHaveBeenCalledTimes(1);
+    expect(globalThis.electronAPI.restoreKitSequence).toHaveBeenCalledWith(
+      "A0",
+      target,
+    );
+    expect(globalThis.electronAPI.updateStepPattern).not.toHaveBeenCalled();
     expect(
       globalThis.electronAPI.updateTriggerConditions,
     ).not.toHaveBeenCalled();
     expect(globalThis.electronAPI.updateSliceSteps).not.toHaveBeenCalled();
   });
 
-  it("reports a failed write", async () => {
-    vi.mocked(globalThis.electronAPI.updateTriggerConditions).mockResolvedValue(
-      { error: "disk full", success: false },
+  it("reports no answer from main as a failure", async () => {
+    vi.mocked(globalThis.electronAPI.restoreKitSequence).mockResolvedValue(
+      undefined as never,
     );
 
     const result = await writeSequenceSnapshot(
@@ -105,6 +132,6 @@ describe("writeSequenceSnapshot", () => {
       snapshot(0),
     );
 
-    expect(result).toEqual({ error: "disk full", success: false });
+    expect(result.success).toBe(false);
   });
 });

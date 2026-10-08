@@ -411,9 +411,9 @@ describe("useUndoActionHandlers", () => {
       );
 
       expect(outcome).toEqual({ success: true });
-      expect(window.electronAPI.updateStepPattern).toHaveBeenCalledWith(
+      expect(window.electronAPI.restoreKitSequence).toHaveBeenCalledWith(
         "TestKit",
-        [[0]],
+        { stepPattern: [[0]] },
       );
     });
   });

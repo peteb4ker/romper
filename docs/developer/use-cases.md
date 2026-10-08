@@ -587,7 +587,9 @@ focused text field keeps its own undo. See
   replace or move restores the voices it touched with one
   `restore-kit-voices` call: full rows, gain and WAV details included, in
   one transaction (RE-86). Redo and undoing an add replay the sample
-  channels above.
+  channels above. Undoing or redoing a sequencer edit writes the steps,
+  trigger conditions and slices that differ with one
+  `restore-kit-sequence` call (#570).
 - **Main:** `electron/main/applicationMenu.ts` (Edit > Undo and Redo);
   `electron/main/db/operations/sampleCrudOperations.ts` (`restoreVoicesTx`).
 

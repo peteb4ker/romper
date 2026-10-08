@@ -2,7 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
-import { useKitScanning } from "../useKitScanning";
+import { useKitScanning, voiceNamesNotSaved } from "../useKitScanning";
 
 describe("[UC-13] useKitScanning", () => {
   const reloadKit = vi.fn().mockResolvedValue(undefined);
@@ -181,13 +181,15 @@ describe("[UC-13] useKitScanning", () => {
       expect(reloadKit).toHaveBeenCalledTimes(1);
     });
 
-    it("reports an error status when saving an alias fails", async () => {
-      vi.mocked(window.electronAPI.updateVoiceAlias).mockRejectedValue(
-        new Error("Write failed"),
+    // #570: each name's result is checked; a refused name used to count as
+    // named, flash, and report success
+    it("[Q-02] says which names weren't saved and flashes only the saved ones", async () => {
+      vi.mocked(window.electronAPI.updateVoiceAlias).mockImplementation(
+        async (_kit, voice) =>
+          voice === 2
+            ? { error: "Kit is locked", success: false }
+            : { success: true },
       );
-      const consoleErrorSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
 
       const { result } = renderHook(() => useKitScanning(defaultParams));
 
@@ -196,12 +198,52 @@ describe("[UC-13] useKitScanning", () => {
       });
 
       expect(result.current.scanStatus).toEqual({
-        message: "Write failed",
+        message: "Couldn't save the name for voice 2. Try again.",
+        status: "error",
+      });
+      expect([...result.current.flashVoices]).toEqual([1]);
+      // The refresh shows the voice's saved name again
+      expect(onRefreshKitMetadata).toHaveBeenCalledTimes(1);
+    });
+
+    it("[Q-02] reports a name main never answered, or that threw, as not saved", async () => {
+      vi.mocked(window.electronAPI.updateVoiceAlias)
+        .mockResolvedValueOnce(undefined as never)
+        .mockRejectedValueOnce(new Error("Write failed"));
+
+      const { result } = renderHook(() => useKitScanning(defaultParams));
+
+      await act(async () => {
+        await result.current.handleInferVoiceNames();
+      });
+
+      expect(result.current.scanStatus).toEqual({
+        message: "Couldn't save the names for voices 1 and 2. Try again.",
         status: "error",
       });
       expect(result.current.flashVoices.size).toBe(0);
+    });
 
-      consoleErrorSpy.mockRestore();
+    it("[Q-02] keeps the failure on screen rather than clearing it", async () => {
+      vi.useFakeTimers();
+      try {
+        vi.mocked(window.electronAPI.updateVoiceAlias).mockResolvedValue({
+          error: "Kit is locked",
+          success: false,
+        });
+        const { result } = renderHook(() => useKitScanning(defaultParams));
+
+        await act(async () => {
+          await result.current.handleInferVoiceNames();
+        });
+        act(() => {
+          vi.runAllTimers();
+        });
+
+        expect(result.current.scanStatus.status).toBe("error");
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it("succeeds with zero updates when no voice has samples", async () => {
@@ -235,6 +277,17 @@ describe("[UC-13] useKitScanning", () => {
 
       expect(window.electronAPI.updateVoiceAlias).not.toHaveBeenCalled();
       expect(result.current.scanStatus).toEqual({ status: "idle" });
+    });
+  });
+
+  describe("voiceNamesNotSaved", () => {
+    it("names one voice, or lists several", () => {
+      expect(voiceNamesNotSaved([3])).toBe(
+        "Couldn't save the name for voice 3. Try again.",
+      );
+      expect(voiceNamesNotSaved([1, 2, 4])).toBe(
+        "Couldn't save the names for voices 1, 2, and 4. Try again.",
+      );
     });
   });
 

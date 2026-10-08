@@ -23,8 +23,8 @@ vi.mock("../../services/sampleService.js", () => ({
 }));
 
 vi.mock("../../security/sampleSourceAccess.js", () => ({
-  checkSampleSourceAccess: vi.fn(() => ({ ok: true })),
-  rememberKitSampleSources: vi.fn(),
+  checkSampleSourceAccess: vi.fn(() => Promise.resolve({ ok: true })),
+  rememberKitSampleSources: vi.fn(() => Promise.resolve()),
 }));
 
 import {
@@ -445,7 +445,7 @@ describe("ipcHandlerUtils", () => {
       it.each(["add", "replace"] as const)(
         "%s refuses a file the user never gave Romper",
         async (operation) => {
-          vi.mocked(checkSampleSourceAccess).mockReturnValueOnce(denied);
+          vi.mocked(checkSampleSourceAccess).mockResolvedValueOnce(denied);
           const handler = createSampleOperationHandler(
             mockInMemorySettings,
             operation,

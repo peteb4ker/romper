@@ -30,7 +30,7 @@ export function createSampleOperationHandler(
   inMemorySettings: Record<string, unknown>,
   operationType: "add" | "delete" | "replace",
 ) {
-  return (
+  return async (
     _event: unknown,
     kitName: string,
     voiceNumber: number,
@@ -42,12 +42,15 @@ export function createSampleOperationHandler(
 
       // RE-03: a new sample source must be a file the user gave Romper.
       if (operationType !== "delete" && filePath) {
-        const access = checkSampleSourceAccess(inMemorySettings, filePath);
+        const access = await checkSampleSourceAccess(
+          inMemorySettings,
+          filePath,
+        );
         if (!access.ok) return { error: access.error, success: false };
       }
       // Undo re-adds whatever this edit removes; let it read those files.
       if (operationType !== "add") {
-        rememberKitSampleSources(inMemorySettings, kitName);
+        await rememberKitSampleSources(inMemorySettings, kitName);
       }
 
       switch (operationType) {

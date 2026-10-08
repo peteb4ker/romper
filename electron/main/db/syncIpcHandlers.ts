@@ -16,17 +16,21 @@ export function registerSyncIpcHandlers(
       // The summary lists what sync would delete from the card, so it reads
       // the card: the same folders as sync may write (RE-03).
       if (sdCardPath) {
-        const access = checkPathAccess(sdCardPath, { write: true });
+        const access = await checkPathAccess(sdCardPath, { write: true });
         if (!access.ok) return { error: access.error, success: false };
       }
       return syncService.generateChangeSummary(inMemorySettings, sdCardPath);
     },
   );
 
-  ipcMain.handle("startKitSync", (_event, options: SyncOptions) => {
+  ipcMain.handle("startKitSync", async (_event, options: SyncOptions) => {
     // RE-03: sync writes to the target and deletes stale kits from it, so it
     // must be the SD card from settings/env or a folder the user picked.
-    const access = checkPathAccess(options?.sdCardPath, { write: true });
+    // The check resolves the card's path under the card watchdog, so a card
+    // that stopped responding fails here instead of freezing (#714).
+    const access = await checkPathAccess(options?.sdCardPath, {
+      write: true,
+    });
     if (!access.ok) return { error: access.error, success: false };
     return syncService.startKitSync(inMemorySettings, options);
   });

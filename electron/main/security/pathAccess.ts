@@ -2,6 +2,10 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
+import {
+  CardNotRespondingError,
+  withCardWatchdog,
+} from "../services/cardWatchdog.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
 
 /**
@@ -35,6 +39,12 @@ import { ServicePathManager } from "../utils/fileSystemUtils.js";
  * change, or a new grant), and read grants once when they're granted, into
  * a set the check looks the target's folders up in. So a check costs the
  * same however many files have been granted this session.
+ *
+ * Resolving is asynchronous (fs.promises, off the main thread) and under the
+ * card watchdog (#714): any of these paths can be on an SD card, and a card
+ * whose driver stopped responding (#653) would otherwise block the main
+ * process, freezing the window. A path that takes longer than the watchdog
+ * allows is refused with the card-not-responding message.
  */
 
 export type PathAccessMode = "read" | "write";
@@ -65,31 +75,39 @@ export class PathAccessPolicy {
   /** Read grants already canonicalised, as given, so a repeat costs nothing */
   private readonly grantedReadRequests = new Set<string>();
   private readonly grantedRoots = new Set<string>();
-  /** The canonical roots, and the uncanonicalised roots they came from */
-  private rootsCache: { canonical: string[]; key: string } | null = null;
+  /**
+   * The canonical roots (resolved, or being resolved), and the
+   * uncanonicalised roots they came from
+   */
+  private rootsCache: { canonical: Promise<string[]>; key: string } | null =
+    null;
   private settings: PathAccessSettings = {};
 
   /**
    * Throwing form of `check`, for handlers that already report failures by
    * throwing.
    */
-  assertAllowed(p: unknown, options: { write?: boolean } = {}): void {
-    const result = this.check(p, options.write ? "write" : "read");
+  async assertAllowed(
+    p: unknown,
+    options: { write?: boolean } = {},
+  ): Promise<void> {
+    const result = await this.check(p, options.write ? "write" : "read");
     if (!result.ok) {
       throw new PathAccessError(result.error);
     }
   }
 
   /** Decide whether the renderer may use `p` for reading or writing. */
-  check(p: unknown, mode: PathAccessMode): PathAccessResult {
+  async check(p: unknown, mode: PathAccessMode): Promise<PathAccessResult> {
     let target: string;
     try {
-      target = canonicalizePath(p);
+      target = await canonicalizePath(p);
     } catch (error) {
+      // Includes a card that stopped responding (#714)
       return { error: (error as Error).message, ok: false };
     }
 
-    for (const root of this.getCanonicalRoots()) {
+    for (const root of await this.getCanonicalRoots()) {
       if (isSameOrInside(target, root)) {
         return { ok: true };
       }
@@ -125,13 +143,13 @@ export class PathAccessPolicy {
    * whatever a symlink at that path points to later. A path that can't be
    * resolved (a dangling or looping symlink) grants nothing.
    */
-  grantRead(p: unknown): void {
+  async grantRead(p: unknown): Promise<void> {
     const value = nonEmptyString(p);
     if (!value || !path.isAbsolute(value)) return;
     const requested = path.resolve(value);
     if (this.grantedReadRequests.has(requested)) return;
     try {
-      this.grantedReadPaths.add(foldCase(canonicalizePath(requested)));
+      this.grantedReadPaths.add(foldCase(await canonicalizePath(requested)));
       this.grantedReadRequests.add(requested);
     } catch {
       // Grants nothing, like a root that can't be resolved
@@ -171,21 +189,14 @@ export class PathAccessPolicy {
    * The roots, canonicalised. They're read on every check but resolved only
    * when they differ from last time, so a settings or env change (or a new
    * grant) takes effect on the next check without re-resolving every root
-   * on every check (RE-85).
+   * on every check (RE-85). Checks that arrive while the roots are being
+   * resolved share that one resolution.
    */
-  private getCanonicalRoots(): string[] {
+  private getCanonicalRoots(): Promise<string[]> {
     const roots = this.getRoots();
     const key = roots.join("\0");
     if (this.rootsCache?.key !== key) {
-      const canonical: string[] = [];
-      for (const root of roots) {
-        try {
-          canonical.push(canonicalizePath(root));
-        } catch {
-          // A root that can't be resolved grants nothing.
-        }
-      }
-      this.rootsCache = { canonical, key };
+      this.rootsCache = { canonical: canonicalizeRoots(roots), key };
     }
     return this.rootsCache.canonical;
   }
@@ -208,34 +219,15 @@ export class PathAccessPolicy {
  * existing component has its symlinks resolved (realpath of the nearest
  * existing ancestor, with the not-yet-existing tail appended).
  *
- * Throws PathAccessError for input that is not an absolute path, contains a
- * NUL byte, or runs through a dangling or looping symlink (writing through a
- * dangling link would create its target, wherever that is).
+ * Rejects with PathAccessError for input that is not an absolute path,
+ * contains a NUL byte, or runs through a dangling or looping symlink
+ * (writing through a dangling link would create its target, wherever that
+ * is), and with CardNotRespondingError when the filesystem doesn't answer
+ * within the card watchdog's limit (#714).
  */
-export function canonicalizePath(p: unknown): string {
+export async function canonicalizePath(p: unknown): Promise<string> {
   assertAbsolutePathInput(p);
-
-  let current = path.resolve(p);
-  // The not-yet-existing components below `current`, outermost first
-  const tail: string[] = [];
-  for (;;) {
-    const real = realpathIfExists(current, p);
-    if (real !== null) {
-      return tail.length > 0 ? path.join(real, ...tail) : real;
-    }
-
-    if (isSymlink(current)) {
-      throw new PathAccessError(`Path runs through a dangling symlink: ${p}`);
-    }
-
-    const parent = path.dirname(current);
-    if (parent === current) {
-      // Nothing on the way up exists (not even the filesystem root).
-      return path.resolve(p);
-    }
-    tail.unshift(path.basename(current));
-    current = parent;
-  }
+  return withCardWatchdog(resolveCanonical(path.resolve(p), p, []));
 }
 
 /** Where the wizard's "Use Default" button puts a new local store. */
@@ -267,14 +259,37 @@ function assertAbsolutePathInput(p: unknown): asserts p is string {
   }
 }
 
+/**
+ * The roots, canonicalised. A root that can't be resolved grants nothing.
+ * A root whose filesystem stopped responding grants its own path as given
+ * (#714), so a hung card doesn't hold up every later check: that never
+ * grants more than the resolved root would, because a canonical target has
+ * no symlinks in it, so it can only sit inside the path as given where that
+ * path has none either.
+ */
+async function canonicalizeRoots(roots: readonly string[]): Promise<string[]> {
+  const canonical = await Promise.all(
+    roots.map(async (root) => {
+      try {
+        return await canonicalizePath(root);
+      } catch (error) {
+        return error instanceof CardNotRespondingError
+          ? path.resolve(root)
+          : null;
+      }
+    }),
+  );
+  return canonical.filter((root): root is string => root !== null);
+}
+
 /** A path as the filesystem compares it: case-folded where it ignores case */
 function foldCase(p: string): string {
   return CASE_INSENSITIVE ? p.toLowerCase() : p;
 }
 
-function isSymlink(p: string): boolean {
+async function isSymlink(p: string): Promise<boolean> {
   try {
-    return fs.lstatSync(p).isSymbolicLink();
+    return (await fs.promises.lstat(p)).isSymbolicLink();
   } catch {
     return false;
   }
@@ -288,9 +303,12 @@ function nonEmptyString(value: unknown): null | string {
  * The realpath of `current`, or null when it doesn't exist (ENOENT,
  * ENOTDIR). Any other failure throws, naming the original path `p`.
  */
-function realpathIfExists(current: string, p: string): null | string {
+async function realpathIfExists(
+  current: string,
+  p: string,
+): Promise<null | string> {
   try {
-    return fs.realpathSync.native(current);
+    return await fs.promises.realpath(current);
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;
     if (code !== "ENOENT" && code !== "ENOTDIR") {
@@ -302,14 +320,41 @@ function realpathIfExists(current: string, p: string): null | string {
   }
 }
 
+/**
+ * canonicalizePath's walk: the realpath of `current` if it exists, else of
+ * its nearest existing ancestor, with `tail` (the not-yet-existing
+ * components below `current`, outermost first) appended.
+ */
+async function resolveCanonical(
+  current: string,
+  p: string,
+  tail: readonly string[],
+): Promise<string> {
+  const real = await realpathIfExists(current, p);
+  if (real !== null) {
+    return tail.length > 0 ? path.join(real, ...tail) : real;
+  }
+
+  if (await isSymlink(current)) {
+    throw new PathAccessError(`Path runs through a dangling symlink: ${p}`);
+  }
+
+  const parent = path.dirname(current);
+  if (parent === current) {
+    // Nothing on the way up exists (not even the filesystem root).
+    return path.resolve(p);
+  }
+  return resolveCanonical(parent, p, [path.basename(current), ...tail]);
+}
+
 export const pathAccess = new PathAccessPolicy();
 
 /** Throw a PathAccessError unless the process-wide policy allows `p`. */
 export function assertAllowed(
   p: unknown,
   options: { write?: boolean } = {},
-): void {
-  pathAccess.assertAllowed(p, options);
+): Promise<void> {
+  return pathAccess.assertAllowed(p, options);
 }
 
 /**
@@ -317,12 +362,14 @@ export function assertAllowed(
  * configured (create-romper-db, insert-kit, insert-sample): it must be a
  * `.romperdb` folder inside a writable root.
  */
-export function checkDatabaseDirAccess(dbDir: unknown): PathAccessResult {
+export function checkDatabaseDirAccess(
+  dbDir: unknown,
+): Promise<PathAccessResult> {
   if (typeof dbDir !== "string" || path.basename(dbDir) !== ".romperdb") {
-    return {
+    return Promise.resolve({
       error: `Access denied: ${String(dbDir)} is not a .romperdb folder`,
       ok: false,
-    };
+    });
   }
   return pathAccess.check(dbDir, "write");
 }
@@ -331,6 +378,6 @@ export function checkDatabaseDirAccess(dbDir: unknown): PathAccessResult {
 export function checkPathAccess(
   p: unknown,
   options: { write?: boolean } = {},
-): PathAccessResult {
+): Promise<PathAccessResult> {
   return pathAccess.check(p, options.write ? "write" : "read");
 }

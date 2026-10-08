@@ -16,7 +16,7 @@ vi.mock("../../services/syncService.js", () => ({
 }));
 
 vi.mock("../../security/pathAccess.js", () => ({
-  checkPathAccess: vi.fn(() => ({ ok: true })),
+  checkPathAccess: vi.fn(() => Promise.resolve({ ok: true })),
 }));
 
 import { ipcMain } from "electron";
@@ -81,7 +81,7 @@ describe("startKitSync path authorization (RE-03)", () => {
   });
 
   it("refuses to sync into a folder Romper wasn't given", async () => {
-    vi.mocked(checkPathAccess).mockReturnValueOnce({
+    vi.mocked(checkPathAccess).mockResolvedValueOnce({
       error: "Access denied",
       ok: false,
     });
@@ -124,7 +124,7 @@ describe("generateSyncChangeSummary path authorization (RE-05)", () => {
   });
 
   it("reads only a card folder Romper was given", async () => {
-    vi.mocked(checkPathAccess).mockReturnValueOnce({
+    vi.mocked(checkPathAccess).mockResolvedValueOnce({
       error: "Access denied",
       ok: false,
     });

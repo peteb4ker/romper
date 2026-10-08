@@ -53,7 +53,9 @@ describe("requestLocalStoreAccess (RE-03)", () => {
       parentWindow,
       expect.objectContaining({ cancelId: 1, detail: target }),
     );
-    expect(pathAccess.check(path.join(target, "A0"), "write").ok).toBe(true);
+    expect((await pathAccess.check(path.join(target, "A0"), "write")).ok).toBe(
+      true,
+    );
   });
 
   it("grants nothing when the user cancels", async () => {
@@ -66,7 +68,7 @@ describe("requestLocalStoreAccess (RE-03)", () => {
 
     expect(result.granted).toBe(false);
     expect(result.error).toContain(target);
-    expect(pathAccess.check(target, "write").ok).toBe(false);
+    expect((await pathAccess.check(target, "write")).ok).toBe(false);
   });
 
   it("prompts without a parent when the sender has no window", async () => {

@@ -21,8 +21,8 @@ vi.mock("../ipcHandlerUtils.js", () => ({
 }));
 
 vi.mock("../../security/sampleSourceAccess.js", () => ({
-  checkSampleSourceAccess: vi.fn(() => ({ ok: true })),
-  rememberKitSampleSources: vi.fn(),
+  checkSampleSourceAccess: vi.fn(() => Promise.resolve({ ok: true })),
+  rememberKitSampleSources: vi.fn(() => Promise.resolve()),
 }));
 
 import { ipcMain } from "electron";
@@ -204,7 +204,7 @@ describe("registerSampleIpcHandlers - undo source grants (RE-03)", () => {
     });
 
     it("refuses a file Romper may not read, and restores nothing (RE-03)", async () => {
-      vi.mocked(checkSampleSourceAccess).mockReturnValueOnce({
+      vi.mocked(checkSampleSourceAccess).mockResolvedValueOnce({
         error: "Access denied",
         ok: false,
       });

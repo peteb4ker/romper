@@ -13,7 +13,7 @@ import {
   planKitStereo,
   type StereoSampleState,
 } from "@romper/shared/stereoLinkRules.js";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import * as path from "node:path";
 
 import type { WavMetadataFields } from "./wavMetadataFields.js";
@@ -124,27 +124,19 @@ export function mergeKitScanTx(
     db.insert(samples).values(row).run();
   }
 
+  // One row per voice (#510): name the voice's row, or add it if missing
   for (const { alias, voiceNumber } of plan.aliasUpdates) {
-    const hasVoiceRow = kitVoices.some((v) => v.voice_number === voiceNumber);
-    if (hasVoiceRow) {
-      db.update(voices)
-        .set({ voice_alias: alias })
-        .where(
-          and(
-            eq(voices.kit_name, kitName),
-            eq(voices.voice_number, voiceNumber),
-          ),
-        )
-        .run();
-    } else {
-      db.insert(voices)
-        .values({
-          kit_name: kitName,
-          voice_alias: alias,
-          voice_number: voiceNumber,
-        })
-        .run();
-    }
+    db.insert(voices)
+      .values({
+        kit_name: kitName,
+        voice_alias: alias,
+        voice_number: voiceNumber,
+      })
+      .onConflictDoUpdate({
+        set: { voice_alias: alias },
+        target: [voices.kit_name, voices.voice_number],
+      })
+      .run();
   }
 
   // Setup links what rule 2 links (#537); a scan only reports it

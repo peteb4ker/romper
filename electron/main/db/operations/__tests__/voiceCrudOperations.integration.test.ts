@@ -1,3 +1,5 @@
+import * as schema from "@romper/shared/db/schema.js";
+import { eq } from "drizzle-orm";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
@@ -5,7 +7,7 @@ import {
   createTempStore,
   removeTempStore,
 } from "../../../../../tests/integration/support/tempStore.js";
-import { createRomperDbFile } from "../../utils/dbUtilities.js";
+import { createRomperDbFile, withDb } from "../../utils/dbUtilities.js";
 import { addKit, getKit, updateKit } from "../kitCrudOperations.js";
 import { markKitAsSynced } from "../kitSyncOperations.js";
 import {
@@ -35,6 +37,53 @@ describe("Voice CRUD Operations - Integration Tests", () => {
 
   afterEach(() => {
     removeTempStore(tempDir);
+  });
+
+  // #510: a kit has one row per voice, and the database itself refuses a
+  // second one
+  describe("[Q-02] one row per voice", () => {
+    const voiceRows = (voiceNumber: number) =>
+      getKit(dbDir, testKitName).data!.voices!.filter(
+        (v) => v.voice_number === voiceNumber,
+      );
+
+    test("adds a missing voice row only once, however many edits create it", () => {
+      withDb(dbDir, (db) =>
+        db
+          .delete(schema.voices)
+          .where(eq(schema.voices.kit_name, testKitName))
+          .run(),
+      );
+
+      expect(updateVoiceVolume(dbDir, testKitName, 2, 70).success).toBe(true);
+      expect(
+        updateVoiceSampleMode(dbDir, testKitName, 2, "random").success,
+      ).toBe(true);
+      expect(updateVoiceAlias(dbDir, testKitName, 2, "Snare").success).toBe(
+        true,
+      );
+
+      const rows = voiceRows(2);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({
+        sample_mode: "random",
+        voice_alias: "Snare",
+        voice_volume: 70,
+      });
+    });
+
+    test("refuses a second row for the same voice", () => {
+      const result = withDb(dbDir, (db) =>
+        db
+          .insert(schema.voices)
+          .values({ kit_name: testKitName, voice_number: 1 })
+          .run(),
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/UNIQUE constraint failed/);
+      expect(voiceRows(1)).toHaveLength(1);
+    });
   });
 
   describe("[UC-27] updateVoiceAlias", () => {

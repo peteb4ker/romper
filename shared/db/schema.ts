@@ -47,28 +47,36 @@ export const kits = sqliteTable("kits", {
 });
 
 // Voices table - each kit has exactly 4 voices
-export const voices = sqliteTable("voices", {
-  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
-  kit_name: text("kit_name")
-    .notNull()
-    .references(() => kits.name), // FK to kits.name
-  sample_mode: text("sample_mode").notNull().default("first"), // "first" | "random" | "round-robin"
-  slice_enabled: integer("slice_enabled", { mode: "boolean" })
-    .notNull()
-    .default(false), // Sequencer slice mode for this voice
-  slice_max_length: integer("slice_max_length").notNull().default(2), // Max slices when varying length (1, 2, 4, 8)
-  slice_roll_amount: integer("slice_roll_amount").notNull().default(100), // Percent of eligible steps a roll changes
-  slice_vary_length: integer("slice_vary_length", { mode: "boolean" })
-    .notNull()
-    .default(false), // Rolls and live-random steps also vary slice length
-  stereo_choice: text("stereo_choice").$type<"mono" | "stereo">(), // The user's own stereo choice (#537): "stereo" linked by hand, "mono" Keep mono or unlinked; null lets Romper link automatically
-  stereo_mode: integer("stereo_mode", { mode: "boolean" })
-    .notNull()
-    .default(false), // Stereo is a voice setting: true links this voice with the next as a stereo pair; samples carry no stereo flag
-  voice_alias: text("voice_alias"), // Optional user-defined voice name
-  voice_number: integer("voice_number").notNull(), // 1-4, explicit voice tracking
-  voice_volume: integer("voice_volume").notNull().default(100), // 0-100 volume level
-});
+export const voices = sqliteTable(
+  "voices",
+  {
+    id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+    kit_name: text("kit_name")
+      .notNull()
+      .references(() => kits.name), // FK to kits.name
+    sample_mode: text("sample_mode").notNull().default("first"), // "first" | "random" | "round-robin"
+    slice_enabled: integer("slice_enabled", { mode: "boolean" })
+      .notNull()
+      .default(false), // Sequencer slice mode for this voice
+    slice_max_length: integer("slice_max_length").notNull().default(2), // Max slices when varying length (1, 2, 4, 8)
+    slice_roll_amount: integer("slice_roll_amount").notNull().default(100), // Percent of eligible steps a roll changes
+    slice_vary_length: integer("slice_vary_length", { mode: "boolean" })
+      .notNull()
+      .default(false), // Rolls and live-random steps also vary slice length
+    stereo_choice: text("stereo_choice").$type<"mono" | "stereo">(), // The user's own stereo choice (#537): "stereo" linked by hand, "mono" Keep mono or unlinked; null lets Romper link automatically
+    stereo_mode: integer("stereo_mode", { mode: "boolean" })
+      .notNull()
+      .default(false), // Stereo is a voice setting: true links this voice with the next as a stereo pair; samples carry no stereo flag
+    voice_alias: text("voice_alias"), // Optional user-defined voice name
+    voice_number: integer("voice_number").notNull(), // 1-4, explicit voice tracking
+    voice_volume: integer("voice_volume").notNull().default(100), // 0-100 volume level
+  },
+  (table) => [
+    // Unique constraint: one row per kit/voice, so reads and updates can't
+    // pick between duplicates (#510)
+    unique("unique_voice").on(table.kit_name, table.voice_number),
+  ],
+);
 
 // Samples table - sample files assigned to voice slots
 export const samples = sqliteTable(

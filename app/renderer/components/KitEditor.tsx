@@ -145,17 +145,13 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
           onSaveVoiceName={logic.updateVoiceAlias}
           onStop={logic.playback.handleStop}
           onWaveformPlayingChange={logic.playback.handleWaveformPlayingChange}
-          playOptions={logic.playback.playOptions}
-          playTriggers={logic.playback.playTriggers}
-          playVolumes={logic.playback.playVolumes}
-          samplePlaying={logic.playback.samplePlaying}
           samples={logic.samples}
           selectedSampleIdx={logic.selectedSampleIdx}
           selectedVoice={logic.selectedVoice}
           sequencerOpen={logic.sequencerOpen}
           setSelectedSampleIdx={logic.setSelectedSampleIdx}
           setSelectedVoice={logic.setSelectedVoice}
-          stopTriggers={logic.playback.stopTriggers}
+          slotPlayback={logic.playback.slotPlayback}
         />
       </div>
       <KitStepSequencer

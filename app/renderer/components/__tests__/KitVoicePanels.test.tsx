@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
 import { GAIN_SAVE_DELAY_MS } from "../GainKnob";
+import { createSlotPlaybackStore } from "../hooks/kit-management/slotPlaybackStore";
 import { MAX_SLOTS_PER_VOICE } from "../hooks/voice-panels/useVoicePanelSlots";
 import KitVoicePanels from "../KitVoicePanels";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
@@ -23,9 +24,7 @@ const baseProps = {
   onSaveVoiceName: vi.fn(),
   onStop: vi.fn(),
   onWaveformPlayingChange: vi.fn(),
-  playTriggers: {},
-  samplePlaying: {},
-  stopTriggers: {},
+  slotPlayback: createSlotPlaybackStore(),
   voices: [
     { samples: ["kick.wav", "snare.wav"], voice: 1, voiceName: "Kick" },
     { samples: ["hat.wav", "clap.wav"], voice: 2, voiceName: "Hat" },
@@ -90,12 +89,10 @@ function MultiVoicePanelsTestWrapper({
           onSaveVoiceName={baseProps.onSaveVoiceName}
           onStop={baseProps.onStop}
           onWaveformPlayingChange={baseProps.onWaveformPlayingChange}
-          playTriggers={{}}
-          samplePlaying={{}}
           samples={samples}
           selectedSampleIdx={selectedSampleIdx}
           selectedVoice={selectedVoice}
-          stopTriggers={{}}
+          slotPlayback={createSlotPlaybackStore()}
           {...props}
         />
       </MockMessageDisplayProvider>
@@ -430,15 +427,13 @@ describe("KitVoicePanels", () => {
               onSaveVoiceName={vi.fn()}
               onStop={vi.fn()}
               onWaveformPlayingChange={vi.fn()}
-              playTriggers={{}}
-              samplePlaying={{}}
               samples={samples}
               selectedSampleIdx={0}
               selectedVoice={1}
               sequencerOpen={false}
               setSelectedSampleIdx={() => {}}
               setSelectedVoice={() => {}}
-              stopTriggers={{}}
+              slotPlayback={createSlotPlaybackStore()}
             />
           </MockMessageDisplayProvider>
         </MockSettingsProvider>,
@@ -470,15 +465,13 @@ describe("KitVoicePanels", () => {
               onSaveVoiceName={vi.fn()}
               onStop={vi.fn()}
               onWaveformPlayingChange={vi.fn()}
-              playTriggers={{}}
-              samplePlaying={{}}
               samples={samples}
               selectedSampleIdx={0}
               selectedVoice={1}
               sequencerOpen={false}
               setSelectedSampleIdx={() => {}}
               setSelectedVoice={() => {}}
-              stopTriggers={{}}
+              slotPlayback={createSlotPlaybackStore()}
             />
           </MockMessageDisplayProvider>
         </MockSettingsProvider>,
@@ -514,15 +507,13 @@ describe("KitVoicePanels", () => {
         onSaveVoiceName: vi.fn(),
         onStop: vi.fn(),
         onWaveformPlayingChange: vi.fn(),
-        playTriggers: {},
-        samplePlaying: {},
         samples: {},
         selectedSampleIdx: 0,
         selectedVoice: 1,
         sequencerOpen: false,
         setSelectedSampleIdx: vi.fn(),
         setSelectedVoice: vi.fn(),
-        stopTriggers: {},
+        slotPlayback: createSlotPlaybackStore(),
       };
 
       expect(() => {
@@ -550,15 +541,13 @@ describe("KitVoicePanels", () => {
               onSaveVoiceName={vi.fn()}
               onStop={vi.fn()}
               onWaveformPlayingChange={vi.fn()}
-              playTriggers={{}}
-              samplePlaying={{}}
               samples={samples}
               selectedSampleIdx={0}
               selectedVoice={1}
               sequencerOpen={false}
               setSelectedSampleIdx={() => {}}
               setSelectedVoice={() => {}}
-              stopTriggers={{}}
+              slotPlayback={createSlotPlaybackStore()}
             />
           </MockMessageDisplayProvider>
         </MockSettingsProvider>,

@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createSlotPlaybackStore } from "../hooks/kit-management/slotPlaybackStore";
 import KitVoicePanels from "../KitVoicePanels";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 import { MockSettingsProvider } from "./MockSettingsProvider";
@@ -59,12 +60,10 @@ function renderPanels(voices: VoiceSpec[]) {
           onSaveVoiceName={vi.fn()}
           onStop={vi.fn()}
           onWaveformPlayingChange={vi.fn()}
-          playTriggers={{}}
-          samplePlaying={{}}
           samples={samples}
           selectedSampleIdx={0}
           selectedVoice={1}
-          stopTriggers={{}}
+          slotPlayback={createSlotPlaybackStore()}
         />
       </MockMessageDisplayProvider>
     </MockSettingsProvider>,

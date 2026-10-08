@@ -3,6 +3,7 @@ import { render, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { slotKey } from "../../../../utils/slotKey";
+import { createSlotPlaybackStore } from "../../kit-management/slotPlaybackStore";
 import {
   useVoicePanelSlotRendering,
   type UseVoicePanelSlotRenderingOptions,
@@ -32,16 +33,15 @@ describe("useVoicePanelSlotRendering", () => {
     onSampleSelect: vi.fn(),
     onWaveformPlayingChange: vi.fn(),
     playsStereo: false,
-    playTriggers: {},
     renderDeleteButton: vi.fn(() => <button>Delete</button>),
     renderPlayButton: vi.fn(() => <button>Play</button>),
     sampleActionsHook: {
       handleSampleContextMenu: vi.fn(),
     },
     sampleMetadata: {},
-    samplePlaying: {},
     samples: ["sample1.wav", "sample2.wav"],
     selectedIdx: 0,
+    slotPlayback: createSlotPlaybackStore(),
     slotRenderingHook: {
       calculateRenderSlots: vi.fn(() => ({
         nextAvailableSlot: 2,
@@ -57,7 +57,6 @@ describe("useVoicePanelSlotRendering", () => {
         slotBaseClass: "base-class",
       })),
     },
-    stopTriggers: {},
     voice: 1,
   };
 

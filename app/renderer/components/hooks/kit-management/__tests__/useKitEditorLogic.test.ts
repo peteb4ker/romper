@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createMockKitWithRelations } from "../../../../../../tests/factories/kit.factory";
 import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/electronAPI";
+import { createSlotPlaybackStore } from "../slotPlaybackStore";
 import { useKitEditorLogic } from "../useKitEditorLogic";
 import { useKitPlayback } from "../useKitPlayback";
 import { useKitVoicePanels } from "../useKitVoicePanels";
@@ -32,9 +33,7 @@ vi.mock("../useKitPlayback", () => ({
     handleWaveformPlayingChange: vi.fn(),
     playbackError: null,
     playbackState: "stopped",
-    playTriggers: {},
-    samplePlaying: null,
-    stopTriggers: {},
+    slotPlayback: createSlotPlaybackStore(),
   })),
 }));
 
@@ -64,11 +63,7 @@ const mockPlayback = (overrides: Partial<Playback> = {}): Playback => ({
   handleStop: vi.fn(),
   handleWaveformPlayingChange: vi.fn(),
   playbackError: null,
-  playOptions: {},
-  playTriggers: {},
-  playVolumes: {},
-  samplePlaying: {},
-  stopTriggers: {},
+  slotPlayback: createSlotPlaybackStore(),
   ...overrides,
 });
 
@@ -83,14 +78,10 @@ const mockVoicePanels = (
   onSaveVoiceName: vi.fn(),
   onStop: vi.fn(),
   onWaveformPlayingChange: vi.fn(),
-  playOptions: {},
-  playTriggers: {},
-  playVolumes: {},
-  samplePlaying: {},
   samples: { 1: [], 2: [], 3: [], 4: [] },
   selectedSampleIdx: 0,
   selectedVoice: 1,
-  stopTriggers: {},
+  slotPlayback: createSlotPlaybackStore(),
   ...overrides,
 });
 

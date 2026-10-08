@@ -126,17 +126,13 @@ function Editor({
           onSaveVoiceName={noop}
           onStop={playback.handleStop}
           onWaveformPlayingChange={playback.handleWaveformPlayingChange}
-          playOptions={playback.playOptions}
-          playTriggers={playback.playTriggers}
-          playVolumes={playback.playVolumes}
-          samplePlaying={playback.samplePlaying}
           samples={samples}
           selectedSampleIdx={0}
           selectedVoice={1}
           sequencerOpen={false}
           setSelectedSampleIdx={noop}
           setSelectedVoice={noop}
-          stopTriggers={playback.stopTriggers}
+          slotPlayback={playback.slotPlayback}
         />
       </MockMessageDisplayProvider>
     </MockSettingsProvider>

@@ -13,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
 import { createMockSample } from "../../../../tests/factories/sample.factory";
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
+import { createSlotPlaybackStore } from "../hooks/kit-management/slotPlaybackStore";
 import KitVoicePanels from "../KitVoicePanels";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
 import { MockSettingsProvider } from "./MockSettingsProvider";
@@ -63,15 +64,13 @@ function Panels({
           onSaveVoiceName={vi.fn()}
           onStop={vi.fn()}
           onWaveformPlayingChange={vi.fn()}
-          playTriggers={{}}
-          samplePlaying={{}}
           samples={{ 1: ["kick.wav"], 2: [], 3: [], 4: [] }}
           selectedSampleIdx={0}
           selectedVoice={1}
           sequencerOpen={false}
           setSelectedSampleIdx={vi.fn()}
           setSelectedVoice={vi.fn()}
-          stopTriggers={{}}
+          slotPlayback={createSlotPlaybackStore()}
         />
       </MockMessageDisplayProvider>
     </MockSettingsProvider>

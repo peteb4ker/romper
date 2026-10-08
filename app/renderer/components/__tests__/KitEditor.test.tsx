@@ -21,6 +21,7 @@ vi.mock("../hooks/kit-management/useKitEditorLogic", () => ({
 
 // UnscannedKitPrompt feature was removed during database migration
 
+import { createSlotPlaybackStore } from "../hooks/kit-management/slotPlaybackStore";
 // Import after mocking and access the mocked function
 import { useKitEditorLogic } from "../hooks/kit-management/useKitEditorLogic";
 const mockUseKitEditorLogic = useKitEditorLogic as ReturnType<typeof vi.fn>;
@@ -55,9 +56,7 @@ function createMockLogic(overrides = {}) {
       handleStop: vi.fn(),
       handleWaveformPlayingChange: vi.fn(),
       playbackError: null,
-      playTriggers: {},
-      samplePlaying: null,
-      stopTriggers: {},
+      slotPlayback: createSlotPlaybackStore(),
     },
     reloadKit: vi.fn(),
     samples: { 1: [], 2: [], 3: [], 4: [] },

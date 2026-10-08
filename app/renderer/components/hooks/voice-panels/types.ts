@@ -1,6 +1,7 @@
 import React from "react";
 
-import type { PlayOptions, SampleData } from "../../kitTypes";
+import type { SampleData } from "../../kitTypes";
+import type { SlotPlaybackStore } from "../kit-management/slotPlaybackStore";
 
 import { DragAndDropHook } from "./useVoicePanelDragHandlers";
 import { SlotRenderingHook } from "./useVoicePanelSlotRendering";
@@ -28,11 +29,8 @@ export interface BaseVoicePanelOptions {
     slot: number,
     playing: boolean,
   ) => void;
-  playOptions?: { [key: string]: PlayOptions | undefined };
   /** The voice is in a stereo pair, as the write makes it (#569) */
   playsStereo: boolean;
-  playTriggers: { [key: string]: number };
-  playVolumes?: { [key: string]: number };
   renderDeleteButton: (
     slotNumber: number,
     sampleName?: string,
@@ -48,11 +46,11 @@ export interface BaseVoicePanelOptions {
     ) => void;
   };
   sampleMetadata?: { [slotKey: string]: SampleData }; // keyed by slotKey(voice, slot)
-  samplePlaying: { [key: string]: boolean };
   samples: string[];
   selectedIdx: number;
+  /** Each slot's playback, read by the slot itself (#482) */
+  slotPlayback: SlotPlaybackStore;
   slotRenderingHook: SlotRenderingHook;
-  stopTriggers: { [key: string]: number };
   voice: number;
 }
 

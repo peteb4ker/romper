@@ -1,6 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { createSlotPlaybackStore } from "../../kit-management/slotPlaybackStore";
 import {
   useVoicePanelRendering,
   type UseVoicePanelRenderingOptions,
@@ -64,14 +65,12 @@ describe("useVoicePanelRendering", () => {
     onStop: vi.fn(),
     onWaveformPlayingChange: vi.fn(),
     playsStereo: false,
-    playTriggers: {},
     sampleActionsHook: mockSampleActionsHook,
     sampleMetadata: {},
-    samplePlaying: {},
     samples: ["kick.wav", "snare.wav"],
     selectedIdx: 1,
+    slotPlayback: createSlotPlaybackStore(),
     slotRenderingHook: mockSlotRenderingHook,
-    stopTriggers: {},
     voice: 1,
     voiceName: null,
     voiceNameEditorHook: mockVoiceNameEditorHook,

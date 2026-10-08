@@ -1,10 +1,11 @@
 import React from "react";
 
+import type { SlotPlaybackStore } from "./hooks/kit-management/slotPlaybackStore";
 import type {
   SlotGainChange,
   SlotGainCommit,
 } from "./hooks/voice-panels/types";
-import type { PlayOptions, SampleData } from "./kitTypes";
+import type { SampleData } from "./kitTypes";
 
 import { useSampleActions } from "./hooks/sample-management/useSampleActions";
 import { useSlotRendering } from "./hooks/sample-management/useSlotRendering";
@@ -62,15 +63,11 @@ interface KitVoicePanelProps {
     slot: number,
     playing: boolean,
   ) => void;
-  playOptions?: { [key: string]: PlayOptions | undefined };
   /** The voice is in a stereo pair, as the write makes it (#569) */
   playsStereo: boolean;
-  playTriggers: { [key: string]: number };
-  playVolumes?: { [key: string]: number };
   sampleMetadata?: { [slotKey: string]: SampleData }; // Keyed by slotKey(voice, slot)
-  samplePlaying: { [key: string]: boolean };
-
   samples: string[];
+
   // New props for cross-voice navigation
   selectedIdx?: number; // index of selected sample in this voice, or -1 if not active
   setSharedDraggedSample?: (
@@ -80,7 +77,6 @@ interface KitVoicePanelProps {
       voice: number;
     } | null,
   ) => void;
-
   // Shared drag state for cross-voice operations
   sharedDraggedSample?: {
     sampleName: string;
@@ -88,11 +84,13 @@ interface KitVoicePanelProps {
     voice: number;
   } | null;
 
+  /** Each slot's playback, read by the slot itself (#482) */
+  slotPlayback: SlotPlaybackStore;
+
   /** Stereo questions and messages for a drop (#537) */
   stereoDrop?: StereoDropHandlers;
   /** A mono voice's note: its stereo samples are mixed down (#537) */
   stereoNote?: string;
-  stopTriggers: { [key: string]: number };
   voice: number;
   voiceName: null | string;
 }
@@ -125,19 +123,15 @@ const KitVoicePanel: React.FC<
   onStop,
   onVoiceUnlink,
   onWaveformPlayingChange,
-  playOptions,
   playsStereo,
-  playTriggers,
-  playVolumes,
   sampleMetadata,
-  samplePlaying,
   samples,
   selectedIdx = -1,
   setSharedDraggedSample,
   sharedDraggedSample,
+  slotPlayback,
   stereoDrop,
   stereoNote,
-  stopTriggers,
   voice,
   voiceName,
 }) => {
@@ -212,18 +206,14 @@ const KitVoicePanel: React.FC<
     onStop,
     onVoiceUnlink,
     onWaveformPlayingChange,
-    playOptions,
     playsStereo,
-    playTriggers,
-    playVolumes,
     sampleActionsHook: sampleActions,
     sampleMetadata,
-    samplePlaying,
     samples,
     selectedIdx,
+    slotPlayback,
     slotRenderingHook: slotRendering,
     stereoNote,
-    stopTriggers,
     voice,
     voiceName,
     voiceNameEditorHook: voiceNameEditor,

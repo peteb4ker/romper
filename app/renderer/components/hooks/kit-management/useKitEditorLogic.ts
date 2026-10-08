@@ -208,14 +208,12 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
       updateVoiceAlias(voice, alias ?? ""),
     onStop: playback.handleStop,
     onWaveformPlayingChange: playback.handleWaveformPlayingChange,
-    playTriggers: playback.playTriggers,
-    samplePlaying: playback.samplePlaying,
     samples,
     selectedSampleIdx,
     selectedVoice,
     setSelectedSampleIdx,
     setSelectedVoice,
-    stopTriggers: playback.stopTriggers,
+    slotPlayback: playback.slotPlayback,
   });
 
   // Forward playback / kit / waveform errors to the parent message handler

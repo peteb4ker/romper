@@ -158,7 +158,8 @@ export function useLocalStoreWizardFileOps({
             }
           },
           (error) => {
-            setError(error.message || String(error));
+            // Without a message, the install's result says why it failed
+            if (error.message) setError(error.message);
           },
         );
 

@@ -101,11 +101,7 @@ export async function findStaleCardEntries(
       } else {
         stale.push(entry.name);
       }
-    } else if (
-      entry.isFile() &&
-      BANK_NAME_FILE_PATTERN.test(entry.name) &&
-      !bankFiles.has(entry.name.toLowerCase())
-    ) {
+    } else if (isStaleBankFile(entry, bankFiles)) {
       stale.push(entry.name);
     }
   }
@@ -313,6 +309,18 @@ function isSameOrInside(child: string, parent: string): boolean {
   return (
     relative === "" ||
     (relative.split(path.sep)[0] !== ".." && !path.isAbsolute(relative))
+  );
+}
+
+/** A bank name file at the card root for a bank that no longer has that name */
+function isStaleBankFile(
+  entry: fs.Dirent,
+  bankFiles: ReadonlySet<string>,
+): boolean {
+  return (
+    entry.isFile() &&
+    BANK_NAME_FILE_PATTERN.test(entry.name) &&
+    !bankFiles.has(entry.name.toLowerCase())
   );
 }
 

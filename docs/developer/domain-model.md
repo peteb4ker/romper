@@ -793,11 +793,12 @@ voice and slot):
 - **Use cases:** [UC-36](use-cases.md#uc-36-messages-and-error-containment), [Q-01](use-cases.md#q-01-romper-stays-responsive-as-your-library-grows), [Q-02](use-cases.md#q-02-your-changes-are-saved-completely-or-not-at-all), [Q-03](use-cases.md#q-03-romper-only-touches-what-you-point-it-at), [Q-07](use-cases.md#q-07-every-change-is-tested-before-it-reaches-you).
 - **Rample manual:** none.
 - **Canonical owner:** `ElectronAPI` in `shared/electronApi.ts`. The
-  preload implements it (`satisfies ElectronAPI`) and the renderer's global
-  uses it, so those two can't drift. Main isn't bound to it: handlers are
-  untyped `ipcMain.handle` calls in `ipcHandlers.ts`, `dbIpcHandlers.ts`
-  and `db/*IpcHandlers.ts`. `tests/unit/ipcChannelParity.test.ts` checks
-  only that channel names match.
+  preload implements it (`satisfies ElectronAPI`), the renderer's global
+  and the tests' mock use it, and main registers every handler through
+  `handle` against the channel map derived from it
+  (`shared/ipcChannels.ts`, #472), so none of them can drift.
+  `tests/unit/ipcChannelParity.test.ts` checks that every channel is
+  handled.
 - **Writers:** whoever adds a feature (the four steps in the coding guide).
   Removals are shared work: re-check callers on current `main` at merge
   (#514 against #512).
@@ -805,20 +806,13 @@ voice and slot):
   that can fail; a missing result is a failure; main validates every
   argument; every write returns what changed, so the renderer can patch
   instead of reload (architecture review steps 5 and 7).
-- **Disagreements on main** (details on #472):
-  - return shapes differ from the contract: `getKit` returns `data: null`
-    for a missing kit; `createKit`, `copyKit`, `deleteKit`,
-    `getKitDeleteSummary` (`validateKitSlot`), `listFilesInRoot`,
-    `validateLocalStore*` and `openExternal` throw instead of returning a
-    failure; `ensureDir`, `showItemInFolder` and `cancelKitSync` are typed
-    `unknown`; `setSetting` is the one write with no result;
+- **Disagreements on main** (#472 bound main to the contract and fixed
+  the return shapes and throws it listed):
   - several result families (`DbResult`, `{ isValid }`, `{ exists }`,
     `{ writable }`, `{ sufficient }`, `{ granted }`, `{ removed }`, raw
     values, `void`), so callers each decide what failure looks like;
-  - the preload does work of its own: `readSettings` re-applies
-    `ROMPER_LOCAL_PATH`; the archive and sync progress listeners are
-    replaced, never removed; `electronFileAPI` and `romperEnv` sit outside
-    the contract;
+    `setSetting` is the one write with no result, and `ensureDir`'s
+    result is ignored by the wizard;
   - one intent, several channels: six kit-field channels reach `updateKit`;
     every kit row carries its bank's name (`kit.bank.artist`, which search
     reads) beside `get-all-banks`, which the browser reads; the local
@@ -903,7 +897,9 @@ the issues it names.
    #472). `handle(name, impl)` in main against `ElectronAPI`; every
    fallible call returns `DbResult`; a missing result is a failure; the
    mock `satisfies ElectronAPI`. This removes the class of #543 and #570
-   instead of fixing each caller.
+   instead of fixing each caller. (Channel map, typed handlers and mock
+   done in #472; one result shape and a missing result as a failure are
+   not.)
 4. **Edits return the changed kit** (step 5, #452). Each intent-level
    operation returns the kit (with its bank, voices and samples) it changed,
    in the transaction that changed it.

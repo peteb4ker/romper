@@ -65,6 +65,8 @@ import {
 import { scanService } from "./services/scanService.js";
 import { ServicePathManager } from "./utils/fileSystemUtils.js";
 
+const NO_LOCAL_STORE_PATH = "No local store path provided or configured";
+
 export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   pathAccess.useSettings(inMemorySettings);
 
@@ -407,15 +409,12 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   );
 
   handle("validate-local-store", async (_event, localStorePath?: string) => {
-    // Check environment override first, then provided path, then settings
-    const settingsPath =
-      typeof inMemorySettings.localStorePath === "string"
-        ? inMemorySettings.localStorePath
-        : undefined;
-    const pathToValidate =
-      process.env.ROMPER_LOCAL_PATH || localStorePath || settingsPath;
+    const pathToValidate = localStorePathToValidate(
+      localStorePath,
+      inMemorySettings,
+    );
     if (!pathToValidate) {
-      throw new Error("No local store path provided or configured");
+      return { error: NO_LOCAL_STORE_PATH, isValid: false };
     }
     const access = await checkPathAccess(pathToValidate);
     if (!access.ok) return { error: access.error, isValid: false };
@@ -425,15 +424,12 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   handle(
     "validate-local-store-basic",
     async (_event, localStorePath?: string) => {
-      // Check environment override first, then provided path, then settings
-      const settingsPath =
-        typeof inMemorySettings.localStorePath === "string"
-          ? inMemorySettings.localStorePath
-          : undefined;
-      const pathToValidate =
-        process.env.ROMPER_LOCAL_PATH || localStorePath || settingsPath;
+      const pathToValidate = localStorePathToValidate(
+        localStorePath,
+        inMemorySettings,
+      );
       if (!pathToValidate) {
-        throw new Error("No local store path provided or configured");
+        return { error: NO_LOCAL_STORE_PATH, isValid: false };
       }
       const access = await checkPathAccess(pathToValidate);
       if (!access.ok) return { error: access.error, isValid: false };
@@ -513,6 +509,22 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
 
   // Progress events are handled via webContents.send in syncService
   // No IPC handler needed for onSyncProgress as it's a renderer-side event listener
+}
+
+/**
+ * The store a validate-local-store call checks (#472): the path it names,
+ * else the ROMPER_LOCAL_PATH override, else the saved store. The override
+ * stands in for the saved store, not for a folder the caller chose.
+ */
+function localStorePathToValidate(
+  localStorePath: string | undefined,
+  inMemorySettings: InMemorySettings,
+): string | undefined {
+  const settingsPath =
+    typeof inMemorySettings.localStorePath === "string"
+      ? inMemorySettings.localStorePath
+      : undefined;
+  return localStorePath || process.env.ROMPER_LOCAL_PATH || settingsPath;
 }
 
 /**

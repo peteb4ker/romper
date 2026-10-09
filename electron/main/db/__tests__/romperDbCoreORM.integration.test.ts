@@ -1,5 +1,7 @@
 import type { NewKit, NewSample } from "@romper/shared/db/schema.js";
 
+import { voices } from "@romper/shared/db/schema.js";
+import { and, eq } from "drizzle-orm";
 // Unit tests for Drizzle ORM implementation
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -260,6 +262,23 @@ describe("Drizzle ORM Database Operations", () => {
       expect(kit).toBeDefined();
       const kickVoice = kit?.voices?.find((v) => v.voice_number === 1);
       expect(kickVoice?.voice_alias).toBe("Kick");
+    });
+
+    it("[Q-07] saves the name of a voice whose row was missing, rather than succeeding without it (#472)", () => {
+      withDb(TEST_DB_DIR, (db) =>
+        db
+          .delete(voices)
+          .where(and(eq(voices.kit_name, "A0"), eq(voices.voice_number, 2)))
+          .run(),
+      );
+
+      expect(updateVoiceAlias(TEST_DB_DIR, "A0", 2, "Snare")).toEqual({
+        success: true,
+      });
+
+      const kit = getKits(TEST_DB_DIR).data?.find((k) => k.name === "A0");
+      const voice = kit?.voices?.find((v) => v.voice_number === 2);
+      expect(voice?.voice_alias).toBe("Snare");
     });
 
     it("should handle multiple voice aliases", async () => {

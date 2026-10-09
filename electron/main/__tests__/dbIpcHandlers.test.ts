@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock electron
 vi.mock("electron", () => ({
@@ -559,6 +559,55 @@ describe("dbIpcHandlers - Routing Tests", () => {
         ).not.toHaveBeenCalled();
       },
     );
+
+    describe("[Q-07] validate-local-store keeps to the contract (#472)", () => {
+      afterEach(() => {
+        vi.unstubAllEnvs();
+      });
+
+      it.each(["validate-local-store", "validate-local-store-basic"])(
+        "%s says no store is set in its result, rather than throwing",
+        async (channel) => {
+          vi.stubEnv("ROMPER_LOCAL_PATH", "");
+          registerDbIpcHandlers({ localStorePath: null });
+
+          await expect(handlerRegistry[channel]({})).resolves.toEqual({
+            error: "No local store path provided or configured",
+            isValid: false,
+          });
+        },
+      );
+
+      it.each([
+        ["validate-local-store", "validateLocalStore"],
+        ["validate-local-store-basic", "validateLocalStoreBasic"],
+      ] as const)(
+        "%s checks the folder it's given, not the ROMPER_LOCAL_PATH store",
+        async (channel, method) => {
+          vi.stubEnv("ROMPER_LOCAL_PATH", "/env/store");
+
+          await handlerRegistry[channel]({}, "/picked/store");
+
+          expect(localStoreService[method]).toHaveBeenCalledWith(
+            "/picked/store",
+          );
+        },
+      );
+
+      it.each([
+        ["validate-local-store", "validateLocalStore"],
+        ["validate-local-store-basic", "validateLocalStoreBasic"],
+      ] as const)(
+        "%s checks the ROMPER_LOCAL_PATH store ahead of the saved one",
+        async (channel, method) => {
+          vi.stubEnv("ROMPER_LOCAL_PATH", "/env/store");
+
+          await handlerRegistry[channel]({});
+
+          expect(localStoreService[method]).toHaveBeenCalledWith("/env/store");
+        },
+      );
+    });
 
     it("validate-local-store validates an allowed path", async () => {
       const result = await handlerRegistry["validate-local-store"](

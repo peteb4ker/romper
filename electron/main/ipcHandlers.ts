@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@romper/shared/errorUtils.js";
 import { app, BrowserWindow, dialog, shell } from "electron";
 import * as path from "node:path";
 
@@ -126,8 +127,14 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
         success: false,
       };
     }
-    await shell.openExternal(url);
-    return { success: true };
+    // No app to open the link with, say: a result, as the contract says,
+    // rather than a rejected call (#472)
+    try {
+      await shell.openExternal(url);
+      return { success: true };
+    } catch (error) {
+      return { error: getErrorMessage(error), success: false };
+    }
   });
 
   handle("get-kit-delete-summary", (_event, kitName: string) =>

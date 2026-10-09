@@ -232,6 +232,25 @@ describe("registerIpcHandlers", () => {
     );
   });
 
+  it("[Q-07] open-external reports a link it couldn't open in its result, rather than rejecting (#472)", async () => {
+    const { shell } = await import("electron");
+    vi.mocked(shell.openExternal).mockRejectedValueOnce(
+      new Error("No application is registered"),
+    );
+    const { registerIpcHandlers } = await import("../ipcHandlers");
+    registerIpcHandlers({ localStorePath: null });
+
+    await expect(
+      ipcMainHandlers["open-external"](
+        {},
+        "https://github.com/peteb4ker/romper",
+      ),
+    ).resolves.toEqual({
+      error: "No application is registered",
+      success: false,
+    });
+  });
+
   it("open-external refuses non-https and invalid URLs", async () => {
     const { shell } = await import("electron");
     const { registerIpcHandlers } = await import("../ipcHandlers");

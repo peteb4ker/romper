@@ -70,6 +70,12 @@ Types that cross the bridge live in `shared/`, never in main: main imports
 contract. The renderer's write panel extends `SyncProgress` with the states
 only it sets (`SyncProgressState`).
 
+A call whose contract returns a result reports a failure the caller can
+act on in that result (`success: false` with `error`, or its own field such
+as `isValid` or `writable`) rather than rejecting; a rejection reaches the
+renderer wrapped in Electron's "Error invoking remote method" text. Calls
+whose result is `void` (`setSetting`, `closeApp`) reject.
+
 Database operations return `DbResult<T>` (`{ success, data?, error? }`);
 `shared/errorUtils.ts` has `getErrorMessage`, which turns a caught error
 into the `error` text.

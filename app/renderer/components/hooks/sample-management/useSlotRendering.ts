@@ -8,6 +8,12 @@ export interface UseSlotRenderingOptions {
   dragOverSlot: null | number;
   dropZone: { mode: "append" | "blocked" | "insert"; slot: number } | null;
   isActive: boolean;
+  /**
+   * The voice is in a stereo pair, as the write makes it (#569); the
+   * format badge reads it, since a stereo file on a mono voice is mixed
+   * down (#576)
+   */
+  playsStereo?: boolean;
   samples: string[];
   selectedIdx: number;
   voice: number;
@@ -21,6 +27,7 @@ export function useSlotRendering({
   dragOverSlot,
   dropZone,
   isActive,
+  playsStereo,
   samples,
   selectedIdx,
   voice,
@@ -142,9 +149,11 @@ export function useSlotRendering({
         return filename || `Slot ${slotNumber + 1}`;
       }
 
-      return formatTooltip(sampleData, sampleData.source_path, filename);
+      return formatTooltip(sampleData, sampleData.source_path, filename, {
+        stereoVoice: playsStereo,
+      });
     },
-    [],
+    [playsStereo],
   );
 
   return {

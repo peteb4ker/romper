@@ -138,6 +138,7 @@ describe("SampleValidator", () => {
           wav_bit_depth: 24,
           wav_bitrate: 48000 * 2 * 24,
           wav_channels: 2,
+          wav_format_tag: null,
           wav_sample_rate: 48000,
         },
       });

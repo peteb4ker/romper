@@ -49,9 +49,21 @@ vi.mock("../syncValidationService.js", () => ({
       type: "unknown",
       userMessage: "Error",
     }),
-    validateSampleFormat: vi
-      .fn()
-      .mockResolvedValue({ data: { issues: [] }, success: true }),
+    // A native file: 16-bit, 44.1 kHz mono, 0.1 s
+    validateSampleFormat: vi.fn().mockResolvedValue({
+      data: {
+        issues: [],
+        metadata: {
+          bitDepth: 16,
+          channels: 1,
+          encoding: "pcm",
+          extensible: false,
+          frames: 4410,
+          sampleRate: 44100,
+        },
+      },
+      success: true,
+    }),
     validateSyncSourceFile: vi
       .fn()
       .mockResolvedValue({ fileSize: 1024, isValid: true }),
@@ -388,6 +400,14 @@ describe("[UC-34] SyncFileOperationsService", () => {
             },
           ],
           isValid: false,
+          metadata: {
+            bitDepth: 16,
+            channels: 1,
+            encoding: "pcm",
+            extensible: true,
+            frames: 4410,
+            sampleRate: 44100,
+          },
         },
         success: true,
       });
@@ -409,6 +429,88 @@ describe("[UC-34] SyncFileOperationsService", () => {
 
       expect(results.validationErrors).toEqual([]);
       expect(results.filesToConvert).toHaveLength(1);
+      expect(results.filesToConvert[0]).toMatchObject({
+        conversion: "format",
+        operation: "convert",
+      });
+    });
+
+    describe("[UC-34] [Q-08] the shared format rule (#576)", () => {
+      const emptyResults = () => ({
+        filesToConvert: [] as SyncFileOperation[],
+        filesToCopy: [] as SyncFileOperation[],
+        hasFormatWarnings: false,
+        validationErrors: [],
+        warnings: [],
+      });
+      const plan = async (
+        sample: Record<string, unknown>,
+        metadata?: Record<string, unknown>,
+      ) => {
+        if (metadata) {
+          vi.mocked(
+            syncValidationService.validateSampleFormat,
+          ).mockResolvedValueOnce({
+            data: { issues: [], isValid: true, metadata },
+            success: true,
+          });
+        }
+        const results = emptyResults();
+        await syncFileOperationsService.categorizeSyncFileOperation(
+          { filename: "s.wav", voice_number: 1, ...sample } as never,
+          "s.wav",
+          "/src/s.wav",
+          "/dest/1-01 s.wav",
+          results,
+        );
+        return results;
+      };
+      const native = {
+        bitDepth: 16,
+        channels: 1,
+        encoding: "pcm",
+        extensible: false,
+        sampleRate: 44100,
+      };
+
+      it("copies a native file as it is", async () => {
+        const results = await plan({ gain_db: 0 });
+        expect(results.filesToCopy).toEqual([
+          expect.objectContaining({ conversion: null, operation: "copy" }),
+        ]);
+      });
+
+      it("converts a native file with a gain adjustment, for gain", async () => {
+        const results = await plan({ gain_db: -6 });
+        expect(results.filesToCopy).toEqual([]);
+        expect(results.filesToConvert).toEqual([
+          expect.objectContaining({
+            conversion: "gain",
+            gainDb: -6,
+            operation: "convert",
+          }),
+        ]);
+      });
+
+      it("counts a file needing both as a format conversion", async () => {
+        const results = await plan(
+          { gain_db: 3 },
+          { ...native, frames: 4800, sampleRate: 48000 },
+        );
+        expect(results.filesToConvert).toEqual([
+          expect.objectContaining({ conversion: "format" }),
+        ]);
+      });
+
+      it("marks a file shorter than 50 ms, but not one of exactly 50 ms", async () => {
+        // 20 ms, 50 ms and 49.98 ms at 44.1 kHz
+        const short = await plan({}, { ...native, frames: 882 });
+        const exact = await plan({}, { ...native, frames: 2205 });
+        const justUnder = await plan({}, { ...native, frames: 2204 });
+        expect(short.filesToCopy[0].tooShort).toBe(true);
+        expect(exact.filesToCopy[0].tooShort).toBe(false);
+        expect(justUnder.filesToCopy[0].tooShort).toBe(true);
+      });
     });
 
     it("[Q-01] doesn't check the source again: planning already has", async () => {

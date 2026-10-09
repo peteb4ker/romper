@@ -57,7 +57,7 @@ tell which sections changed. Read the text on the page.
 | Advanced parameters | [#C0ft3/t](https://squarp.net/rample/manual/#C0ft3/t) | `ed80da496d71` | 2026-10-08 | mirrors, documents | UC-33 | [Kit](domain-model.md#kit) | The slicer mirrors start point and length, and the Romper manual explains them; envelope and run mode aren't mirrored. |
 | Momentary effects | [#XX3QtZz4q](https://squarp.net/rample/manual/#XX3QtZz4q) | `a2efcb4b5b81` | 2026-10-08 | none |  |  |  |
 | Punch effects | [#X8umaeb](https://squarp.net/rample/manual/#X8umaeb) | `368e0cbd6618` | 2026-10-08 | none |  |  |  |
-| Note about start point & sample length | [#XX9CMqGW9](https://squarp.net/rample/manual/#XX9CMqGW9) | `447a6c1db635` | 2026-10-08 | mirrors, documents | UC-33, UC-34 | [Kit](domain-model.md#kit) | The slicer's division; the minimum sample length isn't checked (#576). |
+| Note about start point & sample length | [#XX9CMqGW9](https://squarp.net/rample/manual/#XX9CMqGW9) | `447a6c1db635` | 2026-10-08 | mirrors, documents | UC-33, UC-34 | [Kit](domain-model.md#kit) | The slicer's division; the write summary warns about samples shorter than the minimum length (#576). |
 | MIDI Keyboard Split: Chromatic Mode | [#XX6RMicNl](https://squarp.net/rample/manual/#XX6RMicNl) | `69e40da76aea` | 2026-10-08 | none |  |  |  |
 | MIDI Keyboard Split: Chromatic Mode › CHORD MIDI MODE | [#XX6RMicNl](https://squarp.net/rample/manual/#XX6RMicNl) | `91e8f8ca43fd` | 2026-10-08 | none |  |  |  |
 | MIDI Keyboard Split: Layers Mode | [#mNcX51v](https://squarp.net/rample/manual/#mNcX51v) | `3c717a24f24e` | 2026-10-08 | none |  |  |  |

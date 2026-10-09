@@ -406,6 +406,11 @@ export interface SyncBankSummary {
 
 export interface SyncChangeSummary {
   banks: SyncBankSummary[];
+  /**
+   * Files the write re-encodes, by why (#576): their format (including a
+   * mixdown to mono), or only to apply their gain
+   */
+  conversions: { format: number; gain: number };
   /** Files that will be written to the card */
   fileCount: number;
   kitCount: number;

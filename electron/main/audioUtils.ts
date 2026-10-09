@@ -5,6 +5,10 @@ import type {
 } from "@romper/shared/audioTypes.js";
 import type { DbResult } from "@romper/shared/db/schema.js";
 
+import {
+  formatIssues,
+  RAMPLE_FORMAT_REQUIREMENTS,
+} from "@romper/shared/rampleFormat.js";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -19,22 +23,12 @@ import {
 // does not need to reach into electron/main/.
 export type { AudioMetadata, FormatIssue, FormatValidationResult };
 
-/**
- * Squarp Rample format requirements
- */
-export interface RampleFormatRequirements {
-  readonly bitDepths: readonly number[];
-  readonly fileExtensions: readonly string[];
-  readonly maxChannels: number;
-  readonly sampleRates: readonly number[];
-}
-
-export const RAMPLE_FORMAT_REQUIREMENTS: RampleFormatRequirements = {
-  bitDepths: [8, 16],
-  fileExtensions: [".wav"],
-  maxChannels: 2, // mono or stereo
-  sampleRates: [44100],
-} as const;
+// The Rample's requirements live in shared/rampleFormat.ts, with the rule
+// for what a write converts (#576); re-exported for main's callers.
+export {
+  RAMPLE_FORMAT_REQUIREMENTS,
+  type RampleFormatRequirements,
+} from "@romper/shared/rampleFormat.js";
 
 /**
  * Reads a WAV file's format from its header, wherever its `fmt ` and `data`
@@ -115,70 +109,11 @@ export function isFormatIssueCritical(issue: FormatIssue): boolean {
 }
 
 /**
- * Validates audio metadata against Rample requirements
+ * Validates audio metadata against Rample requirements (the shared rule's
+ * `formatIssues`)
  */
 export function validateAudioFormat(metadata: AudioMetadata): FormatIssue[] {
-  const issues: FormatIssue[] = [];
-
-  // Float samples and extensible headers are converted to plain PCM
-  if (metadata.encoding === "float") {
-    issues.push({
-      current: `${metadata.bitDepth}-bit float`,
-      message: `${metadata.bitDepth}-bit float samples will be converted to 16-bit PCM.`,
-      required: "PCM",
-      type: "encoding",
-    });
-  } else if (metadata.extensible) {
-    issues.push({
-      current: "WAVE_FORMAT_EXTENSIBLE",
-      message:
-        "The file has an extended WAV header; it will be rewritten as a standard WAV.",
-      required: "PCM",
-      type: "encoding",
-    });
-  }
-
-  // Validate bit depth (a float file's is covered above)
-  if (
-    metadata.encoding !== "float" &&
-    metadata.bitDepth !== undefined &&
-    !RAMPLE_FORMAT_REQUIREMENTS.bitDepths.includes(metadata.bitDepth)
-  ) {
-    issues.push({
-      current: metadata.bitDepth,
-      message: `Bit depth ${metadata.bitDepth} is not supported. Rample supports ${RAMPLE_FORMAT_REQUIREMENTS.bitDepths.join(", ")} bit only.`,
-      required: RAMPLE_FORMAT_REQUIREMENTS.bitDepths,
-      type: "bitDepth",
-    });
-  }
-
-  // Validate sample rate
-  if (
-    metadata.sampleRate !== undefined &&
-    !RAMPLE_FORMAT_REQUIREMENTS.sampleRates.includes(metadata.sampleRate)
-  ) {
-    issues.push({
-      current: metadata.sampleRate,
-      message: `Sample rate ${metadata.sampleRate} Hz is not supported. Rample requires ${RAMPLE_FORMAT_REQUIREMENTS.sampleRates[0]} Hz.`,
-      required: RAMPLE_FORMAT_REQUIREMENTS.sampleRates[0],
-      type: "sampleRate",
-    });
-  }
-
-  // Validate channel count
-  if (
-    metadata.channels !== undefined &&
-    metadata.channels > RAMPLE_FORMAT_REQUIREMENTS.maxChannels
-  ) {
-    issues.push({
-      current: metadata.channels,
-      message: `${metadata.channels} channels not supported. Rample supports mono (1) or stereo (2) only.`,
-      required: `1-${RAMPLE_FORMAT_REQUIREMENTS.maxChannels}`,
-      type: "channels",
-    });
-  }
-
-  return issues;
+  return formatIssues(metadata);
 }
 
 /**
@@ -261,6 +196,7 @@ function toAudioMetadata(
       encoding,
       extensible,
       fileSize,
+      frames: Math.floor(dataSize / blockAlign),
       sampleRate,
     },
     success: true,

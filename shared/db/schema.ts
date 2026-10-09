@@ -95,6 +95,7 @@ export const samples = sqliteTable(
     wav_bit_depth: integer("wav_bit_depth"), // Optional WAV metadata - bit depth (8, 16, 24, 32)
     wav_bitrate: integer("wav_bitrate"), // Optional WAV metadata
     wav_channels: integer("wav_channels"), // Optional WAV metadata - channel count (1=mono, 2=stereo)
+    wav_format_tag: integer("wav_format_tag"), // Optional WAV metadata - the fmt chunk's format tag (1 PCM, 3 float, 0xFFFE extensible; #576)
     wav_sample_rate: integer("wav_sample_rate"), // Optional WAV metadata
   },
   (table) => [

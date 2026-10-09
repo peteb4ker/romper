@@ -557,12 +557,17 @@ voice and slot):
 | `source_path` | The file Romper reads: outside the store for samples you add, inside it for imported ones | none | add; scan inserts | `sampleMetadata`; undo snapshots |
 | `filename` | The readable part of the card name | writes (`cardSampleFileName`) | add, scan | `allKitSamples`; `kits[i].samples` |
 | `gain_db` | Trim from -24 to +12 dB, baked in at write | writes (no counterpart: the Rample's level is per voice) | `updateSampleGain` (`update-sample-gain`, flags the kit) | `kits[i].samples[].gain_db`, patched after a save (`markGainSaved`); `sampleMetadata`, built from it |
-| `wav_bit_depth`, `wav_channels`, `wav_sample_rate`, `wav_bitrate` | The file's format when it was added or last scanned | none (the write reads the header) | add (from the validation read), scan only when null | `sampleMetadata` → tooltip and format badge (`wavMetadataFormatter`) |
+| `wav_bit_depth`, `wav_channels`, `wav_sample_rate`, `wav_bitrate`, `wav_format_tag` | The file's format when it was added or last read: the format tag is the header's PCM, float or extensible (#576) | none (the write reads the header) | add (from the validation read); scan when any is null; the kit-open check when the format tag is null | `sampleMetadata` → tooltip and format badge (`wavMetadataFormatter`, by `planConversion`) |
 | `source_status` | What Romper found when it last read the file: `readable`, `missing`, `unreadable`, or null (never checked, as in older libraries) | none | add (`readable`); scan (`mergeKitScanTx`); the kit editor's check when a kit opens (`check-kit-sample-files` → `checkKitSampleFiles`, #537); a completed write (`completeWrite`: `missing`, `unreadable`, or null once a problem file is fine) | `kits[i].quarantined` (`isKitQuarantined`, in main); `sampleMetadata` → the slot labels "File not found" and "Can't be read", the missing-files notice, and the quarantine notice |
 
 - **Canonical owner of the file's format:** the file itself, read at write
   time (`validateSampleFormatAsync`, `formatConverter`). The `wav_*`
-  columns are a cache for display.
+  columns are a cache for display. What a write does to it is one rule,
+  `planConversion` in `shared/rampleFormat.ts` (#576): written as it is, or
+  re-encoded for its format (the Rample's requirements, or a mixdown on a
+  mono voice) or only for its gain. The write plans every file with it
+  and the format badge shows it, from the voice's stereo setting as the
+  write makes it (`playsStereo`).
 - **File status (#537):** catch a problem early and say how to fix it.
   When a kit opens, the kit editor asks main, once and in one batch
   (`check-kit-sample-files`), to check every sample's file still exists
@@ -602,10 +607,11 @@ voice and slot):
     `kit.samples` only.
   - The slicer's waveform cache and `SampleWaveform` don't notice a slot's
     file changing (#575).
-  - The format badge uses its own copy of the Rample's requirements and the
-    cached `wav_*` columns, so it can say "native" for a file the write
-    converts; the write summary counts files re-encoded for gain as copies;
-    and nothing checks the manual's 50 ms minimum (#576).
+  - The format badge reads the cached `wav_*` columns, so a file changed on
+    disk since it was last read shows its old format until a scan or the
+    kit-open check reads it again; neither re-reads a file it already
+    knows (#576 left this: it needs the file's size or modification time
+    stored).
 
 ## The card and a write
 
@@ -634,8 +640,10 @@ voice and slot):
 - **Writers:** `startKitSync` (`syncService`):
   1. **plan** (`planSync`): one load (`getSyncPlanData`), the expected card
      contents (`planCardContents`), a read of each source header in
-     batches (`processSampleForSync`), the voice-1 warning, and mono
-     annotation;
+     batches (`processSampleForSync`), each file's copy or conversion by
+     the shared rule (`planConversion`, #576), the voice-1 warning, mono
+     annotation, and a warning for samples shorter than the manual's 50 ms
+     minimum;
   2. **refuse** when samples can't be written, unless you chose to skip
      them;
   3. **write** every sample (`syncFileOperations.processAllFiles`): copy, or
@@ -706,7 +714,7 @@ voice and slot):
   stereo rules will do); a user-set voice name survives a scan.
 - **Disagreements on main:**
   - `wav_*` columns are refreshed only when empty, so a file changed on disk
-    keeps its old format on screen (#576).
+    keeps its old format on screen (not fixed by #576).
   - `planKitScanMerge`'s comment still lists a "stereo flag" on rows.
   - Voice names are inferred twice: in main (`inferMissingVoiceAliases`,
     from database rows) and in the renderer (`handleInferVoiceNames`, from

@@ -16,6 +16,7 @@ export const createMockSample = (overrides: Partial<Sample> = {}): Sample => ({
   wav_bit_depth: 16,
   wav_bitrate: null,
   wav_channels: 1,
+  wav_format_tag: 1,
   wav_sample_rate: 44100,
   ...overrides,
 });

@@ -63,6 +63,7 @@ const sampleRow = (
   wav_bit_depth: null,
   wav_bitrate: null,
   wav_channels: null,
+  wav_format_tag: null,
   wav_sample_rate: null,
 });
 

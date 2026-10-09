@@ -177,6 +177,7 @@ export function restoreVoicesTx(
             wav_bit_depth: row.wav_bit_depth,
             wav_bitrate: row.wav_bitrate,
             wav_channels: row.wav_channels,
+            wav_format_tag: row.wav_format_tag ?? null,
             wav_sample_rate: row.wav_sample_rate,
           })),
         )
@@ -244,6 +245,8 @@ export function updateSampleMetadata(
       updateData.wav_bitrate = updates.wav_bitrate;
     if (updates.wav_channels !== undefined)
       updateData.wav_channels = updates.wav_channels;
+    if (updates.wav_format_tag !== undefined)
+      updateData.wav_format_tag = updates.wav_format_tag;
     if (updates.wav_sample_rate !== undefined)
       updateData.wav_sample_rate = updates.wav_sample_rate;
     if (updates.gain_db !== undefined) updateData.gain_db = updates.gain_db;
@@ -278,6 +281,7 @@ export function updateSampleSourceStatusTx(
       | "wav_bit_depth"
       | "wav_bitrate"
       | "wav_channels"
+      | "wav_format_tag"
       | "wav_sample_rate"
     >
   >,
@@ -299,6 +303,8 @@ function isRestorableRow(row: VoiceSnapshot["samples"][number]): boolean {
     optionalInt(row.wav_bit_depth) &&
     optionalInt(row.wav_bitrate) &&
     optionalInt(row.wav_channels) &&
+    // Undo entries made before #576 don't have it
+    (row.wav_format_tag === undefined || optionalInt(row.wav_format_tag)) &&
     optionalInt(row.wav_sample_rate)
   );
 }

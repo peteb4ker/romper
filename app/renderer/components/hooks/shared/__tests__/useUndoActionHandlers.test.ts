@@ -44,6 +44,7 @@ describe("useUndoActionHandlers", () => {
         wav_bit_depth: 24,
         wav_bitrate: 2304000,
         wav_channels: 2,
+        wav_format_tag: 1,
         wav_sample_rate: 48000,
       },
     ],

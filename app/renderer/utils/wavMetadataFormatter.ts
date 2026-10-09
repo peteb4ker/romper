@@ -1,18 +1,24 @@
+import {
+  formatOfStoredSample,
+  planConversion,
+} from "@romper/shared/rampleFormat";
+
 import type { SampleData } from "../components/kitTypes";
 
-/**
- * Compatibility status for Rample hardware requirements
- */
-export type CompatibilityStatus = "convertible" | "incompatible" | "native";
+/** What the badge needs to know about the sample's voice */
+export interface CompatibilityOptions {
+  /**
+   * The voice plays in a stereo pair, as the write makes it (`playsStereo`);
+   * on a mono voice a stereo file is mixed down
+   */
+  stereoVoice?: boolean;
+}
 
 /**
- * Rample format requirements (matching scanner logic from PR70)
+ * What a write does to a sample's file, as its format badge shows it:
+ * written as it is ("native") or re-encoded ("convertible")
  */
-const RAMPLE_FORMAT_REQUIREMENTS = {
-  bitDepths: [8, 16] as number[],
-  maxChannels: 2, // mono or stereo
-  sampleRates: [44100] as number[],
-};
+export type CompatibilityStatus = "convertible" | "native";
 
 /**
  * Creates complete formatted tooltip content with metadata and compatibility
@@ -20,25 +26,28 @@ const RAMPLE_FORMAT_REQUIREMENTS = {
  * @param metadata Sample metadata
  * @param sourcePath File path to display
  * @param filename Sample filename to display
+ * @param options The sample's voice, which decides a mixdown
  * @returns Formatted tooltip content with enhanced visual structure
  */
 export function formatTooltip(
   metadata: SampleData,
   sourcePath: string,
   filename: string,
+  options: CompatibilityOptions = {},
 ): string {
   const parts: string[] = [filename, sourcePath];
 
   const wavInfo = formatWavMetadata(metadata);
   if (wavInfo) {
-    const compatibility = getCompatibilityStatus(metadata);
-    const display = getCompatibilityDisplay(compatibility);
-
-    // Use ► symbol for technical specs to make them stand out
-    const statusText = display.emoji
-      ? `${display.emoji} ${display.text}`
-      : display.text;
-    parts.push(`► ${wavInfo} • ${statusText}`);
+    // Use ► symbol for technical specs to make them stand out. The status
+    // is left out when the stored format can't say what the write does.
+    const compatibility = getCompatibilityStatus(metadata, options);
+    if (compatibility) {
+      const display = getCompatibilityDisplay(compatibility);
+      parts.push(`► ${wavInfo} • ${display.emoji} ${display.text}`);
+    } else {
+      parts.push(`► ${wavInfo}`);
+    }
   }
 
   return parts.join("\n");
@@ -82,12 +91,6 @@ export function getCompatibilityDisplay(status: CompatibilityStatus): {
         emoji: "🟡",
         text: "Convertible",
       };
-    case "incompatible":
-      return {
-        colorClass: "text-red-600 dark:text-red-400",
-        emoji: "❌",
-        text: "Incompatible",
-      };
     case "native":
       return {
         colorClass: "text-green-600 dark:text-green-400",
@@ -98,47 +101,25 @@ export function getCompatibilityDisplay(status: CompatibilityStatus): {
 }
 
 /**
- * Determines compatibility status based on WAV metadata
- * @param metadata Sample metadata containing WAV properties
- * @returns Compatibility status
+ * What the write does to a sample's file, by the rule the write itself
+ * plans with (`planConversion`, #576): its format against the Rample's,
+ * the voice's stereo setting and the sample's gain. Null when the stored
+ * format is missing a value the answer depends on.
+ *
+ * The format is the store's copy (`wav_*`), from when the sample was added,
+ * last scanned, or last checked when its kit opened. A file changed on
+ * disk since then shows its old format until it's read again.
  */
 export function getCompatibilityStatus(
   metadata: SampleData,
-): CompatibilityStatus {
-  // If we don't have metadata, assume compatible for backward compatibility
-  if (
-    !metadata.wav_bit_depth ||
-    !metadata.wav_channels ||
-    !metadata.wav_sample_rate
-  ) {
-    return "native";
-  }
-
-  const {
-    wav_bit_depth: bitDepth,
-    wav_channels: channels,
-    wav_sample_rate: sampleRate,
-  } = metadata;
-
-  // Check if natively compatible (no conversion needed)
-  const bitDepthOk = RAMPLE_FORMAT_REQUIREMENTS.bitDepths.includes(bitDepth);
-  const channelsOk = channels <= RAMPLE_FORMAT_REQUIREMENTS.maxChannels;
-  const sampleRateOk =
-    RAMPLE_FORMAT_REQUIREMENTS.sampleRates.includes(sampleRate);
-
-  if (bitDepthOk && channelsOk && sampleRateOk) {
-    return "native";
-  }
-
-  // Check if convertible (supported by sync process). Romper converts the
-  // bit depth and sample rate when it writes the card; the Rample manual
-  // asks for "16–bit or 8–bit, 44100 Hz" (How to make your own sample
-  // kits). A file with more than two channels counts as incompatible.
-  if (channelsOk) {
-    return "convertible";
-  }
-
-  return "incompatible";
+  options: CompatibilityOptions = {},
+): CompatibilityStatus | null {
+  const plan = planConversion(formatOfStoredSample(metadata), {
+    gainDb: metadata.gain_db,
+    stereoVoice: options.stereoVoice,
+  });
+  if (plan.reason) return "convertible";
+  return plan.unknown ? null : "native";
 }
 
 /**

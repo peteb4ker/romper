@@ -14,6 +14,7 @@ describe("[UC-34] SyncUpdateDialog", () => {
       { bank: "A", fileCount: 8, hasConversions: false, kitCount: 5 },
       { bank: "B", fileCount: 7, hasConversions: true, kitCount: 3 },
     ],
+    conversions: { format: 0, gain: 0 },
     fileCount: 15,
     kitCount: 8,
     removals: [],
@@ -116,6 +117,53 @@ describe("[UC-34] SyncUpdateDialog", () => {
 
       // Bank B has conversions, shown as "convert" in its row
       expect(screen.getByText("convert")).toBeInTheDocument();
+    });
+
+    it("[Q-08] says how many samples are converted, for format and for gain (#576)", () => {
+      const { rerender } = render(
+        <SyncUpdateDialog
+          isOpen={true}
+          kitName="A0"
+          localChangeSummary={{
+            ...mockChangeSummary,
+            conversions: { format: 2, gain: 1 },
+          }}
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+        />,
+      );
+      expect(screen.getByTestId("conversion-count")).toHaveTextContent(
+        "3 samples will be converted (2 for format, 1 for gain).",
+      );
+
+      rerender(
+        <SyncUpdateDialog
+          isOpen={true}
+          kitName="A0"
+          localChangeSummary={{
+            ...mockChangeSummary,
+            conversions: { format: 0, gain: 1 },
+          }}
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+        />,
+      );
+      expect(screen.getByTestId("conversion-count")).toHaveTextContent(
+        "1 sample will be converted (1 for gain).",
+      );
+    });
+
+    it("says nothing about conversions when there are none", () => {
+      render(
+        <SyncUpdateDialog
+          isOpen={true}
+          kitName="A0"
+          localChangeSummary={mockChangeSummary}
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+        />,
+      );
+      expect(screen.queryByTestId("conversion-count")).not.toBeInTheDocument();
     });
 
     it("lists what sync will remove from the card", () => {
@@ -367,6 +415,7 @@ describe("[UC-34] SyncUpdateDialog", () => {
     it("should disable Start Write when no files to write", () => {
       const emptyChangeSummary: SyncChangeSummary = {
         banks: [],
+        conversions: { format: 0, gain: 0 },
         fileCount: 0,
         kitCount: 0,
         removals: [],
@@ -395,6 +444,7 @@ describe("[UC-34] SyncUpdateDialog", () => {
     it("[UC-34] allows a write that only removes from the card", () => {
       const removalsOnly: SyncChangeSummary = {
         banks: [],
+        conversions: { format: 0, gain: 0 },
         fileCount: 0,
         kitCount: 0,
         removals: ["A0", "B - OLD.rtf"],

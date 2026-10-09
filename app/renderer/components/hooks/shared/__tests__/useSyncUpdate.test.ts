@@ -30,6 +30,7 @@ describe("useSyncUpdate", () => {
 
   const mockChangeSummary: SyncChangeSummary = {
     banks: [{ bank: "A", fileCount: 1, hasConversions: false, kitCount: 1 }],
+    conversions: { format: 0, gain: 0 },
     fileCount: 1,
     kitCount: 1,
     removals: [],

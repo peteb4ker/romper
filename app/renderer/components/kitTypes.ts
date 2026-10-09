@@ -60,6 +60,8 @@ export interface SampleData {
   wav_bit_depth?: number;
   wav_bitrate?: number;
   wav_channels?: number;
+  /** The WAV format tag: PCM, float or extensible (#576) */
+  wav_format_tag?: number;
   wav_sample_rate?: number;
 }
 

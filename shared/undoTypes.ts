@@ -131,6 +131,7 @@ export type SampleSnapshot = Pick<
   | "wav_bit_depth"
   | "wav_bitrate"
   | "wav_channels"
+  | "wav_format_tag"
   | "wav_sample_rate"
 >;
 
@@ -222,6 +223,7 @@ export function snapshotVoices(
           wav_bit_depth: s.wav_bit_depth,
           wav_bitrate: s.wav_bitrate,
           wav_channels: s.wav_channels,
+          wav_format_tag: s.wav_format_tag,
           wav_sample_rate: s.wav_sample_rate,
         })),
       voice,

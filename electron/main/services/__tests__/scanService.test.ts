@@ -149,6 +149,7 @@ describe("ScanService", () => {
         wav_bit_depth: 16,
         wav_bitrate: 44100 * 2 * 16,
         wav_channels: 2,
+        wav_format_tag: null,
         wav_sample_rate: 44100,
       });
     });
@@ -230,6 +231,7 @@ describe("ScanService", () => {
         wav_bit_depth: 16,
         wav_bitrate: null,
         wav_channels: null,
+        wav_format_tag: null,
         wav_sample_rate: null,
       });
     });

@@ -37,8 +37,9 @@ safe, but:
 
 ## Goals
 
-1. Read every file in `_save` safely, whatever firmware wrote it, and
-   keep what Romper doesn't understand.
+1. Read every file in `_save` safely, whatever firmware wrote it, keep
+   what Romper doesn't understand, and say which firmware the keys point
+   to, as an inference.
 2. Keep a copy of the folder in your library, so nothing the device saved
    is lost to a card failure or to a later Romper write.
 3. Show the device's saved settings for a kit, and say when they no
@@ -62,8 +63,9 @@ safe, but:
 
 ## What's in the folder
 
-From Pete's card (2026-10-04; firmware not recorded, probably 2.00 to
-2.x, see [Public sources](#public-sources) and hardware check 1):
+From Pete's card (2026-10-04). Pete believes it runs firmware 2.00; that
+stays unconfirmed until he reads **Settings → INFO** (hardware check 1).
+See [Firmware versions](#firmware-versions):
 
 | File | Written by | What it holds |
 |---|---|---|
@@ -152,10 +154,7 @@ names its samples or counts its layers.
 `layerMode` is camelCase where every other key is snake_case, and
 `slicer_quantize_postv200` looks renamed so a firmware after 2.00 doesn't
 misread an older value. Both suggest the key set changes between firmware
-versions. The manual says the compressor and tape amounts are saved with
-the settings, but this file has no TAPE, COMPRESS, % COMPRESS or SIDECHAIN
-keys, so it was probably written by a firmware older than those features
-(check 1).
+versions; see [Firmware versions](#firmware-versions).
 
 ### What this settles
 
@@ -166,6 +165,87 @@ keys, so it was probably written by a firmware older than those features
 - **Stereo isn't stored.** No kit key mentions stereo or links, which
   agrees with the invariant that stereo is a voice setting Romper owns.
 - **The Rample has no sequencer state.** No BPM, steps or conditions.
+
+## Firmware versions
+
+No file in `_save` records a firmware or format version: `settings.rpl`
+has no version key, and the kit files have none either. So the firmware
+behind a folder can only be inferred from which keys are present, and
+each inference is labeled as one. Pete believes his Rample runs 2.00
+(unconfirmed until check 1); 3.00 is the latest release (February 2026).
+
+Firmware also changes what a value means without changing its key. 2.00
+moved output levels to dB, redesigned Freeze and Bitcrusher, and let
+START POINT and LENGTH be exponential (SLICER = EXP). 3.00 changed
+Bitcrusher, Freeze and Drive again, with Bitcrusher and Freeze now
+depending on the knob's direction. A `level` or `bitcrush` of 189 may
+not mean the same thing on 2.00 and 3.00, so scaling confirmed on one
+firmware is confirmed for that firmware only.
+
+### Firmware matrix
+
+From the [firmware changelog](https://squarp.net/rample/firmware/) and
+the [manual](https://squarp.net/rample/manual/), checked 2026-10-08.
+"Seen" means the key is in Pete's files; "expected" means a feature that
+should be saved somewhere, under a key nobody has seen yet. There is no
+release between 2.00 and 3.00, and none after 3.00.
+
+| Firmware | Feature it added that is saved | Key | Status |
+|---|---|---|---|
+| 1.1 (June 2020) | Selected layers saved with STORE; ANTICLIC | `selected_layer`, `anti_clic` | Seen |
+| 1.2 (August 2020) | Layer mode per voice; AUTOSAVE of the last kit; first SLICER values (Free, /8 … /48) | `layer_modes`, `autosave`, `autosave_<kit>.rpl`; SLICER under an older key | First two seen; the pre-2.00 SLICER key is expected, probably without `_postv200` |
+| 1.3 (December 2020) | LAYER default; ASSIGN = KIT or GLOBAL | `layerMode`, `assign`, `global_assign.rpl` | Seen |
+| 1.4 (May 2021) | More VUMETER modes; MIDI keyboard split; CV V/oct | `vu_meters` (wider range); the split's storage is unknown | `vu_meters` seen; the split is expected somewhere |
+| 1.50 (July 2022) | FLIP | `flip` | Seen |
+| 2.00 (February 2024) | SLICER EXP and 1/128; levels in dB; new Freeze and Bitcrusher; holding ASSIGN keeps FX on kit load | `slicer_quantize_postv200` | Seen. Pete's files are at least 2.00 (inferred) |
+| 3.00 (February 2026) | Compressor (COMPRESS preset, % COMPRESS, SIDECHAIN) and TAPE, "saved as part of your settings" per the manual | Expected in `settings.rpl`, names unknown | Not seen: Pete's files predate 3.00, or 3.00 writes them only after SAVE SETTINGS (inferred) |
+| 3.00 | PUNCH mode; MIDI layer selection by note; PRO and PEAK VU meters | Unknown; the manual doesn't say whether PUNCH is saved. New VU meters widen `vu_meters`' values | Expected |
+
+The changelog first mentions mute groups in 1.1 and assignments with
+ASSIGN in 1.3; when `mute_group`, `assignments` and the knob keys first
+appeared isn't recorded. The 3.00 announcement says it runs on both the
+Rample and the Rample Turbo
+([forum](https://squarp.community/t/rampleos-3-0/16014)); whether the two
+write the same files is unverified.
+
+### Forward compatibility
+
+Pete expects `_save` to be forward compatible: a newer firmware reads an
+older folder. The evidence fits, but none of it is confirmed:
+
+- The SLICER key was renamed rather than reinterpreted, which only makes
+  sense if a newer firmware reads files an older one wrote.
+- A pre-3.00 `settings.rpl` has no compressor or tape keys, so 3.00 must
+  use defaults for missing keys if it reads such a file at all.
+- One forum user downgraded from 3.00 to 2.00 while chasing a hardware
+  fault and mentioned no lost settings
+  ([forum](https://squarp.community/t/rampleos-3-0/16014)); that's
+  anecdotal, and silence isn't evidence.
+
+Backward compatibility (an older firmware reading a newer folder) is less
+likely to matter, but a downgrade would test it. Check 18 asks for a
+3.00 sample.
+
+### What Romper does about it
+
+- **Read every firmware's files.** Every field is optional; a missing key
+  is reported as missing, not filled with a default. Unknown keys are kept
+  in order with their bytes.
+- **Infer the firmware from the key set, and say it's inferred.** The
+  reader returns a guess from `settings.rpl`, for example "2.00 or later
+  (has `slicer_quantize_postv200`); before 3.00 (no compressor keys)",
+  with the keys it used. Once a 3.00 sample shows the compressor and tape
+  key names, they become the 3.00 marker. A key set that matches no known
+  firmware is reported as "unknown firmware", never as the nearest guess.
+- **Judge each file on its own.** A folder can mix files from different
+  firmware: a kit stored under 2.00 stays as it was after an update until
+  it's stored again, and file times are all 0. Kit files have no marker of
+  their own, so a kit file's firmware is "unknown, folder looks like X".
+- **Interpret values per firmware.** Stage 3 shows raw values, with the
+  inferred firmware, until a check has confirmed a field's meaning on that
+  firmware.
+- **Write only for verified firmware.** Stage 6 needs a real sample and
+  passing checks from every firmware it supports (D8).
 
 ## Public sources
 
@@ -186,9 +266,8 @@ public decode.
     renamed then.
   - 3.00 (February 2026): Compressor, Tape and Punch.
 
-  Pete's `settings.rpl` has the `postv200` key and no compressor or tape
-  keys, so it was probably written by a firmware from 2.00 up to, but not
-  including, 3.00 (inferred; check 1).
+  The [Firmware matrix](#firmware-matrix) lists every saved feature by
+  release.
 - **[Folder settings mishap](https://squarp.community/t/folder-settings-mishap/12026)**
   (Squarp forum, November 2024). A user who replaced their `_save` files
   with another Rample's lost MIDI response until they restored a backup.
@@ -348,6 +427,10 @@ Two PRs, both without UI.
   subset is reported as unreadable with the reason, never as defaults.
   Limits on nesting depth, item counts and file size, so a damaged card
   can't hang or exhaust main.
+- **Firmware:** the reader infers the likely firmware from the
+  `settings.rpl` key set and returns it with the keys it used, labeled as
+  inferred (see [What Romper does about it](#what-romper-does-about-it)).
+  An unmatched key set is "unknown firmware".
 - **Recognizes files by name:** `<kit>.rpl` (with the kit name checked by
   the same rule as kit folders), `settings.rpl`, `global_assign.rpl`,
   `autosave_<kit>.rpl`. Anything else is listed as unknown and kept. An
@@ -363,7 +446,9 @@ Two PRs, both without UI.
   until stage 6); a byte-identical decode → encode round trip for every
   fixture; malformed inputs (truncated at every offset, trailing bytes,
   indefinite length, tag, float, deep nesting) each give a typed error;
-  unknown and missing keys; tagged `[Q-08]`.
+  unknown and missing keys; the firmware guess for a 2.00-style key set,
+  a pre-2.00 one, one with extra keys, and one that matches nothing;
+  tagged `[Q-08]`.
 
 ### Stage 2: keep a copy of the folder (blocked on D2)
 
@@ -461,7 +546,7 @@ Two PRs, both without UI.
 - **Tests:** unit tests of the mapping table, including unknown values;
   an e2e setup from a card with seeded files.
 
-### Stage 6: write back (blocked on D7, D8 and checks 14–17)
+### Stage 6: write back (blocked on D7, D8, D9 and checks 14–18)
 
 **6a. Whole files.** No format knowledge needed beyond stage 1's reader:
 copy a kit's `.rpl` to the new slot when you duplicate a kit (UC-15), and
@@ -477,8 +562,11 @@ with the kit. Only fields confirmed by a hardware check can be edited.
   couldn't read completely.
 - **Firmware fence:** the files carry no firmware version, so the
   `settings.rpl` key set stands in for one. Romper writes only when that
-  key set matches one a hardware check has verified (D8); otherwise it
-  reads and shows, but doesn't write.
+  key set matches a firmware it supports; otherwise it reads and shows,
+  but doesn't write. A firmware is supported only once there is a real
+  `_save` sample from it in the fixtures and checks 14–17 have passed on
+  it (D8). With 2.00 and 3.00 both in use, that means a sample and checks
+  from each (check 18, D9).
 - **Conflicts:** the device may have changed a file since Romper last
   read it. Before writing, Romper compares the card's file with the copy
   it last read (contents, since there are no file times) and stops for
@@ -487,10 +575,11 @@ with the kit. Only fields confirmed by a hardware check can be edited.
   will change, with the old and new values; the stage 2 snapshot is taken
   first; a restore puts the snapshot back.
 - **Affects:** UC-15, UC-32, UC-33, UC-34, Q-02, Q-04, Q-08.
-- **Decisions:** D7, D8.
-- **Hardware:** 14–17 (the device accepts a file Romper wrote, and how it
-  treats missing, extra or reordered keys), plus whichever of 3–6 and 12
-  confirm the fields being edited.
+- **Decisions:** D7, D8, D9.
+- **Hardware:** 14–17 on every supported firmware (the device accepts a
+  file Romper wrote, and how it treats missing, extra or reordered keys),
+  18 (a 3.00 sample), plus whichever of 3–6 and 12 confirm the fields
+  being edited, on each firmware.
 - **Risks:** a file the device misreads silently (odd values, not an
   error). Mitigation: the firmware fence, only confirmed fields, a
   verified round trip, and checks 14–17 on a spare card first.
@@ -522,21 +611,23 @@ before its stage is built.
 | D5 | Should a write offer to reset (delete) those files? | Yes, opt-in per write and off by default for changed kits; on by default for deleted kits is a reasonable alternative, since the kit is gone. Always after a snapshot. Q-04's wording changes to match. |
 | D6 | Which device settings should seed Romper's at setup? | Only exact matches: RANDOM and CYCLIC layer modes, and SLICER when it's one of Romper's divisions. Not level, start, length or effects. |
 | D7 | What may Romper write back, and in what order? | Whole-file operations first (copy with a duplicated kit, restore); value edits only for fields a hardware check has confirmed, starting with layer mode and selected layer. |
-| D8 | Which firmware versions may Romper write for? | Only those whose `settings.rpl` key set a hardware check has verified; read everything. |
+| D8 | Which firmware versions may Romper write for? | Read every version. Write only for a firmware with a real `_save` sample in the fixtures and checks 14–17 passed on it; aim for 2.00 and 3.00. |
+| D9 | How to get a `_save` sample from firmware 3.00: update Pete's Rample, or find another 3.00 owner? | Run checks 1–13 on the current firmware first, with a full card copy. Then update to 3.00 (a forum user reports downgrading to 2.00 works, unverified) and run check 18. Asking on the Squarp forum for a sample is Pete's call. |
 
 ## Hardware verification protocol
 
 What the bytes can't tell us. Pete runs these with the Rample; each one
 changes one thing, saves it, and compares copies of `_save` before and
 after. Checks 1–11 are the numbered checks of the original analysis
-(cited by #617); 12–17 are new. The table after the steps says what each
+(cited by #617); 12–18 are new. The table after the steps says what each
 check unblocks.
 
 ### Before you start
 
 1. Use a spare card, or copy the whole card to the computer first, and
    keep that copy until every check is done.
-2. Write down the firmware version: **Settings → INFO** (check 1).
+2. Write down the firmware version: **Settings → INFO** (check 1). Note
+   it with every copy you make, since nothing in the files records it.
 3. Copy `_save` from the card to a folder named `00-baseline`. Copy
    *from* the card only. If you ever put a file back by hand on a Mac,
    use `cp -X` (or run `dot_clean` on the card afterwards), so macOS
@@ -552,9 +643,9 @@ check unblocks.
 
 ### The checks
 
-1. **Firmware.** Record the version from INFO. If a newer firmware is
-   available, update, then SAVE SETTINGS and copy `_save`: do TAPE and
-   COMPRESS keys appear in `settings.rpl`? Does any kit key change?
+1. **Firmware.** Record the version from **Settings → INFO**, and
+   whether the module is a Rample or a Rample Turbo. Until this is done,
+   the firmware behind Pete's files is a belief (2.00), not a fact.
 2. **Autosave.** With AUTOSAVE on, load kit A0, power off and on, copy
    `_save`. Then load B0, power-cycle, copy again. Expect
    `autosave_C1.rpl` to become `autosave_A0.rpl`, then
@@ -617,6 +708,26 @@ check unblocks.
     Does the device read both? This decides how strict the encoder must
     be.
 
+18. **A sample from firmware 3.00** (D9). On a Rample running 3.00 (Pete's,
+    after an update, or another owner's):
+    1. Before updating, copy the whole card, and copy `_save` to
+       `18-before`.
+    2. Update, power on, and load a kit you stored before (L1). Do its
+       settings still apply? Copy `_save` to `18-after-update`: did the
+       update change any file by itself?
+    3. SAVE SETTINGS without changing anything; copy to
+       `18-save-settings`. Then set TAPE, % COMPRESS, COMPRESS, SIDECHAIN
+       and PUNCH to non-default values, SAVE SETTINGS, copy to
+       `18-master-fx`. Record the new keys and values.
+    4. On L4 change one knob, STORE, copy to `18-store`: does a 3.00 kit
+       file have new keys?
+    5. Repeat checks 3, 7, 12 and 13 on 3.00, since 2.00 and 3.00 changed
+       what some values mean.
+    6. If you go back to 2.00 afterwards, load L4 and copy `_save` once
+       more: does 2.00 read a 3.00 file?
+
+    Every copy goes into the fixtures (D1), labeled with the firmware.
+
 Checks 14–17 put computer-made files on the card. Do them on a spare
 card, keep the baseline copy, and if the device misbehaves, delete the
 file (check 10's reset) or restore the copy.
@@ -625,7 +736,7 @@ file (check 10's reset) or restore the copy.
 
 | Check | Unblocks |
 |---|---|
-| 1 | Fixture labels (D1), the firmware fence (D8), which keys a newer firmware adds |
+| 1 | Fixture labels (D1), the firmware fence (D8), the firmware the matrix assumes for Pete's files |
 | 2 | The meaning of `autosave_<kit>.rpl` in stage 3 |
 | 3 | Units in stage 3; editing knobs in stage 6b |
 | 4 | Run mode names in stage 3 |
@@ -638,7 +749,8 @@ file (check 10's reset) or restore the copy.
 | 11 | #573 |
 | 12 | Layer mode names in stage 3; stage 5 seeding |
 | 13 | Device settings shown in stage 3 |
-| 14–17 | Stage 6 |
+| 14–17 | Stage 6, once per supported firmware |
+| 18 | The 3.00 row of the firmware matrix, 3.00 detection in stage 1b, stage 6 for 3.00 |
 
 ## Risks
 
@@ -647,8 +759,11 @@ file (check 10's reset) or restore the copy.
   write, only the files the summary listed, the stage 1a guard with named
   exceptions, and e2e tests that compare `_save` byte for byte.
 - **Firmware variance.** Keys are added and renamed between versions
-  (`postv200`, the missing TAPE and COMPRESS keys). The reader keeps what
-  it doesn't know; the writer refuses unknown key sets (D8).
+  (`postv200`, the 3.00 master effects), values change meaning without a
+  new key (levels in dB in 2.00; Bitcrusher and Freeze in 2.00 and 3.00),
+  and nothing in a file says which firmware wrote it. The reader keeps
+  what it doesn't know and labels its firmware guess as a guess; the
+  writer refuses key sets it hasn't verified (D8).
 - **Inferred meanings shown as fact.** Raw values until a check confirms
   a field; the tables above mark each field.
 - **A damaged or foreign file.** The reader reports it and moves on;

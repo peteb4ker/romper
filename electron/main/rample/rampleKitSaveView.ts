@@ -38,15 +38,12 @@ export interface RampleSaveCopy extends RampleSaveCopyInfo {
 }
 
 /**
- * A copy's folder name that starts with its date and time, as an ISO 8601
- * stamp with the time's colons optional or written as dashes (file names
- * can't hold colons on Windows). Stage 2 names copies
- * `2026-10-09T04-12-58-123Z-setup` (milliseconds after a dash, then why the
- * copy was taken); `2026-10-09T04:12:58.123Z` and `2026-10-09_041258` read
- * too. Without a `Z` or an offset the time is local.
+ * A copy's folder name starts with when it was taken, in UTC, with dashes
+ * for colons (file names can't hold colons on Windows): stage 2 names
+ * copies `2026-10-09T04-12-58-123Z-setup`. The milliseconds are optional.
  */
 const STAMPED_NAME =
-  /^(\d{4})-(\d{2})-(\d{2})[T_ ](\d{2})[-:]?(\d{2})[-:]?(\d{2})(?:[.,](\d{1,3})|-(\d{3})(?=Z))?(Z|[+-]\d{2}:?\d{2})?/;
+  /^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})(?:-(\d{3}))?Z/;
 
 const KNOWN_KIT_KEYS: ReadonlySet<string> = new Set<string>(
   Object.values(RAMPLE_KIT_SAVE_KEYS),
@@ -161,13 +158,8 @@ export async function readKitRampleSave(
 export function takenAtFromFolderName(name: string): string | undefined {
   const match = STAMPED_NAME.exec(name);
   if (!match) return undefined;
-  const [, year, month, day, hour, minute, second, fraction, dashMs, zone] =
-    match;
-  const ms = (fraction ?? dashMs ?? "").padEnd(3, "0");
-  const local = `${year}-${month}-${day}T${hour}:${minute}:${second}.${ms}`;
-  const offset =
-    zone && zone !== "Z" ? zone.replace(/(\d{2})(\d{2})$/, "$1:$2") : zone;
-  const date = new Date(offset ? `${local}${offset}` : local);
+  const [, day, hour, minute, second, ms = "000"] = match;
+  const date = new Date(`${day}T${hour}:${minute}:${second}.${ms}Z`);
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 

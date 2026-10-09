@@ -90,21 +90,11 @@ describe("[UC-08] [Q-08] the kit editor's view of a kit's saved Rample settings 
       ["2026-10-09T04-12-58-123Z-setup", "2026-10-09T04:12:58.123Z"],
       ["2026-10-09T04-12-58-123Z-write-2", "2026-10-09T04:12:58.123Z"],
       ["2026-10-09T04-12-58Z", "2026-10-09T04:12:58.000Z"],
-      ["2026-10-09T04:12:58.5Z", "2026-10-09T04:12:58.500Z"],
-      ["2026-10-09T041258Z-setup", "2026-10-09T04:12:58.000Z"],
-      ["2026-10-09T04-12-58+0200", "2026-10-09T02:12:58.000Z"],
-      ["2026-10-09T04-12-58-05:00", "2026-10-09T09:12:58.000Z"],
     ])("%s", (name, expected) => {
       expect(takenAtFromFolderName(name)).toBe(expected);
     });
 
-    it("reads a stamp without a zone as local time", () => {
-      expect(takenAtFromFolderName("2026-10-09_041258")).toBe(
-        new Date(2026, 9, 9, 4, 12, 58).toISOString(),
-      );
-    });
-
-    it.each(["setup", "2026-13-45T99-99-99Z", ""])(
+    it.each(["setup", "2026-13-45T99-99-99Z", "2026-10-09T04-12-58", ""])(
       "has no time for %j",
       (name) => {
         expect(takenAtFromFolderName(name)).toBeUndefined();

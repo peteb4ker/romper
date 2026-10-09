@@ -306,21 +306,10 @@ export function isOpaqueItem(value: unknown): value is RampleOpaqueItem {
 }
 
 function encodeInto(value: RampleRawValue, chunks: Uint8Array[]): void {
-  if (value === false) {
-    chunks.push(Uint8Array.of(0xe0 | SIMPLE_FALSE));
-  } else if (value === true) {
-    chunks.push(Uint8Array.of(0xe0 | SIMPLE_TRUE));
-  } else if (value === null) {
-    chunks.push(Uint8Array.of(0xe0 | SIMPLE_NULL));
+  if (typeof value === "boolean" || value === null) {
+    chunks.push(Uint8Array.of(0xe0 | simpleValueOf(value)));
   } else if (typeof value === "number") {
-    if (!Number.isSafeInteger(value)) {
-      throw new TypeError(`Can't encode ${value}: only safe integers`);
-    }
-    chunks.push(
-      value >= 0
-        ? head(MAJOR_UNSIGNED, value)
-        : head(MAJOR_NEGATIVE, -1 - value),
-    );
+    chunks.push(integerHead(value));
   } else if (typeof value === "string") {
     const text = utf8Encoder.encode(value);
     chunks.push(head(MAJOR_TEXT, text.length), text);
@@ -356,4 +345,20 @@ function head(major: number, argument: number): Uint8Array {
   out[0] = type | 27;
   new DataView(out.buffer).setBigUint64(1, BigInt(argument));
   return out;
+}
+
+/** An integer's head, in its shortest form; only safe integers */
+function integerHead(value: number): Uint8Array {
+  if (!Number.isSafeInteger(value)) {
+    throw new TypeError(`Can't encode ${value}: only safe integers`);
+  }
+  return value >= 0
+    ? head(MAJOR_UNSIGNED, value)
+    : head(MAJOR_NEGATIVE, -1 - value);
+}
+
+/** The simple value (major type 7) for false, true or null */
+function simpleValueOf(value: boolean | null): number {
+  if (value === null) return SIMPLE_NULL;
+  return value ? SIMPLE_TRUE : SIMPLE_FALSE;
 }

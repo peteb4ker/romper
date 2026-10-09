@@ -64,34 +64,10 @@ export function diffRawValues(
 ): RampleSaveChange[] {
   if (sameValue(before, after)) return [];
   if (Array.isArray(before) && Array.isArray(after)) {
-    const changes: RampleSaveChange[] = [];
-    for (let i = 0; i < Math.max(before.length, after.length); i++) {
-      changes.push(...diffRawValues(before[i], after[i], `${at}[${i}]`));
-    }
-    return changes;
+    return diffArrays(before, after, at);
   }
   if (before instanceof Map && after instanceof Map) {
-    const changes: RampleSaveChange[] = [];
-    const prefix = at ? `${at}.` : "";
-    // The first copy's keys in its order, then keys only the second has
-    const keys = [...before.keys()];
-    for (const key of after.keys()) {
-      if (!before.has(key)) keys.push(key);
-    }
-    for (const key of keys) {
-      changes.push(
-        ...diffRawValues(before.get(key), after.get(key), `${prefix}${key}`),
-      );
-    }
-    if (changes.length === 0) {
-      // Same keys and values, in another order: that changes the bytes
-      changes.push({
-        after: [...after.keys()].join(", "),
-        before: [...before.keys()].join(", "),
-        path: `${at || "(top)"} key order`,
-      });
-    }
-    return changes;
+    return diffMaps(before, after, at);
   }
   return [
     {
@@ -143,25 +119,11 @@ export function formatRampleSaveFolder(folder: RampleSaveFolder): string[] {
     );
   }
   for (const file of folder.files) {
-    lines.push("", `${file.fileName}: ${fileSummary(file)}`);
-    if (file.raw instanceof Map) {
-      for (const [key, value] of file.raw) {
-        lines.push(`  ${key}: ${formatRawValue(value)}`);
-      }
-    } else if (file.raw !== undefined) {
-      lines.push(`  ${formatRawValue(file.raw)}`);
-    }
-    const notes: [string, string[]][] = [
-      ["unknown keys", file.unknownKeys],
-      ["missing keys", file.missingKeys],
-      ["problems", file.problems],
-    ];
-    for (const [label, items] of notes) {
-      if (items.length > 0) lines.push(`  (${label}: ${items.join("; ")})`);
-    }
-    if (file.kind !== "settings") {
-      lines.push(`  (firmware: ${file.firmware.label})`);
-    }
+    lines.push(
+      "",
+      `${file.fileName}: ${fileSummary(file)}`,
+      ...fileLines(file),
+    );
   }
   return lines;
 }
@@ -196,6 +158,43 @@ function compareBytes(a: string, b: string): number {
   return a < b ? -1 : 1;
 }
 
+function diffArrays(
+  before: RampleRawValue[],
+  after: RampleRawValue[],
+  at: string,
+): RampleSaveChange[] {
+  const changes: RampleSaveChange[] = [];
+  for (let i = 0; i < Math.max(before.length, after.length); i++) {
+    changes.push(...diffRawValues(before[i], after[i], `${at}[${i}]`));
+  }
+  return changes;
+}
+
+function diffMaps(
+  before: Map<string, RampleRawValue>,
+  after: Map<string, RampleRawValue>,
+  at: string,
+): RampleSaveChange[] {
+  const prefix = at ? `${at}.` : "";
+  // The first copy's keys in its order, then keys only the second has
+  const keys = [...before.keys()];
+  for (const key of after.keys()) {
+    if (!before.has(key)) keys.push(key);
+  }
+  const changes = keys.flatMap((key) =>
+    diffRawValues(before.get(key), after.get(key), `${prefix}${key}`),
+  );
+  if (changes.length > 0) return changes;
+  // Same keys and values, in another order: that changes the bytes
+  return [
+    {
+      after: [...after.keys()].join(", "),
+      before: [...before.keys()].join(", "),
+      path: `${at || "(top)"} key order`,
+    },
+  ];
+}
+
 function diffUnreadable(
   a: RampleSaveFile,
   b: RampleSaveFile,
@@ -210,6 +209,30 @@ function diffUnreadable(
       path: "(unreadable)",
     },
   ];
+}
+
+/** A file's keys and values in order, then what didn't fit */
+function fileLines(file: RampleSaveFile): string[] {
+  const lines: string[] = [];
+  if (file.raw instanceof Map) {
+    for (const [key, value] of file.raw) {
+      lines.push(`  ${key}: ${formatRawValue(value)}`);
+    }
+  } else if (file.raw !== undefined) {
+    lines.push(`  ${formatRawValue(file.raw)}`);
+  }
+  const notes: [string, string[]][] = [
+    ["unknown keys", file.unknownKeys],
+    ["missing keys", file.missingKeys],
+    ["problems", file.problems],
+  ];
+  for (const [label, items] of notes) {
+    if (items.length > 0) lines.push(`  (${label}: ${items.join("; ")})`);
+  }
+  if (file.kind !== "settings") {
+    lines.push(`  (firmware: ${file.firmware.label})`);
+  }
+  return lines;
 }
 
 function fileSummary(file: RampleSaveFile): string {

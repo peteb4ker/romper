@@ -255,11 +255,9 @@ async function removeOldBackups(
     const kept = new Set(writeCopies.slice(-Math.max(1, keep)));
     kept.add(newest);
     for (const name of writeCopies.filter((copy) => !kept.has(copy))) {
-      // NOSONAR: sequential on purpose, a handful of small folders
-      await fs.promises.rm(path.join(root, name), {
-        force: true,
-        recursive: true,
-      });
+      const folder = path.join(root, name);
+      // Sequential on purpose: a handful of small folders, oldest first
+      await fs.promises.rm(folder, { force: true, recursive: true }); // NOSONAR
       removedBackups.push(name);
     }
     return { removedBackups };
@@ -302,10 +300,9 @@ async function storeCopy(
   const partial = path.join(root, `${finalName}.partial`);
   try {
     for (const { bytes, name: fileName } of files) {
-      // NOSONAR: sequential on purpose, small files in the store
-      await fs.promises.writeFile(path.join(partial, fileName), bytes, {
-        flag: "wx",
-      });
+      const file = path.join(partial, fileName);
+      // Sequential on purpose: small files, and the first failure stops
+      await fs.promises.writeFile(file, bytes, { flag: "wx" }); // NOSONAR
     }
     const backupPath = path.join(root, finalName);
     await fs.promises.rename(partial, backupPath);

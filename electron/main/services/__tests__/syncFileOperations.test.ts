@@ -29,6 +29,7 @@ vi.mock("../../formatConverter.js", () => ({
 }));
 
 vi.mock("../sdCardSafety.js", () => ({
+  reachesDeviceSaveFolder: vi.fn().mockReturnValue(false),
   removeAppleDoubleCompanion: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -77,7 +78,10 @@ import {
   CardNotRespondingError,
   cardWatchdogSettings,
 } from "../cardWatchdog.js";
-import { removeAppleDoubleCompanion } from "../sdCardSafety.js";
+import {
+  reachesDeviceSaveFolder,
+  removeAppleDoubleCompanion,
+} from "../sdCardSafety.js";
 import {
   type SyncFileOperation,
   syncFileOperationsService,
@@ -303,6 +307,51 @@ describe("[UC-34] SyncFileOperationsService", () => {
       );
       expect(typeof result).toBe("number");
       expect(result).toBeGreaterThanOrEqual(0);
+    });
+
+    it("[Q-04] [UC-34] refuses to write anything when a file would land in _save (#787)", async () => {
+      mockPath.dirname.mockReturnValue("/card/_save");
+      vi.mocked(reachesDeviceSaveFolder).mockImplementation(
+        (_card, destination) => destination.startsWith("/card/_save/"),
+      );
+      const intoSave = [
+        { ...fileOps[0], destinationPath: "/card/A0/1-01 kick.wav" },
+        { ...fileOps[0], destinationPath: "/card/_save/A0.rpl" },
+      ];
+
+      try {
+        await expect(
+          syncFileOperationsService.processAllFiles(intoSave, {}, "/card"),
+        ).rejects.toThrow(/_save folder belongs to the device/);
+        expect(reachesDeviceSaveFolder).toHaveBeenCalledWith(
+          "/card",
+          "/card/_save/A0.rpl",
+        );
+        // Not even the allowed file is written
+        expect(mockFs.promises.copyFile).not.toHaveBeenCalled();
+        expect(mockFs.promises.mkdir).not.toHaveBeenCalled();
+      } finally {
+        vi.mocked(reachesDeviceSaveFolder).mockReturnValue(false);
+      }
+    });
+
+    it("checks every destination against _save when writing to a card", async () => {
+      mockPath.dirname.mockReturnValue("/card/A0");
+      const toCard = [
+        { ...fileOps[0], destinationPath: "/card/A0/1-01 kick.wav" },
+      ];
+
+      const synced = await syncFileOperationsService.processAllFiles(
+        toCard,
+        {},
+        "/card",
+      );
+
+      expect(synced).toBe(1);
+      expect(reachesDeviceSaveFolder).toHaveBeenCalledWith(
+        "/card",
+        "/card/A0/1-01 kick.wav",
+      );
     });
 
     it("should handle empty file list", async () => {

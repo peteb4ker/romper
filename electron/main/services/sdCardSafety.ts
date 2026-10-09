@@ -1,5 +1,7 @@
 import {
   BANK_NAME_FILE_PATTERN,
+  DEVICE_SAVE_FOLDER,
+  isDeviceSaveFolderName,
   kitNameOfCardFolder,
 } from "@romper/shared/rampleCardLayout.js";
 import * as fs from "node:fs";
@@ -24,10 +26,24 @@ export interface CardContents {
 }
 
 export interface RemoveCardEntriesOptions {
-  /** Called after each entry is removed, with the count so far */
+  /**
+   * Called after each entry is removed, with the count so far and the
+   * number it will remove (refused entries aren't counted)
+   */
   onRemoved?: (removed: number, total: number) => void;
   /** Checked before each entry: true stops the removal there (Cancel) */
   shouldStop?: () => boolean;
+}
+
+/** What {@link removeCardEntries} did with the entries it was given. */
+export interface RemoveCardEntriesResult {
+  /**
+   * Entries it refused to remove, as given: the device's `_save` folder,
+   * anything in it, or a path that holds it (#787). None of them is touched.
+   */
+  refused: string[];
+  /** How many entries it removed */
+  removed: number;
 }
 
 export interface SdCardTargetCheck {
@@ -39,9 +55,10 @@ export interface SdCardTargetCheck {
  * The Rample content on the card that `contents` doesn't account for, as
  * paths relative to the card: kit folders for kits that aren't in the
  * store (or have no samples), anything else inside a kit folder, and bank
- * name files for banks without a name. Everything else on the card (the
- * Rample's own `_save` folder, any other file or folder) is left out, and
- * so is a kept kit's folder (`keepKits`) with everything in it.
+ * name files for banks without a name. Everything else on the card (any
+ * other file or folder) is left out, and so is a kept kit's folder
+ * (`keepKits`) with everything in it. The Rample's own `_save` folder is
+ * skipped by name, whatever the kit and bank patterns match (#787).
  *
  * Names are compared ignoring case: FAT32 cards and macOS volumes are case
  * insensitive, so a file sync just overwrote may keep its old case.
@@ -73,6 +90,8 @@ export async function findStaleCardEntries(
     withFileTypes: true,
   });
   for (const entry of entries) {
+    // The device's settings, never Romper's to remove
+    if (isDeviceSaveFolderName(entry.name)) continue;
     const kitName = kitOfFolder(entry);
     if (kitName) {
       if (keepKits.has(kitName)) continue;
@@ -126,6 +145,28 @@ export function getSdCardDialogDefaultPath(): string {
 }
 
 /**
+ * True when writing or removing `cardPath` could change the device's
+ * `_save` folder (#787): the path is the folder or inside it, compared
+ * ignoring case as FAT32 does, or it is the card itself or outside the
+ * card, so it holds the folder. `cardPath` is absolute, or relative to the
+ * card.
+ */
+export function reachesDeviceSaveFolder(
+  sdCardPath: string,
+  cardPath: string,
+): boolean {
+  const card = path.resolve(sdCardPath);
+  const relative = path.relative(card, path.resolve(card, cardPath));
+  const first = relative.split(/[\\/]/)[0];
+  return (
+    relative === "" ||
+    first === ".." ||
+    path.isAbsolute(relative) ||
+    isDeviceSaveFolderName(first)
+  );
+}
+
+/**
  * Remove the AppleDouble file (`._<name>`) macOS made beside a file just
  * written to the card (#653). On a FAT or exFAT card, macOS keeps a file's
  * extended attributes in a `._` file next to it, and it tags every file a
@@ -150,19 +191,38 @@ export async function removeAppleDoubleCompanion(
  * {@link findStaleCardEntries}. Folders are removed with their contents;
  * symlinks are removed, never followed.
  *
+ * Whatever list it's given, it refuses any entry that
+ * {@link reachesDeviceSaveFolder}: the device's `_save` folder, anything in
+ * it, or the card itself (#787). Refused entries are checked before
+ * anything is removed, left alone, and returned in `refused`.
+ *
  * Removal is asynchronous, one entry at a time, yielding between entries
  * (#653): deleting kit folders on a slow card blocked the main process,
  * froze the window and kept Cancel from being handled. Each entry has the
  * card watchdog's time limit, so a card that stops responding fails the
- * write instead of leaving it waiting. Returns how many were removed.
+ * write instead of leaving it waiting.
  */
 export async function removeCardEntries(
   sdCardPath: string,
   entries: readonly string[],
   options: RemoveCardEntriesOptions = {},
-): Promise<number> {
-  let removed = 0;
+): Promise<RemoveCardEntriesResult> {
+  const refused: string[] = [];
+  const removable: string[] = [];
   for (const entry of entries) {
+    (reachesDeviceSaveFolder(sdCardPath, entry) ? refused : removable).push(
+      entry,
+    );
+  }
+  if (refused.length > 0) {
+    console.warn(
+      `Refused to remove ${refused.length} card entries that would change the Rample's ${DEVICE_SAVE_FOLDER} folder:`,
+      refused,
+    );
+  }
+
+  let removed = 0;
+  for (const entry of removable) {
     if (options.shouldStop?.()) break;
     // One at a time, so Cancel and the watchdog act between entries
     const removal = fs.promises.rm(path.join(sdCardPath, entry), {
@@ -171,10 +231,10 @@ export async function removeCardEntries(
     });
     await withCardWatchdog(removal); // NOSONAR: sequential on purpose (#653)
     removed++;
-    options.onRemoved?.(removed, entries.length);
+    options.onRemoved?.(removed, removable.length);
     await yieldToEventLoop(); // NOSONAR: yields between entries on purpose (#653)
   }
-  return removed;
+  return { refused, removed };
 }
 
 /**

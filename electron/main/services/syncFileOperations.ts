@@ -1,6 +1,7 @@
 import type { Sample } from "@romper/shared/db/schema.js";
 import type { SyncValidationError } from "@romper/shared/electronApi.js";
 
+import { DEVICE_SAVE_FOLDER } from "@romper/shared/rampleCardLayout.js";
 import {
   type ConversionReason,
   isShorterThanRampleMinimum,
@@ -18,7 +19,10 @@ import {
 import { cardFileMatches } from "../cardFileMatch.js";
 import { convertToRampleDefault } from "../formatConverter.js";
 import { withCardWatchdog } from "./cardWatchdog.js";
-import { removeAppleDoubleCompanion } from "./sdCardSafety.js";
+import {
+  reachesDeviceSaveFolder,
+  removeAppleDoubleCompanion,
+} from "./sdCardSafety.js";
 import { syncProgressManager } from "./syncProgressManager.js";
 import { syncValidationService } from "./syncValidationService.js";
 
@@ -141,12 +145,27 @@ export class SyncFileOperationsService {
    * I/O is asynchronous and the loop yields to the event loop after every
    * file, so IPC (progress, Cancel) is handled while a sync runs (RE-07).
    * A cancelled sync stops after the file in progress.
+   *
+   * Writing to a card, it refuses the whole list, before writing anything,
+   * if a file would land in the device's `_save` folder (#787): sample
+   * files only ever go in kit folders.
    */
   async processAllFiles(
     allFiles: SyncFileOperation[],
     inMemorySettings: Record<string, unknown>,
-    _sdCardPath?: string,
+    sdCardPath?: string,
   ): Promise<number> {
+    const intoSaveFolder = sdCardPath
+      ? allFiles.find((fileOp) =>
+          reachesDeviceSaveFolder(sdCardPath, fileOp.destinationPath),
+        )
+      : undefined;
+    if (intoSaveFolder) {
+      throw new Error(
+        `Refusing to write ${intoSaveFolder.destinationPath}: the Rample's ${DEVICE_SAVE_FOLDER} folder belongs to the device`,
+      );
+    }
+
     let syncedFiles = 0;
     const totalFiles = allFiles.length;
 

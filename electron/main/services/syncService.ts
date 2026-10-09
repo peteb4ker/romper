@@ -542,7 +542,7 @@ class SyncService {
     if (stale.length === 0) return;
     // The panel counts the removals: "Removing old kits… 3/40" (#653)
     syncProgressManager.emitRemovalProgress(0, stale.length);
-    const removed = await removeCardEntries(sdCardPath, stale, {
+    const { removed } = await removeCardEntries(sdCardPath, stale, {
       onRemoved: (count, total) =>
         syncProgressManager.emitRemovalProgress(count, total),
       shouldStop: () =>

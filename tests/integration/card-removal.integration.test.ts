@@ -60,7 +60,7 @@ describe("[UC-34] [Q-01] removing old kits from the card (#653)", () => {
     setImmediate(tick);
     let progressEvents = 0;
 
-    const removed = await removeCardEntries(card, kits, {
+    const { removed } = await removeCardEntries(card, kits, {
       onRemoved: () => progressEvents++,
     });
     removing = false;

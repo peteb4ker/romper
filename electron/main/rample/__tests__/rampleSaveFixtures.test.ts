@@ -105,7 +105,7 @@ describe("[Q-08] the reader on a real Rample's _save files (#786)", () => {
     expect(kit("F7.rpl").selectedLayer).toEqual([1, 0, 3, 2]);
     expect(kit("F7.rpl").muteGroup).toEqual(four(four(false)));
     // A 127 written as 0 takes one byte fewer: no fixed offsets
-    expect(fixture("L1.rpl").length).toBe(fixture("L4.rpl").length - 1);
+    expect(fixture("L1.rpl")).toHaveLength(fixture("L4.rpl").length - 1);
 
     const settings = byName(files, "settings.rpl") as RampleSettingsFile;
     expect(settings.values.slicerQuantizePostV200).toBe(2);

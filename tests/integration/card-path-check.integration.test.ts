@@ -165,6 +165,10 @@ describe("[UC-34] [Q-01] starting a write on a card that stopped responding (#71
     expect((await invoke("startKitSync", { sdCardPath })).success).toBe(false);
 
     realpath.mockRestore();
+    // A card that answers again gets the app's limit: the check now
+    // resolves real folders, which a busy Windows runner can take longer
+    // than the short limit to do (#794)
+    cardWatchdogSettings.timeoutMs = CARD_OPERATION_TIMEOUT_MS;
     const result = await invoke("startKitSync", { sdCardPath });
 
     expect(result.success).toBe(true);

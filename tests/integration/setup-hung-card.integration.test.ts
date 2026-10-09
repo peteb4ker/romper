@@ -72,8 +72,15 @@ import { createTempStore, removeTempStore } from "./support/tempStore.js";
 // watchdog: setup stops with the card-not-responding message, and setup's
 // cleanup removes what it made.
 
-/** The watchdog's limit in these tests: long enough to count turns */
-const SHORT_WATCHDOG_MS = 200;
+/**
+ * The watchdog's limit once a test's card stops responding: long enough to
+ * count turns, and to leave headroom for the real disk operations the same
+ * test makes (copying the first sample, resolving the store folder), which
+ * the watchdog also times. A busy Windows runner took over 200 ms for one
+ * of those, so the watchdog gave up on a folder that isn't on the card
+ * (#794).
+ */
+const SHORT_WATCHDOG_MS = 1000;
 
 type HandlerResult = Record<string, unknown>;
 
@@ -133,7 +140,9 @@ describe("[UC-01] [Q-01] setting up from a card that stopped responding (#724)",
    * The card's driver stops responding to `operation`: calls to it on the
    * card (those `when` picks, or all) never finish. Everything else still
    * answers, including resolving card paths for the path check (#714)
-   * unless `operation` is realpath.
+   * unless `operation` is realpath. The watchdog gives up after
+   * SHORT_WATCHDOG_MS from here on, not the app's minute; a test that
+   * hangs nothing keeps the app's limit, so a slow disk can't fail it.
    */
   function hang<
     K extends "copyFile" | "lstat" | "readdir" | "realpath" | "stat" | "statfs",
@@ -141,6 +150,7 @@ describe("[UC-01] [Q-01] setting up from a card that stopped responding (#724)",
     const original = fs.promises[operation] as (
       ...args: unknown[]
     ) => Promise<unknown>;
+    cardWatchdogSettings.timeoutMs = SHORT_WATCHDOG_MS;
     return vi
       .spyOn(fs.promises, operation)
       .mockImplementation(((p: fs.PathLike, ...rest: unknown[]) =>
@@ -178,7 +188,6 @@ describe("[UC-01] [Q-01] setting up from a card that stopped responding (#724)",
     registerDbIpcHandlers(settings);
     // The folder the user picked for the new store
     pathAccess.grantRoot(target);
-    cardWatchdogSettings.timeoutMs = SHORT_WATCHDOG_MS;
     vi.clearAllMocks();
   });
 

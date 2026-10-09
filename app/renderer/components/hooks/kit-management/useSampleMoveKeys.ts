@@ -157,12 +157,14 @@ export function useSampleMoveKeys({
   // a new element, and the one that had focus is gone
   React.useEffect(() => {
     const pending = pendingFocus.current;
-    if (
-      !pending ||
-      selectedVoice !== pending.voice ||
-      selectedSampleIdx !== pending.slot ||
-      samples[pending.voice]?.[pending.slot] !== pending.name
-    ) {
+    if (!pending) {
+      return;
+    }
+    const shown =
+      selectedVoice === pending.voice &&
+      selectedSampleIdx === pending.slot &&
+      samples[pending.voice]?.[pending.slot] === pending.name;
+    if (!shown) {
       return;
     }
     pendingFocus.current = null;

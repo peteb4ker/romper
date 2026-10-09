@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("node:fs", () => ({
   existsSync: vi.fn(),
   readdirSync: vi.fn(),
+  statSync: vi.fn(),
 }));
 
 // Mock path
@@ -70,6 +71,10 @@ describe("ScanService", () => {
 
     mockPath.join.mockImplementation((...args) => args.join("/"));
     mockFs.existsSync.mockReturnValue(true);
+    mockFs.statSync.mockReturnValue({
+      mtimeMs: 1_700_000_000_000.75,
+      size: 88_244,
+    } as fs.Stats);
     mockGetAudioMetadata.mockReturnValue({
       data: {
         bitDepth: 16,
@@ -127,8 +132,8 @@ describe("ScanService", () => {
           kitPath: "/test/path/TestKit",
         },
         expect.objectContaining({
-          fileExists: expect.any(Function),
           readMetadata: expect.any(Function),
+          statFile: expect.any(Function),
         }),
       );
     });
@@ -137,14 +142,22 @@ describe("ScanService", () => {
       scanService.rescanKit(mockInMemorySettings, "TestKit");
       const io = mockMergeKitScan.mock.calls[0][3] as KitScanIo;
 
-      mockFs.existsSync.mockReturnValueOnce(false);
-      expect(io.fileExists("/gone.wav")).toBe(false);
+      mockFs.statSync.mockImplementationOnce(() => {
+        throw new Error("ENOENT");
+      });
+      expect(io.statFile("/gone.wav")).toBeNull();
+      expect(io.statFile("/here.wav")).toEqual({
+        mtimeMs: 1_700_000_000_000.75,
+        size: 88_244,
+      });
 
       mockGetAudioMetadata.mockReturnValue({
         data: { bitDepth: 16, channels: 2, sampleRate: 44100 },
         success: true,
       });
       expect(io.readMetadata("/x.wav")).toEqual({
+        source_mtime_ms: 1_700_000_000_000,
+        source_size: 88_244,
         source_status: "readable",
         wav_bit_depth: 16,
         wav_bitrate: 44100 * 2 * 16,
@@ -227,6 +240,8 @@ describe("ScanService", () => {
       });
 
       expect(readWavMetadata("/partial.wav")).toEqual({
+        source_mtime_ms: 1_700_000_000_000,
+        source_size: 88_244,
         source_status: "readable",
         wav_bit_depth: 16,
         wav_bitrate: null,

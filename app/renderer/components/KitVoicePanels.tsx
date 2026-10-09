@@ -253,7 +253,10 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
           id: Math.abs(hash), // Ensure positive ID
           kit_name: hookProps.kitName || "",
           slot_number: data.slot_number ?? 0,
+          // Only main reads files; the renderer's copy doesn't carry these
+          source_mtime_ms: null,
           source_path: data.source_path,
+          source_size: null,
           source_status:
             (data.source_status as Sample["source_status"]) ?? null,
           voice_number: data.voice_number ?? 1,

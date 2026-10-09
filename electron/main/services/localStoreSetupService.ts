@@ -24,7 +24,7 @@ import {
   withCardWatchdog,
 } from "./cardWatchdog.js";
 import { bankRtfFileName } from "./rtfFileService.js";
-import { readWavMetadata } from "./scanService.js";
+import { readWavMetadata, statFileSync } from "./scanService.js";
 
 const ROMPER_DB_DIR = ".romperdb";
 
@@ -340,7 +340,7 @@ export class LocalStoreSetupService {
         db,
         kitName,
         { filesByVoice: groupSamplesByVoice(wavFiles), kitPath },
-        { fileExists: fs.existsSync, readMetadata: readWavMetadata },
+        { readMetadata: readWavMetadata, statFile: statFileSync },
         // Link stereo voices automatically, by stereo rule 2 (#537)
         { linkStereoVoices: true },
       );

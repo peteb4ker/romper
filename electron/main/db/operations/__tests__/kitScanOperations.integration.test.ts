@@ -16,6 +16,8 @@ import { addSample, getKitSamples } from "../sampleCrudOperations.js";
 import { updateVoiceAlias } from "../voiceCrudOperations.js";
 
 const METADATA: WavMetadataFields = {
+  source_mtime_ms: 1_700_000_000_000,
+  source_size: 88_244,
   source_status: "readable",
   wav_bit_depth: 16,
   wav_bitrate: 705600,
@@ -50,8 +52,11 @@ describe("[UC-13] mergeKitScan - Integration Tests", () => {
 
     missingPaths = new Set();
     io = {
-      fileExists: (p) => !missingPaths.has(p),
       readMetadata: () => METADATA,
+      statFile: (p) =>
+        missingPaths.has(p)
+          ? null
+          : { mtimeMs: METADATA.source_mtime_ms!, size: METADATA.source_size! },
     };
   });
 

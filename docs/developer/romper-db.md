@@ -86,6 +86,8 @@ Individual sample file assignments to voice slots.
 | wav_channels | INTEGER | nullable | WAV metadata: 1 (mono) or 2 (stereo) |
 | wav_sample_rate | INTEGER | nullable | WAV metadata: e.g., 44100 Hz |
 | wav_bitrate | INTEGER | nullable | WAV metadata: bits per second |
+| source_size | INTEGER | nullable | The file's size in bytes when its header was last read; null until then (#793) |
+| source_mtime_ms | INTEGER | nullable | The file's modification time in whole milliseconds when its header was last read; null until then (#793) |
 
 **Unique constraints:**
 - `(kit_name, voice_number, slot_number)` — one sample per slot

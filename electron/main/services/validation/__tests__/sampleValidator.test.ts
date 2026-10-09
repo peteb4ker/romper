@@ -123,6 +123,10 @@ describe("SampleValidator", () => {
 
     it("accepts a readable WAV, even one sync will convert", () => {
       mockFs.existsSync.mockReturnValue(true);
+      mockFs.statSync.mockReturnValue({
+        mtimeMs: 1_700_000_000_000.5,
+        size: 288_044,
+      } as fs.Stats);
       vi.mocked(getAudioMetadata).mockReturnValue({
         data: { bitDepth: 24, channels: 2, sampleRate: 48000 },
         success: true,
@@ -134,6 +138,9 @@ describe("SampleValidator", () => {
       expect(result).toEqual({
         isValid: true,
         metadata: {
+          // The file's stat comes with it, for the change check (#793)
+          source_mtime_ms: 1_700_000_000_000,
+          source_size: 288_044,
           source_status: "readable",
           wav_bit_depth: 24,
           wav_bitrate: 48000 * 2 * 24,

@@ -10,7 +10,11 @@ import {
 } from "../kitScanOperations.js";
 
 const KIT_PATH = path.join("/store", "A0");
+/** The file stat METADATA was read at (#793) */
+const STAT = { mtimeMs: 1_700_000_000_000, size: 88_244 };
 const METADATA = {
+  source_mtime_ms: STAT.mtimeMs,
+  source_size: STAT.size,
   // A header read records that the file was readable (#537)
   source_status: "readable" as const,
   wav_bit_depth: 16,
@@ -22,8 +26,8 @@ const METADATA = {
 
 function io(missing: string[] = []): KitScanIo {
   return {
-    fileExists: vi.fn((p: string) => !missing.includes(p)),
     readMetadata: vi.fn(() => METADATA),
+    statFile: vi.fn((p: string) => (missing.includes(p) ? null : STAT)),
   };
 }
 
@@ -175,7 +179,7 @@ describe("[UC-13] planKitScanMerge", () => {
       missingSamples: [],
       scannedSamples: 1,
     });
-    expect(scanIo.fileExists).not.toHaveBeenCalled();
+    expect(scanIo.statFile).not.toHaveBeenCalled();
     expect(scanIo.readMetadata).not.toHaveBeenCalled();
   });
 
@@ -306,13 +310,72 @@ describe("[UC-13] planKitScanMerge", () => {
     expect(plan.result.updatedVoices).toBe(2);
   });
 
+  describe("[UC-34] [Q-08] reading a file again when it changed on disk (#793)", () => {
+    const plan = (rows: Sample[], scanIo: KitScanIo) =>
+      planKitScanMerge({
+        existing: rows,
+        folder: {
+          filesByVoice: { 1: rows.map((r) => r.filename), 2: [], 3: [], 4: [] },
+          kitPath: KIT_PATH,
+        },
+        io: scanIo,
+        kit: factoryKit,
+        voices: [],
+      });
+
+    it("doesn't read a file whose size and modification time are as stored", () => {
+      const scanIo = io();
+
+      const result = plan([row({ filename: "1 kick.wav", id: 1 })], scanIo);
+
+      expect(scanIo.readMetadata).not.toHaveBeenCalled();
+      expect(result.metadataUpdates).toEqual([]);
+    });
+
+    it.each([
+      ["size", { source_size: STAT.size + 1 }],
+      ["modification time", { source_mtime_ms: STAT.mtimeMs - 1000 }],
+      [
+        "size and modification time, not stored yet",
+        {
+          source_mtime_ms: null,
+          source_size: null,
+        },
+      ],
+    ])("reads a file again when its %s differs", (_name, stored) => {
+      const scanIo = io();
+
+      const result = plan(
+        [row({ filename: "1 kick.wav", id: 1, ...stored })],
+        scanIo,
+      );
+
+      expect(scanIo.readMetadata).toHaveBeenCalledTimes(1);
+      expect(result.metadataUpdates).toEqual([{ id: 1, metadata: METADATA }]);
+    });
+
+    it("compares the stored whole milliseconds with the file's fractional time", () => {
+      const scanIo: KitScanIo = {
+        ...io(),
+        statFile: vi.fn(() => ({
+          mtimeMs: STAT.mtimeMs + 0.75,
+          size: STAT.size,
+        })),
+      };
+
+      plan([row({ filename: "1 kick.wav", id: 1 })], scanIo);
+
+      expect(scanIo.readMetadata).not.toHaveBeenCalled();
+    });
+  });
+
   describe("[UC-13] recording what the scan found about each file (#537)", () => {
     it("records missing and unreadable files, and re-reads them next time", () => {
       const scanIo: KitScanIo = {
-        fileExists: vi.fn((p: string) => !p.endsWith("gone.wav")),
         readMetadata: vi.fn((p: string) =>
           p.endsWith("bad.wav") ? null : METADATA,
         ),
+        statFile: vi.fn((p: string) => (p.endsWith("gone.wav") ? null : STAT)),
       };
       const plan = planKitScanMerge({
         existing: [

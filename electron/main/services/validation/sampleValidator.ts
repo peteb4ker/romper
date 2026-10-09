@@ -34,6 +34,9 @@ export class SampleValidator {
     // A file Romper can't read as an uncompressed PCM or float WAV can't be
     // written to the card, so it's refused here rather than at sync (RE-08).
     // Bit depth, rate and channel mismatches are fine: sync converts them.
+    // The stat comes first, so a file changing meanwhile reads as changed
+    // at the next check (#793)
+    const stat = fs.statSync(filePath);
     const metadata = getAudioMetadata(filePath);
     if (!metadata.success) {
       return {
@@ -43,7 +46,7 @@ export class SampleValidator {
     }
     return {
       isValid: true,
-      metadata: toWavMetadataFields(metadata.data ?? {}),
+      metadata: toWavMetadataFields(metadata.data ?? {}, stat),
     };
   }
 

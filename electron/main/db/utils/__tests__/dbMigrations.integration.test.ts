@@ -380,6 +380,48 @@ describe("[Q-02] Upgrading a library is all or nothing (RE-33)", () => {
     });
   });
 
+  // #793: a sample's file size and modification time are stored with its
+  // format, so a changed file is read again. Existing rows have neither,
+  // which counts as unknown: the next kit-open check or scan reads them once
+  describe("[UC-34] [Q-08] recording each sample file's size and time (#793)", () => {
+    it("adds the columns, empty, and keeps the samples' format details", () => {
+      const dbDir = libraryAt(
+        CURRENT.slice(0, CURRENT.indexOf("0017_source_file_stat")),
+      );
+      withLibrary(dbDir, (sqlite) =>
+        sqlite.exec(`
+          UPDATE samples SET source_status = 'readable', wav_channels = 2,
+            wav_bit_depth = 24, wav_sample_rate = 48000, wav_format_tag = 3;
+        `),
+      );
+
+      expect(upgrade(dbDir).success).toBe(true);
+
+      withLibrary(dbDir, (sqlite) => {
+        expect(
+          sqlite
+            .prepare(
+              `SELECT filename, source_status, wav_channels, wav_bit_depth,
+                 wav_sample_rate, wav_format_tag, source_size, source_mtime_ms
+               FROM samples`,
+            )
+            .all(),
+        ).toEqual([
+          {
+            filename: "kick.wav",
+            source_mtime_ms: null,
+            source_size: null,
+            source_status: "readable",
+            wav_bit_depth: 24,
+            wav_channels: 2,
+            wav_format_tag: 3,
+            wav_sample_rate: 48000,
+          },
+        ]);
+      });
+    });
+  });
+
   // #510: nothing stopped a second row for the same voice before 0015, so
   // the upgrade merges duplicates, keeping the row with the user's settings,
   // and then refuses new ones

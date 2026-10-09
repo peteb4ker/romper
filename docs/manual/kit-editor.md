@@ -60,7 +60,7 @@ Each voice has up to **12 sample slots**, matching the Rample's 12-layer-per-voi
 - **Waveform display** -- Visual representation of the audio
 - **File not found** or **Can't be read** -- Shown under the filename when the sample's file is missing or isn't a WAV Romper can read (see [Missing and Unreadable Files](#missing-and-unreadable-files))
 
-Right-click a sample to show its file in Finder or Explorer.
+Right-click a sample to show its file in Finder or Explorer, or select it and press `Shift+F10` or the context-menu key.
 
 ## Assigning Samples
 
@@ -86,6 +86,8 @@ The primary way to add samples is drag and drop, in an editable kit:
 ### Moving Samples
 
 In an editable kit, drag a sample onto another slot, in the same voice or another one, to move it there. The samples from that slot on shift down to make room, and the gap it leaves closes up.
+
+You can also move the selected sample with the keyboard: `Option` (macOS) or `Alt` (Windows/Linux) with `Up` or `Down` moves it a slot within its voice, and with `Left` or `Right` moves it to the previous or next voice. See [Keyboard Shortcuts](keyboard-shortcuts#moving-samples).
 
 ### Stereo and Mono Handling
 

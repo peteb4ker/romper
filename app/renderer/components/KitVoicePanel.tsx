@@ -51,7 +51,7 @@ interface KitVoicePanelProps {
     fromSlot: number,
     toVoice: number,
     toSlot: number,
-  ) => Promise<void>;
+  ) => Promise<unknown>;
   onSampleSelect?: (voice: number, idx: number) => void;
   onSaveVoiceName: (voice: number, newName: string) => Promise<boolean> | void;
 

@@ -9,7 +9,7 @@ export interface UseInternalDragHandlersOptions {
     fromSlot: number,
     toVoice: number,
     toSlot: number,
-  ) => Promise<void>;
+  ) => Promise<unknown>;
   samples: string[];
   setSharedDraggedSample?: (
     sample: {

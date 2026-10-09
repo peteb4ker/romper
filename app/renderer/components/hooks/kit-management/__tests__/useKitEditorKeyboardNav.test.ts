@@ -13,11 +13,14 @@ function setActiveElement(el: Element | null): void {
 /** Capture the keydown handler the hook registers on globalThis. */
 function setup(overrides = {}) {
   const handlers: Array<(e: KeyboardEvent) => void> = [];
+  const upHandlers: Array<(e: KeyboardEvent) => void> = [];
   const addSpy = vi
     .spyOn(globalThis, "addEventListener")
     .mockImplementation((type, listener) => {
       if (type === "keydown") {
         handlers.push(listener as (e: KeyboardEvent) => void);
+      } else if (type === "keyup") {
+        upHandlers.push(listener as (e: KeyboardEvent) => void);
       }
     });
   const removeSpy = vi
@@ -54,7 +57,13 @@ function setup(overrides = {}) {
     return e;
   };
 
-  return { addSpy, fire, props, removeSpy, view };
+  const fireUp = (key: string) => {
+    const e = { key, preventDefault: vi.fn() } as unknown as KeyboardEvent;
+    upHandlers.at(-1)?.(e);
+    return e;
+  };
+
+  return { addSpy, fire, fireUp, props, removeSpy, view };
 }
 
 describe("useKitEditorKeyboardNav", () => {
@@ -355,6 +364,94 @@ describe("useKitEditorKeyboardNav", () => {
       const { fire, props } = setup({ sequencerOpen: true });
       fire("ArrowDown");
       expect(props.onSampleKeyNav).not.toHaveBeenCalled();
+    });
+  });
+  describe("[Q-06] [UC-21] [UC-25] keys on the selected sample (#522)", () => {
+    it.each([
+      ["ArrowUp", "up"],
+      ["ArrowDown", "down"],
+      ["ArrowLeft", "left"],
+      ["ArrowRight", "right"],
+    ])("Alt+%s moves the selected sample %s", (key, direction) => {
+      const onMoveSample = vi.fn();
+      const { fire, props } = setup({ onMoveSample });
+      const e = fire(key, { altKey: true });
+      expect(onMoveSample).toHaveBeenCalledWith(direction);
+      expect(e.preventDefault).toHaveBeenCalled();
+      // Not also a plain arrow's selection step
+      expect(props.onSampleKeyNav).not.toHaveBeenCalled();
+    });
+
+    it("moves with the sequencer open too: its grid leaves Alt alone", () => {
+      const onMoveSample = vi.fn();
+      const { fire } = setup({ onMoveSample, sequencerOpen: true });
+      fire("ArrowDown", { altKey: true });
+      expect(onMoveSample).toHaveBeenCalledWith("down");
+    });
+
+    it("leaves Alt+arrows with Cmd, Ctrl or Shift, and plain arrows, alone", () => {
+      const onMoveSample = vi.fn();
+      const { fire } = setup({ onMoveSample });
+      fire("ArrowDown", { altKey: true, metaKey: true });
+      fire("ArrowDown", { altKey: true, ctrlKey: true });
+      fire("ArrowDown", { altKey: true, shiftKey: true });
+      fire("ArrowDown");
+      expect(onMoveSample).not.toHaveBeenCalled();
+    });
+
+    it("leaves a move key something else handled, or one typed in a field", () => {
+      const onMoveSample = vi.fn();
+      const { fire } = setup({ onMoveSample });
+      fire("ArrowDown", { altKey: true, defaultPrevented: true });
+      const input = document.createElement("input");
+      setActiveElement(input);
+      fire("ArrowDown", { altKey: true });
+      expect(onMoveSample).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ["the context-menu key", "ContextMenu", {}],
+      ["Shift+F10", "F10", { shiftKey: true }],
+    ])("%s shows the selected sample's file", (_name, key, modifiers) => {
+      const onShowSampleFile = vi.fn();
+      const { fire } = setup({ onShowSampleFile });
+      const e = fire(key, modifiers);
+      expect(onShowSampleFile).toHaveBeenCalledTimes(1);
+      // Windows and Linux would open a right-click of their own as well
+      expect(e.preventDefault).toHaveBeenCalled();
+    });
+
+    it("leaves F10 alone, and Shift+F10 a sequencer step already handled", () => {
+      const onShowSampleFile = vi.fn();
+      const { fire } = setup({ onShowSampleFile });
+      fire("F10");
+      fire("F10", { defaultPrevented: true, shiftKey: true });
+      expect(onShowSampleFile).not.toHaveBeenCalled();
+    });
+
+    it("stops the context-menu key's release opening a right-click (Windows)", () => {
+      const { fireUp } = setup({ onShowSampleFile: vi.fn() });
+      expect(fireUp("ContextMenu").preventDefault).toHaveBeenCalled();
+      expect(fireUp("a").preventDefault).not.toHaveBeenCalled();
+    });
+
+    it("ignores both while a modal dialog is open", () => {
+      const onMoveSample = vi.fn();
+      const onShowSampleFile = vi.fn();
+      const { fire, fireUp } = setup({ onMoveSample, onShowSampleFile });
+      const modal = document.createElement("div");
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "true");
+      document.body.appendChild(modal);
+
+      fire("ArrowDown", { altKey: true });
+      fire("F10", { shiftKey: true });
+      const up = fireUp("ContextMenu");
+
+      expect(onMoveSample).not.toHaveBeenCalled();
+      expect(onShowSampleFile).not.toHaveBeenCalled();
+      expect(up.preventDefault).not.toHaveBeenCalled();
+      modal.remove();
     });
   });
 });

@@ -31,6 +31,9 @@ When you press a bank letter, focus jumps to the first kit in that bank. Letters
 | Next kit | `.` (period) |
 | Scan/rescan kit | `/` (slash) |
 | Navigate sample slots | Up / Down arrows |
+| Move the selected sample up or down a slot | `Option+Up` / `Option+Down` (macOS), `Alt+Up` / `Alt+Down` (Windows/Linux) |
+| Move the selected sample to the previous or next voice | `Option+Left` / `Option+Right` (macOS), `Alt+Left` / `Alt+Right` (Windows/Linux) |
+| Show the selected sample's file in Finder or Explorer | `Shift+F10` or the context-menu key |
 | Play selected sample (sequencer hidden), unless a button or field has focus | `Space` |
 | Toggle step sequencer | `S` |
 | Add the open kit to favorites, or remove it | `;` (semicolon) |
@@ -38,6 +41,16 @@ When you press a bank letter, focus jumps to the first kit in that bank. Letters
 | Back to the Kit Browser | `Escape` |
 
 **Edit → Undo** and **Edit → Redo** in the menu bar do the same. In a text field, such as a voice name, they undo your typing instead.
+
+### Moving Samples
+
+The move keys do what dragging a sample does (see [Moving Samples](kit-editor#moving-samples)), so they work in editable kits only, mark the kit modified, and `Cmd+Z` / `Ctrl+Z` undoes them. The sample stays selected, and keeps focus if it had it, so you can press the key again to keep moving it.
+
+- `Up` and `Down` swap the sample with the one above or below it. The first sample doesn't move up, and the last doesn't move down.
+- `Left` and `Right` move it to the same slot of the voice on that side, or after that voice's last sample if it has fewer. The right-hand voice of a stereo pair is skipped, since nothing can be added to it. Voice 1 doesn't move left, and voice 4 doesn't move right.
+- A sample can't move into a full voice; a message says so, as it does for a drag.
+
+`Shift+F10` and the context-menu key do what right-clicking the selected sample does.
 
 ### Kit Navigation
 

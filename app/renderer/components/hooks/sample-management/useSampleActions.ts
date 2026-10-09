@@ -12,6 +12,19 @@ export interface UseSampleActionsOptions {
 }
 
 /**
+ * Shows a sample's file in Finder or Explorer: what right-clicking a sample
+ * row does, and Shift+F10 or the context-menu key on the selected sample
+ * (UC-25, #522)
+ */
+export function showSampleFile(
+  sample: Pick<SampleData, "source_path"> | undefined,
+): void {
+  if (sample?.source_path && globalThis.electronAPI?.showItemInFolder) {
+    void globalThis.electronAPI.showItemInFolder(sample.source_path);
+  }
+}
+
+/**
  * Hook for managing sample actions like deletion and context menu operations
  * Extracted from KitVoicePanel to reduce component complexity
  */
@@ -37,9 +50,7 @@ export function useSampleActions({
   const handleSampleContextMenu = useCallback(
     (e: React.MouseEvent, sampleData: SampleData | undefined) => {
       e.preventDefault();
-      if (sampleData?.source_path && globalThis.electronAPI?.showItemInFolder) {
-        void globalThis.electronAPI.showItemInFolder(sampleData.source_path);
-      }
+      showSampleFile(sampleData);
     },
     [],
   );

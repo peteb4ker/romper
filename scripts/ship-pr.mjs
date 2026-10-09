@@ -188,6 +188,18 @@ export function touchesBacklogHistory(diff, startLine) {
 }
 
 /**
+ * Do two package-lock.json texts pin the same packages? npm install adds
+ * or drops `"libc"` lists depending on the platform; those don't count.
+ * @param {string} a
+ * @param {string} b
+ */
+export function sameLockfile(a, b) {
+  const pins = (/** @type {string} */ text) =>
+    text.replaceAll(/\n\s*"libc": \[[^\]]*\],?/g, "");
+  return pins(a) === pins(b);
+}
+
+/**
  * The run and job IDs in a check's link.
  * @param {string | undefined} link
  *   e.g. https://github.com/o/r/actions/runs/123/job/456
@@ -568,7 +580,7 @@ function provideNodeModules(repo, scratch) {
       return "";
     }
   };
-  if (lock(repo) && lock(repo) === lock(scratch)) {
+  if (lock(repo) && sameLockfile(lock(repo), lock(scratch))) {
     symlinkSync(
       path.join(repo, "node_modules"),
       path.join(scratch, "node_modules"),

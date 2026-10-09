@@ -14,6 +14,7 @@ import {
   parseArgs,
   pullRequestProblem,
   runnerNeverAcquired,
+  sameLockfile,
   type Snapshot,
   splitFailures,
   touchesBacklogHistory,
@@ -149,6 +150,26 @@ describe("[Q-07] ship-pr, the shepherd's merge script", () => {
       expect(
         touchesBacklogHistory("@@ -2 +2 @@\n-a\n+b\n@@ -8,2 +8 @@\n", 6),
       ).toBe(true);
+    });
+  });
+
+  describe("sameLockfile", () => {
+    const pinned = (libc: string) =>
+      `{\n  "node_modules/x": {\n    "version": "1.0.0",${libc}\n    "license": "MIT"\n  }\n}`;
+
+    it("ignores npm's libc churn", () => {
+      expect(
+        sameLockfile(
+          pinned(""),
+          pinned('\n    "libc": [\n      "glibc"\n    ],'),
+        ),
+      ).toBe(true);
+    });
+
+    it("tells different pins apart", () => {
+      expect(
+        sameLockfile(pinned(""), pinned("").replace("1.0.0", "1.0.1")),
+      ).toBe(false);
     });
   });
 

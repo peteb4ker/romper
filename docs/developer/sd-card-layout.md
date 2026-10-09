@@ -2,7 +2,7 @@
 title: SD Card Layout - Specification
 priority: high
 status: specification
-updated: 2026-09-30
+updated: 2026-10-08
 context_size: small
 implementation_status: RE-06 implemented in #372; RE-05 in the follow-up PR.
 -->
@@ -56,14 +56,28 @@ module, and has sync write it.
   numbers. Nothing in the archive shows whether the firmware sorts
   `10` before or after `2`.
 
-### Written by the device (Squarp forum, not the manual)
+### Written by the device (Squarp forum and a real card, not the manual)
 
-- STORE writes per-kit settings to `_save/<kit>.rpl` at the card root
-  (for example `_save/C0.rpl`). The files are binary and undocumented.
-  Deleting one resets that kit, per Squarp staff.
-- SAVE SETTINGS writes global settings to the card, probably under
-  `_save/` too.
-- Nothing the device writes lives inside a kit folder.
+The device writes a `_save/` folder at the card root. Squarp hasn't
+documented it; a copy from Pete's card (2026-10-04) holds:
+
+- `_save/<kit>.rpl` (for example `_save/L1.rpl`), written by STORE: the
+  kit's knob positions, layer modes, selected layers, mute groups and CV
+  assignments. Deleting one resets that kit, per
+  [Squarp staff](https://squarp.community/t/folder-settings-mishap/12026).
+- `_save/settings.rpl`, written by SAVE SETTINGS: the device settings,
+  including SLICER.
+- `_save/global_assign.rpl`: the CV assignments used when ASSIGN is
+  GLOBAL.
+- `_save/autosave_<kit>.rpl`: an empty file; its name records the last
+  kit (inferred).
+
+The files are CBOR (RFC 8949) maps with readable key names, not opaque
+binary, but what most values mean is unverified on hardware. Every file
+has a modification time of 0, so only the contents tell versions apart.
+The keys, sources and the plan for reading and later writing them are in
+[`rample-save-integration.md`](rample-save-integration.md). Nothing the
+device writes lives inside a kit folder.
 
 ## Current state
 
@@ -160,7 +174,9 @@ any folder that isn't a valid kit name.
 `_save/<kit>.rpl` belongs to the kit slot, not its samples, so the
 device applies old settings to a kit whose samples changed. Romper
 leaves `_save/` alone. A later option could reset (delete) the `.rpl`
-for changed kits, which is Squarp's documented reset.
+for changed kits, which is the reset Squarp staff describe. That, and
+reading the files, are staged in
+[`rample-save-integration.md`](rample-save-integration.md) (#786).
 
 ### Validation (warnings in the sync summary)
 

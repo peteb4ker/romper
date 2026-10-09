@@ -41,10 +41,10 @@ tell which sections changed. Read the text on the page.
 | What's inside a kit? | [#YanSdon](https://squarp.net/rample/manual/#YanSdon) | `c46e4f805ba2` | 2026-10-08 | writes | UC-19, UC-34 | [Voice](domain-model.md#voice) | Four voices, each holding one or more samples: Romper's voices and slots. |
 | Trig a sample | [#npDPEfP](https://squarp.net/rample/manual/#npDPEfP) | `069eb4f81778` | 2026-10-08 | mirrors | UC-29, UC-30 | [Kit](domain-model.md#kit), [Playback and voice choke](domain-model.md#playback-and-voice-choke) | Playing a sample, and the sequencer that triggers it, are previews on your computer. |
 | Exit | [#XX5FH9j5x](https://squarp.net/rample/manual/#XX5FH9j5x) | `6f8f9a86fa0e` | 2026-10-08 | none |  |  | Not a gap: moving between the device's modes. |
-| Assign a CV input | [#XX6/ehtPx](https://squarp.net/rample/manual/#XX6/ehtPx) | `b2a28e769aad` | 2026-10-08 | none |  |  | CV assignment; Romper has nothing like it. |
+| Assign a CV input | [#XX6/ehtPx](https://squarp.net/rample/manual/#XX6/ehtPx) | `b2a28e769aad` | 2026-10-08 | none |  |  | CV assignment; Romper has nothing like it. Stored per kit in `_save/<kit>.rpl` (`assignments`), or in `global_assign.rpl` when ASSIGN is GLOBAL; showing them is #786. |
 | Assign a CV input › V/OCTAVE PITCH CONTROL | [#XX6/ehtPx](https://squarp.net/rample/manual/#XX6/ehtPx) | `efbe07a6c4a1` | 2026-10-08 | none |  |  | Pitch from a CV input; previews play at the sample's own pitch. |
-| Mute groups | [#qdSsFkF](https://squarp.net/rample/manual/#qdSsFkF) | `967bc4c74fe5` | 2026-10-08 | none |  | [Voice](domain-model.md#voice) | Romper's mute (UC-32) is a preview mute, a different feature. |
-| Layers | [#e+hlH+Q](https://squarp.net/rample/manual/#e+hlH+Q) | `e2c07d176207` | 2026-10-08 | mirrors | UC-32 | [Voice](domain-model.md#voice), [Playback and voice choke](domain-model.md#playback-and-voice-choke) | Romper's sample modes (first, random, round-robin) differ from the device's layer modes, have a different default, and aren't written to the card. |
+| Mute groups | [#qdSsFkF](https://squarp.net/rample/manual/#qdSsFkF) | `967bc4c74fe5` | 2026-10-08 | none |  | [Voice](domain-model.md#voice) | Romper's mute (UC-32) is a preview mute, a different feature. Stored per kit as `mute_group` in `_save/<kit>.rpl`; showing it is #786. |
+| Layers | [#e+hlH+Q](https://squarp.net/rample/manual/#e+hlH+Q) | `e2c07d176207` | 2026-10-08 | mirrors | UC-32 | [Voice](domain-model.md#voice), [Playback and voice choke](domain-model.md#playback-and-voice-choke) | Romper's sample modes (first, random, round-robin) differ from the device's layer modes, have a different default, and aren't written to the card. Stored per kit as `layer_modes` and `selected_layer` in `_save/<kit>.rpl` (#786). |
 | microSD | [#XX2d0DE/0](https://squarp.net/rample/manual/#XX2d0DE/0) | `caba43b3cd61` | 2026-10-08 | none |  | [The card and a write](domain-model.md#the-card-and-a-write) | Card format and handling; Romper doesn't check the card's format. |
 | Audio effects & parameters workflow | [#jonfAQR](https://squarp.net/rample/manual/#jonfAQR) | `63f52a4f731a` | 2026-10-08 | none |  |  | Effects aren't previewed or stored. |
 | Pitch effect | [#RSGQSY7](https://squarp.net/rample/manual/#RSGQSY7) | `deb6bc43651d` | 2026-10-08 | none |  |  |  |
@@ -70,7 +70,7 @@ tell which sections changed. Read the text on the page.
 | Settings › RANDOM | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `eef968ac3a84` | 2026-10-08 | none |  |  | As RESET. |
 | Settings › COPY | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `e6e97879a526` | 2026-10-08 | none |  |  | As RESET. |
 | Settings › PASTE | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `29144807e4d1` | 2026-10-08 | none |  |  | As RESET. |
-| Settings › STORE | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `bbad8da51fe4` | 2026-10-08 | documents | UC-34 |  | Saved kit settings go to `_save/` on the card. A write leaves it alone and Romper never reads it, so they apply to whatever a slot holds next. |
+| Settings › STORE | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `bbad8da51fe4` | 2026-10-08 | documents | UC-34 |  | Saved kit settings go to `_save/<kit>.rpl`, a CBOR map. A write leaves it alone and Romper never reads it, so they apply to whatever a slot holds next. Reading, keeping and resetting them: #786. |
 | Settings › CHANNEL | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `b66757ad0fcc` | 2026-10-08 | none |  |  |  |
 | Settings › SP1, SP2, SP3, SP4 | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `8926834c3617` | 2026-10-08 | none |  |  |  |
 | Settings › VELOCITY | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `747631ad1c2c` | 2026-10-08 | none |  |  |  |
@@ -78,15 +78,15 @@ tell which sections changed. Read the text on the page.
 | Settings › PROGRAM CHANGE | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `cbff4acfca02` | 2026-10-08 | none |  |  |  |
 | Settings › CV IN | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `b8348f514110` | 2026-10-08 | none |  |  |  |
 | Settings › PITCH | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `ac7093037b19` | 2026-10-08 | none |  |  |  |
-| Settings › SLICER | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `28798e2914a2` | 2026-10-08 | mirrors, documents | UC-33 |  | A device setting with EXP; Romper keeps a division per kit and has no EXP. Whether it's per kit or per voice is unverified (#617). |
-| Settings › LAYER | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `b09db9e76169` | 2026-10-08 | mirrors | UC-32 |  | The device's default layer mode; see Layers. |
-| Settings › ASSIGN | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `fda9df959200` | 2026-10-08 | none |  |  |  |
+| Settings › SLICER | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `28798e2914a2` | 2026-10-08 | mirrors, documents | UC-33 |  | A device setting with EXP; Romper keeps a division per kit and has no EXP. Stored once, in `_save/settings.rpl` (`slicer_quantize_postv200`), not per kit; still to check on hardware (#617). |
+| Settings › LAYER | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `b09db9e76169` | 2026-10-08 | mirrors | UC-32 |  | The device's default layer mode; see Layers. Stored as `layerMode` in `_save/settings.rpl`. |
+| Settings › ASSIGN | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `fda9df959200` | 2026-10-08 | none |  |  | Stored as `assign` in `_save/settings.rpl`; see Assign a CV input (#786). |
 | Settings › ANTICLIC | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `b0b286cf7b4b` | 2026-10-08 | none |  |  | Previews don't fade samples in or out. |
 | Settings › VUMETER | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `ec92ab85b78e` | 2026-10-08 | none |  |  | Not a gap: the device's display. |
 | Settings › FLIP | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `67ab07c72014` | 2026-10-08 | none |  |  | Not a gap: the device's display. |
-| Settings › AUTOSAVE | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `7852ff312298` | 2026-10-08 | none |  |  |  |
+| Settings › AUTOSAVE | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `7852ff312298` | 2026-10-08 | none |  |  | Stored as `autosave` in `_save/settings.rpl`; the last kit is recorded by an empty `autosave_<kit>.rpl` (inferred, #786). |
 | Settings › TAPE | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `ab76737e162d` | 2026-10-08 | none |  |  | Master effect. |
 | Settings › COMPRESS, % COMPRESS, SIDECHAIN | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `68ce8305f015` | 2026-10-08 | none |  |  | Master effect. |
-| Settings › SAVE SETTINGS | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `07a26a3317fb` | 2026-10-08 | none |  |  | The device's settings file; Romper neither reads nor writes it. |
+| Settings › SAVE SETTINGS | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `07a26a3317fb` | 2026-10-08 | none |  |  | The device's settings file, `_save/settings.rpl` (CBOR); Romper neither reads nor writes it. Reading it is #786. |
 | Settings › INFO | [#VhwOTqd](https://squarp.net/rample/manual/#VhwOTqd) | `5da6e43759e3` | 2026-10-08 | none |  |  | Not a gap: the device's display. |
 | Midi implementation chart | [#Zj8++7M](https://squarp.net/rample/manual/#Zj8++7M) | `75ea64e17403` | 2026-10-08 | none |  |  | The chart is an image, so the hash covers only its caption: check it by eye. |

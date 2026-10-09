@@ -1,7 +1,7 @@
 <!--
 title: Domain model
 status: living map; checked against origin/main 3612a5be on 2026-10-03
-updated: 2026-10-03
+updated: 2026-10-08
 context_size: large
 -->
 
@@ -218,7 +218,8 @@ reads them through `app/renderer/config.ts`.
 - **Use cases:** [UC-03](use-cases.md#uc-03-set-up-an-empty-library), [UC-04](use-cases.md#uc-04-choose-an-existing-local-store), [UC-05](use-cases.md#uc-05-recover-from-an-invalid-or-missing-store), [UC-06](use-cases.md#uc-06-change-the-local-store), [UC-23](use-cases.md#uc-23-delete-a-sample), [UC-34](use-cases.md#uc-34-write-kits-to-the-sd-card), [UC-35](use-cases.md#uc-35-preferences), [UC-37](use-cases.md#uc-37-about-help-updates-and-diagnostics), [Q-03](use-cases.md#q-03-romper-only-touches-what-you-point-it-at).
 - **Rample manual:** none. The Rample has its own settings
   ([Settings](https://squarp.net/rample/manual/#VhwOTqd), saved with SAVE
-  SETTINGS), which Romper doesn't read or write.
+  SETTINGS to `_save/settings.rpl` on the card), which Romper doesn't read
+  or write ([`rample-save-integration.md`](rample-save-integration.md)).
 - **Invariants:** a setting has one writer path (`write-settings`) and one
   in-memory owner (main). Path settings are checked against the allowed
   roots before they're saved, so the renderer can't grant itself access.
@@ -617,7 +618,16 @@ voice and slot):
   SAVE SETTINGS entries of [Settings](https://squarp.net/rample/manual/#VhwOTqd)
   ("Save current kit parameters & assignments on the SD card"). The manual
   doesn't name the folder the device writes; `_save/` comes from the Squarp
-  forum ([`sd-card-layout.md`](sd-card-layout.md)). Relationship: **writes**.
+  forum and a real card ([`sd-card-layout.md`](sd-card-layout.md)).
+  Relationship: **writes**.
+- **The device's saved settings:** `_save/` holds a CBOR file per stored
+  kit (`<kit>.rpl`: knob positions, layer modes, selected layers, mute
+  groups, CV assignments), the device settings (`settings.rpl`), the
+  GLOBAL CV assignments (`global_assign.rpl`) and an empty
+  `autosave_<kit>.rpl`. The device owns them; Romper doesn't read, copy
+  or change them yet. A kit's file belongs to its slot, so the device
+  applies it to whatever samples a write puts there next. See
+  [`rample-save-integration.md`](rample-save-integration.md) (#786).
 - **Canonical owner:** the store's database. The card is a generated copy:
   "the card mirrors the store". The card path is an argument to each
   write, remembered in the `sdCardPath` setting.
@@ -834,6 +844,16 @@ The index's Concepts column comes from this document: a concept whose
 (`https://squarp.net/rample/manual/#<anchor>`) is listed against it. So
 cite sections by link, with the anchors the index records, and a changed
 section leads to the concepts it touches.
+
+**What the device stores, by key:** the files in `_save/` name the
+settings the manual describes (STORE's kit parameters, SAVE SETTINGS'
+device settings, LAYER, ASSIGN, SLICER, mute groups), so a manual section
+can now be traced to the key that holds it. The key tables, and which
+meanings are confirmed, are in
+[`rample-save-integration.md`](rample-save-integration.md). SLICER is in
+`settings.rpl` and in no kit file, so it is one setting for the whole
+device on the firmware that wrote Pete's card (#617, still to check on
+hardware).
 
 **Romper concepts with no manual section:** bank name files, the step
 sequencer, BPM, trigger conditions, voice choke, per-sample gain, kit

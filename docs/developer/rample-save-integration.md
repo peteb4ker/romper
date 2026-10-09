@@ -568,6 +568,20 @@ Two PRs, both without UI.
 - **Tests:** component tests for each field and for a missing or
   unreadable file; an e2e that sets up from a card with a seeded `.rpl`
   and shows the panel; screenshots and manual text, per CLAUDE.md.
+- **As built** ([#800](https://github.com/peteb4ker/romper/issues/800)):
+  `readKitRampleSave` (`electron/main/rample/rampleKitSaveView.ts`) reads
+  the kit's file from the store's latest copy (the last folder by name
+  under `.romperdb/rample-save/`; when it was taken comes from the folder
+  name, which starts with the date and time) with the stage 1b reader, and
+  sends the renderer a plain view (`shared/rampleKitSaveView.ts`) on
+  `get-kit-rample-save`: found, no copy yet, no file for the kit, or
+  unreadable. Unknown keys, and known keys of an unexpected shape, come
+  with their values as "other values". The kit editor's section
+  (`app/renderer/components/rample-save/`) is collapsed by default and
+  reads only while open, so opening a kit costs no extra IPC call. Every
+  string is in `rampleSaveText.ts`; the fields and which check confirms
+  each are in `rampleSaveFields.ts`, all still inferred. The kit-card
+  marker is left for a follow-up.
 
 ### Stage 4: warn about settings left on the card, and offer a reset (blocked on D4, D5, checks 8 and 10)
 

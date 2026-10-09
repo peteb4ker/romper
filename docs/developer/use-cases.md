@@ -239,14 +239,18 @@ See [Navigating Banks](../manual/kit-browser.md#navigating-banks) and
 Each kit card shows the kit ID and alias, sample counts per voice, voice
 names, a kit type icon, a stereo icon, a favourite star, a lock icon on
 read-only kits and an amber border on kits changed since the last write.
-See [Kit Cards](../manual/kit-browser.md#kit-cards).
+See [Kit Cards](../manual/kit-browser.md#kit-cards). The kit editor's
+"On the Rample" section shows what the device saved for the kit, read-only
+(#800; see [On the Rample](../manual/kit-editor.md#on-the-rample)).
 
 **Concepts:** [Kit](domain-model.md#kit), [Voice](domain-model.md#voice), [Sample](domain-model.md#sample).
 
 - **Renderer:** `app/renderer/components/KitGridCard.tsx`, `app/renderer/components/KitGridItem.tsx`, `app/renderer/components/KitVoiceStrip.tsx`,
   `app/renderer/components/shared/KitIconRenderer.tsx`, `app/renderer/components/shared/kitItemUtils.ts`;
-  `app/renderer/components/hooks/kit-management/useKitItem.ts`.
-- **IPC:** `get-all-kits`.
+  `app/renderer/components/hooks/kit-management/useKitItem.ts`;
+  `app/renderer/components/rample-save/RampleSavePanel.tsx` (On the Rample).
+- **Main:** `electron/main/rample/rampleKitSaveView.ts` (`readKitRampleSave`).
+- **IPC:** `get-all-kits`, `get-kit-rample-save`.
 
 ### UC-09 Search kits
 

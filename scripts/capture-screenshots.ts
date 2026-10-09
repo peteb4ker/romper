@@ -669,6 +669,26 @@ const SCREENSHOT_TARGETS = [
     output: "manual/missing-file.png",
     store: "broken-kits",
   },
+  {
+    description:
+      "Kit Editor: the On the Rample section, open, with a kit's saved settings (#800)",
+    name: "manual-kit-rample-save",
+    navigate: async (window) => {
+      await openBrokenKit(window, MISSING_FILE_KIT);
+      await window.locator('[data-testid="rample-save-toggle"]').click();
+      await window.locator('[data-testid="rample-save-found"]').waitFor();
+      await window
+        .locator('[data-testid="rample-save-panel"]')
+        .scrollIntoViewIfNeeded();
+      await window.evaluate(() =>
+        (document.activeElement as HTMLElement)?.blur(),
+      );
+      await window.waitForTimeout(300);
+    },
+    output: "manual/kit-rample-save.png",
+    selector: '[data-testid="rample-save-panel"]',
+    store: "broken-kits",
+  },
 
   // -- Slicer (#723): one-time capture from --slicer-sample (tests/utils/slicer-store.ts) --
   {

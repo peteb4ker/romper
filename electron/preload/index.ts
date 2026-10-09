@@ -272,6 +272,10 @@ const electronAPI = {
     isDev && console.debug("[IPC] getKitDeleteSummary invoked", kitName);
     return invoke("get-kit-delete-summary", kitName);
   },
+  getKitRampleSave: (kitName: string) => {
+    isDev && console.debug("[IPC] getKitRampleSave invoked", kitName);
+    return invoke("get-kit-rample-save", kitName);
+  },
   getKits: () => {
     isDev && console.debug("[IPC] getKits invoked");
     return invoke("get-all-kits");

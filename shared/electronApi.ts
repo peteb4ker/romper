@@ -8,6 +8,7 @@ import type {
   LocalStoreValidationDetailedResult,
   Sample,
 } from "./db/schema.js";
+import type { RampleKitSaveView } from "./rampleKitSaveView.js";
 import type { RampleSaveBackupResult } from "./rampleSave.js";
 import type { SliceStep, VoiceSliceSettings } from "./sliceTypes.js";
 import type { WriteStereoSummary } from "./stereoLinkRules.js";
@@ -152,6 +153,12 @@ export interface ElectronAPI {
       voiceCount: number;
     }>
   >;
+  /**
+   * The settings the Rample saved for a kit (`_save/<kit>.rpl`), from the
+   * latest copy of the card's `_save` folder in the store (#800). Read-only;
+   * the card isn't read.
+   */
+  getKitRampleSave: (kitName: string) => Promise<DbResult<RampleKitSaveView>>;
   getKits: () => Promise<DbResult<KitWithRelations[]>>;
   getLocalStoreStatus: () => Promise<LocalStoreValidationDetailedResult>;
   /**

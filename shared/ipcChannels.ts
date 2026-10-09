@@ -72,6 +72,7 @@ export interface IpcInvokeChannels {
   "get-all-samples-for-kit": Call<"getAllSamplesForKit">;
   "get-kit": Call<"getKit">;
   "get-kit-delete-summary": Call<"getKitDeleteSummary">;
+  "get-kit-rample-save": Call<"getKitRampleSave">;
   "get-local-store-status": Call<"getLocalStoreStatus">;
   "get-sample-audio-buffer": Call<"getSampleAudioBuffer">;
   "get-user-home-dir": Call<"getUserHomeDir">;

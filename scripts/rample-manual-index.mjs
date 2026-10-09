@@ -390,7 +390,8 @@ export function mergeSections(previous, sections, date) {
     }
     merged.rows.push({
       anchor: section.anchor,
-      changed: old && old.hash === section.hash && old.changed ? old.changed : date,
+      changed:
+        old && old.hash === section.hash && old.changed ? old.changed : date,
       hash: section.hash,
       key: section.key,
       notes: old?.notes ?? "",
@@ -471,7 +472,9 @@ export function rowProblems(row, ids) {
     }
   }
   if (kinds.includes("none") && kinds.length > 1) {
-    problems.push(`${row.key}: "none" can't be combined with another relationship`);
+    problems.push(
+      `${row.key}: "none" can't be combined with another relationship`,
+    );
   }
   for (const id of row.useCases.match(/\b(?:UC|Q)-\d+\b/g) ?? []) {
     if (!ids.has(id)) problems.push(`${row.key}: ${id} isn't in ${REGISTER}`);
@@ -556,7 +559,7 @@ export function renderIndex({ concepts, fetched, rows, version }) {
     "  section (generated).",
     "- **Notes:** in our own words. A `none` row is a candidate feature until",
     "  its notes cite an issue (`#N`) or say why it's not a gap (\"Not a gap:",
-    "  …\").",
+    '  …").',
     "",
     `| ${TABLE_HEADER.join(" | ")} |`,
     `|${TABLE_HEADER.map(() => "---").join("|")}|`,
@@ -789,7 +792,9 @@ export async function run({
   }
   if (!dryRun) {
     log.log("");
-    log.log(`Wrote ${INDEX}. Section text is in ${CACHE}/sections/ (not committed);`);
+    log.log(
+      `Wrote ${INDEX}. Section text is in ${CACHE}/sections/ (not committed);`,
+    );
     log.log(`diff -ru ${CACHE}/previous ${CACHE}/sections shows what changed.`);
   }
   return problems.length > 0 ? 1 : 0;

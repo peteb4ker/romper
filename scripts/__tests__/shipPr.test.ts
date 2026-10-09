@@ -1,5 +1,19 @@
 // @vitest-environment node
-import { describe, expect, it } from "vitest";
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  readlinkSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   type Check,
@@ -8,8 +22,10 @@ import {
   frozenFiles,
   historyStartLine,
   idsFromLink,
+  linkNodeModules,
   type Memory,
   nextCleanPolls,
+  nodeModulesProblem,
   OUTCOMES,
   parseArgs,
   pullRequestProblem,
@@ -18,6 +34,7 @@ import {
   type Snapshot,
   splitFailures,
   touchesBacklogHistory,
+  unlinkNodeModules,
 } from "../ship-pr.mjs";
 
 const memory = (overrides: Partial<Memory> = {}): Memory => ({
@@ -360,6 +377,106 @@ describe("[Q-07] ship-pr, the shepherd's merge script", () => {
       expect(nextCleanPolls("CLEAN", 1)).toBe(2);
       expect(nextCleanPolls("HAS_HOOKS", 0)).toBe(1);
       expect(nextCleanPolls("BLOCKED", 3)).toBe(0);
+    });
+  });
+
+  describe("borrowed node_modules", () => {
+    let root: string;
+    let source: string;
+    let scratch: string;
+    const link = () => path.join(scratch, "node_modules");
+
+    beforeEach(() => {
+      root = mkdtempSync(path.join(tmpdir(), "ship-pr-test-"));
+      source = path.join(root, "source");
+      scratch = path.join(root, "scratch");
+      mkdirSync(path.join(source, "node_modules", ".bin"), { recursive: true });
+      writeFileSync(path.join(source, "node_modules", "marker"), "source");
+      mkdirSync(scratch);
+    });
+
+    afterEach(() => {
+      rmSync(root, { force: true, recursive: true });
+    });
+
+    const sourceIsIntact = () =>
+      readFileSync(path.join(source, "node_modules", "marker"), "utf8") ===
+        "source" && existsSync(path.join(source, "node_modules", ".bin"));
+
+    const pointsAtSource = () =>
+      lstatSync(link()).isSymbolicLink() &&
+      path.resolve(scratch, readlinkSync(link())) ===
+        path.join(source, "node_modules");
+
+    it("links a fresh scratch tree to the source's node_modules", () => {
+      expect(linkNodeModules(source, scratch)).toBe("linked");
+      expect(pointsAtSource()).toBe(true);
+      expect(existsSync(path.join(link(), "marker"))).toBe(true);
+    });
+
+    it("keeps a link that is already right, so a second rebase doesn't fail", () => {
+      linkNodeModules(source, scratch);
+      expect(linkNodeModules(source, scratch)).toBe("kept");
+      expect(pointsAtSource()).toBe(true);
+      expect(sourceIsIntact()).toBe(true);
+    });
+
+    it("replaces a stale link and leaves what it pointed at alone", () => {
+      const elsewhere = path.join(root, "elsewhere");
+      mkdirSync(elsewhere);
+      writeFileSync(path.join(elsewhere, "marker"), "elsewhere");
+      symlinkSync(elsewhere, link(), "dir");
+
+      expect(linkNodeModules(source, scratch)).toBe("replaced");
+      expect(pointsAtSource()).toBe(true);
+      expect(readFileSync(path.join(elsewhere, "marker"), "utf8")).toBe(
+        "elsewhere",
+      );
+      expect(sourceIsIntact()).toBe(true);
+    });
+
+    it("replaces a dangling link", () => {
+      symlinkSync(path.join(root, "gone"), link(), "dir");
+      expect(linkNodeModules(source, scratch)).toBe("replaced");
+      expect(pointsAtSource()).toBe(true);
+    });
+
+    it("replaces a real folder (an earlier npm ci) with the link", () => {
+      mkdirSync(path.join(link(), "left-over"), { recursive: true });
+      writeFileSync(path.join(link(), "left-over", "file"), "x");
+
+      expect(linkNodeModules(source, scratch)).toBe("replaced");
+      expect(pointsAtSource()).toBe(true);
+      expect(existsSync(path.join(link(), "left-over"))).toBe(false);
+      expect(sourceIsIntact()).toBe(true);
+    });
+
+    it("unlinks only the link, never the source's node_modules", () => {
+      linkNodeModules(source, scratch);
+      expect(unlinkNodeModules(scratch)).toBe(true);
+      expect(existsSync(link())).toBe(false);
+      expect(sourceIsIntact()).toBe(true);
+      expect(readdirSync(scratch)).toEqual([]);
+    });
+
+    it("leaves a real folder for the caller and reports nothing removed", () => {
+      mkdirSync(link());
+      expect(unlinkNodeModules(scratch)).toBe(false);
+      expect(lstatSync(link()).isDirectory()).toBe(true);
+      expect(unlinkNodeModules(path.join(root, "no-such-tree"))).toBe(false);
+    });
+
+    it("reports an environment problem when the source has no node_modules", () => {
+      expect(nodeModulesProblem(source)).toBeNull();
+      rmSync(path.join(source, "node_modules"), { recursive: true });
+      expect(nodeModulesProblem(source)).toMatch(
+        /node_modules is missing from .*source.*npm install/,
+      );
+    });
+
+    it("has its own outcome and exit code, apart from typecheck", () => {
+      expect(OUTCOMES.env).not.toBe(OUTCOMES.typecheck);
+      expect(OUTCOMES.env).toBeGreaterThan(0);
     });
   });
 

@@ -55,8 +55,8 @@ Each concept sits in a chain that runs from the hardware to the tests:
 → **tests and issues** (tests tagged `[UC-NN]`, issues labelled `UC-NN`;
 `npm run trace` joins them and generates each entry's status).
 
-Read along it in either direction. When Squarp changes the manual, #538's
-index finds the changed section, the [summary](#summary) finds the
+Read along it in either direction. When Squarp changes the manual, the
+[Rample manual index](rample-manual-index.md) finds the changed section, the [summary](#summary) finds the
 concepts it touches, and their use cases find the tests to re-run and the
 issues to file. When an issue is filed, its label finds the use case, whose
 Concepts line finds the owner the fix must go through.
@@ -80,7 +80,7 @@ same pull request.
 | [Scan and setup import](#scan-and-setup-import) | the database (merge, never rebuild) | How to make your own sample kits (writes, in reverse) | [UC-01](use-cases.md#uc-01-set-up-from-an-sd-card), [UC-02](use-cases.md#uc-02-set-up-from-the-factory-archive), [UC-13](use-cases.md#uc-13-scan-a-kit-or-scan-all), [UC-27](use-cases.md#uc-27-name-voices), [Q-02](use-cases.md#q-02-your-changes-are-saved-completely-or-not-at-all) |
 | [Undo history](#undo-history) | renderer state (`useUndoRedoState`) | none | [UC-06](use-cases.md#uc-06-change-the-local-store), [UC-26](use-cases.md#uc-26-undo-and-redo), [Q-02](use-cases.md#q-02-your-changes-are-saved-completely-or-not-at-all) |
 | [Playback and voice choke](#playback-and-voice-choke) | audio layer (`claimVoice`, shared `AudioContext`) | Trig a sample; Layers (mirrors; choke unverified) | [UC-29](use-cases.md#uc-29-play-a-sample), [UC-30](use-cases.md#uc-30-step-sequencer), [UC-32](use-cases.md#uc-32-sample-mode-level-and-mute), [UC-33](use-cases.md#uc-33-slicer), [Q-01](use-cases.md#q-01-romper-stays-responsive-as-your-library-grows) |
-| [Use cases, qualities and issues](#use-cases-qualities-and-issues) | `use-cases.md`; GitHub issues | the whole manual (documents, via #538) | [Q-07](use-cases.md#q-07-every-change-is-tested-before-it-reaches-you), [Q-08](use-cases.md#q-08-romper-supports-or-mirrors-the-ramples-features) |
+| [Use cases, qualities and issues](#use-cases-qualities-and-issues) | `use-cases.md`; GitHub issues | the whole manual (documents, via the [index](rample-manual-index.md)) | [Q-07](use-cases.md#q-07-every-change-is-tested-before-it-reaches-you), [Q-08](use-cases.md#q-08-romper-supports-or-mirrors-the-ramples-features) |
 | [The IPC contract](#the-ipc-contract) | `ElectronAPI` (`shared/electronApi.ts`) | none | [UC-36](use-cases.md#uc-36-messages-and-error-containment), [Q-01](use-cases.md#q-01-romper-stays-responsive-as-your-library-grows)–[Q-03](use-cases.md#q-03-romper-only-touches-what-you-point-it-at), [Q-07](use-cases.md#q-07-every-change-is-tested-before-it-reaches-you) |
 
 A range such as UC-07–UC-11 means every entry in it. Each concept's
@@ -434,7 +434,7 @@ voice number):
     says layers play "randomly (by default)". Romper has `first` (its
     default), `random` and `round-robin`, and saves none of it to the card,
     since the Rample keeps layer modes in its own STORE data. A parity gap
-    for #538, not a bug.
+    (Layers in the [Rample manual index](rample-manual-index.md)), not a bug.
   - `updateVoiceAlias` reports success when the voice row doesn't exist,
     so the editor's `handleInferVoiceNames` counts that voice as named.
   - The voice level, sample mode and slicer settings don't flag the kit,
@@ -770,7 +770,7 @@ voice and slot):
   you do it (`Q-NN`), and the open problems with each.
 - **Use cases:** [Q-07](use-cases.md#q-07-every-change-is-tested-before-it-reaches-you), [Q-08](use-cases.md#q-08-romper-supports-or-mirrors-the-ramples-features).
 - **Rample manual:** **documents**: Q-08 traces Rample features to the use
-  cases that cover them (#538).
+  cases that cover them, in the [Rample manual index](rample-manual-index.md).
 - **Canonical owner:** the register, [`use-cases.md`](use-cases.md), for
   entries; GitHub issues for open work, labelled with an entry's ID, a kind
   and a severity ([`BACKLOG.md`](../../BACKLOG.md)). Status is generated
@@ -783,7 +783,7 @@ voice and slot):
   partial while any issue with its label is open; a supported entry has a
   test above unit level or a declared gap.
 - **Disagreements on main:** this document links an issue for each
-  disagreement it lists; the Rample side of Q-08 has no index yet (#538).
+  disagreement it lists.
 
 ## The IPC contract
 
@@ -821,53 +821,19 @@ voice and slot):
 
 ## Rample manual coverage
 
-A first pass, from the manual as fetched on 2026-10-03 (the page shows no
-firmware version). #538's skill will regenerate this list from the manual
-and keep it current; it should use the same headings as keys.
+The map of manual sections is
+[`rample-manual-index.md`](rample-manual-index.md): one row per section
+and sub-heading, keyed by heading, with its anchor, a hash of its text, its
+relationship to Romper and the use cases it relates to. `npm run
+rample-manual` regenerates it from the manual (the `rample-manual-map`
+skill, run by hand when Squarp publishes a new manual or firmware), keeps
+the mapping, and reports changed sections and candidate features.
 
-| Manual section | Anchor | Romper concepts | Relationship |
-|---|---|---|---|
-| Select a kit | `#igGTWqk` | [Kit](#kit), [Bank](#bank) | writes |
-| What's inside a kit? | `#YanSdon` | [Voice](#voice), [Sample](#sample) | writes |
-| Trig a sample | `#npDPEfP` | [Playback](#playback-and-voice-choke), the sequencer ([Kit](#kit)) | mirrors |
-| Exit | `#XX5FH9j5x` | none | none |
-| Assign a CV input | `#XX6/ehtPx` | none | none |
-| Mute groups | `#qdSsFkF` | none (Romper's mute is a preview mute) | none |
-| Layers | `#e+hlH+Q` | [Voice](#voice) sample mode | mirrors (different modes) |
-| microSD | `#XX2d0DE/0` | [The card](#the-card-and-a-write) | none |
-| Audio effects & parameters workflow | `#jonfAQR` | none | none |
-| Pitch effect | `#RSGQSY7` | none | none |
-| Bits effect | `#WHS81iW` | none | none |
-| Filter effect | `#kmNDj7V` | none | none |
-| Freeze effect | `#j/NGXhE` | none | none |
-| Levels/Drive effect | `#zPtALyJ` | [Voice](#voice) level (preview only) | mirrors, loosely |
-| Compressor effect | `#XX9bvyW9o` | none | none |
-| Tape effect | `#XX0VlcFTU` | none | none |
-| Advanced parameters | `#C0ft3/t` | [Kit](#kit) slicer (start point and length only) | mirrors |
-| Momentary effects | `#XX3QtZz4q` | none | none |
-| Punch effects | `#X8umaeb` | none | none |
-| Note about start point & sample length | `#XX9CMqGW9` | [Kit](#kit) slicer division | mirrors |
-| MIDI Keyboard Split: Chromatic Mode | `#XX6RMicNl` | none | none |
-| MIDI Keyboard Split: Layers Mode | `#mNcX51v` | none | none |
-| How to make your own sample kits (incl. STEREO SUPPORT) | `#Gssvcjr` | [Kit](#kit), [Voice](#voice), [Stereo](#stereo), [Sample](#sample), [The card](#the-card-and-a-write), [Scan](#scan-and-setup-import) | writes |
-| Multi–layers kits | `#XX2FJ2ONj` | [Voice](#voice), [Sample](#sample), [Stereo](#stereo) | writes; mirrors (layer modes) |
-| Ramplaid app | `#ibD6Mq9` | none (a third-party tool that does what Romper does) | none |
-| Settings (SLICER, LAYER, STORE, SAVE SETTINGS) | `#VhwOTqd` | [Kit](#kit) slicer division, [Voice](#voice) sample mode, [The card](#the-card-and-a-write) (`_save/`) | mirrors (SLICER, LAYER); none for the rest |
-| Midi implementation chart | `#Zj8++7M` | none | none |
-
-Anchors are fragments of `https://squarp.net/rample/manual/`.
-
-**Sections no concept covers** (candidate features for #538): mute groups;
-CV assignment and V/oct; the effects (pitch, bits, filter, freeze,
-levels/drive, compressor, tape), momentary and punch effects; the
-advanced parameters other than start and length (env, run mode); MIDI
-keyboard splits and the MIDI chart; the device settings other than SLICER
-and LAYER (MIDI channel and notes, velocity, bend, program change, CV
-range, pitch quantise, assign scope, anticlic, VU meter, flip, autosave);
-and per-kit STORE data. Romper never reads `_save/`, so what the device
-stores for a kit (effects, layer modes, assignments) is invisible to it and
-applies to whatever samples the slot holds next
-([`sd-card-layout.md`](sd-card-layout.md)).
+The index's Concepts column comes from this document: a concept whose
+**Rample manual:** line links a section
+(`https://squarp.net/rample/manual/#<anchor>`) is listed against it. So
+cite sections by link, with the anchors the index records, and a changed
+section leads to the concepts it touches.
 
 **Romper concepts with no manual section:** bank name files, the step
 sequencer, BPM, trigger conditions, voice choke, per-sample gain, kit

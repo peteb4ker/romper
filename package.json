@@ -55,7 +55,8 @@
     "icons:generate": "node scripts/generate-app-icons.mjs",
     "dmg:background:generate": "node scripts/generate-dmg-background.mjs",
     "screenshots": "tsx scripts/capture-screenshots.ts",
-    "sonar:pr": "node scripts/sonar-pr.mjs"
+    "sonar:pr": "node scripts/sonar-pr.mjs",
+    "rample-manual": "node scripts/rample-manual-index.mjs"
   },
   "devDependencies": {
     "@electron-forge/cli": "^8.0.1",

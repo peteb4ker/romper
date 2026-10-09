@@ -48,6 +48,8 @@ test-results/
 *.tmp
 worktrees/
 .claude/worktrees/
+# npm run rample-manual's copy of the Rample manual (Squarp's text, never committed)
+.cache/rample-manual/
 # npm run dev's own userData (settings, window state, Chromium profile)
 .romper-dev/
 

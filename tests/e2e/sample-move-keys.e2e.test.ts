@@ -90,7 +90,10 @@ test.describe("[Q-06] [UC-21] [UC-25] [UC-26] Sample move keys", () => {
   test("moves the selected sample to the next voice and down a slot, and undo puts it back", async () => {
     await enableEditing();
     expect(await isModified()).toBe(false);
-    await row(1, "1_kick.wav").click();
+    // Select it, and give the row focus as Tab would: where a click lands
+    // depends on the window's width, and a button there takes focus
+    await row(1, "1_kick.wav").getByText("1_kick.wav", { exact: true }).click();
+    await selectedRow(1).focus();
     await expect(selectedRow(1)).toBeFocused();
 
     // To voice 2, in the same slot: the snare shifts down

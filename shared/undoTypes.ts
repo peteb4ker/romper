@@ -126,7 +126,9 @@ export type SampleSnapshot = Pick<
   | "filename"
   | "gain_db"
   | "slot_number"
+  | "source_mtime_ms"
   | "source_path"
+  | "source_size"
   | "source_status"
   | "wav_bit_depth"
   | "wav_bitrate"
@@ -218,7 +220,9 @@ export function snapshotVoices(
           filename: s.filename,
           gain_db: s.gain_db,
           slot_number: s.slot_number,
+          source_mtime_ms: s.source_mtime_ms,
           source_path: s.source_path,
+          source_size: s.source_size,
           source_status: s.source_status,
           wav_bit_depth: s.wav_bit_depth,
           wav_bitrate: s.wav_bitrate,

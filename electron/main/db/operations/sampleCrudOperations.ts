@@ -171,7 +171,9 @@ export function restoreVoicesTx(
             gain_db: row.gain_db,
             kit_name: kitName,
             slot_number: row.slot_number,
+            source_mtime_ms: row.source_mtime_ms ?? null,
             source_path: row.source_path,
+            source_size: row.source_size ?? null,
             source_status: row.source_status ?? null,
             voice_number: voice,
             wav_bit_depth: row.wav_bit_depth,
@@ -277,6 +279,8 @@ export function updateSampleSourceStatusTx(
   fields: Partial<
     Pick<
       Sample,
+      | "source_mtime_ms"
+      | "source_size"
       | "source_status"
       | "wav_bit_depth"
       | "wav_bitrate"
@@ -300,6 +304,9 @@ function isRestorableRow(row: VoiceSnapshot["samples"][number]): boolean {
     Number.isFinite(row.gain_db) &&
     (row.source_status == null ||
       ["missing", "readable", "unreadable"].includes(row.source_status)) &&
+    // Nor do those made before #793 have the file's size and mtime
+    (row.source_mtime_ms === undefined || optionalInt(row.source_mtime_ms)) &&
+    (row.source_size === undefined || optionalInt(row.source_size)) &&
     optionalInt(row.wav_bit_depth) &&
     optionalInt(row.wav_bitrate) &&
     optionalInt(row.wav_channels) &&

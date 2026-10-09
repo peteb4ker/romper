@@ -226,7 +226,9 @@ describe("[UC-11] Edits the next write puts on the card mark a kit modified (#56
               filename: "kick.wav",
               gain_db: 0,
               slot_number: 0,
+              source_mtime_ms: null,
               source_path: kickPath,
+              source_size: null,
               source_status: null,
               wav_bit_depth: null,
               wav_bitrate: null,
@@ -334,7 +336,9 @@ describe("[UC-11] Edits the next write puts on the card mark a kit modified (#56
       filename: "gone.wav",
       kit_name: "A1",
       slot_number: 0,
+      source_mtime_ms: null,
       source_path: path.join(tempDir, "gone.wav"),
+      source_size: null,
       voice_number: 1,
     });
     updateSampleGain(dbDir, "A0", 1, 0, -6);

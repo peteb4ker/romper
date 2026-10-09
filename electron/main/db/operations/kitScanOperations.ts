@@ -16,11 +16,12 @@ import {
 import { eq } from "drizzle-orm";
 import * as path from "node:path";
 
-import type { WavMetadataFields } from "./wavMetadataFields.js";
+import type { SourceFileStat, WavMetadataFields } from "./wavMetadataFields.js";
 
 import { type RomperDb, withDbTransaction } from "../utils/dbUtilities.js";
 import { flagKitModified } from "./kitSyncOperations.js";
 import { linkVoicesAutomaticallyTx } from "./voiceCrudOperations.js";
+import { hasFileChanged } from "./wavMetadataFields.js";
 
 export type { WavMetadataFields } from "./wavMetadataFields.js";
 
@@ -41,9 +42,13 @@ export interface KitFolderScan {
  * testable, and so all reads happen inside the one transaction.
  */
 export interface KitScanIo {
-  fileExists: (filePath: string) => boolean;
-  /** WAV metadata for a file, or null when it can't be read */
+  /**
+   * WAV metadata for a file, or null when it can't be read. It carries the
+   * file's size and modification time (#793).
+   */
   readMetadata: (filePath: string) => null | WavMetadataFields;
+  /** A file's size and modification time, or null when it isn't there */
+  statFile: (filePath: string) => null | SourceFileStat;
 }
 
 export interface KitScanPlan {
@@ -324,9 +329,10 @@ function addUnreferencedFolderFiles({
 
 /**
  * Check the files of a kit's existing rows: a missing file is reported
- * and recorded as missing, and a file with no WAV details is read, its
- * details recorded, or recorded as unreadable (#537). Returns the source
- * paths of the files that couldn't be read.
+ * and recorded as missing, and a file with no WAV details, or whose size
+ * or modification time differs from what was stored when it was read
+ * (#793), is read, its details recorded, or recorded as unreadable (#537).
+ * Returns the source paths of the files that couldn't be read.
  */
 function checkExistingFiles(
   existing: Sample[],
@@ -335,7 +341,8 @@ function checkExistingFiles(
 ): Set<string> {
   const unreadable = new Set<string>();
   for (const row of existing) {
-    if (!io.fileExists(row.source_path)) {
+    const stat = io.statFile(row.source_path);
+    if (!stat) {
       plan.result.missingSamples.push({
         filename: row.filename,
         slotNumber: row.slot_number,
@@ -345,7 +352,7 @@ function checkExistingFiles(
       if (row.source_status !== "missing") {
         plan.statusUpdates.push({ id: row.id, status: "missing" });
       }
-    } else if (hasMissingMetadata(row)) {
+    } else if (hasMissingMetadata(row) || hasFileChanged(row, stat)) {
       const metadata = io.readMetadata(row.source_path);
       if (metadata) {
         plan.metadataUpdates.push({ id: row.id, metadata });

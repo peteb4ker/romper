@@ -420,6 +420,19 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
     const status = (kit: string, filename: string) =>
       getKit(dbDir, kit).data!.samples!.find((s) => s.filename === filename)
         ?.source_status;
+    // A whole second, which a file keeps exactly when it is set again; a
+    // modification time read back from disk can differ in its last digits
+    const PINNED = new Date("2024-01-01T00:00:00Z");
+    const pin = (file: string, when = PINNED) =>
+      fs.utimesSync(file, when, when);
+    /** Give every file in the store the pinned time, before it's imported */
+    const pinStore = () => {
+      for (const [kit, files] of Object.entries(CARD)) {
+        for (const file of Object.keys(files)) {
+          pin(path.join(store, kit, file));
+        }
+      }
+    };
 
     it("setup records every file it read as readable", () => {
       importCard();
@@ -482,12 +495,16 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
     });
 
     it("the kit-open check finds a known-readable file that's gone, without re-reading the rest", async () => {
+      pinStore();
       importCard();
       expect(status("A1", "3 HAT.wav")).toBe("readable");
       expect(status("A1", "2 PAD.wav")).toBe("readable");
       fs.rmSync(path.join(store, "A1", "3 HAT.wav"));
-      // Still there, so only its existence is checked, not its header
-      fs.writeFileSync(path.join(store, "A1", "2 PAD.wav"), "not a wav");
+      // Still there and unchanged (same size and modification time), so
+      // only its existence is checked, not its header (#793)
+      const padFile = path.join(store, "A1", "2 PAD.wav");
+      fs.writeFileSync(padFile, Buffer.alloc(fs.statSync(padFile).size, 1));
+      pin(padFile);
 
       const checked = await scanService.checkKitSampleFiles(settings(), "A1");
 
@@ -514,6 +531,149 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
       expect(
         (await scanService.checkKitSampleFiles(settings(), "A1")).data?.changed,
       ).toBe(0);
+    });
+
+    describe("[UC-34] [Q-08] a file changed on disk shows its new format (#793)", () => {
+      const padFile = () => path.join(store, "A1", "2 PAD.wav");
+      const pad = () =>
+        getKit(dbDir, "A1").data!.samples!.find(
+          (s) => s.filename === "2 PAD.wav",
+        )!;
+      /** A mono 32-bit float file: the same size as the stereo 16-bit pad */
+      const floatPad = (hz = 220) =>
+        encodeTestWav([sine(hz, 0.05, 44100)], {
+          bitDepth: 32,
+          encoding: "float",
+          sampleRate: 44100,
+        });
+      const open = () => scanService.checkKitSampleFiles(settings(), "A1");
+
+      it("the setup import stores each file's size and modification time", () => {
+        importCard();
+
+        const stat = fs.statSync(padFile());
+        expect(pad()).toMatchObject({
+          source_mtime_ms: Math.floor(stat.mtimeMs),
+          source_size: stat.size,
+        });
+      });
+
+      it("a file replaced on disk updates its format at the next kit open", async () => {
+        importCard();
+        expect(pad()).toMatchObject({ wav_channels: 2, wav_format_tag: 1 });
+        // Longer, so the size differs
+        fs.writeFileSync(
+          padFile(),
+          encodeTestWav([sine(220, 0.1, 48000)], {
+            bitDepth: 24,
+            encoding: "pcm",
+            sampleRate: 48000,
+          }),
+        );
+
+        const checked = await open();
+
+        expect(checked.data?.changed).toBe(1);
+        expect(pad()).toMatchObject({
+          source_size: fs.statSync(padFile()).size,
+          source_status: "readable",
+          wav_bit_depth: 24,
+          wav_channels: 1,
+          wav_format_tag: 1,
+          wav_sample_rate: 48000,
+        });
+      });
+
+      it("a file replaced by one of the same size is seen by its modification time", async () => {
+        pinStore();
+        importCard();
+        const storedSize = fs.statSync(padFile()).size;
+        fs.writeFileSync(padFile(), floatPad());
+        expect(fs.statSync(padFile()).size).toBe(storedSize);
+        pin(padFile(), new Date(PINNED.getTime() + 60_000));
+
+        expect((await open()).data?.changed).toBe(1);
+
+        expect(pad()).toMatchObject({
+          wav_bit_depth: 32,
+          wav_channels: 1,
+          wav_format_tag: 3,
+        });
+      });
+
+      it("an unchanged file isn't read again, and a changed one only once", async () => {
+        pinStore();
+        importCard();
+        // Not a WAV, but the same size and modification time as before: if
+        // the check read it, the sample would turn unreadable
+        fs.writeFileSync(
+          padFile(),
+          Buffer.alloc(fs.statSync(padFile()).size, 1),
+        );
+        pin(padFile());
+
+        expect((await open()).data?.changed).toBe(0);
+        expect(pad()).toMatchObject({
+          source_status: "readable",
+          wav_channels: 2,
+        });
+
+        fs.writeFileSync(padFile(), floatPad());
+        pin(padFile(), new Date(PINNED.getTime() + 60_000));
+        expect((await open()).data?.changed).toBe(1);
+        expect(pad().wav_format_tag).toBe(3);
+        expect((await open()).data?.changed).toBe(0);
+      });
+
+      it("a sample from before the size and time were stored is read once, then not again", async () => {
+        importCard();
+        withDbTransaction(dbDir, (_db, sqlite) =>
+          sqlite.exec(
+            "UPDATE samples SET source_size = NULL, source_mtime_ms = NULL",
+          ),
+        );
+        const total = getKit(dbDir, "A1").data!.samples!.length;
+        expect(pad().source_size).toBeNull();
+
+        expect((await open()).data).toEqual({ changed: total, checked: total });
+
+        expect(pad().source_size).toBe(fs.statSync(padFile()).size);
+        expect((await open()).data).toEqual({ changed: 0, checked: total });
+      });
+
+      it("a scan refreshes a file changed on disk", () => {
+        pinStore();
+        importCard();
+        const later = new Date(PINNED.getTime() + 60_000);
+        fs.writeFileSync(padFile(), floatPad());
+        pin(padFile(), later);
+
+        expect(scanService.rescanKit(settings(), "A1").success).toBe(true);
+
+        expect(pad()).toMatchObject({
+          source_mtime_ms: later.getTime(),
+          wav_bit_depth: 32,
+          wav_channels: 1,
+          wav_format_tag: 3,
+        });
+      });
+
+      it("a scan leaves an unchanged file alone", () => {
+        pinStore();
+        importCard();
+        fs.writeFileSync(
+          padFile(),
+          Buffer.alloc(fs.statSync(padFile()).size, 1),
+        );
+        pin(padFile());
+
+        expect(scanService.rescanKit(settings(), "A1").success).toBe(true);
+
+        expect(pad()).toMatchObject({
+          source_status: "readable",
+          wav_channels: 2,
+        });
+      });
     });
 
     it("a write records an unreadable file, so the kit list shows the kit quarantined straight away", async () => {

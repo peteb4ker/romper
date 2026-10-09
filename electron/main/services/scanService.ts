@@ -10,6 +10,8 @@ import * as path from "node:path";
 
 import { getAudioMetadata, getAudioMetadataAsync } from "../audioUtils.js";
 import {
+  hasFileChanged,
+  type SourceFileStat,
   toWavMetadataFields,
   type WavMetadataFields,
 } from "../db/operations/wavMetadataFields.js";
@@ -35,10 +37,12 @@ export class ScanService {
    * - a file not known to be readable (status unknown, as in older
    *   libraries, or last found missing or unreadable) has its header read
    *   too, so a file that's been put back or replaced is seen.
-   * A known-readable file that still exists isn't read again, unless the
-   * store hasn't recorded its format tag yet (#576). What's
-   * found is recorded in one transaction: missing, unreadable, or readable
-   * with its WAV details.
+   * A known-readable file that still exists isn't read again, unless its
+   * size or modification time differs from what was stored when it was
+   * read (#793; the stat that checks it exists also gives these), or the
+   * store hasn't recorded its format tag yet (#576). What's found is
+   * recorded in one transaction: missing, unreadable, or readable with its
+   * WAV details.
    */
   async checkKitSampleFiles(
     inMemorySettings: Record<string, unknown>,
@@ -112,7 +116,7 @@ export class ScanService {
         dbDir,
         kitName,
         { filesByVoice: groupSamplesByVoice(wavFiles), kitPath },
-        { fileExists: fs.existsSync, readMetadata: readWavMetadata },
+        { readMetadata: readWavMetadata, statFile: statFileSync },
       );
       if (!result.success) {
         return {
@@ -142,35 +146,58 @@ export class ScanService {
   }
 }
 
-/** Read the WAV header fields the samples table stores, or null. */
+/**
+ * Read the WAV header fields the samples table stores, or null. The file's
+ * size and modification time are taken before the header is read, so a
+ * file that changes meanwhile reads as changed at the next check (#793).
+ */
 export function readWavMetadata(filePath: string): null | WavMetadataFields {
+  const stat = statFileSync(filePath);
   const metadataResult = getAudioMetadata(filePath);
   if (!metadataResult.success || !metadataResult.data) return null;
-  return toWavMetadataFields(metadataResult.data);
+  return toWavMetadataFields(metadataResult.data, stat);
+}
+
+/** A file's size and modification time, or null when it isn't there */
+export function statFileSync(filePath: string): null | SourceFileStat {
+  try {
+    const { mtimeMs, size } = fs.statSync(filePath);
+    return { mtimeMs, size };
+  } catch {
+    return null;
+  }
 }
 
 /**
  * What checking a sample's file finds, as the columns to store (#537).
- * A known-readable file only needs to still exist; others are read.
+ * One async stat says whether the file exists and, with its stored size
+ * and modification time, whether it changed (#793). A known-readable,
+ * unchanged file needs nothing more; others have their header read.
  */
 async function checkSampleFile(sample: Sample): Promise<{
   fields: Partial<WavMetadataFields>;
   sample: Sample;
 }> {
-  const exists = await fs.promises
-    .access(sample.source_path)
-    .then(() => true)
-    .catch(() => false);
-  if (!exists) return { fields: { source_status: "missing" }, sample };
-  // A file read before the format tag was stored is read once more (#576)
-  if (sample.source_status === "readable" && sample.wav_format_tag !== null) {
+  const stat = await fs.promises
+    .stat(sample.source_path)
+    .then(({ mtimeMs, size }): SourceFileStat => ({ mtimeMs, size }))
+    .catch(() => null);
+  if (!stat) return { fields: { source_status: "missing" }, sample };
+  // A file read before the format tag was stored is read once more (#576),
+  // and one whose size or modification time isn't what was stored (or
+  // wasn't stored, in older libraries) is read again (#793)
+  if (
+    sample.source_status === "readable" &&
+    sample.wav_format_tag !== null &&
+    !hasFileChanged(sample, stat)
+  ) {
     return { fields: {}, sample };
   }
   const header = await getAudioMetadataAsync(sample.source_path);
   if (!header.success || !header.data) {
     return { fields: { source_status: "unreadable" }, sample };
   }
-  return { fields: toWavMetadataFields(header.data), sample };
+  return { fields: toWavMetadataFields(header.data, stat), sample };
 }
 
 // Export singleton instance

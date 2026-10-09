@@ -184,7 +184,9 @@ export function useVoicePanelSlotRendering({
         : dragHandlers;
 
       // The slot reads its own playback, so a trigger re-renders only the
-      // slots it plays or stops (#482)
+      // slots it plays or stops (#482). Each slot is a grid row whose
+      // controls sit in cells, so assistive technology reaches them; a
+      // listbox option can't hold buttons or a slider (#522)
       return (
         <SlotWithPlayback
           key={`${voice}-${slotNumber}-${sampleName}`}
@@ -212,13 +214,15 @@ export function useVoicePanelSlotRendering({
                   onSampleSelect?.(voice, slotNumber);
                 }
               }}
-              role="option"
+              role="row"
               tabIndex={0}
               title={title}
               {...combinedDragHandlers}
             >
-              {renderPlayButton(playback.playing, slotNumber)}
-              <div className="flex-1 min-w-0">
+              <SlotCell>
+                {renderPlayButton(playback.playing, slotNumber)}
+              </SlotCell>
+              <div className="flex-1 min-w-0" role="gridcell">
                 <span
                   className="block truncate text-xs font-mono font-medium text-text-primary"
                   title={sampleName}
@@ -250,18 +254,24 @@ export function useVoicePanelSlotRendering({
                 )}
               </div>
               {isEditable && (
-                <GainKnob
-                  onChange={(db) =>
-                    onGainChange?.(voice, slotNumber, sampleName, db)
-                  }
-                  onCommit={(db, fromDb) =>
-                    // The parent saves it and reports a failure (RE-91)
-                    onGainCommit?.(voice, slotNumber, sampleName, db, fromDb)
-                  }
-                  value={gainsUnknown ? null : (sampleData?.gain_db ?? 0)}
-                />
+                <SlotCell>
+                  <GainKnob
+                    onChange={(db) =>
+                      onGainChange?.(voice, slotNumber, sampleName, db)
+                    }
+                    onCommit={(db, fromDb) =>
+                      // The parent saves it and reports a failure (RE-91)
+                      onGainCommit?.(voice, slotNumber, sampleName, db, fromDb)
+                    }
+                    value={gainsUnknown ? null : (sampleData?.gain_db ?? 0)}
+                  />
+                </SlotCell>
               )}
-              {isEditable && renderDeleteButton(slotNumber, sampleName)}
+              {isEditable && (
+                <SlotCell>
+                  {renderDeleteButton(slotNumber, sampleName)}
+                </SlotCell>
+              )}
               <SampleWaveform
                 // Unread, the gain plays at 0 dB; unreadable, nothing plays (#636)
                 gainDb={gainsUnreadable ? null : sampleData?.gain_db}
@@ -346,6 +356,7 @@ export function useVoicePanelSlotRendering({
         className={`${slotBaseClass} text-text-tertiary italic${dragOverClass} border-2 border-dashed border-border-default hover:border-accent-sync min-h-[28px] mb-1`}
         data-testid={`drop-zone-voice-${voice}`}
         key={`${voice}-drop-zone`}
+        role="row"
         {...getConditionalDragHandlers(nextAvailableSlot)}
         title={(() => {
           if (isDragOver || isDropZone) return dropHintTitle;
@@ -354,7 +365,10 @@ export function useVoicePanelSlotRendering({
           return `Drop WAV files here to add to voice ${voice}`;
         })()}
       >
-        <div className="flex-1 flex items-center justify-center">
+        <div
+          className="flex-1 flex items-center justify-center"
+          role="gridcell"
+        >
           <span className="text-sm text-text-tertiary text-center">
             {isLinkedPrimary && linkedWith
               ? `Drop WAV files here (stereo · voices ${voice} + ${linkedWith})`
@@ -374,11 +388,13 @@ export function useVoicePanelSlotRendering({
     slotRenderingHook,
   ]);
 
-  // Helper function to render an empty slot placeholder (non-interactive)
+  // Helper function to render an empty slot placeholder (non-interactive).
+  // It only holds the panel's height, so it's no row of the grid (#522).
   const renderEmptySlot = React.useCallback(
     (slotNumber: number) => {
       return (
         <li
+          aria-hidden="true"
           className="min-h-[28px] mb-1 flex items-center text-text-tertiary"
           key={`${voice}-empty-${slotNumber}`}
         >
@@ -434,4 +450,17 @@ export function useVoicePanelSlotRendering({
     renderSampleSlots,
     renderSingleDropZone,
   };
+}
+
+/**
+ * A cell of a sample row that leaves the row's layout alone: it has no box
+ * of its own (display: contents), so the control inside stays a flex item
+ * of the row, as it was before the row became a grid row (#522).
+ */
+function SlotCell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="contents" role="gridcell">
+      {children}
+    </div>
+  );
 }

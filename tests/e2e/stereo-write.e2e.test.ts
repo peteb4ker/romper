@@ -138,7 +138,7 @@ test.describe("[UC-13] [UC-34] [Q-04] Quarantined kits and the write (#537)", ()
     await expect(
       window
         .locator('[data-testid="sample-list-voice-3"]')
-        .getByRole("option", { name: "Sample pad.wav in slot 1" }),
+        .getByRole("row", { name: "Sample pad.wav in slot 1" }),
     ).toBeVisible();
     await dropFiles(window, 3, [click]);
     await expect(

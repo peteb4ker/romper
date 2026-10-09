@@ -288,12 +288,12 @@ test.describe("[UC-01] Set up from an SD card", () => {
     await window.locator('[data-testid="kit-item-A0"]').click();
     await expect(window.locator('[data-testid="kit-editor"]')).toBeVisible();
     const voice1 = window.locator('[data-testid="sample-list-voice-1"]');
-    await expect(voice1.getByRole("option")).toHaveCount(12);
+    await expect(voice1.getByRole("row", { name: /^Sample / })).toHaveCount(12);
     await expect(
-      voice1.getByRole("option", { name: `Sample ${kickName(1)} in slot 1` }),
+      voice1.getByRole("row", { name: `Sample ${kickName(1)} in slot 1` }),
     ).toBeVisible();
     await expect(
-      voice1.getByRole("option", {
+      voice1.getByRole("row", {
         name: `Sample ${kickName(12)} in slot 12`,
       }),
     ).toBeVisible();
@@ -301,7 +301,7 @@ test.describe("[UC-01] Set up from an SD card", () => {
     await expect(
       window
         .locator('[data-testid="sample-list-voice-2"]')
-        .getByRole("option", { name: "Sample 2 SNARE.wav in slot 1" }),
+        .getByRole("row", { name: "Sample 2 SNARE.wav in slot 1" }),
     ).toBeVisible();
   });
 

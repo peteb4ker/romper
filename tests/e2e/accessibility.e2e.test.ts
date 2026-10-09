@@ -67,6 +67,79 @@ test.describe("[Q-06] Keyboard and assistive technology", () => {
     await expect(header).toContainText("Modified");
   });
 
+  // #522: a sample row was a listbox option, which can't hold the row's
+  // buttons and gain knob, so screen readers couldn't reach them
+  test("a sample row's controls are cells of a grid row", async () => {
+    await openKit("A0");
+    await window.getByTitle("Enable editable mode").click();
+    const grid = window.getByRole("grid", {
+      name: "Sample slots for voice 1",
+    });
+    const row = grid.getByRole("row", { name: "Sample 1_kick.wav in slot 1" });
+    await expect(row).toHaveAttribute("aria-selected", "true");
+    await expect(row.getByRole("gridcell")).toHaveCount(4);
+
+    // Chromium's own accessibility tree, which screen readers read, has
+    // each control inside a cell of the row
+    const cdp = await window.context().newCDPSession(window);
+    const { nodes } = (await cdp.send("Accessibility.getFullAXTree")) as {
+      nodes: Array<{
+        childIds?: string[];
+        ignored: boolean;
+        name?: { value: string };
+        nodeId: string;
+        role?: { value: string };
+      }>;
+    };
+    const byId = new Map(nodes.map((n) => [n.nodeId, n]));
+    // The roles and names under a node, skipping the generic wrappers
+    const outline = (id: string): string[] => {
+      const node = byId.get(id);
+      if (!node) return [];
+      const role = node.role?.value ?? "";
+      const kids = (node.childIds ?? []).flatMap(outline);
+      if (
+        node.ignored ||
+        ["generic", "image", "none", "StaticText"].includes(role) ||
+        role === "InlineTextBox"
+      ) {
+        return kids;
+      }
+      return [
+        `${role} ${node.name?.value ?? ""}`,
+        ...kids.map((k) => `  ${k}`),
+      ];
+    };
+    const axRow = nodes.find(
+      (n) =>
+        n.role?.value === "row" &&
+        n.name?.value === "Sample 1_kick.wav in slot 1",
+    );
+    expect(axRow).toBeDefined();
+    expect(outline(axRow!.nodeId)).toEqual([
+      "row Sample 1_kick.wav in slot 1",
+      "  gridcell Play",
+      "    button Play",
+      "  gridcell 1_kick.wav",
+      "  gridcell 0 dB",
+      "    slider Gain: 0 dB",
+      "  gridcell Delete sample",
+      "    button Delete sample",
+    ]);
+
+    // Tab still goes from the row through its controls to the next voice
+    await row.focus();
+    const tabTo = async () => {
+      await window.keyboard.press("Tab");
+      return window.evaluate(
+        () => document.activeElement?.getAttribute("aria-label") ?? "",
+      );
+    };
+    expect(await tabTo()).toBe("Play");
+    expect(await tabTo()).toBe("Gain: 0 dB");
+    expect(await tabTo()).toBe("Delete sample");
+  });
+
   test("[UC-31] C sets a step's trigger condition from the keyboard", async () => {
     await openKit("A0");
     const handle = window.locator('[data-testid="kit-step-sequencer-handle"]');

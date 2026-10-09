@@ -334,7 +334,7 @@ describe("KitVoicePanels", () => {
     // The gain knob in each sample slot of a voice
     const knobs = (voice: number) =>
       within(screen.getByTestId(`voice-panel-${voice}`))
-        .getAllByRole("option")
+        .getAllByRole("row", { name: /^Sample / })
         .map((slot) => within(slot).getByRole("slider"));
     const gains = (voice: number) =>
       knobs(voice).map((knob) => knob.getAttribute("aria-valuenow"));
@@ -1540,7 +1540,7 @@ describe("KitVoicePanels", () => {
         "Mono sample in a stereo pair",
       );
       expect(
-        screen.getByRole("option", { name: "Sample kick.wav in slot 1" }),
+        screen.getByRole("row", { name: "Sample kick.wav in slot 1" }),
       ).toHaveAccessibleDescription("Mono sample in a stereo pair");
     });
 
@@ -1556,7 +1556,7 @@ describe("KitVoicePanels", () => {
         await screen.findByTestId("sample-file-label-1-0"),
       ).toHaveTextContent("Can't be read");
       expect(
-        screen.getByRole("option", { name: "Sample kick.wav in slot 1" }),
+        screen.getByRole("row", { name: "Sample kick.wav in slot 1" }),
       ).toHaveAccessibleDescription("Can't be read");
       expect(screen.getByTestId("kit-quarantine-notice")).toHaveTextContent(
         "Romper can't read kick.wav. Replace it with a WAV Romper can read, or remove it.",

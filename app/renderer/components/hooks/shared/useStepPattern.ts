@@ -37,13 +37,23 @@ export function useStepPattern({
   const kitRef = useLatestRef(kitName);
 
   // A failed save puts the last saved pattern back and says so (#511)
-  const { reset, save } = useSettingSave<string, number[][], KitEdit>();
+  const { pending, reset, save } = useSettingSave<
+    string,
+    number[][],
+    KitEdit
+  >();
 
-  // Show the kit's saved pattern whenever it's loaded or reloaded
+  // Show the kit's saved pattern whenever it's loaded or reloaded. While a
+  // step edit is still saving, a kit that comes back without it (another
+  // save's, or an older read) doesn't take it off screen: the edit stays
+  // until its own save answers (#778).
   const [shownPattern, setShownPattern] = useState(initialPattern);
   if (shownPattern !== initialPattern) {
     setShownPattern(initialPattern);
-    setStepPatternState(ensureValidStepPattern(initialPattern));
+    const saving = pending(kitName);
+    setStepPatternState(
+      saving ? saving.value : ensureValidStepPattern(initialPattern),
+    );
   }
   useEffect(() => {
     reset();

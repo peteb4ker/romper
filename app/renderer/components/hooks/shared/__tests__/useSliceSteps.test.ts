@@ -249,6 +249,104 @@ describe("useSliceSteps", () => {
     });
   });
 
+  // A kit that comes back while a slice edit is saving (a step toggle's
+  // save, or an older read) doesn't take that edit off screen (#778)
+  describe("[UC-33] [Q-01] slices still saving stay on screen (#778)", () => {
+    function holdSaves<T extends (...args: never[]) => unknown>(method: T) {
+      const answers: ((answer: {
+        error?: string;
+        success: boolean;
+      }) => void)[] = [];
+      vi.mocked(method).mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            answers.push(resolve);
+          }) as never,
+      );
+      return answers;
+    }
+
+    it("keeps a slice while it saves, then shows the kit", async () => {
+      const answers = holdSaves(globalThis.electronAPI.updateSliceSteps);
+      const empty = createEmptySliceSteps();
+      const { rerender, result } = renderHook(
+        ({ initialSliceSteps }) =>
+          useSliceSteps({ initialSliceSteps, kitName: "A0" }),
+        { initialProps: { initialSliceSteps: empty } },
+      );
+      const next = createEmptySliceSteps();
+      next[0][0] = makeSliceStep(4, 1, 16);
+
+      let saving: Promise<boolean> | undefined;
+      act(() => {
+        saving = result.current.setSliceSteps(next);
+      });
+      // A step toggle sent before the slice returns the kit without it
+      rerender({ initialSliceSteps: createEmptySliceSteps() });
+      expect(result.current.sliceSteps[0][0]).toEqual(next[0][0]);
+
+      await act(async () => {
+        answers[0]({ success: true });
+        await saving;
+      });
+      const saved = createEmptySliceSteps();
+      saved[0][0] = makeSliceStep(4, 1, 16);
+      saved[1][1] = makeSliceStep(2, 1, 16);
+      rerender({ initialSliceSteps: saved });
+      expect(result.current.sliceSteps).toEqual(saved);
+    });
+
+    it("puts the slices back when the save fails after a kit came back", async () => {
+      const answers = holdSaves(globalThis.electronAPI.updateSliceSteps);
+      const onMessage = vi.fn();
+      const { rerender, result } = renderHook(
+        ({ initialSliceSteps }) =>
+          useSliceSteps({ initialSliceSteps, kitName: "A0", onMessage }),
+        { initialProps: { initialSliceSteps: createEmptySliceSteps() } },
+      );
+      const next = createEmptySliceSteps();
+      next[0][0] = makeSliceStep(4, 1, 16);
+
+      let saving: Promise<boolean> | undefined;
+      act(() => {
+        saving = result.current.setSliceSteps(next);
+      });
+      rerender({ initialSliceSteps: createEmptySliceSteps() });
+      expect(result.current.sliceSteps[0][0]).toEqual(next[0][0]);
+
+      await act(async () => {
+        answers[0]({ error: "disk full", success: false });
+        await saving;
+      });
+      expect(result.current.sliceSteps).toEqual(createEmptySliceSteps());
+      expect(onMessage).toHaveBeenCalledWith(SLICES_NOT_SAVED, "error");
+    });
+
+    it("keeps a division while it saves", async () => {
+      const answers = holdSaves(globalThis.electronAPI.updateKitSlicerDivision);
+      const { rerender, result } = renderHook(
+        ({ initialDivision }) =>
+          useSliceSteps({ initialDivision, kitName: "A0" }),
+        { initialProps: { initialDivision: 16 } },
+      );
+
+      let saving: Promise<void> | undefined;
+      act(() => {
+        saving = result.current.setSlicerDivision(32);
+      });
+      // An older read with another division lands first
+      rerender({ initialDivision: 8 });
+      expect(result.current.slicerDivision).toBe(32);
+
+      await act(async () => {
+        answers[0]({ success: true });
+        await saving;
+      });
+      rerender({ initialDivision: 32 });
+      expect(result.current.slicerDivision).toBe(32);
+    });
+  });
+
   // The sequencer's undo history keeps only saved edits (#570)
   it("[UC-26] resolves to whether the slices were saved", async () => {
     const { result } = renderHook(() =>

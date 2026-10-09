@@ -4,7 +4,7 @@ priority: medium
 status: done
 updated: 2026-10-08
 context_size: small
-implementation_status: step 1 in #765; step 4's failure handling in #775; step 2 in #776; step 3a in #777; step 3b in #779; the rest of step 4 in the PR that closed #452
+implementation_status: step 1 in #765; edits still saving stay on screen for #778; step 4's failure handling in #775; step 2 in #776; step 3a in #777; step 3b in #779; the rest of step 4 in the PR that closed #452
 -->
 
 # Kit refresh after an edit
@@ -182,11 +182,25 @@ Two PRs.
   returns; tests for `applyReadKit` against an older reload, and for the
   undo actions recorded from what main returned.
 
-Still open after step 3: a step toggle whose save returns while the next
-toggle is still saving shows the pattern without the newer toggle until
-that one's save returns. Fixing it means the sequencer keeps edits that
-are still saving over a kit that comes back, which changes what's on
-screen: tracked in #778.
+**Edits still saving stay on screen** (#778, approved by Pete on the
+issue, 2026-10-08). A kit that comes back while a sequencer edit of it
+is still saving (another save's result, or an older read) used to put
+the sequencer back to that kit, so a step you'd just toggled flickered
+off until its own save returned. Now the step pattern, trigger
+conditions, slices and slice division each keep the latest edit sent
+over a kit that arrives while any save of theirs is on its way
+(`useSettingSave`'s `pending`), and show the kit once none is. Each
+save sends the whole grid, so the latest edit sent is what main holds
+once it's saved. A save that fails puts back the last saved value, as
+before (#511), with the same message. The read numbering is unchanged:
+it decides which kit arrives, and this decides whether the sequencer
+shows it yet.
+
+**Verified by:** `useStepPattern.test.ts` (a kit without the second
+toggle arriving first, saves answered out of order, a failed save
+putting back only its own toggle, an older reload), `useSliceSteps.test.ts`
+(slices and division) and `pendingSequencerEdits.test.ts` (a condition's
+save returning the kit without a step still saving, and the reverse).
 
 ### 4. List changes without a full reload (done in the PR that closed #452)
 

@@ -42,25 +42,28 @@ export function useTriggerConditions({
   const kitRef = useLatestRef(kitName);
 
   // A failed save puts the last saved conditions back and says so (#511)
-  const { reset, save } = useSettingSave<
+  const { pending, reset, save } = useSettingSave<
     string,
     TriggerConditionsState,
     KitEdit
   >();
 
   // Show the loaded kit's conditions; when the kit changes before its data
-  // arrives, show the defaults until it does
+  // arrives, show the defaults until it does. Conditions still saving stay
+  // on screen over a kit that comes back without them (#778).
   const [shown, setShown] = useState({ initialConditions, kitName });
   if (
     shown.initialConditions !== initialConditions ||
     shown.kitName !== kitName
   ) {
     setShown({ initialConditions, kitName });
-    setTriggerConditionsState(
-      shown.initialConditions === initialConditions
-        ? createDefaultTriggerConditions()
-        : ensureValidTriggerConditions(initialConditions),
-    );
+    const saving = pending(kitName);
+    let next: TriggerConditionsState;
+    if (saving) next = saving.value;
+    else if (shown.initialConditions === initialConditions) {
+      next = createDefaultTriggerConditions();
+    } else next = ensureValidTriggerConditions(initialConditions);
+    setTriggerConditionsState(next);
   }
   useEffect(() => {
     reset();

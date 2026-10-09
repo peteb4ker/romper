@@ -18,7 +18,9 @@
  *   4. Rebase onto origin/main (any conflict: abort, stop), run
  *      `npm run typecheck` on the rebased tree (a clean rebase can still
  *      break the build), and push with --force-with-lease pinned to the
- *      head it started from.
+ *      head it started from. The typecheck borrows this checkout's
+ *      node_modules by link; if this checkout has none, that's an
+ *      environment problem ("env"), not the PR's.
  *   5. Poll. Auto-merge is armed (rebase) only once SonarCloud has
  *      analyzed the pushed head and reports 0 new issues, so a rebase that
  *      brings in new issues can't merge before they're seen. A check that
@@ -39,7 +41,16 @@
  * main, never skips hooks and never merges with --admin.
  */
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, symlinkSync } from "node:fs";
+import {
+  existsSync,
+  lstatSync,
+  mkdtempSync,
+  readFileSync,
+  readlinkSync,
+  rmSync,
+  symlinkSync,
+  unlinkSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -63,6 +74,7 @@ export const OUTCOMES = /** @type {const} */ ({
   held: 16,
   "branch-moved": 17,
   timeout: 18,
+  env: 19,
 });
 
 /** @typedef {keyof typeof OUTCOMES} Outcome */
@@ -568,6 +580,67 @@ function checkFrozen(repo, headSha) {
 }
 
 /**
+ * Why the checkout the script runs from can't lend its node_modules, if it
+ * can't. That is the shepherd's environment, not the PR: typecheck would
+ * only say `tsc: command not found`.
+ * @param {string} repo the checkout the script runs from
+ * @returns {string | null}
+ */
+export function nodeModulesProblem(repo) {
+  if (existsSync(path.join(repo, "node_modules"))) return null;
+  return `node_modules is missing from ${repo}, the checkout ship-pr runs from; run npm install there, then run again`;
+}
+
+/**
+ * Remove the scratch tree's node_modules if it is a link. Only the link
+ * goes, never what it points at (the source checkout's node_modules); a
+ * real folder is left for the caller.
+ * @param {string} scratch
+ * @returns {boolean} whether a link was removed
+ */
+export function unlinkNodeModules(scratch) {
+  const target = path.join(scratch, "node_modules");
+  try {
+    if (!lstatSync(target).isSymbolicLink()) return false;
+  } catch {
+    return false;
+  }
+  unlinkSync(target);
+  return true;
+}
+
+/**
+ * Link the source checkout's node_modules into the scratch tree. Safe to
+ * repeat: a link that already points there stays, a stale link (it points
+ * elsewhere) is replaced, and so is a real folder an earlier install left.
+ * The source's node_modules is never touched.
+ * @param {string} source the checkout the script runs from
+ * @param {string} scratch the scratch worktree
+ * @returns {"linked" | "kept" | "replaced"}
+ */
+export function linkNodeModules(source, scratch) {
+  const wanted = path.resolve(source, "node_modules");
+  const target = path.join(scratch, "node_modules");
+  /** @type {import("node:fs").Stats | undefined} */
+  let existing;
+  try {
+    existing = lstatSync(target);
+  } catch {
+    // Nothing there yet
+  }
+  if (existing?.isSymbolicLink()) {
+    const current = path.resolve(scratch, readlinkSync(target));
+    if (current === wanted) return "kept";
+    unlinkNodeModules(scratch);
+  } else if (existing) {
+    // A real folder, so it is the scratch tree's own: safe to delete
+    rmSync(target, { force: true, recursive: true });
+  }
+  symlinkSync(wanted, target, "dir");
+  return existing ? "replaced" : "linked";
+}
+
+/**
  * Give the scratch tree node_modules for the typecheck: a link to this
  * checkout's when the lockfiles match, else a clean install.
  * @param {string} repo
@@ -582,14 +655,15 @@ function provideNodeModules(repo, scratch) {
     }
   };
   if (lock(repo) && sameLockfile(lock(repo), lock(scratch))) {
-    symlinkSync(
-      path.join(repo, "node_modules"),
-      path.join(scratch, "node_modules"),
-      "dir",
-    );
+    const problem = nodeModulesProblem(repo);
+    if (problem) throw new Stop("env", problem);
+    linkNodeModules(repo, scratch);
     return;
   }
   log("Lockfile differs from this checkout's: npm ci for the typecheck");
+  // A link left by an earlier rebase must go first, or npm ci would
+  // clear out the checkout's node_modules behind it
+  unlinkNodeModules(scratch);
   const install = run(
     "npm",
     ["ci", "--ignore-scripts", "--no-audit", "--no-fund"],
@@ -736,7 +810,8 @@ async function ship(options) {
   });
   const cleanup = () => {
     // Unlink the borrowed node_modules first, so nothing follows the link
-    rmSync(path.join(scratch, "node_modules"), { force: true });
+    // (a real folder from npm ci is removed with the scratch tree)
+    unlinkNodeModules(scratch);
     run("git", ["worktree", "remove", "--force", scratch], { cwd: repo });
     rmSync(scratch, { force: true, recursive: true });
   };

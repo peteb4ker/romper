@@ -42,6 +42,9 @@ For each PR, **in the order given, one at a time**:
      Look the author session up with `ListAgents` (its title has the PR
      number) and `SendMessage` it the same line.
 
+     (`result=env` is the exception: the PR is fine. Fix the shepherd's own
+     checkout, then run the script again.)
+
 | Outcome | Code | What happened |
 | --- | --- | --- |
 | `merged` | 0 | Merged (or was already) |
@@ -57,6 +60,7 @@ For each PR, **in the order given, one at a time**:
 | `held` | 16 | Labelled `hold` or `do-not-merge` |
 | `branch-moved` | 17 | Someone pushed the branch while it was shipping |
 | `timeout` | 18 | Not merged after 90 polls (about 90 minutes) |
+| `env` | 19 | The checkout the script runs from has no `node_modules`, so it can't typecheck. Not the PR's fault: don't send it back to the author. Run `npm install` in that checkout and run the script again |
 
 Never, whatever the script says:
 
@@ -86,7 +90,9 @@ never touches the author's worktree, and removes it when it exits. It
 refuses held, draft and closed PRs and frozen paths, and checks SonarCloud
 (`npm run sonar:pr`). It rebases onto origin/main (never resolving a
 conflict), runs `npm run typecheck` on the rebased tree (a clean rebase can
-still break the build), and pushes with `--force-with-lease` pinned to the
+still break the build; the tree borrows this checkout's `node_modules` by a
+link it re-makes safely on every rebase, and a checkout without one stops
+with `result=env`), and pushes with `--force-with-lease` pinned to the
 head it started from. The first SonarCloud check reads whatever analysis
 exists, often of the pre-rebase head, so it's only an early exit: auto-merge
 (rebase) is armed once SonarCloud has analyzed the pushed head and reports 0

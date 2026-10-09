@@ -31,7 +31,8 @@ Environment variables are listed under Configuration in the [README](README.md).
    rather than bypassing it. CI runs the full suites and the build.
 3. Open a PR against `main`. CI runs build, lint, typecheck, unit,
    integration, e2e, and SonarCloud analysis.
-4. PRs are rebased onto `main` and merged with the rebase method.
+4. PRs are rebased onto `main` and merged with the rebase method, one
+   at a time, by `npm run ship -- <N>` (the `ship-pr` skill).
 
 Direct commits and pushes to `main` are blocked.
 

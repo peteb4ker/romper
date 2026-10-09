@@ -78,7 +78,8 @@ through a PR.
   `git worktree add <path> -b <branch> origin/main`. Inheriting from a
   non-main HEAD pollutes the PR with someone else's commits (see
   [#270](https://github.com/peteb4ker/romper/pull/270)).
-- Merging: see the `ship-pr` skill. Rebase onto `origin/main` and
+- Merging: see the `ship-pr` skill; the shepherd runs
+  `npm run ship -- <N>`. Rebase onto `origin/main` and
   `git push --force-with-lease`; merge with the rebase method. Don't use
   GitHub's "Update branch" button: it adds a merge commit.
 

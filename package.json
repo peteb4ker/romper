@@ -56,6 +56,7 @@
     "dmg:background:generate": "node scripts/generate-dmg-background.mjs",
     "screenshots": "tsx scripts/capture-screenshots.ts",
     "sonar:pr": "node scripts/sonar-pr.mjs",
+    "ship": "node scripts/ship-pr.mjs",
     "rample-manual": "node scripts/rample-manual-index.mjs",
     "rample:save": "tsx scripts/rample-save.ts"
   },

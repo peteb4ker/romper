@@ -4,7 +4,7 @@ priority: low
 status: specification
 updated: 2026-10-08
 context_size: medium
-implementation_status: stage 0 (docs, #789), stage 1a (the write code's guard, #787) and stage 1b (the read-only reader, #788) built; stages 2-6 not built
+implementation_status: stage 0 (docs, #789), stage 1a (the write code's guard, #787) and stage 1b (the read-only reader, #788) built; Pete's files committed as fixtures (D1); stages 2-6 not built
 -->
 
 # The Rample's `_save` folder: reading it, then writing it
@@ -358,8 +358,8 @@ Reasons:
 and can serve as a development dependency that cross-checks the codec in
 tests. As built in stage 1b: the in-house codec
 (`electron/main/rample/cbor.ts`), with no new dependency. It decodes and
-re-encodes every file on Pete's card byte for byte (checked read-only
-with `npm run rample:save`; the files aren't committed, see D1). Its
+re-encodes every file on Pete's card byte for byte (a test checks it
+on the committed copies; see [Fixtures](#fixtures)). Its
 encoder writes an opaque item back byte for byte, so a round trip stays
 exact; refusing to *write a card file* that holds one is stage 6's job,
 since nothing writes yet.
@@ -371,20 +371,26 @@ values, MIDI notes and settings. They're the only evidence of what a real
 device writes, byte for byte, so they're the best regression fixtures for
 a reader and for byte-identical re-encoding.
 
-- **Recommended:** commit them, unchanged, as
-  `tests/fixtures/rample-save/<firmware>/` once Pete agrees (decision D1)
-  and has recorded the firmware version (check 1), with a short README
-  saying where they came from. Add each later hardware check's `_save`
-  copy beside them, so every claim in the tables above points at a file.
+- **Committed (D1, approved 2026-10-09):** the six files, unchanged, in
+  `tests/fixtures/rample-save/fw-2.00-inferred/`, with a README saying
+  where they came from. The folder says `-inferred` until check 1 reads
+  the firmware from the device; a 3.00 sample goes beside it as
+  `fw-3.00/`, and each later hardware check's `_save` copy goes in too,
+  so every claim in the tables above points at a file. A `.gitattributes`
+  there marks `*.rpl` binary, so Git never changes a byte.
+  `rampleSaveFixtures.test.ts` runs the stage 1b reader on them: all six
+  decode with no unknown, missing or wrongly shaped keys, the firmware
+  guess is 2.00 (inferred), the five non-empty files re-encode byte for
+  byte, and the values the key tables cite are there.
 - **Always:** synthetic fixtures built by the encoder in the tests
   themselves, for what the real files don't cover: missing keys, unknown
   keys, `true` in a mute group, values above 255, a truncated file, an
   indefinite length, a file of a different type under a kit name.
-- **Until D1 is decided,** stage 1 uses synthetic fixtures only, built to
-  match the real files' key sets and values, and checks byte-identical
-  round trips against byte strings written out in the test. As built:
+- **Before D1,** stage 1 used synthetic fixtures only, built to match
+  the real files' key sets and values:
   `tests/factories/rampleSave.factory.ts` builds them with the codec's
-  encoder.
+  encoder. Its `settings.rpl` and `global_assign.rpl` are byte-identical
+  to the real ones, and a test keeps them so.
 
 ## Plan
 

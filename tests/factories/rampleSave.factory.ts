@@ -4,8 +4,8 @@ import { encodeCbor } from "../../electron/main/rample/cbor";
 
 // Synthetic `_save` files (#788), built to match the key sets and kinds of
 // value a Rample on firmware 2.00 writes (docs/developer/
-// rample-save-integration.md). Pete's real files aren't committed until
-// decision D1; these stand in for them. Keys are in the device's order:
+// rample-save-integration.md), for what the real files in
+// tests/fixtures/rample-save/ don't cover. Keys are in the device's order:
 // plain byte order, which puts "assignments" before "env".
 
 const four = (value: RampleRawValue): RampleRawValue[] => [

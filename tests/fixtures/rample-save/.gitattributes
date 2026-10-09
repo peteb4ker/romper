@@ -1,0 +1,2 @@
+# The Rample's save files are CBOR: compare and check out byte for byte
+*.rpl binary

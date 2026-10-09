@@ -169,6 +169,21 @@ the repo or on GitHub.
 - **Unattended PRs:** cloud sessions don't have Auto-fix. A routine
   (`/schedule`) can re-check a cloud-owned PR's CI and act on failures
   until it merges.
+- **Model per subagent:** set the model on each agent you start rather
+  than inheriting the coordinator's.
+  - **Haiku:** mechanical work with one right answer: watching CI and
+    SonarCloud, reruns, worktree clean-up, recording decisions and
+    labels on issues, Dependabot bumps, regenerating screenshots, status
+    roll-ups, and the PR shepherd (`npm run ship`).
+  - **Sonnet** (the default for implementation): a fix or feature the
+    issue already specifies, bulk refactors and type fixes, Sonar, test
+    and conflict fixes on your own PR, and docs.
+  - **Opus:** root-cause investigations, plans and contracts (specs, IPC,
+    data formats), anything that touches the card write, migrations,
+    `_save` or a release, and coordinating sessions.
+  - Before a Haiku or Sonnet PR that touches `electron/main` or the card
+    write is shipped, the coordinator reads its diff. A task that stalls
+    or comes back wrong moves up a tier.
 
 ## Hard rules
 

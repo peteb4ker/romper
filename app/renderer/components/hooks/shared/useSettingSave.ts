@@ -83,7 +83,9 @@ export async function saveResult<D>(
  * before the next starts (wheel notches, arrow presses) also give one
  * message while they keep failing less than `REPEAT_FAILURE_MS` apart.
  *
- * `save` resolves to whether main saved this change.
+ * `save` resolves to whether main saved this change. `pending` gives the
+ * latest change sent for a key while any change for it is still saving, so
+ * a value main returns in the meantime doesn't take it off screen (#778).
  */
 export function useSettingSave<K, V, D = unknown>() {
   // The value main last saved, per key, once a change has been sent
@@ -92,6 +94,8 @@ export function useSettingSave<K, V, D = unknown>() {
   const latest = React.useRef(new Map<K, number>());
   // When the latest change for a key last failed
   const lastFailure = React.useRef(new Map<K, number>());
+  // The latest change sent and how many are still saving, per key
+  const inFlight = React.useRef(new Map<K, { count: number; value: V }>());
 
   const save = React.useCallback(
     async ({
@@ -107,9 +111,14 @@ export function useSettingSave<K, V, D = unknown>() {
       if (!saved.current.has(key)) saved.current.set(key, current);
       const request = (latest.current.get(key) ?? 0) + 1;
       latest.current.set(key, request);
+      const sending = inFlight.current.get(key);
+      inFlight.current.set(key, { count: (sending?.count ?? 0) + 1, value });
 
       const { data, failed } = await saveResult(send(), what);
       if (!failed) saved.current.set(key, value);
+      const saving = inFlight.current.get(key);
+      if (saving && saving.count > 1) saving.count -= 1;
+      else inFlight.current.delete(key);
       // A newer change is on its way; its answer decides
       if (latest.current.get(key) !== request) return !failed;
 
@@ -118,6 +127,9 @@ export function useSettingSave<K, V, D = unknown>() {
           ? (saved.current.get(key) as V)
           : current;
         restore(previous);
+        // An older change still saving keeps what's now on screen
+        const older = inFlight.current.get(key);
+        if (older) older.value = previous;
         const now = Date.now();
         const last = lastFailure.current.get(key);
         lastFailure.current.set(key, now);
@@ -136,5 +148,14 @@ export function useSettingSave<K, V, D = unknown>() {
     saved.current.clear();
   }, []);
 
-  return { reset, save };
+  /**
+   * The latest change sent for `key` while any change for it is still
+   * saving; undefined once main has answered them all
+   */
+  const pending = React.useCallback((key: K): { value: V } | undefined => {
+    const saving = inFlight.current.get(key);
+    return saving && { value: saving.value };
+  }, []);
+
+  return { pending, reset, save };
 }

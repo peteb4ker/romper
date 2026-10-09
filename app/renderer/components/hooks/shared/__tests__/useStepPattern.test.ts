@@ -608,6 +608,160 @@ describe("useStepPattern", () => {
     });
   });
 
+  // A kit that comes back while a step edit is saving (another save's, or
+  // an older read) doesn't take that edit off screen (#778)
+  describe("[UC-30] [Q-01] a step still saving stays on screen (#778)", () => {
+    type Answer = { data?: never; error?: string; success: boolean };
+    const off = [[0, 0, 0, 0]];
+    const withA = [[127, 0, 0, 0]];
+    const withAB = [[127, 127, 0, 0]];
+
+    // Each save waits until the test answers it
+    function deferSaves() {
+      const answers: ((answer: Answer) => void)[] = [];
+      vi.mocked(globalThis.electronAPI.updateStepPattern).mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            answers.push(resolve);
+          }),
+      );
+      return answers;
+    }
+
+    function renderSteps(onMessage = vi.fn()) {
+      return renderHook(
+        ({ initialPattern, kitName }) =>
+          useStepPattern({ initialPattern, kitName, onMessage }),
+        { initialProps: { initialPattern: off, kitName: "A0" } },
+      );
+    }
+
+    it("keeps the second toggle on when the first save's kit comes back first", async () => {
+      const answers = deferSaves();
+      const { rerender, result } = renderSteps();
+
+      let first: Promise<boolean> | undefined;
+      let second: Promise<boolean> | undefined;
+      act(() => {
+        first = result.current.setStepPattern(withA);
+      });
+      act(() => {
+        second = result.current.setStepPattern(withAB);
+      });
+      await act(async () => {
+        answers[0]({ data: { step_pattern: withA } as never, success: true });
+        await first;
+      });
+      // The kit as the first save left it: A, not B
+      rerender({ initialPattern: [[127, 0, 0, 0]], kitName: "A0" });
+      expect(result.current.stepPattern).toEqual(withAB);
+
+      await act(async () => {
+        answers[1]({ success: true });
+        await second;
+      });
+      rerender({ initialPattern: [[127, 127, 0, 0]], kitName: "A0" });
+      expect(result.current.stepPattern).toEqual(withAB);
+    });
+
+    it("keeps both toggles when the saves answer out of order", async () => {
+      const answers = deferSaves();
+      const { rerender, result } = renderSteps();
+
+      let first: Promise<boolean> | undefined;
+      let second: Promise<boolean> | undefined;
+      act(() => {
+        first = result.current.setStepPattern(withA);
+        second = result.current.setStepPattern(withAB);
+      });
+      await act(async () => {
+        answers[1]({ success: true });
+        await second;
+      });
+      rerender({ initialPattern: [[127, 127, 0, 0]], kitName: "A0" });
+      expect(result.current.stepPattern).toEqual(withAB);
+
+      // A read sent before B lands while A is still saving
+      rerender({ initialPattern: [[0, 0, 0, 0]], kitName: "A0" });
+      expect(result.current.stepPattern).toEqual(withAB);
+
+      await act(async () => {
+        answers[0]({ success: true });
+        await first;
+      });
+      expect(result.current.stepPattern).toEqual(withAB);
+    });
+
+    it("puts back only the toggle whose save failed", async () => {
+      const answers = deferSaves();
+      const onMessage = vi.fn();
+      const { rerender, result } = renderSteps(onMessage);
+
+      let first: Promise<boolean> | undefined;
+      let second: Promise<boolean> | undefined;
+      act(() => {
+        first = result.current.setStepPattern(withA);
+      });
+      act(() => {
+        second = result.current.setStepPattern(withAB);
+      });
+      await act(async () => {
+        answers[0]({ success: true });
+        await first;
+      });
+      // A reload sent before either toggle lands while B is saving
+      rerender({ initialPattern: [[0, 0, 0, 0]], kitName: "A0" });
+      expect(result.current.stepPattern).toEqual(withAB);
+      await act(async () => {
+        answers[1]({ error: "disk full", success: false });
+        await second;
+      });
+
+      expect(result.current.stepPattern).toEqual(withA);
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      expect(onMessage).toHaveBeenCalledWith(STEPS_NOT_SAVED, "error");
+    });
+
+    it("keeps a toggle still saving over an older reload, then shows the kit", async () => {
+      const answers = deferSaves();
+      const { rerender, result } = renderSteps();
+
+      let saving: Promise<boolean> | undefined;
+      act(() => {
+        saving = result.current.setStepPattern(withA);
+      });
+      // A reload sent before the toggle, with something else changed
+      rerender({ initialPattern: [[0, 0, 0, 127]], kitName: "A0" });
+      expect(result.current.stepPattern).toEqual(withA);
+
+      await act(async () => {
+        answers[0]({ success: true });
+        await saving;
+      });
+      // The kit the save returned
+      rerender({ initialPattern: [[127, 0, 0, 127]], kitName: "A0" });
+      expect(result.current.stepPattern).toEqual([[127, 0, 0, 127]]);
+    });
+
+    it("shows another kit's steps while this kit's toggle saves", async () => {
+      const answers = deferSaves();
+      const { rerender, result } = renderSteps();
+
+      let saving: Promise<boolean> | undefined;
+      act(() => {
+        saving = result.current.setStepPattern(withA);
+      });
+      rerender({ initialPattern: [[0, 0, 127, 0]], kitName: "A1" });
+      expect(result.current.stepPattern).toEqual([[0, 0, 127, 0]]);
+
+      await act(async () => {
+        answers[0]({ success: true });
+        await saving;
+      });
+      expect(result.current.stepPattern).toEqual([[0, 0, 127, 0]]);
+    });
+  });
+
   // The sequencer's undo history keeps only saved edits (#570)
   describe("[UC-26] resolves to whether the steps were saved", () => {
     const pattern = [[127, 0, 0, 0]];

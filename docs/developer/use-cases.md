@@ -662,7 +662,8 @@ BPM are saved with the kit. See
   `app/renderer/components/hooks/kit-management/useKitStepSequencerLogic.ts` (scheduler worker),
   `app/renderer/components/hooks/kit-management/useSequenceHistory.ts`; `app/renderer/components/hooks/shared/useStepPattern.ts`, `app/renderer/components/hooks/shared/useBpm.ts`
   (both save through `app/renderer/components/hooks/shared/useSettingSave.ts`, which
-  puts back steps or a BPM that isn't saved and says so),
+  puts back steps or a BPM that isn't saved and says so, and keeps steps
+  still saving on screen over a kit that comes back meanwhile),
   `app/renderer/components/hooks/shared/sequenceUndo.ts`.
 - **IPC:** `update-step-pattern`, `update-kit-bpm`.
 - **Main:** `electron/main/db/operations/kitCrudOperations.ts` (`updateKit`).

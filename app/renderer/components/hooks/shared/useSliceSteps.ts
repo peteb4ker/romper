@@ -65,19 +65,21 @@ export function useSliceSteps({
   const divisionRef = useLatestRef(slicerDivision);
   const kitRef = useLatestRef(kitName);
 
-  const { reset: resetStepSaves, save: saveSteps } = useSettingSave<
-    string,
-    SliceStepsState,
-    KitEdit
-  >();
-  const { reset: resetDivisionSaves, save: saveDivision } = useSettingSave<
-    string,
-    SlicerDivision,
-    KitEdit
-  >();
+  const {
+    pending: pendingSteps,
+    reset: resetStepSaves,
+    save: saveSteps,
+  } = useSettingSave<string, SliceStepsState, KitEdit>();
+  const {
+    pending: pendingDivision,
+    reset: resetDivisionSaves,
+    save: saveDivision,
+  } = useSettingSave<string, SlicerDivision, KitEdit>();
 
   // Show the loaded kit's slices and division; when the kit changes before
-  // its data arrives, show the defaults until it does
+  // its data arrives, show the defaults until it does. Slices or a division
+  // still saving stay on screen over a kit that comes back without them
+  // (#778).
   const [shown, setShown] = useState({
     initialDivision,
     initialSliceSteps,
@@ -88,12 +90,18 @@ export function useSliceSteps({
   const divisionChanged = shown.initialDivision !== initialDivision;
   if (kitChanged || stepsChanged || divisionChanged) {
     setShown({ initialDivision, initialSliceSteps, kitName });
-    if (stepsChanged) {
+    const savingSteps = pendingSteps(kitName);
+    if (savingSteps) {
+      setSliceStepsState(savingSteps.value);
+    } else if (stepsChanged) {
       setSliceStepsState(ensureValidSliceSteps(initialSliceSteps));
     } else if (kitChanged) {
       setSliceStepsState(createEmptySliceSteps());
     }
-    if (divisionChanged) {
+    const savingDivision = pendingDivision(kitName);
+    if (savingDivision) {
+      setSlicerDivisionState(savingDivision.value);
+    } else if (divisionChanged) {
       setSlicerDivisionState(toDivision(initialDivision));
     } else if (kitChanged) {
       setSlicerDivisionState(DEFAULT_SLICER_DIVISION);

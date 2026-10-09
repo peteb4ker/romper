@@ -457,7 +457,7 @@ export function useVoicePanelSlotRendering({
  * of its own (display: contents), so the control inside stays a flex item
  * of the row, as it was before the row became a grid row (#522).
  */
-function SlotCell({ children }: { children: React.ReactNode }) {
+function SlotCell({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <div className="contents" role="gridcell">
       {children}

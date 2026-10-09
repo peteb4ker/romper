@@ -893,7 +893,9 @@ the Rample reads from the card), mirrors so you can preview it on your
 computer (like the step sequencer's slicer), or documents. Each Rample
 feature is traced to the use cases that cover it, from the
 [Rample manual](https://squarp.net/rample/manual/); features Romper doesn't
-touch are candidates for the backlog.
+touch are candidates for the backlog. The
+[Rample manual index](rample-manual-index.md) maps each section of the
+manual to the use cases it relates to.
 
 **Concepts:** [Use cases, qualities and issues](domain-model.md#use-cases-qualities-and-issues), [Rample manual coverage](domain-model.md#rample-manual-coverage).
 

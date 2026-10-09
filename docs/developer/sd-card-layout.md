@@ -110,7 +110,7 @@ than a broken feature. Either way, the fix is the same.
 ```
 <card>/
   A - ALWIS.rtf                 bank name (unchanged)
-  _save/                        device-owned; Romper never touches it
+  _save/                        device-owned; the write code refuses it by name
   A0/
     1-01 KICK LOW.wav
     1-02 KICK LOW.wav
@@ -167,7 +167,9 @@ per-voice subfolders anyway, since they aren't samples of the kit.
 ### What sync never touches
 
 `_save/`, anything at the root other than kit folders and bank files, and
-any folder that isn't a valid kit name.
+any folder that isn't a valid kit name. `_save/` is refused by name
+(`DEVICE_SAVE_FOLDER`, #787), not only left out by the kit and bank
+patterns: nothing is removed or written at or under it.
 
 ### Settings stored on the device
 

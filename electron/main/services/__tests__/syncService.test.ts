@@ -56,7 +56,7 @@ vi.mock("../syncMonoAnnotation.js", () => ({
 
 vi.mock("../sdCardSafety.js", () => ({
   findStaleCardEntries: vi.fn(async () => []),
-  removeCardEntries: vi.fn(),
+  removeCardEntries: vi.fn(async () => ({ refused: [], removed: 0 })),
   validateSdCardTarget: vi.fn(async () => ({ ok: true })),
 }));
 
@@ -435,7 +435,7 @@ describe("[UC-34] SyncService", () => {
       mockFindStaleCardEntries.mockResolvedValueOnce(["B3", "A0/1-02 old.wav"]);
       mockRemoveCardEntries.mockImplementationOnce(async () => {
         order.push("remove");
-        return 2;
+        return { refused: [], removed: 2 };
       });
 
       const result = await syncService.startKitSync(mockSettings, {
@@ -459,7 +459,7 @@ describe("[UC-34] SyncService", () => {
           // Cancel arrives while the first entry is removed
           syncService.cancelSync();
           expect(options?.shouldStop?.()).toBe(true);
-          return 1;
+          return { refused: [], removed: 1 };
         },
       );
 

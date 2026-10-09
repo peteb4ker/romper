@@ -4,7 +4,7 @@ priority: low
 status: specification
 updated: 2026-10-08
 context_size: medium
-implementation_status: stage 0 (docs) in the PR that added this file; nothing else built
+implementation_status: stage 0 (docs, #789) and stage 1a (the write code's guard, #787) built; stages 1b-6 not built
 -->
 
 # The Rample's `_save` folder: reading it, then writing it
@@ -300,18 +300,19 @@ public decode.
   (`shared/kitUtilsShared.ts`), so `_save` isn't copied
   (`tests/e2e/sd-card-setup.e2e.test.ts` checks it). Scans read the store,
   not the card.
-- **Never changed by a write.** The only removal path,
+- **Never changed by a write, by name.** The folder is named once
+  (`DEVICE_SAVE_FOLDER` in `shared/rampleCardLayout.ts`, compared ignoring
+  case and trailing dots and spaces). The only removal path,
   `findStaleCardEntries` → `removeCardEntries`
-  (`electron/main/services/sdCardSafety.ts`), considers only folders that
-  match `KIT_FOLDER_PATTERN` and root files that match
-  `BANK_NAME_FILE_PATTERN` (`shared/rampleCardLayout.ts`). `_save` matches
-  neither. Unit and e2e tests seed `_save/A0.rpl` and check it survives a
-  full and a cancelled write, and the full-pipeline validation requires
-  it.
-- **Weak point:** that protection is a side effect of the two patterns.
-  Nothing names `_save` in the code, so widening a pattern, or adding a
-  "clear the card" step, would expose it with only the tests to notice.
-  Stage 1 names it.
+  (`electron/main/services/sdCardSafety.ts`), skips it explicitly, and
+  `removeCardEntries` refuses any entry at or under it, or the card
+  itself, whatever list it's given. The sample writer
+  (`syncFileOperations.processAllFiles`) refuses a write whose files would
+  land in it. None of this depends on `KIT_FOLDER_PATTERN` or
+  `BANK_NAME_FILE_PATTERN`, which `_save` doesn't match either. Unit tests
+  widen both patterns and craft removal lists; unit and e2e tests seed
+  `_save/A0.rpl` and check it survives a full and a cancelled write, and
+  the full-pipeline validation requires it (stage 1a, #787).
 
 ## CBOR library
 
@@ -402,12 +403,13 @@ issue is opened once it's unblocked.
 
 Two PRs, both without UI.
 
-**1a. Guard `_save` by name** ([#787](https://github.com/peteb4ker/romper/issues/787)).
+**1a. Guard `_save` by name** ([#787](https://github.com/peteb4ker/romper/issues/787)). **Done.**
 
 - `shared/rampleCardLayout.ts` names the folder
   (`DEVICE_SAVE_FOLDER = "_save"`). `findStaleCardEntries` skips it
   explicitly, and `removeCardEntries` refuses any path at or under it,
-  whatever the patterns say.
+  whatever the patterns say, and returns the refusals. The sample writer
+  refuses a destination inside it too.
 - **Affects:** Q-04, UC-34.
 - **Tests:** unit tests that a widened kit pattern or a crafted removal
   list still can't remove `_save` or anything in it; the existing e2e

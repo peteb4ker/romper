@@ -350,7 +350,12 @@ sync wasn't cancelled), sync deletes the Rample content the store no
 longer has: kit folders, anything inside a kit folder that isn't one of
 its samples, and bank name files (`sdCardSafety.findStaleCardEntries`).
 The write summary lists the same entries first. Sync never touches the
-device's `_save/` folder or anything else on the card.
+device's `_save/` folder or anything else on the card. The folder is named
+in the code (`rampleCardLayout.DEVICE_SAVE_FOLDER`, #787), not only left
+out by the kit and bank patterns: `findStaleCardEntries` skips it,
+`removeCardEntries` refuses any entry at or under it (or the card itself)
+whatever list it's given, and `processAllFiles` refuses a write whose
+files would land in it (`sdCardSafety.reachesDeviceSaveFolder`).
 
 WAV headers are read by walking RIFF chunks (`wavHeader.ts`, RE-08), so
 `fmt ` and `data` can sit anywhere: Squarp's factory kits have `junk`

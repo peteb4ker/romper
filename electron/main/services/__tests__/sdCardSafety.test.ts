@@ -11,6 +11,7 @@ import {
 import {
   findStaleCardEntries,
   getSdCardDialogDefaultPath,
+  reachesDeviceSaveFolder,
   removeAppleDoubleCompanion,
   removeCardEntries,
   validateSdCardTarget,
@@ -271,13 +272,13 @@ describe("[UC-34] sdCardSafety", () => {
       fs.mkdirSync(path.join(card, "B3"));
       fs.writeFileSync(path.join(card, "B - OLD.rtf"), "x");
 
-      const removed = await removeCardEntries(card, [
+      const result = await removeCardEntries(card, [
         path.join("A0", "2"),
         "B3",
         "B - OLD.rtf",
       ]);
 
-      expect(removed).toBe(3);
+      expect(result).toEqual({ refused: [], removed: 3 });
       expect(fs.readdirSync(card)).toEqual(["A0"]);
       expect(fs.readdirSync(path.join(card, "A0"))).toEqual(["1-01 kick.wav"]);
     });
@@ -339,7 +340,7 @@ describe("[UC-34] sdCardSafety", () => {
       for (const kit of ["B1", "B2", "B3"]) fs.mkdirSync(path.join(card, kit));
       const reported: string[] = [];
 
-      const removed = await removeCardEntries(card, ["B1", "B2", "B3"], {
+      const { removed } = await removeCardEntries(card, ["B1", "B2", "B3"], {
         onRemoved: (count, total) => reported.push(`${count}/${total}`),
         shouldStop: () => reported.length === 2,
       });
@@ -365,6 +366,115 @@ describe("[UC-34] sdCardSafety", () => {
         cardWatchdogSettings.timeoutMs = CARD_OPERATION_TIMEOUT_MS;
         rm.mockRestore();
       }
+    });
+  });
+
+  describe("[Q-04] [UC-34] the Rample's _save folder (#787)", () => {
+    const write = (relative: string) => {
+      fs.mkdirSync(path.dirname(path.join(card, relative)), {
+        recursive: true,
+      });
+      fs.writeFileSync(path.join(card, relative), "rample");
+    };
+
+    it.each([
+      "_save",
+      "_SAVE",
+      path.join("_save", "A0.rpl"),
+      path.join("_Save", "settings.rpl"),
+      path.join("A0", "..", "_save", "A0.rpl"),
+      // Windows drops trailing dots and spaces: `_save.` opens `_save`
+      "_save.",
+      "_save ",
+      // The card itself, and anything outside it, hold the folder
+      "",
+      ".",
+      "..",
+      path.join("..", "elsewhere"),
+    ])("refuses %j", (entry) => {
+      expect(reachesDeviceSaveFolder(card, entry)).toBe(true);
+    });
+
+    it("refuses an absolute path at or under the folder", () => {
+      expect(reachesDeviceSaveFolder(card, path.join(card, "_save"))).toBe(
+        true,
+      );
+      expect(
+        reachesDeviceSaveFolder(card, path.join(card, "_save", "L1.rpl")),
+      ).toBe(true);
+      expect(
+        reachesDeviceSaveFolder(card, path.join(card, "A0", "1-01 kick.wav")),
+      ).toBe(false);
+    });
+
+    it.each([
+      "A0",
+      path.join("A0", "1-01 kick.wav"),
+      // Only the folder at the card root is the device's
+      path.join("A0", "_save"),
+      "_saved",
+      "save",
+      "A - ALWIS.rtf",
+    ])("allows %j", (entry) => {
+      expect(reachesDeviceSaveFolder(card, entry)).toBe(false);
+    });
+
+    it("never lists the folder or anything in it as stale", async () => {
+      write("_save/A0.rpl");
+      write("_save/settings.rpl");
+      write("B3/1-01 old.wav");
+
+      expect(
+        await findStaleCardEntries(card, {
+          bankFiles: [],
+          kits: new Map(),
+        }),
+      ).toEqual(["B3"]);
+    });
+
+    it("refuses a removal list that names the folder or its files, and removes the rest", async () => {
+      write("_save/A0.rpl");
+      write("_save/settings.rpl");
+      write("B3/1-01 old.wav");
+      const reported: string[] = [];
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      try {
+        const result = await removeCardEntries(
+          card,
+          [
+            "_save",
+            path.join("_SAVE", "settings.rpl"),
+            "B3",
+            path.join("B3", "..", "_save", "A0.rpl"),
+            ".",
+          ],
+          { onRemoved: (count, total) => reported.push(`${count}/${total}`) },
+        );
+
+        expect(result).toEqual({
+          refused: [
+            "_save",
+            path.join("_SAVE", "settings.rpl"),
+            path.join("B3", "..", "_save", "A0.rpl"),
+            ".",
+          ],
+          removed: 1,
+        });
+        // The refusal is reported, and only the allowed entry counted
+        expect(warn).toHaveBeenCalledTimes(1);
+        expect(reported).toEqual(["1/1"]);
+      } finally {
+        warn.mockRestore();
+      }
+      expect(fs.readdirSync(card)).toEqual(["_save"]);
+      expect(fs.readdirSync(path.join(card, "_save")).sort()).toEqual([
+        "A0.rpl",
+        "settings.rpl",
+      ]);
+      expect(fs.readFileSync(path.join(card, "_save", "A0.rpl"), "utf8")).toBe(
+        "rample",
+      );
     });
   });
 

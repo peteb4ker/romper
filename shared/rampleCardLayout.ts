@@ -3,6 +3,7 @@
 //
 //   <card>/<kit>/<voice>-<slot> <name>.wav     e.g. A0/1-01 KICK LOW.wav
 //   <card>/<letter> - <bank name>.rtf          e.g. A - ALWIS.rtf
+//   <card>/_save/                               the device's own settings
 //
 // Kit folders sit at the card root. WAV files sit directly in the kit
 // folder; the first character of the name is the voice (1-4), and the
@@ -10,6 +11,16 @@
 // docs/developer/sd-card-layout.md.
 
 import { trimTrailing } from "./trimTrailing.js";
+
+/**
+ * The folder at the card root where the Rample keeps what you set on the
+ * device: STORE writes a kit's settings to `_save/<kit>.rpl`, SAVE SETTINGS
+ * the device settings (docs/developer/rample-save-integration.md). The
+ * device owns it: nothing Romper writes to a card may remove or write
+ * anything at or under it, whatever the kit and bank patterns match (#787,
+ * Q-04). Compare names with {@link isDeviceSaveFolderName}.
+ */
+export const DEVICE_SAVE_FOLDER = "_save";
 
 /** Longest file name sync writes, extension included. */
 export const MAX_CARD_FILE_NAME_LENGTH = 64;
@@ -112,6 +123,16 @@ export function cardSampleFileName(
 /** True for a bank letter as Romper stores it: one capital, A to Z. */
 export function isBankLetter(value: unknown): value is string {
   return typeof value === "string" && BANK_LETTER_PATTERN.test(value);
+}
+
+/**
+ * True when a name at the card root is the device's save folder
+ * ({@link DEVICE_SAVE_FOLDER}). Case is ignored, as FAT32 ignores it, and so
+ * are trailing spaces and dots, which Windows drops from a path (`_SAVE.`
+ * opens `_save` there).
+ */
+export function isDeviceSaveFolderName(name: string): boolean {
+  return trimTrailing(name, " .").toLowerCase() === DEVICE_SAVE_FOLDER;
 }
 
 /** True for a kit name as Romper stores it: A0 to Z99, the letter a capital. */

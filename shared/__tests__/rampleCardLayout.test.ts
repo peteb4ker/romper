@@ -4,7 +4,9 @@ import { describe, expect, it } from "vitest";
 import {
   cardKitFolders,
   cardSampleFileName,
+  DEVICE_SAVE_FOLDER,
   isBankLetter,
+  isDeviceSaveFolderName,
   isKitName,
   kitNameOfCardFolder,
   MAX_CARD_FILE_NAME_LENGTH,
@@ -189,6 +191,31 @@ describe("[UC-34] rampleCardLayout", () => {
 
   // #573: one rule for kit names and bank letters, which setup, the write
   // and every kit or bank check use
+  describe("[Q-04] the device's save folder (#787)", () => {
+    it("is named _save", () => {
+      expect(DEVICE_SAVE_FOLDER).toBe("_save");
+    });
+
+    it.each(["_save", "_SAVE", "_Save", "_save.", "_save .", "_save "])(
+      "%j is the save folder",
+      (name) => {
+        expect(isDeviceSaveFolderName(name)).toBe(true);
+      },
+    );
+
+    it.each(["save", "_saved", ".save", "_save/A0.rpl", "A0", ""])(
+      "%j isn't",
+      (name) => {
+        expect(isDeviceSaveFolderName(name)).toBe(false);
+      },
+    );
+
+    it("isn't a kit folder or a bank name file", () => {
+      expect(kitNameOfCardFolder(DEVICE_SAVE_FOLDER)).toBeNull();
+      expect(parseBankNameFile(DEVICE_SAVE_FOLDER)).toBeNull();
+    });
+  });
+
   describe("[Q-04] kit names and bank letters", () => {
     it.each(["A0", "A1", "B10", "Z99", "A01"])("%s is a kit name", (name) => {
       expect(isKitName(name)).toBe(true);

@@ -54,7 +54,7 @@ Each voice panel has a header showing:
 Each voice has up to **12 sample slots**, matching the Rample's 12-layer-per-voice capability. A column on the left numbers the slots 1 to 12. Filled slots show:
 
 - **Play button** -- Click to audition the sample
-- **Sample filename** -- Hover over the row to see the file's path and format
+- **Sample filename** -- Hover over the row to see the file's path and format, and whether it's written to the card as it is (**Native**) or converted when you write (**Convertible**): a format the Rample can't play, a stereo file on a voice that isn't linked as stereo, or a gain adjustment
 - **Gain knob** -- Per-sample volume trim (see [Gain Control](#gain-control) below); editable kits only
 - **Delete button** -- Remove the sample from this slot; the samples below it move up. Romper asks first unless **Confirm destructive actions** is off in Preferences. Editable kits only
 - **Waveform display** -- Visual representation of the audio

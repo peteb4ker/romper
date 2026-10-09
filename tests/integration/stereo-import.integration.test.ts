@@ -13,6 +13,7 @@ import {
   getKit,
   getKits,
   markKitAsModified,
+  updateSampleMetadata,
   updateVoiceStereoMode,
   withDbTransaction,
 } from "../../electron/main/db/romperDbCoreORM.js";
@@ -494,6 +495,25 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
       expect(status("A1", "3 HAT.wav")).toBe("missing");
       expect(status("A1", "2 PAD.wav")).toBe("readable");
       expect(getKit(dbDir, "A1").data!.quarantined).toBe(false);
+    });
+
+    it("[UC-34] the kit-open check reads a file once more when its format tag isn't stored (#576)", async () => {
+      importCard();
+      const pad = () =>
+        getKit(dbDir, "A1").data!.samples!.find(
+          (s) => s.filename === "2 PAD.wav",
+        )!;
+      expect(pad().wav_format_tag).toBe(1);
+      // As a library from before #576 has it
+      updateSampleMetadata(dbDir, pad().id, { wav_format_tag: null });
+
+      const checked = await scanService.checkKitSampleFiles(settings(), "A1");
+
+      expect(checked.data?.changed).toBe(1);
+      expect(pad().wav_format_tag).toBe(1);
+      expect(
+        (await scanService.checkKitSampleFiles(settings(), "A1")).data?.changed,
+      ).toBe(0);
     });
 
     it("a write records an unreadable file, so the kit list shows the kit quarantined straight away", async () => {

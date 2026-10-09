@@ -18,6 +18,8 @@ export interface AudioMetadata {
   /** WAVE_FORMAT_EXTENSIBLE header (sync rewrites it as plain PCM) */
   extensible?: boolean;
   fileSize?: number;
+  /** Sample frames in the data chunk (bytes / bytes per frame) */
+  frames?: number;
   sampleRate?: number;
 }
 

@@ -367,6 +367,7 @@ function hasMissingMetadata(row: Sample): boolean {
     row.wav_sample_rate === null ||
     row.wav_bit_depth === null ||
     row.wav_channels === null ||
+    row.wav_format_tag === null ||
     row.source_status !== "readable"
   );
 }

@@ -10,6 +10,7 @@ import {
   WarningIcon,
   XIcon,
 } from "@phosphor-icons/react";
+import { describeConversionCount } from "@romper/shared/rampleFormat";
 import {
   describeQuarantinedKit,
   describeQuarantineProblem,
@@ -256,6 +257,11 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
   const fileCount = changeSummary?.fileCount || 0;
   const banks = changeSummary?.banks || [];
   const conversionsNeeded = banks.some((b) => b.hasConversions);
+  // How many files are re-encoded, and why: format or gain (#576)
+  const conversionLine = describeConversionCount(
+    changeSummary?.conversions?.format ?? 0,
+    changeSummary?.conversions?.gain ?? 0,
+  );
   const invalidFiles = changeSummary?.validationErrors || [];
   const warnings = changeSummary?.warnings || [];
   const removals = changeSummary?.removals || [];
@@ -527,6 +533,14 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
                 {conversionsNeeded && <span className="w-14" />}
               </div>
             </div>
+            {conversionLine && (
+              <p
+                className="mt-1.5 text-[11px] text-text-secondary"
+                data-testid="conversion-count"
+              >
+                {conversionLine}
+              </p>
+            )}
           </div>
         )}
 

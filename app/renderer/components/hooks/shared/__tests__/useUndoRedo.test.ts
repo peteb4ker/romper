@@ -171,6 +171,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
             wav_bit_depth: 16,
             wav_bitrate: 705600,
             wav_channels: 1,
+            wav_format_tag: 1,
             wav_sample_rate: 44100,
           })),
           voice: 1,

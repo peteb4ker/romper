@@ -9,6 +9,7 @@ import type {
 import type { WriteStereoSummary } from "@romper/shared/stereoLinkRules.js";
 
 import { cardSampleFileName } from "@romper/shared/rampleCardLayout.js";
+import { describeTooShortCount } from "@romper/shared/rampleFormat.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { setImmediate as yieldToEventLoop } from "node:timers/promises";
@@ -128,6 +129,8 @@ class SyncService {
       }
       const plan = planResult.data;
       const fileCount = plan.files.length;
+      // Files re-encoded, by why (#576): gain re-encodes count too
+      const conversions = { format: 0, gain: 0 };
 
       // Group the planned files by bank (first character of kit name, A-Z)
       const bankMap = new Map<
@@ -145,6 +148,7 @@ class SyncService {
         entry.kitNames.add(file.kitName);
         if (file.operation === "convert") {
           entry.hasConversions = true;
+          conversions[file.conversion === "gain" ? "gain" : "format"]++;
         }
         bankMap.set(bank, entry);
       }
@@ -160,6 +164,7 @@ class SyncService {
 
       const summary: SyncChangeSummary = {
         banks,
+        conversions,
         fileCount,
         kitCount: plan.kitCount,
         removals: sdCardPath
@@ -497,6 +502,12 @@ class SyncService {
       (file) => written(file.kitName),
     );
     annotateMonoConversion(files, stereo.effectiveVoices);
+    // The manual's minimum length; what the Rample does with a shorter
+    // file is unverified, so it's written with a warning (#576)
+    const tooShort = describeTooShortCount(
+      files.filter((file) => file.tooShort).length,
+    );
+    if (tooShort) results.warnings.push(tooShort);
 
     return {
       data: {

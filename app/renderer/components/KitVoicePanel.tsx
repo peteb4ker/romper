@@ -181,6 +181,7 @@ const KitVoicePanel: React.FC<
     dragOverSlot: dragAndDrop.dragOverSlot,
     dropZone: dragAndDrop.dropZone,
     isActive,
+    playsStereo,
     samples,
     selectedIdx,
     voice,

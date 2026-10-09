@@ -107,118 +107,89 @@ describe("wavMetadataFormatter", () => {
     });
   });
 
-  describe("getCompatibilityStatus", () => {
+  describe("[UC-34] [Q-08] getCompatibilityStatus: the shared format rule (#576)", () => {
+    const sample = (fields: Partial<SampleData>): SampleData => ({
+      filename: "test.wav",
+      source_path: "/path/test.wav",
+      ...fields,
+    });
+
     it("returns native for Rample-compatible formats", () => {
-      const metadata: SampleData = {
-        filename: "test.wav",
-        source_path: "/path/test.wav",
+      expect(
+        getCompatibilityStatus(
+          sample({
+            wav_bit_depth: 16,
+            wav_channels: 1,
+            wav_sample_rate: 44100,
+          }),
+        ),
+      ).toBe("native");
+      expect(
+        getCompatibilityStatus(
+          sample({ wav_bit_depth: 8, wav_channels: 1, wav_sample_rate: 44100 }),
+        ),
+      ).toBe("native");
+    });
+
+    it("returns convertible for 24-bit, 48 kHz and float (32-bit) files", () => {
+      for (const fields of [
+        { wav_bit_depth: 24, wav_channels: 1, wav_sample_rate: 44100 },
+        { wav_bit_depth: 16, wav_channels: 1, wav_sample_rate: 48000 },
+        { wav_bit_depth: 32, wav_channels: 1, wav_sample_rate: 44100 },
+      ]) {
+        expect(getCompatibilityStatus(sample(fields))).toBe("convertible");
+      }
+    });
+
+    it("returns convertible, not incompatible, for more than two channels", () => {
+      expect(
+        getCompatibilityStatus(
+          sample({
+            wav_bit_depth: 16,
+            wav_channels: 6,
+            wav_sample_rate: 44100,
+          }),
+          { stereoVoice: true },
+        ),
+      ).toBe("convertible");
+    });
+
+    it("reads the voice's stereo setting: a stereo file on a mono voice is mixed down", () => {
+      const stereo = sample({
         wav_bit_depth: 16,
         wav_channels: 2,
         wav_sample_rate: 44100,
-      };
-
-      const result = getCompatibilityStatus(metadata);
-      expect(result).toBe("native");
+      });
+      expect(getCompatibilityStatus(stereo, { stereoVoice: true })).toBe(
+        "native",
+      );
+      expect(getCompatibilityStatus(stereo, { stereoVoice: false })).toBe(
+        "convertible",
+      );
     });
 
-    it("returns convertible for non-native but convertible formats", () => {
-      const metadata: SampleData = {
-        filename: "test.wav",
-        source_path: "/path/test.wav",
-        wav_bit_depth: 24,
-        wav_channels: 1,
-        wav_sample_rate: 48000,
-      };
-
-      const result = getCompatibilityStatus(metadata);
-      expect(result).toBe("convertible");
+    it("returns convertible for a native file with a gain adjustment", () => {
+      expect(
+        getCompatibilityStatus(
+          sample({
+            gain_db: -3,
+            wav_bit_depth: 16,
+            wav_channels: 1,
+            wav_sample_rate: 44100,
+          }),
+        ),
+      ).toBe("convertible");
     });
 
-    it("returns incompatible for multi-channel formats", () => {
-      const metadata: SampleData = {
-        filename: "test.wav",
-        source_path: "/path/test.wav",
-        wav_bit_depth: 16,
-        wav_channels: 6,
-        wav_sample_rate: 44100,
-      };
-
-      const result = getCompatibilityStatus(metadata);
-      expect(result).toBe("incompatible");
+    it("returns null, not native, when the stored format is missing", () => {
+      expect(getCompatibilityStatus(sample({}))).toBeNull();
+      expect(getCompatibilityStatus(sample({ wav_bit_depth: 16 }))).toBeNull();
     });
 
-    it("returns native for missing metadata (backward compatibility)", () => {
-      const metadata: SampleData = {
-        filename: "test.wav",
-        source_path: "/path/test.wav",
-      };
-
-      const result = getCompatibilityStatus(metadata);
-      expect(result).toBe("native");
-    });
-
-    it("returns native for partially missing metadata", () => {
-      const metadata: SampleData = {
-        filename: "test.wav",
-        source_path: "/path/test.wav",
-        wav_bit_depth: 16,
-        // Missing channels and sample rate
-      };
-
-      const result = getCompatibilityStatus(metadata);
-      expect(result).toBe("native");
-    });
-
-    it("returns native for edge case of 8-bit mono 44100Hz", () => {
-      const metadata: SampleData = {
-        filename: "test.wav",
-        source_path: "/path/test.wav",
-        wav_bit_depth: 8,
-        wav_channels: 1,
-        wav_sample_rate: 44100,
-      };
-
-      const result = getCompatibilityStatus(metadata);
-      expect(result).toBe("native");
-    });
-
-    it("returns convertible for 24-bit stereo format", () => {
-      const metadata: SampleData = {
-        filename: "test.wav",
-        source_path: "/path/test.wav",
-        wav_bit_depth: 24,
-        wav_channels: 2,
-        wav_sample_rate: 48000,
-      };
-
-      const result = getCompatibilityStatus(metadata);
-      expect(result).toBe("convertible");
-    });
-
-    it("returns incompatible for 5.1 surround format", () => {
-      const metadata: SampleData = {
-        filename: "test.wav",
-        source_path: "/path/test.wav",
-        wav_bit_depth: 16,
-        wav_channels: 6,
-        wav_sample_rate: 44100,
-      };
-
-      const result = getCompatibilityStatus(metadata);
-      expect(result).toBe("incompatible");
-    });
-
-    it("returns incompatible for 3-channel format", () => {
-      const metadata: SampleData = {
-        filename: "test.wav",
-        source_path: "/path/test.wav",
-        wav_bit_depth: 16,
-        wav_channels: 3,
-        wav_sample_rate: 44100,
-      };
-
-      const result = getCompatibilityStatus(metadata);
-      expect(result).toBe("incompatible");
+    it("returns convertible when a known value already needs converting", () => {
+      expect(getCompatibilityStatus(sample({ wav_sample_rate: 48000 }))).toBe(
+        "convertible",
+      );
     });
   });
 
@@ -238,15 +209,6 @@ describe("wavMetadataFormatter", () => {
         colorClass: "text-yellow-600 dark:text-yellow-400",
         emoji: "🟡",
         text: "Convertible",
-      });
-    });
-
-    it("returns correct display info for incompatible format", () => {
-      const result = getCompatibilityDisplay("incompatible");
-      expect(result).toEqual({
-        colorClass: "text-red-600 dark:text-red-400",
-        emoji: "❌",
-        text: "Incompatible",
       });
     });
   });
@@ -292,7 +254,7 @@ describe("wavMetadataFormatter", () => {
       );
     });
 
-    it("handles incompatible format correctly", () => {
+    it("shows a multichannel file as convertible", () => {
       const metadata: SampleData = {
         filename: "test.wav",
         source_path: "/path/test.wav",
@@ -303,8 +265,37 @@ describe("wavMetadataFormatter", () => {
 
       const result = formatTooltip(metadata, "/path/test.wav", "test.wav");
       expect(result).toBe(
-        "test.wav\n/path/test.wav\n► 44.1kHz • 16-bit • 6ch • ❌ Incompatible",
+        "test.wav\n/path/test.wav\n► 44.1kHz • 16-bit • 6ch • 🟡 Convertible",
       );
+    });
+
+    it("shows a stereo file on a mono voice as convertible", () => {
+      const metadata: SampleData = {
+        filename: "test.wav",
+        source_path: "/path/test.wav",
+        wav_bit_depth: 16,
+        wav_channels: 2,
+        wav_sample_rate: 44100,
+      };
+
+      const result = formatTooltip(metadata, "/path/test.wav", "test.wav", {
+        stereoVoice: false,
+      });
+      expect(result).toBe(
+        "test.wav\n/path/test.wav\n► 44.1kHz • 16-bit • Stereo • 🟡 Convertible",
+      );
+    });
+
+    it("leaves the status out when the stored format is incomplete", () => {
+      const metadata: SampleData = {
+        filename: "test.wav",
+        source_path: "/path/test.wav",
+        wav_bit_depth: 16,
+        wav_sample_rate: 44100,
+      };
+
+      const result = formatTooltip(metadata, "/path/test.wav", "test.wav");
+      expect(result).toBe("test.wav\n/path/test.wav\n► 44.1kHz • 16-bit");
     });
   });
 });

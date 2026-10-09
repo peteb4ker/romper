@@ -170,3 +170,59 @@ describe("[UC-28] annotateMonoConversion", () => {
     expect(files[0].operation).toBe("copy");
   });
 });
+
+describe("[UC-34] [Q-08] annotateMonoConversion counts a mixdown as a format conversion (#576)", () => {
+  const voices = [
+    { kit_name: "myKit", stereo_mode: false, voice_number: 1 },
+  ] as PlanVoices;
+
+  it("turns a gain re-encode into a format conversion when the file is mixed down", () => {
+    const files: SyncFileOperation[] = [
+      {
+        channels: 2,
+        conversion: "gain",
+        destinationPath: "myKit/1-01 pad.wav",
+        filename: "pad.wav",
+        gainDb: -6,
+        kitName: "myKit",
+        operation: "convert",
+        reason: "Re-encoded to apply the sample's gain",
+        sourcePath: "/src/pad.wav",
+        voiceNumber: 1,
+      },
+    ];
+
+    annotateMonoConversion(files, voices);
+
+    expect(files[0]).toMatchObject({
+      conversion: "format",
+      forceMonoConversion: true,
+      operation: "convert",
+      reason: "Stereo sample on voice 1, a mono voice: mixed down to mono",
+    });
+  });
+
+  it("keeps a format conversion's own reason", () => {
+    const files: SyncFileOperation[] = [
+      {
+        channels: 2,
+        conversion: "format",
+        destinationPath: "myKit/1-01 pad.wav",
+        filename: "pad.wav",
+        kitName: "myKit",
+        operation: "convert",
+        reason: "Sample rate 48000 Hz is not supported.",
+        sourcePath: "/src/pad.wav",
+        voiceNumber: 1,
+      },
+    ];
+
+    annotateMonoConversion(files, voices);
+
+    expect(files[0]).toMatchObject({
+      conversion: "format",
+      forceMonoConversion: true,
+      reason: "Sample rate 48000 Hz is not supported.",
+    });
+  });
+});

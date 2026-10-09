@@ -231,6 +231,7 @@ describe("[UC-11] Edits the next write puts on the card mark a kit modified (#56
               wav_bit_depth: null,
               wav_bitrate: null,
               wav_channels: null,
+              wav_format_tag: null,
               wav_sample_rate: null,
             },
           ],

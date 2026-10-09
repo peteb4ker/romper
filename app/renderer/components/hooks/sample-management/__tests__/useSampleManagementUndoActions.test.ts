@@ -33,6 +33,7 @@ describe("useSampleManagementUndoActions", () => {
     wav_bit_depth: 24,
     wav_bitrate: null,
     wav_channels: 2,
+    wav_format_tag: 1,
     wav_sample_rate: null,
   };
   /** mockSample's voice as undo snapshots it: the full row, gain included */
@@ -47,6 +48,7 @@ describe("useSampleManagementUndoActions", () => {
         wav_bit_depth: 24,
         wav_bitrate: null,
         wav_channels: 2,
+        wav_format_tag: 1,
         wav_sample_rate: null,
       },
     ],

@@ -253,6 +253,30 @@ describe("useSlotRendering", () => {
         sampleData,
         sampleData.source_path,
         "kick.wav",
+        { stereoVoice: undefined },
+      );
+    });
+
+    it("[UC-34] gives the format badge the voice's stereo setting (#576)", () => {
+      vi.mocked(formatTooltip).mockReturnValue("kick.wav");
+      const { result } = renderHook(() =>
+        useSlotRendering({ ...defaultProps, playsStereo: false }),
+      );
+
+      result.current.getSampleSlotTitle(
+        1,
+        sampleData,
+        false,
+        false,
+        "",
+        "kick.wav",
+      );
+
+      expect(formatTooltip).toHaveBeenCalledWith(
+        sampleData,
+        sampleData.source_path,
+        "kick.wav",
+        { stereoVoice: false },
       );
     });
 

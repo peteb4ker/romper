@@ -120,6 +120,7 @@ function sampleMetadataOf(rows: Sample[]): { [slotKey: string]: SampleData } {
       wav_bit_depth: sample.wav_bit_depth ?? undefined,
       wav_bitrate: sample.wav_bitrate ?? undefined,
       wav_channels: sample.wav_channels ?? undefined,
+      wav_format_tag: sample.wav_format_tag ?? undefined,
       wav_sample_rate: sample.wav_sample_rate ?? undefined,
     };
   }
@@ -259,6 +260,7 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
           wav_bit_depth: data.wav_bit_depth || null,
           wav_bitrate: data.wav_bitrate || null,
           wav_channels: data.wav_channels || null,
+          wav_format_tag: data.wav_format_tag ?? null,
           wav_sample_rate: data.wav_sample_rate || null,
         });
       });

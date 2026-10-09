@@ -728,8 +728,10 @@ step, with rolls ("happy accidents") to generate patterns. See
 ### UC-34 Write kits to the SD card
 
 **Write** in the browser header compares the store with the card and shows a
-summary: kits and samples to write, conversions, files the store no longer
-has, and samples that can't be written. It then makes the card match the
+summary: kits and samples to write, how many samples are converted for
+format and for gain, files the store no longer has, samples that can't be
+written, and a warning for samples shorter than the Rample's 50 ms minimum
+(#576). It then makes the card match the
 store. It converts files the Rample can't play, applies gain, mixes stereo
 files on unlinked voices to mono, writes bank name files, and leaves the
 Rample's own `_save` folder alone. It links stereo voices automatically
@@ -756,7 +758,9 @@ the write with a message saying so (#653). See
   `electron/main/services/syncValidationService.ts`, `electron/main/services/syncMonoAnnotation.ts`,
   `electron/main/services/syncStereoPlan.ts` (`planWriteStereo`),
   `electron/main/services/syncProgressManager.ts`, `electron/main/services/sdCardSafety.ts`, `electron/main/services/cardWatchdog.ts`, `electron/main/services/rtfFileService.ts`;
-  `electron/main/formatConverter.ts`, `electron/main/cardFileMatch.ts`; `shared/rampleCardLayout.ts`.
+  `electron/main/formatConverter.ts`, `electron/main/cardFileMatch.ts`; `shared/rampleCardLayout.ts`,
+  `shared/rampleFormat.ts` (`planConversion`, the rule the format badge
+  shows too).
 
 ## App
 

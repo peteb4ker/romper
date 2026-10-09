@@ -1,6 +1,12 @@
 import type { Sample } from "@romper/shared/db/schema.js";
 import type { SyncValidationError } from "@romper/shared/electronApi.js";
 
+import {
+  type ConversionReason,
+  isShorterThanRampleMinimum,
+  planConversion,
+  type SampleFormat,
+} from "@romper/shared/rampleFormat.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { setImmediate as yieldToEventLoop } from "node:timers/promises";
@@ -22,9 +28,16 @@ export interface SyncFileOperation {
    * on this and the voice's stereo setting (RE-29).
    */
   channels?: number;
+  /**
+   * Why the file is re-encoded (`planConversion`, #576): "format" or
+   * "gain"; null when it's copied as it is
+   */
+  conversion?: ConversionReason | null;
   destinationPath: string;
   filename: string;
   forceMonoConversion?: boolean;
+  /** The source file's format, from its header */
+  format?: SampleFormat;
   gainDb?: number;
   kitName: string;
   operation: "convert" | "copy";
@@ -32,6 +45,8 @@ export interface SyncFileOperation {
   reason?: string;
   sourcePath: string;
   targetFormat?: string;
+  /** Shorter than the Rample's 50 ms minimum (#576) */
+  tooShort?: boolean;
   /** The voice (1-4) the sample plays on */
   voiceNumber: number;
 }
@@ -184,54 +199,55 @@ export class SyncFileOperationsService {
   }
 
   /**
-   * Add file to convert list
+   * Queue a sample's file as a copy or a conversion, as the shared rule
+   * plans it (`planConversion`, #576). The voice's stereo setting isn't
+   * known yet; `annotateMonoConversion` applies it once the stereo plan is
+   * made.
    */
-  private addSyncFileToConvert(
+  private addSyncFile(
     sample: Sample,
     destinationPath: string,
     format: FormatValidationResult,
     results: SyncResults,
   ): void {
-    const issues = format.issues || [];
-    const reasons = issues.map((issue) => issue.message).join(", ");
+    const metadata = format.metadata ?? {};
+    const plan = planConversion(metadata, { gainDb: sample.gain_db });
+    const common = {
+      channels: metadata.channels,
+      conversion: plan.reason,
+      destinationPath,
+      filename: sample.filename,
+      format: metadata,
+      gainDb: sample.gain_db,
+      kitName: sample.kit_name,
+      sourcePath: sample.source_path,
+      tooShort: isShorterThanRampleMinimum(metadata),
+      voiceNumber: sample.voice_number,
+    };
+
+    // A header the write reads always has the format; were it unknown,
+    // converting writes a known one
+    if (plan.reason === null && !plan.unknown) {
+      results.filesToCopy.push({
+        ...common,
+        operation: "copy",
+        originalFormat: "Compatible audio file",
+      });
+      return;
+    }
 
     results.filesToConvert.push({
-      channels: format.metadata?.channels,
-      destinationPath,
-      filename: sample.filename,
-      gainDb: sample.gain_db,
-      kitName: sample.kit_name,
+      ...common,
+      conversion: plan.reason ?? "format",
       operation: "convert",
       originalFormat: "Audio file (needs conversion)",
-      reason: reasons,
-      sourcePath: sample.source_path,
+      reason:
+        plan.reason === "gain"
+          ? "Re-encoded to apply the sample's gain"
+          : plan.issues.map((issue) => issue.message).join(", "),
       targetFormat: "WAV (16-bit, mono/stereo)",
-      voiceNumber: sample.voice_number,
     });
-
-    results.hasFormatWarnings = true;
-  }
-
-  /**
-   * Add file to copy list
-   */
-  private addSyncFileToCopy(
-    sample: Sample,
-    destinationPath: string,
-    format: FormatValidationResult,
-    results: SyncResults,
-  ): void {
-    results.filesToCopy.push({
-      channels: format.metadata?.channels,
-      destinationPath,
-      filename: sample.filename,
-      gainDb: sample.gain_db,
-      kitName: sample.kit_name,
-      operation: "copy",
-      originalFormat: "Compatible audio file",
-      sourcePath: sample.source_path,
-      voiceNumber: sample.voice_number,
-    });
+    if (plan.reason !== "gain") results.hasFormatWarnings = true;
   }
 
   private async categorizeReadableFile(
@@ -270,11 +286,7 @@ export class SyncFileOperationsService {
       return;
     }
 
-    if (format.issues && format.issues.length > 0) {
-      this.addSyncFileToConvert(sample, destinationPath, format, results);
-    } else {
-      this.addSyncFileToCopy(sample, destinationPath, format, results);
-    }
+    this.addSyncFile(sample, destinationPath, format, results);
   }
 
   /**

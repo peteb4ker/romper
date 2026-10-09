@@ -35,7 +35,8 @@ export class ScanService {
    * - a file not known to be readable (status unknown, as in older
    *   libraries, or last found missing or unreadable) has its header read
    *   too, so a file that's been put back or replaced is seen.
-   * A known-readable file that still exists isn't read again. What's
+   * A known-readable file that still exists isn't read again, unless the
+   * store hasn't recorded its format tag yet (#576). What's
    * found is recorded in one transaction: missing, unreadable, or readable
    * with its WAV details.
    */
@@ -161,7 +162,10 @@ async function checkSampleFile(sample: Sample): Promise<{
     .then(() => true)
     .catch(() => false);
   if (!exists) return { fields: { source_status: "missing" }, sample };
-  if (sample.source_status === "readable") return { fields: {}, sample };
+  // A file read before the format tag was stored is read once more (#576)
+  if (sample.source_status === "readable" && sample.wav_format_tag !== null) {
+    return { fields: {}, sample };
+  }
   const header = await getAudioMetadataAsync(sample.source_path);
   if (!header.success || !header.data) {
     return { fields: { source_status: "unreadable" }, sample };

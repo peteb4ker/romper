@@ -13,15 +13,20 @@
  *      from a fork, or is labelled hold / do-not-merge.
  *   2. Refuse a diff that touches frozen paths: aidlc-docs/, or the
  *      "Fixed before the issue tracker" list in BACKLOG.md.
- *   3. Refuse new SonarCloud issues (sonar:pr) on the PR's latest analysis.
+ *   3. Refuse new SonarCloud issues (sonar:pr) on the PR's latest analysis
+ *      (an early exit: that analysis may be of the pre-rebase head).
  *   4. Rebase onto origin/main (any conflict: abort, stop), run
  *      `npm run typecheck` on the rebased tree (a clean rebase can still
  *      break the build), and push with --force-with-lease pinned to the
  *      head it started from.
- *   5. Arm rebase auto-merge, then poll: a check that fails because no
- *      runner ever picked it up is rerun once; any other failure stops it.
- *      BEHIND rebases again (same rules). CLEAN for two polls without
- *      merging (auto-merge stalls) merges directly with --rebase.
+ *   5. Poll. Auto-merge is armed (rebase) only once SonarCloud has
+ *      analyzed the pushed head and reports 0 new issues, so a rebase that
+ *      brings in new issues can't merge before they're seen. A check that
+ *      fails because no runner ever picked it up is rerun once; any other
+ *      failure stops it. BEHIND turns auto-merge off and rebases again
+ *      (same rules), and the new head waits for its own analysis. CLEAN
+ *      for two polls without merging (auto-merge stalls) merges directly
+ *      with --rebase.
  *
  * --dry-run does steps 1-3 and predicts the rebase with `git merge-tree`,
  * then prints what it would do, without creating a worktree or pushing.
@@ -326,10 +331,12 @@ export function decide(snapshot, memory) {
       outcome: "not-open",
     };
   }
-  if (sonar.code === 1) {
+  // Only the head's analysis counts here; an older one was the early exit
+  const headClean = sonar.head && sonar.code === 0;
+  if (sonar.head && sonar.code === 1) {
     return {
       action: "stop",
-      detail: "SonarCloud reports new issues (npm run sonar:pr)",
+      detail: "SonarCloud reports new issues on the head (npm run sonar:pr)",
       outcome: "sonar",
     };
   }
@@ -367,20 +374,14 @@ export function decide(snapshot, memory) {
     };
   }
   if (mergeStateStatus === "BEHIND") return { action: "rebase" };
-  if (!memory.armed && sonar.code === 0) return { action: "arm" };
-  if (memory.cleanPolls >= 2) {
-    if (sonar.code === 0 && sonar.head) return { action: "merge" };
+  if (!headClean) {
     return {
       action: "wait",
-      reason: "green, waiting for SonarCloud to analyze the head",
+      reason: "waiting for SonarCloud to analyze the head before arming",
     };
   }
-  if (sonar.code !== 0) {
-    return {
-      action: "wait",
-      reason: "waiting for SonarCloud's first analysis before arming",
-    };
-  }
+  if (memory.cleanPolls >= 2) return { action: "merge" };
+  if (!memory.armed) return { action: "arm" };
   return {
     action: "wait",
     reason: `merge state ${mergeStateStatus || "UNKNOWN"}`,
@@ -470,11 +471,11 @@ function gh(path) {
 
 /**
  * @param {string} pr
- * @returns {PullRequest & { headRefOid: string, mergeStateStatus: string, mergedAt: string | null }}
+ * @returns {PullRequest & { headRefOid: string, mergeStateStatus: string, mergedAt: string | null, autoMergeRequest: object | null }}
  */
 function viewPullRequest(pr) {
   const fields =
-    "state,isDraft,isCrossRepository,baseRefName,headRefName,headRefOid,labels,mergeStateStatus,mergedAt";
+    "state,isDraft,isCrossRepository,baseRefName,headRefName,headRefOid,labels,mergeStateStatus,mergedAt,autoMergeRequest";
   return JSON.parse(must("gh", ["pr", "view", pr, "--json", fields]));
 }
 
@@ -719,9 +720,7 @@ async function ship(options) {
       `create a scratch worktree at ${head.slice(0, 8)}`,
       "rebase onto origin/main (merge-tree predicts no conflict), npm run typecheck",
       `push with --force-with-lease=refs/heads/${branch}:${head.slice(0, 8)}`,
-      sonar.code === 0
-        ? "arm gh pr merge --auto --rebase"
-        : "arm auto-merge once SonarCloud analyzes",
+      "arm gh pr merge --auto --rebase once SonarCloud reports 0 new issues on the pushed head",
       `poll every ${options.pollSeconds}s, up to ${options.maxPolls} times, until merged`,
     ];
     for (const step of steps) log(`would ${step}`);
@@ -753,6 +752,12 @@ async function ship(options) {
     rerunJobs: [],
     rerunWorkflows: [],
   };
+  const disarm = () => {
+    if (run("gh", ["pr", "merge", pr, "--disable-auto"]).ok) {
+      log("Auto-merge off until SonarCloud analyzes the head");
+    }
+    memory.armed = false;
+  };
   const arm = () => {
     const armed = run("gh", ["pr", "merge", pr, "--auto", "--rebase"]);
     memory.armed = armed.ok;
@@ -764,8 +769,10 @@ async function ship(options) {
   };
 
   try {
+    // Auto-merge armed earlier (by the author, or a previous run) could
+    // merge the rebased head before SonarCloud has looked at it
+    if (view.autoMergeRequest) disarm();
     head = rebaseAndPush({ branch, expectedHead: head, repo, scratch });
-    if (sonar.code === 0) arm();
 
     let errorsInARow = 0;
     for (let poll = 1; poll <= options.maxPolls; poll++) {
@@ -821,9 +828,9 @@ async function ship(options) {
             break;
           case "rebase":
             log("Behind main: rebasing again");
+            if (memory.armed) disarm();
             head = rebaseAndPush({ branch, expectedHead: head, repo, scratch });
             memory.cleanPolls = 0;
-            if (sonar.code === 0) arm();
             break;
           case "arm":
             arm();

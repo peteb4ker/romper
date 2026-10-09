@@ -243,10 +243,22 @@ describe("[Q-07] ship-pr, the shepherd's merge script", () => {
       });
     });
 
-    it("stops on new SonarCloud issues", () => {
+    it("stops on new SonarCloud issues in the head's analysis", () => {
       expect(
         decide(snapshot({ sonar: { code: 1, head: true } }), memory()),
       ).toMatchObject({ action: "stop", outcome: "sonar" });
+    });
+
+    it("leaves an older analysis to the early exit, and waits for the head's", () => {
+      expect(
+        decide(
+          snapshot({ sonar: { code: 1, head: false } }),
+          memory({ armed: false }),
+        ),
+      ).toEqual({
+        action: "wait",
+        reason: "waiting for SonarCloud to analyze the head before arming",
+      });
     });
 
     it("stops on a failed check, naming it", () => {
@@ -298,18 +310,42 @@ describe("[Q-07] ship-pr, the shepherd's merge script", () => {
       ).toEqual({ action: "rebase" });
     });
 
-    it("arms only once SonarCloud has analyzed with 0 issues", () => {
+    it("arms only once SonarCloud reports 0 issues on the pushed head", () => {
       const unarmed = memory({ armed: false });
       expect(decide(snapshot(), unarmed)).toEqual({ action: "arm" });
+      // Not analyzed at all, or only an older commit analyzed, even if clean
+      for (const sonar of [
+        { code: 2, head: false },
+        { code: 0, head: false },
+      ]) {
+        expect(decide(snapshot({ sonar }), unarmed).action).toBe("wait");
+      }
+    });
+
+    it("doesn't arm a head with new issues", () => {
       expect(
-        decide(snapshot({ sonar: { code: 2, head: false } }), unarmed).action,
-      ).toBe("wait");
+        decide(
+          snapshot({ sonar: { code: 1, head: true } }),
+          memory({ armed: false }),
+        ).action,
+      ).toBe("stop");
+    });
+
+    it("waits once armed until auto-merge fires", () => {
+      expect(decide(snapshot(), memory())).toEqual({
+        action: "wait",
+        reason: "merge state BLOCKED",
+      });
     });
 
     it("merges directly after two clean polls, once the head is analyzed", () => {
       const clean = snapshot({ mergeStateStatus: "CLEAN" });
       expect(decide(clean, memory({ cleanPolls: 1 })).action).toBe("wait");
       expect(decide(clean, memory({ cleanPolls: 2 }))).toEqual({
+        action: "merge",
+      });
+      // Green before arming (the analysis finished last): merge, don't arm
+      expect(decide(clean, memory({ armed: false, cleanPolls: 2 }))).toEqual({
         action: "merge",
       });
       expect(

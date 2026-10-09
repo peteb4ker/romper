@@ -15,7 +15,8 @@ For each PR, **in the order given, one at a time**:
 
 1. **Skip a held PR.** If the PR is labelled `hold` or `do-not-merge`, or
    the coordinator listed it as waiting on Pete's sign-off, don't run
-   anything on it. Move to the next PR.
+   anything on it. Move to the next PR. (The script refuses those labels
+   too, with `result=held`.)
 2. Run the script and wait for it to finish (it can take an hour; run it
    with `run_in_background` and wait for it to exit):
 
@@ -49,7 +50,7 @@ For each PR, **in the order given, one at a time**:
 | `usage` | 2 | Bad arguments |
 | `conflict` | 10 | Rebase onto origin/main conflicts (aborted, nothing pushed) |
 | `typecheck` | 11 | Rebased cleanly, but `npm run typecheck` fails |
-| `sonar` | 12 | SonarCloud reports new issues |
+| `sonar` | 12 | SonarCloud reports new issues (on the latest analysis, or the pushed head's) |
 | `frozen` | 13 | Diff touches `aidlc-docs/` or BACKLOG.md's "Fixed before the issue tracker" list |
 | `check-failed` | 14 | A CI check failed (lost runners are rerun once first) |
 | `not-open` | 15 | Closed, draft, not based on main, or from a fork |
@@ -64,6 +65,16 @@ Never, whatever the script says:
 - use GitHub's "Update branch" button (it adds a merge commit);
 - push to `main` or bypass hooks (`--no-verify`, `HUSKY=0`).
 
+### Holding a PR
+
+Two labels keep a PR out of the queue; the shepherd skips them and the
+script refuses them:
+
+- `hold`: waiting on Pete's sign-off. Whoever finds an unrecorded decision
+  adds it; it comes off once the sign-off is on the issue.
+- `do-not-merge`: must not merge as it stands (a spike, or a PR another
+  one replaces).
+
 `npm run ship -- <N> --dry-run` runs the read-only checks (state, labels,
 frozen paths, SonarCloud, a predicted rebase) and prints the plan without
 pushing anything.
@@ -76,12 +87,16 @@ refuses held, draft and closed PRs and frozen paths, and checks SonarCloud
 (`npm run sonar:pr`). It rebases onto origin/main (never resolving a
 conflict), runs `npm run typecheck` on the rebased tree (a clean rebase can
 still break the build), and pushes with `--force-with-lease` pinned to the
-head it started from. Then it arms rebase auto-merge right away, while CI
-runs: auto-merge fires on a check-completion event, so arming it after
-everything is green means it never fires. It polls once a minute: a job no
-runner ever picked up is rerun once, any other failed check stops it,
-BEHIND rebases again by the same rules, and CLEAN for two polls without
-merging (a stalled auto-merge) merges directly with `--rebase`. When it
+head it started from. The first SonarCloud check reads whatever analysis
+exists, often of the pre-rebase head, so it's only an early exit: auto-merge
+(rebase) is armed once SonarCloud has analyzed the pushed head and reports 0
+new issues, so issues a rebase brings in can't merge unseen. Auto-merge an
+author armed earlier is turned off until then. It polls once a minute: a
+job no runner ever picked up is rerun once, any other failed check stops
+it, BEHIND turns auto-merge off and rebases again by the same rules (the
+new head waits for its own analysis), and CLEAN for two polls without
+merging (auto-merge fires on a check-completion event, so arming after
+everything is green can stall it) merges directly with `--rebase`. When it
 stops for any reason but a merge, it turns auto-merge off again.
 
 Branch protection on `main` requires branches to be up to date
@@ -164,8 +179,9 @@ The shepherd escalates anything the script stops on back to you.
    missing check isn't.
 9. **Decisions are recorded.** A UX or product choice the PR makes
    (shortcut, wording, behavior) has Pete's sign-off on the issue. If it
-   doesn't, say so in the description and tell the coordinator, who holds
-   the PR until Pete signs off.
+   doesn't, label the PR `hold` (`gh pr edit <N> --add-label hold`), say
+   so in the description and tell the coordinator. Remove the label once
+   Pete signs off.
 10. **UI changes carry their screenshots.** If the PR changes how a
     captured view looks, it must include the regenerated screenshots and
     manual text (`capture-screenshots` command).

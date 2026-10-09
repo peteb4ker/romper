@@ -79,7 +79,7 @@ test.describe("[UC-19] Dropping a file on a filled slot", () => {
     });
     await window.setInputFiles("#e2e-hover-file", [file]);
 
-    const filled = window.getByRole("option", { name: /in slot 1$/ }).first();
+    const filled = window.getByRole("row", { name: /in slot 1$/ }).first();
     const dispatch = (types: string[]) =>
       filled.evaluate((slot, eventTypes) => {
         const input = document.getElementById(

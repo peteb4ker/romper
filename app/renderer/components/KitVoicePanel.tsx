@@ -249,13 +249,15 @@ const KitVoicePanel: React.FC<
       {rendering.renderVoiceName(dataTestIdVoiceName)}
       {/* Voice panel content */}
       <div className={voicePanelClasses}>
+        {/* A grid, not a listbox: a sample row holds buttons and a gain
+            knob, which a listbox option can't contain (#522) */}
         <ul
           aria-label={`Sample slots for voice ${voice}`}
           className="list-none ml-0 text-sm flex flex-col"
           data-testid={`sample-list-voice-${voice}`}
           onKeyDown={keyboardNav.handleKeyDown}
           ref={listRef}
-          role="listbox"
+          role="grid"
           tabIndex={isActive ? 0 : -1}
         >
           {rendering.renderSampleSlots()}

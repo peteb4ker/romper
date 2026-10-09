@@ -146,7 +146,9 @@ test.describe("Edit menu undo", () => {
     expect(before[0].gain_db).toBe(-7.5);
 
     const first = window
-      .locator(`[data-testid="sample-list-voice-${voice}"] [role="option"]`)
+      .locator(
+        `[data-testid="sample-list-voice-${voice}"] [role="row"][aria-label^="Sample "]`,
+      )
       .first();
     await first.getByRole("button", { name: "Delete sample" }).click();
     await window
@@ -226,7 +228,7 @@ test.describe("Edit menu undo", () => {
     await expect.poll(() => sampleCount(voice)).toBe(count);
     await expect(
       window.locator(
-        `[data-testid="sample-list-voice-${voice}"] [role="option"]`,
+        `[data-testid="sample-list-voice-${voice}"] [role="row"][aria-label^="Sample "]`,
       ),
     ).toHaveCount(count);
   }

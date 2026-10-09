@@ -297,7 +297,7 @@ describe("useVoicePanelSlots", () => {
         return <ul>{renderSampleSlots()}</ul>;
       };
       render(<TestComponent />);
-      return screen.getAllByRole("option");
+      return screen.getAllByRole("row", { name: /^Sample / });
     };
 
     it("shows only the playing slot as playing", () => {
@@ -426,7 +426,7 @@ describe("useVoicePanelSlots", () => {
     render(<TestComponent />);
 
     const firstSample = screen.getByText("sample1.wav").closest("li");
-    expect(firstSample).toHaveAttribute("role", "option");
+    expect(firstSample).toHaveAttribute("role", "row");
     expect(firstSample).toHaveAttribute(
       "aria-label",
       "Sample sample1.wav in slot 1",

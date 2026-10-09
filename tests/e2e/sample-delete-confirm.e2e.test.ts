@@ -27,7 +27,9 @@ test.describe("[UC-23] [UC-35] Confirm destructive actions", () => {
   let userData: string;
 
   const voice1Samples = () =>
-    window.locator('[data-testid="sample-list-voice-1"] [role="option"]');
+    window.locator(
+      '[data-testid="sample-list-voice-1"] [role="row"][aria-label^="Sample "]',
+    );
 
   test.beforeEach(async () => {
     testEnv = await extractE2EFixture();
@@ -75,7 +77,7 @@ test.describe("[UC-23] [UC-35] Confirm destructive actions", () => {
     await prompt.getByRole("button", { name: "Cancel" }).click();
     await expect(prompt).toHaveCount(0);
     await expect(voice1Samples()).toHaveCount(before);
-    await expect(window.getByRole("option", { name: name! })).toBeVisible();
+    await expect(window.getByRole("row", { name: name! })).toBeVisible();
     // Still in the kit
     await expect(window.locator('[data-testid="kit-editor"]')).toBeVisible();
 

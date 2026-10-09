@@ -274,13 +274,13 @@ test.describe("Stereo voice linking", () => {
     await expect(
       window
         .locator('[data-testid="sample-list-voice-3"]')
-        .getByRole("option", { name: "Sample pad.wav in slot 1" }),
+        .getByRole("row", { name: "Sample pad.wav in slot 1" }),
     ).toBeVisible();
     await dropOn(3, [await writeStereo("pad 2.wav")]);
     await expect(
       window
         .locator('[data-testid="sample-list-voice-3"]')
-        .getByRole("option", { name: "Sample pad 2.wav in slot 2" }),
+        .getByRole("row", { name: "Sample pad 2.wav in slot 2" }),
     ).toBeVisible();
     await expect(window.getByRole("dialog")).toHaveCount(0);
   });

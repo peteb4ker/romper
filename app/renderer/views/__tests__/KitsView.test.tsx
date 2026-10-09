@@ -678,7 +678,7 @@ describe("KitsView", () => {
       // The voice panels show the samples the open loaded
       expect(
         await within(screen.getByTestId("sample-list-voice-1")).findByRole(
-          "option",
+          "row",
           { name: /kick\.wav/ },
         ),
       ).toBeInTheDocument();
@@ -759,18 +759,18 @@ describe("KitsView", () => {
       const voice = (n: number) =>
         within(screen.getByTestId(`sample-list-voice-${n}`));
       expect(
-        await voice(1).findByRole("option", {
+        await voice(1).findByRole("row", {
           name: "Sample kick.wav in slot 1",
         }),
       ).toBeInTheDocument();
       expect(
-        voice(1).getByRole("option", { name: "Sample hat.wav in slot 2" }),
+        voice(1).getByRole("row", { name: "Sample hat.wav in slot 2" }),
       ).toBeInTheDocument();
       expect(
-        voice(2).getByRole("option", { name: "Sample snare.wav in slot 1" }),
+        voice(2).getByRole("row", { name: "Sample snare.wav in slot 1" }),
       ).toBeInTheDocument();
       expect(
-        voice(3).getByRole("option", { name: "Sample stereo.wav in slot 1" }),
+        voice(3).getByRole("row", { name: "Sample stereo.wav in slot 1" }),
       ).toBeInTheDocument();
     });
   });
@@ -1066,12 +1066,12 @@ describe("KitsView", () => {
 
       expect(
         await within(screen.getByTestId("sample-list-voice-1")).findByRole(
-          "option",
+          "row",
           { name: "Sample new-kick.wav in slot 1" },
         ),
       ).toBeInTheDocument();
       expect(
-        within(screen.getByTestId("sample-list-voice-2")).getByRole("option", {
+        within(screen.getByTestId("sample-list-voice-2")).getByRole("row", {
           name: "Sample new-snare.wav in slot 1",
         }),
       ).toBeInTheDocument();

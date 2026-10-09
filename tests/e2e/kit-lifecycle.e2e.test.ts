@@ -141,19 +141,19 @@ test.describe("[Q-07] Editing kits in the app", () => {
     await openEditable("A0");
 
     // Drag the kick onto the snare: it goes in before it, on voice 2
-    const kick = window.getByRole("option", {
+    const kick = window.getByRole("row", {
       name: /^Sample .*kick.* in slot 1$/,
     });
-    const snare = window.getByRole("option", {
+    const snare = window.getByRole("row", {
       name: /^Sample .*snare.* in slot 1$/,
     });
     await kick.dragTo(snare);
 
     await expect(
-      window.getByRole("option", { name: /^Sample .*kick.* in slot 1$/ }),
+      window.getByRole("row", { name: /^Sample .*kick.* in slot 1$/ }),
     ).toHaveCount(1);
     await expect(
-      window.getByRole("option", { name: /^Sample .*snare.* in slot 2$/ }),
+      window.getByRole("row", { name: /^Sample .*snare.* in slot 2$/ }),
     ).toHaveCount(1);
     expect(samples("A0")).toEqual([
       { filename: "1_kick.wav", slot_number: 0, voice_number: 2 },

@@ -330,7 +330,7 @@ describe("useKitEditorKeyboardNav", () => {
 
       it.each([
         ["the page", () => document.body],
-        ["a sample row", () => make("li", { role: "option" })],
+        ["a sample row", () => make("li", { role: "row" })],
       ])("plays the selected sample for Space on %s", (_label, target) => {
         const { fire, props } = setup();
         const e = fire(" ", { target: target() });

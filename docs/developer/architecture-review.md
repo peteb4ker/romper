@@ -192,6 +192,9 @@ What the numbers say:
   - `getKit` returns `null`, not a `DbResult`;
   - `SyncProgress` is defined four times;
   - `updateKit` accepts fields that aren't columns (RE-22).
+
+  Bound in #472: main registers handlers through a channel map derived
+  from the contract, so drift fails typecheck.
 - **The renderer tolerates missing wiring.** It has 45 `?.()` calls and 41
   `if (!electronAPI?.x)` guards, which turn missing wiring back into silent
   no-ops.

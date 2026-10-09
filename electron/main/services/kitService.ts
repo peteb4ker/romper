@@ -37,8 +37,8 @@ export class KitService {
       return { error: "No local store path configured", success: false };
     }
 
-    this.validateKitSlot(sourceKit);
-    this.validateKitSlot(destKit);
+    const invalid = kitSlotError(sourceKit) ?? kitSlotError(destKit);
+    if (invalid) return { error: invalid, success: false };
 
     const dbPath = this.getDbPath(localStorePath);
 
@@ -65,7 +65,8 @@ export class KitService {
       return { error: "No local store path configured", success: false };
     }
 
-    this.validateKitSlot(kitSlot);
+    const invalid = kitSlotError(kitSlot);
+    if (invalid) return { error: invalid, success: false };
 
     const dbPath = this.getDbPath(localStorePath);
 
@@ -107,7 +108,8 @@ export class KitService {
       return { error: "No local store path configured", success: false };
     }
 
-    this.validateKitSlot(kitName);
+    const invalid = kitSlotError(kitName);
+    if (invalid) return { error: invalid, success: false };
     const dbPath = this.getDbPath(localStorePath);
 
     // Check kit exists and is not locked
@@ -149,7 +151,8 @@ export class KitService {
       return { error: "No local store path configured", success: false };
     }
 
-    this.validateKitSlot(kitName);
+    const invalid = kitSlotError(kitName);
+    if (invalid) return { error: invalid, success: false };
     const dbPath = this.getDbPath(localStorePath);
 
     return getKitDeleteSummaryDb(dbPath, kitName);
@@ -161,12 +164,6 @@ export class KitService {
 
   private getLocalStorePath(inMemorySettings: InMemorySettings): null | string {
     return ServicePathManager.getLocalStorePath(inMemorySettings);
-  }
-
-  private validateKitSlot(kitSlot: string): void {
-    if (!isKitName(kitSlot)) {
-      throw new Error("Invalid kit slot. Use format A0-Z99.");
-    }
   }
 
   /**
@@ -190,3 +187,11 @@ export class KitService {
 
 // Export singleton instance
 export const kitService = new KitService();
+
+/**
+ * Why `kitSlot` isn't a kit name, or null if it is. Returned as the
+ * result's error, as the contract says, rather than thrown (#472).
+ */
+function kitSlotError(kitSlot: string): null | string {
+  return isKitName(kitSlot) ? null : "Invalid kit slot. Use format A0-Z99.";
+}

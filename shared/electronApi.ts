@@ -41,6 +41,10 @@ export interface ArchiveProgress {
  * - the renderer tests' mock (tests/mocks/electron/electronAPI.ts) is
  *   checked against it too.
  *
+ * A member that resolves with a result reports a failure the caller can act
+ * on in it (`success: false` with `error`, or its own field such as
+ * `isValid`), rather than rejecting.
+ *
  * Every member is required: an optional member turns missing wiring into a
  * silent no-op at `?.` call sites — the bug class behind the dead About
  * links, the phantom playback API, and three orphaned IPC channels.

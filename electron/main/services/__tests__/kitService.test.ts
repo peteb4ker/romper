@@ -94,10 +94,11 @@ describe("KitService", () => {
       );
     });
 
-    it("rejects invalid kit slot format", () => {
-      expect(() => {
-        kitService.createKit(mockInMemorySettings, "invalid");
-      }).toThrow("Invalid kit slot. Use format A0-Z99.");
+    it("[Q-07] refuses an invalid kit slot in its result, not by throwing (#472)", () => {
+      expect(kitService.createKit(mockInMemorySettings, "invalid")).toEqual({
+        error: "Invalid kit slot. Use format A0-Z99.",
+        success: false,
+      });
       expect(mockAddKit).not.toHaveBeenCalled();
     });
 
@@ -132,9 +133,10 @@ describe("KitService", () => {
       });
 
       invalidSlots.forEach((slot) => {
-        expect(() => {
-          kitService.createKit(mockInMemorySettings, slot);
-        }).toThrow("Invalid kit slot. Use format A0-Z99.");
+        expect(kitService.createKit(mockInMemorySettings, slot)).toEqual({
+          error: "Invalid kit slot. Use format A0-Z99.",
+          success: false,
+        });
       });
     });
 
@@ -163,17 +165,23 @@ describe("KitService", () => {
       );
     });
 
-    it("rejects invalid source kit slot", () => {
-      expect(() => {
-        kitService.copyKit(mockInMemorySettings, "invalid", "B2");
-      }).toThrow("Invalid kit slot. Use format A0-Z99.");
+    it("[Q-07] refuses an invalid source kit slot in its result (#472)", () => {
+      expect(kitService.copyKit(mockInMemorySettings, "invalid", "B2")).toEqual(
+        {
+          error: "Invalid kit slot. Use format A0-Z99.",
+          success: false,
+        },
+      );
       expect(mockCopyKit).not.toHaveBeenCalled();
     });
 
-    it("rejects invalid destination kit slot", () => {
-      expect(() => {
-        kitService.copyKit(mockInMemorySettings, "A1", "invalid");
-      }).toThrow("Invalid kit slot. Use format A0-Z99.");
+    it("[Q-07] refuses an invalid destination kit slot in its result (#472)", () => {
+      expect(kitService.copyKit(mockInMemorySettings, "A1", "invalid")).toEqual(
+        {
+          error: "Invalid kit slot. Use format A0-Z99.",
+          success: false,
+        },
+      );
       expect(mockCopyKit).not.toHaveBeenCalled();
     });
 
@@ -270,10 +278,11 @@ describe("KitService", () => {
       expect(result.error).toBe("No local store path configured");
     });
 
-    it("rejects invalid kit slot format", () => {
-      expect(() => {
-        kitService.deleteKit(mockInMemorySettings, "invalid");
-      }).toThrow("Invalid kit slot. Use format A0-Z99.");
+    it("[Q-07] refuses an invalid kit slot in its result, not by throwing (#472)", () => {
+      expect(kitService.deleteKit(mockInMemorySettings, "invalid")).toEqual({
+        error: "Invalid kit slot. Use format A0-Z99.",
+        success: false,
+      });
     });
   });
 
@@ -300,6 +309,16 @@ describe("KitService", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("No local store path configured");
+    });
+
+    it("[Q-07] refuses an invalid kit slot in its result, not by throwing (#472)", () => {
+      expect(
+        kitService.getKitDeleteSummary(mockInMemorySettings, "invalid"),
+      ).toEqual({
+        error: "Invalid kit slot. Use format A0-Z99.",
+        success: false,
+      });
+      expect(mockGetKitDeleteSummary).not.toHaveBeenCalled();
     });
   });
 

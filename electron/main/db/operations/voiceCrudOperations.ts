@@ -51,6 +51,9 @@ export function updateVoiceAlias(
 ): DbResult<void> {
   return withDbTransaction(dbDir, (db) => {
     requireEditableKitTx(db, kitName);
+    // Like the voice's other settings: a kit missing the row gets one, so
+    // success means the name was saved (#472)
+    ensureVoiceRow(db, kitName, voiceNumber);
     const voice = and(
       eq(voices.kit_name, kitName),
       eq(voices.voice_number, voiceNumber),

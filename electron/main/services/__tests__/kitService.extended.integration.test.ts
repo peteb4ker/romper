@@ -470,34 +470,39 @@ describe("KitService Extended Integration Tests", () => {
   });
 
   describe("Validation edge cases", () => {
-    it("should throw on invalid kit slot format: lowercase letters", () => {
-      expect(() => {
-        kitService.createKit(mockInMemorySettings, "a1");
-      }).toThrow("Invalid kit slot");
+    it("[Q-07] refuses an invalid kit slot format: lowercase letters", () => {
+      expect(kitService.createKit(mockInMemorySettings, "a1")).toEqual({
+        error: "Invalid kit slot. Use format A0-Z99.",
+        success: false,
+      });
     });
 
-    it("should throw on invalid kit slot format: missing number", () => {
-      expect(() => {
-        kitService.createKit(mockInMemorySettings, "A");
-      }).toThrow("Invalid kit slot");
+    it("[Q-07] refuses an invalid kit slot format: missing number", () => {
+      expect(kitService.createKit(mockInMemorySettings, "A")).toEqual({
+        error: "Invalid kit slot. Use format A0-Z99.",
+        success: false,
+      });
     });
 
-    it("should throw on invalid kit slot format: too many digits", () => {
-      expect(() => {
-        kitService.createKit(mockInMemorySettings, "A100");
-      }).toThrow("Invalid kit slot");
+    it("[Q-07] refuses an invalid kit slot format: too many digits", () => {
+      expect(kitService.createKit(mockInMemorySettings, "A100")).toEqual({
+        error: "Invalid kit slot. Use format A0-Z99.",
+        success: false,
+      });
     });
 
-    it("should throw on invalid kit slot format: special characters", () => {
-      expect(() => {
-        kitService.createKit(mockInMemorySettings, "A#1");
-      }).toThrow("Invalid kit slot");
+    it("[Q-07] refuses an invalid kit slot format: special characters", () => {
+      expect(kitService.createKit(mockInMemorySettings, "A#1")).toEqual({
+        error: "Invalid kit slot. Use format A0-Z99.",
+        success: false,
+      });
     });
 
-    it("should throw on empty kit slot", () => {
-      expect(() => {
-        kitService.createKit(mockInMemorySettings, "");
-      }).toThrow("Invalid kit slot");
+    it("[Q-07] refuses an empty kit slot", () => {
+      expect(kitService.createKit(mockInMemorySettings, "")).toEqual({
+        error: "Invalid kit slot. Use format A0-Z99.",
+        success: false,
+      });
     });
 
     it("should accept single-digit kit numbers", () => {

@@ -613,6 +613,11 @@ describe("preload/index.tsx", () => {
         method: "checkKitSampleFiles",
       },
       {
+        args: ["A0"],
+        ipcChannel: "get-kit-rample-save",
+        method: "getKitRampleSave",
+      },
+      {
         args: ["/path/to/audio.wav"],
         ipcChannel: "validate-sample-format",
         method: "validateSampleFormat",

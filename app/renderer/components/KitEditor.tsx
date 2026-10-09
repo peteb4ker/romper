@@ -13,6 +13,7 @@ import KitForm from "./KitForm";
 import KitHeader from "./KitHeader";
 import KitStepSequencer from "./KitStepSequencer";
 import KitVoicePanels from "./KitVoicePanels";
+import RampleSavePanel from "./rample-save/RampleSavePanel";
 
 interface KitEditorAllProps extends KitEditorProps {
   kit?: KitWithRelations; // Kit data passed from parent - used via useKitEditorLogic hook
@@ -160,6 +161,7 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
           setSelectedVoice={logic.setSelectedVoice}
           slotPlayback={logic.playback.slotPlayback}
         />
+        <RampleSavePanel kitName={props.kitName} />
       </div>
       <KitStepSequencer
         bpm={logic.kit?.bpm}

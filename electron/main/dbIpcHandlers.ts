@@ -46,6 +46,7 @@ import {
   volumeError,
 } from "./ipcValidation.js";
 import { parseKitMetadataUpdates } from "./kitMetadataUpdates.js";
+import { registerRampleSaveIpcHandlers } from "./rample/rampleSaveIpcHandlers.js";
 import {
   checkPathAccess,
   checkSetupDatabaseDirAccess,
@@ -74,6 +75,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   registerSampleIpcHandlers(inMemorySettings);
   registerSyncIpcHandlers(inMemorySettings);
   registerFavoritesIpcHandlers(inMemorySettings);
+  registerRampleSaveIpcHandlers(inMemorySettings);
 
   // Setup-wizard database operations. They run before the new store is
   // configured, so they name its .romperdb folder; it must sit inside a

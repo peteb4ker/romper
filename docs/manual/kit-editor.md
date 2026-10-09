@@ -184,6 +184,19 @@ The step sequencer lets you audition all four voices together in a rhythmic patt
 
 See the full [Step Sequencer]({{ site.baseurl }}/manual/step-sequencer) guide for details on the grid, transport controls, trigger conditions, sample selection modes, voice volume/mute, and a walkthrough example.
 
+## On the Rample
+
+When you **STORE** a kit on the Rample, the device saves that kit's settings on the card: each voice's level, pitch, filter, bits, freeze, envelope, start, length and run mode, its layer mode and selected layer, and the kit's mute groups and CV assignments. The **On the Rample** section at the bottom of the Kit Editor shows what the device saved for the kit you're looking at. It starts collapsed; click its title, or press `Enter` or `Space` on it, to open it.
+
+The section reads Romper's latest copy of the card's saved settings, not the card itself, and says when that copy was taken. Romper takes a copy when you set up from a card and before each write. It only reads: nothing here changes what the Rample saved.
+
+- **Raw values.** The numbers are the ones the Rample stores, not the units or names it shows on its screen, because what most of them mean hasn't been checked on a Rample yet. Knobs probably run from 0 to 254, with 127 in the middle; the small gauge beside each knob value marks 127 with a line. Names with a dotted underline are Romper's best guess at what each value is, and the device's own name for it is shown beside it.
+- **Firmware.** No saved file says which firmware wrote it, so Romper infers the firmware from the keys in the card's settings, and labels it as inferred.
+- **Mute groups and CV assignments** are shown as stored: a grid of voices for the mute groups (which way round it goes hasn't been checked), and the raw numbers of each CV input's assignment, used when ASSIGN is set to KIT.
+- **Other values.** Anything in the file that Romper doesn't know yet is listed as the file has it, rather than hidden.
+
+If the card had no saved settings for the kit when Romper last copied them, the section says so instead of showing defaults. The Rample saves a kit's settings only when you **STORE** it.
+
 ## Navigating Between Kits
 
 You don't need to return to the Kit Browser to switch kits. Use:

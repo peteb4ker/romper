@@ -9,6 +9,9 @@
  *
  * Nothing is known about the fixture's files until Romper checks them,
  * which it does when a kit opens.
+ *
+ * It also has a copy of the card's `_save` folder with settings the Rample
+ * saved for A0, for the kit editor's "On the Rample" section (#800).
  */
 import fs from "fs-extra";
 import path from "node:path";
@@ -19,6 +22,7 @@ import {
   type E2ETestEnvironment,
   extractE2EFixture,
 } from "./e2e-fixture-extractor";
+import { seedRampleSaveCopy } from "./rample-save-copy";
 
 export const MISSING_FILE_KIT = "A0";
 export const UNREADABLE_FILE_KIT = "B1";
@@ -46,6 +50,7 @@ export async function createBrokenKitStore(): Promise<E2ETestEnvironment> {
   } finally {
     db.close();
   }
+  await seedRampleSaveCopy(store, { [MISSING_FILE_KIT]: {} });
   return env;
 }
 

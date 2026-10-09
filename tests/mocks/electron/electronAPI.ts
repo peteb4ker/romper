@@ -179,6 +179,10 @@ export const createElectronAPIMock = (
       data: { kitName: "A0", locked: false, sampleCount: 0, voiceCount: 4 },
       success: true,
     }),
+    getKitRampleSave: mockMethod("getKitRampleSave").mockResolvedValue({
+      data: { kitName: "A0", status: "noCopy" },
+      success: true,
+    }),
     // Database operations
     getKits: mockMethod("getKits").mockResolvedValue({
       data: [kitRow("A0"), kitRow("A1")],

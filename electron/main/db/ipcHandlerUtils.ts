@@ -122,7 +122,8 @@ export function createSampleOperationHandler(
     }
 
     default:
-      return async () => ({ error: "Unknown operation type", success: false });
+      return () =>
+        Promise.resolve({ error: "Unknown operation type", success: false });
   }
 }
 

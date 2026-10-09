@@ -18,6 +18,7 @@ import { useKitErrorReporting } from "./useKitErrorReporting";
 import { useKitPlayback } from "./useKitPlayback";
 import { useKitScanning } from "./useKitScanning";
 import { useKitVoicePanels } from "./useKitVoicePanels";
+import { useSampleMoveKeys } from "./useSampleMoveKeys";
 
 export type { ScanStatus } from "./useKitScanning";
 
@@ -247,15 +248,29 @@ export function useKitEditorLogic(props: UseKitEditorLogicParams) {
     }
   }, [sequencerOpen]);
 
+  // Alt+arrows and Shift+F10 on the selected sample (#522)
+  const { moveSelectedSample, showSelectedSampleFile } = useSampleMoveKeys({
+    isEditable,
+    kit,
+    onSampleMove: sampleManagement.handleSampleMove,
+    samples,
+    selectedSampleIdx,
+    selectedVoice,
+    setSelectedSampleIdx,
+    setSelectedVoice,
+  });
+
   // Global keyboard navigation for sample preview, sequencer toggle, kit navigation, and scanning
   useKitEditorKeyboardNav({
     isEditable: !!kit?.editable,
     onInferVoiceNames: () => void handleInferVoiceNames(),
+    onMoveSample: moveSelectedSample,
     onNextKit,
     onPlaySample: playback.handlePlay,
     onPrevKit,
     onSampleKeyNav: kitVoicePanels.onSampleKeyNav,
     onScanKit: () => void handleScanKit(),
+    onShowSampleFile: showSelectedSampleFile,
     onToggleFavorite: toggleFavorite,
     samples,
     selectedSampleIdx,

@@ -4,7 +4,10 @@ import React from "react";
 
 import {
   hasCommandModifier,
+  isContextMenuKey,
   isFavoriteKey,
+  sampleMoveDirection,
+  type SampleMoveDirection,
   usesSpaceItself,
 } from "../../../utils/keyboardShortcuts";
 import { isModalDialogOpen } from "../../../utils/modalDialog";
@@ -22,11 +25,15 @@ type SampleNavParams = Pick<
 interface UseKitEditorKeyboardNavParams {
   isEditable: boolean;
   onInferVoiceNames: () => void;
+  /** Alt+arrows: move the selected sample a slot or a voice (#522) */
+  onMoveSample?: (direction: SampleMoveDirection) => Promise<void> | void;
   onNextKit?: () => void;
   onPlaySample: (voice: number, slot: number) => void;
   onPrevKit?: () => void;
   onSampleKeyNav: (direction: "down" | "up") => void;
   onScanKit: () => void;
+  /** Shift+F10 or the context-menu key: what right-clicking it does (#522) */
+  onShowSampleFile?: () => void;
   onToggleFavorite?: () => Promise<void> | void;
   samples: VoiceSamples;
   selectedSampleIdx: number;
@@ -37,9 +44,11 @@ interface UseKitEditorKeyboardNavParams {
 
 /**
  * Global keyboard shortcuts for the kit editor: kit navigation (, .),
- * scanning (/), sequencer toggle (s), favorite (;), and sample navigation/preview
- * (arrows + space) while the sequencer is closed. Space on a focused button
- * or field is the control's, not the preview's.
+ * scanning (/), sequencer toggle (s), favorite (;), sample navigation/preview
+ * (arrows + space) while the sequencer is closed, and on the selected
+ * sample, moving it (Alt+arrows) and its right-click (Shift+F10 or the
+ * context-menu key). Space on a focused button or field is the control's,
+ * not the preview's.
  */
 export function useKitEditorKeyboardNav(params: UseKitEditorKeyboardNavParams) {
   // The listener reads the latest params, so it subscribes once rather than
@@ -62,12 +71,12 @@ export function useKitEditorKeyboardNav(params: UseKitEditorKeyboardNavParams) {
         sequencerOpen,
         setSequencerOpen,
       } = paramsRef.current;
-      // Ignore if a modal, input, textarea, or contenteditable is focused
-      if (isTypingTarget(document.activeElement)) {
+      if (!isEditorKey()) {
         return;
       }
-      // Keys pressed in a dialog are the dialog's (#500)
-      if (isModalDialogOpen()) {
+      // Alt+arrows (Option+arrows on macOS) move the selected sample.
+      // Before the modifier check below, which leaves Alt presses alone.
+      if (handleSampleKey(e, paramsRef.current)) {
         return;
       }
       // Cmd/Ctrl/Alt combinations belong to the menu and the system: Cmd+,
@@ -124,9 +133,56 @@ export function useKitEditorKeyboardNav(params: UseKitEditorKeyboardNavParams) {
         });
       }
     }
+    // On Windows the context-menu key opens a right-click when it's
+    // released; the key down already did, so the release mustn't again
+    function handleGlobalKeyUp(e: KeyboardEvent) {
+      if (
+        e.key === "ContextMenu" &&
+        isEditorKey() &&
+        paramsRef.current.onShowSampleFile
+      ) {
+        e.preventDefault();
+      }
+    }
     globalThis.addEventListener("keydown", handleGlobalKeyDown);
-    return () => globalThis.removeEventListener("keydown", handleGlobalKeyDown);
+    globalThis.addEventListener("keyup", handleGlobalKeyUp);
+    return () => {
+      globalThis.removeEventListener("keydown", handleGlobalKeyDown);
+      globalThis.removeEventListener("keyup", handleGlobalKeyUp);
+    };
   }, [paramsRef]);
+}
+
+/**
+ * The keys on the selected sample (#522): Alt+arrows move it, Shift+F10 or
+ * the context-menu key does what right-clicking it does. A key something
+ * else handled, such as Shift+F10 on a sequencer step, is left alone.
+ * Returns true when the key is one of them.
+ */
+function handleSampleKey(
+  e: KeyboardEvent,
+  params: Pick<
+    UseKitEditorKeyboardNavParams,
+    "onMoveSample" | "onShowSampleFile"
+  >,
+): boolean {
+  const direction = sampleMoveDirection(e);
+  if (direction) {
+    if (params.onMoveSample && !e.defaultPrevented) {
+      e.preventDefault();
+      void params.onMoveSample(direction);
+    }
+    return true;
+  }
+  if (isContextMenuKey(e)) {
+    if (params.onShowSampleFile && !e.defaultPrevented) {
+      // Also stops Windows and Linux opening a right-click of their own
+      e.preventDefault();
+      params.onShowSampleFile();
+    }
+    return true;
+  }
+  return false;
 }
 
 /** Handle the sample navigation/preview keys (arrows + space). */
@@ -146,6 +202,15 @@ function handleSampleNavKey(key: string, params: SampleNavParams): void {
   if (sample) {
     params.onPlaySample(params.selectedVoice, params.selectedSampleIdx);
   }
+}
+
+/**
+ * Whether keys are the kit editor's at all: not while typing in a field,
+ * and not while a dialog is open, since keys pressed in a dialog are the
+ * dialog's (#500)
+ */
+function isEditorKey(): boolean {
+  return !isTypingTarget(document.activeElement) && !isModalDialogOpen();
 }
 
 /**

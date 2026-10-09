@@ -79,7 +79,7 @@ interface KitVoicePanelsProps {
     fromSlot: number,
     toVoice: number,
     toSlot: number,
-  ) => Promise<void>;
+  ) => Promise<unknown>;
   onSampleSelect: (voice: number, idx: number) => void; // Used by useKitVoicePanels hook
   onSaveVoiceName: (voice: number, newName: string) => Promise<boolean> | void; // Used by useKitVoicePanels hook
   onStop: (voice: number, slot: number) => void; // Used by useKitVoicePanels hook

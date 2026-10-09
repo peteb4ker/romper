@@ -71,6 +71,8 @@ export function useSampleManagementMoveOps({
     [onSamplesChanged],
   );
 
+  // Resolves true once the sample has moved, false when it didn't (and a
+  // message says why), so the move keys know where the sample is (#522)
   const handleSampleMove = useCallback(
     async (
       fromVoice: number,
@@ -78,11 +80,11 @@ export function useSampleManagementMoveOps({
       toVoice: number,
       toSlot: number,
       toKit?: string,
-    ) => {
+    ): Promise<boolean> => {
       const targetKit = toKit || kitName;
       const isCrossKit = targetKit !== kitName;
 
-      if (!validateMoveAPI(isCrossKit)) return;
+      if (!validateMoveAPI(isCrossKit)) return false;
 
       try {
         let result;
@@ -157,14 +159,16 @@ export function useSampleManagementMoveOps({
             toVoice,
             toSlot,
           );
-        } else {
-          onMessage?.(result?.error || "Failed to move sample", "error");
+          return true;
         }
+        onMessage?.(result?.error || "Failed to move sample", "error");
+        return false;
       } catch (error) {
         onMessage?.(
           `Failed to move sample: ${error instanceof Error ? error.message : String(error)}`,
           "error",
         );
+        return false;
       }
     },
     [

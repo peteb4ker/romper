@@ -11,6 +11,7 @@ import ReactDOM from "react-dom";
 import type { RolledSteps } from "./hooks/kit-management/useSlicerEditor";
 import type { StereoLinks } from "./KitStepSequencer";
 
+import { isContextMenuKey } from "../utils/keyboardShortcuts";
 import ConditionPips from "./ConditionPips";
 import { sequentialSliceStep } from "./hooks/shared/sliceConstants";
 import {
@@ -235,12 +236,7 @@ export function isStepOptionsKey(
   >,
 ): boolean {
   if (e.metaKey || e.ctrlKey || e.altKey) return false;
-  return (
-    e.key === "c" ||
-    e.key === "C" ||
-    e.key === "ContextMenu" ||
-    (e.key === "F10" && e.shiftKey)
-  );
+  return e.key === "c" || e.key === "C" || isContextMenuKey(e);
 }
 
 /** Up and Down move between the condition choices in the step options. */

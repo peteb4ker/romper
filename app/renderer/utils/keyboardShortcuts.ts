@@ -36,6 +36,9 @@ const SPACE_ROLES = new Set([
   "tab",
 ]);
 
+/** Which way a move key sends the selected sample in the kit editor */
+export type SampleMoveDirection = "down" | "left" | "right" | "up";
+
 /**
  * True when Space on this element does something of its own: presses a
  * button, ticks a box, opens a select or types a space. A window-level
@@ -54,4 +57,39 @@ export function usesSpaceItself(target: EventTarget | null): boolean {
     return true;
   }
   return SPACE_ROLES.has(el.getAttribute("role") ?? "");
+}
+
+const MOVE_DIRECTIONS: Record<string, SampleMoveDirection> = {
+  ArrowDown: "down",
+  ArrowLeft: "left",
+  ArrowRight: "right",
+  ArrowUp: "up",
+};
+
+/**
+ * The keyboard's right-click: the context-menu key, or Shift+F10 (Q-06).
+ * Not with Cmd, Ctrl or Alt held.
+ */
+export function isContextMenuKey(
+  e: Pick<KeyboardEvent, "altKey" | "ctrlKey" | "key" | "metaKey" | "shiftKey">,
+): boolean {
+  if (hasCommandModifier(e)) {
+    return false;
+  }
+  return e.key === "ContextMenu" || (e.key === "F10" && e.shiftKey);
+}
+
+/**
+ * The direction an Alt+arrow press (Option+arrow on macOS) moves the
+ * selected sample: Up and Down a slot within its voice, Left and Right to
+ * the previous or next voice (#522). Null for any other press, including an
+ * arrow with Cmd, Ctrl or Shift held too.
+ */
+export function sampleMoveDirection(
+  e: Pick<KeyboardEvent, "altKey" | "ctrlKey" | "key" | "metaKey" | "shiftKey">,
+): null | SampleMoveDirection {
+  if (!e.altKey || e.metaKey || e.ctrlKey || e.shiftKey) {
+    return null;
+  }
+  return MOVE_DIRECTIONS[e.key] ?? null;
 }

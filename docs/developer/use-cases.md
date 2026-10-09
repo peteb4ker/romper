@@ -475,14 +475,19 @@ onto an occupied slot inserts.
 ### UC-21 Move samples within a kit
 
 Drag a sample to another slot or voice in the same kit; the samples after
-it shift to make room. The manual doesn't describe this; the website and
-the FAQ mention reordering
+it shift to make room. Alt+arrows (Option+arrows on macOS) move the
+selected sample a slot or a voice through the same move (#522). The
+manual's [Moving Samples](../manual/kit-editor.md#moving-samples) and
+[Keyboard Shortcuts](../manual/keyboard-shortcuts.md#moving-samples)
+describe both; the FAQ mentions reordering
 ([Can I undo changes?](../faq.md#can-i-undo-changes)).
 
 **Concepts:** [Sample](domain-model.md#sample).
 
 - **Renderer:** `app/renderer/components/hooks/shared/useInternalDragHandlers.ts`
   (`handleSampleDrop`, drag type `application/x-romper-sample`);
+  `app/renderer/components/hooks/kit-management/useSampleMoveKeys.ts`
+  (`moveSelectedSample`, the move keys, from `useKitEditorKeyboardNav`);
   `app/renderer/components/hooks/sample-management/useSampleManagementMoveOps.ts`
   (`handleSampleMove`, records `MOVE_SAMPLE` undo).
 - **IPC:** `move-sample-in-kit`.
@@ -549,19 +554,22 @@ applied when the kit is written to the card. See
 
 ### UC-25 Reveal a sample in Finder or Explorer
 
-Right-click a sample to show its source file in Finder or Explorer. Nothing
-in the UI or the manual mentions it.
+Right-click a sample, or select it and press Shift+F10 or the context-menu
+key (#522), to show its source file in Finder or Explorer. The manual's
+kit editor page and keyboard shortcuts describe it.
 
 **Concepts:** [Sample](domain-model.md#sample).
 
 - **Renderer:** `app/renderer/components/hooks/voice-panels/useVoicePanelSlotRendering.tsx`
   (context menu) → `app/renderer/components/hooks/sample-management/useSampleActions.ts`
-  (`handleSampleContextMenu`).
+  (`handleSampleContextMenu`, `showSampleFile`); the keys:
+  `app/renderer/components/hooks/kit-management/useSampleMoveKeys.ts`
+  (`showSelectedSampleFile`).
 - **IPC:** `show-item-in-folder`.
 - **Main:** `electron/main/ipcHandlers.ts` (`shell.showItemInFolder`).
 
-**Test gap:** a real test would open Finder or Explorer; it needs a
-`shell` stub in main to be testable above unit level.
+The e2e test replaces the `show-item-in-folder` handler, so it checks the
+file the renderer asks for without opening Finder or Explorer.
 
 ### UC-26 Undo and redo
 

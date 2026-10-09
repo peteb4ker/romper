@@ -541,6 +541,50 @@ describe("dbIpcHandlers - Routing Tests", () => {
       importSetupBankNames.mockRestore();
     });
 
+    it("[UC-01] setup-backup-rample-save routes to the setup service (#786)", async () => {
+      const { localStoreSetupService } =
+        await import("../services/localStoreSetupService.js");
+      const backup = vi
+        .spyOn(localStoreSetupService, "backupSetupRampleSave")
+        .mockResolvedValue({ data: { status: "missing" }, success: true });
+      const result = await handlerRegistry["setup-backup-rample-save"](
+        {},
+        "/test/path/.romperdb",
+        "/Volumes/RAMPLE",
+      );
+      expect(result).toEqual({ data: { status: "missing" }, success: true });
+      expect(backup).toHaveBeenCalledWith(
+        "/test/path/.romperdb",
+        "/Volumes/RAMPLE",
+      );
+      backup.mockRestore();
+    });
+
+    it("[Q-03] setup-backup-rample-save refuses a denied database folder or card", async () => {
+      const { localStoreSetupService } =
+        await import("../services/localStoreSetupService.js");
+      const backup = vi.spyOn(localStoreSetupService, "backupSetupRampleSave");
+      vi.mocked(checkSetupDatabaseDirAccess).mockResolvedValueOnce(DENIED);
+      expect(
+        await handlerRegistry["setup-backup-rample-save"](
+          {},
+          "/Users/me/Library/.romperdb",
+          "/Volumes/RAMPLE",
+        ),
+      ).toEqual({ error: DENIED.error, success: false });
+      vi.mocked(checkSetupPathAccess).mockResolvedValueOnce(DENIED);
+      expect(
+        await handlerRegistry["setup-backup-rample-save"](
+          {},
+          "/test/path/.romperdb",
+          "/Users/me/Library",
+        ),
+      ).toEqual({ error: DENIED.error, success: false });
+      expect(checkSetupPathAccess).toHaveBeenCalledWith("/Users/me/Library");
+      expect(backup).not.toHaveBeenCalled();
+      backup.mockRestore();
+    });
+
     it("[Q-03] get-all-kits reads the configured store, not a renderer path", async () => {
       await handlerRegistry["get-all-kits"]({}, "/attacker/.romperdb");
       expect(romperDbCore.getKits).toHaveBeenCalledWith("/test/path/.romperdb");

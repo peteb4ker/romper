@@ -58,6 +58,7 @@ import { registerDbIpcHandlers } from "../../electron/main/dbIpcHandlers.js";
 import { registerIpcHandlers } from "../../electron/main/ipcHandlers.js";
 import { pathAccess } from "../../electron/main/security/pathAccess.js";
 import {
+  CARD_NOT_RESPONDING_MESSAGE,
   CARD_NOT_RESPONDING_SETUP_MESSAGE,
   CARD_OPERATION_TIMEOUT_MS,
   cardWatchdogSettings,
@@ -145,7 +146,14 @@ describe("[UC-01] [Q-01] setting up from a card that stopped responding (#724)",
    * hangs nothing keeps the app's limit, so a slow disk can't fail it.
    */
   function hang<
-    K extends "copyFile" | "lstat" | "readdir" | "realpath" | "stat" | "statfs",
+    K extends
+      | "copyFile"
+      | "lstat"
+      | "readdir"
+      | "readFile"
+      | "realpath"
+      | "stat"
+      | "statfs",
   >(operation: K, when: (p: string) => boolean = () => true) {
     const original = fs.promises[operation] as (
       ...args: unknown[]
@@ -178,6 +186,9 @@ describe("[UC-01] [Q-01] setting up from a card that stopped responding (#724)",
     writeWav(path.join(kit, "1 KICK.wav"));
     writeWav(path.join(kit, "2 SNARE.wav"));
     fs.writeFileSync(path.join(card, "A - Artist.rtf"), String.raw`{\rtf1}`);
+    // The device's own settings, which setup keeps a copy of (#786)
+    fs.mkdirSync(path.join(card, "_save"));
+    fs.writeFileSync(path.join(card, "_save", "A0.rpl"), "rample");
     fs.mkdirSync(target);
     cardPaths = [card, fs.realpathSync.native(card)];
 
@@ -257,6 +268,33 @@ describe("[UC-01] [Q-01] setting up from a card that stopped responding (#724)",
     expect(fs.existsSync(dbDir)).toBe(false);
   });
 
+  it("[Q-04] copying the card's _save folder gives up, and setup carries on (#786)", async () => {
+    const dbDir = path.join(target, ".romperdb");
+    expect((await invoke("create-romper-db", dbDir)).success).toBe(true);
+    const readFile = hang("readFile", (p) => p.includes("_save"));
+
+    const { result, turns } = await whileCounting(() =>
+      invoke("setup-backup-rample-save", dbDir, card),
+    );
+
+    // Not an error: setup goes on without the copy
+    expect(result).toEqual({
+      data: {
+        cardNotResponding: true,
+        error: `Couldn't read the card's _save folder: ${CARD_NOT_RESPONDING_MESSAGE}`,
+        status: "failed",
+      },
+      success: true,
+    });
+    expect(turns).toBeGreaterThan(10);
+    expect(fs.existsSync(path.join(dbDir, "rample-save"))).toBe(false);
+    readFile.mockRestore();
+    expect(await invoke("setup-import-bank-names", dbDir, card)).toEqual({
+      data: { importedBanks: 1 },
+      success: true,
+    });
+  });
+
   it("the path check on setup's channels says setup stopped (#714)", async () => {
     // Resolving any path on the card never finishes, so the path check in
     // front of each channel gives up
@@ -319,6 +357,11 @@ describe("[UC-01] [Q-01] setting up from a card that stopped responding (#724)",
     ).toEqual({ success: true });
     const dbDir = path.join(target, ".romperdb");
     expect((await invoke("create-romper-db", dbDir)).success).toBe(true);
+    const backup = await invoke("setup-backup-rample-save", dbDir, card);
+    expect(backup).toMatchObject({
+      data: { files: ["A0.rpl"], status: "copied" },
+      success: true,
+    });
     expect((await invoke("setup-import-kit", dbDir, "A0")).success).toBe(true);
     expect(await invoke("setup-import-bank-names", dbDir, card)).toEqual({
       data: { importedBanks: 1 },

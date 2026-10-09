@@ -103,6 +103,7 @@ export interface IpcInvokeChannels {
   "select-existing-local-store": Call<"selectExistingLocalStore">;
   "select-local-store-path": Call<"selectLocalStorePath">;
   "select-sd-card": Call<"selectSdCard">;
+  "setup-backup-rample-save": Call<"setupBackupRampleSave">;
   "setup-import-bank-names": Call<"setupImportBankNames">;
   "setup-import-kit": Call<"setupImportKit">;
   "show-item-in-folder": Call<"showItemInFolder">;

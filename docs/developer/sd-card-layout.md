@@ -79,8 +79,11 @@ The keys, sources and the plan for reading and later writing them are in
 [`rample-save-integration.md`](rample-save-integration.md). Romper can
 decode a copy of the folder, read-only (`electron/main/rample/`, and
 `npm run rample:save -- <folder> [<folder>]` to print one or compare
-two), but the app doesn't read the card's folder yet. Nothing the
-device writes lives inside a kit folder.
+two). The app keeps an opaque copy of the card's folder in the store, at
+setup from a card and before every write, in
+`.romperdb/rample-save/<date-time>-setup/` or `-write/` (#786, stage 2;
+see [`architecture.md`](architecture.md)), but doesn't decode it yet.
+Nothing the device writes lives inside a kit folder.
 
 ## Current state
 
@@ -172,13 +175,15 @@ per-voice subfolders anyway, since they aren't samples of the kit.
 `_save/`, anything at the root other than kit folders and bank files, and
 any folder that isn't a valid kit name. `_save/` is refused by name
 (`DEVICE_SAVE_FOLDER`, #787), not only left out by the kit and bank
-patterns: nothing is removed or written at or under it.
+patterns: nothing is removed or written at or under it. The write only
+reads it, to keep a copy in the store first (#786, stage 2).
 
 ### Settings stored on the device
 
 `_save/<kit>.rpl` belongs to the kit slot, not its samples, so the
 device applies old settings to a kit whose samples changed. Romper
-leaves `_save/` alone. A later option could reset (delete) the `.rpl`
+leaves `_save/` alone, apart from reading it for the copy it keeps in the
+store. A later option could reset (delete) the `.rpl`
 for changed kits, which is the reset Squarp staff describe. That, and
 reading the files, are staged in
 [`rample-save-integration.md`](rample-save-integration.md) (#786).

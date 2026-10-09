@@ -21,6 +21,10 @@ import {
   updateSampleSourceStatusTx,
   withDbTransaction,
 } from "../db/romperDbCoreORM.js";
+import {
+  backupRampleSaveFolder,
+  logRampleSaveBackup,
+} from "../rample/rampleSaveBackup.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
 import { logger } from "../utils/logger.js";
 import {
@@ -236,6 +240,23 @@ class SyncService {
       const refusal = unconfirmedSkipRefusal(validationErrors, options);
       if (refusal) return { error: refusal, success: false };
 
+      // Keep a copy of the Rample's own _save folder before anything on the
+      // card changes (#786, stage 2). Read-only on the card; a copy that
+      // fails is logged and doesn't stop the write.
+      const rampleSaveBackup = await backupRampleSaveFolder({
+        cardPath: options.sdCardPath,
+        dbDir,
+        reason: "write",
+      });
+      logRampleSaveBackup(rampleSaveBackup, "Before the write");
+      const outcome = (cancelled: boolean, syncedFiles: number) =>
+        writeOutcome(cancelled, {
+          rampleSaveBackup,
+          skippedFiles: validationErrors,
+          syncedFiles,
+          warnings,
+        });
+
       syncProgressManager.initializeSyncJob(allFiles);
 
       const syncedFiles = await syncFileOperationsService.processAllFiles(
@@ -246,7 +267,7 @@ class SyncService {
 
       if (syncProgressManager.getCurrentSyncJob()?.cancelled) {
         syncProgressManager.finalizeSyncJob();
-        return writeOutcome(true, validationErrors, syncedFiles, warnings);
+        return outcome(true, syncedFiles);
       }
       syncProgressManager.emitFinalizingProgress();
 
@@ -261,7 +282,7 @@ class SyncService {
       await this.removeStaleEntries(options.sdCardPath, cardContents);
       if (syncProgressManager.getCurrentSyncJob()?.cancelled) {
         syncProgressManager.finalizeSyncJob();
-        return writeOutcome(true, validationErrors, syncedFiles, warnings);
+        return outcome(true, syncedFiles);
       }
 
       // The card now mirrors the store, so every kit is in step with it,
@@ -282,7 +303,7 @@ class SyncService {
       syncProgressManager.emitCompletionProgress(syncedFiles, allFiles.length);
       syncProgressManager.finalizeSyncJob();
 
-      return writeOutcome(false, validationErrors, syncedFiles, warnings);
+      return outcome(false, syncedFiles);
     } catch (error) {
       await this.handleSyncFailure(inMemorySettings, error);
       syncProgressManager.finalizeSyncJob();
@@ -627,12 +648,7 @@ function unconfirmedSkipRefusal(
 /** A write's result, completed or cancelled */
 function writeOutcome(
   cancelled: boolean,
-  skippedFiles: SyncValidationError[],
-  syncedFiles: number,
-  warnings: string[],
+  outcome: Omit<SyncOutcome, "cancelled">,
 ): DbResult<SyncOutcome> {
-  return {
-    data: { cancelled, skippedFiles, syncedFiles, warnings },
-    success: true,
-  };
+  return { data: { cancelled, ...outcome }, success: true };
 }

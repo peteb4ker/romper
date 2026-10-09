@@ -260,6 +260,9 @@ export const createElectronAPIMock = (
     // File operations
     selectSdCard: mockMethod("selectSdCard").mockResolvedValue("/sd"),
     setSetting: mockMethod("setSetting").mockResolvedValue(undefined),
+    setupBackupRampleSave: mockMethod(
+      "setupBackupRampleSave",
+    ).mockResolvedValue({ data: { status: "missing" }, success: true }),
     setupImportBankNames: mockMethod("setupImportBankNames").mockResolvedValue({
       data: { importedBanks: 0 },
       success: true,

@@ -53,15 +53,15 @@ During sync, Romper writes:
 
 Files the Rample can't play as they are, or that have a gain adjustment, are converted as they're written: other sample rates become 44.1 kHz, other bit depths and float WAVs become 16-bit, and a stereo file on a voice that isn't [linked as stereo]({{ site.baseurl }}/manual/kit-editor#stereo-and-mono-handling) is mixed down to mono. Your original files aren't changed.
 
-The card ends up matching your library: after everything is written, sync removes kit folders, files inside kit folders, and bank name files that your library no longer has. A [quarantined]({{ site.baseurl }}/manual/kit-editor#stereo-and-mono-handling) kit is the exception: it isn't written, and its folder on the card is left exactly as it is until you fix the kit. If you cancel while files are being written, nothing is removed. Romper doesn't write or remove anything else. The Rample keeps its own saved kit settings (from **STORE**) in a `_save` folder on the card, which sync leaves alone.
+The card ends up matching your library: after everything is written, sync removes kit folders, files inside kit folders, and bank name files that your library no longer has. A [quarantined]({{ site.baseurl }}/manual/kit-editor#stereo-and-mono-handling) kit is the exception: it isn't written, and its folder on the card is left exactly as it is until you fix the kit. If you cancel while files are being written, nothing is removed. Romper doesn't write or remove anything else. The Rample keeps its own saved kit settings (from **STORE**) in a `_save` folder on the card, which sync never changes; it only reads it to keep a copy (see [Backing Up](#backing-up)).
 
 ### Backing Up
 
-Romper doesn't back up the SD card. It doesn't need to: your library (the local store) is the master copy, and sync rewrites the card to match it, so you can rebuild a card at any time by syncing again.
+Romper doesn't back up your samples on the SD card. It doesn't need to: your library (the local store) is the master copy, and sync rewrites the card to match it, so you can rebuild a card at any time by syncing again.
 
 Back up the **local store folder** instead, with whatever backup you already use. It holds your kits, voice names, sequencer patterns and settings (in its `.romperdb` folder), along with any samples stored there. Samples you added from elsewhere stay where they are, so back those folders up too.
 
-The one thing on the card that only the Rample writes is its `_save` folder (kit settings you saved with **STORE**). Sync never touches it. If you want a copy, copy that folder yourself.
+The one thing on the card that only the Rample writes is its `_save` folder (kit settings you saved with **STORE**, and device settings from **SAVE SETTINGS**). Sync never changes it. Romper keeps copies of it in your local store, in `.romperdb/rample-save/`: one from setup, and one from just before each of your last 10 writes, each in a folder named after the date and time (UTC). Romper never puts a copy back on the card; to restore one, copy its files into the card's `_save` folder yourself.
 
 ## Factory Samples
 

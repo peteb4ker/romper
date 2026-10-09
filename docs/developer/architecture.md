@@ -357,6 +357,24 @@ out by the kit and bank patterns: `findStaleCardEntries` skips it,
 whatever list it's given, and `processAllFiles` refuses a write whose
 files would land in it (`sdCardSafety.reachesDeviceSaveFolder`).
 
+Before the write changes anything on the card, it keeps a copy of
+`_save/` in the store (#786, stage 2;
+`electron/main/rample/rampleSaveBackup.ts`): every regular file directly
+in it, byte for byte, into
+`.romperdb/rample-save/<date-time>-write/`. Setup from a card does the
+same into `<date-time>-setup/`, after creating the database and before
+importing kits (`setup-backup-rample-save`). The card is only read, with
+`fs.promises` and each operation under the watchdog. Links and folders
+are listed as skipped and never followed; a file bigger than a save file
+can be (the reader's 64 KiB), more than 4096 files or 8 MiB in all is
+skipped too. The copy is written to a `.partial` folder and renamed into
+place, so a failed copy leaves nothing. A copy that fails (a card that
+stopped responding, a damaged folder) is logged and returned with the
+outcome (`SyncOutcome.rampleSaveBackup`), and setup or the write carries
+on; a card without `_save/` has nothing to copy. The setup copy and the
+newest ten write copies are kept (`RAMPLE_SAVE_WRITE_BACKUPS_KEPT`), and
+the copy just made is never removed. Nothing restores a copy yet.
+
 WAV headers are read by walking RIFF chunks (`wavHeader.ts`, RE-08), so
 `fmt ` and `data` can sit anywhere: Squarp's factory kits have `junk`
 chunks, and other tools write `JUNK`, `bext` or `LIST` chunks and 18- or

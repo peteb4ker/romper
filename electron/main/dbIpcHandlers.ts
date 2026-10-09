@@ -97,6 +97,21 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
   // factory archive extracted into the new store (#567), in the same step
   // as the kits. Either folder is one the user picked, so main has granted
   // it
+  // A copy of the card's _save folder, kept in the new store before its
+  // kits are imported (#786, stage 2). The card is the folder the user
+  // picked, so main has granted it; it's only read
+  handle(
+    "setup-backup-rample-save",
+    async (_event, dbDir: string, cardPath: string) => {
+      const access = await checkSetupDatabaseDirAccess(dbDir);
+      const cardAccess = access.ok
+        ? await checkSetupPathAccess(cardPath)
+        : access;
+      if (!cardAccess.ok) return { error: cardAccess.error, success: false };
+      return localStoreSetupService.backupSetupRampleSave(dbDir, cardPath);
+    },
+  );
+
   handle(
     "setup-import-bank-names",
     async (_event, dbDir: string, sourcePath: string) => {

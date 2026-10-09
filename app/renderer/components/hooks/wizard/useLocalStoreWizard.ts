@@ -235,6 +235,8 @@ export function useLocalStoreWizard(
         await fileOpsHook.createAndPopulateDb(
           state.targetPath,
           bankNamesSourcePath(state),
+          // A copy of the card's _save folder goes into the store (#786)
+          state.source === "sdcard" ? state.sdCardSourcePath : undefined,
         );
       log.debug("initialize - database creation completed");
       throwIfCancelled();

@@ -54,6 +54,11 @@ vi.mock("../syncMonoAnnotation.js", () => ({
   annotateMonoConversion: vi.fn(),
 }));
 
+vi.mock("../../rample/rampleSaveBackup.js", () => ({
+  backupRampleSaveFolder: vi.fn(async () => ({ status: "missing" })),
+  logRampleSaveBackup: vi.fn(),
+}));
+
 vi.mock("../sdCardSafety.js", () => ({
   findStaleCardEntries: vi.fn(async () => []),
   removeCardEntries: vi.fn(async () => ({ refused: [], removed: 0 })),
@@ -68,6 +73,7 @@ import {
   markAllKitsAsSyncedExceptTx,
 } from "../../db/romperDbCoreORM.js";
 import { convertToRampleDefault } from "../../formatConverter.js";
+import { backupRampleSaveFolder } from "../../rample/rampleSaveBackup.js";
 import { rtfFileService } from "../rtfFileService.js";
 import {
   findStaleCardEntries,
@@ -474,6 +480,56 @@ describe("[UC-34] SyncService", () => {
       expect(mockMarkKitsAsSynced).not.toHaveBeenCalled();
     });
 
+    it("[Q-04] keeps a copy of the card's _save folder before writing (#786)", async () => {
+      const result = await syncService.startKitSync(mockSettings, {
+        sdCardPath: "/sd/card",
+      });
+
+      const backup = vi.mocked(backupRampleSaveFolder);
+      expect(backup).toHaveBeenCalledWith({
+        cardPath: "/sd/card",
+        dbDir: expect.stringContaining(".romperdb"),
+        reason: "write",
+      });
+      expect(backup.mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(syncFileOperationsService.processAllFiles).mock
+          .invocationCallOrder[0],
+      );
+      expect(result.data?.rampleSaveBackup).toEqual({ status: "missing" });
+    });
+
+    it("[Q-04] writes anyway when the copy of _save fails (#786)", async () => {
+      const failed = {
+        cardNotResponding: true,
+        error: "Couldn't read the card's _save folder",
+        status: "failed" as const,
+      };
+      vi.mocked(backupRampleSaveFolder).mockResolvedValueOnce(failed);
+
+      const result = await syncService.startKitSync(mockSettings, {
+        sdCardPath: "/sd/card",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data?.cancelled).toBe(false);
+      expect(result.data?.rampleSaveBackup).toEqual(failed);
+      expect(syncFileOperationsService.processAllFiles).toHaveBeenCalled();
+    });
+
+    it("doesn't copy _save when the write is refused before it starts", async () => {
+      mockValidateSdCardTarget.mockResolvedValueOnce({
+        ok: false,
+        reason: "not a card",
+      });
+
+      const result = await syncService.startKitSync(mockSettings, {
+        sdCardPath: "/",
+      });
+
+      expect(result.success).toBe(false);
+      expect(backupRampleSaveFolder).not.toHaveBeenCalled();
+    });
+
     it("reports a cancelled sync, and removes and marks nothing (RE-07)", async () => {
       vi.mocked(
         syncFileOperationsService.processAllFiles,
@@ -493,6 +549,7 @@ describe("[UC-34] SyncService", () => {
       expect(result).toEqual({
         data: {
           cancelled: true,
+          rampleSaveBackup: { status: "missing" },
           skippedFiles: [],
           syncedFiles: 0,
           warnings: [],

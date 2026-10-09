@@ -8,6 +8,7 @@ import type {
   LocalStoreValidationDetailedResult,
   Sample,
 } from "./db/schema.js";
+import type { RampleSaveBackupResult } from "./rampleSave.js";
 import type { SliceStep, VoiceSliceSettings } from "./sliceTypes.js";
 import type { WriteStereoSummary } from "./stereoLinkRules.js";
 import type { SequenceSnapshot, VoiceSnapshot } from "./undoTypes.js";
@@ -242,6 +243,15 @@ export interface ElectronAPI {
   selectSdCard: () => Promise<null | string>;
   setSetting: (key: SettingsKey, value: unknown) => Promise<void>;
   /**
+   * Copy the card's `_save` folder into the store setup is creating, in
+   * main (#786, stage 2). Read-only on the card; a copy that fails comes
+   * back as `status: "failed"`, not as an error, so setup carries on.
+   */
+  setupBackupRampleSave: (
+    dbDir: string,
+    cardPath: string,
+  ) => Promise<DbResult<RampleSaveBackupResult>>;
+  /**
    * Import the bank names in `sourcePath`'s name files into the store setup
    * is creating, in main: the card setup is copying from (#564), or the
    * store the factory archive was extracted into (#567).
@@ -456,6 +466,12 @@ export interface SyncOutcome {
    * progress (#653); the next write removes the rest.
    */
   cancelled: boolean;
+  /**
+   * The copy of the card's `_save` folder taken before the write (#786,
+   * stage 2). A copy that failed didn't stop the write; nothing shows it
+   * yet.
+   */
+  rampleSaveBackup?: RampleSaveBackupResult;
   /** Samples that were not written because they failed validation */
   skippedFiles: SyncValidationError[];
   syncedFiles: number;

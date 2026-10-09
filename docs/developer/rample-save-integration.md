@@ -4,7 +4,7 @@ priority: low
 status: specification
 updated: 2026-10-08
 context_size: medium
-implementation_status: stage 0 (docs, #789), stage 1a (the write code's guard, #787) and stage 1b (the read-only reader, #788) built; Pete's files committed as fixtures (D1); stages 2-6 not built
+implementation_status: stage 0 (docs, #789), stage 1a (the write code's guard, #787), stage 1b (the read-only reader, #788) and stage 2 (a copy in the store, #802) built; Pete's files committed as fixtures (D1); stages 3-6 not built
 -->
 
 # The Rample's `_save` folder: reading it, then writing it
@@ -296,12 +296,12 @@ public decode.
 
 ## Romper today
 
-- **Never read.** Setup imports only folders that pass `isValidKit`
-  (`shared/kitUtilsShared.ts`), so `_save` isn't copied
-  (`tests/e2e/sd-card-setup.e2e.test.ts` checks it). Scans read the store,
-  not the card. The stage 1b reader (`electron/main/rample/`) decodes a
-  copy of the folder for `npm run rample:save`; nothing in the app calls
-  it yet.
+- **Copied, not imported or decoded.** Setup imports only folders that
+  pass `isValidKit` (`shared/kitUtilsShared.ts`), so `_save` isn't
+  imported as a kit; setup and every write keep an opaque copy of it in
+  the store instead (stage 2, #802). Scans read the store, not the card.
+  The stage 1b reader (`electron/main/rample/`) decodes a copy of the
+  folder for `npm run rample:save`; nothing in the app calls it yet.
 - **Never changed by a write, by name.** The folder is named once
   (`DEVICE_SAVE_FOLDER` in `shared/rampleCardLayout.ts`, compared ignoring
   case and trailing dots and spaces). The only removal path,
@@ -480,7 +480,7 @@ Two PRs, both without UI.
   a pre-2.00 one, one with extra keys, and one that matches nothing;
   tagged `[Q-08]`.
 
-### Stage 2: keep a copy of the folder (blocked on D2)
+### Stage 2: keep a copy of the folder ([#802](https://github.com/peteb4ker/romper/issues/802)). **Done.**
 
 - **Setup from a card (UC-01)** copies `_save` into the store as an opaque
   backup, byte for byte, before importing kits. A copy that fails doesn't
@@ -496,10 +496,46 @@ Two PRs, both without UI.
   step until stage 6 gives it a button.
 - **Affects:** UC-01, UC-34, Q-02, Q-03 (Romper reads one more folder on
   the card you chose).
-- **Decisions:** D2.
+- **Decisions:** D2 (approved 2026-10-09).
 - **Hardware:** none.
 - **Risks:** a card with a damaged `_save` (a copy failure must not block
   setup or a write); store size (small: a few hundred bytes per kit).
+- **As built:** `electron/main/rample/rampleSaveBackup.ts`
+  (`backupRampleSaveFolder`). The write calls it after its plan and
+  before the first file goes to the card; setup calls it through
+  `setup-backup-rample-save` after creating the database and before
+  importing kits. Copies go to
+  `.romperdb/rample-save/<date-time>-setup/` and `<date-time>-write/`
+  (UTC, `2026-10-08T21-46-58-123Z-write`), by way of a `.partial` folder
+  renamed into place, so a failed copy leaves nothing; it never creates
+  `.romperdb`.
+  - **Read-only and bounded.** Only `_save` is read (found ignoring
+    case), with `fs.promises` and each operation under the card
+    watchdog, one at a time. Only regular files directly in it are
+    copied: links (including a `_save` that is one) are never followed,
+    folders aren't entered, and a file over the reader's 64 KiB, past
+    4096 files or past 8 MiB in all is skipped and listed.
+  - **Failures don't block.** A missing `_save` is `status: "missing"`;
+    a failed copy (a card that stopped responding, a damaged folder, a
+    store that can't be written) is `status: "failed"`, logged as a
+    warning, and setup or the write carries on. The write returns the
+    result as `SyncOutcome.rampleSaveBackup`. Nothing shows it to the
+    user yet: the summary line's wording is Pete's to approve (proposed
+    on #802).
+  - **Retention.** The setup copy is always kept, and so are the newest
+    ten write copies (`RAMPLE_SAVE_WRITE_BACKUPS_KEPT`, proposed for
+    Pete to confirm: the roadmap said "the latest few"); older write
+    copies are removed after each new one. The copy just made is never
+    removed, even if the clock went back. Folders not named like a copy
+    are left alone.
+  - **Tests:** `rampleSaveBackup.test.ts` (copy, case, missing, empty,
+    links and folders skipped, size limits, a hung card, a store that
+    can't be written, retention), `sync-rample-save-backup.integration`
+    (the copy is in the store before the first file is written; missing,
+    hung and damaged `_save` don't stop the write),
+    `setup-hung-card.integration` (a hung copy at setup, and the whole
+    setup reads the card only asynchronously), the wizard's unit tests,
+    and the e2e setup and write tests (the copies are byte-identical).
 - **Tests:** an e2e setup from a card with a seeded `_save` checks the
   copy is byte-identical and still not imported as a kit (it replaces the
   current "not copied" assertion); an integration test that a write

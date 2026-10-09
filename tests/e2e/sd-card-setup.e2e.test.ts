@@ -84,8 +84,9 @@ function bankNames(storePath: string): Record<string, string> {
  * - A0: 13 kicks on voice 1 (one too many), a snare on voice 2
  * - B1: a hat on voice 1, a clap on voice 3
  * - C12: a bass on voice 4
- * - the Rample's `_save` folder, a text file and a folder not named like a
- *   kit, which setup leaves alone
+ * - the Rample's `_save` folder, which setup keeps a copy of in the store's
+ *   `.romperdb` folder (#786) but doesn't import, and a text file and a
+ *   folder not named like a kit, which setup leaves alone
  */
 async function buildCard(card: string) {
   for (let i = 1; i <= 13; i++) {
@@ -261,6 +262,16 @@ test.describe("[UC-01] Set up from an SD card", () => {
     // Folders that aren't kits weren't copied
     expect(await fs.pathExists(path.join(store, "Drums"))).toBe(false);
     expect(await fs.pathExists(path.join(store, "_save"))).toBe(false);
+    // ...but the Rample's _save folder is kept, byte for byte, beside the
+    // database (#786, stage 2)
+    const backups = path.join(store, ".romperdb", "rample-save");
+    const copies = await fs.readdir(backups);
+    expect(copies).toHaveLength(1);
+    expect(copies[0]).toMatch(/-setup$/);
+    expect(await fs.readdir(path.join(backups, copies[0]))).toEqual(["A0.dat"]);
+    expect(await fs.readFile(path.join(backups, copies[0], "A0.dat"))).toEqual(
+      await fs.readFile(path.join(card, "_save", "A0.dat")),
+    );
     // The card itself is untouched
     expect(await fs.readdir(path.join(card, "A0"))).toHaveLength(14);
 

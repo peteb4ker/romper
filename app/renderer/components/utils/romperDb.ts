@@ -3,10 +3,40 @@
 // #567).
 
 import type { KitScanResult } from "@romper/shared/db/schema.js";
+import type { RampleSaveBackupResult } from "@romper/shared/rampleSave.js";
 
 import { createLogger } from "../../utils/logger";
 
 const log = createLogger("Renderer");
+
+/**
+ * Keep a copy of the card's `_save` folder in the store setup is creating
+ * (#786, stage 2). Main reads the card and logs what it did. Never throws:
+ * a copy that fails mustn't stop setup, so a failure comes back as
+ * `status: "failed"`.
+ */
+export async function backupSetupRampleSave(
+  dbDir: string,
+  cardPath: string,
+): Promise<RampleSaveBackupResult> {
+  try {
+    if (!globalThis.electronAPI?.setupBackupRampleSave) {
+      throw new Error("IPC not available");
+    }
+    const result = await globalThis.electronAPI.setupBackupRampleSave(
+      dbDir,
+      cardPath,
+    );
+    if (!result.success || !result.data) {
+      throw new Error(result.error || "Failed to copy the card's _save folder");
+    }
+    return result.data;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    log.warn("Couldn't copy the card's _save folder:", message);
+    return { cardNotResponding: false, error: message, status: "failed" };
+  }
+}
 
 export async function createRomperDb(dbDir: string) {
   if (!globalThis.electronAPI?.createRomperDb) {

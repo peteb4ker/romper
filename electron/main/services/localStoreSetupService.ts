@@ -1,4 +1,5 @@
 import type { DbResult, KitScanResult } from "@romper/shared/db/schema.js";
+import type { RampleSaveBackupResult } from "@romper/shared/rampleSave.js";
 
 import {
   groupSamplesByVoice,
@@ -17,6 +18,10 @@ import {
   updateBank,
   withDbTransaction,
 } from "../db/romperDbCoreORM.js";
+import {
+  backupRampleSaveFolder,
+  logRampleSaveBackup,
+} from "../rample/rampleSaveBackup.js";
 import { logger } from "../utils/logger.js";
 import {
   CARD_NOT_RESPONDING_SETUP_MESSAGE,
@@ -71,6 +76,39 @@ export class LocalStoreSetupService {
   private readonly createdEntries = new Map<string, Set<string>>();
 
   private setupAbort = new AbortController();
+
+  /**
+   * Keep a copy of the card's `_save` folder in the store this setup is
+   * creating (#786, stage 2), as `.romperdb/rample-save/<date-time>-setup/`,
+   * byte for byte. The card is only read, asynchronously and under the
+   * card watchdog. A copy that fails (a card that stopped responding, a
+   * damaged folder) is logged and comes back as `status: "failed"`, so
+   * setup carries on; a card without `_save` has nothing to copy. The copy
+   * goes into the existing `.romperdb` folder and never creates it, so a
+   * setup cleaned up while the card was read leaves nothing behind.
+   *
+   * Refuses any store this process's setup didn't create.
+   */
+  async backupSetupRampleSave(
+    dbDir: string,
+    cardPath: string,
+  ): Promise<DbResult<RampleSaveBackupResult>> {
+    const resolved = path.resolve(dbDir);
+    if (!this.createdDbDirs.has(resolved)) {
+      return {
+        error:
+          "Setup can only copy the card's _save folder into the store it is creating",
+        success: false,
+      };
+    }
+    const result = await backupRampleSaveFolder({
+      cardPath,
+      dbDir: resolved,
+      reason: "setup",
+    });
+    logRampleSaveBackup(result, "Setup");
+    return { data: result, success: true };
+  }
 
   /** Stop the setup download or extraction in progress (RE-66). */
   cancelSetup(): void {

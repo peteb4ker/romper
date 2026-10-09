@@ -162,6 +162,42 @@ export type RampleRawValue =
   | RampleRawValue[]
   | string;
 
+/** When a copy of `_save` was taken (#786, stage 2) */
+export type RampleSaveBackupReason = "setup" | "write";
+
+/**
+ * A copy of the card's `_save` folder in the store (#786, stage 2):
+ * copied, the card had no `_save`, or it failed (setup or the write
+ * carried on).
+ */
+export type RampleSaveBackupResult =
+  | {
+      /** The card stopped responding (the watchdog gave up) */
+      cardNotResponding: boolean;
+      error: string;
+      status: "failed";
+    }
+  | {
+      /** The copy's folder in the store */
+      backupPath: string;
+      /** The files copied, by name */
+      files: string[];
+      /** Older copies removed to keep the newest (see retention) */
+      removedBackups: string[];
+      /** Why retention couldn't remove older copies; the copy is fine */
+      retentionError?: string;
+      /** Entries in `_save` that weren't copied, and why */
+      skipped: RampleSaveBackupSkip[];
+      status: "copied";
+    }
+  | { status: "missing" };
+
+/** An entry in `_save` a copy left out */
+export interface RampleSaveBackupSkip {
+  name: string;
+  reason: string;
+}
+
 export type RampleSaveFile =
   | RampleAutosaveFile
   | RampleGlobalAssignFile

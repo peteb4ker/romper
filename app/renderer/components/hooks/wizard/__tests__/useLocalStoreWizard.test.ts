@@ -379,6 +379,8 @@ describe("useLocalStoreWizard", () => {
     expect(ensureDirCalled).toBe(true);
     expect(result.current.state.error).toBeNull();
     expect(result.current.state.isInitializing).toBe(false);
+    // No card, so no _save folder to copy (#786)
+    expect(window.electronAPI.setupBackupRampleSave).not.toHaveBeenCalled();
   });
 
   it("initializes sdcard source and ensures directory is created (copy logic not yet implemented)", async () => {
@@ -1016,6 +1018,78 @@ describe("useLocalStoreWizard", () => {
       expect(window.electronAPI.createRomperDb).not.toHaveBeenCalled();
       expect(window.electronAPI.cleanupPartialInit).toHaveBeenCalledWith(store);
     });
+
+    it("[Q-04] keeps a copy of the card's _save folder before importing its kits (#786)", async () => {
+      vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
+        async () => listed(["A0"]),
+      );
+      vi.mocked(window.electronAPI.copyDir).mockResolvedValue({
+        success: true,
+      });
+
+      const result = await setUpFromCard();
+
+      expect(result.current.state.error).toBeNull();
+      const backup = vi.mocked(window.electronAPI.setupBackupRampleSave);
+      expect(backup).toHaveBeenCalledWith(`${store}/.romperdb`, "/mock/sd");
+      expect(backup.mock.invocationCallOrder[0]).toBeGreaterThan(
+        vi.mocked(window.electronAPI.createRomperDb).mock
+          .invocationCallOrder[0],
+      );
+      expect(backup.mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(window.electronAPI.setupImportKit).mock
+          .invocationCallOrder[0],
+      );
+    });
+
+    it.each([
+      [
+        "comes back failed",
+        () =>
+          vi
+            .mocked(window.electronAPI.setupBackupRampleSave)
+            .mockResolvedValueOnce({
+              data: {
+                cardNotResponding: true,
+                error: "Couldn't read the card's _save folder",
+                status: "failed",
+              },
+              success: true,
+            }),
+      ],
+      [
+        "is refused",
+        () =>
+          vi
+            .mocked(window.electronAPI.setupBackupRampleSave)
+            .mockResolvedValueOnce({ error: "denied", success: false }),
+      ],
+      [
+        "throws",
+        () =>
+          vi
+            .mocked(window.electronAPI.setupBackupRampleSave)
+            .mockRejectedValueOnce(new Error("IPC gone")),
+      ],
+    ])(
+      "[Q-04] carries on when the copy of _save %s (#786)",
+      async (_case, arrange) => {
+        vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
+          async () => listed(["A0"]),
+        );
+        vi.mocked(window.electronAPI.copyDir).mockResolvedValue({
+          success: true,
+        });
+        arrange();
+
+        const result = await setUpFromCard();
+
+        expect(result.current.state.error).toBeNull();
+        expect(window.electronAPI.setupImportKit).toHaveBeenCalled();
+        expect(window.electronAPI.finishSetup).toHaveBeenCalledWith(store);
+        expect(window.electronAPI.cleanupPartialInit).not.toHaveBeenCalled();
+      },
+    );
 
     it("stops when the card's bank names can't be read", async () => {
       vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(

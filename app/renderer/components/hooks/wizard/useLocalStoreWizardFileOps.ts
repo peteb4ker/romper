@@ -13,6 +13,7 @@ import type {
 } from "./useLocalStoreWizardState";
 
 import {
+  backupSetupRampleSave,
   createRomperDb,
   importSetupBankNames,
   importSetupKit,
@@ -196,13 +197,16 @@ export function useLocalStoreWizardFileOps({
   /**
    * Create the store's database and import its kit folders, then the bank
    * names in the `bankNamesPath` folder's name files, if setup has one
-   * (see {@link bankNamesSourcePath}).
+   * (see {@link bankNamesSourcePath}). For a setup from a card
+   * (`cardPath`), a copy of the card's `_save` folder goes into the store
+   * first (#786, stage 2); a copy that fails doesn't stop setup.
    */
   const createAndPopulateDb = useCallback(
-    async (targetPath: string, bankNamesPath?: string) => {
+    async (targetPath: string, bankNamesPath?: string, cardPath?: string) => {
       const dbDir = `${targetPath}/.romperdb`;
       if (api.ensureDir) await api.ensureDir(dbDir);
       await createRomperDb(dbDir);
+      if (cardPath) await backupSetupRampleSave(dbDir, cardPath);
       // The store's kit folders, which setup named by their kits
       const validKits = (await listFolder(api, targetPath)).filter(isKitName);
       const truncationWarnings: TruncationWarning[] = [];

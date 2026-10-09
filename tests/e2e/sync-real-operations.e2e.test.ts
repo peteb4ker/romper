@@ -254,6 +254,18 @@ test.describe("[UC-34] Sync Real Operations E2E Tests", () => {
       expect(
         await fs.pathExists(path.join(tempSdCardDir, "_save", "A0.rpl")),
       ).toBe(true);
+      // ...and a copy of it went into the store before the write (#786)
+      const backups = path.join(
+        testEnv.localStorePath,
+        ".romperdb",
+        "rample-save",
+      );
+      const copies = await fs.readdir(backups);
+      expect(copies).toHaveLength(1);
+      expect(copies[0]).toMatch(/-write$/);
+      expect(
+        await fs.readFile(path.join(backups, copies[0], "A0.rpl"), "utf8"),
+      ).toBe("x");
 
       // Close sync dialog
       const closeButton = window.locator('[data-testid="cancel-sync"]');

@@ -90,12 +90,13 @@ pair it linked (#537, stereo rule 2). See
   `check-existing-local-store`, `check-path-writable`, `check-disk-space`,
   `list-files-in-root`, `copy-dir`, `create-romper-db`, `setup-import-kit`
   (one call per kit), `setup-import-bank-names` (the card's bank names),
+  `setup-backup-rample-save` (a copy of the card's `_save` folder, #786),
   `cleanup-partial-init`, `finish-setup` (the store is built, so a quit
   keeps it, #616), `write-settings`.
 - **Main:** `electron/main/services/archiveService.ts` (`copyDirectory`);
   `electron/main/services/localStoreSetupService.ts` (`createSetupDatabase`,
   `hasExistingLocalStore`, `importSetupKit`, `importSetupBankNames`,
-  `cleanupFailedSetup`, `cleanupUnfinishedSetups` on quit,
+  `backupSetupRampleSave`, `cleanupFailedSetup`, `cleanupUnfinishedSetups` on quit,
   `markSetupComplete`), which imports
   each kit with `electron/main/db/operations/kitScanOperations.ts`
   (`mergeKitScan`): up to 12 samples per voice, WAV metadata, voice names
@@ -742,7 +743,8 @@ written, and a warning for samples shorter than the Rample's 50 ms minimum
 (#576). It then makes the card match the
 store. It converts files the Rample can't play, applies gain, mixes stereo
 files on unlinked voices to mono, writes bank name files, and leaves the
-Rample's own `_save` folder alone. It links stereo voices automatically
+Rample's own `_save` folder alone, after keeping a copy of it in the store
+(#786, stage 2). It links stereo voices automatically
 where stereo rule 2 says, and leaves a quarantined kit off the card with
 its card folder untouched (#537); the summary lists both. A file the card
 already holds byte for byte isn't written again (#650). Cancel stops
@@ -765,7 +767,8 @@ the write with a message saying so (#653). See
   `writeBankRtfFiles`); `electron/main/services/syncFileOperations.ts`, `electron/main/services/syncSampleProcessing.ts`,
   `electron/main/services/syncValidationService.ts`, `electron/main/services/syncMonoAnnotation.ts`,
   `electron/main/services/syncStereoPlan.ts` (`planWriteStereo`),
-  `electron/main/services/syncProgressManager.ts`, `electron/main/services/sdCardSafety.ts`, `electron/main/services/cardWatchdog.ts`, `electron/main/services/rtfFileService.ts`;
+  `electron/main/services/syncProgressManager.ts`, `electron/main/services/sdCardSafety.ts`, `electron/main/services/cardWatchdog.ts`, `electron/main/services/rtfFileService.ts`,
+  `electron/main/rample/rampleSaveBackup.ts` (`backupRampleSaveFolder`);
   `electron/main/formatConverter.ts`, `electron/main/cardFileMatch.ts`; `shared/rampleCardLayout.ts`,
   `shared/rampleFormat.ts` (`planConversion`, the rule the format badge
   shows too).

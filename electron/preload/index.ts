@@ -410,6 +410,11 @@ const electronAPI = {
   setSetting: async (key: SettingsKey, value: unknown): Promise<void> => {
     return await settingsManager.setSetting(key, value as SettingsValue);
   },
+  setupBackupRampleSave: (dbDir: string, cardPath: string) => {
+    isDev &&
+      console.debug("[IPC] setupBackupRampleSave invoked", dbDir, cardPath);
+    return invoke("setup-backup-rample-save", dbDir, cardPath);
+  },
   setupImportBankNames: (dbDir: string, sourcePath: string) => {
     isDev &&
       console.debug("[IPC] setupImportBankNames invoked", dbDir, sourcePath);

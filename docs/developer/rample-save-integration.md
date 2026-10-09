@@ -4,7 +4,7 @@ priority: low
 status: specification
 updated: 2026-10-08
 context_size: medium
-implementation_status: stage 0 (docs, #789) and stage 1a (the write code's guard, #787) built; stages 1b-6 not built
+implementation_status: stage 0 (docs, #789), stage 1a (the write code's guard, #787) and stage 1b (the read-only reader, #788) built; stages 2-6 not built
 -->
 
 # The Rample's `_save` folder: reading it, then writing it
@@ -299,7 +299,9 @@ public decode.
 - **Never read.** Setup imports only folders that pass `isValidKit`
   (`shared/kitUtilsShared.ts`), so `_save` isn't copied
   (`tests/e2e/sd-card-setup.e2e.test.ts` checks it). Scans read the store,
-  not the card.
+  not the card. The stage 1b reader (`electron/main/rample/`) decodes a
+  copy of the folder for `npm run rample:save`; nothing in the app calls
+  it yet.
 - **Never changed by a write, by name.** The folder is named once
   (`DEVICE_SAVE_FOLDER` in `shared/rampleCardLayout.ts`, compared ignoring
   case and trailing dots and spaces). The only removal path,
@@ -354,7 +356,13 @@ Reasons:
 
 `cbor2` is the fallback if the codec turns out to be more than it looks,
 and can serve as a development dependency that cross-checks the codec in
-tests. Neither is added until stage 1b.
+tests. As built in stage 1b: the in-house codec
+(`electron/main/rample/cbor.ts`), with no new dependency. It decodes and
+re-encodes every file on Pete's card byte for byte (checked read-only
+with `npm run rample:save`; the files aren't committed, see D1). Its
+encoder writes an opaque item back byte for byte, so a round trip stays
+exact; refusing to *write a card file* that holds one is stage 6's job,
+since nothing writes yet.
 
 ## Fixtures
 
@@ -374,7 +382,9 @@ a reader and for byte-identical re-encoding.
   indefinite length, a file of a different type under a kit name.
 - **Until D1 is decided,** stage 1 uses synthetic fixtures only, built to
   match the real files' key sets and values, and checks byte-identical
-  round trips against byte strings written out in the test.
+  round trips against byte strings written out in the test. As built:
+  `tests/factories/rampleSave.factory.ts` builds them with the codec's
+  encoder.
 
 ## Plan
 
@@ -415,7 +425,7 @@ Two PRs, both without UI.
   list still can't remove `_save` or anything in it; the existing e2e
   checks stay.
 
-**1b. A tolerant reader, with types** ([#788](https://github.com/peteb4ker/romper/issues/788)).
+**1b. A tolerant reader, with types** ([#788](https://github.com/peteb4ker/romper/issues/788)). **Done.**
 
 - A CBOR decoder for the subset above (see [CBOR library](#cbor-library))
   in `electron/main/rample/`, and the decoded shapes in `shared/`
@@ -441,6 +451,18 @@ Two PRs, both without UI.
   a folder's decoded files, or the differences between two copies. It
   makes the hardware checks below a one-line compare.
 - No IPC channel or UI yet.
+- **As built:** the codec is `electron/main/rample/cbor.ts`, the reader
+  `rampleSaveReader.ts` (with `rampleSaveFirmware.ts` and
+  `rampleSaveDiff.ts`), the types `shared/rampleSave.ts`. Following the
+  [CBOR library](#cbor-library) rule, a well-formed item outside the
+  subset (a float, a byte string, a tag, another simple value, an integer
+  beyond a safe JavaScript number, a map with a non-text key) is kept as
+  an opaque item, not an error, so the file stays readable and its bytes
+  exact; malformed input (truncated, trailing bytes, an indefinite length,
+  a reserved head, a duplicate key, too deep, too big) is unreadable,
+  with the byte offset. Each file also says whether it re-encodes byte
+  for byte: a device file always should; one with a longer integer form
+  than needed (hardware check 17) doesn't.
 - **Affects:** Q-08. **Decisions:** D1 (fixtures; the stage starts
   with synthetic ones). **Hardware:** none; check 1 labels the fixtures.
 - **Tests:** unit tests of the decoder against every fixture; the

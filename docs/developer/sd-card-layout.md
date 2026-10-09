@@ -76,7 +76,10 @@ The files are CBOR (RFC 8949) maps with readable key names, not opaque
 binary, but what most values mean is unverified on hardware. Every file
 has a modification time of 0, so only the contents tell versions apart.
 The keys, sources and the plan for reading and later writing them are in
-[`rample-save-integration.md`](rample-save-integration.md). Nothing the
+[`rample-save-integration.md`](rample-save-integration.md). Romper can
+decode a copy of the folder, read-only (`electron/main/rample/`, and
+`npm run rample:save -- <folder> [<folder>]` to print one or compare
+two), but the app doesn't read the card's folder yet. Nothing the
 device writes lives inside a kit folder.
 
 ## Current state

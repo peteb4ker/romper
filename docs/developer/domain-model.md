@@ -630,8 +630,9 @@ voice and slot):
   kit (`<kit>.rpl`: knob positions, layer modes, selected layers, mute
   groups, CV assignments), the device settings (`settings.rpl`), the
   GLOBAL CV assignments (`global_assign.rpl`) and an empty
-  `autosave_<kit>.rpl`. The device owns them; Romper doesn't read, copy
-  or change them yet. A kit's file belongs to its slot, so the device
+  `autosave_<kit>.rpl`. The device owns them; the app doesn't read, copy
+  or change them yet. A read-only reader exists for developers
+  (`electron/main/rample/`, `npm run rample:save`, #788). A kit's file belongs to its slot, so the device
   applies it to whatever samples a write puts there next. See
   [`rample-save-integration.md`](rample-save-integration.md) (#786).
 - **Canonical owner:** the store's database. The card is a generated copy:

@@ -491,17 +491,17 @@ land, `validateLocalStoreAgainstDb` has no caller and is deleted.
 
 | # | Question | Recommendation |
 |---|---|---|
-| D1 | Where does "search on disk" look? | The store's kit folders, plus one folder you pick each time, opened at the nearest existing folder above the file's old place. Never the whole home folder. |
-| D2 | "Copy back into place" for a sample whose file was outside the store | Point the sample at the file found, without copying. Copy only when the old place is inside the store. (Copying outside the store changes Q-03.) |
-| D3 | What counts as a match? | Same name (case ignored) + same size + same header is a match; same name only is a possible match you confirm. No content hash. Several matches: you choose. |
-| D4 | Which folder findings are reported? | Untracked WAVs in read-only kits only; a read-only kit with no folder; not folders with no kit (deleting an imported kit leaves its folder), or only as a line in the details dialog. |
-| D5 | Remove missing samples from a read-only kit? | Allow it as a named exception for this fix only (re-checked, undoable). Alternative: offer "make editable" first. |
-| D6 | A file on a drive that isn't connected | Report it as "drive not connected", not as missing; never offer to remove it. |
-| D7 | Triggers and throttle | Startup after the grid loads; store change; focus if the last pass ended over ten minutes ago. No timer, no watcher. |
-| D8 | What is "the notice"? | A status bar item while problems exist, opening a details dialog, plus one message when a pass finds something new. |
-| D9 | Changed files | Refresh their details silently, as #810 does; show nothing unless one becomes unreadable. |
-| D10 | The promised "Validate Store" button (UC-05) | Don't build an on-demand button; the automatic check replaces it. Optionally a "Check again" in the details dialog. |
-| D11 | The badge's look | A warning-colored icon distinct from the quarantine octagon (for example Phosphor's `FileX`), one per card. |
+| D1 | Where does "search on disk" look? | **Approved by Pete, 2026-10-10:** The store's kit folders, plus one folder you pick each time, opened at the nearest existing folder above the file's old place. Never the whole home folder. |
+| D2 | "Copy back into place" for a sample whose file was outside the store | **Approved by Pete, 2026-10-10:** Point the sample at the file found, without copying. Copy only when the old place is inside the store. (Copying outside the store changes Q-03.) |
+| D3 | What counts as a match? | **Approved by Pete, 2026-10-10:** Same name (case ignored) + same size + same header is a match; same name only is a possible match you confirm. No content hash. Several matches: you choose. |
+| D4 | Which folder findings are reported? | **Approved by Pete, 2026-10-10:** Untracked WAVs in read-only kits only; a read-only kit with no folder; not folders with no kit (deleting an imported kit leaves its folder), or only as a line in the details dialog. |
+| D5 | Remove missing samples from a read-only kit? | **Approved by Pete, 2026-10-10:** Allow it as a named exception for this fix only (re-checked, undoable). Alternative: offer "make editable" first. |
+| D6 | A file on a drive that isn't connected | **Approved by Pete, 2026-10-10:** Report it as "drive not connected", not as missing; never offer to remove it. |
+| D7 | Triggers and throttle | **Approved by Pete, 2026-10-10:** Startup after the grid loads; store change; focus if the last pass ended over ten minutes ago. No timer, no watcher. |
+| D8 | What is "the notice"? | **Approved by Pete, 2026-10-10:** A status bar item while problems exist, opening a details dialog, plus one message when a pass finds something new. |
+| D9 | Changed files | **Approved by Pete, 2026-10-10:** Refresh their details silently, as #810 does; show nothing unless one becomes unreadable. |
+| D10 | The promised "Validate Store" button (UC-05) | **Approved by Pete, 2026-10-10:** Don't build an on-demand button; the automatic check replaces it. Optionally a "Check again" in the details dialog. |
+| D11 | The badge's look | **Approved by Pete, 2026-10-10:** A warning-colored icon distinct from the quarantine octagon (for example Phosphor's `FileX`), one per card. |
 
 ## Drafted wording
 

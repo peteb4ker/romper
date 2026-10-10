@@ -228,7 +228,7 @@ describe("[UC-29] the logo's glow follows the theme (#767)", () => {
     const reads = vi.mocked(window.getComputedStyle).mock.calls.length;
     drawFrame(leds);
     drawFrame(leds);
-    expect(vi.mocked(window.getComputedStyle).mock.calls.length).toBe(reads);
+    expect(vi.mocked(window.getComputedStyle).mock.calls).toHaveLength(reads);
 
     act(() => {
       applyTheme(true);

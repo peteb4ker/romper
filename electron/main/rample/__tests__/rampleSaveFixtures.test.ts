@@ -18,7 +18,7 @@ import {
 import { decodeCbor, encodeCbor } from "../cbor";
 import { readRampleSaveFolder } from "../rampleSaveReader";
 
-// Pete's real `_save` files (decision D1, #786), copied unchanged from his
+// Real `_save` files (decision D1, #786), copied unchanged from a
 // Rample's card. The firmware is inferred (2.00) until hardware check 1
 // confirms it; see the folder's README.
 const FW_2_00_INFERRED = path.resolve(

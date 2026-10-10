@@ -10,7 +10,7 @@
 
 ## Decisions
 
-<!-- A UX or product choice this PR makes (shortcut, wording, behaviour): link Pete's sign-off on the issue. Delete if none. -->
+<!-- A UX or product choice this PR makes (shortcut, wording, behaviour): link the maintainer's sign-off on the issue. Delete if none. -->
 
 ## Verified
 

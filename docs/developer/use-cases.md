@@ -478,7 +478,7 @@ See [Drag and Drop](../manual/kit-editor.md#drag-and-drop).
 
 **Status:** not built (won't build, #611)
 
-Replace the file in an occupied slot, keeping its position. Pete decided
+Replace the file in an occupied slot, keeping its position. The maintainer decided
 on 2026-10-04 not to build it (#611), and the unused replace path
 (service, IPC channel, preload method and undo action) was removed. To
 replace a sample, delete it (UC-23) and drop the new file (UC-19); a drop

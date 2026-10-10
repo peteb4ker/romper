@@ -1,6 +1,6 @@
 // Every string the kit editor's "On the Rample" section shows (#800), in one
 // place, so its wording can be reviewed and signed off together. Product
-// wording is Pete's (CLAUDE.md, "Product decisions are mine").
+// wording is the maintainer's (CLAUDE.md, "Product decisions").
 //
 // The values the section shows are the device's raw numbers. What most of
 // them mean is inferred, not confirmed on hardware

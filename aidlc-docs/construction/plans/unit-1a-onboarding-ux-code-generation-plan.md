@@ -5,7 +5,7 @@
 - **Priority**: P0 (highest)
 - **Scope**: User-facing improvements to wizard flows — better errors, pre-checks, progress, empty state guidance
 - **Dependencies**: None
-- **Workspace Root**: /Users/pete/workspace/romper/worktrees/aidlc-comprehensive-testing
+- **Workspace Root**: ~/workspace/romper/worktrees/aidlc-comprehensive-testing
 
 ## Steps
 

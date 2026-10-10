@@ -40,12 +40,12 @@ How to work:
 4. **Propose options with a recommendation.** For each option give what it
    changes, its cost, its risk (especially to the card write, migrations
    and users' data) and how to verify it. Say which you recommend and why.
-   The choice is Pete's if it affects visible behavior.
+   The choice is the maintainer's if it affects visible behavior.
 5. **A plan that spans several PRs becomes a spec.** Write it to
    `docs/developer/<feature>.md` (like `step-sequencer-slicer.md`) in your
    worktree, open a `docs/` PR, and link it from the issue. For a contract
    (IPC, data format), state the types, the invariants and the failure
-   cases. The spec records what Pete decides; don't present options as
+   cases. The spec records what the maintainer decides; don't present options as
    decisions.
 6. Don't implement the fix unless the goal says to. If you find the cause,
    say where the fix belongs and how big it is.
@@ -54,4 +54,4 @@ How to work:
 
 Finish with the final report from `conventions.md`. Put confirmed and
 inferred findings under "What changed", and the options under "Decisions for
-Pete".
+the maintainer".

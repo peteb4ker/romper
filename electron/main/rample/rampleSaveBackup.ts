@@ -36,7 +36,7 @@ export const RAMPLE_SAVE_BACKUP_FOLDER = "rample-save";
 
 /**
  * How many copies taken before a write are kept (the newest ones), beside
- * the setup copy, which is always kept. Approved by Pete on #802; a copy
+ * the setup copy, which is always kept. Approved on #802; a copy
  * is a few hundred bytes per kit.
  */
 export const RAMPLE_SAVE_WRITE_BACKUPS_KEPT = 10;

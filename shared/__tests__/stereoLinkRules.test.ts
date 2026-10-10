@@ -24,7 +24,7 @@ import {
   type StereoVoiceState,
 } from "../stereoLinkRules";
 
-// Pete's "Final stereo rules v2" on #537
+// The "Final stereo rules v2" on #537
 
 const mono = (voice_number: number, filename = "m.wav"): StereoSampleState => ({
   filename,

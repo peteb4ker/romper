@@ -12,7 +12,7 @@ device (**Settings → INFO**, hardware check 1) says `-inferred`.
 
 | Folder | Source | Firmware |
 |---|---|---|
-| `fw-2.00-inferred/` | Pete's Rample, copied 2026-10-04 | 2.00, inferred from `settings.rpl`'s keys; unconfirmed until check 1 |
+| `fw-2.00-inferred/` | A real Rample, copied 2026-10-04 | 2.00, inferred from `settings.rpl`'s keys; unconfirmed until check 1 |
 
 Rules:
 

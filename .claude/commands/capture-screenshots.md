@@ -73,7 +73,7 @@ ROMPER_HEADLESS=true npm run screenshots -- --target manual-step-sequencer,manua
 - **Slicer:** targets marked `store: "slicer"` (`manual-slicer`,
   `manual-slice-strip`, `manual-slice-step-options`,
   `manual-slice-roll-options`) were a one-time capture from a long sample
-  on Pete's machine, not a committed fixture. They need
+  on the maintainer's machine, not a committed fixture. They need
   `--slicer-sample <wav>`: `tests/utils/slicer-store.ts` copies that file
   into a temporary store built from the e2e fixture (the original is only
   read) and sets up a sliced voice. Never commit the sample; only the PNGs

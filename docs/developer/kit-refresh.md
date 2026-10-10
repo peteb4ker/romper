@@ -182,7 +182,7 @@ Two PRs.
   returns; tests for `applyReadKit` against an older reload, and for the
   undo actions recorded from what main returned.
 
-**Edits still saving stay on screen** (#778, approved by Pete on the
+**Edits still saving stay on screen** (#778, approved on the
 issue, 2026-10-08). A kit that comes back while a sequencer edit of it
 is still saving (another save's result, or an older read) used to put
 the sequencer back to that kit, so a step you'd just toggled flickered
@@ -216,7 +216,7 @@ save returning the kit without a step still saving, and the reverse).
 - **Done, ahead of the rest of this step:** a failed full reload (Scan all,
   a write, a bank rename, creating, duplicating or deleting a kit) keeps
   the kits on screen instead of emptying the grid, with no message.
-  Approved by Pete on #452 (2026-10-08). Loading at startup or after a
+  Approved on #452 (2026-10-08). Loading at startup or after a
   store change still empties the list when the store can't be read: the
   kits on screen may belong to another store.
 - **Verified by:** unit tests for each list change against older and newer
@@ -232,7 +232,7 @@ results.
 
 ## Decisions
 
-Approved by Pete on #452 (2026-10-08):
+Approved on #452 (2026-10-08):
 
 - **A single-kit reload that fails** (step 1) keeps the kit on screen,
   where any failed reload used to empty the kit list. After every kind of

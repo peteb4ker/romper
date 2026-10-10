@@ -26,7 +26,7 @@ import { encodeTestWav, sine } from "../validation/support/wav.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 // #537: importing a card linked no voice, so the next write mixed the card's
-// stereo samples down to mono. Pete's final stereo rules v2: setup and the
+// stereo samples down to mono. The final stereo rules v2: setup and the
 // write link a voice automatically when every sample on it is stereo and
 // the next voice is free (rule 2); a mono voice is mixed down (rule 1);
 // links are never undone (rule 3); a kit that breaks a stereo pair is

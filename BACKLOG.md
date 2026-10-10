@@ -76,7 +76,7 @@ cloud sessions alike.
   `fix(scan): keep stereo samples stereo after importing a card (#537)`.
 
 A UX or product decision (a shortcut, wording, a behaviour choice) needs
-Pete's sign-off recorded on the issue before you build it. If the issue has
+the maintainer's sign-off recorded on the issue before you build it. If the issue has
 none, ask the coordinator; don't pick one yourself.
 
 ## Fix

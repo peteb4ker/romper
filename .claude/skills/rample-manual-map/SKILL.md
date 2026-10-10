@@ -88,8 +88,8 @@ sentence) is fine in a doc that cites the section, as the domain model does.
      `documentation` when our docs disagree with the manual) and a severity
      (`severity:low` unless it breaks what Romper writes);
    - the body links the manual section by anchor and says what Romper does
-     today, in our words. Building it needs Pete's sign-off on the issue
-     (product decisions are his).
+     today, in our words. Building it needs the maintainer's sign-off on the issue
+     (product decisions are theirs).
 
    Then put the issue number in that row's Notes, which takes it off the
    candidate list. Check `gh issue list --label Q-08 --state all` first,

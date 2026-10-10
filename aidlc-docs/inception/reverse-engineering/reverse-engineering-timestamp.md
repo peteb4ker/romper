@@ -7,7 +7,7 @@
 
 **Analysis Date**: 2026-09-29T00:00:00Z
 **Analyzer**: Claude Code (Claude Opus 5.5), five parallel read-only reviews plus hand verification
-**Workspace**: /Users/pete/workspace/romper
+**Workspace**: ~/workspace/romper
 **Baseline**: `main` @ `87bea51` (app version 1.3.1). The only later commit at the time of writing, `674f2b7`, bumps `brace-expansion` in the lockfile.
 **Previous analysis**: 2026-04-08 (app version 1.0.1). All artifacts were rewritten.
 **Total Files Analyzed**: 244 TypeScript source files (about 35,200 LOC), 273 test files (238 unit, 27 integration, 8 e2e), 12 SQL migrations, 8 CI workflows, build and packaging configs, and the developer and user docs.

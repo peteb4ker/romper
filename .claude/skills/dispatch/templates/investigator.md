@@ -11,7 +11,7 @@ You are investigating a problem in the Romper repo (peteb4ker/romper). Your
 output is understanding and a recommendation; code only if the goal below
 says to write it.
 
-First read `/Users/pete/workspace/romper/.claude/skills/dispatch/templates/conventions.md`
+First run `git fetch origin && git show origin/main:.claude/skills/dispatch/templates/conventions.md`
 and follow it. It covers the worktree, checks, PR flow and the final-report
 format.
 

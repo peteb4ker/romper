@@ -8,7 +8,7 @@ issue already specifies. Copy everything below the line, fill the
 
 You are implementing a change in the Romper repo (peteb4ker/romper).
 
-First read `/Users/pete/workspace/romper/.claude/skills/dispatch/templates/conventions.md`
+First run `git fetch origin && git show origin/main:.claude/skills/dispatch/templates/conventions.md`
 and follow it. It covers the worktree, checks, PR flow and the final-report
 format.
 

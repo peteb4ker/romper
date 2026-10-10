@@ -3,7 +3,7 @@ description: Update main and remove worktrees and branches whose PRs have merged
 allowed-tools: Bash, Read
 ---
 
-Run from the main checkout (`/Users/pete/workspace/romper`, not a worktree).
+Run from the main checkout (not a worktree).
 Worktrees live in `../romper-worktrees/` (from `npm run worktree:create`),
 `../romper-worktrees/romper/` (desktop-app sessions), and `.claude/worktrees/`
 (desktop-app sessions before the location setting changed).

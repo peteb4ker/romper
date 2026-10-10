@@ -18,7 +18,7 @@ one place and each prompt stays short.
 3. **Start the subagent** with that text as its prompt and the template's
    model set explicitly, not inherited from the coordinator.
 4. **Read the final report** (format in `conventions.md`). Product decisions
-   in it are Pete's: pass them on with the recommendation.
+   in it are the maintainer's: pass them on with the recommendation.
 
 ## Which template
 
@@ -36,8 +36,8 @@ one place and each prompt stays short.
 - `{{context}}`: what the subagent can't see: links to the issue, PR or
   spec, relevant files, what other sessions are doing. A cloud session sees
   only what is pushed, so put it on GitHub or in the repo first.
-- `{{decisions_made}}`: choices already settled, especially Pete's, with
-  where they are recorded. The subagent must not reopen them.
+- `{{decisions_made}}`: choices already settled, especially the maintainer's,
+  with where they are recorded. The subagent must not reopen them.
 - `{{out_of_scope}}`: what to leave alone, even if it looks wrong. The
   subagent reports it instead of fixing it.
 - `{{worktree_name}}`: a short kebab-case name, also the branch slug.
@@ -48,5 +48,5 @@ one place and each prompt stays short.
   card write, read its diff yourself.
 - Move a task that stalls or comes back wrong up a tier, and say what the
   lower tier got wrong in the new prompt's `{{context}}`.
-- Subagents report decisions for Pete; they never make them. Relay each with
+- Subagents report decisions for the maintainer; they never make them. Relay each with
   its recommendation.

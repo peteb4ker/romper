@@ -1,7 +1,7 @@
 /**
  * What Romper says when it couldn't keep a copy of the card's `_save`
  * folder (#802, stage 2 of #786). Setup and the write carry on without it.
- * Wording approved by Pete, 2026-10-09 (#802). A card that stops
+ * Wording approved on 2026-10-09 (#802). A card that stops
  * responding during the copy stops setup or the write instead, with the
  * messages in cardMessages.ts.
  */

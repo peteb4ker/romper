@@ -32,7 +32,7 @@ async function snapshot(folder: string): Promise<Record<string, string>> {
   return Object.fromEntries(entries);
 }
 
-// #537, Pete's final stereo rules v2, rules 4 and 5: a kit with a mono
+// #537, the final stereo rules v2, rules 4 and 5: a kit with a mono
 // sample on a stereo pair is quarantined. A scan says so without changing
 // anything, and a write leaves the kit's folder on the card exactly as it
 // was while writing the other kits. Romper's design, unverified on hardware.

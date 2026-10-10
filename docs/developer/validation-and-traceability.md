@@ -441,7 +441,7 @@ behaviour checks, and RE-51 makes tests type-check.
 
 Fixes for these, in order: [`validation-fix-plan.md`](validation-fix-plan.md).
 
-## Decisions (Pete, 2026-10-01)
+## Decisions (2026-10-01)
 
 1. **Stereo file on an unlinked voice**: convert to mono when writing to the
    card. That's the intended behaviour; RE-29 tracks the bug.

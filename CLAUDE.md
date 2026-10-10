@@ -136,7 +136,7 @@ the repo or on GitHub.
 - **Status:** the PR is the status record. Keep its description current
   (done, left, how it was verified) and hand off in PR comments.
 - **Product decisions** (shortcuts, wording, behaviour choices) need
-  Pete's sign-off recorded on the issue before you build them. Don't pick
+  the maintainer's sign-off recorded on the issue before you build them. Don't pick
   one yourself: if the issue has no recorded decision, ask the coordinator.
 - **Describe only what's on main.** Re-check `origin/main` before filing
   or editing an issue; never describe code that exists only in an open PR.
@@ -215,7 +215,7 @@ Hooks in `.claude/hooks/` and `.husky/` enforce the first two.
   `voices.stereo_mode` drives stereo; samples have no stereo flag. Never
   copy samples onto the adjacent voice because a file is stereo; that
   created undeletable phantom samples. Don't infer a voice's setting from
-  a file's channel count, except as Pete's "Final stereo rules v2" on
+  a file's channel count, except as the "Final stereo rules v2" on
   #537 decide (in the Stereo section of `docs/developer/domain-model.md`):
   a mono voice is always fine and is mixed down at write; setup and the
   write link a voice automatically when every sample on it is stereo and
@@ -226,7 +226,7 @@ Hooks in `.claude/hooks/` and `.husky/` enforce the first two.
   The rules and their words live in `shared/stereoLinkRules.ts`, shared by
   main, setup, scan, the write, the link button and drops. Use "stereo
   pair", "link", "unlink", "mixed down to mono" and "quarantined", never
-  "busy" or "in use"; new wording needs Pete's sign-off.
+  "busy" or "in use"; new wording needs the maintainer's sign-off.
 - **Renderer code reaches IPC through `globalThis.electronAPI`.** In tests,
   override the default mock (wired up in `vitest.setup.ts`) with
   `vi.mocked(globalThis.electronAPI.someMethod)`; don't reassign

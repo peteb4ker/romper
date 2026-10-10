@@ -179,15 +179,15 @@ each other and can land in any order.
 - **C4:** a `?` overlay with every shortcut (`?` again or Escape closes
   it), opened by `?` or a **⌨ ?** button under the transport, and an
   `S` keycap on the Show/Hide handle. #375 also added a status line under
-  the grid; Pete removed it (too busy), keeping only the button. The
+  the grid; it was removed (too busy), keeping only the button. The
   button first sat among the column headers, where it read as a label;
   it now sits under the transport and uses the palette's `btn-secondary`
   style (strong border, primary text), which the slicer's Roll and Undo
   share.
 - **C9:** #375 added a grip to set the pad height by dragging the
-  drawer's edge. Pete removed it: the layout has one sweet spot, and
+  drawer's edge. It was removed: the layout has one sweet spot, and
   other heights look wrong. Pads keep the window-driven size.
-- **Slice auditions always choke.** Pete heard slice auditions overlap.
+- **Slice auditions always choke.** The maintainer heard slice auditions overlap.
   Retriggering one slot already stopped its previous sound, and the cases
   reproduced in the app choked correctly, but the choke between slots
   depended on React state that kit refreshes reset (RE-13) and that is

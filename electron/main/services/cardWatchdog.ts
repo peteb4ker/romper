@@ -1,7 +1,7 @@
 /**
  * A watchdog for SD card operations (#653).
  *
- * A card's file system driver can stop responding: on Pete's card, macOS's
+ * A card's file system driver can stop responding: on a real card, macOS's
  * FSKit MS-DOS driver hung and an `unlinkat` never returned. Card I/O runs
  * off the main thread (fs.promises, on libuv's thread pool), so the window
  * stays responsive, but an operation that never finishes would leave the

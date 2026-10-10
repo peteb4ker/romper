@@ -245,7 +245,7 @@ class SyncService {
       // card changes (#802, stage 2 of #786). Read-only on the card. A copy
       // that fails is logged and returned, and the write goes ahead; a card
       // that stopped responding stops the write here, before it changes
-      // anything (Pete, 2026-10-09)
+      // anything (approved 2026-10-09)
       const rampleSaveBackup = await backupRampleSaveFolder({
         cardPath: options.sdCardPath,
         dbDir,

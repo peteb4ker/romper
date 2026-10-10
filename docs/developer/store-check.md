@@ -27,7 +27,7 @@ haven't opened stays hidden until the write.
 
 ## Decisions already made
 
-Pete, 2026-10-09 (recorded on #769). This spec doesn't reopen them.
+Decided on 2026-10-09 (recorded on #769). This spec doesn't reopen them.
 
 - **When:** automatically, in the background.
 - **What:** it checks that the store's folder matches the database
@@ -36,7 +36,7 @@ Pete, 2026-10-09 (recorded on #769). This spec doesn't reopen them.
   badges on the affected kits and a notice.
 - **Fixes offered:** rescan the kit, remove the missing samples, or search
   on disk for the missing files and copy them back into place.
-- **Wording:** every new string (badge, notice, fix actions) goes to Pete
+- **Wording:** every new string (badge, notice, fix actions) goes to the maintainer
   for sign-off. The wording below is drafted, not approved.
 
 ## What exists today
@@ -126,7 +126,7 @@ Confirmed by reading `main` at `ce90f1ba`:
 
 Run on 2026-10-09 against the factory archive the validation profile uses
 (`~/.cache/romper/RampleSamplesV1-2.zip`, extracted to a scratch folder;
-never Pete's store), with Node 22 on Pete's Mac, file cache warm. The
+never a user's store), with Node 22 on a Mac, file cache warm. The
 figures are in the PR that added this file and on #769, not here, because
 they go stale. In short: listing every kit folder and `stat`-ing every
 sample file of the factory library took tens of milliseconds, with no
@@ -270,7 +270,7 @@ interface StoreCheckStatus {
 
 ## Badges and the notice
 
-All wording here is a draft for Pete (see
+All wording here is a draft for the maintainer (see
 [Drafted wording](#drafted-wording)).
 
 - **Kit card badge.** A kit with missing files or untracked files gets
@@ -439,7 +439,7 @@ Each stage is one PR. Stages 2 to 6 wait for the decisions named.
   cancels it; the budgets above hold; the "idle on the kit grid"
   validation budget holds.
 - **Affects:** UC-05, Q-01. **Decisions:** none (D7's triggers are
-  recommended; Pete can change the numbers on the issue).
+  recommended; the maintainer can change the numbers on the issue).
 
 ### Stage 2: check kit folders (blocked on D4)
 
@@ -488,25 +488,25 @@ Each stage is one PR. Stages 2 to 6 wait for the decisions named.
 checks samples. Once stage 3 replaces `ValidationResultsDialog`,
 `validateLocalStoreAgainstDb` has no caller and is deleted.
 
-## Decisions for Pete
+## Decisions for the maintainer
 
 | # | Question | Recommendation |
 |---|---|---|
-| D1 | Where does "search on disk" look? | **Approved by Pete, 2026-10-10:** The store's kit folders, plus one folder you pick each time, opened at the nearest existing folder above the file's old place. Never the whole home folder. |
-| D2 | "Copy back into place" for a sample whose file was outside the store | **Approved by Pete, 2026-10-10:** Point the sample at the file found, without copying. Copy only when the old place is inside the store. (Copying outside the store changes Q-03.) |
-| D3 | What counts as a match? | **Approved by Pete, 2026-10-10:** Same name (case ignored) + same size + same header is a match; same name only is a possible match you confirm. No content hash. Several matches: you choose. |
-| D4 | Which folder findings are reported? | **Approved by Pete, 2026-10-10:** Untracked WAVs in read-only kits only; a read-only kit with no folder; not folders with no kit (deleting an imported kit leaves its folder), or only as a line in the details dialog. |
-| D5 | Remove missing samples from a read-only kit? | **Approved by Pete, 2026-10-10:** Allow it as a named exception for this fix only (re-checked, undoable). Alternative: offer "make editable" first. |
-| D6 | A file on a drive that isn't connected | **Approved by Pete, 2026-10-10:** Report it as "drive not connected", not as missing; never offer to remove it. |
-| D7 | Triggers and throttle | **Approved by Pete, 2026-10-10:** Startup after the grid loads; store change; focus if the last pass ended over ten minutes ago. No timer, no watcher. |
-| D8 | What is "the notice"? | **Approved by Pete, 2026-10-10:** A status bar item while problems exist, opening a details dialog, plus one message when a pass finds something new. |
-| D9 | Changed files | **Approved by Pete, 2026-10-10:** Refresh their details silently, as #810 does; show nothing unless one becomes unreadable. |
-| D10 | The promised "Validate Store" button (UC-05) | **Approved by Pete, 2026-10-10:** Don't build an on-demand button; the automatic check replaces it. Optionally a "Check again" in the details dialog. |
-| D11 | The badge's look | **Approved by Pete, 2026-10-10:** A warning-colored icon distinct from the quarantine octagon (for example Phosphor's `FileX`), one per card. |
+| D1 | Where does "search on disk" look? | **Approved 2026-10-10:** The store's kit folders, plus one folder you pick each time, opened at the nearest existing folder above the file's old place. Never the whole home folder. |
+| D2 | "Copy back into place" for a sample whose file was outside the store | **Approved 2026-10-10:** Point the sample at the file found, without copying. Copy only when the old place is inside the store. (Copying outside the store changes Q-03.) |
+| D3 | What counts as a match? | **Approved 2026-10-10:** Same name (case ignored) + same size + same header is a match; same name only is a possible match you confirm. No content hash. Several matches: you choose. |
+| D4 | Which folder findings are reported? | **Approved 2026-10-10:** Untracked WAVs in read-only kits only; a read-only kit with no folder; not folders with no kit (deleting an imported kit leaves its folder), or only as a line in the details dialog. |
+| D5 | Remove missing samples from a read-only kit? | **Approved 2026-10-10:** Allow it as a named exception for this fix only (re-checked, undoable). Alternative: offer "make editable" first. |
+| D6 | A file on a drive that isn't connected | **Approved 2026-10-10:** Report it as "drive not connected", not as missing; never offer to remove it. |
+| D7 | Triggers and throttle | **Approved 2026-10-10:** Startup after the grid loads; store change; focus if the last pass ended over ten minutes ago. No timer, no watcher. |
+| D8 | What is "the notice"? | **Approved 2026-10-10:** A status bar item while problems exist, opening a details dialog, plus one message when a pass finds something new. |
+| D9 | Changed files | **Approved 2026-10-10:** Refresh their details silently, as #810 does; show nothing unless one becomes unreadable. |
+| D10 | The promised "Validate Store" button (UC-05) | **Approved 2026-10-10:** Don't build an on-demand button; the automatic check replaces it. Optionally a "Check again" in the details dialog. |
+| D11 | The badge's look | **Approved 2026-10-10:** A warning-colored icon distinct from the quarantine octagon (for example Phosphor's `FileX`), one per card. |
 
 ## Drafted wording
 
-**Drafts for Pete's sign-off; none is approved.**
+**Drafts for the maintainer's sign-off; none is approved.**
 
 - Badge, missing files: "2 sample files not found"
 - Badge, untracked files: "3 files in this kit's folder aren't in the kit. Scan the kit to add them."
@@ -552,5 +552,5 @@ checks samples. Once stage 3 replaces `ValidationResultsDialog`,
 - Checking the database's own integrity (SQLite `integrity_check`) or
   schema, which `validateLocalStoreAndDb` and the migrations cover.
 - Bank name files in the store (`banks.artist` owns bank names, #567).
-- Relinking a sample by hand to any file you choose (#769 listed it; Pete
+- Relinking a sample by hand to any file you choose (#769 listed it; the maintainer
   didn't pick it), beyond what D2 decides.

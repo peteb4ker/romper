@@ -85,7 +85,7 @@ export class LocalStoreSetupService {
    * be written) is logged and comes back as `status: "failed"`, so setup
    * carries on and its summary says so; a card without `_save` has
    * nothing to copy. A card that stopped responding stops setup with
-   * setup's card-not-responding message (Pete, 2026-10-09; #802). The copy
+   * setup's card-not-responding message (approved 2026-10-09; #802). The copy
    * goes into the existing `.romperdb` folder and never creates it, so a
    * setup cleaned up while the card was read leaves nothing behind.
    *

@@ -1,6 +1,6 @@
 /**
  * What Romper says when the card watchdog gives up on an SD card operation
- * (#653): the card's driver stopped responding. Wording approved by Pete,
+ * (#653): the card's driver stopped responding. Wording approved on
  * 2026-10-08 (#724).
  */
 

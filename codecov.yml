@@ -1,5 +1,5 @@
 # Codecov status checks. Neither is a required check on main; they flag a
-# real drop in coverage. Pete set the bar at 90% (2026-10-10): run-to-run
+# real drop in coverage. The bar is 90% (2026-10-10): run-to-run
 # variation of a few hundredths of a percent shouldn't fail a commit.
 coverage:
   status:

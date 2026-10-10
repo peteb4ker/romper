@@ -300,7 +300,7 @@ names) and an optional name (the "artist").
   - A letter is one capital A to Z (`isBankLetter` in
     `shared/rampleCardLayout.ts`, #573), which `update-bank` and the
     renderer check. A bank name file's letter may be either case
-    (`a - Name.rtf` is bank A; Pete, #567); any other letter, such as `Ä`,
+    (`a - Name.rtf` is bank A; approved on #567); any other letter, such as `Ä`,
     isn't a bank.
   - A name is never blank and holds none of `/ \ : * ? " < > |` or control
     characters (`bankNameError`), because it becomes a file name.
@@ -460,7 +460,7 @@ voice number):
   linking by hand or **Link** on a drop, `mono` after **Keep mono** or an
   unlink, null when Romper may decide). Migration `0014_stereo_choice`
   added it and recorded every existing link as `stereo`.
-- **Rules (Pete's "Final stereo rules v2" on #537, 2026-10-03).** Stereo
+- **Rules (the "Final stereo rules v2" on #537, 2026-10-03).** Stereo
   is a voice setting, Romper's design, not Rample behaviour. Terms: a
   *stereo* or *mono sample* is a 2- or 1-channel WAV; a *mono voice* is an
   unlinked voice (voice 4 always is); a *stereo pair* is voices N and N+1
@@ -859,7 +859,7 @@ can now be traced to the key that holds it. The key tables, and which
 meanings are confirmed, are in
 [`rample-save-integration.md`](rample-save-integration.md). SLICER is in
 `settings.rpl` and in no kit file, so it is one setting for the whole
-device on the firmware that wrote Pete's card (#617, still to check on
+device on the firmware that wrote the committed files (#617, still to check on
 hardware).
 
 **Romper concepts with no manual section:** bank name files, the step

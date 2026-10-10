@@ -18,7 +18,7 @@ import { type E2ETestEnvironment } from "../utils/e2e-fixture-extractor";
 const QUARANTINE_LABEL =
   "Quarantined: this kit won't be written to the card until it's fixed";
 
-// #537, Pete's decisions on #577: catch file problems early and say how to
+// #537, the decisions on #577: catch file problems early and say how to
 // fix them. The broken-kit store's A0 has a missing file and B1 a file
 // Romper can't read; nothing is known about them until a kit opens or the
 // card is written. A missing file is labelled and explained but doesn't

@@ -306,7 +306,7 @@ linked for downmixing (channel average, in `formatConverter.ts`), so the
 summary shows the conversion too (RE-29); that never changes the voice's
 setting.
 
-Pete's "Final stereo rules v2" on #537 (in the Stereo section of
+The "Final stereo rules v2" on #537 (in the Stereo section of
 [domain-model.md](domain-model.md#stereo)) decide the rest, all through
 `shared/stereoLinkRules.ts`: `planKitStereo` gives a kit's automatic links,
 mixdowns and quarantine problems, and `checkStereoLink` says when a voice

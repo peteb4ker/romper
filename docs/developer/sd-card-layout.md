@@ -17,7 +17,7 @@ doesn't: every sample goes into a per-voice subfolder
 firmware doesn't look. This spec defines the card layout once, in one
 module, and has sync write it.
 
-## Assumptions (Pete, 2026-09-30)
+## Assumptions (2026-09-30)
 
 - **One Rample.** A user syncs to one device's card.
 - **The local store is the source of truth.** The user backs it up with
@@ -59,7 +59,7 @@ module, and has sync write it.
 ### Written by the device (Squarp forum and a real card, not the manual)
 
 The device writes a `_save/` folder at the card root. Squarp hasn't
-documented it; a copy from Pete's card (2026-10-04) holds:
+documented it; a copy from a real card (2026-10-04) holds:
 
 - `_save/<kit>.rpl` (for example `_save/L1.rpl`), written by STORE: the
   kit's knob positions, layer modes, selected layers, mute groups and CV
@@ -105,7 +105,7 @@ Nothing the device writes lives inside a kit folder.
 - `docs/manual/syncing.md` describes `/KITS/[bank][slot]/[voice]/` and a
   `.rample_labels.json` labels file. Neither exists.
 
-Pete thinks a card synced by Romper has played on his Rample. If so,
+The maintainer thinks a card synced by Romper has played on their Rample. If so,
 the firmware reads subfolders too and this is a compliance fix rather
 than a broken feature. Either way, the fix is the same.
 

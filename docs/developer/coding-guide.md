@@ -38,7 +38,7 @@ fill 2 mono voices."
 ## Keyboard shortcuts
 
 - A plain-key shortcut that must work in the kit browser and elsewhere
-  uses a number or a special character only, with no Shift (Pete, #552).
+  uses a number or a special character only, with no Shift (approved on #552).
   Letters are reserved for bank jumps in the browser. `;` toggles a
   favorite in both the browser and the editor.
 - Standard Cmd/Ctrl menu shortcuts are exempt, Shift included: for
@@ -51,7 +51,7 @@ fill 2 mono voices."
   (`hasCommandModifier`), keys typed in a text field, and keys pressed while
   a modal dialog is open (`isModalDialogOpen`).
 - Choosing a shortcut, like any wording or behaviour choice, is a product
-  decision: it needs Pete's sign-off recorded on the issue before it's
+  decision: it needs the maintainer's sign-off recorded on the issue before it's
   built.
 
 ## IPC and the database

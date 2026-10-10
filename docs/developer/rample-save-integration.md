@@ -4,14 +4,14 @@ priority: low
 status: specification
 updated: 2026-10-08
 context_size: medium
-implementation_status: stage 0 (docs, #789), stage 1a (the write code's guard, #787), stage 1b (the read-only reader, #788) stage 2 (a copy in the store, #802) and stage 3 (the kit editor's read-only view, #800; the kit-card marker still to do) built; Pete's files committed as fixtures (D1); stages 4-6 not built
+implementation_status: stage 0 (docs, #789), stage 1a (the write code's guard, #787), stage 1b (the read-only reader, #788) stage 2 (a copy in the store, #802) and stage 3 (the kit editor's read-only view, #800; the kit-card marker still to do) built; a real card's files committed as fixtures (D1); stages 4-6 not built
 -->
 
 # The Rample's `_save` folder: reading it, then writing it
 
 Tracks [#786](https://github.com/peteb4ker/romper/issues/786) ([Q-08](use-cases.md#q-08-romper-supports-or-mirrors-the-ramples-features)).
 Discovery was done on 2026-10-04 and 2026-10-08 from a copy of the
-`_save` folder on Pete's Rample card. The files were read, never changed.
+`_save` folder on a real Rample card. The files were read, never changed.
 
 ## Problem
 
@@ -63,8 +63,8 @@ safe, but:
 
 ## What's in the folder
 
-From Pete's card (2026-10-04). Pete believes it runs firmware 2.00; that
-stays unconfirmed until he reads **Settings → INFO** (hardware check 1).
+From a real card (2026-10-04), believed to run firmware 2.00; that
+stays unconfirmed until someone reads **Settings → INFO** (hardware check 1).
 See [Firmware versions](#firmware-versions):
 
 | File | Written by | What it holds |
@@ -171,7 +171,7 @@ versions; see [Firmware versions](#firmware-versions).
 No file in `_save` records a firmware or format version: `settings.rpl`
 has no version key, and the kit files have none either. So the firmware
 behind a folder can only be inferred from which keys are present, and
-each inference is labeled as one. Pete believes his Rample runs 2.00
+each inference is labeled as one. The Rample that wrote these files is believed to run 2.00
 (unconfirmed until check 1); 3.00 is the latest release (February 2026).
 
 Firmware also changes what a value means without changing its key. 2.00
@@ -186,7 +186,7 @@ firmware is confirmed for that firmware only.
 
 From the [firmware changelog](https://squarp.net/rample/firmware/) and
 the [manual](https://squarp.net/rample/manual/), checked 2026-10-08.
-"Seen" means the key is in Pete's files; "expected" means a feature that
+"Seen" means the key is in the committed files; "expected" means a feature that
 should be saved somewhere, under a key nobody has seen yet. There is no
 release between 2.00 and 3.00, and none after 3.00.
 
@@ -197,8 +197,8 @@ release between 2.00 and 3.00, and none after 3.00.
 | 1.3 (December 2020) | LAYER default; ASSIGN = KIT or GLOBAL | `layerMode`, `assign`, `global_assign.rpl` | Seen |
 | 1.4 (May 2021) | More VUMETER modes; MIDI keyboard split; CV V/oct | `vu_meters` (wider range); the split's storage is unknown | `vu_meters` seen; the split is expected somewhere |
 | 1.50 (July 2022) | FLIP | `flip` | Seen |
-| 2.00 (February 2024) | SLICER EXP and 1/128; levels in dB; new Freeze and Bitcrusher; holding ASSIGN keeps FX on kit load | `slicer_quantize_postv200` | Seen. Pete's files are at least 2.00 (inferred) |
-| 3.00 (February 2026) | Compressor (COMPRESS preset, % COMPRESS, SIDECHAIN) and TAPE, "saved as part of your settings" per the manual | Expected in `settings.rpl`, names unknown | Not seen: Pete's files predate 3.00, or 3.00 writes them only after SAVE SETTINGS (inferred) |
+| 2.00 (February 2024) | SLICER EXP and 1/128; levels in dB; new Freeze and Bitcrusher; holding ASSIGN keeps FX on kit load | `slicer_quantize_postv200` | Seen. The committed files are at least 2.00 (inferred) |
+| 3.00 (February 2026) | Compressor (COMPRESS preset, % COMPRESS, SIDECHAIN) and TAPE, "saved as part of your settings" per the manual | Expected in `settings.rpl`, names unknown | Not seen: the committed files predate 3.00, or 3.00 writes them only after SAVE SETTINGS (inferred) |
 | 3.00 | PUNCH mode; MIDI layer selection by note; PRO and PEAK VU meters | Unknown; the manual doesn't say whether PUNCH is saved. New VU meters widen `vu_meters`' values | Expected |
 
 The changelog first mentions mute groups in 1.1 and assignments with
@@ -210,7 +210,7 @@ write the same files is unverified.
 
 ### Forward compatibility
 
-Pete expects `_save` to be forward compatible: a newer firmware reads an
+`_save` is expected to be forward compatible: a newer firmware reads an
 older folder. The evidence fits, but none of it is confirmed:
 
 - The SLICER key was renamed rather than reinterpreted, which only makes
@@ -323,7 +323,7 @@ Romper needs a decoder now and an encoder later, and the encoder must
 reproduce the device's bytes exactly: shortest integers, definite
 lengths, and keys in the order the file had them (plain string order,
 not a canonical order). Compared on 2026-10-08, by decoding and
-re-encoding Pete's five non-empty files:
+re-encoding the five non-empty files:
 
 | | Byte-identical by default | Notes |
 |---|---|---|
@@ -359,7 +359,7 @@ Reasons:
 and can serve as a development dependency that cross-checks the codec in
 tests. As built in stage 1b: the in-house codec
 (`electron/main/rample/cbor.ts`), with no new dependency. It decodes and
-re-encodes every file on Pete's card byte for byte (a test checks it
+re-encodes every file on the original card byte for byte (a test checks it
 on the committed copies; see [Fixtures](#fixtures)). Its
 encoder writes an opaque item back byte for byte, so a round trip stays
 exact; refusing to *write a card file* that holds one is stage 6's job,
@@ -367,7 +367,7 @@ since nothing writes yet.
 
 ## Fixtures
 
-Pete's six files are small, hold no samples and no names, only knob
+The six files are small, hold no samples and no names, only knob
 values, MIDI notes and settings. They're the only evidence of what a real
 device writes, byte for byte, so they're the best regression fixtures for
 a reader and for byte-identical re-encoding.
@@ -521,13 +521,13 @@ Two PRs, both without UI.
     can't be written) is `status: "failed"`, logged as a warning, and
     setup or the write carries on. The write returns the result as
     `SyncOutcome.rampleSaveBackup`, and the write panel and the setup
-    summary say so in the wording Pete approved on #802
+    summary say so in the wording approved on #802
     (`shared/rampleSaveMessages.ts`). A card that stops responding during
     the copy stops the write before anything on the card changes, with
     the write's card-not-responding message, and stops setup with
-    setup's (Pete, 2026-10-09).
+    setup's (approved 2026-10-09).
   - **Retention.** The setup copy is always kept, and so are the newest
-    ten write copies (`RAMPLE_SAVE_WRITE_BACKUPS_KEPT`, approved by Pete
+    ten write copies (`RAMPLE_SAVE_WRITE_BACKUPS_KEPT`, approved
     on #802); older write
     copies are removed after each new one. The copy just made is never
     removed, even if the clock went back. Folders not named like a copy
@@ -682,26 +682,26 @@ with the kit. Only fields confirmed by a hardware check can be edited.
 - **Device settings in the docs:** the manual pages could explain what
   the device does with a changed kit's saved settings, from check 8.
 
-## Decisions for Pete
+## Decisions for the maintainer
 
-Recommendations, not decisions: each needs Pete's sign-off on the epic
+Recommendations, not decisions: each needs the maintainer's sign-off on the epic
 before its stage is built.
 
 | # | Question | Recommendation |
 |---|---|---|
-| D1 | May Pete's real `.rpl` files be committed as test fixtures? | Yes, unchanged, under `tests/fixtures/rample-save/<firmware>/` with a note of where they came from. They hold knob values, MIDI notes and settings, nothing personal. Stage 1 starts with synthetic fixtures either way. |
+| D1 | May real `.rpl` files from a Rample be committed as test fixtures? | Yes, unchanged, under `tests/fixtures/rample-save/<firmware>/` with a note of where they came from. They hold knob values, MIDI notes and settings, nothing personal. Stage 1 starts with synthetic fixtures either way. |
 | D2 | Should Romper copy `_save` into the library, and when? | Yes: at setup from a card and before every write, into `.romperdb/rample-save/<date-time>/`, keeping the setup copy and the latest few. Never restored automatically. |
-| D3 | Where and how should the device's saved settings show? | A read-only "On the Rample" section in the kit editor, collapsed by default, with raw values and the middle marked until hardware checks confirm the units; a small marker on kit cards whose slot has a saved file. Wording is Pete's. |
+| D3 | Where and how should the device's saved settings show? | A read-only "On the Rample" section in the kit editor, collapsed by default, with raw values and the middle marked until hardware checks confirm the units; a small marker on kit cards whose slot has a saved file. Wording is the maintainer's. |
 | D4 | Should the write summary warn about saved settings left behind? | Yes, as information, never blocking: list changed and deleted kits that still have a saved file. Say the same when deleting a kit. |
 | D5 | Should a write offer to reset (delete) those files? | Yes, opt-in per write and off by default for changed kits; on by default for deleted kits is a reasonable alternative, since the kit is gone. Always after a snapshot. Q-04's wording changes to match. |
 | D6 | Which device settings should seed Romper's at setup? | Only exact matches: RANDOM and CYCLIC layer modes, and SLICER when it's one of Romper's divisions. Not level, start, length or effects. |
 | D7 | What may Romper write back, and in what order? | Whole-file operations first (copy with a duplicated kit, restore); value edits only for fields a hardware check has confirmed, starting with layer mode and selected layer. |
 | D8 | Which firmware versions may Romper write for? | Read every version. Write only for a firmware with a real `_save` sample in the fixtures and checks 14–17 passed on it; aim for 2.00 and 3.00. |
-| D9 | How to get a `_save` sample from firmware 3.00: update Pete's Rample, or find another 3.00 owner? | Run checks 1–13 on the current firmware first, with a full card copy. Then update to 3.00 (a forum user reports downgrading to 2.00 works, unverified) and run check 18. Asking on the Squarp forum for a sample is Pete's call. |
+| D9 | How to get a `_save` sample from firmware 3.00: update our Rample, or find another 3.00 owner? | Run checks 1–13 on the current firmware first, with a full card copy. Then update to 3.00 (a forum user reports downgrading to 2.00 works, unverified) and run check 18. Asking on the Squarp forum for a sample is the maintainer's call. |
 
 ## Hardware verification protocol
 
-What the bytes can't tell us. Pete runs these with the Rample; each one
+What the bytes can't tell us. The maintainer runs these with the Rample; each one
 changes one thing, saves it, and compares copies of `_save` before and
 after. Checks 1–11 are the numbered checks of the original analysis
 (cited by #617); 12–18 are new. The table after the steps says what each
@@ -730,7 +730,7 @@ check unblocks.
 
 1. **Firmware.** Record the version from **Settings → INFO**, and
    whether the module is a Rample or a Rample Turbo. Until this is done,
-   the firmware behind Pete's files is a belief (2.00), not a fact.
+   the firmware behind the committed files is a belief (2.00), not a fact.
 2. **Autosave.** With AUTOSAVE on, load kit A0, power off and on, copy
    `_save`. Then load B0, power-cycle, copy again. Expect
    `autosave_C1.rpl` to become `autosave_A0.rpl`, then
@@ -793,7 +793,7 @@ check unblocks.
     Does the device read both? This decides how strict the encoder must
     be.
 
-18. **A sample from firmware 3.00** (D9). On a Rample running 3.00 (Pete's,
+18. **A sample from firmware 3.00** (D9). On a Rample running 3.00 (ours,
     after an update, or another owner's):
     1. Before updating, copy the whole card, and copy `_save` to
        `18-before`.
@@ -821,7 +821,7 @@ file (check 10's reset) or restore the copy.
 
 | Check | Unblocks |
 |---|---|
-| 1 | Fixture labels (D1), the firmware fence (D8), the firmware the matrix assumes for Pete's files |
+| 1 | Fixture labels (D1), the firmware fence (D8), the firmware the matrix assumes for the committed files |
 | 2 | The meaning of `autosave_<kit>.rpl` in stage 3 |
 | 3 | Units in stage 3; editing knobs in stage 6b |
 | 4 | Run mode names in stage 3 |

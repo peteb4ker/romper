@@ -8,7 +8,7 @@
 
 ## Workspace State
 - **Existing Code**: Yes
-- **Workspace Root**: /Users/pete/workspace/romper/worktrees/aidlc-comprehensive-testing
+- **Workspace Root**: ~/workspace/romper/worktrees/aidlc-comprehensive-testing
 - **Architecture**: Electron + React + TypeScript + Drizzle ORM + Vitest
 - **Version**: 1.0.1
 

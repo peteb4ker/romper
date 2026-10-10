@@ -14,7 +14,7 @@ mechanics; you never fix a PR yourself.
 For each PR, **in the order given, one at a time**:
 
 1. **Skip a held PR.** If the PR is labelled `hold` or `do-not-merge`, or
-   the coordinator listed it as waiting on Pete's sign-off, don't run
+   the coordinator listed it as waiting on the maintainer's sign-off, don't run
    anything on it. Move to the next PR. (The script refuses those labels
    too, with `result=held`.)
 2. Run the script and wait for it to finish (it can take an hour; run it
@@ -74,7 +74,7 @@ Never, whatever the script says:
 Two labels keep a PR out of the queue; the shepherd skips them and the
 script refuses them:
 
-- `hold`: waiting on Pete's sign-off. Whoever finds an unrecorded decision
+- `hold`: waiting on the maintainer's sign-off. Whoever finds an unrecorded decision
   adds it; it comes off once the sign-off is on the issue.
 - `do-not-merge`: must not merge as it stands (a spike, or a PR another
   one replaces).
@@ -184,10 +184,10 @@ The shepherd escalates anything the script stops on back to you.
    here, or filed as an issue (link it). "None found" is an answer; a
    missing check isn't.
 9. **Decisions are recorded.** A UX or product choice the PR makes
-   (shortcut, wording, behavior) has Pete's sign-off on the issue. If it
+   (shortcut, wording, behavior) has the maintainer's sign-off on the issue. If it
    doesn't, label the PR `hold` (`gh pr edit <N> --add-label hold`), say
    so in the description and tell the coordinator. Remove the label once
-   Pete signs off.
+   the maintainer signs off.
 10. **UI changes carry their screenshots.** If the PR changes how a
     captured view looks, it must include the regenerated screenshots and
     manual text (`capture-screenshots` command).

@@ -6,11 +6,10 @@ If the two disagree, `CLAUDE.md` wins and you say so in your report.
 
 ## Worktree and branch
 
-- Create a worktree from the main checkout:
-  `cd /Users/pete/workspace/romper && npm run worktree:create <name>`.
-  It makes `/Users/pete/workspace/romper-worktrees/<name>` on
-  `feature/<name>` from `origin/main`. Work there, and don't edit anyone
-  else's worktree.
+- Create a worktree from the main checkout: from there, run
+  `npm run worktree:create <name>`. It makes `../romper-worktrees/<name>`
+  (beside the main checkout) on `feature/<name>` from `origin/main`. Work
+  there, and don't edit anyone else's worktree.
 - **Unique scratch file names.** Subagents of one session share a scratchpad.
   Name anything you write there after your branch or PR (e.g.
   `pr-<branch>-body.md`), never a generic name like `pr.md`, and pass PR
@@ -49,22 +48,22 @@ If the two disagree, `CLAUDE.md` wins and you say so in your report.
 - A UI change ships with regenerated screenshots and matching manual text in
   the same PR (`capture-screenshots` command).
 - Don't edit `aidlc-docs/` or the historical list in `BACKLOG.md`. Edit
-  `CLAUDE.md` only when the coordinator says Pete approved the change.
+  `CLAUDE.md` only when the coordinator says the maintainer approved the change.
 
-## Keep Pete's data safe
+## Keep the maintainer's data safe
 
-- Never touch Pete's real store, his `.romper-dev` settings,
+- Never touch the maintainer's real store, their `.romper-dev` settings,
   `~/Library/Application Support/Romper`, any SD card, or
-  `/Users/pete/Downloads/_save/`.
+  the `_save/` folder in their Downloads folder.
 - Any app launch sets `ROMPER_USER_DATA_DIR` to a temp directory.
 - Don't verify UI in a browser (the renderer needs the preload script). Use
   the `run-app` skill.
 
-## Decisions are Pete's
+## Decisions are the maintainer's
 
 UX and behavior choices (wording, shortcuts, defaults, visible behavior) are
 not yours. Stop, report the choice with a recommendation, and never ship
-wording Pete hasn't approved. Don't reopen anything listed under decisions
+wording the maintainer hasn't approved. Don't reopen anything listed under decisions
 already made.
 
 ## Getting a PR to merged
@@ -97,7 +96,7 @@ End with these, in order:
 3. **What changed:** a few lines.
 4. **Test evidence:** which tests cover it, and for a fix, that they fail
    without it.
-5. **Decisions for Pete:** each with your recommendation, or "none".
+5. **Decisions for the maintainer:** each with your recommendation, or "none".
 6. **Left:** anything unfinished, out of scope but noticed, or filed as an
    issue (link it).
 7. **Worktree:** its absolute path.

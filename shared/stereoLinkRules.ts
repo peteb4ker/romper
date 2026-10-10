@@ -1,4 +1,4 @@
-// Stereo pairs, by Pete's "Final stereo rules v2" on #537 (with #541 and
+// Stereo pairs, by the "Final stereo rules v2" on #537 (with #541 and
 // #574). One module for main and the renderer: setup, scan reports, the
 // write, main's `updateVoiceStereoMode`, the link button, drops and the
 // kit editor's labels all read the rules and their words from here.
@@ -249,7 +249,7 @@ function linkAutomatically(kit: KitView): number[] {
 }
 
 // --- Wording -------------------------------------------------------------
-// Approved by Pete (#537).
+// Approved on #537.
 
 /** Rule 4's problems with the pair on voices n and n+1 */
 function pairProblems(kit: KitView, n: number): QuarantineProblem[] {

@@ -1,5 +1,5 @@
 /**
- * The message for a favorite toggle that failed, worded as Pete approved on
+ * The message for a favorite toggle that failed, worded as approved on
  * #554 and #607. The kit editor (`useKitEditorLogic.toggleFavorite`) and the
  * kit browser (`useKitFilters.handleToggleFavorite`) both show it.
  *

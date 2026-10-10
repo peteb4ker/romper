@@ -39,6 +39,13 @@
  *
  * with one exit code per outcome (OUTCOMES below). It never pushes to
  * main, never skips hooks and never merges with --admin.
+ *
+ * It never reports a PR that merged as anything else: before any result
+ * but merged, dry-run or usage it re-checks the PR's state (with retries),
+ * so a network error after the merge still ends as "merged". And it never
+ * waits on a call forever: every git, gh and SonarCloud call has a time
+ * limit (LIMITS), and a --dry-run has a total limit as well. Running out of
+ * either ends as "timeout".
  */
 import { spawnSync } from "node:child_process";
 import {
@@ -55,9 +62,29 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { checkPullRequest } from "./sonar-pr.mjs";
+import {
+  checkPullRequest,
+  fetchWithTimeout,
+  SONAR_TIMEOUT_MS,
+} from "./sonar-pr.mjs";
 
 const REPO = "peteb4ker/romper";
+
+/** Time limits, in milliseconds */
+export const LIMITS = {
+  /** One git or gh call */
+  callMs: 120_000,
+  /** The whole of a --dry-run, which makes only a handful of calls */
+  dryRunMs: 180_000,
+  /** npm ci or npm run typecheck */
+  longMs: 15 * 60_000,
+  /** Pause between re-checks of whether the PR merged */
+  recheckPauseMs: 3000,
+  /** One re-check of whether the PR merged */
+  recheckMs: 15_000,
+  /** Tries at that re-check */
+  recheckAttempts: 3,
+};
 
 /** Exit code for each outcome; "merged" and "dry-run" are the successes */
 export const OUTCOMES = /** @type {const} */ ({
@@ -400,6 +427,48 @@ export function decide(snapshot, memory) {
   };
 }
 
+/** Outcomes that can't be a mistake about a merge, so nothing is re-checked */
+const SETTLED = ["merged", "dry-run", "usage"];
+
+/**
+ * Never report a PR that merged as anything else. Before a result other
+ * than merged, dry-run or usage, ask again whether the PR merged (retrying
+ * the question) and report merged if it did. A re-check that can't be made
+ * leaves the result as it was, with a note saying so.
+ * @param {{ outcome: Outcome, detail: string }} result
+ * @param {() => { state: string, mergedAt?: string | null }} recheck
+ *   reads the PR's state; may throw
+ * @param {{ attempts?: number, pauseMs?: number }} [options]
+ * @returns {Promise<{ outcome: Outcome, detail: string }>}
+ */
+export async function settleResult(
+  result,
+  recheck,
+  { attempts = LIMITS.recheckAttempts, pauseMs = LIMITS.recheckPauseMs } = {},
+) {
+  if (SETTLED.includes(result.outcome)) return result;
+  /** @type {unknown} */
+  let failure;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, pauseMs));
+    try {
+      const now = recheck();
+      if (now.state !== "MERGED") return result;
+      return {
+        detail: `merged at ${now.mergedAt} (first seen as ${result.outcome}: ${result.detail})`,
+        outcome: "merged",
+      };
+    } catch (error) {
+      failure = error;
+    }
+  }
+  const why = failure instanceof Error ? failure.message : String(failure);
+  return {
+    detail: `${result.detail} (couldn't re-check whether the PR merged: ${why})`,
+    outcome: result.outcome,
+  };
+}
+
 /**
  * The one-line result, for the shepherd to read.
  * @param {Outcome} outcome
@@ -426,32 +495,81 @@ class Stop extends Error {
   }
 }
 
+/** When the dry run's total limit ends (epoch ms); no limit for a real run */
+let deadlineAt = Infinity;
+
+/** @param {number} at epoch ms, or Infinity for no limit */
+function setDeadline(at) {
+  deadlineAt = at;
+}
+
 /**
- * Run a command; the caller decides what a failure means.
+ * How long a call may take: its own limit, cut short to what is left of the
+ * dry run's. Throws a timeout once nothing is left.
+ * @param {number} capMs the call's own limit
+ * @param {number} [deadline] when the dry run's limit ends
+ * @param {number} [now]
+ * @returns {number} milliseconds
+ */
+export function timeLeft(capMs, deadline = deadlineAt, now = Date.now()) {
+  const left = deadline - now;
+  if (left <= 0) {
+    throw new Stop("timeout", "the dry run ran past its total time limit");
+  }
+  return Math.min(capMs, left);
+}
+
+/**
+ * Run a command; the caller decides what a failure means. A command that
+ * runs past its time limit is killed and throws a timeout, never a result
+ * the caller could mistake for its own failure (a conflict, say).
  * @param {string} cmd
  * @param {string[]} args
- * @param {{ cwd?: string }} [options]
+ * @param {{ cwd?: string, timeoutMs?: number }} [options]
  */
-function run(cmd, args, { cwd } = {}) {
+export function run(cmd, args, { cwd, timeoutMs = LIMITS.callMs } = {}) {
+  const limit = timeLeft(timeoutMs);
   const result = spawnSync(cmd, args, {
     cwd,
     encoding: "utf8",
+    killSignal: "SIGKILL",
     maxBuffer: 64 * 1024 * 1024,
+    timeout: limit,
   });
+  if (result.error && /** @type {any} */ (result.error).code === "ETIMEDOUT") {
+    throw new Stop(
+      "timeout",
+      `${cmd} ${args.slice(0, 3).join(" ")} timed out after ${Math.round(limit / 1000)}s`,
+    );
+  }
   return {
     ok: result.status === 0,
-    output: `${result.stdout ?? ""}${result.stderr ?? ""}`.trim(),
+    output:
+      `${result.stdout ?? ""}${result.stderr ?? ""}`.trim() ||
+      (result.error?.message ?? ""),
     stdout: (result.stdout ?? "").trim(),
   };
+}
+
+/**
+ * Run a cleanup step that mustn't hide the error that got us here.
+ * @param {() => unknown} step
+ */
+function quietly(step) {
+  try {
+    step();
+  } catch {
+    // Best effort
+  }
 }
 
 /**
  * Run a command that must succeed.
  * @param {string} cmd
  * @param {string[]} args
- * @param {{ cwd?: string }} [options]
+ * @param {{ cwd?: string, timeoutMs?: number }} [options]
  */
-function must(cmd, args, options) {
+export function must(cmd, args, options) {
   const result = run(cmd, args, options);
   if (!result.ok) {
     throw new Stop(
@@ -534,11 +652,21 @@ function readChecks(pr) {
  * @param {string} headSha
  */
 async function readSonar(pr, headSha) {
-  const head = await checkPullRequest(pr, { headSha });
-  if (head.code !== 2)
-    return { code: head.code, head: true, lines: head.lines };
-  const any = await checkPullRequest(pr);
-  return { code: any.code, head: false, lines: any.lines };
+  // Each request gets its own limit, cut short by the dry run's
+  const fetchImpl = (/** @type {string} */ url) =>
+    fetchWithTimeout(timeLeft(SONAR_TIMEOUT_MS))(url);
+  try {
+    const head = await checkPullRequest(pr, { fetchImpl, headSha });
+    if (head.code !== 2)
+      return { code: head.code, head: true, lines: head.lines };
+    const any = await checkPullRequest(pr, { fetchImpl });
+    return { code: any.code, head: false, lines: any.lines };
+  } catch (error) {
+    if (error instanceof Error && error.name === "TimeoutError") {
+      throw new Stop("timeout", "SonarCloud didn't answer in time");
+    }
+    throw error;
+  }
 }
 
 /**
@@ -667,7 +795,7 @@ function provideNodeModules(repo, scratch) {
   const install = run(
     "npm",
     ["ci", "--ignore-scripts", "--no-audit", "--no-fund"],
-    { cwd: scratch },
+    { cwd: scratch, timeoutMs: LIMITS.longMs },
   );
   if (!install.ok) {
     throw new Stop("error", `npm ci failed: ${lastLines(install.output, 3)}`);
@@ -697,7 +825,10 @@ function rebaseAndPush({ branch, expectedHead, repo, scratch }) {
   }
   log("Rebased; running npm run typecheck on the rebased tree");
   provideNodeModules(repo, scratch);
-  const typecheck = run("npm", ["run", "typecheck"], { cwd: scratch });
+  const typecheck = run("npm", ["run", "typecheck"], {
+    cwd: scratch,
+    timeoutMs: LIMITS.longMs,
+  });
   if (!typecheck.ok) {
     console.error(lastLines(typecheck.output, 20).split(" | ").join("\n"));
     throw new Stop("typecheck", "npm run typecheck fails on the rebased tree");
@@ -734,6 +865,7 @@ function sleep(seconds) {
  */
 async function ship(options) {
   const { pr } = options;
+  if (options.dryRun) setDeadline(Date.now() + LIMITS.dryRunMs);
   const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
   const view = viewPullRequest(pr);
@@ -812,7 +944,9 @@ async function ship(options) {
     // Unlink the borrowed node_modules first, so nothing follows the link
     // (a real folder from npm ci is removed with the scratch tree)
     unlinkNodeModules(scratch);
-    run("git", ["worktree", "remove", "--force", scratch], { cwd: repo });
+    quietly(() =>
+      run("git", ["worktree", "remove", "--force", scratch], { cwd: repo }),
+    );
     rmSync(scratch, { force: true, recursive: true });
   };
   process.once("SIGINT", () => {
@@ -828,9 +962,11 @@ async function ship(options) {
     rerunWorkflows: [],
   };
   const disarm = () => {
-    if (run("gh", ["pr", "merge", pr, "--disable-auto"]).ok) {
-      log("Auto-merge off until SonarCloud analyzes the head");
-    }
+    quietly(() => {
+      if (run("gh", ["pr", "merge", pr, "--disable-auto"]).ok) {
+        log("Auto-merge off until SonarCloud analyzes the head");
+      }
+    });
     memory.armed = false;
   };
   const arm = () => {
@@ -924,8 +1060,15 @@ async function ship(options) {
         errorsInARow = 0;
       } catch (error) {
         // A network blip in a long watch isn't a reason to stop: retry a
-        // failed git, gh or SonarCloud call twice before giving up
-        if (error instanceof Stop && error.outcome !== "error") throw error;
+        // failed or timed-out git, gh or SonarCloud call twice before
+        // giving up
+        if (
+          error instanceof Stop &&
+          error.outcome !== "error" &&
+          error.outcome !== "timeout"
+        ) {
+          throw error;
+        }
         if (++errorsInARow >= 3) throw error;
         log(
           `Poll ${poll}: ${error instanceof Error ? error.message : error}; retrying`,
@@ -936,7 +1079,7 @@ async function ship(options) {
   } catch (error) {
     if (memory.armed) {
       // Nothing merges unattended after the shepherd has stopped
-      run("gh", ["pr", "merge", pr, "--disable-auto"]);
+      quietly(() => run("gh", ["pr", "merge", pr, "--disable-auto"]));
     }
     throw error;
   } finally {
@@ -970,6 +1113,15 @@ if (
             outcome: "error",
           };
   }
+  // The dry run's total limit has done its job; the re-check has its own
+  setDeadline(Infinity);
+  result = await settleResult(result, () =>
+    JSON.parse(
+      must("gh", ["pr", "view", options.pr, "--json", "state,mergedAt"], {
+        timeoutMs: LIMITS.recheckMs,
+      }),
+    ),
+  );
   console.log(formatResult(result.outcome, options.pr, result.detail));
   process.exit(OUTCOMES[result.outcome]);
 }

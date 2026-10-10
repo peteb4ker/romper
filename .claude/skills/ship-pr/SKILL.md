@@ -47,7 +47,7 @@ For each PR, **in the order given, one at a time**:
 
 | Outcome | Code | What happened |
 | --- | --- | --- |
-| `merged` | 0 | Merged (or was already) |
+| `merged` | 0 | Merged (or was already). Before any other result the script re-checks the PR's state, so a network error after the merge still ends here |
 | `dry-run` | 0 | `--dry-run`: all read-only checks passed |
 | `error` | 1 | git, gh or npm failed unexpectedly |
 | `usage` | 2 | Bad arguments |
@@ -59,7 +59,7 @@ For each PR, **in the order given, one at a time**:
 | `not-open` | 15 | Closed, draft, not based on main, or from a fork |
 | `held` | 16 | Labelled `hold` or `do-not-merge` |
 | `branch-moved` | 17 | Someone pushed the branch while it was shipping |
-| `timeout` | 18 | Not merged after 90 polls (about 90 minutes) |
+| `timeout` | 18 | Not merged after 90 polls (about 90 minutes), or a git, gh or SonarCloud call (or a `--dry-run` as a whole) ran past its time limit. Check the PR's state before escalating |
 | `env` | 19 | The checkout the script runs from has no `node_modules`, so it can't typecheck. Not the PR's fault: don't send it back to the author. Run `npm install` in that checkout and run the script again |
 
 Never, whatever the script says:

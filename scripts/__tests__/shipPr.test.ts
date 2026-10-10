@@ -29,10 +29,13 @@ import {
   OUTCOMES,
   parseArgs,
   pullRequestProblem,
+  run,
   runnerNeverAcquired,
   sameLockfile,
+  settleResult,
   type Snapshot,
   splitFailures,
+  timeLeft,
   touchesBacklogHistory,
   unlinkNodeModules,
 } from "../ship-pr.mjs";
@@ -494,6 +497,112 @@ describe("[Q-07] ship-pr, the shepherd's merge script", () => {
       const codes = stops.map(([, code]) => code);
       expect(new Set(codes).size).toBe(codes.length);
       expect(codes).not.toContain(0);
+    });
+  });
+  describe("a result that is wrong because the PR merged", () => {
+    const noPause = { attempts: 3, pauseMs: 0 };
+    const failed = { detail: "fetch failed", outcome: "error" as const };
+
+    it("reports merged when a network error followed the merge", async () => {
+      const recheck = () => ({
+        mergedAt: "2026-10-10T08:25:26Z",
+        state: "MERGED",
+      });
+      const result = await settleResult(failed, recheck, noPause);
+      expect(result.outcome).toBe("merged");
+      expect(result.detail).toContain("2026-10-10T08:25:26Z");
+    });
+
+    it("retries the re-check before giving up on it", async () => {
+      let calls = 0;
+      const recheck = () => {
+        if (++calls < 3) throw new Error("fetch failed");
+        return { mergedAt: "2026-10-10T08:25:26Z", state: "MERGED" };
+      };
+      const result = await settleResult(failed, recheck, noPause);
+      expect(result.outcome).toBe("merged");
+      expect(calls).toBe(3);
+    });
+
+    it("keeps the original result when the PR is still open", async () => {
+      const recheck = () => ({ mergedAt: null, state: "OPEN" });
+      const timeout = { detail: "gh timed out", outcome: "timeout" as const };
+      expect(await settleResult(timeout, recheck, noPause)).toEqual(timeout);
+    });
+
+    it("keeps the original outcome when the re-check can't be made", async () => {
+      const recheck = () => {
+        throw new Error("fetch failed");
+      };
+      const result = await settleResult(failed, recheck, noPause);
+      expect(result.outcome).toBe("error");
+      expect(result.detail).toContain("couldn't re-check");
+    });
+
+    it("re-checks every non-merged outcome but not usage, merged or dry-run", async () => {
+      let calls = 0;
+      const recheck = () => {
+        calls++;
+        return { mergedAt: "t", state: "MERGED" };
+      };
+      for (const outcome of [
+        "conflict",
+        "sonar",
+        "branch-moved",
+        "timeout",
+      ] as const) {
+        expect(
+          (await settleResult({ detail: "x", outcome }, recheck, noPause))
+            .outcome,
+        ).toBe("merged");
+      }
+      for (const outcome of ["usage", "merged", "dry-run"] as const) {
+        const input = { detail: "x", outcome };
+        expect(await settleResult(input, recheck, noPause)).toEqual(input);
+      }
+      expect(calls).toBe(4);
+    });
+  });
+
+  describe("time limits", () => {
+    it("stops a command that hangs, with a timeout rather than a wait", () => {
+      const started = Date.now();
+      expect(() =>
+        run("node", ["-e", "setTimeout(() => {}, 30000)"], { timeoutMs: 300 }),
+      ).toThrow(/timed out/);
+      expect(Date.now() - started).toBeLessThan(10_000);
+      try {
+        run("node", ["-e", "setTimeout(() => {}, 30000)"], { timeoutMs: 300 });
+      } catch (error) {
+        expect((error as { outcome?: string }).outcome).toBe("timeout");
+      }
+    });
+
+    it("still returns the output of a command that finishes", () => {
+      const result = run("node", ["-e", "console.log('hi')"]);
+      expect(result.ok).toBe(true);
+      expect(result.stdout).toBe("hi");
+    });
+
+    it("gives a call its own limit while a dry run has time left", () => {
+      expect(timeLeft(5000, Date.now() + 60_000, Date.now())).toBe(5000);
+    });
+
+    it("cuts a call short to fit what is left of the dry run's limit", () => {
+      expect(timeLeft(5000, 1000 + 2000, 1000)).toBe(2000);
+    });
+
+    it("ends the dry run with a timeout once its limit has passed", () => {
+      try {
+        timeLeft(5000, 1000, 1000);
+        expect.unreachable();
+      } catch (error) {
+        expect((error as { outcome?: string }).outcome).toBe("timeout");
+      }
+    });
+
+    it("has no limit when none is set (a real run)", () => {
+      expect(timeLeft(5000, Infinity, Date.now())).toBe(5000);
     });
   });
 });

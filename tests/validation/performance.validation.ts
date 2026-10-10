@@ -234,6 +234,40 @@ test("[Q-01] performance profile", async () => {
     }
 
     await watchFrames();
+
+    // #812: the store check starts by itself a few seconds after the grid
+    // loads, once main has had no IPC call for that long. Measured from here
+    // to the end of the pass, the longest stall is what the pass cost main.
+    await measure("store check: full pass", async () => {
+      await new Promise((r) => setTimeout(r, 3000));
+      await expect
+        .poll(
+          async () =>
+            ui().evaluate(async () => {
+              const api = (
+                globalThis as unknown as {
+                  electronAPI: {
+                    getStoreCheckStatus(): Promise<{
+                      data?: { lastCompletedAt: null | number };
+                    }>;
+                  };
+                }
+              ).electronAPI;
+              return (await api.getStoreCheckStatus()).data?.lastCompletedAt;
+            }),
+          { intervals: [1000], timeout: 120_000 },
+        )
+        .not.toBeNull();
+    });
+
+    // A fresh start for the rest: the idle reading below has a pass running
+    // in it, which starts a few seconds after the grid loads
+    await app?.close();
+    await launch();
+    await ui()
+      .locator('[data-testid="kit-item-A0"]')
+      .waitFor({ timeout: 60_000 });
+    await watchFrames();
     const p = ui();
 
     await measure("idle on the kit grid, 10 s", async () => {

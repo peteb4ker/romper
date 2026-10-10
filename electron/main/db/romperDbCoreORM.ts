@@ -16,6 +16,7 @@ export {
   getAllBanks,
   getKit,
   getKitDeleteSummary,
+  getKitNamesForCheck,
   getKits,
   getKitSamples,
   getSamplesToDelete,
@@ -29,6 +30,7 @@ export {
   markKitsAsSyncedTx,
   mergeKitScan,
   mergeKitScanTx,
+  readKitRowsToCheck,
   requireEditableKitTx,
   restoreVoicesTx,
   toggleKitFavorite,
@@ -44,10 +46,12 @@ export {
   updateVoiceVolume,
 } from "./operations/crudOperations.js";
 
+export type { KitRowsToCheck } from "./operations/crudOperations.js";
 export {
   moveSampleBetweenKitsTx,
   moveSampleTx,
 } from "./operations/sampleMovement.js";
+
 // Import and re-export database utilities
 export { DB_FILENAME } from "./utils/dbUtilities.js";
 

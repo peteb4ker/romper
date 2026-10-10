@@ -114,11 +114,11 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
   const validatePath = async (path: string) => {
     setIsValidating(true);
     try {
-      if (!globalThis.electronAPI?.validateLocalStore) {
+      if (!globalThis.electronAPI?.validateLocalStoreOpens) {
         throw new Error("Validation API not available");
       }
 
-      const result = await globalThis.electronAPI.validateLocalStore(path);
+      const result = await globalThis.electronAPI.validateLocalStoreOpens(path);
       if (isMountedRef.current) {
         setValidationResult({
           error: result.error || undefined,
@@ -164,7 +164,7 @@ const InvalidLocalStoreDialog: React.FC<InvalidLocalStoreDialogProps> = ({
     setIsRetrying(true);
     try {
       const result =
-        await globalThis.electronAPI?.validateLocalStore?.(localStorePath);
+        await globalThis.electronAPI?.validateLocalStoreOpens?.(localStorePath);
       if (result?.isValid) {
         await refreshLocalStoreStatus();
       } else if (isMountedRef.current) {

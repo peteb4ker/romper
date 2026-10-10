@@ -168,6 +168,19 @@ export class LocalStoreService {
   ): LocalStoreValidationDetailedResult {
     return validateLocalStoreBasic(localStorePath);
   }
+
+  /**
+   * Check that a store opens: its folder, its database file and the
+   * database's schema. Sample files aren't read (#813); missing and extra
+   * ones are for the store check to find (#769). The Invalid Local Store
+   * dialog asks this, as get-local-store-status does, so every refusal
+   * carries a reason in `error`.
+   */
+  validateLocalStoreOpens(
+    localStorePath: string,
+  ): LocalStoreValidationDetailedResult {
+    return validateLocalStoreAndDb(localStorePath);
+  }
 }
 
 // Export singleton instance

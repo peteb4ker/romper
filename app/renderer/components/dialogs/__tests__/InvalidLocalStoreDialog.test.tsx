@@ -49,7 +49,7 @@ describe("[UC-05] InvalidLocalStoreDialog", () => {
   const mockElectronAPI = {
     closeApp: vi.fn(),
     selectLocalStorePath: vi.fn(),
-    validateLocalStore: vi.fn(),
+    validateLocalStoreOpens: vi.fn(),
   };
 
   beforeEach(() => {
@@ -79,7 +79,7 @@ describe("[UC-05] InvalidLocalStoreDialog", () => {
 
   it("should handle directory selection", async () => {
     mockElectronAPI.selectLocalStorePath.mockResolvedValue("/new/path");
-    mockElectronAPI.validateLocalStore.mockResolvedValue({
+    mockElectronAPI.validateLocalStoreOpens.mockResolvedValue({
       isValid: true,
     });
 
@@ -93,7 +93,7 @@ describe("[UC-05] InvalidLocalStoreDialog", () => {
     });
 
     await waitFor(() => {
-      expect(mockElectronAPI.validateLocalStore).toHaveBeenCalledWith(
+      expect(mockElectronAPI.validateLocalStoreOpens).toHaveBeenCalledWith(
         "/new/path",
       );
     });
@@ -106,7 +106,7 @@ describe("[UC-05] InvalidLocalStoreDialog", () => {
 
   it("should handle validation failure", async () => {
     mockElectronAPI.selectLocalStorePath.mockResolvedValue("/invalid/new/path");
-    mockElectronAPI.validateLocalStore.mockResolvedValue({
+    mockElectronAPI.validateLocalStoreOpens.mockResolvedValue({
       error: "Directory is not writable",
       isValid: false,
     });
@@ -125,7 +125,7 @@ describe("[UC-05] InvalidLocalStoreDialog", () => {
 
   it("should update path and reload when valid directory selected", async () => {
     mockElectronAPI.selectLocalStorePath.mockResolvedValue("/valid/path");
-    mockElectronAPI.validateLocalStore.mockResolvedValue({
+    mockElectronAPI.validateLocalStoreOpens.mockResolvedValue({
       isValid: true,
     });
 
@@ -165,7 +165,9 @@ describe("[UC-05] InvalidLocalStoreDialog", () => {
   it("reports a save that failed (RE-78)", async () => {
     mockSetLocalStorePath.mockResolvedValue(false);
     mockElectronAPI.selectLocalStorePath.mockResolvedValue("/valid/path");
-    mockElectronAPI.validateLocalStore.mockResolvedValue({ isValid: true });
+    mockElectronAPI.validateLocalStoreOpens.mockResolvedValue({
+      isValid: true,
+    });
     render(<InvalidLocalStoreDialog {...defaultProps} />);
 
     fireEvent.click(screen.getByTestId("file-picker-button"));
@@ -185,7 +187,9 @@ describe("[UC-05] InvalidLocalStoreDialog", () => {
   // RE-80: a store on a drive that wasn't connected at launch
   describe("Try Again", () => {
     it("reopens the store once it can be opened", async () => {
-      mockElectronAPI.validateLocalStore.mockResolvedValue({ isValid: true });
+      mockElectronAPI.validateLocalStoreOpens.mockResolvedValue({
+        isValid: true,
+      });
       render(<InvalidLocalStoreDialog {...defaultProps} />);
 
       fireEvent.click(screen.getByTestId("retry-local-store-btn"));
@@ -193,14 +197,30 @@ describe("[UC-05] InvalidLocalStoreDialog", () => {
       await waitFor(() =>
         expect(mockRefreshLocalStoreStatus).toHaveBeenCalled(),
       );
-      expect(mockElectronAPI.validateLocalStore).toHaveBeenCalledWith(
+      expect(mockElectronAPI.validateLocalStoreOpens).toHaveBeenCalledWith(
         "/invalid/path",
       );
       expect(mockSetLocalStorePath).not.toHaveBeenCalled();
     });
 
+    it("[UC-05] reopens a store that has a missing sample or an extra WAV (#813)", async () => {
+      // The channel answers only whether the store opens, so a store the
+      // store check would report on is valid here
+      mockElectronAPI.validateLocalStoreOpens.mockResolvedValue({
+        isValid: true,
+      });
+      render(<InvalidLocalStoreDialog {...defaultProps} />);
+
+      fireEvent.click(screen.getByTestId("retry-local-store-btn"));
+
+      await waitFor(() =>
+        expect(mockRefreshLocalStoreStatus).toHaveBeenCalled(),
+      );
+      expect(screen.queryByTestId("retry-error")).not.toBeInTheDocument();
+    });
+
     it("says why when the store still can't be opened", async () => {
-      mockElectronAPI.validateLocalStore.mockResolvedValue({
+      mockElectronAPI.validateLocalStoreOpens.mockResolvedValue({
         error: "Local store directory does not exist",
         isValid: false,
       });

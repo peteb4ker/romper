@@ -226,6 +226,30 @@ describe("LocalStoreService", () => {
     });
   });
 
+  describe("[UC-05] validateLocalStoreOpens (#813)", () => {
+    it("checks the store itself, not its samples", () => {
+      mockValidateAndDb.mockReturnValue({ isValid: true });
+
+      const result = localStoreService.validateLocalStoreOpens("/test/path");
+
+      expect(result).toEqual({ isValid: true });
+      expect(mockValidateAndDb).toHaveBeenCalledWith("/test/path");
+      expect(mockValidateAgainstDb).not.toHaveBeenCalled();
+    });
+
+    it("says why a store is refused", () => {
+      mockValidateAndDb.mockReturnValue({
+        error: "Romper DB file not found",
+        isValid: false,
+      });
+
+      expect(localStoreService.validateLocalStoreOpens("/test/path")).toEqual({
+        error: "Romper DB file not found",
+        isValid: false,
+      });
+    });
+  });
+
   describe("validateLocalStoreBasic", () => {
     it("delegates to validateLocalStoreBasic", () => {
       const mockResult = {

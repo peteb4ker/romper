@@ -334,6 +334,9 @@ export const createElectronAPIMock = (
     validateLocalStoreBasic: mockMethod(
       "validateLocalStoreBasic",
     ).mockResolvedValue({ isValid: true }),
+    validateLocalStoreOpens: mockMethod(
+      "validateLocalStoreOpens",
+    ).mockResolvedValue({ isValid: true }),
 
     validateSampleFormat: mockMethod("validateSampleFormat").mockResolvedValue({
       success: true,

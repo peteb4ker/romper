@@ -47,7 +47,7 @@ binds every side at compile time:
   `Call<"method">`, a method's own parameters and result, so a channel can't
   drift from the method it serves. `IpcEvents` does the same for what main
   sends the renderer (`sync-progress`, `archive-progress`, `archive-error`,
-  `local-store-database-missing`).
+  `local-store-database-missing`, `store-check-updated`).
 - **Main.** Every handler is registered with `handle(channel, handler)` from
   `electron/main/ipcHandle.ts`, and the events in `IpcEvents` are sent with
   `sendEvent` (the menu's events carry nothing and are sent directly). A

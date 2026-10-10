@@ -21,6 +21,7 @@ import { localStoreSetupService } from "./services/localStoreSetupService.js";
 import { sampleService } from "./services/sampleService.js";
 import { getSdCardDialogDefaultPath } from "./services/sdCardSafety.js";
 import { settingsService } from "./services/settingsService.js";
+import { storeCheckService } from "./services/storeCheckService.js";
 import {
   checkDiskSpaceSufficient,
   checkPathWritable,
@@ -47,9 +48,11 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
     }
     const previousStore = inMemorySettings.localStorePath;
     settingsService.writeSetting(inMemorySettings, key, value);
-    // A different store: close the old one's connection (RE-81). The new
-    // store's connection opens on its first use.
+    // A different store: stop checking the old one's files (#812), then
+    // close its connection (RE-81). The new store's connection opens on its
+    // first use, and its check starts when its kit grid has loaded.
     if (key === "localStorePath" && value !== previousStore) {
+      storeCheckService.cancel();
       closeAllDbConnections();
     }
     // The wizard saves the store as the last step of a successful setup. It
@@ -82,6 +85,23 @@ export function registerIpcHandlers(inMemorySettings: InMemorySettings) {
         sendEvent(win.webContents, "local-store-database-missing");
       }
     }
+  });
+
+  // The background check of the store's sample files (#812). The kit grid
+  // asks for its status once it has loaded, which also starts the check; a
+  // step that changes a kit's finding is pushed to the renderer.
+  storeCheckService.onUpdate((update) => {
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (!win.isDestroyed()) {
+        sendEvent(win.webContents, "store-check-updated", update);
+      }
+    }
+  });
+  handle("get-store-check-status", () => {
+    const localStorePath =
+      ServicePathManager.getLocalStorePath(inMemorySettings);
+    if (localStorePath) storeCheckService.start(localStorePath);
+    return { data: storeCheckService.getStatus(), success: true };
   });
 
   // Add close app handler

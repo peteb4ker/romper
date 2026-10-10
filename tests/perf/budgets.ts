@@ -82,6 +82,8 @@ export const BUDGETS = {
       "get-all-banks": { max: 1 },
       "get-all-kits": { max: 1 },
       "get-local-store-status": { max: 1 },
+      /** #812: the grid asks once; the check's own work isn't IPC */
+      "get-store-check-status": { max: 1 },
       "read-settings": { max: 2 },
     },
     /**
@@ -249,6 +251,12 @@ export const BUDGETS = {
       /** Planning's own file reads are asynchronous (RE-82). */
       syncFsCalls: { max: 0 },
     },
+    /** The generated store's six kits, each as above, and the kit list */
+    "store check: full pass": {
+      connections: NO_NEW_CONNECTION,
+      statements: { max: 73 },
+      syncFsCalls: { max: 0 },
+    },
     /**
      * #650: a full write of the mixed-format store in
      * tests/integration/sync-write-budget.integration.test.ts.
@@ -256,6 +264,19 @@ export const BUDGETS = {
      * card. `syncFsCalls` as above, for the whole write: conversions read
      * their headers asynchronously too (RE-07).
      */
+    /**
+     * #812: the background check of the store's sample files. A step is one
+     * kit: its rows are read, and what changed is recorded in one
+     * transaction, which reads them again. Measured on a kit whose files
+     * were never checked (an older library), so each of its eight rows is
+     * updated; later passes record nothing. It makes no sync fs call and
+     * opens no connection.
+     */
+    "store check: one kit": {
+      connections: NO_NEW_CONNECTION,
+      statements: { max: 12 },
+      syncFsCalls: { max: 0 },
+    },
     "write a full card": {
       cardWrites: { max: 77 },
       syncFsCalls: { max: 0 },
@@ -310,6 +331,11 @@ export const BUDGETS = {
     "search: clear": { bytes: SMALL, mainBusyMs: STALL },
     "search: type 'kick'": { bytes: SMALL, mainBusyMs: STALL },
     "sequencer playing, 5 s": { bytes: SMALL, mainBusyMs: STALL },
+    /**
+     * #812: the background check of every kit's sample files, one kit per
+     * step; its polling for the end of the pass is the only IPC it makes
+     */
+    "store check: full pass": { bytes: SMALL, mainBusyMs: STALL },
     /**
      * #452: each save returns the kit it changed, without its samples (its
      * pattern, conditions, slices and voices), and nothing reads it again

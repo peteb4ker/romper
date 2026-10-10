@@ -47,6 +47,12 @@ export {
 } from "./sampleCrudOperations.js";
 
 export {
+  getKitNamesForCheck,
+  type KitRowsToCheck,
+  readKitRowsToCheck,
+} from "./storeCheckOperations.js";
+
+export {
   linkVoicesAutomaticallyTx,
   updateVoiceAlias,
   updateVoiceSampleMode,

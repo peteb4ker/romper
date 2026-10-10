@@ -193,6 +193,10 @@ export const createElectronAPIMock = (
       data: { bytes: new ArrayBuffer(8), version: "mock-version" },
       success: true,
     }),
+    getStoreCheckStatus: mockMethod("getStoreCheckStatus").mockResolvedValue({
+      data: { kits: [], lastCompletedAt: null, state: "idle" },
+      success: true,
+    }),
     // Settings operations
     getUserHomeDir:
       mockMethod("getUserHomeDir").mockResolvedValue("/mock/home"),
@@ -223,6 +227,9 @@ export const createElectronAPIMock = (
     onLocalStoreDatabaseMissing: mockMethod(
       "onLocalStoreDatabaseMissing",
     ).mockReturnValue(() => {}),
+    onStoreCheckUpdated: mockMethod("onStoreCheckUpdated").mockReturnValue(
+      () => {},
+    ),
     onSyncProgress: mockMethod("onSyncProgress").mockReturnValue(() => {}),
 
     openExternal: mockMethod("openExternal").mockResolvedValue({

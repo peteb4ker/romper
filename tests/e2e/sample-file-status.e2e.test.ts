@@ -20,10 +20,11 @@ const QUARANTINE_LABEL =
 
 // #537, Pete's decisions on #577: catch file problems early and say how to
 // fix them. The broken-kit store's A0 has a missing file and B1 a file
-// Romper can't read; nothing is known about them until a kit opens or the
-// card is written. A missing file is labelled and explained but doesn't
-// quarantine the kit; a file Romper can't read quarantines it, in the kit
-// editor and on its kit card.
+// Romper can't read; nothing is known about them until a kit opens, the
+// card is written, or the background store check reaches them a few
+// seconds after the grid loads (#812, store-check.e2e.test.ts). A missing
+// file is labelled and explained but doesn't quarantine the kit; a file
+// Romper can't read quarantines it, in the kit editor and on its kit card.
 test.describe("[UC-13] [Q-04] Missing and unreadable sample files (#537)", () => {
   let electronApp: ElectronApplication;
   let window: Page;
@@ -95,9 +96,6 @@ test.describe("[UC-13] [Q-04] Missing and unreadable sample files (#537)", () =>
   });
 
   test("an unreadable file quarantines the kit in the editor and the kit browser", async () => {
-    // Before B1 is opened, nothing is known about its files
-    await expect(indicator("B1")).toHaveCount(0);
-
     await open("B1");
 
     await expect(
@@ -141,7 +139,6 @@ test.describe("[UC-13] [Q-04] Missing and unreadable sample files (#537)", () =>
 
   test("a write records what it found, so the kit card shows quarantine without opening the kit", async () => {
     test.setTimeout(60000);
-    await expect(indicator("B1")).toHaveCount(0);
 
     await window.locator('[data-testid="sync-to-sd-card"]').click();
     await window.waitForSelector('[data-testid="sync-dialog"]');

@@ -722,6 +722,85 @@ describe("useKitDataManager", () => {
     });
   });
 
+  // #812: the store check finds a kit quarantined without it being opened
+  describe("[Q-01] [UC-05] applyQuarantine (#812)", () => {
+    const loaded = async () => {
+      const hook = renderHook(() =>
+        useKitDataManager({
+          isInitialized: true,
+          isLocalStoreReady: true,
+          localStorePath: "/test/path",
+        }),
+      );
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      vi.mocked(globalThis.electronAPI.getKits).mockClear();
+      return hook;
+    };
+
+    it("shows the kit quarantined, and only that kit, without asking main", async () => {
+      const { result } = await loaded();
+      const otherKit = result.current.getKitByName("A1");
+
+      act(() => {
+        result.current.applyQuarantine("A0", true);
+      });
+
+      expect(result.current.getKitByName("A0")?.quarantined).toBe(true);
+      expect(result.current.getKitByName("A1")).toBe(otherKit);
+      expect(globalThis.electronAPI.getKit).not.toHaveBeenCalled();
+      expect(globalThis.electronAPI.getKits).not.toHaveBeenCalled();
+
+      act(() => {
+        result.current.applyQuarantine("A0", false);
+      });
+      expect(result.current.getKitByName("A0")?.quarantined).toBe(false);
+    });
+
+    it("redraws nothing when the kit already shows it", async () => {
+      const { result } = await loaded();
+      const kits = result.current.kits;
+
+      act(() => {
+        result.current.applyQuarantine("A0", false);
+      });
+
+      expect(result.current.kits).toBe(kits);
+    });
+
+    it("isn't put back by a reload sent before it", async () => {
+      const { result } = await loaded();
+      let answer: (value: DbResult<KitWithRelations>) => void = () => {};
+      vi.mocked(globalThis.electronAPI.getKit).mockReturnValueOnce(
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+      );
+      let reload: Promise<void>;
+      act(() => {
+        reload = result.current.refreshKit("A0");
+      });
+      act(() => {
+        result.current.applyQuarantine("A0", true);
+      });
+
+      await act(async () => {
+        answer({
+          data: createMockKitWithRelations({
+            name: "A0",
+            quarantined: false,
+            samples: mockSamples,
+          }),
+          success: true,
+        });
+        await reload;
+      });
+
+      expect(result.current.getKitByName("A0")?.quarantined).toBe(true);
+    });
+  });
+
   // #452 step 4: kits created, copied and deleted go on and off the list
   // without reading every kit
   describe("[Q-01] addKit and removeKit (#452)", () => {

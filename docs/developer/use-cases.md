@@ -176,6 +176,14 @@ and [Validating Your Store](../manual/kit-browser.md#validating-your-store).
   nothing recreates the file, and pushes `local-store-database-missing`;
   the renderer (`SettingsContext.tsx`) checks the store again and shows
   the dialog (#535).
+- **Main, while running (sample files):** `electron/main/services/storeCheckService.ts`
+  (`StoreCheckService`, #812) checks every kit's sample rows against their
+  files in the background, a kit at a time, from when the kit grid has
+  loaded (`get-store-check-status`) and again after a store change. It
+  gives way to IPC calls, writes, setup and rescans, and pushes
+  `store-check-updated` for a kit whose finding changed; the kit card shows
+  the existing quarantine icon. The plan is `docs/developer/store-check.md`
+  (#769).
 - **Renderer:** `app/renderer/utils/SettingsContext.tsx` (`refreshLocalStoreStatus`) →
   `app/renderer/components/hooks/kit-management/useLocalStoreSetupFlow.ts` → `app/renderer/components/dialogs/InvalidLocalStoreDialog.tsx`
   or the setup wizard; `app/renderer/components/dialogs/CriticalErrorDialog.tsx`.

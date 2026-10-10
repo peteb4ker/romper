@@ -28,6 +28,7 @@ import {
 } from "./navigationPolicy.js";
 import { enforceTrustedIpcSenders } from "./security/ipcSender.js";
 import { localStoreSetupService } from "./services/localStoreSetupService.js";
+import { storeCheckService } from "./services/storeCheckService.js";
 import { ServicePathManager } from "./utils/fileSystemUtils.js";
 import { logger } from "./utils/logger.js";
 
@@ -311,6 +312,8 @@ app.on("will-quit", () => {
       );
     }
   }
+  // No store check step may touch the database as it closes (#812)
+  storeCheckService.cancel();
   // Closing checkpoints the write-ahead log into the database file (RE-81)
   closeAllDbConnections();
 });

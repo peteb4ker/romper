@@ -40,6 +40,11 @@ interface UseKitDataManagerReturn {
    * reading it again (#452)
    */
   applyKitEdit: (kitName: string, edited: KitEdit) => void;
+  /**
+   * Shows that the store check found a kit quarantined, or no longer, in
+   * place of reading the kit (#812). Nothing redraws if it already shows it.
+   */
+  applyQuarantine: (kitName: string, quarantined: boolean) => void;
   /** Shows the kit a sample edit returned, samples and all (#452) */
   applyReadKit: (kitName: string, kit: KitWithRelations) => void;
   getKitByName: (kitName: string) => KitWithRelations | undefined;
@@ -545,6 +550,20 @@ export function useKitDataManager({
     [applySavedChange],
   );
 
+  // Show what the store check found about a kit's files, as main saved it
+  // (#812). The kit is only replaced if its flag differs, so a finding that
+  // changes nothing the card shows redraws nothing (#462).
+  const applyQuarantine = useCallback(
+    (kitName: string, quarantined: boolean) => {
+      applySavedChange(kitName, "quarantined", (kit) =>
+        (kit.quarantined ?? false) === quarantined
+          ? kit
+          : { ...kit, quarantined },
+      );
+    },
+    [applySavedChange],
+  );
+
   // Show the kit an edit to its own fields or voices returned, in place of
   // reading it again (#452). It's everything about the kit but its
   // samples, so it replaces the kit-level changes saved before it.
@@ -680,6 +699,7 @@ export function useKitDataManager({
     addKit,
     allKitSamples,
     applyKitEdit,
+    applyQuarantine,
     applyReadKit,
     getKitByName,
     kits,

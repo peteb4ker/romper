@@ -8,6 +8,8 @@ import type { IpcMainInvokeEvent } from "electron";
 
 import { ipcMain } from "electron";
 
+import { ipcActivity } from "./ipcActivity.js";
+
 /**
  * A handler for `channel`: it takes the arguments the contract says the
  * preload sends (or wider types, to validate them) and resolves with the
@@ -31,13 +33,17 @@ interface EventTarget {
  * registered through this, never with `ipcMain.handle` directly, so its
  * arguments and result are checked against the ElectronAPI contract
  * (shared/ipcChannels.ts) at compile time. Registration still goes through
- * `ipcMain.handle`, so sender validation (RE-02) wraps it.
+ * `ipcMain.handle`, so sender validation (RE-02) wraps it. Each call is
+ * counted while it runs, for background work that yields to it.
  */
 export function handle<C extends IpcChannel>(
   channel: C,
   handler: IpcHandler<C>,
 ): void {
-  ipcMain.handle(channel, handler);
+  // Background work (the store check, #812) gives way to calls in flight
+  ipcMain.handle(channel, (event, ...args) =>
+    ipcActivity.track(channel, () => handler(event, ...(args as IpcArgs<C>))),
+  );
 }
 
 /** Send the renderer an event the contract describes (IpcEvents) */

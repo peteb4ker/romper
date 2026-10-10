@@ -164,6 +164,11 @@ export interface ElectronAPI {
     slotNumber: number,
     knownVersion?: string,
   ) => Promise<DbResult<null | SampleAudio>>;
+  /**
+   * What the background store check has found so far (#812). The kit grid
+   * calls it once it has loaded: the first call also starts the check.
+   */
+  getStoreCheckStatus: () => Promise<DbResult<StoreCheckStatus>>;
   getUserHomeDir: () => Promise<string>;
   /** A folder's entries; setup lists the card with it (#724) */
   listFilesInRoot: (localStorePath: string) => Promise<DbResult<string[]>>;
@@ -201,6 +206,13 @@ export interface ElectronAPI {
    * stops listening.
    */
   onLocalStoreDatabaseMissing: (callback: () => void) => () => void;
+  /**
+   * Call `callback` with the kits whose finding changed in a step of the
+   * store check (#812). Returns a function that stops listening.
+   */
+  onStoreCheckUpdated: (
+    callback: (update: StoreCheckUpdate) => void,
+  ) => () => void;
   /**
    * Call `callback` with each progress event of the write in progress. It
    * replaces the previous callback; returns a function that stops listening.
@@ -396,6 +408,38 @@ export interface SettingsData {
 }
 
 export type SettingsKey = keyof SettingsData;
+
+/**
+ * What the store check found about one kit's sample files (#812): rows
+ * whose file is missing, rows whose file can't be read, and whether that
+ * quarantines the kit. Folder findings come with a later stage of
+ * docs/developer/store-check.md.
+ */
+export interface StoreCheckKitFinding {
+  kitName: string;
+  missing: number;
+  quarantined: boolean;
+  unreadable: number;
+}
+
+/** Where the store check is */
+export type StoreCheckState = "idle" | "paused" | "running";
+
+/** The store check so far; `kits` lists only kits with a finding */
+export interface StoreCheckStatus {
+  kits: StoreCheckKitFinding[];
+  lastCompletedAt: null | number;
+  state: StoreCheckState;
+}
+
+/**
+ * Sent over the "store-check-updated" channel: the kits whose finding
+ * changed in a step, a kit that's now clean included with zero counts
+ */
+export interface StoreCheckUpdate {
+  kits: StoreCheckKitFinding[];
+  state: StoreCheckState;
+}
 
 export interface SyncBankSummary {
   bank: string;

@@ -1,8 +1,9 @@
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { VoiceVuState } from "../useLedVisualization";
 
+import { applyTheme } from "../../../utils/appliedTheme";
 import { clearAllLevels, setVoiceLevel } from "../audioLevels";
 import {
   ICON_LED_COUNT,
@@ -139,6 +140,102 @@ describe("useLedVisualization", () => {
     // Voice 1 columns (1,2,3) should have backgroundColor set
     const voice1Led = mockLeds[1]; // col 1, row 0
     expect(voice1Led.style.backgroundColor).not.toBe("");
+  });
+});
+
+describe("[UC-29] the logo's glow follows the theme (#767)", () => {
+  let rafCallbacks: FrameRequestCallback[];
+
+  // Light and dark themes give each voice a different color
+  const LIGHT = "#102030";
+  const DARK = "#a0b0c0";
+
+  beforeEach(() => {
+    rafCallbacks = [];
+    applyTheme(false);
+    vi.spyOn(window, "getComputedStyle").mockImplementation(
+      () =>
+        ({
+          getPropertyValue: () =>
+            document.documentElement.classList.contains("dark") ? DARK : LIGHT,
+        }) as unknown as CSSStyleDeclaration,
+    );
+    global.requestAnimationFrame = vi.fn((cb) => {
+      rafCallbacks.push(cb);
+      return rafCallbacks.length;
+    });
+    global.cancelAnimationFrame = vi.fn();
+    vi.spyOn(performance, "now").mockReturnValue(1000);
+  });
+
+  afterEach(() => {
+    applyTheme(false);
+    vi.restoreAllMocks();
+    clearAllLevels();
+  });
+
+  function drawFrame(leds: HTMLDivElement[]): string {
+    rafCallbacks.at(-1)?.(1000);
+    return leds.map((el) => el.style.boxShadow).join("|");
+  }
+
+  function mountLeds() {
+    const { result } = renderHook(() =>
+      useLedVisualization({ current: false }),
+    );
+    const leds = Array.from({ length: ICON_LED_COUNT }, () =>
+      document.createElement("div"),
+    );
+    result.current.ledRefs.current = leds;
+    return leds;
+  }
+
+  it("draws the glow in the new theme's color right after a switch", () => {
+    const leds = mountLeds();
+    expect(drawFrame(leds)).toContain("16, 32, 48");
+
+    act(() => {
+      applyTheme(true);
+    });
+    const shadows = drawFrame(leds);
+    expect(shadows).toContain("160, 176, 192");
+    expect(shadows).not.toContain("16, 32, 48");
+
+    act(() => {
+      applyTheme(false);
+    });
+    expect(drawFrame(leds)).toContain("16, 32, 48");
+  });
+
+  it("draws the voice colors of the new theme while voices play", () => {
+    const leds = mountLeds();
+    setVoiceLevel(1, { isStereo: false, left: 0.5, right: 0.5 });
+    drawFrame(leds);
+    vi.spyOn(performance, "now").mockReturnValue(2000);
+    act(() => {
+      applyTheme(true);
+    });
+    rafCallbacks.at(-1)?.(2000);
+    rafCallbacks.at(-1)?.(2100);
+    const shadows = leds.map((el) => el.style.boxShadow).join("|");
+    expect(shadows).toContain("160, 176, 192");
+    expect(shadows).not.toContain("16, 32, 48");
+  });
+
+  it("reads styles on a theme switch, not on every frame", () => {
+    const leds = mountLeds();
+    drawFrame(leds);
+    const reads = vi.mocked(window.getComputedStyle).mock.calls.length;
+    drawFrame(leds);
+    drawFrame(leds);
+    expect(vi.mocked(window.getComputedStyle).mock.calls.length).toBe(reads);
+
+    act(() => {
+      applyTheme(true);
+    });
+    expect(
+      vi.mocked(window.getComputedStyle).mock.calls.length,
+    ).toBeGreaterThan(reads);
   });
 });
 

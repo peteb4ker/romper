@@ -1,6 +1,7 @@
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { applyTheme } from "../../../../utils/appliedTheme";
 import { LED_COUNT, MAX_RIPPLES } from "../ledConstants";
 import { useLedAnimation } from "../useLedAnimation";
 
@@ -107,5 +108,51 @@ describe("useLedAnimation", () => {
 
     // Should not throw or cause issues
     expect(() => result.current.addRipple(0, 0)).not.toThrow();
+  });
+});
+
+describe("[UC-29] the About dialog's glow follows the theme (#767)", () => {
+  afterEach(() => {
+    applyTheme(false);
+    vi.restoreAllMocks();
+  });
+
+  it("draws the glow in the new theme's color right after a switch", () => {
+    const callbacks: FrameRequestCallback[] = [];
+    applyTheme(false);
+    vi.spyOn(window, "getComputedStyle").mockImplementation(
+      () =>
+        ({
+          getPropertyValue: () =>
+            document.documentElement.classList.contains("dark")
+              ? "#a0b0c0"
+              : "#102030",
+        }) as unknown as CSSStyleDeclaration,
+    );
+    global.requestAnimationFrame = vi.fn((cb) => {
+      callbacks.push(cb);
+      return callbacks.length;
+    });
+    global.cancelAnimationFrame = vi.fn();
+    vi.spyOn(performance, "now").mockReturnValue(1000);
+
+    const { result } = renderHook(() => useLedAnimation());
+    const leds = Array.from({ length: LED_COUNT }, () =>
+      document.createElement("div"),
+    );
+    result.current.ledRefs.current = leds;
+    // A pointer over the grid lights the LEDs around it
+    result.current.setMousePosition(7, 2);
+    const shadows = () => leds.map((el) => el.style.boxShadow).join("|");
+
+    callbacks.at(-1)?.(1000);
+    expect(shadows()).toContain("16, 32, 48");
+
+    act(() => {
+      applyTheme(true);
+    });
+    callbacks.at(-1)?.(1000);
+    expect(shadows()).toContain("160, 176, 192");
+    expect(shadows()).not.toContain("16, 32, 48");
   });
 });

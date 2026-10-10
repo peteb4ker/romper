@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef } from "react";
 import type { Ripple } from "../dialogs/led-grid/ledMath";
 import type { CrossFadeState, VoiceVuState } from "./vuMeterState";
 
+import { useAppliedTheme } from "../../utils/appliedTheme";
 import { readGlowColor, readVoiceGlowColor } from "../dialogs/led-grid/ledMath";
 import { hasActiveVoices } from "./audioLevels";
 import {
@@ -64,12 +65,15 @@ export function useLedVisualization(
     wasVuActive: false,
   });
 
+  // The glow colors are copied from the CSS tokens when the theme changes,
+  // not per frame, so the animation loop never reads styles (#767)
+  const theme = useAppliedTheme();
   useEffect(() => {
     glowColorRef.current = readGlowColor();
     for (let v = 1; v <= 4; v++) {
       voiceGlowColorsRef.current[v] = readVoiceGlowColor(v);
     }
-  }, []);
+  }, [theme]);
 
   useEffect(() => {
     const animate = () => {

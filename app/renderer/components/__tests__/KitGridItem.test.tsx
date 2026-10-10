@@ -1264,6 +1264,44 @@ describe("KitGridItem", () => {
     });
   });
 
+  // #814: the cell's aria-label replaces its children's names, so the icon's
+  // own label never reaches a screen reader; the cell describes itself with it
+  describe("[Q-06][UC-08] quarantine announcement (#814)", () => {
+    const QUARANTINED =
+      "Quarantined: this kit won't be written to the card until it's fixed";
+
+    it("describes a quarantined kit's cell with the quarantine label", () => {
+      render(
+        <KitGridItem
+          {...defaultProps}
+          kitData={{ ...defaultProps.kitData, quarantined: true }}
+        />,
+      );
+      expect(screen.getByRole("gridcell")).toHaveAccessibleDescription(
+        QUARANTINED,
+      );
+    });
+
+    it("keeps the cell's name the same for a quarantined kit", () => {
+      render(
+        <KitGridItem
+          {...defaultProps}
+          kitData={{ ...defaultProps.kitData, quarantined: true }}
+        />,
+      );
+      expect(screen.getByRole("gridcell")).toHaveAccessibleName(
+        /^Kit .+ - \d+ samples$/,
+      );
+    });
+
+    it("gives a kit that isn't quarantined no description", () => {
+      render(<KitGridItem {...defaultProps} />);
+      const cell = screen.getByRole("gridcell");
+      expect(cell).not.toHaveAttribute("aria-describedby");
+      expect(cell).toHaveAccessibleDescription("");
+    });
+  });
+
   describe("[Q-07] favorite pulse timer (#709)", () => {
     beforeEach(() => {
       vi.useFakeTimers();

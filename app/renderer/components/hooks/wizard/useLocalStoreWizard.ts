@@ -41,6 +41,8 @@ const log = createLogger("LocalStoreWizard");
 
 /** What a finished setup tells the user about the store it built */
 interface SetupSummary {
+  /** The copy of the card's _save folder failed; setup went ahead (#802) */
+  rampleSaveNotice?: string;
   stereoNotices: StereoImportNotice[];
   truncationWarnings: TruncationWarning[];
 }
@@ -231,7 +233,7 @@ export function useLocalStoreWizard(
       // Create the database and import the kits (main names the voices),
       // and the card's or the factory archive's bank names
       log.debug("initialize - creating and populating database");
-      const { stereoNotices, truncationWarnings } =
+      const { rampleSaveNotice, stereoNotices, truncationWarnings } =
         await fileOpsHook.createAndPopulateDb(
           state.targetPath,
           bankNamesSourcePath(state),
@@ -247,6 +249,7 @@ export function useLocalStoreWizard(
 
       // Set the local store path only after everything is ready
       return await saveFinishedStore({
+        rampleSaveNotice,
         stereoNotices: stereoNotices ?? [],
         truncationWarnings: truncationWarnings ?? [],
       });

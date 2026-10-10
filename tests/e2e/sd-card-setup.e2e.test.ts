@@ -6,6 +6,7 @@ import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
 
+import { RAMPLE_SAVE_SETUP_BACKUP_FAILED_MESSAGE } from "../../shared/rampleSaveMessages";
 import { appEnv } from "../utils/e2e-app-env";
 import { approveLocalStorePrompts } from "../utils/e2e-dialogs";
 import { expect, test } from "../utils/e2e-error-guard";
@@ -139,6 +140,12 @@ function readStore(storePath: string) {
 test.describe("[UC-01] Set up from an SD card", () => {
   test.use({
     expectedMessages: {
+      "the #802 test's card has a file where _save should be, so the copy fails":
+        {
+          pattern:
+            /\[RampleSave\] Setup: Couldn't read the card's _save folder/,
+          sources: ["main-stderr"],
+        },
       "the test starts with no local store, so the wizard opens": {
         pattern: /No local store configured/,
         sources: ["main-stdout"],
@@ -421,5 +428,24 @@ test.describe("[UC-01] Set up from an SD card", () => {
     await expect(
       notice.locator('[data-testid="truncation-warning-files"] li'),
     ).toHaveText([kickName(13), kickName(14)]);
+  });
+
+  test("[Q-04] says when it couldn't keep a copy of the card's _save folder, and sets up anyway (#802)", async () => {
+    test.setTimeout(45000);
+    const card = await tempDir("romper-e2e-card-");
+    await writeWav(path.join(card, "A0", "1 KICK.wav"));
+    // A file where the Rample's folder should be: Romper can't copy it
+    await fs.outputFile(path.join(card, "_save"), "damaged");
+    const { guidance, store } = await setUpFrom(card);
+
+    await expect(
+      guidance.locator('[data-testid="rample-save-notice"]'),
+    ).toHaveText(RAMPLE_SAVE_SETUP_BACKUP_FAILED_MESSAGE);
+    expect(readStore(store).kits).toEqual(["A0"]);
+    expect(
+      await fs.pathExists(path.join(store, ".romperdb", "rample-save")),
+    ).toBe(false);
+    // The card is as it was
+    expect(await fs.readFile(path.join(card, "_save"), "utf8")).toBe("damaged");
   });
 });

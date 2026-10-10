@@ -1,6 +1,7 @@
 import type { SyncChangeSummary } from "@romper/app/renderer/components/dialogs/SyncUpdateDialog.types";
 import type { SyncOptions } from "@romper/shared/electronApi.js";
 
+import { RAMPLE_SAVE_WRITE_BACKUP_FAILED_MESSAGE } from "@romper/shared/rampleSaveMessages.js";
 import { useCallback, useState } from "react";
 
 import { createLogger } from "../../../utils/logger";
@@ -117,11 +118,18 @@ export function useSyncUpdate(
         const finalStatus = result.data?.cancelled ? "cancelled" : "completed";
         // Main's count is exact; the last progress event may lag behind it
         const syncedFiles = result.data?.syncedFiles;
+        // The copy of the card's _save folder failed, but the write went
+        // ahead (#802)
+        const notice =
+          result.data?.rampleSaveBackup?.status === "failed"
+            ? RAMPLE_SAVE_WRITE_BACKUP_FAILED_MESSAGE
+            : undefined;
         setSyncProgress((prev) =>
           prev
             ? {
                 ...prev,
                 filesCompleted: syncedFiles ?? prev.filesCompleted,
+                notice,
                 status: finalStatus,
               }
             : null,

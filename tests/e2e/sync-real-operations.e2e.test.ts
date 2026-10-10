@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { _electron as electron } from "playwright";
 
+import { RAMPLE_SAVE_WRITE_BACKUP_FAILED_MESSAGE } from "../../shared/rampleSaveMessages";
 import { appEnv } from "../utils/e2e-app-env";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
@@ -25,6 +26,12 @@ import {
 test.describe("[UC-34] Sync Real Operations E2E Tests", () => {
   test.use({
     expectedMessages: {
+      "the #802 test's card has a file where _save should be, so the copy fails":
+        {
+          pattern:
+            /\[RampleSave\] Before the write: Couldn't read the card's _save folder/,
+          sources: ["main-stderr"],
+        },
       "the RE-09 test deletes a sample's source file before writing": {
         pattern: /Source file not found: .*1_kick\.wav/,
         sources: ["main-stdout", "ui"],
@@ -185,6 +192,32 @@ test.describe("[UC-34] Sync Real Operations E2E Tests", () => {
 
       // Verify we're back to kit list
       await expect(window.locator('[data-testid="kit-grid"]')).toBeVisible();
+    });
+
+    test("[Q-04] says when it couldn't keep a copy of the card's _save folder, and writes anyway (#802)", async () => {
+      // A file where the Rample's folder should be: Romper can't copy it
+      await fs.writeFile(path.join(tempSdCardDir, "_save"), "damaged");
+
+      await window.waitForSelector('[data-testid="kit-grid"]', {
+        timeout: 10000,
+      });
+      await window.locator('[data-testid="sync-to-sd-card"]').click();
+      await window
+        .locator('[data-testid="bank-summary"]')
+        .waitFor({ state: "visible", timeout: 10000 });
+      await window.locator('[data-testid="confirm-sync"]').click();
+
+      await window
+        .locator("text=Write Complete")
+        .waitFor({ state: "visible", timeout: 15000 });
+      await expect(
+        window.locator('[data-testid="rample-save-notice"]'),
+      ).toHaveText(RAMPLE_SAVE_WRITE_BACKUP_FAILED_MESSAGE);
+      // The kits were written, and the card's _save is as it was
+      expect(await fs.pathExists(path.join(tempSdCardDir, "A0"))).toBe(true);
+      expect(await fs.readFile(path.join(tempSdCardDir, "_save"), "utf8")).toBe(
+        "damaged",
+      );
     });
 
     test("removes what the store no longer has from the card, and keeps the Rample's own files (RE-05)", async () => {

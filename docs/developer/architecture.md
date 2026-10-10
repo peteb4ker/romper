@@ -368,10 +368,15 @@ importing kits (`setup-backup-rample-save`). The card is only read, with
 are listed as skipped and never followed; a file bigger than a save file
 can be (the reader's 64 KiB), more than 4096 files or 8 MiB in all is
 skipped too. The copy is written to a `.partial` folder and renamed into
-place, so a failed copy leaves nothing. A copy that fails (a card that
-stopped responding, a damaged folder) is logged and returned with the
+place, so a failed copy leaves nothing. A copy that fails (a damaged
+folder, a store that can't be written) is logged and returned with the
 outcome (`SyncOutcome.rampleSaveBackup`), and setup or the write carries
-on; a card without `_save/` has nothing to copy. The setup copy and the
+on and says so when it finishes (`shared/rampleSaveMessages.ts`); a card
+without `_save/` has nothing to copy. A card that stops responding during
+the copy stops the write before it changes anything, with
+`CARD_NOT_RESPONDING_MESSAGE`, and stops setup with
+`CARD_NOT_RESPONDING_SETUP_MESSAGE`, which then cleans up as after any
+other failure. The setup copy and the
 newest ten write copies are kept (`RAMPLE_SAVE_WRITE_BACKUPS_KEPT`), and
 the copy just made is never removed. Nothing restores a copy yet.
 

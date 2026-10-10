@@ -74,6 +74,7 @@ import {
 } from "../../db/romperDbCoreORM.js";
 import { convertToRampleDefault } from "../../formatConverter.js";
 import { backupRampleSaveFolder } from "../../rample/rampleSaveBackup.js";
+import { CARD_NOT_RESPONDING_MESSAGE } from "../cardWatchdog.js";
 import { rtfFileService } from "../rtfFileService.js";
 import {
   findStaleCardEntries,
@@ -498,9 +499,29 @@ describe("[UC-34] SyncService", () => {
       expect(result.data?.rampleSaveBackup).toEqual({ status: "missing" });
     });
 
-    it("[Q-04] writes anyway when the copy of _save fails (#786)", async () => {
-      const failed = {
+    it("[Q-04] stops before writing when the card stops responding during the copy of _save (#802)", async () => {
+      vi.mocked(backupRampleSaveFolder).mockResolvedValueOnce({
         cardNotResponding: true,
+        error: "Couldn't read the card's _save folder",
+        status: "failed",
+      });
+
+      const result = await syncService.startKitSync(mockSettings, {
+        sdCardPath: "/sd/card",
+      });
+
+      expect(result).toEqual({
+        error: CARD_NOT_RESPONDING_MESSAGE,
+        success: false,
+      });
+      expect(syncFileOperationsService.processAllFiles).not.toHaveBeenCalled();
+      expect(mockRemoveCardEntries).not.toHaveBeenCalled();
+      expect(mockMarkKitsAsSynced).not.toHaveBeenCalled();
+    });
+
+    it("[Q-04] writes anyway when the copy of _save fails otherwise (#786)", async () => {
+      const failed = {
+        cardNotResponding: false,
         error: "Couldn't read the card's _save folder",
         status: "failed" as const,
       };

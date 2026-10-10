@@ -405,6 +405,20 @@ const SyncUpdateDialog: React.FC<SyncUpdateDialogProps> = ({
         </div>
       )}
 
+      {/* The copy of the card's _save folder failed; the write went ahead (#802) */}
+      {syncProgress?.notice &&
+        (syncProgress.status === "completed" ||
+          syncProgress.status === "cancelled") && (
+          <div
+            className="px-4 py-2 border-b border-border-subtle"
+            data-testid="rample-save-notice"
+          >
+            <p className="p-2.5 rounded border border-accent-warning/30 bg-accent-warning/10 text-[11px] text-text-secondary">
+              {syncProgress.notice}
+            </p>
+          </div>
+        )}
+
       {/* Inline Error — pinned at top */}
       {syncProgress?.status === "error" && (
         <div className="px-4 py-2 border-b border-border-subtle">

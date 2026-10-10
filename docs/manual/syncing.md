@@ -63,6 +63,8 @@ Back up the **local store folder** instead, with whatever backup you already use
 
 The one thing on the card that only the Rample writes is its `_save` folder (kit settings you saved with **STORE**, and device settings from **SAVE SETTINGS**). Sync never changes it. Romper keeps copies of it in your local store, in `.romperdb/rample-save/`: one from setup, and one from just before each of your last 10 writes, each in a folder named after the date and time (UTC). Romper never puts a copy back on the card; to restore one, copy its files into the card's `_save` folder yourself.
 
+If Romper can't make the copy, the write still goes ahead, and when it finishes the panel says: "Romper couldn't keep a copy of the Rample's saved settings (the card's _save folder) before writing. The write went ahead, and that folder on the card wasn't changed." If the card stops responding while Romper reads `_save`, the write stops before it changes anything on the card.
+
 ## Factory Samples
 
 The setup wizard can download the official Squarp factory sample packs into a new local store:

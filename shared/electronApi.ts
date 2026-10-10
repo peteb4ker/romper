@@ -244,8 +244,10 @@ export interface ElectronAPI {
   setSetting: (key: SettingsKey, value: unknown) => Promise<void>;
   /**
    * Copy the card's `_save` folder into the store setup is creating, in
-   * main (#786, stage 2). Read-only on the card; a copy that fails comes
-   * back as `status: "failed"`, not as an error, so setup carries on.
+   * main (#802, stage 2 of #786). Read-only on the card; a copy that fails
+   * comes back as `status: "failed"`, not as an error, so setup carries
+   * on. A card that stopped responding is an error, with setup's
+   * card-not-responding message, and stops setup.
    */
   setupBackupRampleSave: (
     dbDir: string,
@@ -467,9 +469,10 @@ export interface SyncOutcome {
    */
   cancelled: boolean;
   /**
-   * The copy of the card's `_save` folder taken before the write (#786,
-   * stage 2). A copy that failed didn't stop the write; nothing shows it
-   * yet.
+   * The copy of the card's `_save` folder taken before the write (#802,
+   * stage 2 of #786). A copy that failed didn't stop the write, and the
+   * write panel says so when it finishes; a card that stopped responding
+   * during the copy fails the write instead.
    */
   rampleSaveBackup?: RampleSaveBackupResult;
   /** Samples that were not written because they failed validation */

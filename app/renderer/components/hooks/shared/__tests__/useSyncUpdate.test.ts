@@ -6,6 +6,7 @@ import type {
   SyncProgress,
 } from "@romper/shared/electronApi";
 
+import { RAMPLE_SAVE_WRITE_BACKUP_FAILED_MESSAGE } from "@romper/shared/rampleSaveMessages";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -194,6 +195,44 @@ describe("useSyncUpdate", () => {
       expect(result.current.syncProgressStore.get()?.status).toBe("completed");
       expect(result.current.isLoading).toBe(false);
     });
+
+    it.each([
+      ["failed", RAMPLE_SAVE_WRITE_BACKUP_FAILED_MESSAGE],
+      ["copied", undefined],
+      ["missing", undefined],
+    ] as const)(
+      "[UC-34] [Q-04] says when the copy of _save %s (#802)",
+      async (status, notice) => {
+        const rampleSaveBackup =
+          status === "failed"
+            ? { cardNotResponding: false, error: "damaged", status }
+            : status === "copied"
+              ? {
+                  backupPath: "/store/.romperdb/rample-save/x-write",
+                  files: [],
+                  removedBackups: [],
+                  skipped: [],
+                  status,
+                }
+              : { status };
+        mockElectronAPI.startKitSync.mockResolvedValue({
+          data: { ...syncOutcome({ syncedFiles: 1 }), rampleSaveBackup },
+          success: true,
+        });
+        const { result } = renderHook(() =>
+          useSyncUpdate({ electronAPI: mockElectronAPI }),
+        );
+
+        await act(async () => {
+          await result.current.startSync({ sdCardPath: "/path/to/sd" });
+        });
+
+        expect(result.current.syncProgressStore.get()).toMatchObject({
+          notice,
+          status: "completed",
+        });
+      },
+    );
 
     it("should handle sync failure", async () => {
       mockElectronAPI.startKitSync.mockResolvedValue({

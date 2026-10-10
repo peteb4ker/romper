@@ -26,6 +26,11 @@ export interface SyncFileOperation {
  */
 export type SyncProgressState = {
   error?: string;
+  /**
+   * Shown once the write has finished or been cancelled: the copy of the
+   * card's `_save` folder failed (#802)
+   */
+  notice?: string;
   status: "cancelled" | "preparing" | SyncProgress["status"];
 } & Omit<SyncProgress, "elapsedTime" | "estimatedTimeRemaining" | "status">;
 

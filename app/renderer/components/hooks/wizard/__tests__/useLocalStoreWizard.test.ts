@@ -5,6 +5,7 @@ import type {
 import type { KitStereoPlan } from "@romper/shared/stereoLinkRules";
 
 import { CARD_NOT_RESPONDING_SETUP_MESSAGE } from "@romper/shared/cardMessages";
+import { RAMPLE_SAVE_SETUP_BACKUP_FAILED_MESSAGE } from "@romper/shared/rampleSaveMessages";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -966,6 +967,8 @@ describe("useLocalStoreWizard", () => {
   // made, as after any other failure.
   describe("[UC-01] [Q-01] a card that stopped responding (#724)", () => {
     const store = "/mock/home/Documents/romper";
+    /** What the last setUpFromCard's initialize returned */
+    let outcome: unknown;
 
     async function setUpFromCard() {
       const { result } = renderHook(() => useLocalStoreWizard());
@@ -976,7 +979,7 @@ describe("useLocalStoreWizard", () => {
         result.current.setSdCardPath("/mock/sd");
       });
       await act(async () => {
-        await result.current.initialize();
+        outcome = await result.current.initialize();
       });
       return result;
     }
@@ -1040,6 +1043,8 @@ describe("useLocalStoreWizard", () => {
         vi.mocked(window.electronAPI.setupImportKit).mock
           .invocationCallOrder[0],
       );
+      expect(outcome).toMatchObject({ success: true });
+      expect(outcome).not.toHaveProperty("rampleSaveNotice", expect.anything());
     });
 
     it.each([
@@ -1050,7 +1055,7 @@ describe("useLocalStoreWizard", () => {
             .mocked(window.electronAPI.setupBackupRampleSave)
             .mockResolvedValueOnce({
               data: {
-                cardNotResponding: true,
+                cardNotResponding: false,
                 error: "Couldn't read the card's _save folder",
                 status: "failed",
               },
@@ -1072,7 +1077,7 @@ describe("useLocalStoreWizard", () => {
             .mockRejectedValueOnce(new Error("IPC gone")),
       ],
     ])(
-      "[Q-04] carries on when the copy of _save %s (#786)",
+      "[Q-04] carries on when the copy of _save %s, and says so (#802)",
       async (_case, arrange) => {
         vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
           async () => listed(["A0"]),
@@ -1088,8 +1093,34 @@ describe("useLocalStoreWizard", () => {
         expect(window.electronAPI.setupImportKit).toHaveBeenCalled();
         expect(window.electronAPI.finishSetup).toHaveBeenCalledWith(store);
         expect(window.electronAPI.cleanupPartialInit).not.toHaveBeenCalled();
+        // The setup summary says so (#802)
+        expect(outcome).toMatchObject({
+          rampleSaveNotice: RAMPLE_SAVE_SETUP_BACKUP_FAILED_MESSAGE,
+          success: true,
+        });
       },
     );
+
+    it("[Q-04] stops when the card stops responding during the copy of _save (#802)", async () => {
+      vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(
+        async () => listed(["A0"]),
+      );
+      vi.mocked(window.electronAPI.copyDir).mockResolvedValue({
+        success: true,
+      });
+      vi.mocked(window.electronAPI.setupBackupRampleSave).mockResolvedValueOnce(
+        { error: CARD_NOT_RESPONDING_SETUP_MESSAGE, success: false },
+      );
+
+      const result = await setUpFromCard();
+
+      expect(result.current.state.error).toBe(
+        CARD_NOT_RESPONDING_SETUP_MESSAGE,
+      );
+      expect(window.electronAPI.setupImportKit).not.toHaveBeenCalled();
+      expect(window.electronAPI.finishSetup).not.toHaveBeenCalled();
+      expect(window.electronAPI.cleanupPartialInit).toHaveBeenCalledWith(store);
+    });
 
     it("stops when the card's bank names can't be read", async () => {
       vi.mocked(window.electronAPI.listFilesInRoot).mockImplementation(

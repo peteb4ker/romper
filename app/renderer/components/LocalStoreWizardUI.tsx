@@ -65,6 +65,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
     const [stereoNotices, setStereoNotices] = useState<StereoImportNotice[]>(
       [],
     );
+    const [rampleSaveNotice, setRampleSaveNotice] = useState<string>();
     const [isCancelling, setIsCancelling] = useState(false);
     const {
       cancelSetup,
@@ -141,7 +142,11 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
         const stereo = result.stereoNotices ?? [];
         setTruncationWarnings(warnings);
         setStereoNotices(stereo);
-        const hasWarnings = warnings.length > 0 || stereo.length > 0;
+        setRampleSaveNotice(result.rampleSaveNotice);
+        const hasWarnings =
+          warnings.length > 0 ||
+          stereo.length > 0 ||
+          Boolean(result.rampleSaveNotice);
         const isBlankFolder = state.source === "blank";
 
         if (isBlankFolder || hasWarnings) {
@@ -224,6 +229,7 @@ const LocalStoreWizardUI: React.FC<LocalStoreWizardUIProps> = React.memo(
               setShowPostInitGuidance(false);
               if (onSuccess) onSuccess();
             }}
+            rampleSaveNotice={rampleSaveNotice}
             stereoNotices={stereoNotices}
             truncationWarnings={truncationWarnings}
           />

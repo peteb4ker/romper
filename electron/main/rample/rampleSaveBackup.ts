@@ -7,7 +7,8 @@
 // The card is only read, asynchronously and under the card watchdog: a card
 // whose driver stopped responding (#653, #724) gives up after the
 // watchdog's limit instead of blocking main. A backup that fails never
-// throws; it says why, and setup or the write carries on.
+// throws; it says why (`cardNotResponding` for a hung card, which stops
+// setup or the write), and otherwise setup or the write carries on.
 //
 // Only regular files directly in `_save` are copied, each no bigger than a
 // save file can be (the reader's limit), up to a file count and a total.
@@ -35,9 +36,8 @@ export const RAMPLE_SAVE_BACKUP_FOLDER = "rample-save";
 
 /**
  * How many copies taken before a write are kept (the newest ones), beside
- * the setup copy, which is always kept. A proposal awaiting Pete's
- * confirmation on #802: the roadmap says "the latest few", and a copy is a
- * few hundred bytes per kit.
+ * the setup copy, which is always kept. Approved by Pete on #802; a copy
+ * is a few hundred bytes per kit.
  */
 export const RAMPLE_SAVE_WRITE_BACKUPS_KEPT = 10;
 
@@ -111,7 +111,7 @@ export async function backupRampleSaveFolder(options: {
 /**
  * Log what a backup did, for troubleshooting: a failure, a skipped entry
  * or a retention problem as a warning, which stays visible in production.
- * No user-facing message yet: its wording is Pete's call (#802).
+ * What the user sees is in shared/rampleSaveMessages.ts (#802).
  */
 export function logRampleSaveBackup(
   result: RampleSaveBackupResult,

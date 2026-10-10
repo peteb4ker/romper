@@ -559,7 +559,7 @@ voice and slot):
 | `gain_db` | Trim from -24 to +12 dB, baked in at write | writes (no counterpart: the Rample's level is per voice) | `updateSampleGain` (`update-sample-gain`, flags the kit) | `kits[i].samples[].gain_db`, patched after a save (`markGainSaved`); `sampleMetadata`, built from it |
 | `wav_bit_depth`, `wav_channels`, `wav_sample_rate`, `wav_bitrate`, `wav_format_tag` | The file's format when it was added or last read: the format tag is the header's PCM, float or extensible (#576) | none (the write reads the header) | add (from the validation read); scan and the kit-open check when any is null, or when the file's size or modification time differs from `source_size` and `source_mtime_ms` (#793) | `sampleMetadata` → tooltip and format badge (`wavMetadataFormatter`, by `planConversion`) |
 | `source_size`, `source_mtime_ms` | The file's size in bytes and modification time (whole ms) when its header was read; null in older libraries and after a restore from an older undo entry, which reads as changed (#793) | none | wherever the header is read, with the `wav_*` columns: add, scan, setup import, the kit-open check (one async `stat` per sample, the header read only when it differs) | none (compared in main only) |
-| `source_status` | What Romper found when it last read the file: `readable`, `missing`, `unreadable`, or null (never checked, as in older libraries) | none | add (`readable`); scan (`mergeKitScanTx`); the kit editor's check when a kit opens (`check-kit-sample-files` → `checkKitSampleFiles`, #537); a completed write (`completeWrite`: `missing`, `unreadable`, or null once a problem file is fine) | `kits[i].quarantined` (`isKitQuarantined`, in main); `sampleMetadata` → the slot labels "File not found" and "Can't be read", the missing-files notice, and the quarantine notice |
+| `source_status` | What Romper found when it last read the file: `readable`, `missing`, `unreadable`, or null (never checked, as in older libraries) | none | add (`readable`); scan (`mergeKitScanTx`); the kit editor's check when a kit opens (`check-kit-sample-files` → `checkKitSampleFiles`, #537); the background store check, which runs the same check over every kit (`StoreCheckService`, #812); a completed write (`completeWrite`: `missing`, `unreadable`, or null once a problem file is fine) | `kits[i].quarantined` (`isKitQuarantined`, in main); `sampleMetadata` → the slot labels "File not found" and "Can't be read", the missing-files notice, and the quarantine notice |
 
 - **Canonical owner of the file's format:** the file itself, read at write
   time (`validateSampleFormatAsync`, `formatConverter`). The `wav_*`
@@ -578,7 +578,9 @@ voice and slot):
   seen too) also have their header read, as does a known-readable file
   whose size or modification time differs from what was stored when it
   was read (#793); an unchanged one isn't read again. If anything
-  changed, the kit reloads. A
+  changed, the kit reloads. Main also runs the same check over every kit
+  in the background (#812), a kit at a time once the kit grid has loaded,
+  so a kit shows quarantined without being opened. A
   completed write records what it found too, in the transaction that
   records the write (`completeWrite`): missing and unreadable files, and
   null for a file last found missing or unreadable that's now fine, so

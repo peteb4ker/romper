@@ -35,12 +35,14 @@ vi.mock("electron", () => ({
     isPackaged: false,
   },
   BrowserWindow: { getAllWindows: () => [] },
+  dialog: { showOpenDialog: () => Promise.resolve({ canceled: true }) },
   ipcMain: {
     handle: (channel: string, handler: Handler) => {
       probe.handlers.set(channel, handler);
     },
     removeHandler: (channel: string) => probe.handlers.delete(channel),
   },
+  shell: { openExternal: () => undefined, showItemInFolder: () => undefined },
 }));
 
 // The real driver, counting connections and statements
@@ -76,8 +78,13 @@ import {
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { withDbTransaction } from "../../electron/main/db/utils/dbUtilities.js";
 import { registerDbIpcHandlers } from "../../electron/main/dbIpcHandlers.js";
+import { registerIpcHandlers } from "../../electron/main/ipcHandlers.js";
 import { pathAccess } from "../../electron/main/security/pathAccess.js";
 import { sampleService } from "../../electron/main/services/sampleService.js";
+import {
+  storeCheckService,
+  storeCheckSettings,
+} from "../../electron/main/services/storeCheckService.js";
 import { syncService } from "../../electron/main/services/syncService.js";
 import { type NewSample, samples } from "../../shared/db/schema.js";
 import { createStoreDb } from "./support/storeDb.js";
@@ -242,10 +249,12 @@ describe("[Q-01] performance budgets: main-process operations", () => {
     probe.handlers.clear();
     settings = { localStorePath: store, sdCardPath: card };
     registerDbIpcHandlers(settings);
+    registerIpcHandlers(settings);
     pathAccess.grantRoot(card);
   }, SLOW_RUNNER_MS);
 
   afterEach(() => {
+    storeCheckService.cancel();
     pathAccess.reset();
     removeTempStore(work);
   });
@@ -319,6 +328,60 @@ describe("[Q-01] performance budgets: main-process operations", () => {
       () => sampleService.getSampleAudioBuffer(settings, "A0", 2, 1),
       ["connections", "statements", "syncFsCalls"],
     );
+  });
+
+  it("[UC-05] store check: one kit", async () => {
+    // The worst step: nothing is known about the kit's files yet, so each is
+    // read and recorded
+    const dbDir = path.join(store, ".romperdb");
+    await expectWithinBudget(
+      "integration/store check: one kit",
+      async () => ({
+        success: await storeCheckService.checkKit(dbDir, "A0"),
+      }),
+      ["connections", "statements", "syncFsCalls"],
+    );
+    const checked = getKitSamples(dbDir, "A0").data ?? [];
+    expect(checked).toHaveLength(4 * SAMPLES_PER_VOICE);
+    expect(checked.every((s) => s.source_status === "readable")).toBe(true);
+  });
+
+  it("[UC-05] store check: full pass", async () => {
+    storeCheckSettings.quietMs = 0;
+    storeCheckSettings.startupQuietMs = 0;
+    storeCheckSettings.pollMs = 5;
+    try {
+      // The kit grid loads, which starts the pass; it ends when every kit
+      // is checked
+      await expectWithinBudget(
+        "integration/store check: full pass",
+        async () => {
+          await invoke("get-store-check-status");
+          await vi.waitFor(
+            () =>
+              expect(storeCheckService.getStatus().lastCompletedAt).not.toBe(
+                null,
+              ),
+            { timeout: 10_000 },
+          );
+          return { success: true };
+        },
+        ["connections", "statements", "syncFsCalls"],
+      );
+    } finally {
+      Object.assign(storeCheckSettings, {
+        pollMs: 100,
+        quietMs: 250,
+        startupQuietMs: 2000,
+      });
+    }
+    const dbDir = path.join(store, ".romperdb");
+    for (const bank of BANKS) {
+      for (let k = 0; k < KITS_PER_BANK; k++) {
+        const rows = getKitSamples(dbDir, `${bank}${k}`).data ?? [];
+        expect(rows.every((s) => s.source_status === "readable")).toBe(true);
+      }
+    }
   });
 
   it("get kits", async () => {

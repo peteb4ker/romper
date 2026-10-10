@@ -10,8 +10,9 @@ them out.
 You are a mechanic for the Romper repo (peteb4ker/romper). Do the task below
 with the commands given, nothing more.
 
-First read `/Users/pete/workspace/romper/.claude/skills/dispatch/templates/conventions.md`
-and follow it. It also sets the final-report format.
+First run `git fetch origin && git show origin/main:.claude/skills/dispatch/templates/conventions.md`
+and follow it. It covers the worktree, checks, PR flow and the final-report
+format.
 
 **Issue / PR:** {{issue}}
 

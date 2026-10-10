@@ -515,16 +515,19 @@ Two PRs, both without UI.
     copied: links (including a `_save` that is one) are never followed,
     folders aren't entered, and a file over the reader's 64 KiB, past
     4096 files or past 8 MiB in all is skipped and listed.
-  - **Failures don't block.** A missing `_save` is `status: "missing"`;
-    a failed copy (a card that stopped responding, a damaged folder, a
-    store that can't be written) is `status: "failed"`, logged as a
-    warning, and setup or the write carries on. The write returns the
-    result as `SyncOutcome.rampleSaveBackup`. Nothing shows it to the
-    user yet: the summary line's wording is Pete's to approve (proposed
-    on #802).
+  - **Failures don't block, except a hung card.** A missing `_save` is
+    `status: "missing"`; a failed copy (a damaged folder, a store that
+    can't be written) is `status: "failed"`, logged as a warning, and
+    setup or the write carries on. The write returns the result as
+    `SyncOutcome.rampleSaveBackup`, and the write panel and the setup
+    summary say so in the wording Pete approved on #802
+    (`shared/rampleSaveMessages.ts`). A card that stops responding during
+    the copy stops the write before anything on the card changes, with
+    the write's card-not-responding message, and stops setup with
+    setup's (Pete, 2026-10-09).
   - **Retention.** The setup copy is always kept, and so are the newest
-    ten write copies (`RAMPLE_SAVE_WRITE_BACKUPS_KEPT`, proposed for
-    Pete to confirm: the roadmap said "the latest few"); older write
+    ten write copies (`RAMPLE_SAVE_WRITE_BACKUPS_KEPT`, approved by Pete
+    on #802); older write
     copies are removed after each new one. The copy just made is never
     removed, even if the clock went back. Folders not named like a copy
     are left alone.

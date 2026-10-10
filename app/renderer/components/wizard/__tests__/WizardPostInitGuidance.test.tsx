@@ -103,6 +103,23 @@ describe("WizardPostInitGuidance", () => {
     expect(screen.queryByTestId("truncation-warnings")).toBeNull();
   });
 
+  it("[UC-01] [Q-04] shows the notice when the copy of _save failed (#802)", () => {
+    const notice = "Romper couldn't keep a copy";
+    const { rerender } = render(
+      <WizardPostInitGuidance
+        isBlankFolder={false}
+        onDismiss={vi.fn()}
+        rampleSaveNotice={notice}
+      />,
+    );
+    expect(screen.getByTestId("rample-save-notice")).toHaveTextContent(notice);
+
+    rerender(
+      <WizardPostInitGuidance isBlankFolder={false} onDismiss={vi.fn()} />,
+    );
+    expect(screen.queryByTestId("rample-save-notice")).toBeNull();
+  });
+
   it("does not list stereo lines when there are none", () => {
     render(
       <WizardPostInitGuidance

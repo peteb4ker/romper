@@ -1,3 +1,4 @@
+import { RAMPLE_SAVE_WRITE_BACKUP_FAILED_MESSAGE } from "@romper/shared/rampleSaveMessages";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
@@ -618,6 +619,55 @@ describe("[UC-34] SyncUpdateDialog", () => {
       );
 
       expect(screen.getByText("Write Complete")).toBeInTheDocument();
+    });
+
+    it.each(["completed", "cancelled"] as const)(
+      "[UC-34] [Q-04] shows a %s write's notice that the copy of _save failed (#802)",
+      (status) => {
+        render(
+          <SyncUpdateDialog
+            isOpen={true}
+            kitName="A0"
+            localChangeSummary={mockChangeSummary}
+            onClose={mockOnClose}
+            onConfirm={mockOnConfirm}
+            sdCardPath="/path/to/sd"
+            syncProgress={{
+              currentFile: "",
+              filesCompleted: 15,
+              notice: RAMPLE_SAVE_WRITE_BACKUP_FAILED_MESSAGE,
+              status,
+              totalFiles: 15,
+            }}
+          />,
+        );
+
+        expect(screen.getByTestId("rample-save-notice")).toHaveTextContent(
+          RAMPLE_SAVE_WRITE_BACKUP_FAILED_MESSAGE,
+        );
+      },
+    );
+
+    it("doesn't show the notice while the write is still running", () => {
+      render(
+        <SyncUpdateDialog
+          isOpen={true}
+          kitName="A0"
+          localChangeSummary={mockChangeSummary}
+          onClose={mockOnClose}
+          onConfirm={mockOnConfirm}
+          sdCardPath="/path/to/sd"
+          syncProgress={{
+            currentFile: "1-01 kick.wav",
+            filesCompleted: 3,
+            notice: RAMPLE_SAVE_WRITE_BACKUP_FAILED_MESSAGE,
+            status: "copying",
+            totalFiles: 15,
+          }}
+        />,
+      );
+
+      expect(screen.queryByTestId("rample-save-notice")).toBeNull();
     });
 
     it("should show SD card selection button", () => {

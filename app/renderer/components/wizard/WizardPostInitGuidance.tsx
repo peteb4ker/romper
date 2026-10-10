@@ -8,6 +8,8 @@ import type {
 interface WizardPostInitGuidanceProps {
   isBlankFolder: boolean;
   onDismiss: () => void;
+  /** The copy of the card's _save folder failed (#802) */
+  rampleSaveNotice?: string;
   // Both lists are used: destructured and rendered below. NOSONAR
   // suppresses the S6767 false positive on them.
   /** Setup summary lines for pairs setup linked automatically (#537) */
@@ -17,7 +19,13 @@ interface WizardPostInitGuidanceProps {
 
 const WizardPostInitGuidance: React.FC<WizardPostInitGuidanceProps> =
   React.memo(
-    ({ isBlankFolder, onDismiss, stereoNotices, truncationWarnings }) => {
+    ({
+      isBlankFolder,
+      onDismiss,
+      rampleSaveNotice,
+      stereoNotices,
+      truncationWarnings,
+    }) => {
       const hasWarnings = truncationWarnings && truncationWarnings.length > 0;
       const hasStereoNotices = stereoNotices && stereoNotices.length > 0;
 
@@ -58,6 +66,15 @@ const WizardPostInitGuidance: React.FC<WizardPostInitGuidanceProps> =
                 ))}
               </ul>
             </div>
+          )}
+
+          {rampleSaveNotice && (
+            <p
+              className="bg-accent-warning/15 border border-accent-warning text-text-primary text-sm px-4 py-3 rounded mb-4"
+              data-testid="rample-save-notice"
+            >
+              {rampleSaveNotice}
+            </p>
           )}
 
           {hasStereoNotices && (

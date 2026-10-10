@@ -114,6 +114,8 @@ For full details on the sync process, see [Syncing](syncing).
 
 **"The SD card stopped responding, so setup stopped"** -- The card didn't answer for a minute while Romper was reading it. Setup removes the kits it had copied so far. Eject and reinsert the card, then click **Initialize Local Store** to try again.
 
+**"Romper couldn't keep a copy of the Rample's saved settings"** -- Setup couldn't copy the card's `_save` folder into your local store (see [Backing Up]({{ site.baseurl }}/manual/syncing#backing-up)). Your kits were still set up, and the card wasn't changed. To keep a copy, copy that folder from the card yourself.
+
 **"This folder already contains a Romper local store"** -- Choose another folder, or click **Choose Existing Store** to use the store that's there.
 
 **"Factory samples download failed after 3 attempts"** -- The connection dropped or stalled each time, and the message says how. Check your internet connection and click **Initialize Local Store** to try again. The factory samples download is about 313 MiB and needs a stable connection.

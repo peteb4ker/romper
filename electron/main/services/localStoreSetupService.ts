@@ -81,9 +81,11 @@ export class LocalStoreSetupService {
    * Keep a copy of the card's `_save` folder in the store this setup is
    * creating (#786, stage 2), as `.romperdb/rample-save/<date-time>-setup/`,
    * byte for byte. The card is only read, asynchronously and under the
-   * card watchdog. A copy that fails (a card that stopped responding, a
-   * damaged folder) is logged and comes back as `status: "failed"`, so
-   * setup carries on; a card without `_save` has nothing to copy. The copy
+   * card watchdog. A copy that fails (a damaged folder, a store that can't
+   * be written) is logged and comes back as `status: "failed"`, so setup
+   * carries on and its summary says so; a card without `_save` has
+   * nothing to copy. A card that stopped responding stops setup with
+   * setup's card-not-responding message (Pete, 2026-10-09; #802). The copy
    * goes into the existing `.romperdb` folder and never creates it, so a
    * setup cleaned up while the card was read leaves nothing behind.
    *
@@ -107,6 +109,9 @@ export class LocalStoreSetupService {
       reason: "setup",
     });
     logRampleSaveBackup(result, "Setup");
+    if (result.status === "failed" && result.cardNotResponding) {
+      return { error: CARD_NOT_RESPONDING_SETUP_MESSAGE, success: false };
+    }
     return { data: result, success: true };
   }
 

@@ -1,6 +1,7 @@
 import type { KitScanResult } from "@romper/shared/db/schema";
 
 import { cardKitFolders, isKitName } from "@romper/shared/rampleCardLayout";
+import { RAMPLE_SAVE_SETUP_BACKUP_FAILED_MESSAGE } from "@romper/shared/rampleSaveMessages";
 import { describeSetupAutoLink } from "@romper/shared/stereoLinkRules";
 import { useCallback, useMemo } from "react";
 
@@ -199,14 +200,22 @@ export function useLocalStoreWizardFileOps({
    * names in the `bankNamesPath` folder's name files, if setup has one
    * (see {@link bankNamesSourcePath}). For a setup from a card
    * (`cardPath`), a copy of the card's `_save` folder goes into the store
-   * first (#786, stage 2); a copy that fails doesn't stop setup.
+   * first (#802, stage 2 of #786). A copy that fails doesn't stop setup;
+   * the summary says so (`rampleSaveNotice`). A card that stopped
+   * responding during the copy stops setup.
    */
   const createAndPopulateDb = useCallback(
     async (targetPath: string, bankNamesPath?: string, cardPath?: string) => {
       const dbDir = `${targetPath}/.romperdb`;
       if (api.ensureDir) await api.ensureDir(dbDir);
       await createRomperDb(dbDir);
-      if (cardPath) await backupSetupRampleSave(dbDir, cardPath);
+      const backup = cardPath
+        ? await backupSetupRampleSave(dbDir, cardPath)
+        : undefined;
+      const rampleSaveNotice =
+        backup?.status === "failed"
+          ? RAMPLE_SAVE_SETUP_BACKUP_FAILED_MESSAGE
+          : undefined;
       // The store's kit folders, which setup named by their kits
       const validKits = (await listFolder(api, targetPath)).filter(isKitName);
       const truncationWarnings: TruncationWarning[] = [];
@@ -226,7 +235,13 @@ export function useLocalStoreWizardFileOps({
       if (bankNamesPath) {
         await importSetupBankNames(dbDir, bankNamesPath);
       }
-      return { dbDir, stereoNotices, truncationWarnings, validKits };
+      return {
+        dbDir,
+        rampleSaveNotice,
+        stereoNotices,
+        truncationWarnings,
+        validKits,
+      };
     },
     [api, reportStepProgress],
   );

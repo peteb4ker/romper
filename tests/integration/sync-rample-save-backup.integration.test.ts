@@ -8,9 +8,14 @@ vi.mock("electron", () => ({
   },
 }));
 
-import { addKit, addSample } from "../../electron/main/db/romperDbCoreORM.js";
+import {
+  addKit,
+  addSample,
+  getKit,
+} from "../../electron/main/db/romperDbCoreORM.js";
 import { RAMPLE_SAVE_BACKUP_FOLDER } from "../../electron/main/rample/rampleSaveBackup.js";
 import {
+  CARD_NOT_RESPONDING_MESSAGE,
   CARD_OPERATION_TIMEOUT_MS,
   cardWatchdogSettings,
 } from "../../electron/main/services/cardWatchdog.js";
@@ -23,7 +28,8 @@ import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
 // #786, stage 2: before every write, Romper keeps a copy of the Rample's
 // _save folder in the store, under .romperdb/rample-save/. It only reads
-// the card's _save, and a copy that fails doesn't stop the write.
+// the card's _save. A copy that fails doesn't stop the write, but a card
+// that stops responding during it does, before anything changes (#802).
 
 /** Every file under `root`, relative, with its bytes */
 function filesUnder(root: string): Record<string, string> {
@@ -150,8 +156,7 @@ describe("[UC-34] [Q-04] a write keeps a copy of the card's _save folder first (
     expect(fs.readdirSync(card)).toEqual(["A0"]);
   });
 
-  it("still writes when reading _save stops responding, and stores no partial copy", async () => {
-    // Long enough for the write's own card operations on a busy runner (#794)
+  it("stops before changing the card when reading _save stops responding, and stores no partial copy", async () => {
     cardWatchdogSettings.timeoutMs = 1000;
     const readFile = fs.promises.readFile;
     vi.spyOn(fs.promises, "readFile").mockImplementation(((
@@ -164,18 +169,25 @@ describe("[UC-34] [Q-04] a write keeps a copy of the card's _save folder first (
             file,
             ...rest,
           )) as typeof fs.promises.readFile);
+    const cardBefore = filesUnder(card);
+    const entriesBefore = fs.readdirSync(card, { recursive: true }).sort();
 
     const result = await syncService.startKitSync(settings, {
       sdCardPath: card,
     });
 
-    expect(result.success).toBe(true);
-    expect(result.data?.rampleSaveBackup).toMatchObject({
-      cardNotResponding: true,
-      status: "failed",
+    // The write's own message, as when any card operation stops responding
+    expect(result).toEqual({
+      error: CARD_NOT_RESPONDING_MESSAGE,
+      success: false,
     });
-    expect(result.data?.syncedFiles).toBe(1);
+    expect(filesUnder(card)).toEqual(cardBefore);
+    expect(fs.readdirSync(card, { recursive: true }).sort()).toEqual(
+      entriesBefore,
+    );
     expect(fs.existsSync(backups)).toBe(false);
+    // Nothing was written, so the kit still needs writing
+    expect(getKit(dbDir, "A0").data?.modified_since_sync).toBe(true);
   });
 
   it("still writes when _save can't be read", async () => {

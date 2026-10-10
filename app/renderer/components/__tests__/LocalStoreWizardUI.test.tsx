@@ -1,3 +1,4 @@
+import { RAMPLE_SAVE_SETUP_BACKUP_FAILED_MESSAGE } from "@romper/shared/rampleSaveMessages";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -281,6 +282,35 @@ describe("LocalStoreWizardUI", () => {
       const summary = await screen.findByTestId("stereo-summary");
       expect(summary).toHaveTextContent(message);
       expect(screen.queryByTestId("truncation-warnings")).toBeNull();
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+
+    it("[UC-01] [Q-04] says when it couldn't keep a copy of the card's _save folder (#802)", async () => {
+      vi.resetModules();
+      const onSuccess = vi.fn();
+      const mockHook = readyToInitialize(async () => ({
+        rampleSaveNotice: RAMPLE_SAVE_SETUP_BACKUP_FAILED_MESSAGE,
+        stereoNotices: [],
+        success: true,
+        truncationWarnings: [],
+      }));
+      vi.doMock("../hooks/wizard/useLocalStoreWizard", () => ({
+        useLocalStoreWizard: () => mockHook,
+      }));
+      const { default: LocalStoreWizardUI } =
+        await import("../LocalStoreWizardUI");
+      render(
+        <LocalStoreWizardUI
+          onClose={() => {}}
+          onSuccess={onSuccess}
+          setLocalStorePath={vi.fn()}
+        />,
+      );
+
+      fireEvent.click(screen.getByTestId("wizard-initialize-btn"));
+
+      const notice = await screen.findByTestId("rample-save-notice");
+      expect(notice).toHaveTextContent(RAMPLE_SAVE_SETUP_BACKUP_FAILED_MESSAGE);
       expect(onSuccess).not.toHaveBeenCalled();
     });
 

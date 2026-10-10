@@ -27,6 +27,7 @@ import {
 } from "../rample/rampleSaveBackup.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
 import { logger } from "../utils/logger.js";
+import { CARD_NOT_RESPONDING_MESSAGE } from "./cardWatchdog.js";
 import {
   bankRtfFileName,
   isWritableBankName,
@@ -241,14 +242,22 @@ class SyncService {
       if (refusal) return { error: refusal, success: false };
 
       // Keep a copy of the Rample's own _save folder before anything on the
-      // card changes (#786, stage 2). Read-only on the card; a copy that
-      // fails is logged and doesn't stop the write.
+      // card changes (#802, stage 2 of #786). Read-only on the card. A copy
+      // that fails is logged and returned, and the write goes ahead; a card
+      // that stopped responding stops the write here, before it changes
+      // anything (Pete, 2026-10-09)
       const rampleSaveBackup = await backupRampleSaveFolder({
         cardPath: options.sdCardPath,
         dbDir,
         reason: "write",
       });
       logRampleSaveBackup(rampleSaveBackup, "Before the write");
+      if (
+        rampleSaveBackup.status === "failed" &&
+        rampleSaveBackup.cardNotResponding
+      ) {
+        return { error: CARD_NOT_RESPONDING_MESSAGE, success: false };
+      }
       const outcome = (cancelled: boolean, syncedFiles: number) =>
         writeOutcome(cancelled, {
           rampleSaveBackup,

@@ -58,7 +58,6 @@ import { registerDbIpcHandlers } from "../../electron/main/dbIpcHandlers.js";
 import { registerIpcHandlers } from "../../electron/main/ipcHandlers.js";
 import { pathAccess } from "../../electron/main/security/pathAccess.js";
 import {
-  CARD_NOT_RESPONDING_MESSAGE,
   CARD_NOT_RESPONDING_SETUP_MESSAGE,
   CARD_OPERATION_TIMEOUT_MS,
   cardWatchdogSettings,
@@ -268,27 +267,40 @@ describe("[UC-01] [Q-01] setting up from a card that stopped responding (#724)",
     expect(fs.existsSync(dbDir)).toBe(false);
   });
 
-  it("[Q-04] copying the card's _save folder gives up, and setup carries on (#786)", async () => {
+  it("[Q-04] copying the card's _save folder says the card stopped responding, and cleanup sets the store aside (#802)", async () => {
     const dbDir = path.join(target, ".romperdb");
     expect((await invoke("create-romper-db", dbDir)).success).toBe(true);
-    const readFile = hang("readFile", (p) => p.includes("_save"));
+    hang("readFile", (p) => p.includes("_save"));
 
     const { result, turns } = await whileCounting(() =>
       invoke("setup-backup-rample-save", dbDir, card),
     );
 
-    // Not an error: setup goes on without the copy
     expect(result).toEqual({
-      data: {
-        cardNotResponding: true,
-        error: `Couldn't read the card's _save folder: ${CARD_NOT_RESPONDING_MESSAGE}`,
-        status: "failed",
-      },
-      success: true,
+      error: CARD_NOT_RESPONDING_SETUP_MESSAGE,
+      success: false,
     });
     expect(turns).toBeGreaterThan(10);
     expect(fs.existsSync(path.join(dbDir, "rample-save"))).toBe(false);
-    readFile.mockRestore();
+
+    const cleanup = await invoke("cleanup-partial-init", target);
+    expect(cleanup).toMatchObject({ removed: true });
+    expect(fs.existsSync(dbDir)).toBe(false);
+  });
+
+  it("[Q-04] a copy of _save that fails otherwise doesn't stop setup (#802)", async () => {
+    const dbDir = path.join(target, ".romperdb");
+    expect((await invoke("create-romper-db", dbDir)).success).toBe(true);
+    // A file where the folder should be: not a folder, never followed
+    fs.rmSync(path.join(card, "_save"), { recursive: true });
+    fs.writeFileSync(path.join(card, "_save"), "damaged");
+
+    expect(await invoke("setup-backup-rample-save", dbDir, card)).toMatchObject(
+      {
+        data: { cardNotResponding: false, status: "failed" },
+        success: true,
+      },
+    );
     expect(await invoke("setup-import-bank-names", dbDir, card)).toEqual({
       data: { importedBanks: 1 },
       success: true,

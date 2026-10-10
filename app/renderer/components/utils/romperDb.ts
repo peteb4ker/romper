@@ -5,20 +5,24 @@
 import type { KitScanResult } from "@romper/shared/db/schema.js";
 import type { RampleSaveBackupResult } from "@romper/shared/rampleSave.js";
 
+import { CARD_NOT_RESPONDING_SETUP_MESSAGE } from "@romper/shared/cardMessages.js";
+
 import { createLogger } from "../../utils/logger";
 
 const log = createLogger("Renderer");
 
 /**
  * Keep a copy of the card's `_save` folder in the store setup is creating
- * (#786, stage 2). Main reads the card and logs what it did. Never throws:
- * a copy that fails mustn't stop setup, so a failure comes back as
- * `status: "failed"`.
+ * (#802, stage 2 of #786). Main reads the card and logs what it did. A
+ * copy that fails mustn't stop setup, so a failure comes back as
+ * `status: "failed"`. The one exception: a card that stopped responding
+ * throws setup's card-not-responding message, which stops setup.
  */
 export async function backupSetupRampleSave(
   dbDir: string,
   cardPath: string,
 ): Promise<RampleSaveBackupResult> {
+  let message: string;
   try {
     if (!globalThis.electronAPI?.setupBackupRampleSave) {
       throw new Error("IPC not available");
@@ -27,15 +31,14 @@ export async function backupSetupRampleSave(
       dbDir,
       cardPath,
     );
-    if (!result.success || !result.data) {
-      throw new Error(result.error || "Failed to copy the card's _save folder");
-    }
-    return result.data;
+    if (result.success && result.data) return result.data;
+    message = result.error || "Failed to copy the card's _save folder";
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    log.warn("Couldn't copy the card's _save folder:", message);
-    return { cardNotResponding: false, error: message, status: "failed" };
+    message = error instanceof Error ? error.message : String(error);
   }
+  if (message === CARD_NOT_RESPONDING_SETUP_MESSAGE) throw new Error(message);
+  log.warn("Couldn't copy the card's _save folder:", message);
+  return { cardNotResponding: false, error: message, status: "failed" };
 }
 
 export async function createRomperDb(dbDir: string) {

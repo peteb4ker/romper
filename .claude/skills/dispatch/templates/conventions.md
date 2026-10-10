@@ -11,6 +11,10 @@ If the two disagree, `CLAUDE.md` wins and you say so in your report.
   It makes `/Users/pete/workspace/romper-worktrees/<name>` on
   `feature/<name>` from `origin/main`. Work there, and don't edit anyone
   else's worktree.
+- **Unique scratch file names.** Subagents of one session share a scratchpad.
+  Name anything you write there after your branch or PR (e.g.
+  `pr-<branch>-body.md`), never a generic name like `pr.md`, and pass PR
+  bodies with `--body-file` from that file only.
 - Rename the branch before pushing: `fix/<issue>-<slug>`, or `docs/<slug>`
   or `feat/<slug>` (`git branch -m <new>`).
 - The PR title and commits end with the issue number, `(#N)`; the PR

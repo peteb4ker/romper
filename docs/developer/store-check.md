@@ -103,15 +103,15 @@ Confirmed by reading `main` at `ce90f1ba`:
 
 ### Found while writing this spec
 
-- **Choosing a store in the Invalid Local Store dialog runs the old
-  validator.** `InvalidLocalStoreDialog` (`validatePath`,
-  `handleTryAgain`) calls `validateLocalStore`, which runs
+- **Choosing a store in the Invalid Local Store dialog ran the old
+  validator (fixed, #813).** `InvalidLocalStoreDialog` (`validatePath`,
+  `handleTryAgain`) called `validateLocalStore`, which runs
   `validateLocalStoreAgainstDb`. So one missing sample file, or one extra
   WAV in a kit folder (including a macOS `._` AppleDouble file copied
-  from a card, which its `.wav` filter counts), makes a good store read as
-  invalid, with no `error` text. It also holds the main thread for the
-  whole store. Confirmed by reading the code; not reproduced in the app.
-  Filed as #813.
+  from a card, which its `.wav` filter counts), made a good store read as
+  invalid, with no `error` text. It also held the main thread for the
+  whole store. The dialog now asks `validate-local-store-opens`, which
+  checks only that the store opens and says why when it doesn't.
 - **A stale check result can land on a changed row.** Both the kit-open
   check and a background check stat a path, then update the row by `id`.
   If an edit changes the row's `source_path` in between, the old file's
@@ -481,11 +481,12 @@ Each stage is one PR. Stages 2 to 6 wait for the decisions named.
   lists several matches for a choice; undo deletes only an unchanged copy
   or points the sample back.
 
-### Separately: the Invalid Local Store dialog bug
+### Separately: the Invalid Local Store dialog
 
-[#813](https://github.com/peteb4ker/romper/issues/813): choosing or retrying a store should validate the
-store (`validateLocalStoreAndDb`), not its samples. Once it and stage 3
-land, `validateLocalStoreAgainstDb` has no caller and is deleted.
+[#813](https://github.com/peteb4ker/romper/issues/813) moved the dialog to
+`validate-local-store-opens` (`validateLocalStoreAndDb`), so it no longer
+checks samples. Once stage 3 replaces `ValidationResultsDialog`,
+`validateLocalStoreAgainstDb` has no caller and is deleted.
 
 ## Decisions for Pete
 

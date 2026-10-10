@@ -182,11 +182,17 @@ and [Validating Your Store](../manual/kit-browser.md#validating-your-store).
   or the setup wizard; `app/renderer/components/dialogs/CriticalErrorDialog.tsx`.
   Nothing reads the store (kit load, bank names) until
   its status says it's valid (`isLocalStoreReady`, #553).
-- **IPC:** `get-local-store-status`, `validate-local-store`,
+- **IPC:** `get-local-store-status`, `validate-local-store-opens`,
   `select-local-store-path`, `write-settings`; push
-  `local-store-database-missing`.
-- **Main:** `electron/main/services/localStoreService.ts` (`getLocalStoreStatus`);
-  `electron/main/localStoreValidator.ts` (`validateLocalStoreAgainstDb`).
+  `local-store-database-missing`. The dialog's Choose and Try Again check
+  only that the store opens (its folder, database and schema), never its
+  sample files (#813); the answer carries the reason in `error`.
+  `validate-local-store`, which does check every sample, is now used only by
+  `ValidationResultsDialog`, which nothing opens (#758), until the store
+  check replaces it (#769).
+- **Main:** `electron/main/services/localStoreService.ts` (`getLocalStoreStatus`,
+  `validateLocalStoreOpens`);
+  `electron/main/localStoreValidator.ts` (`validateLocalStoreAndDb`).
 - **Planned:** a background check that the store's sample files match
   its database, with badges, a notice and fixes:
   [`store-check.md`](store-check.md) (#769).

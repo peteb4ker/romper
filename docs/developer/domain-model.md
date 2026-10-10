@@ -183,9 +183,9 @@ Renderer paths are under `app/renderer/components/` unless they start with
   - Romper writes only its database and the bank name files into the store;
     samples you add are referenced, never copied.
 - **Disagreements on main:**
-  - `validate-local-store` and `validate-local-store-basic` take
-    `ROMPER_LOCAL_PATH` before their argument, so with the override set the
-    folder you pick is never the one validated. `ServicePathManager` and
+  - `validate-local-store`, `validate-local-store-basic` and
+    `validate-local-store-opens` take `ROMPER_LOCAL_PATH` before their
+    argument, so with the override set the folder you pick is never the one validated. `ServicePathManager` and
     `getLocalStoreStatus` ignore a blank override; `readSettings`, the
     preload and the `validate-*` handlers don't. Test-only today; part of
     the precedence that should live in one function.

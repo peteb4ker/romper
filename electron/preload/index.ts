@@ -597,6 +597,12 @@ const electronAPI = {
     return invoke("validate-local-store-basic", localStorePath);
   },
 
+  validateLocalStoreOpens: (localStorePath?: string) => {
+    isDev &&
+      console.debug("[IPC] validateLocalStoreOpens invoked", localStorePath);
+    return invoke("validate-local-store-opens", localStorePath);
+  },
+
   validateSampleFormat: (filePath: string) => {
     isDev && console.debug("[IPC] validateSampleFormat invoked", filePath);
     return invoke("validate-sample-format", filePath);

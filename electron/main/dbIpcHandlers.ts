@@ -2,6 +2,7 @@ import type {
   DbResult,
   KitEdit,
   KitWithRelations,
+  LocalStoreValidationDetailedResult,
 } from "@romper/shared/db/schema.js";
 import type { VoiceSliceSettings } from "@romper/shared/sliceTypes.js";
 import type { SequenceSnapshot } from "@romper/shared/undoTypes.js";
@@ -425,22 +426,13 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     ),
   );
 
-  handle("validate-local-store", async (_event, localStorePath?: string) => {
-    const pathToValidate = localStorePathToValidate(
-      localStorePath,
-      inMemorySettings,
-    );
-    if (!pathToValidate) {
-      return { error: NO_LOCAL_STORE_PATH, isValid: false };
-    }
-    const access = await checkPathAccess(pathToValidate);
-    if (!access.ok) return { error: access.error, isValid: false };
-    return localStoreService.validateLocalStore(pathToValidate);
-  });
-
-  handle(
-    "validate-local-store-basic",
-    async (_event, localStorePath?: string) => {
+  // The store a validate channel checks, with the same answers for no path
+  // and for a path outside the roots Romper may read
+  const validateStore =
+    (
+      validate: (localStorePath: string) => LocalStoreValidationDetailedResult,
+    ) =>
+    async (_event: unknown, localStorePath?: string) => {
       const pathToValidate = localStorePathToValidate(
         localStorePath,
         inMemorySettings,
@@ -450,8 +442,23 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
       }
       const access = await checkPathAccess(pathToValidate);
       if (!access.ok) return { error: access.error, isValid: false };
-      return localStoreService.validateLocalStoreBasic(pathToValidate);
-    },
+      return validate(pathToValidate);
+    };
+
+  handle(
+    "validate-local-store",
+    validateStore((p) => localStoreService.validateLocalStore(p)),
+  );
+
+  handle(
+    "validate-local-store-basic",
+    validateStore((p) => localStoreService.validateLocalStoreBasic(p)),
+  );
+
+  // The Invalid Local Store dialog checks only that a store opens (#813)
+  handle(
+    "validate-local-store-opens",
+    validateStore((p) => localStoreService.validateLocalStoreOpens(p)),
   );
 
   handle(

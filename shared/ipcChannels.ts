@@ -125,6 +125,7 @@ export interface IpcInvokeChannels {
   "update-voice-volume": Call<"updateVoiceVolume">;
   "validate-local-store": Call<"validateLocalStore">;
   "validate-local-store-basic": Call<"validateLocalStoreBasic">;
+  "validate-local-store-opens": Call<"validateLocalStoreOpens">;
   "validate-sample-format": Call<"validateSampleFormat">;
   /** setSetting's channel; main rejects a path setting it hasn't granted */
   "write-settings": {

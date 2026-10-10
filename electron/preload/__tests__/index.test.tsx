@@ -91,6 +91,7 @@ describe("preload/index.tsx", () => {
         updateVoiceStereoMode: expect.any(Function),
         validateLocalStore: expect.any(Function),
         validateLocalStoreBasic: expect.any(Function),
+        validateLocalStoreOpens: expect.any(Function),
         validateSampleFormat: expect.any(Function),
       }),
     );
@@ -657,6 +658,11 @@ describe("preload/index.tsx", () => {
         args: ["/local/store"],
         ipcChannel: "validate-local-store-basic",
         method: "validateLocalStoreBasic",
+      },
+      {
+        args: ["/local/store"],
+        ipcChannel: "validate-local-store-opens",
+        method: "validateLocalStoreOpens",
       },
       {
         args: ["TestKit"],

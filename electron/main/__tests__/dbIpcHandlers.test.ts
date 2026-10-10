@@ -46,6 +46,7 @@ vi.mock("../services/localStoreService.js", () => ({
   localStoreService: {
     validateLocalStore: vi.fn(() => ({ isValid: true })),
     validateLocalStoreBasic: vi.fn(() => ({ isValid: true })),
+    validateLocalStoreOpens: vi.fn(() => ({ isValid: true })),
   },
 }));
 
@@ -152,6 +153,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
         "update-step-pattern",
         "validate-local-store",
         "validate-local-store-basic",
+        "validate-local-store-opens",
         "get-all-samples-for-kit",
         "rescan-kit",
         // The bank strip loads every bank's name (#512)
@@ -590,26 +592,30 @@ describe("dbIpcHandlers - Routing Tests", () => {
       expect(romperDbCore.getKits).toHaveBeenCalledWith("/test/path/.romperdb");
     });
 
-    it.each(["validate-local-store", "validate-local-store-basic"])(
-      "%s refuses a renderer path outside the roots",
-      async (channel) => {
-        vi.mocked(checkPathAccess).mockResolvedValueOnce(DENIED);
-        const result = await handlerRegistry[channel]({}, "/Users/me");
-        expect(checkPathAccess).toHaveBeenCalledWith("/Users/me");
-        expect(result).toEqual({ error: DENIED.error, isValid: false });
-        expect(localStoreService.validateLocalStore).not.toHaveBeenCalled();
-        expect(
-          localStoreService.validateLocalStoreBasic,
-        ).not.toHaveBeenCalled();
-      },
-    );
+    it.each([
+      "validate-local-store",
+      "validate-local-store-basic",
+      "validate-local-store-opens",
+    ])("%s refuses a renderer path outside the roots", async (channel) => {
+      vi.mocked(checkPathAccess).mockResolvedValueOnce(DENIED);
+      const result = await handlerRegistry[channel]({}, "/Users/me");
+      expect(checkPathAccess).toHaveBeenCalledWith("/Users/me");
+      expect(result).toEqual({ error: DENIED.error, isValid: false });
+      expect(localStoreService.validateLocalStore).not.toHaveBeenCalled();
+      expect(localStoreService.validateLocalStoreBasic).not.toHaveBeenCalled();
+      expect(localStoreService.validateLocalStoreOpens).not.toHaveBeenCalled();
+    });
 
     describe("[Q-07] validate-local-store keeps to the contract (#472)", () => {
       afterEach(() => {
         vi.unstubAllEnvs();
       });
 
-      it.each(["validate-local-store", "validate-local-store-basic"])(
+      it.each([
+        "validate-local-store",
+        "validate-local-store-basic",
+        "validate-local-store-opens",
+      ])(
         "%s says no store is set in its result, rather than throwing",
         async (channel) => {
           vi.stubEnv("ROMPER_LOCAL_PATH", "");
@@ -625,6 +631,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
       it.each([
         ["validate-local-store", "validateLocalStore"],
         ["validate-local-store-basic", "validateLocalStoreBasic"],
+        ["validate-local-store-opens", "validateLocalStoreOpens"],
       ] as const)(
         "%s checks the folder it's given, not the ROMPER_LOCAL_PATH store",
         async (channel, method) => {
@@ -641,6 +648,7 @@ describe("dbIpcHandlers - Routing Tests", () => {
       it.each([
         ["validate-local-store", "validateLocalStore"],
         ["validate-local-store-basic", "validateLocalStoreBasic"],
+        ["validate-local-store-opens", "validateLocalStoreOpens"],
       ] as const)(
         "%s checks the ROMPER_LOCAL_PATH store ahead of the saved one",
         async (channel, method) => {
@@ -651,6 +659,18 @@ describe("dbIpcHandlers - Routing Tests", () => {
           expect(localStoreService[method]).toHaveBeenCalledWith("/env/store");
         },
       );
+    });
+
+    it("[UC-05] validate-local-store-opens checks only that the store opens (#813)", async () => {
+      const result = await handlerRegistry["validate-local-store-opens"](
+        {},
+        "/picked/store",
+      );
+      expect(result).toEqual({ isValid: true });
+      expect(localStoreService.validateLocalStoreOpens).toHaveBeenCalledWith(
+        "/picked/store",
+      );
+      expect(localStoreService.validateLocalStore).not.toHaveBeenCalled();
     });
 
     it("validate-local-store validates an allowed path", async () => {

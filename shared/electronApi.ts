@@ -345,6 +345,10 @@ export interface ElectronAPI {
   validateLocalStoreBasic: (
     localStorePath?: string,
   ) => Promise<LocalStoreValidationDetailedResult>;
+  /** Only that the store opens: its database is there, readable and valid */
+  validateLocalStoreOpens: (
+    localStorePath?: string,
+  ) => Promise<LocalStoreValidationDetailedResult>;
   validateSampleFormat: (
     filePath: string,
   ) => Promise<DbResult<FormatValidationResult>>;

@@ -21,6 +21,19 @@ import { pathToFileURL } from "node:url";
 const API = "https://sonarcloud.io/api";
 const PROJECT = "peteb4ker_romper";
 
+/** How long one SonarCloud request may take before it is given up on */
+export const SONAR_TIMEOUT_MS = 30_000;
+
+/**
+ * `fetch` that gives up after `ms`, covering the body too, with a
+ * TimeoutError. Without a limit a stalled connection waits indefinitely.
+ * @param {number} [ms]
+ * @returns {Fetch}
+ */
+export function fetchWithTimeout(ms = SONAR_TIMEOUT_MS) {
+  return (url) => fetch(url, { signal: AbortSignal.timeout(ms) });
+}
+
 /**
  * The part of `fetch` the check uses, so tests can answer for SonarCloud
  * @typedef {(url: string) => Promise<{ json(): Promise<unknown>, ok: boolean, status: number }>} Fetch
@@ -44,7 +57,7 @@ const PROJECT = "peteb4ker_romper";
  */
 export async function checkPullRequest(
   pr,
-  { fetchImpl = fetch, headSha } = {},
+  { fetchImpl = fetchWithTimeout(), headSha } = {},
 ) {
   if (!/^\d+$/.test(String(pr ?? ""))) {
     return { code: 2, lines: ["Usage: npm run sonar:pr -- <pr-number>"] };
@@ -120,7 +133,11 @@ function readHeadSha(pr) {
     return execFileSync(
       "gh",
       ["pr", "view", String(pr), "--json", "headRefOid", "-q", ".headRefOid"],
-      { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+      {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+        timeout: SONAR_TIMEOUT_MS,
+      },
     ).trim();
   } catch {
     return undefined;

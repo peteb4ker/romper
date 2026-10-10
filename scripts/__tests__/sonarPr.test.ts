@@ -1,7 +1,12 @@
 // @vitest-environment node
+import { createServer } from "node:http";
 import { describe, expect, it, vi } from "vitest";
 
-import { checkPullRequest, formatIssue } from "../sonar-pr.mjs";
+import {
+  checkPullRequest,
+  fetchWithTimeout,
+  formatIssue,
+} from "../sonar-pr.mjs";
 
 const HEAD = "cf80464ff4e327afd05c4f47d43c7bdb31376077";
 
@@ -85,5 +90,24 @@ describe("[Q-07] sonar:pr, the pre-handover SonarCloud check (#658)", () => {
     expect(formatIssue({ ...issue, line: undefined })).toBe(
       "  CRITICAL\ttypescript:S3776\telectron/main/services/syncService.ts\tRefactor this function to reduce its Cognitive Complexity",
     );
+  });
+
+  it("gives up on a SonarCloud request that never answers", async () => {
+    // A server that accepts the request and says nothing
+    const server = createServer(() => {});
+    await new Promise<void>((resolve) =>
+      server.listen(0, "127.0.0.1", resolve),
+    );
+    const { port } = server.address() as { port: number };
+    const started = Date.now();
+    try {
+      await expect(
+        fetchWithTimeout(300)(`http://127.0.0.1:${port}/api`),
+      ).rejects.toMatchObject({ name: "TimeoutError" });
+      expect(Date.now() - started).toBeLessThan(10_000);
+    } finally {
+      server.closeAllConnections();
+      server.close();
+    }
   });
 });

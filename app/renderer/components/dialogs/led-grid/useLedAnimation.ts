@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 
 import type { Ripple } from "./ledMath";
 
+import { useAppliedTheme } from "../../../utils/appliedTheme";
 import {
   BASE_MIN,
   BASE_SCALE,
@@ -37,10 +38,12 @@ export function useLedAnimation(): UseLedAnimationReturn {
   const rafRef = useRef<null | number>(null);
   const glowColorRef = useRef<string>("224, 90, 96");
 
-  // Read the --voice-1 CSS color once on mount
+  // Read the --voice-1 CSS color on mount and again when the theme changes
+  // (#767), so the animation loop never reads styles per frame
+  const theme = useAppliedTheme();
   useEffect(() => {
     glowColorRef.current = readGlowColor();
-  }, []);
+  }, [theme]);
 
   // Animation loop
   useEffect(() => {

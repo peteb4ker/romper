@@ -12,7 +12,7 @@ import fs from "fs-extra";
 import path from "node:path";
 
 import { encodeCbor } from "../../electron/main/rample/cbor";
-import { RAMPLE_SAVE_COPIES_FOLDER } from "../../electron/main/rample/rampleKitSaveView";
+import { RAMPLE_SAVE_BACKUP_FOLDER } from "../../electron/main/rample/rampleSaveBackup";
 import {
   syntheticGlobalAssign,
   syntheticKitSave,
@@ -34,7 +34,7 @@ export async function seedRampleSaveCopy(
   const copy = path.join(
     localStorePath,
     ".romperdb",
-    RAMPLE_SAVE_COPIES_FOLDER,
+    RAMPLE_SAVE_BACKUP_FOLDER,
     RAMPLE_SAVE_COPY_NAME,
   );
   await fs.ensureDir(copy);

@@ -4,7 +4,7 @@ priority: low
 status: specification
 updated: 2026-10-08
 context_size: medium
-implementation_status: stage 0 (docs, #789), stage 1a (the write code's guard, #787), stage 1b (the read-only reader, #788) stage 2 (a copy in the store, #802) and stage 3 (the kit editor's read-only view, #800; the kit-card marker still to do) built; a real card's files committed as fixtures (D1); stages 4-6 not built
+implementation_status: stage 0 (docs, #789), stage 1a (the write code's guard, #787), stage 1b (the read-only reader, #788), stage 2 (a copy in the store, #802) and stage 3 (the kit editor's read-only view, #800; the kit-card marker still to do) built; a real card's files committed as fixtures (D1); stages 4-6 not built
 -->
 
 # The Rample's `_save` folder: reading it, then writing it

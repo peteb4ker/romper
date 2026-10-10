@@ -24,13 +24,11 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 import { isOpaqueItem } from "./cbor.js";
+import {
+  RAMPLE_SAVE_BACKUP_FOLDER,
+  RAMPLE_SAVE_BACKUP_NAME,
+} from "./rampleSaveBackup.js";
 import { readRampleSaveFolder } from "./rampleSaveReader.js";
-
-/**
- * The store's copies of the card's `_save` folder, one folder per copy,
- * under `.romperdb` (decision D2 on #786; stage 2 takes them).
- */
-export const RAMPLE_SAVE_COPIES_FOLDER = "rample-save";
 
 /** A copy of the card's `_save` folder in the store. */
 export interface RampleSaveCopy extends RampleSaveCopyInfo {
@@ -50,14 +48,16 @@ const KNOWN_KIT_KEYS: ReadonlySet<string> = new Set<string>(
 );
 
 /**
- * The latest copy of the card's `_save` folder in the store, or null when
- * there's none. Copies are named so their names sort in the order they
- * were taken; the last folder by name is the latest.
+ * The latest copy of the card's `_save` folder in the store (stage 2,
+ * `rampleSaveBackup.ts`), or null when there's none. Copies are named so
+ * their names sort in the order they were taken; the last by name is the
+ * latest. Only folders named as copies count, never one still being
+ * written (`.partial`).
  */
 export async function findLatestRampleSaveCopy(
   dbDir: string,
 ): Promise<null | RampleSaveCopy> {
-  const copiesDir = path.join(dbDir, RAMPLE_SAVE_COPIES_FOLDER);
+  const copiesDir = path.join(dbDir, RAMPLE_SAVE_BACKUP_FOLDER);
   let entries: fs.Dirent[];
   try {
     entries = await fs.promises.readdir(copiesDir, { withFileTypes: true });
@@ -66,17 +66,20 @@ export async function findLatestRampleSaveCopy(
     throw error;
   }
   const latest = entries
-    .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
+    .filter(
+      (entry) =>
+        entry.isDirectory() && RAMPLE_SAVE_BACKUP_NAME.test(entry.name),
+    )
     .map((entry) => entry.name)
     .sort(compareBytes)
     .at(-1);
   if (latest === undefined) return null;
 
-  const copyPath = path.join(copiesDir, latest);
-  const takenAt =
-    takenAtFromFolderName(latest) ??
-    (await fs.promises.stat(copyPath)).mtime.toISOString();
-  return { folderName: latest, path: copyPath, takenAt };
+  return {
+    folderName: latest,
+    path: path.join(copiesDir, latest),
+    takenAt: takenAtFromFolderName(latest),
+  };
 }
 
 /**

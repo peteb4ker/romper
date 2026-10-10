@@ -188,6 +188,8 @@ See the full [Step Sequencer]({{ site.baseurl }}/manual/step-sequencer) guide fo
 
 When you **STORE** a kit on the Rample, the device saves that kit's settings on the card: each voice's level, pitch, filter, bits, freeze, envelope, start, length and run mode, its layer mode and selected layer, and the kit's mute groups and CV assignments. The **On the Rample** section at the bottom of the Kit Editor shows what the device saved for the kit you're looking at. It starts collapsed; click its title, or press `Enter` or `Space` on it, to open it.
 
+![The On the Rample section, open, with a kit's saved settings]({{ site.baseurl }}/images/manual/kit-rample-save.png)
+
 The section reads Romper's latest copy of the card's saved settings, not the card itself, and says when that copy was taken. Romper takes a copy when you set up from a card and before each write. It only reads: nothing here changes what the Rample saved.
 
 - **Raw values.** The numbers are the ones the Rample stores, not the units or names it shows on its screen, because what most of them mean hasn't been checked on a Rample yet. Knobs probably run from 0 to 254, with 127 in the middle; the small gauge beside each knob value marks 127 with a line. Names with a dotted underline are Romper's best guess at what each value is, and the device's own name for it is shown beside it.

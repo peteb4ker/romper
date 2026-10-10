@@ -4,7 +4,7 @@ priority: low
 status: specification
 updated: 2026-10-08
 context_size: medium
-implementation_status: stage 0 (docs, #789), stage 1a (the write code's guard, #787), stage 1b (the read-only reader, #788) and stage 2 (a copy in the store, #802) built; Pete's files committed as fixtures (D1); stages 3-6 not built
+implementation_status: stage 0 (docs, #789), stage 1a (the write code's guard, #787), stage 1b (the read-only reader, #788) stage 2 (a copy in the store, #802) and stage 3 (the kit editor's read-only view, #800; the kit-card marker still to do) built; Pete's files committed as fixtures (D1); stages 4-6 not built
 -->
 
 # The Rample's `_save` folder: reading it, then writing it
@@ -296,12 +296,13 @@ public decode.
 
 ## Romper today
 
-- **Copied, not imported or decoded.** Setup imports only folders that
+- **Copied, and shown read-only.** Setup imports only folders that
   pass `isValidKit` (`shared/kitUtilsShared.ts`), so `_save` isn't
   imported as a kit; setup and every write keep an opaque copy of it in
   the store instead (stage 2, #802). Scans read the store, not the card.
   The stage 1b reader (`electron/main/rample/`) decodes a copy of the
-  folder for `npm run rample:save`; nothing in the app calls it yet.
+  folder for `npm run rample:save`, and the kit editor's "On the Rample"
+  section shows a kit's file from the latest copy (stage 3, #800).
 - **Never changed by a write, by name.** The folder is named once
   (`DEVICE_SAVE_FOLDER` in `shared/rampleCardLayout.ts`, compared ignoring
   case and trailing dots and spaces). The only removal path,
@@ -545,7 +546,7 @@ Two PRs, both without UI.
   stores the snapshot before writing; a test that an unreadable `_save`
   doesn't fail setup or the write.
 
-### Stage 3: show the device's saved settings for a kit (blocked on D3)
+### Stage 3: show the device's saved settings for a kit ([#800](https://github.com/peteb4ker/romper/issues/800)). **Done**, except the kit-card marker.
 
 - A read-only "On the Rample" view of a kit's latest copy of
   `<kit>.rpl`: per voice level, pitch, filter, bits, freeze, env, start,
@@ -571,8 +572,9 @@ Two PRs, both without UI.
 - **As built** ([#800](https://github.com/peteb4ker/romper/issues/800)):
   `readKitRampleSave` (`electron/main/rample/rampleKitSaveView.ts`) reads
   the kit's file from the store's latest copy (the last folder by name
-  under `.romperdb/rample-save/`; when it was taken comes from the folder
-  name, which starts with the date and time) with the stage 1b reader, and
+  under `.romperdb/rample-save/` that stage 2 named as a copy, so a
+  `.partial` folder is never read; when it was taken comes from the
+  name) with the stage 1b reader, and
   sends the renderer a plain view (`shared/rampleKitSaveView.ts`) on
   `get-kit-rample-save`: found, no copy yet, no file for the kit, or
   unreadable. Unknown keys, and known keys of an unexpected shape, come

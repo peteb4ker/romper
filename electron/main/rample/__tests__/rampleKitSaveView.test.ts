@@ -15,12 +15,12 @@ import {
 import { decodeCbor, encodeCbor } from "../cbor";
 import {
   findLatestRampleSaveCopy,
-  RAMPLE_SAVE_COPIES_FOLDER,
   readKitRampleSave,
   takenAtFromFolderName,
   toRampleDisplayValue,
   valueAtKeyPath,
 } from "../rampleKitSaveView";
+import { RAMPLE_SAVE_BACKUP_FOLDER } from "../rampleSaveBackup";
 
 // Named as stage 2 names its copies
 const COPY = "2026-10-09T04-12-58-000Z-setup";
@@ -31,7 +31,7 @@ describe("[UC-08] [Q-08] the kit editor's view of a kit's saved Rample settings 
 
   beforeEach(() => {
     store = fs.mkdtempSync(path.join(os.tmpdir(), "romper-rample-view-"));
-    copies = path.join(store, ".romperdb", RAMPLE_SAVE_COPIES_FOLDER);
+    copies = path.join(store, ".romperdb", RAMPLE_SAVE_BACKUP_FOLDER);
   });
 
   afterEach(() => {
@@ -62,7 +62,8 @@ describe("[UC-08] [Q-08] the kit editor's view of a kit's saved Rample settings 
       writeCopy(COPY, {});
       writeCopy("2026-10-05T09-00-00-000Z-write", {});
       fs.writeFileSync(path.join(copies, "zz-not-a-folder"), "");
-      fs.mkdirSync(path.join(copies, ".partial"));
+      // A copy still being written, newer than every finished one
+      fs.mkdirSync(path.join(copies, "2026-10-10T00-00-00-000Z-write.partial"));
 
       const latest = await findLatestRampleSaveCopy(
         path.join(store, ".romperdb"),
@@ -75,13 +76,15 @@ describe("[UC-08] [Q-08] the kit editor's view of a kit's saved Rample settings 
       });
     });
 
-    it("falls back to the folder's time when its name has no date", async () => {
-      writeCopy("setup", {});
-      const latest = await findLatestRampleSaveCopy(
-        path.join(store, ".romperdb"),
+    it("counts only folders stage 2 named as copies", async () => {
+      writeCopy("setup", syntheticSaveFolder());
+      writeCopy(
+        "2026-10-10T00-00-00-000Z-write.partial",
+        syntheticSaveFolder(),
       );
-      expect(latest?.folderName).toBe("setup");
-      expect(Number.isNaN(Date.parse(latest?.takenAt ?? ""))).toBe(false);
+      expect(
+        await findLatestRampleSaveCopy(path.join(store, ".romperdb")),
+      ).toBeNull();
     });
   });
 

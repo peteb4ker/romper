@@ -56,8 +56,11 @@ interface CardFile {
   name: string;
 }
 
-/** A whole copy's folder name; group 1 is when it was taken */
-const BACKUP_NAME =
+/**
+ * A whole copy's folder name; group 1 is why it was taken. A copy still
+ * being written (`<name>.partial`) doesn't match.
+ */
+export const RAMPLE_SAVE_BACKUP_NAME =
   /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z-(setup|write)(?:-\d+)?$/;
 
 /**
@@ -248,7 +251,8 @@ async function removeOldBackups(
     const writeCopies = entries
       .filter(
         (entry) =>
-          entry.isDirectory() && BACKUP_NAME.exec(entry.name)?.[1] === "write",
+          entry.isDirectory() &&
+          RAMPLE_SAVE_BACKUP_NAME.exec(entry.name)?.[1] === "write",
       )
       .map((entry) => entry.name)
       .sort(compareBytes);

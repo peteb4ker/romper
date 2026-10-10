@@ -166,7 +166,7 @@ Recommended (D7):
 
 - **At startup**, once the store's status is valid (`isLocalStoreReady`)
   and the kit grid has loaded, after a few seconds with no IPC call in
-  flight. Not before the grid: the cold-start budgets stay as they are.
+  flight. Not before the grid, so none of its work lands in cold start.
 - **After a store change**: the running pass is cancelled at once (before
   `closeAllDbConnections`), and a new one starts on the new store as at
   startup.

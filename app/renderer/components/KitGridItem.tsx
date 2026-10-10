@@ -8,7 +8,7 @@ import {
 } from "@phosphor-icons/react";
 import { toCapitalCase } from "@romper/shared/kitUtilsShared";
 import { QUARANTINE_ICON_LABEL } from "@romper/shared/stereoLinkRules";
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 
 import type {
   DuplicateKitFn,
@@ -97,6 +97,9 @@ const KitGridItem = React.memo(
         (sampleCounts?.[3] || 0);
       const statusText = isValid ? `${totalSamples} samples` : "Invalid kit";
       const ariaLabel = `Kit ${kit} - ${statusText}`;
+      // The cell's aria-label replaces its children's names, so the
+      // quarantine icon's own label is described to a screen reader (#814)
+      const quarantineId = useId();
 
       const canDelete =
         isValid && onDeleteKit && kitData?.editable && !kitData?.locked;
@@ -109,6 +112,7 @@ const KitGridItem = React.memo(
 
       return (
         <div
+          aria-describedby={kitData?.quarantined ? quarantineId : undefined}
           aria-label={ariaLabel}
           aria-selected={isSelected ? "true" : "false"}
           className={`card-grain relative flex flex-col p-2 rounded-md border text-sm h-full w-full ${getBorderStyle(isValid, kitData?.modified_since_sync)} cursor-pointer hover:bg-surface-2 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary ${animationClasses}`}
@@ -158,6 +162,7 @@ const KitGridItem = React.memo(
                     aria-label={QUARANTINE_ICON_LABEL}
                     className="flex-shrink-0 text-accent-danger"
                     data-testid="quarantine-indicator"
+                    id={quarantineId}
                     role="img"
                     title={QUARANTINE_ICON_LABEL}
                   >

@@ -21,7 +21,7 @@ import type { IpcHandler } from "../../electron/main/ipcHandle";
 describe("[Q-07] IPC contract types", () => {
   it("gives every ElectronAPI method except the event listeners a channel", () => {
     expectTypeOf<Exclude<keyof ElectronAPI, MethodWithChannel>>().toEqualTypeOf<
-      "onLocalStoreDatabaseMissing" | "onSyncProgress"
+      "onLocalStoreDatabaseMissing" | "onStoreCheckUpdated" | "onSyncProgress"
     >();
   });
 

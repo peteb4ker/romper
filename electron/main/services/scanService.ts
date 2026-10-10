@@ -23,6 +23,15 @@ import {
 } from "../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
 
+/** Gives an fs operation a time limit; it rejects if the limit passes */
+export type OperationLimit = <T>(operation: Promise<T>) => Promise<T>;
+
+/** What checking a sample's file found; see {@link checkSampleFile} */
+export interface SampleCheck {
+  fields: Partial<WavMetadataFields>;
+  sample: Sample;
+}
+
 /**
  * Service for scanning operations (kit rescanning and file checks).
  * Extracted from dbIpcHandlers.ts to separate business logic from IPC
@@ -60,16 +69,15 @@ export class ScanService {
       return { data: { changed: 0, checked: 0 }, success: true };
     }
 
-    const found = await Promise.all(toCheck.map(checkSampleFile));
-    const changes = found.filter(({ fields, sample }) =>
-      Object.entries(fields).some(
-        ([key, value]) => sample[key as keyof Sample] !== value,
-      ),
+    const found = await Promise.all(
+      toCheck.map((sample) => checkSampleFile(sample)),
     );
+    const changes = changedChecks(found);
     if (changes.length > 0) {
       const saved = withDbTransaction(dbDir, (db) => {
         for (const { fields, sample } of changes) {
-          updateSampleSourceStatusTx(db, sample.id, fields);
+          // Only if the row still points at the file that was checked (#812)
+          updateSampleSourceStatusTx(db, sample.id, fields, sample.source_path);
         }
       });
       if (!saved.success) return { error: saved.error, success: false };
@@ -146,6 +154,54 @@ export class ScanService {
   }
 }
 
+/** The checks that found something to record: a column that differs */
+export function changedChecks(found: SampleCheck[]): SampleCheck[] {
+  return found.filter(({ fields, sample }) =>
+    Object.entries(fields).some(
+      ([key, value]) => sample[key as keyof Sample] !== value,
+    ),
+  );
+}
+
+/**
+ * What checking a sample's file finds, as the columns to store (#537).
+ * One async stat says whether the file exists and, with its stored size
+ * and modification time, whether it changed (#793). A known-readable,
+ * unchanged file needs nothing more; others have their header read.
+ * Shared by the kit-open check and the store check (#812).
+ *
+ * `limit` wraps each fs operation. A file that can't be stat-ed or read
+ * is missing or unreadable, but an operation that never finishes makes
+ * `limit` reject, and so this: the file's state is unknown.
+ */
+export async function checkSampleFile(
+  sample: Sample,
+  limit: OperationLimit = (operation) => operation,
+): Promise<SampleCheck> {
+  const stat = await limit(
+    fs.promises
+      .stat(sample.source_path)
+      .then(({ mtimeMs, size }): SourceFileStat => ({ mtimeMs, size }))
+      .catch(() => null),
+  );
+  if (!stat) return { fields: { source_status: "missing" }, sample };
+  // A file read before the format tag was stored is read once more (#576),
+  // and one whose size or modification time isn't what was stored (or
+  // wasn't stored, in older libraries) is read again (#793)
+  if (
+    sample.source_status === "readable" &&
+    sample.wav_format_tag !== null &&
+    !hasFileChanged(sample, stat)
+  ) {
+    return { fields: {}, sample };
+  }
+  const header = await limit(getAudioMetadataAsync(sample.source_path));
+  if (!header.success || !header.data) {
+    return { fields: { source_status: "unreadable" }, sample };
+  }
+  return { fields: toWavMetadataFields(header.data, stat), sample };
+}
+
 /**
  * Read the WAV header fields the samples table stores, or null. The file's
  * size and modification time are taken before the header is read, so a
@@ -166,38 +222,6 @@ export function statFileSync(filePath: string): null | SourceFileStat {
   } catch {
     return null;
   }
-}
-
-/**
- * What checking a sample's file finds, as the columns to store (#537).
- * One async stat says whether the file exists and, with its stored size
- * and modification time, whether it changed (#793). A known-readable,
- * unchanged file needs nothing more; others have their header read.
- */
-async function checkSampleFile(sample: Sample): Promise<{
-  fields: Partial<WavMetadataFields>;
-  sample: Sample;
-}> {
-  const stat = await fs.promises
-    .stat(sample.source_path)
-    .then(({ mtimeMs, size }): SourceFileStat => ({ mtimeMs, size }))
-    .catch(() => null);
-  if (!stat) return { fields: { source_status: "missing" }, sample };
-  // A file read before the format tag was stored is read once more (#576),
-  // and one whose size or modification time isn't what was stored (or
-  // wasn't stored, in older libraries) is read again (#793)
-  if (
-    sample.source_status === "readable" &&
-    sample.wav_format_tag !== null &&
-    !hasFileChanged(sample, stat)
-  ) {
-    return { fields: {}, sample };
-  }
-  const header = await getAudioMetadataAsync(sample.source_path);
-  if (!header.success || !header.data) {
-    return { fields: { source_status: "unreadable" }, sample };
-  }
-  return { fields: toWavMetadataFields(header.data, stat), sample };
 }
 
 // Export singleton instance

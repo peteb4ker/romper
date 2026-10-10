@@ -18,6 +18,7 @@ import { useKitSearch } from "../components/hooks/kit-management/useKitSearch";
 import { useKitViewMenuHandlers } from "../components/hooks/kit-management/useKitViewMenuHandlers";
 import { useLocalStoreSetupFlow } from "../components/hooks/kit-management/useLocalStoreSetupFlow";
 import { useSampleRefreshListener } from "../components/hooks/kit-management/useSampleRefreshListener";
+import { useStoreCheck } from "../components/hooks/kit-management/useStoreCheck";
 import { useDialogState } from "../components/hooks/shared/useDialogState";
 import { useGlobalKeyboardShortcuts } from "../components/hooks/shared/useGlobalKeyboardShortcuts";
 import { useMessageApi } from "../components/hooks/shared/useMessageApi";
@@ -69,6 +70,7 @@ const KitsView: React.FC = () => {
     addKit,
     allKitSamples,
     applyKitEdit,
+    applyQuarantine,
     applyReadKit,
     getKitByName,
     kits,
@@ -87,6 +89,15 @@ const KitsView: React.FC = () => {
     isLocalStoreReady: setupFlow.isLocalStoreReady,
     localStorePath,
     onMessage: showMessage,
+  });
+
+  // Main checks the store's sample files in the background once the grid
+  // has loaded; a kit with a file it can't read shows its quarantine icon
+  // without being opened (#812)
+  useStoreCheck({
+    isGridLoaded: setupFlow.isLocalStoreReady && kits.length > 0,
+    localStorePath,
+    onQuarantineFound: applyQuarantine,
   });
 
   // Kit navigation

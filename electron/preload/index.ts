@@ -305,6 +305,10 @@ const electronAPI = {
       knownVersion,
     );
   },
+  getStoreCheckStatus: () => {
+    isDev && console.debug("[IPC] getStoreCheckStatus invoked");
+    return invoke("get-store-check-status");
+  },
   getUserHomeDir: () => {
     isDev && console.debug("[IPC] getUserHomeDir invoked");
     return invoke("get-user-home-dir");
@@ -366,6 +370,12 @@ const electronAPI = {
     isDev &&
       console.debug("[IPC] onLocalStoreDatabaseMissing listener registered");
     return listen("local-store-database-missing", () => callback());
+  },
+  onStoreCheckUpdated: (
+    callback: (update: IpcEvents["store-check-updated"]) => void,
+  ) => {
+    isDev && console.debug("[IPC] onStoreCheckUpdated listener registered");
+    return listen("store-check-updated", callback);
   },
   onSyncProgress: (
     callback: (progress: IpcEvents["sync-progress"]) => void,

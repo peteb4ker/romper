@@ -64,6 +64,7 @@ import {
   type StagedRtfFile,
 } from "./services/rtfFileService.js";
 import { scanService } from "./services/scanService.js";
+import { storeCheckService } from "./services/storeCheckService.js";
 import { ServicePathManager } from "./utils/fileSystemUtils.js";
 
 const NO_LOCAL_STORE_PATH = "No local store path provided or configured";
@@ -471,6 +472,8 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     if (typeof kitName !== "string" || kitName === "") {
       return { error: "Kit name must be a string", success: false };
     }
+    // The store check leaves the open kit to this check (#812)
+    storeCheckService.noteKitOpened(kitName);
     return scanService.checkKitSampleFiles(inMemorySettings, kitName);
   });
 

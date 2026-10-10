@@ -5,6 +5,7 @@ import type {
   MoveSampleBetweenKitsParams,
   SettingsData,
   SettingsKey,
+  StoreCheckUpdate,
   SyncProgress,
 } from "./electronApi.js";
 
@@ -24,6 +25,8 @@ export interface IpcEvents {
   "archive-progress": ArchiveProgress;
   /** onLocalStoreDatabaseMissing (#535) */
   "local-store-database-missing": void;
+  /** onStoreCheckUpdated (#812) */
+  "store-check-updated": StoreCheckUpdate;
   /** onSyncProgress */
   "sync-progress": SyncProgress;
 }
@@ -75,6 +78,7 @@ export interface IpcInvokeChannels {
   "get-kit-rample-save": Call<"getKitRampleSave">;
   "get-local-store-status": Call<"getLocalStoreStatus">;
   "get-sample-audio-buffer": Call<"getSampleAudioBuffer">;
+  "get-store-check-status": Call<"getStoreCheckStatus">;
   "get-user-home-dir": Call<"getUserHomeDir">;
   "list-files-in-root": Call<"listFilesInRoot">;
   /** Sent as one object */

@@ -272,6 +272,11 @@ export function updateSampleMetadata(
 /**
  * Record what reading a sample's file found (#537): its source status,
  * and its WAV details when it could be read. On the caller's transaction.
+ *
+ * With `checkedPath`, the row is updated only if it still points at the
+ * file that was checked, so a result that arrives after an edit moved the
+ * row to another file can't land on it (#812). Returns whether a row was
+ * updated.
  */
 export function updateSampleSourceStatusTx(
   db: RomperDb,
@@ -289,8 +294,13 @@ export function updateSampleSourceStatusTx(
       | "wav_sample_rate"
     >
   >,
-): void {
-  db.update(samples).set(fields).where(eq(samples.id, sampleId)).run();
+  checkedPath?: string,
+): boolean {
+  const row =
+    checkedPath === undefined
+      ? eq(samples.id, sampleId)
+      : and(eq(samples.id, sampleId), eq(samples.source_path, checkedPath));
+  return db.update(samples).set(fields).where(row).run().changes > 0;
 }
 
 function isRestorableRow(row: VoiceSnapshot["samples"][number]): boolean {

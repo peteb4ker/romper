@@ -187,6 +187,9 @@ and [Validating Your Store](../manual/kit-browser.md#validating-your-store).
   `local-store-database-missing`.
 - **Main:** `electron/main/services/localStoreService.ts` (`getLocalStoreStatus`);
   `electron/main/localStoreValidator.ts` (`validateLocalStoreAgainstDb`).
+- **Planned:** a background check that the store's sample files match
+  its database, with badges, a notice and fixes:
+  [`store-check.md`](store-check.md) (#769).
 
 ### UC-06 Change the local store
 

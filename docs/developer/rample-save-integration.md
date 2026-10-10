@@ -848,3 +848,7 @@ file (check 10's reset) or restore the copy.
 - The `autosave_<kit>.rpl` file beyond reading its name.
 - Writing `settings.rpl` or `global_assign.rpl`. Device settings stay the
   device's; stage 6 covers kit files only.
+- Checking the store's files against its database. The background store
+  check ([`store-check.md`](store-check.md), #769) reads kit folders and
+  sample files only, and skips `.romperdb`, so it never looks at the
+  stage 2 copies of `_save`.

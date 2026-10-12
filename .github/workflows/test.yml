@@ -51,14 +51,14 @@ jobs:
 
       - name: Upload unit test results
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: test-results-unit
           path: reports/results-unit.json
           retention-days: 7
 
       - name: Upload unit coverage artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: unit-coverage
           path: coverage/unit/
@@ -144,7 +144,7 @@ jobs:
 
       - name: Upload integration test results
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: test-results-integration-${{ matrix.os }}
           path: reports/results-integration.json
@@ -152,7 +152,7 @@ jobs:
 
       - name: Upload integration coverage artifacts
         if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: integration-coverage
           path: coverage/integration/
@@ -204,13 +204,13 @@ jobs:
 
       # Download coverage artifacts from previous jobs
       - name: Download unit coverage artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: unit-coverage
           path: coverage/unit/
 
       - name: Download integration coverage artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: integration-coverage
           path: coverage/integration/

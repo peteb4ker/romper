@@ -67,6 +67,14 @@ const EXPECTED: Expectation[] = [
     reason: "the factory set has two voices with more than 12 files",
   },
   {
+    // Exactly two, so a third short file (or a test WAV under 50 ms) fails
+    pattern: /^2 samples are shorter than the Rample's 50 ms minimum\.$/,
+    reason:
+      "the factory set has two files under the manual's 50 ms minimum: K4's 2_S_KR_metrim_01.wav (49.6 ms) and 2_S_KR_metrim_02.wav (48.5 ms), so every write that includes them says so (#576, #843)",
+    ref: "#843",
+    sources: ["ui"],
+  },
+  {
     pattern:
       /Voices 1 and 2 are unlinked\. Voice 1's stereo samples will be written to the card as mono\./,
     reason:

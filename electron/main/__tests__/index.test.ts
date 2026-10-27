@@ -97,6 +97,9 @@ vi.mock("../security/ipcSender.js", () => ({
 vi.mock("../services/localStoreSetupService.js", () => ({
   localStoreSetupService: { cleanupUnfinishedSetups: vi.fn(() => []) },
 }));
+vi.mock("../services/storeCheckService.js", () => ({
+  storeCheckService: { cancel: vi.fn(), refreshIfStale: vi.fn() },
+}));
 vi.mock("../localStoreValidator.js", () => ({
   validateLocalStoreAndDb: vi.fn(() => ({ isValid: true })),
 }));
@@ -206,6 +209,8 @@ describe("main/index.ts", () => {
     const { app } = await import("electron");
     const { localStoreSetupService } =
       await import("../services/localStoreSetupService.js");
+    const { storeCheckService } =
+      await import("../services/storeCheckService.js");
     vi.mocked(localStoreSetupService.cleanupUnfinishedSetups).mockReturnValue([
       { error: "EBUSY", removed: false, targetPath: "/mock/half-built" },
     ]);
@@ -219,6 +224,7 @@ describe("main/index.ts", () => {
       )?.[1] as () => void;
     onQuit();
 
+    expect(storeCheckService.cancel).toHaveBeenCalledTimes(1);
     expect(localStoreSetupService.cleanupUnfinishedSetups).toHaveBeenCalledWith(
       "/mock/local",
     );
@@ -232,9 +238,6 @@ describe("main/index.ts", () => {
     const { app } = await import("electron");
     const { storeCheckService } =
       await import("../services/storeCheckService.js");
-    const refresh = vi
-      .spyOn(storeCheckService, "refreshIfStale")
-      .mockImplementation(() => {});
     await import("../index");
 
     const onFocus = vi
@@ -244,8 +247,7 @@ describe("main/index.ts", () => {
       )?.[1] as () => void;
     onFocus();
 
-    expect(refresh).toHaveBeenCalledTimes(1);
-    refresh.mockRestore();
+    expect(storeCheckService.refreshIfStale).toHaveBeenCalledTimes(1);
   });
 
   it("registers unhandledRejection handler and logs error", async () => {

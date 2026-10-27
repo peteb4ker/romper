@@ -1,11 +1,7 @@
 # Romper -- Claude Code project notes
 
 Cross-platform Electron sample manager for the Squarp Rample Eurorack
-sampler. Renderer is React + Tailwind + Vite (`app/renderer`); main and
-preload are TypeScript on Node (`electron/`); shared types and the Drizzle
-schema live in `shared/`. Database is SQLite via Drizzle ORM on the
-synchronous better-sqlite3 driver. Tests are Vitest (unit + integration) and
-Playwright (e2e).
+sampler. The database driver (better-sqlite3) is synchronous.
 
 ## Commands
 
@@ -31,11 +27,8 @@ Playwright (e2e).
   `npm run test:play -- tests/e2e/<file>`. It doesn't rebuild, so run
   `npm run build` first after changing code. The e2e error guard fails a
   test on any main-process stderr line except known noise from Chromium,
-  the OS or the harness, listed in `tests/validation/support/known-noise.ts`.
-  If a run fails on such a line, add or widen its source's entry there,
-  with its platforms, a reason (required), a link where there is one, and
-  the real line as an example; don't expect it in one spec. See "Known
-  noise" in the coding guide. CI runs e2e on Linux only for PRs; pushes
+  the OS or the harness, listed in `tests/validation/support/known-noise.ts`;
+  see "Known noise" in the coding guide before adding to it. CI runs e2e on Linux only for PRs; pushes
   to `main` and releases run it on macOS and Windows too, so a macOS- or
   Windows-only failure first shows up on `main`.
 - `npm run dev` -- builds everything, then runs Vite + Electron. Long-running;
@@ -102,34 +95,10 @@ the repo or on GitHub.
   The main thread turns off its PR monitor's `auto_archive_on_close`, so
   it isn't archived when its PR merges.
 - **Backlog:** GitHub issues are the backlog; [`BACKLOG.md`](BACKLOG.md)
-  has the protocol. Each issue is labelled with the use case or quality
-  (`UC-NN`, `Q-NN` in `docs/developer/use-cases.md`) where a user would
-  notice it, a kind and a severity. The loop:
-  1. Triage first: `gh issue list --label triage` (and unlabelled issues).
-     Give each a UC/Q label, a kind and a severity, and remove `triage`.
-  2. Pick: `gh issue list --label severity:high`, then medium, then by use
-     case (`--label UC-19`); skip claimed ones.
-  3. Claim: a draft PR whose description says `Fixes #N`, or a comment on
-     the issue. Branch `fix/<issue>-<slug>`; commit and PR titles end with
-     the issue number, e.g. `(#552)`.
-  4. Fix it, with tests tagged `[UC-NN]` or `[Q-NN]`, and look for
-     siblings: other callers or code paths with the same bug. Fix them or
-     file issues, and list them in the PR.
-  5. The PR body ends with `Fixes #N`. Merging closes the issue, and the
-     release notes list the closed issues.
-  6. A new finding becomes an issue: a plain title saying what a user
-     would notice, a UC/Q, kind and severity label, and the technical
-     detail in the body.
-
-  Status is generated, never edited: an entry is supported when no open
-  issue carries its label and partial when one does (only `**Status:** not
-  built` is written by hand). Fix PRs never touch a status; closing the
-  issue is enough. `npm run trace` prints the statuses, and the Lint job
-  summary shows them. `npm run trace:check` warns on a PR about what a
-  release can't ship with (an issue or entry without its label, a
-  supported entry with no test above unit level and no declared gap; fix
-  the warning if your PR caused it), and the release fails on it
-  (`--strict-issues`).
+  has the protocol (triage, pick, claim, fix, report a finding) and how
+  use case statuses are generated. Branch `fix/<issue>-<slug>`; commit and
+  PR titles end with the issue number, e.g. `(#552)`; the PR body ends
+  with `Fixes #N`. Tag tests `[UC-NN]` or `[Q-NN]`.
 - **Plans:** for work bigger than one PR, commit a spec to
   `docs/developer/<feature>.md` before implementing (like
   `step-sequencer-slicer.md`), and link it from an issue or the PR.

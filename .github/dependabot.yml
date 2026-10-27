@@ -17,13 +17,22 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(deps)"
-    # The one npm major we hold back. "typescript" is an alias of
+    # The npm majors we hold back. "typescript" is an alias of
     # @typescript/typescript6 (#469): TypeScript 7, which provides `tsc` as
     # @typescript/native, has no JavaScript API yet, and typescript-eslint,
     # eslint-plugin-sonarjs and scripts/traceability.mjs need the 6.x API.
     # Remove this rule once they support TypeScript 7.
     ignore:
       - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
+      # "@types/node" stays on the major of the Node that runs the app,
+      # which is the Node embedded in the Electron we ship (not the newest
+      # Node). Types for a newer Node admit APIs that don't exist at run
+      # time, so a compile can pass while the app fails. Minor and patch
+      # updates still arrive. Move the major in the same PR as the Electron
+      # upgrade that changes the embedded Node.
+      - dependency-name: "@types/node"
         update-types:
           - version-update:semver-major
     groups:

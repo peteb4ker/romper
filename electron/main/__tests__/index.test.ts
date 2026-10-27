@@ -228,6 +228,26 @@ describe("main/index.ts", () => {
     warn.mockRestore();
   });
 
+  it("[UC-05] asks the store check to refresh when a window gains focus (#812)", async () => {
+    const { app } = await import("electron");
+    const { storeCheckService } =
+      await import("../services/storeCheckService.js");
+    const refresh = vi
+      .spyOn(storeCheckService, "refreshIfStale")
+      .mockImplementation(() => {});
+    await import("../index");
+
+    const onFocus = vi
+      .mocked(app.on)
+      .mock.calls.find(
+        ([event]: unknown[]) => event === "browser-window-focus",
+      )?.[1] as () => void;
+    onFocus();
+
+    expect(refresh).toHaveBeenCalledTimes(1);
+    refresh.mockRestore();
+  });
+
   it("registers unhandledRejection handler and logs error", async () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     await import("../index");

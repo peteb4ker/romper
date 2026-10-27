@@ -4,7 +4,7 @@ priority: medium
 status: specification
 updated: 2026-10-09
 context_size: medium
-implementation_status: not built; stage 1 is #812, stages 2-6 wait for the decisions below
+implementation_status: stage 1 built (#812, PR #828); stages 2-6 (#820-#824) not built, waiting for the decisions below
 -->
 
 # Store check: keeping the library's files and database in agreement
@@ -162,7 +162,7 @@ bank name files, and the card.
 
 ## When it runs
 
-Recommended (D7):
+Approved (D7, on #769 on 2026-10-10):
 
 - **At startup**, once the store's status is valid (`isLocalStoreReady`)
   and the kit grid has loaded, after a few seconds with no IPC call in
@@ -438,8 +438,32 @@ Each stage is one PR. Stages 2 to 6 wait for the decisions named.
   other fs work; no sync fs call; a write pauses the pass; a store change
   cancels it; the budgets above hold; the "idle on the kit grid"
   validation budget holds.
-- **Affects:** UC-05, Q-01. **Decisions:** none (D7's triggers are
-  recommended; the maintainer can change the numbers on the issue).
+- **Affects:** UC-05, Q-01. **Decisions:** D7 (approved on #769, 2026-10-10).
+- **As built (#812):**
+  - Triggers: the first `get-store-check-status` after the kit grid has
+    loaded starts the pass (after a 2 s quiet startup); a store change
+    cancels it and the new store's grid load starts another; a window
+    gaining focus (`browser-window-focus`) calls
+    `StoreCheckService.refreshIfStale`, which starts another pass over the
+    same store if the last *completed* pass ended over ten minutes ago. It
+    does nothing while a pass runs or a write, setup or rescan is in
+    flight, and the refresh skips the startup wait. No timer, no watcher.
+  - The pass yields to every IPC call (`ipcActivity`), pauses during a
+    write, setup or rescan, and checks a kit again if one began while it
+    was checked. A fs operation that takes over 10 s skips the rest of
+    that volume for the pass. It uses no sync fs call.
+  - A paused pass doesn't resume "from the next unchecked kit" after a
+    cancel: a cancel (store change, quit) discards the pass and a new one
+    starts over. A pass that can't read the database ends without a
+    completion time, and the next grid load starts it again; focus only
+    refreshes a store whose pass completed.
+  - The kit open in the editor is left to its own kit-open check. Main
+    learns of it from `check-kit-sample-files` and isn't told when the
+    editor closes, so the pass skips the last kit opened for the rest of
+    the session (until a store change). That's an approximation.
+  - The renderer (`useStoreCheck`) patches `quarantined` on the kits whose
+    finding changed (`applyQuarantine`); the status also carries the
+    missing and unreadable counts for stage 3.
 
 ### Stage 2: check kit folders (blocked on D4)
 

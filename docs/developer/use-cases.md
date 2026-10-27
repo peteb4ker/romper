@@ -180,7 +180,8 @@ and [Validating Your Store](../manual/kit-browser.md#validating-your-store).
 - **Main, while running (sample files):** `electron/main/services/storeCheckService.ts`
   (`StoreCheckService`, #812) checks every kit's sample rows against their
   files in the background, a kit at a time, from when the kit grid has
-  loaded (`get-store-check-status`) and again after a store change. It
+  loaded (`get-store-check-status`), again after a store change, and
+  on window focus when the last pass ended over ten minutes ago. It
   gives way to IPC calls, writes, setup and rescans, and pushes
   `store-check-updated` for a kit whose finding changed; the kit card shows
   the existing quarantine icon. The plan is `docs/developer/store-check.md`

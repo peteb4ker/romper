@@ -36,6 +36,11 @@ export const storeCheckSettings = {
   pollMs: 100,
   /** No IPC call in flight, and none begun or ended, for this long */
   quietMs: 250,
+  /**
+   * A window gaining focus starts another pass once the last one ended this
+   * long ago (D7 of docs/developer/store-check.md). No timer, no watcher.
+   */
+  refreshAfterMs: 10 * 60 * 1000,
   /** The same before the first kit of a pass: not while the app is starting */
   startupQuietMs: 2000,
 };
@@ -162,6 +167,30 @@ export class StoreCheckService {
   }
 
   /**
+   * The window gained focus: start another pass over the same store if the
+   * last one ended over `refreshAfterMs` ago (D7). Does nothing while a
+   * pass is running, while a write, setup or rescan is in flight, or if no
+   * pass has completed for the store. The findings stay as they were until
+   * the new pass changes them, and the startup wait is skipped: the app
+   * has been up for a while.
+   */
+  refreshIfStale(): void {
+    if (
+      this.storePath === null ||
+      this.state !== "idle" ||
+      this.lastCompletedAt === null ||
+      this.activity.exclusiveActive ||
+      Date.now() - this.lastCompletedAt <= storeCheckSettings.refreshAfterMs
+    ) {
+      return;
+    }
+    this.state = "running";
+    const controller = new AbortController();
+    this.controller = controller;
+    void this.runPass(this.storePath, controller, 0);
+  }
+
+  /**
    * Start the pass for the store at `localStorePath`, once its kit grid has
    * loaded. Does nothing if this store's pass has already started, so a
    * renderer that reloads doesn't start another.
@@ -230,17 +259,12 @@ export class StoreCheckService {
   private async runPass(
     localStorePath: string,
     controller: AbortController,
+    startupQuietMs = storeCheckSettings.startupQuietMs,
   ): Promise<void> {
     const dbDir = ServicePathManager.getDbPath(localStorePath);
     const slowVolumes = new Set<string>();
     try {
-      if (
-        !(await this.waitForQuiet(
-          controller,
-          storeCheckSettings.startupQuietMs,
-          Date.now(),
-        ))
-      ) {
+      if (!(await this.waitForQuiet(controller, startupQuietMs, Date.now()))) {
         return;
       }
       const names = getKitNamesForCheck(dbDir);

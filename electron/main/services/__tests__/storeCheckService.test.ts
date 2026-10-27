@@ -294,6 +294,119 @@ describe("[UC-05] [Q-01] StoreCheckService schedules the background check (#812)
     expect(scan.check).toHaveBeenCalledTimes(6);
   });
 
+  describe("window focus (D7)", () => {
+    const TEN_MINUTES = 10 * 60 * 1000;
+
+    async function completedPass() {
+      service.start("/lib");
+      await run(1000);
+      expect(scan.check).toHaveBeenCalledTimes(3);
+      expect(service.getStatus().state).toBe("idle");
+    }
+
+    it("checks the store again when the last pass ended over 10 minutes ago", async () => {
+      await completedPass();
+
+      await run(TEN_MINUTES + 1);
+      service.refreshIfStale();
+      await run(1000);
+
+      expect(scan.check).toHaveBeenCalledTimes(6);
+      expect(service.getStatus().state).toBe("idle");
+    });
+
+    it("does nothing when the last pass ended 10 minutes ago or less", async () => {
+      await completedPass();
+
+      await run(TEN_MINUTES - 2000);
+      service.refreshIfStale();
+      await run(1000);
+      service.refreshIfStale();
+      await run(5000);
+
+      expect(scan.check).toHaveBeenCalledTimes(3);
+    });
+
+    it("counts the 10 minutes from the end of the latest pass, so a focus soon after a refresh does nothing", async () => {
+      await completedPass();
+      await run(TEN_MINUTES + 1);
+      service.refreshIfStale();
+      await run(1000);
+      expect(scan.check).toHaveBeenCalledTimes(6);
+
+      service.refreshIfStale();
+      await run(5000);
+
+      expect(scan.check).toHaveBeenCalledTimes(6);
+    });
+
+    it("does not start a second pass while one is running", async () => {
+      await completedPass();
+      await run(TEN_MINUTES + 1);
+      service.refreshIfStale();
+      expect(service.getStatus().state).toBe("running");
+
+      service.refreshIfStale();
+      service.refreshIfStale();
+      await run(1000);
+
+      expect(scan.check).toHaveBeenCalledTimes(6);
+    });
+
+    it("does not start while a write, setup or rescan is in flight", async () => {
+      await completedPass();
+      let finish!: () => void;
+      const write = activity.track(
+        "setup-import-kit",
+        () =>
+          new Promise<void>((resolve) => {
+            finish = resolve;
+          }),
+      );
+      await run(TEN_MINUTES + 1);
+
+      service.refreshIfStale();
+      await run(5000);
+      expect(scan.check).toHaveBeenCalledTimes(3);
+      expect(service.getStatus().state).toBe("idle");
+
+      finish();
+      await write;
+      service.refreshIfStale();
+      await run(1000);
+      expect(scan.check).toHaveBeenCalledTimes(6);
+    });
+
+    it("does nothing before a first pass has completed, or after a store change", async () => {
+      service.refreshIfStale();
+      await run(TEN_MINUTES);
+      expect(scan.check).not.toHaveBeenCalled();
+
+      await completedPass();
+      service.cancel();
+      await run(TEN_MINUTES + 1);
+      service.refreshIfStale();
+      await run(1000);
+      expect(scan.check).toHaveBeenCalledTimes(3);
+    });
+
+    it("keeps the findings until the new pass changes them, and skips the startup wait", async () => {
+      filesFind({ "/lib/A0/1.wav": "missing" });
+      await completedPass();
+      expect(service.getStatus().kits.map((k) => k.kitName)).toEqual(["A0"]);
+
+      await run(TEN_MINUTES + 1);
+      filesFind();
+      scan.check.mockClear();
+      service.refreshIfStale();
+      expect(service.getStatus().kits.map((k) => k.kitName)).toEqual(["A0"]);
+      await run(100);
+      expect(scan.check).toHaveBeenCalled();
+      await run(1000);
+      expect(service.getStatus().kits).toEqual([]);
+    });
+  });
+
   it("leaves the kit open in the editor to its own check", async () => {
     service.noteKitOpened("A1");
     service.start("/lib");

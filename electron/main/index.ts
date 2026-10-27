@@ -318,6 +318,13 @@ app.on("will-quit", () => {
   closeAllDbConnections();
 });
 
+// Coming back to the app is when files may have changed on disk: check the
+// store's sample files again if the last pass ended over 10 minutes ago.
+// The service decides whether to; there's no timer or file watcher (#812).
+app.on("browser-window-focus", () => {
+  storeCheckService.refreshIfStale();
+});
+
 process.on("unhandledRejection", (reason: unknown) => {
   console.error(
     "Unhandled Promise Rejection:",

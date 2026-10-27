@@ -101,20 +101,7 @@ export class StoreCheckService {
     const rows = read.data;
     const before = this.findingOf(kitName, rows);
 
-    const limit = <T>(operation: Promise<T>) =>
-      withCardWatchdog(operation, storeCheckSettings.operationTimeoutMs);
-    const found: SampleCheck[] = [];
-    for (const sample of rows.samples) {
-      if (controller.signal.aborted) return true;
-      const volume = volumeOf(sample.source_path);
-      if (slowVolumes.has(volume)) continue;
-      try {
-        // One operation at a time: never Promise.all
-        found.push(await checkSampleFile(sample, limit)); // NOSONAR: one fs operation at a time on purpose
-      } catch (error) {
-        if (error instanceof CardNotRespondingError) slowVolumes.add(volume);
-      }
-    }
+    const found = await this.checkFiles(rows, controller, slowVolumes);
     if (controller.signal.aborted) return true;
     // A write, setup or rescan began meanwhile: what was found may be out
     // of date, so check the kit again once it's over
@@ -205,6 +192,33 @@ export class StoreCheckService {
     void this.runPass(localStorePath, controller);
   }
 
+  /**
+   * Check the kit's files one at a time, each under a time limit. A volume
+   * that timed out is skipped from then on; a file whose check failed any
+   * other way is left as it is.
+   */
+  private async checkFiles(
+    rows: KitRowsToCheck,
+    controller: AbortController,
+    slowVolumes: Set<string>,
+  ): Promise<SampleCheck[]> {
+    const limit = <T>(operation: Promise<T>) =>
+      withCardWatchdog(operation, storeCheckSettings.operationTimeoutMs);
+    const found: SampleCheck[] = [];
+    for (const sample of rows.samples) {
+      if (controller.signal.aborted) break;
+      const volume = volumeOf(sample.source_path);
+      if (slowVolumes.has(volume)) continue;
+      try {
+        // One operation at a time: never Promise.all
+        found.push(await checkSampleFile(sample, limit)); // NOSONAR: one fs operation at a time on purpose
+      } catch (error) {
+        if (error instanceof CardNotRespondingError) slowVolumes.add(volume);
+      }
+    }
+    return found;
+  }
+
   /** The kit's finding after a step: only what the renderer can show */
   private findingOf(kitName: string, rows: KitRowsToCheck) {
     let missing = 0;
@@ -262,7 +276,7 @@ export class StoreCheckService {
     startupQuietMs = storeCheckSettings.startupQuietMs,
   ): Promise<void> {
     const dbDir = ServicePathManager.getDbPath(localStorePath);
-    const slowVolumes = new Set<string>();
+    const slow = new Set<string>();
     try {
       if (!(await this.waitForQuiet(controller, startupQuietMs, Date.now()))) {
         return;
@@ -275,21 +289,8 @@ export class StoreCheckService {
         return;
       }
       for (const kitName of names.data) {
-        let checked = false;
-        while (!checked) {
-          if (
-            !(await this.waitForQuiet(controller, storeCheckSettings.quietMs))
-          ) {
-            return;
-          }
-          if (kitName === this.openKit) break;
-          checked = await this.checkKit(
-            dbDir,
-            kitName,
-            controller,
-            slowVolumes,
-          );
-        }
+        const stepped = await this.stepKit(dbDir, kitName, controller, slow); // NOSONAR: one kit per step on purpose
+        if (!stepped) return;
       }
       this.finish(controller, true);
     } catch (error) {
@@ -298,6 +299,25 @@ export class StoreCheckService {
         error instanceof Error ? error.message : String(error),
       );
       this.finish(controller, false);
+    }
+  }
+
+  /**
+   * Wait for a quiet moment, then check one kit; again if a write, setup
+   * or rescan began meanwhile. False if the pass was cancelled.
+   */
+  private async stepKit(
+    dbDir: string,
+    kitName: string,
+    controller: AbortController,
+    slowVolumes: Set<string>,
+  ): Promise<boolean> {
+    const quietMs = storeCheckSettings.quietMs;
+    for (;;) {
+      if (!(await this.waitForQuiet(controller, quietMs))) return false; // NOSONAR: waits for a quiet moment on purpose
+      if (kitName === this.openKit) return true;
+      const args = [dbDir, kitName, controller, slowVolumes] as const;
+      if (await this.checkKit(...args)) return true; // NOSONAR: one kit per step on purpose
     }
   }
 
@@ -324,6 +344,14 @@ export class StoreCheckService {
   }
 }
 
+/** Where each OS mounts a drive: the first group is the volume */
+const MOUNT_PATTERNS: readonly RegExp[] = [
+  /^(\/Volumes\/[^/]+)(\/|$)/,
+  /^(\/media\/[^/]+\/[^/]+)(\/|$)/,
+  /^(\/run\/media\/[^/]+\/[^/]+)(\/|$)/,
+  /^(\/mnt\/[^/]+)(\/|$)/,
+];
+
 /** The shared store check */
 export const storeCheckService = new StoreCheckService();
 
@@ -333,11 +361,11 @@ export const storeCheckService = new StoreCheckService();
  * else the path's root (a Windows drive letter or share, or `/`)
  */
 export function volumeOf(filePath: string): string {
-  const mounted =
-    /^(\/Volumes\/[^/]+|\/media\/[^/]+\/[^/]+|\/run\/media\/[^/]+\/[^/]+|\/mnt\/[^/]+)(\/|$)/.exec(
-      filePath,
-    );
-  return mounted?.[1] ?? path.parse(filePath).root;
+  for (const mount of MOUNT_PATTERNS) {
+    const mounted = mount.exec(filePath);
+    if (mounted) return mounted[1];
+  }
+  return path.parse(filePath).root;
 }
 
 /** Wait `ms`, or less if `signal` aborts. Never keeps the process alive. */

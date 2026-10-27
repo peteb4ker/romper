@@ -106,7 +106,7 @@
     "eslint-plugin-sonarjs": "^4.2.2",
     "fast-check": "^4.10.2",
     "fontkit": "^2.0.4",
-    "globals": "^16.3.0",
+    "globals": "^17.13.0",
     "handlebars": "^4.7.10",
     "husky": "^9.1.7",
     "image-size": "file:scripts/image-size-compat",

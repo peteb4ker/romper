@@ -5,7 +5,9 @@ import type {
 } from "@romper/shared/electronApi.js";
 
 import { compareKitSlots } from "@romper/shared/kitUtilsShared.js";
+import { voiceOfCardFile } from "@romper/shared/rampleCardLayout.js";
 import { isKitQuarantined } from "@romper/shared/stereoLinkRules.js";
+import * as fs from "node:fs";
 import * as path from "node:path";
 
 import {
@@ -45,6 +47,19 @@ export const storeCheckSettings = {
   startupQuietMs: 2000,
 };
 
+/** The folder side of a kit's finding (#820) */
+type FolderFinding = Pick<
+  StoreCheckKitFinding,
+  "folderMissing" | "unavailableVolumes" | "untracked"
+>;
+
+/** Nothing found in a folder: also what an editable kit's folder reports */
+const NO_FOLDER_FINDING: FolderFinding = {
+  folderMissing: false,
+  unavailableVolumes: [],
+  untracked: [],
+};
+
 /**
  * Checks that the store's sample files still match its database, in the
  * background, so a file deleted or broken on disk is found without opening
@@ -57,6 +72,11 @@ export const storeCheckSettings = {
  * moment with no IPC call in flight, so a user action always goes first; it
  * doesn't run during a write, setup or rescan, and drops a step's findings
  * if one began meanwhile. It never uses a sync fs call.
+ *
+ * A read-only kit's folder is listed too, in the same step (#820, stage 2):
+ * voice-prefixed WAVs no row points at, and a folder that is gone, are
+ * findings kept in memory. Editable kits' folders, and folders no kit
+ * claims (an imported kit's leftovers), are never listed (D4).
  */
 export class StoreCheckService {
   private readonly activity: IpcActivity;
@@ -85,23 +105,35 @@ export class StoreCheckService {
   }
 
   /**
-   * One step of a pass: check one kit's sample files and record what
-   * changed. False if the step must run again (a write, setup or rescan
-   * began meanwhile).
+   * One step of a pass: check one kit's sample files, and its folder if it
+   * is read-only, and record what changed. False if the step must run
+   * again (a write, setup or rescan began meanwhile).
    */
   async checkKit(
-    dbDir: string,
+    localStorePath: string,
     kitName: string,
     controller: AbortController = new AbortController(),
     slowVolumes: Set<string> = new Set(),
   ): Promise<boolean> {
+    const dbDir = ServicePathManager.getDbPath(localStorePath);
     const started = this.activity.exclusiveStartCount;
     const read = withDb(dbDir, (db) => readKitRowsToCheck(db, kitName));
     if (!read.success || !read.data) return true;
     const rows = read.data;
-    const before = this.findingOf(kitName, rows);
+    // The folder side isn't in the database: what the last pass found
+    const known = folderPartOf(this.findings.get(kitName));
+    const fileSide = this.findingOf(kitName, rows);
+    const before = { ...fileSide, ...known };
 
     const found = await this.checkFiles(rows, controller, slowVolumes);
+    const folder = rows.editable
+      ? NO_FOLDER_FINDING
+      : ((await this.checkFolder(
+          path.join(localStorePath, kitName),
+          rows,
+          controller,
+          slowVolumes,
+        )) ?? known);
     if (controller.signal.aborted) return true;
     // A write, setup or rescan began meanwhile: what was found may be out
     // of date, so check the kit again once it's over
@@ -113,7 +145,7 @@ export class StoreCheckService {
     }
 
     const changes = changedChecks(found);
-    let after = before;
+    let after = fileSide;
     if (changes.length > 0) {
       // The rows are read again in the transaction, so the finding is what
       // the store holds after the record
@@ -125,7 +157,7 @@ export class StoreCheckService {
       });
       if (saved.success && saved.data) after = saved.data;
     }
-    this.report(before, after);
+    this.report(before, { ...after, ...folder });
     return true;
   }
 
@@ -219,8 +251,60 @@ export class StoreCheckService {
     return found;
   }
 
-  /** The kit's finding after a step: only what the renderer can show */
-  private findingOf(kitName: string, rows: KitRowsToCheck) {
+  /**
+   * List a read-only kit's folder, under the same time limit as the files,
+   * and find what is wrong with it. Null if it couldn't be told (any
+   * failure other than the folder being gone), so the last finding stands.
+   */
+  private async checkFolder(
+    kitPath: string,
+    rows: KitRowsToCheck,
+    controller: AbortController,
+    slowVolumes: Set<string>,
+  ): Promise<FolderFinding | null> {
+    const volume = volumeOf(kitPath);
+    if (controller.signal.aborted) return null;
+    if (slowVolumes.has(volume)) return unavailable(volume);
+    const limit = <T>(operation: Promise<T>) =>
+      withCardWatchdog(operation, storeCheckSettings.operationTimeoutMs);
+    try {
+      const names = await limit(fs.promises.readdir(kitPath));
+      const tracked = new Set(rows.samples.map((row) => row.source_path));
+      return {
+        ...NO_FOLDER_FINDING,
+        untracked: names
+          .filter(isKitWav)
+          .filter((name) => !tracked.has(path.join(kitPath, name)))
+          .sort((a, b) => a.localeCompare(b)),
+      };
+    } catch (error) {
+      if (error instanceof CardNotRespondingError) {
+        slowVolumes.add(volume);
+        return unavailable(volume);
+      }
+      if (!isGone(error)) return null;
+    }
+    // The folder is gone: or is it the drive that isn't there (D6)?
+    try {
+      await limit(fs.promises.stat(volume));
+    } catch (error) {
+      if (error instanceof CardNotRespondingError) {
+        slowVolumes.add(volume);
+        return unavailable(volume);
+      }
+      return isGone(error) ? unavailable(volume) : null;
+    }
+    return { ...NO_FOLDER_FINDING, folderMissing: true };
+  }
+
+  /**
+   * The file side of a kit's finding after a step: only what the renderer
+   * can show
+   */
+  private findingOf(
+    kitName: string,
+    rows: KitRowsToCheck,
+  ): Omit<StoreCheckKitFinding, keyof FolderFinding> {
     let missing = 0;
     let unreadable = 0;
     for (const { source_status } of rows.samples) {
@@ -248,16 +332,14 @@ export class StoreCheckService {
     before: StoreCheckKitFinding,
     after: StoreCheckKitFinding,
   ): void {
-    if (after.missing > 0 || after.unreadable > 0 || after.quarantined) {
+    if (hasFinding(after)) {
       this.findings.set(after.kitName, after);
     } else {
       this.findings.delete(after.kitName);
     }
-    const changed =
-      before.missing !== after.missing ||
-      before.unreadable !== after.unreadable ||
-      before.quarantined !== after.quarantined;
-    if (changed) this.listener?.({ kits: [after], state: this.state });
+    if (!sameFinding(before, after)) {
+      this.listener?.({ kits: [after], state: this.state });
+    }
   }
 
   /** Stop the pass and forget what it found */
@@ -289,7 +371,8 @@ export class StoreCheckService {
         return;
       }
       for (const kitName of names.data) {
-        const stepped = await this.stepKit(dbDir, kitName, controller, slow); // NOSONAR: one kit per step on purpose
+        const step = [localStorePath, kitName, controller, slow] as const;
+        const stepped = await this.stepKit(...step); // NOSONAR: one kit per step on purpose
         if (!stepped) return;
       }
       this.finish(controller, true);
@@ -307,7 +390,7 @@ export class StoreCheckService {
    * or rescan began meanwhile. False if the pass was cancelled.
    */
   private async stepKit(
-    dbDir: string,
+    localStorePath: string,
     kitName: string,
     controller: AbortController,
     slowVolumes: Set<string>,
@@ -316,7 +399,7 @@ export class StoreCheckService {
     for (;;) {
       if (!(await this.waitForQuiet(controller, quietMs))) return false; // NOSONAR: waits for a quiet moment on purpose
       if (kitName === this.openKit) return true;
-      const args = [dbDir, kitName, controller, slowVolumes] as const;
+      const args = [localStorePath, kitName, controller, slowVolumes] as const;
       if (await this.checkKit(...args)) return true; // NOSONAR: one kit per step on purpose
     }
   }
@@ -342,6 +425,62 @@ export class StoreCheckService {
       if (controller.signal.aborted) return false;
     }
   }
+}
+
+/** The folder side of a kit's last finding, or nothing found */
+function folderPartOf(
+  finding: StoreCheckKitFinding | undefined,
+): FolderFinding {
+  return finding
+    ? {
+        folderMissing: finding.folderMissing,
+        unavailableVolumes: finding.unavailableVolumes,
+        untracked: finding.untracked,
+      }
+    : NO_FOLDER_FINDING;
+}
+
+/** Whether the kit has anything to show */
+function hasFinding(finding: StoreCheckKitFinding): boolean {
+  return (
+    finding.missing > 0 ||
+    finding.unreadable > 0 ||
+    finding.quarantined ||
+    finding.folderMissing ||
+    finding.untracked.length > 0 ||
+    finding.unavailableVolumes.length > 0
+  );
+}
+
+/** The fs error says there is no such file or folder (or it isn't one) */
+function isGone(error: unknown): boolean {
+  const code = (error as NodeJS.ErrnoException | undefined)?.code;
+  return code === "ENOENT" || code === "ENOTDIR";
+}
+
+/**
+ * A voice-prefixed `.wav` file, the way `rescanKit` picks a kit folder's
+ * samples: names starting with `.` (macOS `._` AppleDouble files,
+ * `.DS_Store`) and other files never count
+ */
+function isKitWav(name: string): boolean {
+  return voiceOfCardFile(name) !== null && name.toLowerCase().endsWith(".wav");
+}
+
+function sameFinding(a: StoreCheckKitFinding, b: StoreCheckKitFinding) {
+  return (
+    a.missing === b.missing &&
+    a.unreadable === b.unreadable &&
+    a.quarantined === b.quarantined &&
+    a.folderMissing === b.folderMissing &&
+    a.untracked.join("\n") === b.untracked.join("\n") &&
+    a.unavailableVolumes.join("\n") === b.unavailableVolumes.join("\n")
+  );
+}
+
+/** The kit's folder couldn't be checked: its drive isn't connected or didn't respond */
+function unavailable(volume: string): FolderFinding {
+  return { ...NO_FOLDER_FINDING, unavailableVolumes: [volume] };
 }
 
 /** Where each OS mounts a drive: the first group is the volume */

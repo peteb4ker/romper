@@ -7,6 +7,7 @@ const db = vi.hoisted(() => ({
   rows: new Map<
     string,
     {
+      editable: boolean;
       samples: Partial<Sample>[];
       voices: { stereo_mode: boolean; voice_number: number }[];
     }
@@ -42,6 +43,21 @@ vi.mock("../../db/romperDbCoreORM.js", () => ({
 const scan = vi.hoisted(() => ({
   check: vi.fn(),
 }));
+
+// The folder side lists each read-only kit's folder with fs.promises (#820)
+const files = vi.hoisted(() => ({
+  readdir: vi.fn(),
+  stat: vi.fn(),
+}));
+vi.mock("node:fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs")>();
+  const promises = {
+    ...actual.promises,
+    readdir: files.readdir,
+    stat: files.stat,
+  };
+  return { ...actual, default: { ...actual, promises }, promises };
+});
 vi.mock("../scanService.js", () => ({
   changedChecks: (
     found: {
@@ -63,6 +79,17 @@ import {
 } from "../storeCheckService.js";
 
 const SETTINGS = { ...storeCheckSettings };
+
+/** A finding with nothing in it, to spread the one thing a test expects */
+const CLEAN = {
+  folderMissing: false,
+  kitName: "",
+  missing: 0,
+  quarantined: false,
+  unavailableVolumes: [],
+  unreadable: 0,
+  untracked: [],
+};
 
 /** The checks find each file readable, unless `problems` says otherwise */
 function filesFind(problems: Record<string, "missing" | "unreadable"> = {}) {
@@ -112,6 +139,7 @@ describe("[UC-05] [Q-01] StoreCheckService schedules the background check (#812)
       db.names.map((kit) => [
         kit,
         {
+          editable: true,
           samples: [
             sample(db.names.indexOf(kit) * 10 + 1, `/lib/${kit}/1.wav`),
           ],
@@ -121,6 +149,8 @@ describe("[UC-05] [Q-01] StoreCheckService schedules the background check (#812)
     );
     db.updates = [];
     scan.check.mockReset();
+    files.readdir.mockReset();
+    files.stat.mockReset();
     filesFind();
     activity = new IpcActivity();
     service = new StoreCheckService(activity);
@@ -437,8 +467,8 @@ describe("[UC-05] [Q-01] StoreCheckService schedules the background check (#812)
 
     // A0 went from never checked to readable: no finding changed
     expect(pushed.flatMap((update) => update.kits)).toEqual([
-      { kitName: "A1", missing: 0, quarantined: true, unreadable: 1 },
-      { kitName: "B0", missing: 1, quarantined: false, unreadable: 0 },
+      { ...CLEAN, kitName: "A1", quarantined: true, unreadable: 1 },
+      { ...CLEAN, kitName: "B0", missing: 1 },
     ]);
     expect(service.getStatus().kits.map((kit) => kit.kitName)).toEqual([
       "A1",
@@ -456,7 +486,7 @@ describe("[UC-05] [Q-01] StoreCheckService schedules the background check (#812)
     expect(pushed).toEqual([]);
     // It is still in the status
     expect(service.getStatus().kits).toEqual([
-      { kitName: "A1", missing: 0, quarantined: true, unreadable: 1 },
+      { ...CLEAN, kitName: "A1", quarantined: true, unreadable: 1 },
     ]);
   });
 
@@ -467,7 +497,7 @@ describe("[UC-05] [Q-01] StoreCheckService schedules the background check (#812)
     await run(1000);
 
     expect(pushed.flatMap((update) => update.kits)).toEqual([
-      { kitName: "A1", missing: 0, quarantined: false, unreadable: 0 },
+      { ...CLEAN, kitName: "A1" },
     ]);
     expect(service.getStatus().kits).toEqual([]);
   });
@@ -475,6 +505,7 @@ describe("[UC-05] [Q-01] StoreCheckService schedules the background check (#812)
   it("gives each file operation a time limit, and skips the rest of a volume that timed out", async () => {
     db.names = ["A0", "A1"];
     db.rows.set("A0", {
+      editable: true,
       samples: [
         sample(1, "/Volumes/Slow/a.wav"),
         sample(2, "/Volumes/Slow/b.wav"),
@@ -483,6 +514,7 @@ describe("[UC-05] [Q-01] StoreCheckService schedules the background check (#812)
       voices: [{ stereo_mode: false, voice_number: 1 }],
     });
     db.rows.set("A1", {
+      editable: true,
       samples: [sample(4, "/Volumes/Slow/d.wav"), sample(5, "/lib/e.wav")],
       voices: [{ stereo_mode: false, voice_number: 1 }],
     });
@@ -517,6 +549,7 @@ describe("[UC-05] [Q-01] StoreCheckService schedules the background check (#812)
   it("a limit that rejects with anything else skips only that file", async () => {
     db.names = ["A0"];
     db.rows.set("A0", {
+      editable: true,
       samples: [sample(1, "/lib/a.wav"), sample(2, "/lib/b.wav")],
       voices: [{ stereo_mode: false, voice_number: 1 }],
     });
@@ -534,6 +567,178 @@ describe("[UC-05] [Q-01] StoreCheckService schedules the background check (#812)
 
     expect(checkedFiles()).toEqual(["/lib/a.wav", "/lib/b.wav"]);
     expect(db.updates.map((update) => update.id)).toEqual([2]);
+  });
+
+  describe("[UC-05] kit folders (#820, stage 2)", () => {
+    const enoent = () =>
+      Object.assign(new Error("no such file"), { code: "ENOENT" });
+    /** What each folder holds; a folder not listed is gone */
+    let folders: Record<string, string[]>;
+    const listed = () => files.readdir.mock.calls.map(([dir]) => dir);
+
+    beforeEach(() => {
+      folders = {};
+      files.readdir.mockImplementation((dir: string) =>
+        dir in folders
+          ? Promise.resolve(folders[dir])
+          : Promise.reject(enoent()),
+      );
+      // The drive the store is on is there
+      files.stat.mockResolvedValue({});
+      db.rows.get("A1")!.editable = false;
+    });
+
+    it("lists a voice-prefixed WAV in a read-only kit's folder that no row points at", async () => {
+      folders["/lib/A1"] = ["1.wav", "2 dropped.wav", "3 SNARE.WAV"];
+      service.start("/lib");
+
+      await run(1000);
+
+      expect(service.getStatus().kits).toEqual([
+        {
+          ...CLEAN,
+          kitName: "A1",
+          untracked: ["2 dropped.wav", "3 SNARE.WAV"],
+        },
+      ]);
+      expect(pushed.flatMap((update) => update.kits)).toEqual(
+        service.getStatus().kits,
+      );
+    });
+
+    it("never counts a hidden file, an AppleDouble file, a non-WAV or a name with no voice prefix", async () => {
+      folders["/lib/A1"] = [
+        "1.wav",
+        "._2 dropped.wav",
+        ".DS_Store",
+        ".1 hidden.wav",
+        "notes.txt",
+        "kick.wav",
+        "5 high.wav",
+        "2 dropped.wav.bak",
+      ];
+      service.start("/lib");
+
+      await run(1000);
+
+      expect(service.getStatus().kits).toEqual([]);
+      expect(pushed).toEqual([]);
+    });
+
+    it("leaves an editable kit's folder alone: it isn't listed or reported", async () => {
+      folders["/lib/A0"] = ["1.wav", "2 extra.wav"];
+      folders["/lib/A1"] = ["1.wav"];
+      service.start("/lib");
+
+      await run(1000);
+
+      expect(listed()).toEqual(["/lib/A1"]);
+      expect(service.getStatus().kits).toEqual([]);
+    });
+
+    it("reports a read-only kit whose folder is gone", async () => {
+      service.start("/lib");
+
+      await run(1000);
+
+      expect(service.getStatus().kits).toEqual([
+        { ...CLEAN, folderMissing: true, kitName: "A1" },
+      ]);
+    });
+
+    it("counts a missing folder on a drive that isn't connected as the drive, not as a missing folder", async () => {
+      files.stat.mockImplementation((target: string) =>
+        target === "/Volumes/Samples SSD"
+          ? Promise.reject(enoent())
+          : Promise.resolve({}),
+      );
+      service.start("/Volumes/Samples SSD/lib");
+
+      await run(1000);
+
+      expect(service.getStatus().kits).toEqual([
+        {
+          ...CLEAN,
+          kitName: "A1",
+          unavailableVolumes: ["/Volumes/Samples SSD"],
+        },
+      ]);
+    });
+
+    it("skips the rest of a volume whose folder listing times out, and says so", async () => {
+      db.rows.get("B0")!.editable = false;
+      files.readdir.mockImplementation(() => new Promise(() => undefined));
+      service.start("/Volumes/Slow/lib");
+
+      await run(600);
+      expect(listed()).toEqual(["/Volumes/Slow/lib/A1"]);
+      await run(1000);
+
+      // B0 isn't listed: its volume is already known not to respond
+      expect(listed()).toEqual(["/Volumes/Slow/lib/A1"]);
+      expect(service.getStatus().kits).toEqual([
+        { ...CLEAN, kitName: "A1", unavailableVolumes: ["/Volumes/Slow"] },
+        { ...CLEAN, kitName: "B0", unavailableVolumes: ["/Volumes/Slow"] },
+      ]);
+      expect(service.getStatus().state).toBe("idle");
+    });
+
+    it("keeps what it knew of a folder it couldn't read for any other reason", async () => {
+      folders["/lib/A1"] = ["1.wav", "2 dropped.wav"];
+      service.start("/lib");
+      await run(1000);
+      expect(service.getStatus().kits).toHaveLength(1);
+
+      files.readdir.mockRejectedValue(
+        Object.assign(new Error("denied"), { code: "EACCES" }),
+      );
+      await run(10 * 60 * 1000 + 1);
+      service.refreshIfStale();
+      await run(1000);
+
+      expect(service.getStatus().kits).toEqual([
+        { ...CLEAN, kitName: "A1", untracked: ["2 dropped.wav"] },
+      ]);
+    });
+
+    it("sends a kit that's clean again with an empty list, when the file is gone or the kit becomes editable", async () => {
+      folders["/lib/A1"] = ["1.wav", "2 dropped.wav"];
+      service.start("/lib");
+      await run(1000);
+      expect(service.getStatus().kits).toHaveLength(1);
+
+      folders["/lib/A1"] = ["1.wav"];
+      await run(10 * 60 * 1000 + 1);
+      service.refreshIfStale();
+      await run(1000);
+
+      expect(pushed.at(-1)?.kits).toEqual([{ ...CLEAN, kitName: "A1" }]);
+      expect(service.getStatus().kits).toEqual([]);
+    });
+
+    it("lists no folder the database has no kit for: a deleted imported kit's folder is left alone", async () => {
+      // A2's kit was deleted; its folder stays in the store
+      folders["/lib/A2"] = ["1.wav", "2 left behind.wav"];
+      folders["/lib/A1"] = ["1.wav"];
+      service.start("/lib");
+
+      await run(1000);
+
+      expect(listed()).toEqual(["/lib/A1"]);
+      expect(service.getStatus().kits).toEqual([]);
+    });
+
+    it("carries a folder finding with the kit's file findings, in one push", async () => {
+      folders["/lib/A1"] = ["1.wav", "2 dropped.wav"];
+      filesFind({ "/lib/A1/1.wav": "missing" });
+      service.start("/lib");
+
+      await run(1000);
+
+      expect(pushed.flatMap((update) => update.kits)).toEqual([
+        { ...CLEAN, kitName: "A1", missing: 1, untracked: ["2 dropped.wav"] },
+      ]);
+    });
   });
 });
 

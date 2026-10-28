@@ -205,7 +205,8 @@ export const BUDGETS = {
    * Main-process operations through their IPC handlers, on the generated
    * store in tests/integration/performance-budgets.integration.test.ts.
    * `connections`: better-sqlite3 connections opened. `statements`:
-   * statements prepared plus `exec` and `pragma` calls. `syncFsCalls`:
+   * statements prepared plus `exec` and `pragma` calls. `folderListings`:
+   * async `readdir` calls (the store check's). `syncFsCalls`:
    * existsSync, statSync, readSync, readdirSync and readFileSync calls, the
    * proxy for time the operation holds the main thread.
    */
@@ -251,10 +252,16 @@ export const BUDGETS = {
       /** Planning's own file reads are asynchronous (RE-82). */
       syncFsCalls: { max: 0 },
     },
-    /** The generated store's six kits, each as above, and the kit list */
+    /**
+     * The generated store's six kits, each as above, and the kit list.
+     * #820: two of the kits are read-only, so two folder listings (one
+     * async `readdir` each); editable kits' folders and folders no kit
+     * claims are never listed.
+     */
     "store check: full pass": {
       connections: NO_NEW_CONNECTION,
-      statements: { max: 73 },
+      folderListings: { max: 2 },
+      statements: { max: 85 },
       syncFsCalls: { max: 0 },
     },
     /**
@@ -270,11 +277,14 @@ export const BUDGETS = {
      * transaction, which reads them again. Measured on a kit whose files
      * were never checked (an older library), so each of its eight rows is
      * updated; later passes record nothing. It makes no sync fs call and
-     * opens no connection.
+     * opens no connection. #820: a read-only kit's folder is listed once
+     * (`folderListings`, an async `readdir`), and the kit's flag is read
+     * with its rows (a statement each time they are read).
      */
     "store check: one kit": {
       connections: NO_NEW_CONNECTION,
-      statements: { max: 12 },
+      folderListings: { max: 1 },
+      statements: { max: 14 },
       syncFsCalls: { max: 0 },
     },
     "write a full card": {

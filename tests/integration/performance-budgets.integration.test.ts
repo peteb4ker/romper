@@ -11,6 +11,7 @@
  * mocked with a counting subclass of the real driver, and fs's sync
  * functions are wrapped on the module object for the measured call only.
  */
+import { eq } from "drizzle-orm";
 import fs from "node:fs";
 import { syncBuiltinESMExports } from "node:module";
 import path from "node:path";
@@ -86,7 +87,7 @@ import {
   storeCheckSettings,
 } from "../../electron/main/services/storeCheckService.js";
 import { syncService } from "../../electron/main/services/syncService.js";
-import { type NewSample, samples } from "../../shared/db/schema.js";
+import { kits, type NewSample, samples } from "../../shared/db/schema.js";
 import { createStoreDb } from "./support/storeDb.js";
 import { createTempStore, removeTempStore } from "./support/tempStore.js";
 
@@ -192,9 +193,26 @@ async function invoke(channel: string, ...args: unknown[]) {
   return handler({}, ...args);
 }
 
+/** Imported kits are read-only, and the store check lists their folders (#820) */
+function makeReadOnly(...names: string[]) {
+  const dbDir = path.join(store, ".romperdb");
+  for (const name of names) {
+    expect(
+      withDbTransaction(dbDir, (db) =>
+        db
+          .update(kits)
+          .set({ editable: false })
+          .where(eq(kits.name, name))
+          .run(),
+      ).success,
+    ).toBe(true);
+  }
+}
+
 /** Count what `run` costs: connections, statements and sync fs calls */
 async function measure(run: () => Promise<unknown>) {
   const fsCalls = { count: 0 };
+  const listings = { count: 0 };
   const originals = SYNC_FS_CALLS.map((name) => [name, fs[name]] as const);
   for (const [name, original] of originals) {
     (fs as unknown as Record<string, unknown>)[name] = (...args: unknown[]) => {
@@ -202,6 +220,12 @@ async function measure(run: () => Promise<unknown>) {
       return (original as (...a: unknown[]) => unknown)(...args);
     };
   }
+  // Folder listings are asynchronous: counted apart, not a sync fs call
+  const realReaddir = fs.promises.readdir;
+  fs.promises.readdir = ((...args: Parameters<typeof realReaddir>) => {
+    listings.count++;
+    return realReaddir(...args);
+  }) as typeof realReaddir;
   // Named ESM imports of node:fs see the wrappers too
   syncBuiltinESMExports();
   probe.counts.connections = 0;
@@ -210,6 +234,7 @@ async function measure(run: () => Promise<unknown>) {
   try {
     result = await run();
   } finally {
+    fs.promises.readdir = realReaddir;
     for (const [name, original] of originals) {
       (fs as unknown as Record<string, unknown>)[name] = original;
     }
@@ -218,6 +243,7 @@ async function measure(run: () => Promise<unknown>) {
   return {
     counts: {
       connections: probe.counts.connections,
+      folderListings: listings.count,
       statements: probe.counts.statements,
       syncFsCalls: fsCalls.count,
     },
@@ -334,12 +360,13 @@ describe("[Q-01] performance budgets: main-process operations", () => {
     // The worst step: nothing is known about the kit's files yet, so each is
     // read and recorded
     const dbDir = path.join(store, ".romperdb");
+    makeReadOnly("A0");
     await expectWithinBudget(
       "integration/store check: one kit",
       async () => ({
-        success: await storeCheckService.checkKit(dbDir, "A0"),
+        success: await storeCheckService.checkKit(store, "A0"),
       }),
-      ["connections", "statements", "syncFsCalls"],
+      ["connections", "folderListings", "statements", "syncFsCalls"],
     );
     const checked = getKitSamples(dbDir, "A0").data ?? [];
     expect(checked).toHaveLength(4 * SAMPLES_PER_VOICE);
@@ -347,6 +374,7 @@ describe("[Q-01] performance budgets: main-process operations", () => {
   });
 
   it("[UC-05] store check: full pass", async () => {
+    makeReadOnly("A0", "B0");
     storeCheckSettings.quietMs = 0;
     storeCheckSettings.startupQuietMs = 0;
     storeCheckSettings.pollMs = 5;
@@ -366,7 +394,7 @@ describe("[Q-01] performance budgets: main-process operations", () => {
           );
           return { success: true };
         },
-        ["connections", "statements", "syncFsCalls"],
+        ["connections", "folderListings", "statements", "syncFsCalls"],
       );
     } finally {
       Object.assign(storeCheckSettings, {

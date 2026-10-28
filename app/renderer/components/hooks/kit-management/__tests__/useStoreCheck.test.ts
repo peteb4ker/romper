@@ -7,10 +7,13 @@ import { setupElectronAPIMock } from "../../../../../../tests/mocks/electron/ele
 import { useStoreCheck } from "../useStoreCheck";
 
 const finding = (kitName: string, quarantined: boolean) => ({
+  folderMissing: false,
   kitName,
   missing: 0,
   quarantined,
+  unavailableVolumes: [],
   unreadable: quarantined ? 1 : 0,
+  untracked: [],
 });
 
 describe("[UC-05] [Q-01] useStoreCheck (#812)", () => {

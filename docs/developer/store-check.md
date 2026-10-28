@@ -2,9 +2,9 @@
 title: Store check - Specification
 priority: medium
 status: specification
-updated: 2026-10-09
+updated: 2026-10-26
 context_size: medium
-implementation_status: stage 1 built (#812, PR #828); stages 2-6 (#820-#824) not built, waiting for the decisions below
+implementation_status: stages 1 (#812, PR #828) and 2 (#820) built; stages 3-6 (#824, #821-#823) not built, waiting for the decisions below
 -->
 
 # Store check: keeping the library's files and database in agreement
@@ -465,7 +465,7 @@ Each stage is one PR. Stages 2 to 6 wait for the decisions named.
     finding changed (`applyQuarantine`); the status also carries the
     missing and unreadable counts for stage 3.
 
-### Stage 2: check kit folders (blocked on D4)
+### Stage 2: check kit folders ([#820](https://github.com/peteb4ker/romper/issues/820))
 
 - Untracked files in read-only kits, read-only kits with no folder,
   drives not connected (D6), and folders with no kit if D4 wants them.
@@ -473,6 +473,42 @@ Each stage is one PR. Stages 2 to 6 wait for the decisions named.
 - **Acceptance:** a WAV added to a read-only kit's folder is listed; one
   added to an editable kit's folder isn't; `._` files never are; a
   deleted kit's folder is handled as D4 says.
+- **Affects:** UC-05, Q-01. **Decisions:** D4 and D6 (approved on #769,
+  2026-10-10).
+- **As built (#820):**
+  - The folder side is part of stage 1's step, after the kit's files: a
+    read-only kit's folder is listed once with an async `readdir` under
+    the same 10 s limit, and a volume that times out joins the pass's
+    skipped volumes. Editable kits' folders are never listed.
+  - A name is untracked when it is a voice-prefixed `.wav`
+    (`voiceOfCardFile`, extension case ignored, as `rescanKit` picks them)
+    and no row of the kit points at `<store>/<kit>/<name>`. `._` files,
+    `.DS_Store` and other hidden or non-WAV files never count. (The old
+    validator's `findExtraFiles` counts them: #826.)
+  - A folder whose listing fails with ENOENT or ENOTDIR is `folderMissing`,
+    unless its volume (`volumeOf`) is gone too (its `stat` fails the same
+    way): then the volume is listed in `unavailableVolumes` and
+    `folderMissing` stays false (D6). A volume that timed out is listed
+    there too. Any other failure (permissions, I/O) leaves the kit's
+    previous folder finding as it was.
+  - Folders with no kit (D4) are never looked for, so the store root is
+    not listed: the pass reads only the folders of read-only kits it
+    already knows. This leaves out the spec's "one `readdir` of the store
+    root per pass".
+  - `StoreCheckKitFinding` gains `untracked`, `folderMissing` and
+    `unavailableVolumes`; they are in memory and ride the status and the
+    push. A push now also goes out when only the folder side changed. The
+    renderer ignores the new fields until stage 3. A kit's folder side
+    survives until the next pass changes it; a cancelled pass forgets it.
+  - Sample rows on a drive that isn't connected are still recorded
+    `missing`, as in stage 1: reporting them as the drive (D6) belongs to
+    stage 3 (#824) and stage 5.
+  - `KitRowsToCheck` carries `editable`, read with the rows (one more
+    statement per read); `checkKit` takes the store path, not the database
+    folder.
+  - Budgets: a `folderListings` metric (async `readdir` calls) in
+    `tests/perf/budgets.ts` for the one-kit step and the full pass;
+    `syncFsCalls` stays 0.
 
 ### Stage 3: badges and the notice (blocked on D8, D11 and wording)
 

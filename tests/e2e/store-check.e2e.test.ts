@@ -1,3 +1,4 @@
+import fs from "fs-extra";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import {
@@ -12,7 +13,10 @@ import {
 } from "../utils/broken-kit-store";
 import { appEnv } from "../utils/e2e-app-env";
 import { expect, test } from "../utils/e2e-error-guard";
-import { type E2ETestEnvironment } from "../utils/e2e-fixture-extractor";
+import {
+  type E2ETestEnvironment,
+  extractE2EFixture,
+} from "../utils/e2e-fixture-extractor";
 
 // #812, stage 1 of docs/developer/store-check.md: main checks the store's
 // sample files in the background once the kit grid has loaded, so a file
@@ -88,5 +92,92 @@ test.describe("[UC-05] [Q-01] The store check finds broken sample files without 
     await expect(
       window.locator('[data-testid="quarantine-indicator"]'),
     ).toHaveCount(1);
+  });
+});
+
+// #820, stage 2: the folder side. There is no UI for it yet (stage 3), so
+// the status main keeps is read through the call the kit grid makes.
+test.describe("[UC-05] [Q-01] The store check lists WAVs in a read-only kit's folder that no sample points at (#820)", () => {
+  let electronApp: ElectronApplication;
+  let window: Page;
+  let testEnv: E2ETestEnvironment;
+
+  test.beforeEach(async () => {
+    testEnv = await extractE2EFixture();
+    const store = testEnv.localStorePath;
+    // B1 is read-only, as an imported kit is; A0 is editable
+    const db = new DatabaseSync(path.join(store, ".romperdb", "romper.sqlite"));
+    try {
+      const editable = db.prepare(
+        "UPDATE kits SET editable = ? WHERE name = ?",
+      );
+      editable.run(0, "B1");
+      editable.run(1, "A0");
+    } finally {
+      db.close();
+    }
+    const wav = await fs.readFile(path.join(store, "A0", "1_kick.wav"));
+    // A WAV dropped into each folder in Finder; a ._ file as macOS makes
+    // beside files copied from a card
+    await fs.writeFile(path.join(store, "B1", "4_dropped.wav"), wav);
+    await fs.writeFile(
+      path.join(store, "B1", "._4_dropped.wav"),
+      "AppleDouble",
+    );
+    await fs.writeFile(path.join(store, "A0", "4_dropped.wav"), wav);
+    electronApp = await electron.launch({
+      args: ["dist/electron/main/index.js"],
+      env: appEnv(testEnv.environment),
+      timeout: 30000,
+    });
+    window = await electronApp.firstWindow();
+    await window.waitForSelector('[data-testid="kit-grid"]', {
+      timeout: 10000,
+    });
+  });
+
+  test.afterEach(async () => {
+    await electronApp?.close();
+    if (testEnv) await removeBrokenKitStore(testEnv);
+  });
+
+  test("finds the read-only kit's extra WAV, but not a ._ file or the editable kit's extra file", async () => {
+    test.setTimeout(60000);
+    type Status = {
+      data?: {
+        kits: {
+          folderMissing: boolean;
+          kitName: string;
+          untracked: string[];
+        }[];
+        lastCompletedAt: null | number;
+      };
+    };
+    const read = () =>
+      window.evaluate(
+        () =>
+          (
+            globalThis as unknown as {
+              electronAPI: { getStoreCheckStatus(): Promise<unknown> };
+            }
+          ).electronAPI.getStoreCheckStatus() as Promise<Status>,
+      );
+
+    // The check starts a few seconds after the grid loads, and waits for a
+    // quiet moment between kits, so ask rarely: every call is activity
+    await expect
+      .poll(async () => (await read()).data?.lastCompletedAt, {
+        intervals: [4000],
+        timeout: 45000,
+      })
+      .not.toBeNull();
+
+    expect((await read()).data?.kits).toEqual([
+      expect.objectContaining({
+        folderMissing: false,
+        kitName: "B1",
+        untracked: ["4_dropped.wav"],
+      }),
+    ]);
   });
 });

@@ -433,16 +433,22 @@ export interface SettingsData {
 export type SettingsKey = keyof SettingsData;
 
 /**
- * What the store check found about one kit's sample files (#812): rows
- * whose file is missing, rows whose file can't be read, and whether that
- * quarantines the kit. Folder findings come with a later stage of
- * docs/developer/store-check.md.
+ * What the store check found about one kit (#812, #820): rows whose file is
+ * missing, rows whose file can't be read, and whether that quarantines the
+ * kit; and, for a read-only kit only, the folder side: voice-prefixed WAVs
+ * in its folder that no row points at (`untracked`, file names), its folder
+ * being gone (`folderMissing`), and drives that weren't connected or didn't
+ * respond when its folder was listed (`unavailableVolumes`). The folder
+ * side is in memory only and is rebuilt on every pass.
  */
 export interface StoreCheckKitFinding {
+  folderMissing: boolean;
   kitName: string;
   missing: number;
   quarantined: boolean;
+  unavailableVolumes: string[];
   unreadable: number;
+  untracked: string[];
 }
 
 /** Where the store check is */

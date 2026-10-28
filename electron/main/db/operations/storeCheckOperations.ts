@@ -10,6 +10,8 @@ const { kits, samples, voices } = schema;
 
 /** A kit's voices and sample rows, as the store check reads them (#812) */
 export interface KitRowsToCheck {
+  /** Whether the kit is editable; a read-only kit's folder is checked too (#820) */
+  editable: boolean;
   samples: Sample[];
   voices: (typeof voices.$inferSelect)[];
 }
@@ -27,7 +29,7 @@ export function getKitNamesForCheck(dbDir: string): DbResult<string[]> {
 }
 
 /**
- * One kit's voices and sample rows (two indexed queries) on the caller's
+ * One kit's flag, voices and sample rows (three indexed queries) on the caller's
  * handle, so the store check reads what it checks and what it found in the
  * same transaction (#812)
  */
@@ -35,7 +37,14 @@ export function readKitRowsToCheck(
   db: RomperDb,
   kitName: string,
 ): KitRowsToCheck {
+  const kit = db
+    .select({ editable: kits.editable })
+    .from(kits)
+    .where(eq(kits.name, kitName))
+    .get();
   return {
+    // A kit deleted meanwhile has no folder to check
+    editable: kit?.editable ?? true,
     samples: db
       .select()
       .from(samples)

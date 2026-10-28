@@ -68,14 +68,30 @@ import { createTempStore, removeTempStore } from "./support/tempStore.js";
 // files in the background, a kit at a time, once the kit grid has loaded
 // (stage 1 of docs/developer/store-check.md).
 
+type Finding = {
+  folderMissing: boolean;
+  kitName: string;
+  missing: number;
+  quarantined: boolean;
+  unavailableVolumes: string[];
+  unreadable: number;
+  untracked: string[];
+};
+
+/** A finding with nothing in it, to spread the one thing a test expects */
+const CLEAN: Finding = {
+  folderMissing: false,
+  kitName: "",
+  missing: 0,
+  quarantined: false,
+  unavailableVolumes: [],
+  unreadable: 0,
+  untracked: [],
+};
+
 type Status = {
   data: {
-    kits: {
-      kitName: string;
-      missing: number;
-      quarantined: boolean;
-      unreadable: number;
-    }[];
+    kits: Finding[];
     lastCompletedAt: null | number;
     state: string;
   };
@@ -83,13 +99,15 @@ type Status = {
 };
 
 const KITS = ["A0", "A1", "B0"];
+/** Imported kits are read-only; A0 is a kit made in Romper */
+const READ_ONLY = new Set(["A1", "B0"]);
 const DEFAULT_SETTINGS = { ...storeCheckSettings };
 
 let work: string;
 let store: string;
 let dbDir: string;
 
-/** Three kits (A0, A1, B0) of two files each, never checked */
+/** Three kits (A0, A1, B0) of two files each, never checked; A1 and B0 are read-only */
 function generateStore() {
   expect(createStoreDb(dbDir).success).toBe(true);
   for (const kit of KITS) {
@@ -97,7 +115,7 @@ function generateStore() {
       addKit(dbDir, {
         alias: null,
         bank_letter: kit[0],
-        editable: true,
+        editable: !READ_ONLY.has(kit),
         locked: false,
         modified_since_sync: false,
         name: kit,
@@ -225,8 +243,8 @@ describe("[UC-05] [Q-01] the store check finds missing and unreadable sample fil
 
     // A0 went from never checked to readable: no finding changed, no push
     expect(updates().flatMap((u) => u.kits)).toEqual([
-      { kitName: "A1", missing: 0, quarantined: true, unreadable: 1 },
-      { kitName: "B0", missing: 1, quarantined: false, unreadable: 0 },
+      { ...CLEAN, kitName: "A1", quarantined: true, unreadable: 1 },
+      { ...CLEAN, kitName: "B0", missing: 1 },
     ]);
     const status = (await gridLoaded()).data;
     expect(status.state).toBe("idle");
@@ -260,7 +278,7 @@ describe("[UC-05] [Q-01] the store check finds missing and unreadable sample fil
     await untilPassEnds();
 
     expect(updates().at(-1)).toMatchObject({
-      kits: [{ kitName: "A1", missing: 0, quarantined: false, unreadable: 0 }],
+      kits: [{ ...CLEAN, kitName: "A1" }],
     });
     expect(await quarantinedKits()).toEqual([]);
   });
@@ -297,6 +315,89 @@ describe("[UC-05] [Q-01] the store check finds missing and unreadable sample fil
       }
     }
     expect(calls).toEqual([]);
+  });
+
+  describe("[UC-05] kit folders (#820, stage 2)", () => {
+    const folderOf = (kit: string) => path.join(store, kit);
+    const statusKits = async () => {
+      await gridLoaded();
+      await untilPassEnds();
+      return (await gridLoaded()).data.kits;
+    };
+    /** The folders the pass listed, by kit name */
+    const listFolders = () => {
+      const listed: string[] = [];
+      const realReaddir = fs.promises.readdir.bind(fs.promises);
+      const spy = vi.spyOn(fs.promises, "readdir").mockImplementation(((
+        p: string,
+        ...rest: unknown[]
+      ) => {
+        listed.push(path.relative(store, p));
+        return realReaddir(p, ...(rest as []));
+      }) as typeof fs.promises.readdir);
+      return { listed, restore: () => spy.mockRestore() };
+    };
+
+    it("finds a WAV dropped into a read-only kit's folder outside Romper, and pushes it", async () => {
+      fs.writeFileSync(path.join(folderOf("A1"), "2 dropped.wav"), goodWav());
+
+      expect(await statusKits()).toEqual([
+        { ...CLEAN, kitName: "A1", untracked: ["2 dropped.wav"] },
+      ]);
+      expect(updates().flatMap((u) => u.kits)).toEqual([
+        { ...CLEAN, kitName: "A1", untracked: ["2 dropped.wav"] },
+      ]);
+    });
+
+    it("ignores macOS AppleDouble files, hidden files and files that aren't voice-prefixed WAVs", async () => {
+      const folder = folderOf("A1");
+      fs.writeFileSync(path.join(folder, "._2 dropped.wav"), "AppleDouble");
+      fs.writeFileSync(path.join(folder, ".DS_Store"), "x");
+      fs.writeFileSync(path.join(folder, "notes.txt"), "x");
+      fs.writeFileSync(path.join(folder, "kick.wav"), goodWav());
+
+      expect(await statusKits()).toEqual([]);
+      expect(updates()).toEqual([]);
+    });
+
+    it("doesn't report an editable kit's extra file", async () => {
+      fs.writeFileSync(path.join(folderOf("A0"), "2 extra.wav"), goodWav());
+
+      expect(await statusKits()).toEqual([]);
+    });
+
+    it("finds a read-only kit whose folder was deleted, with its samples missing", async () => {
+      fs.rmSync(folderOf("B0"), { force: true, recursive: true });
+
+      expect(await statusKits()).toEqual([
+        { ...CLEAN, folderMissing: true, kitName: "B0", missing: 2 },
+      ]);
+    });
+
+    it("doesn't report a deleted imported kit's leftover folder, and lists only read-only kits' folders", async () => {
+      // The kit was deleted in Romper (database only); its folder stays
+      fs.mkdirSync(folderOf("A5"));
+      fs.writeFileSync(path.join(folderOf("A5"), "1 left.wav"), goodWav());
+      const { listed, restore } = listFolders();
+      try {
+        expect(await statusKits()).toEqual([]);
+      } finally {
+        restore();
+      }
+
+      expect(listed.sort()).toEqual(["A1", "B0"]);
+    });
+
+    it("drops a finding once the file is gone, when the store is checked again", async () => {
+      const dropped = path.join(folderOf("A1"), "2 dropped.wav");
+      fs.writeFileSync(dropped, goodWav());
+      expect(await statusKits()).toHaveLength(1);
+
+      fs.rmSync(dropped);
+      // As after a store change: a new pass over the same folders
+      storeCheckService.cancel();
+      expect(await statusKits()).toEqual([]);
+    });
   });
 
   describe("scheduling", () => {

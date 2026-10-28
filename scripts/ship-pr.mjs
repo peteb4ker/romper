@@ -29,6 +29,15 @@
  *      (same rules), and the new head waits for its own analysis. CLEAN
  *      for two polls without merging (auto-merge stalls) merges directly
  *      with --rebase.
+ *   6. A Dependabot PR's own pushes run CI without the SonarCloud secret,
+ *      so its head can be green with no analysis (#846). When the author
+ *      is Dependabot, `analysis` has finished (or is missing) for two polls
+ *      and the head still has no analysis, the head is re-created: a
+ *      `git rebase --force-rebase` onto origin/main (same tree, new commit)
+ *      pushed with the lease, so CI runs as the shepherd, with secrets.
+ *      It happens once, and only for Dependabot PRs, so a person's commits
+ *      are never rewritten. If a head the script pushed still gets no
+ *      analysis, it stops ("sonar") rather than polling out.
  *
  * --dry-run does steps 1-3 and predicts the rebase with `git merge-tree`,
  * then prints what it would do, without creating a worktree or pushing.
@@ -288,6 +297,7 @@ export function runnerNeverAcquired(job, annotations) {
  * @property {string} state
  * @property {string} mergeStateStatus
  * @property {Check[]} checks
+ * @property {boolean} dependabot the PR's author is Dependabot
  * @property {{ code: number, head: boolean }} sonar sonar:pr's exit code
  *   for the latest analysis, and whether it's of the PR's head
  */
@@ -296,6 +306,10 @@ export function runnerNeverAcquired(job, annotations) {
  * @typedef {object} Memory
  * @property {boolean} armed auto-merge is on
  * @property {number} cleanPolls polls in a row that saw CLEAN
+ * @property {number} gapPolls polls in a row that saw a Dependabot head
+ *   with a finished `analysis` job and no analysis (noAnalysisExpected)
+ * @property {boolean} headPushed the script pushed the head it is watching
+ *   (a rebase or a re-created head), so CI ran with the secret
  * @property {string[]} rerunWorkflows workflows already rerun once
  * @property {string[]} rerunJobs failed jobs a rerun replaces
  */
@@ -305,6 +319,7 @@ export function runnerNeverAcquired(job, annotations) {
  *   | { action: "stop", outcome: Outcome, detail: string }
  *   | { action: "rerun", runIds: string[], jobIds: string[], workflows: string[] }
  *   | { action: "rebase" }
+ *   | { action: "recreate" }
  *   | { action: "arm" }
  *   | { action: "merge" }
  *   | { action: "wait", reason: string }} Decision
@@ -352,6 +367,48 @@ export function splitFailures(failed, rerunWorkflows) {
  */
 export function nextCleanPolls(mergeStateStatus, previous) {
   return ["CLEAN", "HAS_HOOKS"].includes(mergeStateStatus) ? previous + 1 : 0;
+}
+
+/**
+ * Is the PR's author Dependabot? gh spells the login `app/dependabot`, the
+ * API `dependabot[bot]`.
+ * @param {{ login?: string } | null | undefined} author
+ */
+export function isDependabot(author) {
+  return /^(app\/)?dependabot(\[bot\])?$/.test(author?.login ?? "");
+}
+
+/**
+ * Has CI's `analysis` job finished without delivering an analysis? A
+ * Dependabot run skips the SonarCloud scan at step level, so the job ends
+ * green (or skipped) and nothing arrives. A missing job counts only once
+ * nothing else is still running.
+ * @param {Check[]} checks
+ */
+export function analysisJobDone(checks) {
+  const job = checks.find((c) => c.name === "analysis");
+  if (job) return job.bucket === "pass" || job.bucket === "skipping";
+  return !checks.some((c) => c.bucket === "pending");
+}
+
+/**
+ * Is this a Dependabot head that will never get an analysis as it stands:
+ * the job meant to deliver one is done, and none came?
+ * @param {Pick<Snapshot, "checks" | "dependabot" | "sonar">} snapshot
+ */
+export function noAnalysisExpected({ checks, dependabot, sonar }) {
+  return dependabot && !sonar.head && analysisJobDone(checks);
+}
+
+/**
+ * How many polls in a row have seen noAnalysisExpected, counting this one.
+ * Two are needed, so an analysis that is only late isn't mistaken for one
+ * that can't come.
+ * @param {boolean} expected
+ * @param {number} previous
+ */
+export function nextGapPolls(expected, previous) {
+  return expected ? previous + 1 : 0;
 }
 
 /**
@@ -413,6 +470,17 @@ export function decide(snapshot, memory) {
     };
   }
   if (mergeStateStatus === "BEHIND") return { action: "rebase" };
+  if (!headClean && noAnalysisExpected(snapshot) && memory.gapPolls >= 2) {
+    if (memory.headPushed) {
+      return {
+        action: "stop",
+        detail:
+          "the head has no SonarCloud analysis although CI's analysis job finished on a head this script pushed; see the ship-pr skill (run npm run sonar:pr, or push the branch yourself so CI runs with secrets)",
+        outcome: "sonar",
+      };
+    }
+    return { action: "recreate" };
+  }
   if (!headClean) {
     return {
       action: "wait",
@@ -601,11 +669,11 @@ function gh(path) {
 
 /**
  * @param {string} pr
- * @returns {PullRequest & { headRefOid: string, mergeStateStatus: string, mergedAt: string | null, autoMergeRequest: object | null }}
+ * @returns {PullRequest & { headRefOid: string, mergeStateStatus: string, mergedAt: string | null, autoMergeRequest: object | null, author: { login?: string } | null }}
  */
 function viewPullRequest(pr) {
   const fields =
-    "state,isDraft,isCrossRepository,baseRefName,headRefName,headRefOid,labels,mergeStateStatus,mergedAt,autoMergeRequest";
+    "state,isDraft,isCrossRepository,baseRefName,headRefName,headRefOid,labels,mergeStateStatus,mergedAt,autoMergeRequest,author";
   return JSON.parse(must("gh", ["pr", "view", pr, "--json", fields]));
 }
 
@@ -805,12 +873,19 @@ function provideNodeModules(repo, scratch) {
 /**
  * Rebase the scratch tree onto origin/main, typecheck it and push it, with
  * the lease pinned to the head it started from. Returns the new head.
- * @param {{ repo: string, scratch: string, branch: string, expectedHead: string }} context
+ * With `force`, the rebase re-creates the commits even when the branch is
+ * already on top of origin/main (same tree, new commit IDs), so that the
+ * push triggers a CI run of its own.
+ * @param {{ repo: string, scratch: string, branch: string, expectedHead: string, force?: boolean }} context
  */
-function rebaseAndPush({ branch, expectedHead, repo, scratch }) {
+function rebaseAndPush({ branch, expectedHead, force = false, repo, scratch }) {
   if (branch === "main") throw new Stop("error", "refusing to push to main");
   must("git", ["fetch", "-q", "origin", "main"], { cwd: scratch });
-  const rebase = run("git", ["rebase", "origin/main"], { cwd: scratch });
+  const rebase = run(
+    "git",
+    ["rebase", ...(force ? ["--force-rebase"] : []), "origin/main"],
+    { cwd: scratch },
+  );
   if (!rebase.ok) {
     run("git", ["rebase", "--abort"], { cwd: scratch });
     throw new Stop(
@@ -820,6 +895,12 @@ function rebaseAndPush({ branch, expectedHead, repo, scratch }) {
   }
   const head = must("git", ["rev-parse", "HEAD"], { cwd: scratch });
   if (head === expectedHead) {
+    if (force) {
+      throw new Stop(
+        "error",
+        "git rebase --force-rebase left the head unchanged; push the branch yourself so CI runs with secrets",
+      );
+    }
     log("Already on top of origin/main: nothing to push");
     return head;
   }
@@ -929,6 +1010,11 @@ async function ship(options) {
       "arm gh pr merge --auto --rebase once SonarCloud reports 0 new issues on the pushed head",
       `poll every ${options.pollSeconds}s, up to ${options.maxPolls} times, until merged`,
     ];
+    if (isDependabot(view.author)) {
+      steps.push(
+        `re-create the head once (git rebase --force-rebase onto origin/main, push with --force-with-lease=refs/heads/${branch}:<head>) if it still has no analysis after CI's analysis job is done, as Dependabot's pushes get no SonarCloud secret`,
+      );
+    }
     for (const step of steps) log(`would ${step}`);
     return {
       detail: `would ship ${branch}; ${steps.length} steps`,
@@ -958,9 +1044,12 @@ async function ship(options) {
   const memory = {
     armed: false,
     cleanPolls: 0,
+    gapPolls: 0,
+    headPushed: false,
     rerunJobs: [],
     rerunWorkflows: [],
   };
+  const dependabot = isDependabot(view.author);
   const disarm = () => {
     quietly(() => {
       if (run("gh", ["pr", "merge", pr, "--disable-auto"]).ok) {
@@ -983,7 +1072,9 @@ async function ship(options) {
     // Auto-merge armed earlier (by the author, or a previous run) could
     // merge the rebased head before SonarCloud has looked at it
     if (view.autoMergeRequest) disarm();
+    const before = head;
     head = rebaseAndPush({ branch, expectedHead: head, repo, scratch });
+    memory.headPushed = head !== before;
 
     let errorsInARow = 0;
     for (let poll = 1; poll <= options.maxPolls; poll++) {
@@ -1001,15 +1092,18 @@ async function ship(options) {
           now.mergeStateStatus,
           memory.cleanPolls,
         );
-        const decision = decide(
-          {
-            checks: readChecks(pr),
-            mergeStateStatus: now.mergeStateStatus,
-            sonar,
-            state: now.state,
-          },
-          memory,
+        const polled = {
+          checks: readChecks(pr),
+          dependabot,
+          mergeStateStatus: now.mergeStateStatus,
+          sonar,
+          state: now.state,
+        };
+        memory.gapPolls = nextGapPolls(
+          noAnalysisExpected(polled),
+          memory.gapPolls,
         );
+        const decision = decide(polled, memory);
         switch (decision.action) {
           case "merged": {
             const merged = viewPullRequest(pr);
@@ -1042,6 +1136,24 @@ async function ship(options) {
             if (memory.armed) disarm();
             head = rebaseAndPush({ branch, expectedHead: head, repo, scratch });
             memory.cleanPolls = 0;
+            memory.gapPolls = 0;
+            memory.headPushed = true;
+            break;
+          case "recreate":
+            log(
+              "Dependabot head has no SonarCloud analysis: re-creating it (git rebase --force-rebase) so CI runs with secrets",
+            );
+            if (memory.armed) disarm();
+            head = rebaseAndPush({
+              branch,
+              expectedHead: head,
+              force: true,
+              repo,
+              scratch,
+            });
+            memory.cleanPolls = 0;
+            memory.gapPolls = 0;
+            memory.headPushed = true;
             break;
           case "arm":
             arm();

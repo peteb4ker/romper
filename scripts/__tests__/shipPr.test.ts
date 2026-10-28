@@ -22,9 +22,12 @@ import {
   frozenFiles,
   historyStartLine,
   idsFromLink,
+  isDependabot,
   linkNodeModules,
   type Memory,
   nextCleanPolls,
+  nextGapPolls,
+  noAnalysisExpected,
   nodeModulesProblem,
   OUTCOMES,
   parseArgs,
@@ -43,6 +46,8 @@ import {
 const memory = (overrides: Partial<Memory> = {}): Memory => ({
   armed: true,
   cleanPolls: 0,
+  gapPolls: 0,
+  headPushed: false,
   rerunJobs: [],
   rerunWorkflows: [],
   ...overrides,
@@ -50,6 +55,7 @@ const memory = (overrides: Partial<Memory> = {}): Memory => ({
 
 const snapshot = (overrides: Partial<Snapshot> = {}): Snapshot => ({
   checks: [],
+  dependabot: false,
   mergeStateStatus: "BLOCKED",
   sonar: { code: 0, head: true },
   state: "OPEN",
@@ -380,6 +386,94 @@ describe("[Q-07] ship-pr, the shepherd's merge script", () => {
       expect(nextCleanPolls("CLEAN", 1)).toBe(2);
       expect(nextCleanPolls("HAS_HOOKS", 0)).toBe(1);
       expect(nextCleanPolls("BLOCKED", 3)).toBe(0);
+    });
+  });
+
+  describe("a Dependabot head with no SonarCloud analysis (#846)", () => {
+    // Dependabot's pushes run CI without the SonarCloud secret: the
+    // `analysis` job finishes green, but nothing is analyzed
+    const analysis = (bucket: string) =>
+      check({ bucket, name: "analysis", workflow: "Test" });
+    const noAnalysis = (overrides: Partial<Snapshot> = {}) =>
+      snapshot({
+        checks: [analysis("pass"), check({ name: "lint" })],
+        dependabot: true,
+        sonar: { code: 2, head: false },
+        ...overrides,
+      });
+    const seenTwice = { gapPolls: 2 };
+
+    it("knows Dependabot's author, in gh's and the API's spelling", () => {
+      expect(isDependabot({ login: "app/dependabot" })).toBe(true);
+      expect(isDependabot({ login: "dependabot[bot]" })).toBe(true);
+      expect(isDependabot({ login: "peteb4ker" })).toBe(false);
+      expect(isDependabot({ login: "not-dependabot" })).toBe(false);
+      expect(isDependabot(null)).toBe(false);
+      expect(isDependabot(undefined)).toBe(false);
+    });
+
+    it("plans a fresh head once the analysis job is done and nothing was analyzed", () => {
+      expect(
+        decide(noAnalysis(), memory({ armed: false, ...seenTwice })),
+      ).toEqual({ action: "recreate" });
+      // The analysis job skipped, or missing with every other check done
+      const skipped = noAnalysis({ checks: [analysis("skipping")] });
+      expect(decide(skipped, memory(seenTwice)).action).toBe("recreate");
+      const missing = noAnalysis({ checks: [check({ name: "lint" })] });
+      expect(decide(missing, memory(seenTwice)).action).toBe("recreate");
+    });
+
+    it("waits one more poll before rewriting the head, in case the analysis is just late", () => {
+      expect(decide(noAnalysis(), memory({ gapPolls: 1 })).action).toBe("wait");
+    });
+
+    it("doesn't, for a human's PR: it keeps waiting as before", () => {
+      expect(
+        decide(noAnalysis({ dependabot: false }), memory(seenTwice)),
+      ).toEqual({
+        action: "wait",
+        reason: "waiting for SonarCloud to analyze the head before arming",
+      });
+    });
+
+    it("doesn't, when the head already has an analysis", () => {
+      const analyzed = noAnalysis({ sonar: { code: 0, head: true } });
+      expect(decide(analyzed, memory({ armed: false, ...seenTwice }))).toEqual({
+        action: "arm",
+      });
+      expect(noAnalysisExpected(analyzed)).toBe(false);
+    });
+
+    it("doesn't while the analysis job is still running or other checks are pending", () => {
+      const running = noAnalysis({ checks: [analysis("pending")] });
+      expect(decide(running, memory(seenTwice)).action).toBe("wait");
+      const missingButBusy = noAnalysis({
+        checks: [check({ bucket: "pending", name: "unit-tests" })],
+      });
+      expect(decide(missingButBusy, memory(seenTwice)).action).toBe("wait");
+    });
+
+    it("rebases when behind first: that push brings its own analysis", () => {
+      expect(
+        decide(noAnalysis({ mergeStateStatus: "BEHIND" }), memory(seenTwice)),
+      ).toEqual({ action: "rebase" });
+    });
+
+    it("stops with a clear result, rather than polling out, if a fresh head still gets none", () => {
+      const decision = decide(
+        noAnalysis(),
+        memory({ headPushed: true, ...seenTwice }),
+      );
+      expect(decision).toMatchObject({ action: "stop", outcome: "sonar" });
+      expect(decision).toHaveProperty(
+        "detail",
+        expect.stringContaining("no SonarCloud analysis"),
+      );
+    });
+
+    it("counts the polls in a row that saw the gap", () => {
+      expect(nextGapPolls(true, 1)).toBe(2);
+      expect(nextGapPolls(false, 3)).toBe(0);
     });
   });
 

@@ -53,7 +53,7 @@ For each PR, **in the order given, one at a time**:
 | `usage` | 2 | Bad arguments |
 | `conflict` | 10 | Rebase onto origin/main conflicts (aborted, nothing pushed) |
 | `typecheck` | 11 | Rebased cleanly, but `npm run typecheck` fails |
-| `sonar` | 12 | SonarCloud reports new issues (on the latest analysis, or the pushed head's) |
+| `sonar` | 12 | SonarCloud reports new issues (on the latest analysis, or the pushed head's). Also: a Dependabot head the script pushed (a rebase, or the re-created head below) got no analysis although CI's `analysis` job finished. Push the branch yourself so CI runs with secrets, then run the script again |
 | `frozen` | 13 | Diff touches `aidlc-docs/` or BACKLOG.md's "Fixed before the issue tracker" list |
 | `check-failed` | 14 | A CI check failed (lost runners are rerun once first) |
 | `not-open` | 15 | Closed, draft, not based on main, or from a fork |
@@ -104,6 +104,16 @@ new head waits for its own analysis), and CLEAN for two polls without
 merging (auto-merge fires on a check-completion event, so arming after
 everything is green can stall it) merges directly with `--rebase`. When it
 stops for any reason but a merge, it turns auto-merge off again.
+
+A Dependabot PR's own pushes run CI without the SonarCloud secret, so its
+head can be green with no analysis, and waiting would never end (#846).
+When the PR's author is Dependabot, CI's `analysis` job has finished (or is
+missing) for two polls and the head still has no analysis, the script
+re-creates the head once: `git rebase --force-rebase origin/main` (same
+tree, new commit) pushed with the lease, so CI runs with secrets. It does
+this for Dependabot PRs only, so a person's commits are never rewritten.
+Dependabot may stop updating a branch someone else pushed to; a later
+conflict then needs `@dependabot recreate` or a manual rebase.
 
 Branch protection on `main` requires branches to be up to date
 (`strict: true`) and the build, lint, typecheck, unit, integration

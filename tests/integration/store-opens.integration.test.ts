@@ -156,14 +156,4 @@ describe("[UC-05] The Invalid Local Store dialog checks only that the store open
     expect(result.isValid).toBe(false);
     expect(result.error).toMatch(/^Database schema validation failed: /);
   });
-
-  it("is still the store check's job to report the files", async () => {
-    // The Validate Store report keeps its per-kit findings until the store
-    // check replaces it (#769)
-    const report = (await check("validate-local-store")) as {
-      errors?: { extraFiles: string[]; missingFiles: string[] }[];
-    } & Result;
-    expect(report.isValid).toBe(false);
-    expect(report.errors?.[0].missingFiles).toEqual(["gone.wav"]);
-  });
 });

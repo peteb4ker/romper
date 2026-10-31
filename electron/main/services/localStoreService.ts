@@ -6,7 +6,6 @@ import type {
 import * as fs from "node:fs";
 
 import {
-  validateLocalStoreAgainstDb,
   validateLocalStoreAndDb,
   validateLocalStoreBasic,
 } from "../localStoreValidator.js";
@@ -149,15 +148,6 @@ export class LocalStoreService {
         success: false,
       };
     }
-  }
-
-  /**
-   * Validate local store path against database
-   */
-  validateLocalStore(
-    localStorePath: string,
-  ): LocalStoreValidationDetailedResult {
-    return validateLocalStoreAgainstDb(localStorePath);
   }
 
   /**

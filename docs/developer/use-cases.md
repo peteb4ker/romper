@@ -204,10 +204,8 @@ and [Validating Your Store](../manual/kit-browser.md#validating-your-store).
   `local-store-database-missing`. The dialog's Choose and Try Again check
   only that the store opens (its folder, database and schema), never its
   sample files (#813); the answer carries the reason in `error`.
-  `validate-local-store`, which does check every sample, has no caller now:
-  the store check's "Library check" dialog replaced
-  `ValidationResultsDialog` (#824), and the channel and its validator are
-  left to remove.
+  The store check's "Library check" dialog (#824) reports the sample
+  files; the old `validate-local-store` channel is gone (#862).
 - **Main:** `electron/main/services/localStoreService.ts` (`getLocalStoreStatus`,
   `validateLocalStoreOpens`);
   `electron/main/localStoreValidator.ts` (`validateLocalStoreAndDb`).

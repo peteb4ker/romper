@@ -173,7 +173,8 @@ What the numbers say:
   slot (RE-83). Fixed in #744: one row by slot, an asynchronous read, and
   no read at all when the renderer already holds the file's version.
 - `validate-local-store` calls `getKitSamples` once per kit (184 calls) on
-  top of `getKits`, and does about 2,400 `existsSync` calls.
+  top of `getKits`, and does about 2,400 `existsSync` calls. Removed in #862:
+  the Library check replaced it.
 - **Path checks don't scale (RE-85).** `pathAccess.check` calls
   `realpathSync` on every root and every granted path, and the set of grants
   grows during a session. A denied check falls back to loading every sample

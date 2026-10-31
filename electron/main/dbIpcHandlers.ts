@@ -447,11 +447,6 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     };
 
   handle(
-    "validate-local-store",
-    validateStore((p) => localStoreService.validateLocalStore(p)),
-  );
-
-  handle(
     "validate-local-store-basic",
     validateStore((p) => localStoreService.validateLocalStoreBasic(p)),
   );
@@ -544,7 +539,7 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
 }
 
 /**
- * The store a validate-local-store call checks (#472): the path it names,
+ * The store a validate-local-store-basic or -opens call checks (#472): the path it names,
  * else the ROMPER_LOCAL_PATH override, else the saved store. The override
  * stands in for the saved store, not for a folder the caller chose.
  */

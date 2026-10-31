@@ -19,13 +19,11 @@ vi.mock("node:path", () => ({
 
 // Mock local store validator
 vi.mock("../../localStoreValidator.js", () => ({
-  validateLocalStoreAgainstDb: vi.fn(),
   validateLocalStoreAndDb: vi.fn(),
   validateLocalStoreBasic: vi.fn(),
 }));
 
 import {
-  validateLocalStoreAgainstDb,
   validateLocalStoreAndDb,
   validateLocalStoreBasic,
 } from "../../localStoreValidator.js";
@@ -38,7 +36,6 @@ import { LocalStoreService } from "../localStoreService.js";
 
 const mockFs = vi.mocked(fs);
 const mockPath = vi.mocked(path);
-const mockValidateAgainstDb = vi.mocked(validateLocalStoreAgainstDb);
 const mockValidateAndDb = vi.mocked(validateLocalStoreAndDb);
 const mockValidateBasic = vi.mocked(validateLocalStoreBasic);
 
@@ -212,20 +209,6 @@ describe("LocalStoreService", () => {
     });
   });
 
-  describe("validateLocalStore", () => {
-    it("delegates to validateLocalStoreAgainstDb", () => {
-      const mockResult = {
-        isValid: true,
-      };
-      mockValidateAgainstDb.mockReturnValue(mockResult);
-
-      const result = localStoreService.validateLocalStore("/test/path");
-
-      expect(result).toBe(mockResult);
-      expect(mockValidateAgainstDb).toHaveBeenCalledWith("/test/path");
-    });
-  });
-
   describe("[UC-05] validateLocalStoreOpens (#813)", () => {
     it("checks the store itself, not its samples", () => {
       mockValidateAndDb.mockReturnValue({ isValid: true });
@@ -234,7 +217,6 @@ describe("LocalStoreService", () => {
 
       expect(result).toEqual({ isValid: true });
       expect(mockValidateAndDb).toHaveBeenCalledWith("/test/path");
-      expect(mockValidateAgainstDb).not.toHaveBeenCalled();
     });
 
     it("says why a store is refused", () => {

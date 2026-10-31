@@ -596,11 +596,6 @@ const electronAPI = {
     return invoke("update-voice-volume", kitName, voiceNumber, volume);
   },
 
-  validateLocalStore: (localStorePath?: string) => {
-    isDev && console.debug("[IPC] validateLocalStore invoked", localStorePath);
-    return invoke("validate-local-store", localStorePath);
-  },
-
   validateLocalStoreBasic: (localStorePath?: string) => {
     isDev &&
       console.debug("[IPC] validateLocalStoreBasic invoked", localStorePath);

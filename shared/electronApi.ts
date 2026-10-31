@@ -351,9 +351,6 @@ export interface ElectronAPI {
     voiceNumber: number,
     volume: number,
   ) => Promise<DbResult<KitEdit>>;
-  validateLocalStore: (
-    localStorePath?: string,
-  ) => Promise<LocalStoreValidationDetailedResult>;
   validateLocalStoreBasic: (
     localStorePath?: string,
   ) => Promise<LocalStoreValidationDetailedResult>;

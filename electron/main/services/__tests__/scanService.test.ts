@@ -4,8 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fs
 vi.mock("node:fs", () => ({
-  existsSync: vi.fn(),
-  readdirSync: vi.fn(),
+  promises: { readdir: vi.fn() },
   statSync: vi.fn(),
 }));
 
@@ -21,8 +20,11 @@ vi.mock("@romper/shared/kitUtilsShared.js", () => ({
 }));
 
 // Mock database operations
+vi.mock("../kitScanReads.js", () => ({
+  mergeKitScanReadingAsync: vi.fn(),
+}));
+
 vi.mock("../../db/romperDbCoreORM.js", () => ({
-  mergeKitScan: vi.fn(),
   // A bank scan commits once; each bank is a nested unit of work
   withDbTransaction: vi.fn((_dbDir: string, fn: () => unknown) => ({
     data: fn(),
@@ -37,15 +39,14 @@ vi.mock("../../audioUtils.js", () => ({
 
 import { groupSamplesByVoice } from "@romper/shared/kitUtilsShared.js";
 
-import type { KitScanIo } from "../../db/operations/kitScanOperations.js";
-
 import { getAudioMetadata } from "../../audioUtils.js";
-import { mergeKitScan } from "../../db/romperDbCoreORM.js";
+import { mergeKitScanReadingAsync } from "../kitScanReads.js";
 import { readWavMetadata, ScanService } from "../scanService.js";
 
 const mockFs = vi.mocked(fs);
 const mockPath = vi.mocked(path);
-const mockMergeKitScan = vi.mocked(mergeKitScan);
+const mockMergeKitScan = vi.mocked(mergeKitScanReadingAsync);
+const mockReaddir = vi.mocked(fs.promises.readdir);
 const mockGroupSamplesByVoice = vi.mocked(groupSamplesByVoice);
 const mockGetAudioMetadata = vi.mocked(getAudioMetadata);
 
@@ -70,7 +71,6 @@ describe("ScanService", () => {
     scanService = new ScanService();
 
     mockPath.join.mockImplementation((...args) => args.join("/"));
-    mockFs.existsSync.mockReturnValue(true);
     mockFs.statSync.mockReturnValue({
       mtimeMs: 1_700_000_000_000.75,
       size: 88_244,
@@ -87,7 +87,7 @@ describe("ScanService", () => {
 
   describe("rescanKit", () => {
     beforeEach(() => {
-      mockFs.readdirSync.mockReturnValue([
+      mockReaddir.mockResolvedValue([
         "1_kick.wav",
         "1_snare.WAV",
         "2_hihat.wav",
@@ -101,18 +101,21 @@ describe("ScanService", () => {
         4: [],
       });
 
-      mockMergeKitScan.mockReturnValue({
+      mockMergeKitScan.mockResolvedValue({
         data: { ...EMPTY_SCAN_RESULT, addedSamples: 3, scannedSamples: 3 },
         success: true,
       });
     });
 
-    it("merges the kit folder's WAV files instead of deleting samples", () => {
-      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
+    it("merges the kit folder's WAV files instead of deleting samples", async () => {
+      const result = await scanService.rescanKit(
+        mockInMemorySettings,
+        "TestKit",
+      );
 
       expect(result.success).toBe(true);
       expect(result.data?.addedSamples).toBe(3);
-      expect(mockFs.readdirSync).toHaveBeenCalledWith("/test/path/TestKit");
+      expect(mockReaddir).toHaveBeenCalledWith("/test/path/TestKit");
       expect(mockGroupSamplesByVoice).toHaveBeenCalledWith([
         "1_kick.wav",
         "1_snare.WAV",
@@ -131,89 +134,68 @@ describe("ScanService", () => {
           },
           kitPath: "/test/path/TestKit",
         },
-        expect.objectContaining({
-          readMetadata: expect.any(Function),
-          statFile: expect.any(Function),
-        }),
       );
     });
 
-    it("gives the merge real file checks and WAV metadata", () => {
-      scanService.rescanKit(mockInMemorySettings, "TestKit");
-      const io = mockMergeKitScan.mock.calls[0][3] as KitScanIo;
-
-      mockFs.statSync.mockImplementationOnce(() => {
-        throw new Error("ENOENT");
-      });
-      expect(io.statFile("/gone.wav")).toBeNull();
-      expect(io.statFile("/here.wav")).toEqual({
-        mtimeMs: 1_700_000_000_000.75,
-        size: 88_244,
-      });
-
-      mockGetAudioMetadata.mockReturnValue({
-        data: { bitDepth: 16, channels: 2, sampleRate: 44100 },
-        success: true,
-      });
-      expect(io.readMetadata("/x.wav")).toEqual({
-        source_mtime_ms: 1_700_000_000_000,
-        source_size: 88_244,
-        source_status: "readable",
-        wav_bit_depth: 16,
-        wav_bitrate: 44100 * 2 * 16,
-        wav_channels: 2,
-        wav_format_tag: null,
-        wav_sample_rate: 44100,
-      });
-    });
-
-    it("returns the merge result unchanged, including a locked kit", () => {
+    it("returns the merge result unchanged, including a locked kit", async () => {
       const locked = { ...EMPTY_SCAN_RESULT, locked: true, scannedSamples: 3 };
-      mockMergeKitScan.mockReturnValue({ data: locked, success: true });
+      mockMergeKitScan.mockResolvedValue({ data: locked, success: true });
 
-      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
+      const result = await scanService.rescanKit(
+        mockInMemorySettings,
+        "TestKit",
+      );
 
       expect(result).toEqual({ data: locked, success: true });
     });
 
-    it("returns error when no local store path configured", () => {
-      const result = scanService.rescanKit({}, "TestKit");
+    it("returns error when no local store path configured", async () => {
+      const result = await scanService.rescanKit({}, "TestKit");
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("No local store path configured");
       expect(mockMergeKitScan).not.toHaveBeenCalled();
     });
 
-    it("returns error when kit directory does not exist", () => {
-      mockFs.existsSync.mockImplementation(
-        (path: fs.PathLike) => !String(path).includes("TestKit"),
+    it("returns error when kit directory does not exist", async () => {
+      mockReaddir.mockRejectedValue(
+        Object.assign(new Error("ENOENT: no such file or directory"), {
+          code: "ENOENT",
+        }),
       );
 
-      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
+      const result = await scanService.rescanKit(
+        mockInMemorySettings,
+        "TestKit",
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Kit directory not found");
       expect(mockMergeKitScan).not.toHaveBeenCalled();
     });
 
-    it("reports a failed (rolled back) merge", () => {
-      mockMergeKitScan.mockReturnValue({
+    it("reports a failed (rolled back) merge", async () => {
+      mockMergeKitScan.mockResolvedValue({
         error: "SQLITE_BUSY",
         success: false,
       });
 
-      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
+      const result = await scanService.rescanKit(
+        mockInMemorySettings,
+        "TestKit",
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Failed to scan kit TestKit: SQLITE_BUSY");
     });
 
-    it("handles exceptions gracefully", () => {
-      mockFs.readdirSync.mockImplementation(() => {
-        throw new Error("Permission denied");
-      });
+    it("handles exceptions gracefully", async () => {
+      mockReaddir.mockRejectedValue(new Error("Permission denied"));
 
-      const result = scanService.rescanKit(mockInMemorySettings, "TestKit");
+      const result = await scanService.rescanKit(
+        mockInMemorySettings,
+        "TestKit",
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toContain(
@@ -270,33 +252,22 @@ describe("ScanService", () => {
       vi.unstubAllEnvs();
     });
 
-    it("rescans a kit in the override, not the saved path", () => {
-      mockFs.readdirSync.mockReturnValue(
-        [] as unknown as fs.Dirent<NonSharedBuffer>[],
-      );
+    it("rescans a kit in the override, not the saved path", async () => {
+      mockReaddir.mockResolvedValue([]);
       mockGroupSamplesByVoice.mockReturnValue({});
-      mockMergeKitScan.mockReturnValue({
-        data: {
-          addedSamples: 0,
-          locked: false,
-          metadataUpdated: 0,
-          missingSamples: [],
-          scannedSamples: 0,
-          skippedFiles: [],
-          updatedVoices: 0,
-        },
+      mockMergeKitScan.mockResolvedValue({
+        data: EMPTY_SCAN_RESULT,
         success: true,
       });
 
-      const result = scanService.rescanKit(mockInMemorySettings, "A0");
+      const result = await scanService.rescanKit(mockInMemorySettings, "A0");
 
       expect(result.success).toBe(true);
-      expect(mockFs.existsSync).toHaveBeenCalledWith("/env/store/A0");
+      expect(mockReaddir).toHaveBeenCalledWith("/env/store/A0");
       expect(mockMergeKitScan).toHaveBeenCalledWith(
         "/env/store/.romperdb",
         "A0",
         expect.objectContaining({ kitPath: "/env/store/A0" }),
-        expect.anything(),
       );
     });
   });

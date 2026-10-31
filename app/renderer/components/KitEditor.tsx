@@ -143,6 +143,7 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
           onKitUpdated={logic.reloadKit}
           onMessage={props.onMessage}
           onPlay={logic.playback.handlePlay}
+          onRescanKit={() => void logic.handleScanKit()}
           onSampleAdd={logic.sampleManagement.handleSampleAdd}
           onSampleDelete={logic.sampleManagement.handleSampleDelete}
           onSampleMove={logic.sampleManagement.handleSampleMove}
@@ -154,6 +155,7 @@ const KitEditor: React.FC<KitEditorAllProps> = (props) => {
           onStop={logic.playback.handleStop}
           onWaveformPlayingChange={logic.playback.handleWaveformPlayingChange}
           samples={logic.samples}
+          scanning={logic.scanStatus.status === "scanning"}
           selectedSampleIdx={logic.selectedSampleIdx}
           selectedVoice={logic.selectedVoice}
           sequencerOpen={logic.sequencerOpen}

@@ -348,6 +348,42 @@ test.describe("[UC-05] [Q-01] The store check lists WAVs in a read-only kit's fo
     ]);
   });
 
+  test("[UC-05] Scan kit in the Library check adds the file, and the kit's badge, the status bar item and its entry go at once (#821)", async () => {
+    test.setTimeout(60000);
+    const badge = window.locator(
+      '[data-testid="kit-item-B1"] [data-testid="store-check-badge"]',
+    );
+    const item = window.getByTestId("store-check-status");
+    await expect(item).toBeVisible({ timeout: 40000 });
+    await item.click();
+    const dialog = window.getByRole("dialog", { name: "Library check" });
+    const entry = dialog.getByTestId("library-check-untracked-B1");
+    await expect(entry).toBeVisible();
+
+    await entry.getByRole("button", { name: "Scan kit B1" }).click();
+
+    // No new pass: main checks the kit again when the scan ends
+    await expect(entry).toHaveCount(0);
+    await expect(dialog.getByText("No problems found.")).toBeVisible();
+    await expect(item).toHaveCount(0);
+    await window.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(badge).toHaveCount(0);
+    // The file is a sample of the kit now
+    const db = new DatabaseSync(
+      path.join(testEnv.localStorePath, ".romperdb", "romper.sqlite"),
+      { readOnly: true },
+    );
+    try {
+      const row = db
+        .prepare("SELECT 1 AS found FROM samples WHERE source_path = ?")
+        .get(path.join(testEnv.localStorePath, "B1", "4_dropped.wav"));
+      expect(row).toBeTruthy();
+    } finally {
+      db.close();
+    }
+  });
+
   test("badges that kit and counts it in the status bar, with no message (there are no missing files) (#824)", async () => {
     test.setTimeout(60000);
     const badge = window.locator(

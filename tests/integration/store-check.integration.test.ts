@@ -463,6 +463,83 @@ describe("[UC-05] [Q-01] the store check finds missing and unreadable sample fil
     });
   });
 
+  describe("[UC-05] rescan from the notice (#821, stage 4)", () => {
+    const folderOf = (kit: string) => path.join(store, kit);
+    const kitsFound = () => storeCheckService.getStatus().kits;
+
+    it("a rescan clears the kit's untracked finding at once, and pushes the kit as clean", async () => {
+      fs.writeFileSync(path.join(folderOf("A1"), "2 dropped.wav"), goodWav());
+      await gridLoaded();
+      await untilPassEnds();
+      expect(kitsFound()).toEqual([
+        { ...CLEAN, kitName: "A1", untracked: ["2 dropped.wav"] },
+      ]);
+
+      const scanned = (await invoke("rescan-kit", "A1")) as {
+        data: { addedSamples: number };
+        success: boolean;
+      };
+
+      expect(scanned.success).toBe(true);
+      expect(scanned.data.addedSamples).toBe(1);
+      // No new pass: the rescan's own re-check of the kit
+      await vi.waitFor(() => expect(kitsFound()).toEqual([]));
+      expect(updates().at(-1)).toEqual({
+        kits: [{ ...CLEAN, kitName: "A1" }],
+        state: "idle",
+      });
+    });
+
+    it("a rescan clears a missing file that has been put back", async () => {
+      fs.renameSync(fileOf("B0", 1), path.join(work, "moved.wav"));
+      await gridLoaded();
+      await untilPassEnds();
+      expect(kitsFound()).toEqual([{ ...CLEAN, kitName: "B0", missing: 1 }]);
+
+      fs.renameSync(path.join(work, "moved.wav"), fileOf("B0", 1));
+      expect(
+        ((await invoke("rescan-kit", "B0")) as { success: boolean }).success,
+      ).toBe(true);
+
+      await vi.waitFor(() => expect(kitsFound()).toEqual([]));
+      expect(rowOf("B0", 1).source_status).toBe("readable");
+    });
+
+    it("re-checks the kit open in the editor too", async () => {
+      fs.writeFileSync(path.join(folderOf("A1"), "2 dropped.wav"), goodWav());
+      await gridLoaded();
+      await untilPassEnds();
+      await invoke("check-kit-sample-files", "A1");
+
+      await invoke("rescan-kit", "A1");
+
+      await vi.waitFor(() => expect(kitsFound()).toEqual([]));
+    });
+
+    it("leaves the check alone when it hasn't started, and when the rescan fails", async () => {
+      // The grid hasn't loaded: no pass, nothing held, nothing pushed
+      expect(
+        ((await invoke("rescan-kit", "A1")) as { success: boolean }).success,
+      ).toBe(true);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(updates()).toEqual([]);
+      expect(rowOf("A1").source_status).toBe("readable");
+
+      await gridLoaded();
+      await untilPassEnds();
+      probe.pushes.length = 0;
+      fs.rmSync(folderOf("B0"), { force: true, recursive: true });
+      const failed = (await invoke("rescan-kit", "B0")) as {
+        error: string;
+        success: boolean;
+      };
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(failed.success).toBe(false);
+      expect(failed.error).toContain("Kit directory not found");
+      expect(updates()).toEqual([]);
+    });
+  });
+
   describe("scheduling", () => {
     it("a stat that never resolves times out without stalling the event loop or other fs work, and its volume is skipped", async () => {
       storeCheckSettings.operationTimeoutMs = 100;

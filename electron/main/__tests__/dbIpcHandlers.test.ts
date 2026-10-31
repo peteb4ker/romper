@@ -36,6 +36,10 @@ vi.mock("../services/scanService.js", () => ({
   },
 }));
 
+vi.mock("../services/storeCheckService.js", () => ({
+  storeCheckService: { noteKitOpened: vi.fn(), recheckKit: vi.fn() },
+}));
+
 // Mock audio utilities
 vi.mock("../audioUtils.js", () => ({
   getAudioMetadata: vi.fn(),
@@ -81,6 +85,7 @@ import {
 import { localStoreService } from "../services/localStoreService.js";
 import { sampleService } from "../services/sampleService.js";
 import { scanService } from "../services/scanService.js";
+import { storeCheckService } from "../services/storeCheckService.js";
 
 const mockIpcMain = vi.mocked(ipcMain);
 const mockSampleService = vi.mocked(sampleService);
@@ -346,6 +351,27 @@ describe("dbIpcHandlers - Routing Tests", () => {
         mockInMemorySettings,
         "TestKit",
       );
+    });
+
+    it("[UC-05] rescan-kit has the store check look at the kit again once the scan worked (#821)", async () => {
+      const handler = handlerRegistry["rescan-kit"];
+
+      await handler({}, "TestKit");
+
+      expect(storeCheckService.recheckKit).toHaveBeenCalledWith("TestKit");
+    });
+
+    it("[UC-05] rescan-kit leaves the store check alone when the scan failed (#821)", async () => {
+      mockScanService.rescanKit.mockResolvedValue({
+        error: "Kit directory not found: /test/path/TestKit",
+        success: false,
+      });
+      const handler = handlerRegistry["rescan-kit"];
+
+      const result = await handler({}, "TestKit");
+
+      expect(result.success).toBe(false);
+      expect(storeCheckService.recheckKit).not.toHaveBeenCalled();
     });
 
     // #567: the store's bank name files are only written, from banks.artist

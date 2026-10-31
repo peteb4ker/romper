@@ -1,6 +1,6 @@
 import type { KitWithRelations } from "@romper/shared/db/schema";
 
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import React from "react";
 import {
   afterEach,
@@ -13,6 +13,7 @@ import {
 } from "vitest";
 
 import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
+import { createMockSample } from "../../../../tests/factories/sample.factory";
 import { createMockVoice } from "../../../../tests/factories/voice.factory";
 import { TestSettingsProvider } from "../../../../tests/providers/TestSettingsProvider";
 import { render } from "../../../../tests/utils/renderWithProviders";
@@ -293,6 +294,65 @@ describe("KitEditor", () => {
         expect(screen.getAllByTitle("Edit voice name").length).toBeGreaterThan(
           0,
         );
+      });
+    });
+
+    describe("[UC-05] the missing-files notice's Scan kit (#821)", () => {
+      const missingKit = (editable: boolean) =>
+        createTestKit({
+          editable,
+          samples: [
+            createMockSample({
+              filename: "kick.wav",
+              kit_name: "TestKit",
+              slot_number: 0,
+              source_path: "/src/kick.wav",
+              source_status: "missing",
+              voice_number: 1,
+            }),
+          ],
+        });
+      const scanFromNotice = async () => {
+        renderWithSettings(
+          <KitEditor
+            kitName="TestKit"
+            onBack={() => {}}
+            onMessage={vi.fn()}
+            samples={{ 1: ["kick.wav"], 2: [], 3: [], 4: [] }}
+          />,
+        );
+        const notice = await screen.findByTestId("kit-missing-files-notice");
+        fireEvent.click(
+          within(notice).getByRole("button", { name: "Scan kit TestKit" }),
+        );
+      };
+
+      it.each([
+        ["a read-only kit", false],
+        ["an editable kit", true],
+      ])(
+        "rescans %s from the notice, not just names its voices",
+        async (_, editable) => {
+          const mockLogic = createMockLogic({ kit: missingKit(editable) });
+          mockUseKitEditorLogic.mockReturnValue(mockLogic);
+
+          await scanFromNotice();
+
+          expect(mockLogic.handleScanKit).toHaveBeenCalledTimes(1);
+          expect(mockLogic.handleInferVoiceNames).not.toHaveBeenCalled();
+        },
+      );
+
+      it("waits while a rescan runs", async () => {
+        const mockLogic = createMockLogic({
+          kit: missingKit(false),
+          scanStatus: { status: "scanning" },
+        });
+        mockUseKitEditorLogic.mockReturnValue(mockLogic);
+
+        await scanFromNotice();
+
+        expect(mockLogic.handleScanKit).not.toHaveBeenCalled();
       });
     });
 

@@ -90,21 +90,7 @@ export function mergeKitScanTx(
   io: KitScanIo,
   options: { linkStereoVoices?: boolean } = {},
 ): KitScanResult {
-  const kit = db.select().from(kits).where(eq(kits.name, kitName)).get();
-  if (!kit) {
-    throw new Error(`Kit not found in database: ${kitName}`);
-  }
-
-  const existing = db
-    .select()
-    .from(samples)
-    .where(eq(samples.kit_name, kitName))
-    .all();
-  const kitVoices = db
-    .select()
-    .from(voices)
-    .where(eq(voices.kit_name, kitName))
-    .all();
+  const { existing, kit, voices: kitVoices } = readKitScanInputs(db, kitName);
 
   const plan = planKitScanMerge({
     existing,
@@ -255,6 +241,29 @@ export function planKitScanMerge({
   result.stereo = planKitStereo(kitVoices, merged);
 
   return plan;
+}
+
+/**
+ * What a kit scan merges into: the kit, its sample rows and its voices.
+ * Throws when the kit isn't in the database.
+ */
+export function readKitScanInputs(db: RomperDb, kitName: string) {
+  const kit = db.select().from(kits).where(eq(kits.name, kitName)).get();
+  if (!kit) {
+    throw new Error(`Kit not found in database: ${kitName}`);
+  }
+
+  const existing = db
+    .select()
+    .from(samples)
+    .where(eq(samples.kit_name, kitName))
+    .all();
+  const kitVoices = db
+    .select()
+    .from(voices)
+    .where(eq(voices.kit_name, kitName))
+    .all();
+  return { existing, kit, voices: kitVoices };
 }
 
 /**

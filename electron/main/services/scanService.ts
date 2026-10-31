@@ -17,11 +17,11 @@ import {
 } from "../db/operations/wavMetadataFields.js";
 import {
   getKitSamples,
-  mergeKitScan,
   updateSampleSourceStatusTx,
   withDbTransaction,
 } from "../db/romperDbCoreORM.js";
 import { ServicePathManager } from "../utils/fileSystemUtils.js";
+import { mergeKitScanReadingAsync } from "./kitScanReads.js";
 
 /** Gives an fs operation a time limit; it rejects if the limit passes */
 export type OperationLimit = <T>(operation: Promise<T>) => Promise<T>;
@@ -94,12 +94,14 @@ export class ScanService {
    * The kit directory must exist. Unreferenced WAV files are added, existing
    * sample rows and their user data are kept, missing files are reported,
    * and locked kits are left alone. See planKitScanMerge for the rules.
-   * The database work runs in one transaction.
+   * The database work runs in one transaction. Every file read is
+   * `fs.promises`, made before the transaction, so a scan holds the main
+   * thread only for the merge (#821, Q-01).
    */
-  rescanKit(
+  async rescanKit(
     inMemorySettings: Record<string, unknown>,
     kitName: string,
-  ): DbResult<KitScanResult> {
+  ): Promise<DbResult<KitScanResult>> {
     const localStorePath = this.getLocalStorePath(inMemorySettings);
     if (!localStorePath) {
       return { error: "No local store path configured", success: false };
@@ -109,23 +111,26 @@ export class ScanService {
 
     try {
       const kitPath = path.join(localStorePath, kitName);
-      if (!fs.existsSync(kitPath)) {
-        return {
-          error: `Kit directory not found: ${kitPath}`,
-          success: false,
-        };
+      let names: string[];
+      try {
+        names = await fs.promises.readdir(kitPath);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+          return {
+            error: `Kit directory not found: ${kitPath}`,
+            success: false,
+          };
+        }
+        throw error;
       }
-
-      const wavFiles = fs
-        .readdirSync(kitPath)
-        .filter((file) => file.toLowerCase().endsWith(".wav"));
-
-      const result = mergeKitScan(
-        dbDir,
-        kitName,
-        { filesByVoice: groupSamplesByVoice(wavFiles), kitPath },
-        { readMetadata: readWavMetadata, statFile: statFileSync },
+      const wavFiles = names.filter((file) =>
+        file.toLowerCase().endsWith(".wav"),
       );
+
+      const result = await mergeKitScanReadingAsync(dbDir, kitName, {
+        filesByVoice: groupSamplesByVoice(wavFiles),
+        kitPath,
+      });
       if (!result.success) {
         return {
           error: `Failed to scan kit ${kitName}: ${result.error}`,

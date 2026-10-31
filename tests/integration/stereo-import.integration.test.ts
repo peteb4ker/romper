@@ -177,12 +177,12 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
     }
   });
 
-  it("a scan changes nothing about stereo, and reports what the rules will do", () => {
+  it("a scan changes nothing about stereo, and reports what the rules will do", async () => {
     importCard();
     // A stereo file lands on A2's voice 2, which rule 2 would link with 3
     fs.writeFileSync(path.join(store, "A2", "2 PAD.wav"), wav(2));
 
-    const a2 = scanService.rescanKit(settings(), "A2");
+    const a2 = await scanService.rescanKit(settings(), "A2");
     expect(a2.success).toBe(true);
     expect(a2.data).toMatchObject({
       addedSamples: 1,
@@ -196,7 +196,7 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
 
     // Unlinked by hand: reported as mixed down, and not linked again
     expect(updateVoiceStereoMode(dbDir, "A0", 1, false).success).toBe(true);
-    const a0 = scanService.rescanKit(settings(), "A0");
+    const a0 = await scanService.rescanKit(settings(), "A0");
     expect(a0.data?.stereo).toMatchObject({
       autoLinks: [],
       mixdowns: [{ reason: "mono_voice", voiceNumber: 1 }],
@@ -210,7 +210,7 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
   it("the write links automatically, keeps linked stereo byte for byte, and mixes mono voices down", async () => {
     importCard();
     fs.writeFileSync(path.join(store, "A2", "2 PAD.wav"), wav(2));
-    expect(scanService.rescanKit(settings(), "A2").success).toBe(true);
+    expect((await scanService.rescanKit(settings(), "A2")).success).toBe(true);
 
     const summary = await syncService.generateChangeSummary(settings(), card);
     expect(summary.data?.stereo).toEqual({
@@ -332,15 +332,17 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
   // the write completes, so a cancelled or failed write leaves none
   describe("[Q-02] automatic links and an incomplete write", () => {
     /** A2 gains a stereo file on voice 2, which the write would link */
-    function withAutoLink() {
+    async function withAutoLink() {
       importCard();
       fs.writeFileSync(path.join(store, "A2", "2 PAD.wav"), wav(2));
-      expect(scanService.rescanKit(settings(), "A2").success).toBe(true);
+      expect((await scanService.rescanKit(settings(), "A2")).success).toBe(
+        true,
+      );
       expect(voice("A2", 2).stereo_mode).toBe(false);
     }
 
     it("a cancelled write leaves no automatic link", async () => {
-      withAutoLink();
+      await withAutoLink();
       const emit =
         syncProgressManager.emitFileCompletionProgress.bind(
           syncProgressManager,
@@ -365,7 +367,7 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
     });
 
     it("a failed write leaves no automatic link", async () => {
-      withAutoLink();
+      await withAutoLink();
       vi.spyOn(syncFileOperationsService, "processAllFiles").mockRejectedValue(
         new Error("ENOSPC: no space left on device"),
       );
@@ -382,7 +384,7 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
     });
 
     it("a write that fails while recording itself rolls its automatic links back", async () => {
-      withAutoLink();
+      await withAutoLink();
       // The links are recorded first, then the synced flags, in one
       // transaction: failing the flags must take the links with them
       expect(markKitAsModified(dbDir, "A2").success).toBe(true);
@@ -408,7 +410,7 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
     });
 
     it("a completed write records the link", async () => {
-      withAutoLink();
+      await withAutoLink();
       await write();
       expect(voice("A2", 2).stereo_mode).toBe(true);
     });
@@ -641,14 +643,16 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
         expect((await open()).data).toEqual({ changed: 0, checked: total });
       });
 
-      it("a scan refreshes a file changed on disk", () => {
+      it("a scan refreshes a file changed on disk", async () => {
         pinStore();
         importCard();
         const later = new Date(PINNED.getTime() + 60_000);
         fs.writeFileSync(padFile(), floatPad());
         pin(padFile(), later);
 
-        expect(scanService.rescanKit(settings(), "A1").success).toBe(true);
+        expect((await scanService.rescanKit(settings(), "A1")).success).toBe(
+          true,
+        );
 
         expect(pad()).toMatchObject({
           source_mtime_ms: later.getTime(),
@@ -658,7 +662,7 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
         });
       });
 
-      it("a scan leaves an unchanged file alone", () => {
+      it("a scan leaves an unchanged file alone", async () => {
         pinStore();
         importCard();
         fs.writeFileSync(
@@ -667,7 +671,9 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
         );
         pin(padFile());
 
-        expect(scanService.rescanKit(settings(), "A1").success).toBe(true);
+        expect((await scanService.rescanKit(settings(), "A1")).success).toBe(
+          true,
+        );
 
         expect(pad()).toMatchObject({
           source_status: "readable",
@@ -736,7 +742,9 @@ describe("[UC-01] [UC-13] [UC-34] [Q-04] Stereo samples from a card stay stereo 
     it("a missing file doesn't quarantine its kit", async () => {
       importCard();
       fs.rmSync(path.join(store, "A1", "3 HAT.wav"));
-      expect(scanService.rescanKit(settings(), "A1").success).toBe(true);
+      expect((await scanService.rescanKit(settings(), "A1")).success).toBe(
+        true,
+      );
       expect(status("A1", "3 HAT.wav")).toBe("missing");
       expect(getKit(dbDir, "A1").data!.quarantined).toBe(false);
     });

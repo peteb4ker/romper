@@ -469,8 +469,13 @@ export function registerDbIpcHandlers(inMemorySettings: InMemorySettings) {
     }),
   );
 
-  handle("rescan-kit", (_event, kitName: string) => {
-    return scanService.rescanKit(inMemorySettings, kitName);
+  handle("rescan-kit", async (_event, kitName: string) => {
+    const result = await scanService.rescanKit(inMemorySettings, kitName);
+    // The store check looks at the kit again once this call is over, so its
+    // badge, the status bar count and its entry in the Library check follow
+    // the scan at once instead of at the next pass (#821)
+    if (result.success) storeCheckService.recheckKit(kitName);
+    return result;
   });
 
   // The kit editor checks files it doesn't know are readable, once per

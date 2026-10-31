@@ -12,11 +12,13 @@ import {
   describeKitsNeedAttention,
   describeMissingFiles,
   describeNewMissingFiles,
+  describeScanKit,
   describeStatusBarItem,
   describeUntrackedFiles,
   hasKitBadge,
   LIBRARY_CHECK_EMPTY,
   LIBRARY_CHECK_HEADINGS,
+  SCAN_KIT_LABEL,
   summarizeStoreCheck,
 } from "../storeCheckWording";
 
@@ -27,6 +29,16 @@ const finding = (overrides: Partial<StoreCheckKitFinding> = {}) =>
 // docs/developer/store-check.md ("Wording"). A change to it is a product
 // decision.
 describe("[UC-05] [Q-06] store check wording (#824)", () => {
+  describe("the Scan kit fix (#821)", () => {
+    it("reads 'Scan kit' exactly, as approved", () => {
+      expect(SCAN_KIT_LABEL).toBe("Scan kit");
+    });
+
+    it("names the kit in the button's accessible name, keeping the label first", () => {
+      expect(describeScanKit("A3")).toBe("Scan kit A3");
+    });
+  });
+
   describe("the badge", () => {
     it("says how many sample files aren't found", () => {
       expect(describeKitBadge(finding({ missing: 2 }))).toBe(

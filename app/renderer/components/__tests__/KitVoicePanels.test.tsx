@@ -1579,6 +1579,76 @@ describe("KitVoicePanels", () => {
       expect(screen.queryByTestId("kit-quarantine-notice")).toBeNull();
     });
 
+    it("[UC-05] offers Scan kit in the missing-files notice when it can rescan, and rescans from it (#821)", async () => {
+      metadata({
+        ...row(1, 0, "kick.wav", 1),
+        source_status: "missing",
+      });
+      const onRescanKit = vi.fn();
+      render(
+        <MultiVoicePanelsTestWrapper
+          onRescanKit={onRescanKit}
+          voices={kitVoices()}
+        />,
+      );
+
+      const notice = await screen.findByTestId("kit-missing-files-notice");
+      const scan = within(notice).getByRole("button", {
+        name: "Scan kit Kit1",
+      });
+      expect(scan).toHaveTextContent("Scan kit");
+      fireEvent.click(scan);
+
+      expect(onRescanKit).toHaveBeenCalledTimes(1);
+    });
+
+    it("[UC-05] shows no Scan kit button without a rescan, and none when no file is missing (#821)", async () => {
+      metadata({
+        ...row(1, 0, "kick.wav", 1),
+        source_status: "missing",
+      });
+      const { unmount } = render(
+        <MultiVoicePanelsTestWrapper voices={kitVoices()} />,
+      );
+      await screen.findByTestId("kit-missing-files-notice");
+      expect(screen.queryByRole("button", { name: /^Scan kit/ })).toBeNull();
+      unmount();
+
+      metadata({ ...row(1, 0, "kick.wav", 1), source_status: "readable" });
+      render(
+        <MultiVoicePanelsTestWrapper
+          onRescanKit={vi.fn()}
+          voices={kitVoices()}
+        />,
+      );
+      await screen.findByRole("row", { name: "Sample kick.wav in slot 1" });
+      expect(screen.queryByTestId("kit-missing-files-notice")).toBeNull();
+      expect(screen.queryByRole("button", { name: /^Scan kit/ })).toBeNull();
+    });
+
+    it("[UC-05] the Scan kit button waits for a rescan that is running, without a new label (#821)", async () => {
+      metadata({
+        ...row(1, 0, "kick.wav", 1),
+        source_status: "missing",
+      });
+      const onRescanKit = vi.fn();
+      render(
+        <MultiVoicePanelsTestWrapper
+          onRescanKit={onRescanKit}
+          scanning
+          voices={kitVoices()}
+        />,
+      );
+
+      const scan = await screen.findByRole("button", { name: "Scan kit Kit1" });
+      expect(scan).toHaveAttribute("aria-busy", "true");
+      expect(scan).toHaveAttribute("aria-disabled", "true");
+      expect(scan).toHaveTextContent("Scan kit");
+      fireEvent.click(scan);
+
+      expect(onRescanKit).not.toHaveBeenCalled();
+    });
+
     it("asks main to check the kit's files once per kit open, and reloads when something changed", async () => {
       metadata({ ...row(1, 0, "kick.wav", 1), source_status: null });
       vi.mocked(globalThis.electronAPI.checkKitSampleFiles).mockResolvedValue({

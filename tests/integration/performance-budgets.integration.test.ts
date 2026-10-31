@@ -356,6 +356,23 @@ describe("[Q-01] performance budgets: main-process operations", () => {
     );
   });
 
+  it("[UC-05] [Q-01] rescan a kit makes no sync fs call (#821)", async () => {
+    // A read-only kit with a file in its folder that no row points at
+    const dbDir = path.join(store, ".romperdb");
+    makeReadOnly("A0");
+    wav(path.join(store, "A0", "3_new.wav"), 500);
+    const result = await expectWithinBudget(
+      "integration/rescan a kit",
+      () => invoke("rescan-kit", "A0"),
+      ["connections", "statements", "syncFsCalls"],
+    );
+    // The scan did its work: the new file is a row, and every row was read
+    expect((result.data as { addedSamples: number }).addedSamples).toBe(1);
+    const rows = getKitSamples(dbDir, "A0").data ?? [];
+    expect(rows).toHaveLength(4 * SAMPLES_PER_VOICE + 1);
+    expect(rows.every((s) => s.source_status === "readable")).toBe(true);
+  });
+
   it("[UC-05] store check: one kit", async () => {
     // The worst step: nothing is known about the kit's files yet, so each is
     // read and recorded

@@ -87,6 +87,8 @@ export class StoreCheckService {
   private listener: ((update: StoreCheckUpdate) => void) | null = null;
   /** The kit open in the editor, whose own kit-open check covers it */
   private openKit: null | string = null;
+  /** Kits waiting for, or in, a re-check after a rescan (#821) */
+  private readonly rechecking = new Set<string>();
   private state: StoreCheckStatus["state"] = "idle";
   /** The store this pass is for; null when none has started */
   private storePath: null | string = null;
@@ -200,6 +202,31 @@ export class StoreCheckService {
   /** Call `listener` with each step that changed a kit's finding */
   onUpdate(listener: (update: StoreCheckUpdate) => void): void {
     this.listener = listener;
+  }
+
+  /**
+   * Check one kit now, outside the pass, once any write, setup or rescan in
+   * flight is over: a rescan just changed the kit's rows and its folder, so
+   * its finding is out of date (#821, stage 4). It records what changed and
+   * pushes the kit if its finding did, as a step of the pass does, and
+   * checks the kit open in the editor too. Does nothing before the pass for
+   * this store has started (the pass will see the kit as the rescan left
+   * it) and after a cancel.
+   */
+  recheckKit(kitName: string): void {
+    const storePath = this.storePath;
+    const controller = this.controller;
+    if (storePath === null || controller === null) return;
+    if (this.rechecking.has(kitName)) return;
+    this.rechecking.add(kitName);
+    void this.runRecheck(storePath, kitName, controller)
+      .catch((error: unknown) => {
+        console.warn(
+          "[StoreCheck] Couldn't check the kit again:",
+          error instanceof Error ? error.message : String(error),
+        );
+      })
+      .finally(() => this.rechecking.delete(kitName));
   }
 
   /**
@@ -461,6 +488,29 @@ export class StoreCheckService {
         error instanceof Error ? error.message : String(error),
       );
       this.finish(controller, false);
+    }
+  }
+
+  /**
+   * Check a kit that a rescan changed, as soon as no write, setup or
+   * rescan is in flight; again if one begins meanwhile. A rescan's own call
+   * must have ended first (it counts as one), so the first look is a turn
+   * of the event loop later. No wait for a quiet moment: the user just
+   * asked for this kit.
+   */
+  private async runRecheck(
+    localStorePath: string,
+    kitName: string,
+    controller: AbortController,
+  ): Promise<void> {
+    for (;;) {
+      await new Promise<void>((resolve) => setImmediate(resolve)); // NOSONAR: yields to the event loop on purpose
+      if (controller.signal.aborted) return;
+      if (this.activity.exclusiveActive) {
+        await sleep(storeCheckSettings.pollMs, controller.signal); // NOSONAR: waits for the exclusive call on purpose
+        continue;
+      }
+      if (await this.checkKit(localStorePath, kitName, controller)) return; // NOSONAR: one kit, again if an exclusive call began
     }
   }
 

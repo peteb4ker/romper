@@ -1,0 +1,104 @@
+name: Factory Archive Cache
+
+# Keeps main's cached copy of Squarp's factory archive (#865), so the full
+# validation (validate-full.yml, by hand or from a release) restores it
+# instead of downloading ~313 MiB from Squarp. A run reads the caches saved
+# from its own ref and from main; validate-full never runs on main, so what
+# it saved was private to the branch or tag that ran it, and no later run
+# could read it. This job puts the copy in main's scope.
+#
+# The copy is keyed by the archive's recorded SHA-256 (not by a hash of the
+# record file, whose `checked` date and counts change without the archive
+# changing, and whose line endings differ on Windows), so there is one entry
+# per archive version. It is one cross-OS entry that all three validation
+# platforms read, because the repo is near GitHub's 10 GB cache limit.
+#
+# It runs when the record changes, and weekly: GitHub deletes a cache that
+# hasn't been read for seven days, and a release can be months apart. A run
+# that hits the cache downloads nothing; Squarp is only contacted on a miss.
+# The archive is Squarp's content: it lives only in this repo's private
+# Actions cache, never an artifact.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - tests/validation/factory-archive.json
+      - .github/workflows/factory-archive-cache.yml
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: factory-archive-cache
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  cache-archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Read the archive record
+        id: record
+        run: |
+          node -e '
+            const r = require("./tests/validation/factory-archive.json");
+            const out = ["url", "fileName", "sha256"].map((k) => `${k}=${r[k]}`);
+            require("fs").appendFileSync(process.env.GITHUB_OUTPUT, out.join("\n") + "\n");
+          '
+
+      # The same key and path as validate-full.yml's restore step
+      - name: Restore the factory archive
+        id: archive
+        uses: actions/cache/restore@v6
+        with:
+          path: .factory-archive-cache
+          key: factory-archive-${{ steps.record.outputs.sha256 }}
+          enableCrossOsArchive: true
+
+      # Only main saves (a copy saved from another ref is private to it and
+      # adds to a cache that's already near its limit), so a dispatch from
+      # a branch only reports.
+      - name: Say why nothing is saved
+        if: >-
+          steps.archive.outputs.cache-hit != 'true' &&
+          github.ref != 'refs/heads/main'
+        run: echo "::warning::main has no copy of the archive yet; only a run on main saves one"
+
+      # Download to a temp name and move it into place only once the
+      # checksum matches, so a changed or cut-off download is never saved.
+      - name: Download the factory archive
+        if: >-
+          steps.archive.outputs.cache-hit != 'true' &&
+          github.ref == 'refs/heads/main'
+        env:
+          ARCHIVE_URL: ${{ steps.record.outputs.url }}
+          ARCHIVE_FILE: ${{ steps.record.outputs.fileName }}
+          ARCHIVE_SHA256: ${{ steps.record.outputs.sha256 }}
+        run: |
+          mkdir -p .factory-archive-cache
+          curl --fail --location --silent --show-error \
+            --retry 3 --retry-delay 30 --retry-all-errors \
+            --user-agent "romper-ci (https://github.com/${GITHUB_REPOSITORY})" \
+            --output "$RUNNER_TEMP/$ARCHIVE_FILE" "$ARCHIVE_URL"
+          echo "$ARCHIVE_SHA256  $RUNNER_TEMP/$ARCHIVE_FILE" | sha256sum --check
+          mv "$RUNNER_TEMP/$ARCHIVE_FILE" ".factory-archive-cache/$ARCHIVE_FILE"
+
+      - name: Save the factory archive
+        if: >-
+          steps.archive.outputs.cache-hit != 'true' &&
+          github.ref == 'refs/heads/main'
+        uses: actions/cache/save@v6
+        with:
+          path: .factory-archive-cache
+          key: ${{ steps.archive.outputs.cache-primary-key }}
+          enableCrossOsArchive: true

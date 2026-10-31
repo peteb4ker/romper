@@ -52,14 +52,25 @@ jobs:
           electron: "true"
 
       # Our copy of Squarp's archive, keyed by its recorded SHA-256, so each
-      # archive version is downloaded from Squarp once, not once per run. The
-      # cache is private to this repo; the archive is never uploaded as an
-      # artifact (it's Squarp's content).
+      # archive version is downloaded from Squarp once, not once per run.
+      # factory-archive-cache.yml saves it from main (#865), where every
+      # branch and release tag can read it; this workflow only restores (a
+      # copy it saved would be private to its own branch or tag). It's one
+      # cross-OS entry for all three platforms. On a miss the validation
+      # downloads the archive for this run only. The cache is private to this
+      # repo; the archive is never uploaded as an artifact (it's Squarp's
+      # content).
+      - name: Find the factory archive's key
+        id: archive-key
+        shell: bash
+        run: echo "sha256=$(node -p "require('./tests/validation/factory-archive.json').sha256")" >> "$GITHUB_OUTPUT"
+
       - name: Restore the factory archive
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
-          path: ~/.cache/romper
-          key: factory-archive-${{ hashFiles('tests/validation/factory-archive.json') }}
+          path: .factory-archive-cache
+          key: factory-archive-${{ steps.archive-key.outputs.sha256 }}
+          enableCrossOsArchive: true
 
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
@@ -84,6 +95,7 @@ jobs:
         env:
           CI: true
           DISPLAY: ":99"
+          ROMPER_ARCHIVE_CACHE_DIR: ${{ github.workspace }}/.factory-archive-cache
 
       - name: Upload the report
         if: always()

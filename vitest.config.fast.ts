@@ -76,7 +76,6 @@ export default defineConfig({
         : ["**/*.test.{js,ts,jsx,tsx}"],
       // Sized to the free cores, so a busy machine doesn't time workers out
       maxWorkers: testWorkerCount(),
-      minWorkers: 1,
       pool: "threads",
       // Optimized reporters - dot is fastest
       reporter: ["dot"],

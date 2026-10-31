@@ -166,7 +166,6 @@ export default defineConfig({
         : ["**/*.test.{js,ts,jsx,tsx}"],
       // Performance optimizations
       maxWorkers: isCI ? 8 : 2,
-      minWorkers: isCI ? 2 : 1,
       pool: "threads",
       // Optimized reporters for CI
       reporter: isCI ? ["dot"] : ["verbose"],

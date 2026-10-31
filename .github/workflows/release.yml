@@ -307,7 +307,8 @@ jobs:
         env:
           npm_config_devdir: ${{ runner.temp }}/node-gyp
         run: |
-          npm ci || {
+          # TEMPORARY (#860 evidence, reverted before merge): show node-gyp's requests
+          npm ci --foreground-scripts --loglevel=http || {
             echo "::warning::npm ci failed; retrying once"
             npm ci
           }

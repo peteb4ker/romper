@@ -4,7 +4,7 @@ priority: medium
 status: specification
 updated: 2026-10-26
 context_size: medium
-implementation_status: stages 1 (#812, PR #828) and 2 (#820) built; stages 3-6 (#824, #821-#823) not built, waiting for the decisions below
+implementation_status: stages 1 (#812, PR #828), 2 (#820) and 3 (#824) built; stages 4-6 (#821-#823) not built
 -->
 
 # Store check: keeping the library's files and database in agreement
@@ -519,6 +519,50 @@ Each stage is one PR. Stages 2 to 6 wait for the decisions named.
 - **Acceptance:** silent with no problems; badge and notice with one;
   the message appears once per new problem; keyboard and screen reader
   paths work.
+- **As built (#824):**
+  - `StoreCheckKitFinding` gains `notConnected` (rows whose file is
+    missing on a drive that isn't connected, by drive) and `notResponding`
+    (drives that didn't respond while the kit was checked). A missing file
+    on a drive whose mount point is gone (`stat` of its volume fails with
+    ENOENT or ENOTDIR, asked once per drive per pass) is counted in
+    `notConnected`, never in `missing` (D6); its row still reads `missing`,
+    as stage 1 records it. A file on a drive that didn't respond is counted
+    in neither. This is what the drive lines of the dialog and the
+    "weren't checked" wording need. `unavailableVolumes` stays as it was
+    (the folder side, read-only kits).
+  - A pass that completes pushes `{ kits: [], state: "idle" }` once, so the
+    renderer can say what it found once the pass is over. A step that
+    changes nothing still sends nothing.
+  - A step pushes when the kit's finding differs from the one main last held
+    (none, at the start of a session), or its quarantine differs from what
+    the loaded kit list shows. Before, it compared with the rows as the
+    database held them, so a file recorded missing in an earlier session
+    never reached the renderer, which asked for the status before the pass
+    got to the kit.
+  - `storeCheckStore` (renderer, outside React state, a listener set per
+    kit) holds the findings; `useStoreCheck` feeds it from the status and
+    the pushes. The card's badge (`KitGridItem`, `describeKitBadge`), the
+    status bar item (`StatusBar`) and `LibraryCheckDialog` read it, so only
+    a changed kit's card redraws. The dialog is mounted in `main.tsx`, not in
+    `KitBrowser`, because the status bar item is reachable from the kit
+    editor too. `ValidationResultsDialog`, `useValidationResults` and
+    `useKitDialogs` are gone; `validate-local-store` and
+    `validateLocalStoreAgainstDb` stay until a PR that may change the IPC
+    contract removes them.
+  - The strings are in `shared/storeCheckWording.ts`, as approved, plus
+    singular forms that agree with a count of one ("1 kit needs
+    attention").
+  - The badge shows for missing files, untracked files and a missing
+    folder; an unreadable file keeps the quarantine icon only. "N kits need
+    attention" and the dialog's kit list count the kits with a badge. The
+    one-time message counts kits with more missing files than were known
+    (it says "missing sample files", so untracked files and a missing
+    folder alone don't bring it). A badge or the item goes at the next
+    pass: nothing refreshes it when you fix a kit, until the fix stages.
+  - Not built: the dialog's fix buttons (stages 4-6), a "Check again"
+    button (D10 allows it, but no channel starts a pass on demand),
+    group headings in the dialog (no approved wording), an empty-state
+    line.
 
 ### Stage 4: rescan from the notice (after stage 3)
 

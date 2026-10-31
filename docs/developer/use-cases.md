@@ -183,9 +183,17 @@ and [Validating Your Store](../manual/kit-browser.md#validating-your-store).
   loaded (`get-store-check-status`), again after a store change, and
   on window focus when the last pass ended over ten minutes ago. It
   gives way to IPC calls, writes, setup and rescans, and pushes
-  `store-check-updated` for a kit whose finding changed; the kit card shows
-  the existing quarantine icon. The plan is `docs/developer/store-check.md`
+  `store-check-updated` for a kit whose finding changed, and once when a
+  pass completes. The kit card shows the quarantine icon for a file Romper
+  can't read, and a badge for missing files or files its folder holds that
+  the kit doesn't (#824). The plan is `docs/developer/store-check.md`
   (#769).
+- **Renderer, notice (#824):** `useStoreCheck` →
+  `app/renderer/components/hooks/kit-management/storeCheckStore.ts`, read by
+  `KitGridItem.tsx` (the badge), `StatusBar.tsx` ("3 kits need attention")
+  and `dialogs/LibraryCheckDialog.tsx`; words in
+  `shared/storeCheckWording.ts`. See
+  [Validating Your Store](../manual/kit-browser.md#validating-your-store).
 - **Renderer:** `app/renderer/utils/SettingsContext.tsx` (`refreshLocalStoreStatus`) →
   `app/renderer/components/hooks/kit-management/useLocalStoreSetupFlow.ts` → `app/renderer/components/dialogs/InvalidLocalStoreDialog.tsx`
   or the setup wizard; `app/renderer/components/dialogs/CriticalErrorDialog.tsx`.
@@ -196,15 +204,16 @@ and [Validating Your Store](../manual/kit-browser.md#validating-your-store).
   `local-store-database-missing`. The dialog's Choose and Try Again check
   only that the store opens (its folder, database and schema), never its
   sample files (#813); the answer carries the reason in `error`.
-  `validate-local-store`, which does check every sample, is now used only by
-  `ValidationResultsDialog`, which nothing opens (#758), until the store
-  check replaces it (#769).
+  `validate-local-store`, which does check every sample, has no caller now:
+  the store check's "Library check" dialog replaced
+  `ValidationResultsDialog` (#824), and the channel and its validator are
+  left to remove.
 - **Main:** `electron/main/services/localStoreService.ts` (`getLocalStoreStatus`,
   `validateLocalStoreOpens`);
   `electron/main/localStoreValidator.ts` (`validateLocalStoreAndDb`).
-- **Planned:** a background check that the store's sample files match
-  its database, with badges, a notice and fixes:
-  [`store-check.md`](store-check.md) (#769).
+- **Planned:** the fixes for what the check finds (rescan, remove missing
+  samples, find and restore files): [`store-check.md`](store-check.md)
+  (#769).
 
 ### UC-06 Change the local store
 

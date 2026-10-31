@@ -22,6 +22,10 @@
  * with deliberately broken kits (tests/utils/broken-kit-store.ts), not the
  * user's.
  *
+ * Targets marked `store: "library-check"` are captured from a generated store
+ * the background store check finds problems in (a deleted file, a dropped
+ * WAV): the badge, the status bar item and the "Library check" dialog (#824).
+ *
  * Targets marked `store: "slicer"` are a one-time capture from a long sample
  * on this machine, given with --slicer-sample <wav>: it's copied into a
  * temporary store (tests/utils/slicer-store.ts), never committed.
@@ -52,6 +56,7 @@ import { _electron as electron } from "playwright";
 
 import {
   createBrokenKitStore,
+  createLibraryCheckStore,
   MISSING_FILE_KIT,
   removeBrokenKitStore,
   UNREADABLE_FILE_KIT,
@@ -137,6 +142,19 @@ function decodePng(
     );
   }
   return { height, pixels, width };
+}
+
+/** Dismiss the toast stack, so it isn't in the shot */
+async function dismissMessages(window: Page) {
+  const dismiss = window.getByRole("button", { name: "Dismiss message" });
+  while (
+    await dismiss
+      .first()
+      .isVisible()
+      .catch(() => false)
+  ) {
+    await dismiss.first().click();
+  }
 }
 
 /** Open a kit in the broken-kit store and wait for its file check. */
@@ -273,6 +291,21 @@ function unfilter(raw: Buffer, header: PngHeader): Uint8Array {
     }
   }
   return rows;
+}
+
+/**
+ * Wait for the background store check to badge a kit, which it does a few
+ * seconds after the grid loads (#824)
+ */
+async function waitForStoreCheck(window: Page, kit: string) {
+  await window
+    .locator(
+      `[data-testid="kit-item-${kit}"] [data-testid="store-check-badge"]`,
+    )
+    .waitFor({ timeout: 40000 });
+  await window.locator('[data-testid="store-check-status"]').waitFor();
+  await window.evaluate(() => (document.activeElement as HTMLElement)?.blur());
+  await window.waitForTimeout(300);
 }
 
 const SCREENSHOT_TARGETS = [
@@ -690,6 +723,75 @@ const SCREENSHOT_TARGETS = [
     store: "broken-kits",
   },
 
+  // -- Store check (#824), from a generated store (createLibraryCheckStore) --
+  {
+    description:
+      "Kit card of a kit the store check found a sample file missing from, with its badge",
+    name: "manual-kit-card-store-check",
+    navigate: async (window) => {
+      await waitForStoreCheck(window, MISSING_FILE_KIT);
+    },
+    output: "manual/kit-card-store-check.png",
+    selector: `[data-testid="kit-item-${MISSING_FILE_KIT}"]`,
+    store: "library-check",
+  },
+  {
+    description:
+      "Kit card of a read-only kit with a file in its folder that the kit doesn't hold, with its badge",
+    name: "manual-kit-card-store-check-folder",
+    navigate: async (window) => {
+      await waitForStoreCheck(window, UNREADABLE_FILE_KIT);
+    },
+    output: "manual/kit-card-store-check-folder.png",
+    selector: `[data-testid="kit-item-${UNREADABLE_FILE_KIT}"]`,
+    store: "library-check",
+  },
+  {
+    // Just the item: the rest of the bar shows the generated store's
+    // temporary folder
+    captureOverride: async (window, outputPath) => {
+      const box = await window
+        .locator('[data-testid="store-check-status"]')
+        .boundingBox();
+      if (!box) throw new Error("The store check item isn't visible");
+      const pad = 12;
+      await window.screenshot({
+        clip: {
+          height: box.height + pad * 2,
+          width: box.width + pad * 2,
+          x: box.x - pad,
+          y: box.y - pad,
+        },
+        path: outputPath,
+      });
+    },
+    description: "The store check's status bar item: kits need attention",
+    name: "manual-status-bar-store-check",
+    navigate: async (window) => {
+      await waitForStoreCheck(window, MISSING_FILE_KIT);
+      await dismissMessages(window);
+    },
+    output: "manual/status-bar-store-check.png",
+    store: "library-check",
+  },
+  {
+    description: "The Library check dialog, listing the kits to look at",
+    name: "manual-library-check-dialog",
+    navigate: async (window) => {
+      await waitForStoreCheck(window, MISSING_FILE_KIT);
+      await dismissMessages(window);
+      await window.locator('[data-testid="store-check-status"]').click();
+      await window.locator('[data-testid="library-check-dialog"]').waitFor();
+      await window.evaluate(() =>
+        (document.activeElement as HTMLElement)?.blur(),
+      );
+      await window.waitForTimeout(300);
+    },
+    output: "manual/library-check-dialog.png",
+    selector: '[data-testid="library-check-dialog"]',
+    store: "library-check",
+  },
+
   // -- Slicer (#723): one-time capture from --slicer-sample (tests/utils/slicer-store.ts) --
   {
     description:
@@ -851,12 +953,16 @@ function resolveStore(): string {
 }
 
 // Targets marked `store: "broken-kits"` use a generated store with broken
-// kits (#537), and `store: "slicer"` one built around --slicer-sample (#723);
+// kits (#537), `store: "library-check"` one the store check finds problems
+// in (#824), and `store: "slicer"` one built around --slicer-sample (#723);
 // the rest use --store or the installed app's
 const storeOf = (t: (typeof SCREENSHOT_TARGETS)[number]) =>
   "store" in t ? t.store : null;
 const userTargets = targets.filter((t) => storeOf(t) === null);
 const brokenKitTargets = targets.filter((t) => storeOf(t) === "broken-kits");
+const libraryCheckTargets = targets.filter(
+  (t) => storeOf(t) === "library-check",
+);
 const slicerTargets = targets.filter((t) => storeOf(t) === "slicer");
 
 const slicerSampleArg = args.includes("--slicer-sample")
@@ -1015,6 +1121,14 @@ async function main() {
       await capture(brokenKits.localStorePath, brokenKitTargets);
     } finally {
       await removeBrokenKitStore(brokenKits);
+    }
+  }
+  if (libraryCheckTargets.length > 0) {
+    const libraryCheck = await createLibraryCheckStore();
+    try {
+      await capture(libraryCheck.localStorePath, libraryCheckTargets);
+    } finally {
+      await removeBrokenKitStore(libraryCheck);
     }
   }
   if (slicerTargets.length > 0 && slicerSampleArg) {

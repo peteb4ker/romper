@@ -4,7 +4,7 @@ priority: medium
 status: specification
 updated: 2026-10-31
 context_size: medium
-implementation_status: stages 1 (#812, PR #828), 2 (#820), 3 (#824) and 4 (#821) built; stages 5-6 (#822, #823) not built
+implementation_status: stages 1 (#812, PR #828), 2 (#820), 3 (#824), 4 (#821) and 5 (#822) built; stage 6 (#823) not built
 -->
 
 # Store check: keeping the library's files and database in agreement
@@ -620,6 +620,43 @@ Each stage is one PR. Stages 2 to 6 wait for the decisions named.
 - `remove-missing-samples`, its popover, and undo.
 - **Acceptance:** removes only rows still missing at the time; never
   those on a drive not connected; one undo restores them.
+- **As built (#822):**
+  - `remove-missing-samples` (`removeMissingSamples(kitName, undo?)`)
+    returns `{ samples, voicesBefore }`. Main reads the kit's rows recorded
+    `missing`, `stat`s each file again (one at a time, under the check's
+    10 s limit, no sync fs call), and for a file still gone `stat`s its
+    drive (`volumeOf`) once: a drive that is gone or doesn't answer keeps
+    its rows (D6), as does a file that is back or can't be told. Then, in
+    one transaction (`removeMissingSamplesTx`), it deletes the rows that
+    still point at the checked file and still read `missing`, reindexes
+    their voices and flags the kit modified. The channel is exclusive in
+    `ipcActivity`, so a pass step that overlaps it is checked again, and the
+    handler calls `StoreCheckService.recheckKit` after it, as `rescan-kit`
+    does.
+  - D5: the two transactions call `requireKitForMissingSampleRemovalTx`
+    (`kitEditableGuard.ts`), which checks only that the kit exists, instead
+    of `requireEditableKitTx`. No other edit calls it; `restore-kit-voices`
+    still refuses a read-only kit.
+  - Undo is a `REMOVE_MISSING_SAMPLES` entry on the kit view's one undo
+    stack, carrying its kit and main's `voicesBefore`. It goes through the
+    same channel with `undo`: `putBackMissingSamplesTx` puts the voices back
+    with `restoreVoicesTx` only if each voice holds exactly the snapshot's
+    other rows (same order, file, name and gain) and every row it adds
+    reads `missing`; otherwise it refuses and changes nothing. Restored rows
+    get new ids; voice, slot, file, gain, WAV details and status are as
+    before. Redo removes again (re-checked) and keeps the new snapshot.
+  - The entry names its kit, so Edit > Undo and Cmd+Z undo it with any kit
+    open or none, and in a read-only kit (`carriesItsKit`). The stack is
+    still cleared when another kit opens. The Library check, mounted
+    beside the kit view, adds the entry with a `romper:add-undo-action`
+    event; the kit is read again with `romper:refresh-samples`, now also
+    for a kit that isn't open.
+  - Offered in the Library check for a kit under "Sample files not found"
+    with `missing > 0` (which excludes drives not connected), and in the
+    editor's missing-files notice, counting the notice's rows not on a drive
+    the check lists as not connected. The popover is inline, not portalled,
+    so it stays inside the modal; it honors "Confirm destructive actions".
+    One fix runs at a time in the dialog.
 
 ### Stage 6: find missing files and put them back
 

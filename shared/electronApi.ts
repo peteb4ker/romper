@@ -229,6 +229,19 @@ export interface ElectronAPI {
   openExternal: (url: string) => Promise<{ error?: string; success: boolean }>;
   readSettings: () => Promise<SettingsData>;
   /**
+   * Remove a kit's samples whose files are missing (#822, stage 5 of
+   * docs/developer/store-check.md). Main checks each file again first and
+   * removes only the rows still missing, never one on a drive that isn't
+   * connected (D6), closes the gaps in their voices and flags the kit
+   * modified, in one transaction. Allowed on a read-only kit (D5). With
+   * `undo`, the voices the removal returned instead: it puts back only the
+   * rows it removed, and only while the voices are as it left them.
+   */
+  removeMissingSamples: (
+    kitName: string,
+    undo?: VoiceSnapshot[],
+  ) => Promise<DbResult<RemoveMissingSamplesResult>>;
+  /**
    * Ask main to allow a setup-wizard target folder the user typed. Main
    * confirms it with the user in a native prompt unless it is already inside
    * a folder Romper has been given.
@@ -392,6 +405,17 @@ export interface MoveSampleBetweenKitsParams {
 }
 
 // createRomperDb returns a DbResult extended with the created file path
+/** What removing a kit's missing samples did, or its undo (#822) */
+export interface RemoveMissingSamplesResult {
+  /** The rows removed, or for an undo the rows put back */
+  samples: number;
+  /**
+   * The voices the removal changed, as they were before it: what its undo
+   * puts back. Empty when nothing was removed, and for an undo.
+   */
+  voicesBefore: VoiceSnapshot[];
+}
+
 export interface RomperDbResult extends DbResult<void> {
   dbPath?: string;
 }

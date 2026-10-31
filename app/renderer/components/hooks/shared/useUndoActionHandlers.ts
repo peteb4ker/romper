@@ -5,10 +5,12 @@ import type {
   MoveSampleAction,
   MoveSampleBetweenKitsAction,
   ReindexSamplesAction,
+  RemoveMissingSamplesAction,
   VoiceSnapshot,
 } from "@romper/shared/undoTypes";
 
 import { createLogger } from "../../../utils/logger";
+import { requestKitRefresh } from "../kit-management/removeMissingSamples";
 import { writeSequenceSnapshot } from "./sequenceUndo";
 
 const log = createLogger("UNDO");
@@ -91,6 +93,20 @@ export function useUndoActionHandlers({
     return restoreVoices(action.data.voicesBefore);
   };
 
+  // Puts back what "Remove missing samples" took, through its own channel:
+  // the kit may be read-only (D5), and may not be the open one (#822)
+  const undoRemoveMissingSamples = async (
+    action: RemoveMissingSamplesAction,
+  ) => {
+    const { kitName: kit, voicesBefore } = action.data;
+    const result = await globalThis.electronAPI?.removeMissingSamples?.(
+      kit,
+      voicesBefore,
+    );
+    if (result?.success) requestKitRefresh(kit);
+    return result;
+  };
+
   // Main undo action executor
   const executeUndoAction = async (action: AnyUndoAction) => {
     switch (action.type) {
@@ -104,6 +120,8 @@ export function useUndoActionHandlers({
         return await undoMoveSampleBetweenKits(action);
       case "REINDEX_SAMPLES":
         return await undoReindexSamples(action);
+      case "REMOVE_MISSING_SAMPLES":
+        return await undoRemoveMissingSamples(action);
       case "SEQUENCE_EDIT":
         return await writeSequenceSnapshot(
           kitName,

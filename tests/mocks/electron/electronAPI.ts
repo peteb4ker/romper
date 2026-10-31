@@ -244,6 +244,10 @@ export const createElectronAPIMock = (
       sdCardPath: "/mock/sd/card",
       themeMode: "light",
     }),
+    removeMissingSamples: mockMethod("removeMissingSamples").mockResolvedValue({
+      data: { samples: 0, voicesBefore: [] },
+      success: true,
+    }),
     requestLocalStoreAccess: mockMethod(
       "requestLocalStoreAccess",
     ).mockResolvedValue({ granted: true }),

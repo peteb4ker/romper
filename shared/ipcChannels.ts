@@ -101,6 +101,7 @@ export interface IpcInvokeChannels {
     method: null;
     result: void;
   };
+  "remove-missing-samples": Call<"removeMissingSamples">;
   "request-local-store-access": Call<"requestLocalStoreAccess">;
   "rescan-kit": Call<"rescanKit">;
   "restore-kit-sequence": Call<"restoreKitSequence">;

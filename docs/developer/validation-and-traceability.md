@@ -193,7 +193,12 @@ guard (section 2).
     the repo. The harness points `ROMPER_SQUARP_ARCHIVE_URL` at it (a
     `file://` URL), so the wizard's download path still runs.
   - In CI the copy is an `actions/cache` entry keyed by the SHA-256, so
-    Squarp is hit once per archive version, not once per run.
+    Squarp is hit once per archive version, not once per run. Only
+    `factory-archive-cache.yml` saves it, from main (when the record changes,
+    and weekly so GitHub doesn't evict it unread); `validate-full.yml` and
+    the release only restore it, because a cache saved from a branch or tag
+    is invisible to every other ref. It is one cross-OS entry, restored into
+    `.factory-archive-cache` on all three platforms.
   - `--fresh` (and the workflow's `fresh` input) downloads from Squarp through
     the app, as a user would, then checks the checksum. A mismatch fails with
     "Squarp's archive changed" and the new checksum, so updating the record is

@@ -127,11 +127,17 @@ test.describe("[UC-05] [Q-01] The store check finds broken sample files without 
 
     const dialog = window.getByRole("dialog", { name: "Library check" });
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByTestId("library-check-kit-A0")).toContainText(
+    await expect(
+      dialog.getByRole("heading", { name: "Sample files not found" }),
+    ).toBeVisible();
+    await expect(dialog.getByTestId("library-check-missing-A0")).toContainText(
       "1 sample file not found",
     );
+    await expect(
+      dialog.getByRole("heading", { name: "Files not in the kit" }),
+    ).toHaveCount(0);
     // The kit that's only quarantined isn't a kit to look at here
-    await expect(dialog.getByTestId("library-check-kit-B1")).toHaveCount(0);
+    await expect(dialog.getByTestId("library-check-missing-B1")).toHaveCount(0);
 
     await window.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
@@ -191,6 +197,68 @@ test.describe("[UC-05] [Q-01] The store check is silent when the library matches
     ).toHaveCount(0);
     await expect(window.getByTestId("store-check-status")).toHaveCount(0);
     await expect(window.locator('[data-testid^="message-"]')).toHaveCount(0);
+  });
+});
+
+// #824: samples on a drive that isn't connected are the drive's problem, not
+// missing files: no badge, but the status bar item says so (approved on #824,
+// 2026-10-31)
+test.describe("[UC-05] [Q-06] A drive that isn't connected shows in the status bar and the Library check (#824)", () => {
+  let electronApp: ElectronApplication;
+  let window: Page;
+  let testEnv: E2ETestEnvironment;
+  const volume = "/Volumes/RomperDriveThatIsNotThere";
+
+  test.beforeEach(async () => {
+    testEnv = await extractE2EFixture();
+    // A0's samples are on a drive that isn't there. A0 is editable, as a kit
+    // is whose samples you added from elsewhere: its folder isn't listed, so
+    // the folder's own files aren't reported as not in the kit.
+    const db = new DatabaseSync(
+      path.join(testEnv.localStorePath, ".romperdb", "romper.sqlite"),
+    );
+    try {
+      db.prepare(
+        "UPDATE samples SET source_path = ? || '/' || filename WHERE kit_name = ?",
+      ).run(volume, "A0");
+      db.prepare("UPDATE kits SET editable = 1 WHERE name = ?").run("A0");
+    } finally {
+      db.close();
+    }
+    electronApp = await electron.launch({
+      args: ["dist/electron/main/index.js"],
+      env: appEnv(testEnv.environment),
+      timeout: 30000,
+    });
+    window = await electronApp.firstWindow();
+    await window.waitForSelector('[data-testid="kit-grid"]', {
+      timeout: 10000,
+    });
+  });
+
+  test.afterEach(async () => {
+    await electronApp?.close();
+    if (testEnv) await removeBrokenKitStore(testEnv);
+  });
+
+  test("the item reads Drive not connected, opens the dialog with the drive's line, and no kit is badged or announced", async () => {
+    test.setTimeout(60000);
+    const item = window.getByRole("button", { name: "Drive not connected" });
+    await expect(item).toBeVisible({ timeout: 40000 });
+    await expect(
+      window.locator('[data-testid="store-check-badge"]'),
+    ).toHaveCount(0);
+    await expect(window.locator('[data-testid^="message-"]')).toHaveCount(0);
+
+    await item.click();
+
+    const dialog = window.getByRole("dialog", { name: "Library check" });
+    await expect(
+      dialog.getByText(
+        /^The drive "RomperDriveThatIsNotThere" isn't connected, so \d+ samples? in 1 kit (wasn't|weren't) checked\.$/,
+      ),
+    ).toBeVisible();
+    await expect(dialog.getByRole("heading", { level: 3 })).toHaveCount(0);
   });
 });
 

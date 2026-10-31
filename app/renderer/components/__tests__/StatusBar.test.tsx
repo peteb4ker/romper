@@ -300,18 +300,71 @@ describe("[UC-05] [Q-06] StatusBar: the store check's notice (#824)", () => {
     ).toBeInTheDocument();
   });
 
-  it("doesn't count a kit that is only quarantined or has samples on a drive that isn't connected", () => {
+  it("shows nothing for a kit that is only quarantined", () => {
+    render(<StatusBar />);
+
+    find([{ kitName: "A0", quarantined: true, unreadable: 1 }]);
+
+    expect(screen.queryByTestId("store-check-status")).toBeNull();
+  });
+
+  it("says a drive isn't connected when that is all there is, and opens the same dialog", () => {
     render(<StatusBar />);
 
     find([
-      { kitName: "A0", quarantined: true, unreadable: 1 },
       {
         kitName: "B1",
         notConnected: [{ samples: 2, volume: "/Volumes/SSD" }],
       },
     ]);
 
-    expect(screen.queryByTestId("store-check-status")).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Drive not connected" }),
+    );
+    expect(storeCheckStore.getDialogOpen()).toBe(true);
+  });
+
+  it("says a drive didn't respond when none is disconnected", () => {
+    render(<StatusBar />);
+
+    find([{ kitName: "B1", notResponding: ["/Volumes/Slow"] }]);
+
+    expect(
+      screen.getByRole("button", { name: "Drive not responding" }),
+    ).toBeInTheDocument();
+  });
+
+  it("says a drive isn't connected before one didn't respond", () => {
+    render(<StatusBar />);
+
+    find([
+      {
+        kitName: "B1",
+        notConnected: [{ samples: 2, volume: "/Volumes/SSD" }],
+        notResponding: ["/Volumes/Slow"],
+      },
+    ]);
+
+    expect(
+      screen.getByRole("button", { name: "Drive not connected" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the kit count in place of the drive when kits need attention", () => {
+    render(<StatusBar />);
+
+    find([
+      { kitName: "A0", missing: 1 },
+      {
+        kitName: "B1",
+        notConnected: [{ samples: 2, volume: "/Volumes/SSD" }],
+      },
+    ]);
+
+    expect(
+      screen.getByRole("button", { name: "1 kit needs attention" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Drive not connected")).toBeNull();
   });
 
   it("goes when the problems are gone", () => {

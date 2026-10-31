@@ -549,20 +549,23 @@ Each stage is one PR. Stages 2 to 6 wait for the decisions named.
     `useKitDialogs` are gone; `validate-local-store` and
     `validateLocalStoreAgainstDb` stay until a PR that may change the IPC
     contract removes them.
-  - The strings are in `shared/storeCheckWording.ts`, as approved, plus
-    singular forms that agree with a count of one ("1 kit needs
-    attention").
+  - The strings are in `shared/storeCheckWording.ts`, as approved, with
+    the follow-ups approved on #824 on 2026-10-31 (singular forms, dialog
+    headings and empty line, the drive-only status bar item).
   - The badge shows for missing files, untracked files and a missing
     folder; an unreadable file keeps the quarantine icon only. "N kits need
-    attention" and the dialog's kit list count the kits with a badge. The
+    attention" counts the kits with a badge; the dialog groups them under
+    "Sample files not found" (a kit with a missing folder is there too) and
+    "Files not in the kit", a kit in both appearing under each. When no kit
+    needs attention but a drive wasn't connected or didn't respond, the
+    status bar item reads "Drive not connected" or "Drive not responding"
+    and opens the same dialog. The
     one-time message counts kits with more missing files than were known
     (it says "missing sample files", so untracked files and a missing
     folder alone don't bring it). A badge or the item goes at the next
     pass: nothing refreshes it when you fix a kit, until the fix stages.
   - Not built: the dialog's fix buttons (stages 4-6), a "Check again"
-    button (D10 allows it, but no channel starts a pass on demand),
-    group headings in the dialog (no approved wording), an empty-state
-    line.
+    button (D10 allows it, but no channel starts a pass on demand).
 
 ### Stage 4: rescan from the notice (after stage 3)
 
@@ -626,6 +629,14 @@ checks samples. Once stage 3 replaces `ValidationResultsDialog`,
 - Search: "Choose a folder to search for kick.wav"; results "Found kick.wav in Samples/Drums." / "Found 2 files named kick.wav. Choose one." / "No copy of kick.wav found in Samples."
 - Restore buttons: "Copy back" (store samples), "Use this file" (samples outside the store, if D2 says so)
 - Undo of a copy whose file changed: "kick.wav has changed since Romper copied it, so it wasn't removed."
+
+**Approved on #824 (2026-10-31):**
+
+- Singular forms: "1 sample file not found", "1 kit needs attention", "Romper found missing sample files in 1 kit.", "1 file in this kit's folder isn't in the kit. Scan the kit to add it.", "1 sample in 1 kit wasn't checked."
+- Details dialog headings: "Sample files not found", "Files not in the kit"
+- Details dialog with nothing to list: "No problems found."
+- Status bar item when the only problems are drives: "Drive not connected", or "Drive not responding" when no drive is disconnected and one didn't respond. When kits need attention, the kit count shows instead.
+- The one-time message is for missing sample files only; untracked files and missing folders show only by the badge and the status bar.
 
 ## Risks
 

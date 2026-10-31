@@ -110,14 +110,30 @@ jobs:
       # (anyone can open or close an issue); a release fails on them.
       - name: Set up Node.js
         if: startsWith(github.ref, 'refs/tags/')
+        id: node
         uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: "npm"
 
+      # The node-gyp headers, as in the build job below (#860)
+      - name: Restore the node-gyp headers
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/node-gyp
+          key: node-gyp-headers-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}
+
       - name: Install dependencies
         if: startsWith(github.ref, 'refs/tags/')
-        run: npm ci
+        shell: bash
+        env:
+          npm_config_devdir: ${{ runner.temp }}/node-gyp
+        run: |
+          npm ci || {
+            echo "::warning::npm ci failed; retrying once"
+            npm ci
+          }
 
       - name: Check the use cases against the open issues
         if: startsWith(github.ref, 'refs/tags/')
@@ -250,10 +266,23 @@ jobs:
           persist-credentials: false
 
       - name: Set up Node.js
+        id: node
         uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: "npm"
+
+      # npm ci runs node-gyp for better-sqlite3, which downloads the Node
+      # headers (and node.lib on Windows) from nodejs.org unless its devdir
+      # already has them; a cut-off download failed the job (#853, #860).
+      # Restore the headers main's CI saved (the shared install-dependencies
+      # action fills this cache). A release only reads it, never saves.
+      # node_modules is not restored: a release installs from scratch.
+      - name: Restore the node-gyp headers
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/node-gyp
+          key: node-gyp-headers-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}
 
       - name: Install system dependencies (Linux)
         if: matrix.os == 'ubuntu-latest'
@@ -271,8 +300,17 @@ jobs:
             libasound2-dev \
             libgtk-3-0
 
+      # On a headers cache miss (a Node version main hasn't cached yet)
+      # node-gyp still downloads them, so one retry covers a cut-off download
       - name: Install dependencies
-        run: npm ci
+        shell: bash
+        env:
+          npm_config_devdir: ${{ runner.temp }}/node-gyp
+        run: |
+          npm ci || {
+            echo "::warning::npm ci failed; retrying once"
+            npm ci
+          }
 
       - name: Build application
         run: npm run build
@@ -496,13 +534,28 @@ jobs:
           persist-credentials: false
 
       - name: Set up Node.js
+        id: node
         uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: "npm"
 
+      # The node-gyp headers, as in the build job (#860)
+      - name: Restore the node-gyp headers
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/node-gyp
+          key: node-gyp-headers-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}
+
       - name: Install dependencies
-        run: npm ci
+        shell: bash
+        env:
+          npm_config_devdir: ${{ runner.temp }}/node-gyp
+        run: |
+          npm ci || {
+            echo "::warning::npm ci failed; retrying once"
+            npm ci
+          }
 
       - name: Download all artifacts
         uses: actions/download-artifact@v8

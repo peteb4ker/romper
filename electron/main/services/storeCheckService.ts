@@ -477,7 +477,9 @@ export class StoreCheckService {
       rows.samples.map((row) => volumeOf(row.source_path)),
     );
     if (folderPath !== null) volumes.add(volumeOf(folderPath));
-    return [...volumes].filter((volume) => slowVolumes.has(volume)).sort();
+    return [...volumes]
+      .filter((volume) => slowVolumes.has(volume))
+      .sort((a, b) => a.localeCompare(b));
   }
 
   /**

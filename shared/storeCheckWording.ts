@@ -8,6 +8,7 @@
 import type { StoreCheckKitFinding } from "./electronApi.js";
 
 import { compareKitSlots } from "./kitUtilsShared.js";
+import { trimTrailing } from "./trimTrailing.js";
 
 /** One drive that isn't connected, with what wasn't checked on it */
 export interface DriveNotConnected {
@@ -32,7 +33,7 @@ export const LIBRARY_CHECK_TITLE = "Library check";
 
 /** The drive's name for people: "Samples SSD" for `/Volumes/Samples SSD` */
 export function describeDrive(volume: string): string {
-  const trimmed = volume.replace(/[\\/]+$/, "");
+  const trimmed = trimTrailing(volume, "\\/");
   const name = trimmed.split(/[\\/]/).at(-1);
   return name || volume;
 }
@@ -118,8 +119,9 @@ export function summarizeStoreCheck(
     }
     for (const volume of finding.notResponding) notResponding.add(volume);
   }
+  attention.sort((a, b) => compareKitSlots(a.kitName, b.kitName));
   return {
-    attention: attention.sort((a, b) => compareKitSlots(a.kitName, b.kitName)),
+    attention,
     notConnected: [...notConnected.values()].sort((a, b) =>
       a.volume.localeCompare(b.volume),
     ),

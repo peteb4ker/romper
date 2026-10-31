@@ -12,6 +12,14 @@ description: >-
 # installs, when it changes the lockfile) but never writes its own: caches a
 # PR saves are scoped to that PR, and every Dependabot PR would add a copy
 # per platform to a repo already at GitHub's 10 GB cache limit.
+#
+# The node-gyp headers are cached too (#853). npm ci runs node-gyp for
+# better-sqlite3 (its binding.gyp only skips the compile when a prebuild
+# exists, after node-gyp has downloaded the Node headers, and node.lib on
+# Windows, from nodejs.org). A download cut off there failed the job before
+# any test ran. With the headers in node-gyp's devdir, node-gyp finds them
+# and makes no request. The same applies to any other module whose install
+# script runs node-gyp.
 
 inputs:
   electron:
@@ -36,10 +44,51 @@ runs:
         path: node_modules
         key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
 
+    # Keyed on the exact Node version: the headers must match it. node-gyp
+    # reads the devdir from npm_config_devdir, and (without --target) only
+    # downloads headers its devdir lacks.
+    - name: Restore the node-gyp headers
+      id: headers
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ runner.temp }}/node-gyp
+        key: node-gyp-headers-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}
+
+    - name: Point node-gyp at the cached headers
+      shell: bash
+      env:
+        DEVDIR: ${{ runner.temp }}/node-gyp
+      run: echo "npm_config_devdir=$DEVDIR" >> "$GITHUB_ENV"
+
+    # A cache miss on the headers (a new Node version nobody has cached yet)
+    # still downloads them, so one retry covers a cut-off download.
     - name: Install dependencies
       if: steps.modules.outputs.cache-hit != 'true'
       shell: bash
-      run: npm ci --prefer-offline --no-audit
+      run: |
+        npm ci --prefer-offline --no-audit || {
+          echo "::warning::npm ci failed; retrying once"
+          npm ci --prefer-offline --no-audit
+        }
+
+    # main saves the headers even when node_modules came from its cache
+    # and npm ci didn't run, so the first push after a Node bump fills them.
+    # --ensure makes it a no-op when npm ci already fetched them.
+    - name: Fetch the node-gyp headers
+      id: fetch-headers
+      if: >-
+        steps.headers.outputs.cache-hit != 'true' &&
+        github.event_name == 'push' && github.ref == 'refs/heads/main'
+      continue-on-error: true
+      shell: bash
+      run: node node_modules/node-gyp/bin/node-gyp.js install --ensure
+
+    - name: Save the node-gyp headers
+      if: steps.fetch-headers.outcome == 'success'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ runner.temp }}/node-gyp
+        key: ${{ steps.headers.outputs.cache-primary-key }}
 
     # Saved straight after npm ci, before anything else touches node_modules
     # (the Electron binary below, the Linux e2e job's chrome-sandbox chown).

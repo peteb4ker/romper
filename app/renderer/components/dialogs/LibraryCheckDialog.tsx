@@ -15,13 +15,21 @@ import {
 } from "@romper/shared/storeCheckWording";
 import React, { useContext, useLayoutEffect, useRef, useState } from "react";
 
+import { removeMissingSamplesFromKit } from "../hooks/kit-management/removeMissingSamples";
 import {
   storeCheckStore,
   useLibraryCheckDialogOpen,
   useStoreCheckSummary,
 } from "../hooks/kit-management/storeCheckStore";
 import { MessageDisplayContext } from "../MessageDisplayContext";
+import RemoveMissingSamplesButton from "../RemoveMissingSamplesButton";
 import ModalDialog from "../shared/ModalDialog";
+
+/** The fix running now, and its kit: one at a time */
+interface RunningFix {
+  fix: "remove" | "scan";
+  kitName: string;
+}
 
 /**
  * The "Library check" dialog (#824, stage 3 of docs/developer/store-check.md):
@@ -33,15 +41,19 @@ import ModalDialog from "../shared/ModalDialog";
  *
  * Each kit has a "Scan kit" button (#821, stage 4): it rescans the kit, and
  * main checks the kit again once the scan is over, so the kit's entry, its
- * badge and the status bar count follow at once. The other fixes (remove,
- * find) come with later stages.
+ * badge and the status bar count follow at once. A kit with missing
+ * samples also has "Remove missing samples" (#822, stage 5): main checks
+ * the files again, removes the rows still missing (never one on a drive
+ * that isn't connected, D6), and checks the kit again. Undo (Edit > Undo)
+ * puts them back. Finding the files comes with stage 6.
  */
 const LibraryCheckDialog: React.FC = () => {
   const isOpen = useLibraryCheckDialogOpen();
   const { attention, notConnected, notResponding } = useStoreCheckSummary();
   const messages = useContext(MessageDisplayContext);
-  // The kit being scanned: one at a time
-  const [scanning, setScanning] = useState<null | string>(null);
+  // The fix running now: one at a time
+  const [running, setRunning] = useState<null | RunningFix>(null);
+  const scanning = running?.fix === "scan" ? running.kitName : null;
   const titleRef = useRef<HTMLHeadingElement>(null);
 
   // A scan that fixes a kit removes its entry, and the button that had
@@ -53,24 +65,33 @@ const LibraryCheckDialog: React.FC = () => {
     }
   });
 
-  const scanKit = async (kitName: string) => {
-    if (scanning !== null) return;
-    setScanning(kitName);
+  // Main's own words for why a fix failed, as the kit editor shows them
+  const runFix = async (fix: RunningFix, run: () => Promise<null | string>) => {
+    if (running !== null) return;
+    setRunning(fix);
     try {
-      const result = await globalThis.electronAPI?.rescanKit?.(kitName);
-      // Main's own words for why the scan failed, as the kit editor shows them
-      if (result && !result.success && result.error) {
-        messages?.showMessage(result.error, "error");
-      }
+      const error = await run();
+      if (error) messages?.showMessage(error, "error");
     } catch (error) {
       messages?.showMessage(
         error instanceof Error ? error.message : String(error),
         "error",
       );
     } finally {
-      setScanning(null);
+      setRunning(null);
     }
   };
+
+  const scanKit = (kitName: string) =>
+    runFix({ fix: "scan", kitName }, async () => {
+      const result = await globalThis.electronAPI?.rescanKit?.(kitName);
+      return result && !result.success ? (result.error ?? null) : null;
+    });
+
+  const removeMissing = (kitName: string) =>
+    runFix({ fix: "remove", kitName }, () =>
+      removeMissingSamplesFromKit(kitName),
+    );
 
   if (!isOpen) return null;
 
@@ -152,26 +173,41 @@ const LibraryCheckDialog: React.FC = () => {
                       ))}
                     </ul>
                   </div>
-                  <button
-                    aria-busy={scanning === finding.kitName}
-                    aria-disabled={scanning !== null}
-                    aria-label={describeScanKit(finding.kitName)}
-                    className={`shrink-0 px-2 py-1 text-xs bg-accent-primary text-text-inverse rounded font-semibold flex items-center transition duration-150 ${
-                      scanning === null
-                        ? "hover:bg-accent-primary/80"
-                        : "opacity-60 cursor-wait"
-                    }`}
-                    data-testid={`library-check-scan-${group.id}-${finding.kitName}`}
-                    onClick={() => void scanKit(finding.kitName)}
-                    type="button"
-                  >
-                    <ArrowsClockwiseIcon
-                      aria-hidden="true"
-                      className="inline-block mr-1"
-                      size={14}
-                    />
-                    {SCAN_KIT_LABEL}
-                  </button>
+                  <div className="flex shrink-0 items-start gap-2">
+                    <button
+                      aria-busy={scanning === finding.kitName}
+                      aria-disabled={running !== null}
+                      aria-label={describeScanKit(finding.kitName)}
+                      className={`shrink-0 px-2 py-1 text-xs bg-accent-primary text-text-inverse rounded font-semibold flex items-center transition duration-150 ${
+                        running === null
+                          ? "hover:bg-accent-primary/80"
+                          : "opacity-60 cursor-wait"
+                      }`}
+                      data-testid={`library-check-scan-${group.id}-${finding.kitName}`}
+                      onClick={() => void scanKit(finding.kitName)}
+                      type="button"
+                    >
+                      <ArrowsClockwiseIcon
+                        aria-hidden="true"
+                        className="inline-block mr-1"
+                        size={14}
+                      />
+                      {SCAN_KIT_LABEL}
+                    </button>
+                    {group.id === "missing" && finding.missing > 0 && (
+                      <RemoveMissingSamplesButton
+                        busy={
+                          running?.fix === "remove" &&
+                          running.kitName === finding.kitName
+                        }
+                        count={finding.missing}
+                        data-testid={`library-check-remove-${finding.kitName}`}
+                        disabled={running !== null}
+                        kitName={finding.kitName}
+                        onRemove={() => void removeMissing(finding.kitName)}
+                      />
+                    )}
+                  </div>
                 </div>
               </li>
             ))}

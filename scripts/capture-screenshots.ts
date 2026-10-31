@@ -791,6 +791,33 @@ const SCREENSHOT_TARGETS = [
     selector: '[data-testid="library-check-dialog"]',
     store: "library-check",
   },
+  {
+    description:
+      "The Library check asking before it removes a kit's missing samples (#822)",
+    name: "manual-library-check-remove",
+    navigate: async (window) => {
+      await waitForStoreCheck(window, MISSING_FILE_KIT);
+      await dismissMessages(window);
+      // The dialog's own target may have left it open
+      const dialog = window.locator('[data-testid="library-check-dialog"]');
+      if (!(await dialog.isVisible())) {
+        await window.locator('[data-testid="store-check-status"]').click();
+        await dialog.waitFor();
+      }
+      await window
+        .locator(`[data-testid="library-check-remove-${MISSING_FILE_KIT}"]`)
+        .click();
+      await window
+        .locator(
+          `[data-testid="library-check-remove-${MISSING_FILE_KIT}-confirm"]`,
+        )
+        .waitFor();
+      await window.waitForTimeout(300);
+    },
+    output: "manual/library-check-remove.png",
+    selector: '[data-testid="library-check-dialog"]',
+    store: "library-check",
+  },
 
   // -- Slicer (#723): one-time capture from --slicer-sample (tests/utils/slicer-store.ts) --
   {

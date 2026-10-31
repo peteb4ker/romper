@@ -1,6 +1,7 @@
 // Global keyboard shortcuts hook
 // Handles app-wide keyboard shortcuts like Cmd+Z (undo) and Cmd+Shift+Z (redo)
 
+import { carriesItsKit } from "@romper/shared/undoTypes";
 import { useCallback, useEffect } from "react";
 
 import { isModalDialogOpen } from "../../../utils/modalDialog";
@@ -82,12 +83,18 @@ export function useGlobalKeyboardShortcuts({
   // Undoes or redoes the next action if the current kit allows it, for
   // the keyboard and the Edit menu alike. Sample edits undo only in edit
   // mode; sequencer edits always do, since the sequencer works on
-  // read-only kits too (main refuses sample edits on them, #572). Returns false when there's no kit or the kit doesn't allow it.
+  // read-only kits too (main refuses sample edits on them, #572).
+  // "Remove missing samples" names its own kit and is allowed on a
+  // read-only kit (D5), so it undoes with any kit open, or none (#822).
+  // Returns false when there's no kit or the kit doesn't allow it.
   const applyUndoRedo = useCallback(
     (isRedo: boolean): boolean => {
-      if (!currentKitName) return false;
       const next = isRedo ? undoRedo.nextRedo : undoRedo.nextUndo;
-      if (!isEditMode && next?.type !== "SEQUENCE_EDIT") return false;
+      const ownKit = carriesItsKit(next);
+      if (!currentKitName && !ownKit) return false;
+      if (!isEditMode && next?.type !== "SEQUENCE_EDIT" && !ownKit) {
+        return false;
+      }
 
       if (isRedo) {
         if (undoRedo.canRedo && !undoRedo.isRedoing) void undoRedo.redo();

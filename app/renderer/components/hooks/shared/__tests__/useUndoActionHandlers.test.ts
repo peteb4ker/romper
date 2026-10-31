@@ -5,6 +5,7 @@ import type {
   MoveSampleAction,
   MoveSampleBetweenKitsAction,
   ReindexSamplesAction,
+  RemoveMissingSamplesAction,
   VoiceSnapshot,
 } from "@romper/shared/undoTypes";
 
@@ -315,6 +316,69 @@ describe("useUndoActionHandlers", () => {
           [voiceOne],
         );
         expect(window.electronAPI?.addSampleToSlot).not.toHaveBeenCalled();
+      });
+    });
+
+    describe("[UC-05] REMOVE_MISSING_SAMPLES undo (#822)", () => {
+      const action: RemoveMissingSamplesAction = {
+        data: { kitName: "B0", samples: 1, voicesBefore: [voiceOne] },
+        description: "Remove 1 missing sample from B0",
+        id: "test-id",
+        timestamp: new Date(),
+        type: "REMOVE_MISSING_SAMPLES",
+      };
+
+      it("puts the action's own kit back through its channel, not the open kit's restore, and reloads that kit", async () => {
+        vi.mocked(window.electronAPI.removeMissingSamples).mockResolvedValue({
+          data: { samples: 1, voicesBefore: [] },
+          success: true,
+        });
+        const refreshed = vi.fn();
+        const onRefresh = (e: Event) => refreshed((e as CustomEvent).detail);
+        document.addEventListener("romper:refresh-samples", onRefresh);
+        try {
+          // Another kit is open (or none): the action names its own
+          const { result } = renderHook(() =>
+            useUndoActionHandlers(mockOptions),
+          );
+
+          const undone = await result.current.executeUndoAction(action);
+
+          expect(undone).toMatchObject({ success: true });
+          expect(window.electronAPI.removeMissingSamples).toHaveBeenCalledWith(
+            "B0",
+            [voiceOne],
+          );
+          expect(window.electronAPI.restoreKitVoices).not.toHaveBeenCalled();
+          expect(refreshed).toHaveBeenCalledWith({
+            kitName: "B0",
+            refreshAll: true,
+          });
+        } finally {
+          document.removeEventListener("romper:refresh-samples", onRefresh);
+        }
+      });
+
+      it("passes a refusal back and reloads nothing", async () => {
+        vi.mocked(window.electronAPI.removeMissingSamples).mockResolvedValue({
+          error:
+            "Voice 1 of kit B0 changed since its missing samples were removed",
+          success: false,
+        });
+        const refreshed = vi.fn();
+        document.addEventListener("romper:refresh-samples", refreshed);
+        try {
+          const { result } = renderHook(() =>
+            useUndoActionHandlers(mockOptions),
+          );
+
+          const undone = await result.current.executeUndoAction(action);
+
+          expect(undone).toMatchObject({ success: false });
+          expect(refreshed).not.toHaveBeenCalled();
+        } finally {
+          document.removeEventListener("romper:refresh-samples", refreshed);
+        }
       });
     });
 

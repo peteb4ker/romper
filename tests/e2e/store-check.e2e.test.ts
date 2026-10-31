@@ -405,3 +405,138 @@ test.describe("[UC-05] [Q-01] The store check lists WAVs in a read-only kit's fo
     await expect(window.locator('[data-testid^="message-"]')).toHaveCount(0);
   });
 });
+
+// #822, stage 5: "Remove missing samples" takes a kit's missing samples out
+// in one step, from the Library check or the kit editor's notice, on a
+// read-only kit too (D5), and one undo puts them back
+test.describe("[UC-05] Remove missing samples (#822)", () => {
+  let electronApp: ElectronApplication;
+  let window: Page;
+  let testEnv: E2ETestEnvironment;
+  const snare = "2_snare.wav";
+
+  const snareRows = () => {
+    const db = new DatabaseSync(
+      path.join(testEnv.localStorePath, ".romperdb", "romper.sqlite"),
+      { readOnly: true },
+    );
+    try {
+      return db
+        .prepare(
+          "SELECT voice_number, slot_number, source_status FROM samples WHERE kit_name = 'A0' AND filename = ?",
+        )
+        .all(snare);
+    } finally {
+      db.close();
+    }
+  };
+
+  async function clickEditMenu(id: "redo" | "undo") {
+    await electronApp.evaluate(({ BrowserWindow, Menu }, itemId) => {
+      const target = BrowserWindow.getAllWindows()[0];
+      const item = Menu.getApplicationMenu()?.getMenuItemById(itemId);
+      if (!item) throw new Error(`no Edit menu item "${itemId}"`);
+      item.click(undefined, target, target.webContents);
+    }, id);
+  }
+
+  test.beforeEach(async () => {
+    // A0's snare is gone; A0 is read-only, as an imported kit is
+    testEnv = await createBrokenKitStore();
+    const db = new DatabaseSync(
+      path.join(testEnv.localStorePath, ".romperdb", "romper.sqlite"),
+    );
+    try {
+      db.prepare("UPDATE kits SET editable = 0 WHERE name = 'A0'").run();
+    } finally {
+      db.close();
+    }
+    electronApp = await electron.launch({
+      args: ["dist/electron/main/index.js"],
+      env: appEnv(testEnv.environment),
+      timeout: 30000,
+    });
+    window = await electronApp.firstWindow();
+    await window.waitForSelector('[data-testid="kit-grid"]', {
+      timeout: 10000,
+    });
+  });
+
+  test.afterEach(async () => {
+    await electronApp?.close();
+    if (testEnv) await removeBrokenKitStore(testEnv);
+  });
+
+  test("from the Library check: asks first, removes the read-only kit's missing sample, clears its badge at once, and Edit > Undo on the kit grid puts it back", async () => {
+    test.setTimeout(60000);
+    const badge = window.locator(
+      '[data-testid="kit-item-A0"] [data-testid="store-check-badge"]',
+    );
+    const item = window.getByTestId("store-check-status");
+    await expect(item).toBeVisible({ timeout: 40000 });
+    const before = snareRows();
+    expect(before).toEqual([
+      expect.objectContaining({ source_status: "missing" }),
+    ]);
+    await item.click();
+    const dialog = window.getByRole("dialog", { name: "Library check" });
+    const entry = dialog.getByTestId("library-check-missing-A0");
+
+    await entry
+      .getByRole("button", { name: "Remove missing samples A0" })
+      .click();
+    const popover = dialog.getByRole("dialog", {
+      name: "Remove 1 missing sample from A0? You can undo this.",
+    });
+    await expect(popover.getByRole("button", { name: "Cancel" })).toBeFocused();
+    await popover
+      .getByRole("button", { name: "Remove missing samples" })
+      .click();
+
+    // Main checks the kit again: the entry, the item and the badge go
+    await expect(entry).toHaveCount(0);
+    await expect(dialog.getByText("No problems found.")).toBeVisible();
+    await expect(item).toHaveCount(0);
+    expect(snareRows()).toEqual([]);
+    await window.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(badge).toHaveCount(0);
+
+    await clickEditMenu("undo");
+
+    // The row is back where it was, and so is the badge
+    await expect.poll(() => snareRows()).toEqual(before);
+    await expect(badge).toBeVisible();
+    await expect(
+      window.getByRole("button", { name: "1 kit needs attention" }),
+    ).toBeVisible();
+  });
+
+  test("from the kit editor's notice: removes it, and Edit > Undo in the read-only kit puts it back", async () => {
+    test.setTimeout(60000);
+    await window.locator('[data-testid="kit-item-A0"]').click();
+    await window.waitForSelector('[data-testid="kit-editor"]');
+    const notice = window.getByTestId("kit-missing-files-notice");
+    await expect(notice).toBeVisible({ timeout: 20000 });
+
+    await notice
+      .getByRole("button", { name: "Remove missing samples A0" })
+      .click();
+    await notice
+      .getByRole("dialog", {
+        name: "Remove 1 missing sample from A0? You can undo this.",
+      })
+      .getByRole("button", { name: "Remove missing samples" })
+      .click();
+
+    await expect(notice).toHaveCount(0);
+    expect(snareRows()).toEqual([]);
+
+    await clickEditMenu("undo");
+
+    await expect(notice).toBeVisible();
+    await expect(
+      window.locator('[data-testid="sample-file-label-2-0"]'),
+    ).toHaveText("File not found");
+  });
+});

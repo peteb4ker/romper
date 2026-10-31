@@ -31,8 +31,11 @@ export {
   mergeKitScan,
   mergeKitScanTx,
   planKitScanMerge,
+  putBackMissingSamplesTx,
   readKitRowsToCheck,
   readKitScanInputs,
+  readMissingSamplesTx,
+  removeMissingSamplesTx,
   requireEditableKitTx,
   restoreVoicesTx,
   toggleKitFavorite,
@@ -48,7 +51,10 @@ export {
   updateVoiceVolume,
 } from "./operations/crudOperations.js";
 
-export type { KitRowsToCheck } from "./operations/crudOperations.js";
+export type {
+  ConfirmedMissingSample,
+  KitRowsToCheck,
+} from "./operations/crudOperations.js";
 export {
   moveSampleBetweenKitsTx,
   moveSampleTx,

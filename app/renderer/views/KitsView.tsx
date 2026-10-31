@@ -1,4 +1,5 @@
 import type { KitEdit, KitWithRelations } from "@romper/shared/db/schema";
+import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 
@@ -6,6 +7,7 @@ import CriticalErrorDialog from "../components/dialogs/CriticalErrorDialog";
 import InvalidLocalStoreDialog from "../components/dialogs/InvalidLocalStoreDialog";
 import { EnvironmentBanner } from "../components/EnvironmentBanner";
 import { ErrorBoundary } from "../components/ErrorBoundary";
+import { ADD_UNDO_ACTION_EVENT } from "../components/hooks/kit-management/removeMissingSamples";
 import { useHmrSelectedKit } from "../components/hooks/kit-management/useHmrSelectedKit";
 import { useKitDataManager } from "../components/hooks/kit-management/useKitDataManager";
 import { useKitFilters } from "../components/hooks/kit-management/useKitFilters";
@@ -198,6 +200,18 @@ const KitsView: React.FC = () => {
       void loadKitSamplesOnOpen(navigation.selectedKit);
     }
   }, [navigation.selectedKit, loadKitSamplesOnOpen]);
+
+  // "Remove missing samples" from the Library check, which is mounted
+  // beside this view, puts its undo entry on this view's stack (#822)
+  const { addUndoAction } = keyboardShortcuts;
+  useEffect(() => {
+    const onAddUndoAction = (event: Event) => {
+      addUndoAction((event as CustomEvent<AnyUndoAction>).detail);
+    };
+    document.addEventListener(ADD_UNDO_ACTION_EVENT, onAddUndoAction);
+    return () =>
+      document.removeEventListener(ADD_UNDO_ACTION_EVENT, onAddUndoAction);
+  }, [addUndoAction]);
 
   // Lets the sequencer's Undo button undo its own edits
   const { nextUndo, undo } = keyboardShortcuts;

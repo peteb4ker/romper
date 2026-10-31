@@ -36,6 +36,32 @@ describe("useRedoActionHandlers", () => {
   });
 
   describe("executeRedoAction", () => {
+    it("[UC-05] redoes REMOVE_MISSING_SAMPLES by removing the action's kit's missing samples again, keeping what this removal returned for the next undo (#822)", async () => {
+      const voicesBefore = [{ samples: [], voice: 2 }];
+      vi.mocked(globalThis.electronAPI.removeMissingSamples).mockResolvedValue({
+        data: { samples: 3, voicesBefore },
+        success: true,
+      });
+      const { result } = renderHook(() =>
+        useRedoActionHandlers({ kitName: testKitName }),
+      );
+      const action: AnyUndoAction = {
+        data: { kitName: "B0", samples: 1, voicesBefore: [] },
+        description: "Remove 1 missing sample from B0",
+        id: "remove-id",
+        timestamp: new Date(),
+        type: "REMOVE_MISSING_SAMPLES",
+      };
+
+      const redone = await result.current.executeRedoAction(action);
+
+      expect(redone).toMatchObject({ success: true });
+      expect(globalThis.electronAPI.removeMissingSamples).toHaveBeenCalledWith(
+        "B0",
+      );
+      expect(action.data).toEqual({ kitName: "B0", samples: 3, voicesBefore });
+    });
+
     it("should handle ADD_SAMPLE redo action", async () => {
       const { result } = renderHook(() =>
         useRedoActionHandlers({ kitName: testKitName }),

@@ -142,19 +142,23 @@ When there's nothing to report, Romper says nothing. When there is:
 
 - **A message** -- When a check finds missing sample files it hadn't found before, one message says so: "Romper found missing sample files in 3 kits. Open the list from the status bar." Problems you already know about don't bring it back.
 
-Click the status bar item (or focus it and press `Enter`) to open the **Library check**. It lists the kits under **Sample files not found** and **Files not in the kit**, with what's wrong with each, and a line for each drive that wasn't connected or didn't respond. A kit with both problems is under both headings. If the list empties while the dialog is open, it says "No problems found." Each kit has a **Scan kit** button (named for the kit, such as "Scan kit A3" to a screen reader). It rescans that kit, as the Kit Editor's **Scan Kit** button does, and Romper checks the kit again straight away, so its entry, its icon and the status bar item update as soon as the scan ends. A kit stays on the list if the scan didn't fix it, for example because a file is still missing. While one scan runs the other buttons wait. Press `Escape` or **Close** to close it; focus goes back to the status bar item.
+Click the status bar item (or focus it and press `Enter`) to open the **Library check**. It lists the kits under **Sample files not found** and **Files not in the kit**, with what's wrong with each, and a line for each drive that wasn't connected or didn't respond. A kit with both problems is under both headings. If the list empties while the dialog is open, it says "No problems found." Each kit has a **Scan kit** button (named for the kit, such as "Scan kit A3" to a screen reader). It rescans that kit, as the Kit Editor's **Scan Kit** button does, and Romper checks the kit again straight away, so its entry, its icon and the status bar item update as soon as the scan ends. A kit stays on the list if the scan didn't fix it, for example because a file is still missing. While one scan or removal runs the other buttons wait. Press `Escape` or **Close** to close it; focus goes back to the status bar item.
 
 ![The Library check, listing a kit with a missing sample file and a kit with a file in its folder that the kit doesn't hold]({{ site.baseurl }}/images/manual/library-check-dialog.png)
+
+A kit under **Sample files not found** also has a **Remove missing samples** button. It asks first, for example "Remove 2 missing samples from A3? You can undo this." (unless you turned off **Confirm destructive actions** in Preferences). Romper then checks each file again and removes only the samples whose files are still gone, closes the gaps they leave in their voices, and marks the kit modified. It never deletes a file, and it never removes a sample whose file is on a drive that isn't connected. It works on read-only kits too. The kit's entry, its icon and the status bar item update at once. To put the samples back, use **Edit > Undo** (`Cmd+Z` / `Ctrl+Z`) after closing the Library check, before you open another kit.
+
+![The Library check asking before it removes a kit's missing sample]({{ site.baseurl }}/images/manual/library-check-remove.png)
 
 ![The yellow file icon on a read-only kit with a file in its folder that the kit doesn't hold]({{ site.baseurl }}/images/manual/kit-card-store-check-folder.png)
 
 ### What to do about it
 
-- **A file is missing:** put it back where it was, then click **Scan kit** in the Library check, or open the kit and replace or remove the sample (the Kit Editor labels it **File not found**). Until then it's skipped when you write to the SD card.
+- **A file is missing:** put it back where it was, then click **Scan kit** in the Library check, or open the kit and replace or remove the sample (the Kit Editor labels it **File not found**). If the file is gone for good, click **Remove missing samples** to remove all of the kit's missing samples at once. Until then a missing sample is skipped when you write to the SD card.
 - **A file isn't in the kit:** click **Scan kit** next to the kit in the Library check (or open the kit and click **Scan Kit**, or use **File > Scan All**) to add it. See [Scanning Your Library](#scanning-your-library).
 - **A drive isn't connected:** connect it.
 
-After a scan from the Library check or the Kit Editor, the kit's icon and the status bar item update at once. If you fix a problem another way, they go the next time Romper checks.
+After a scan or a removal from the Library check or the Kit Editor, the kit's icon and the status bar item update at once. If you fix a problem another way, they go the next time Romper checks.
 
 ## Scanning Your Library
 

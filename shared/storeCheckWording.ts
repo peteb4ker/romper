@@ -33,7 +33,7 @@ export const LIBRARY_CHECK_TITLE = "Library check";
 
 /** The drive's name for people: "Samples SSD" for `/Volumes/Samples SSD` */
 export function describeDrive(volume: string): string {
-  const trimmed = trimTrailing(volume, "\\/");
+  const trimmed = trimTrailing(volume, String.raw`\/`);
   const name = trimmed.split(/[\\/]/).at(-1);
   return name || volume;
 }

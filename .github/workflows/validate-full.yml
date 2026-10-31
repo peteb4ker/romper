@@ -42,14 +42,14 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
-          cache: "npm"
-
+      # Node, node_modules and the Electron binary, with the node-gyp
+      # headers from main's cache so npm ci makes no request to nodejs.org
+      # (#860). This workflow never runs on a push to main, so it only reads
+      # those caches.
       - name: Install dependencies
-        run: npm ci
+        uses: ./.github/actions/install-dependencies
+        with:
+          electron: "true"
 
       # Our copy of Squarp's archive, keyed by its recorded SHA-256, so each
       # archive version is downloaded from Squarp once, not once per run. The
@@ -68,8 +68,7 @@ jobs:
           sudo apt-get install -y libnss3-dev libatk-bridge2.0-dev libxkbcommon0 \
             libxcomposite1 libxdamage1 libxrandr2 libgbm1 libxss1 libasound2-dev \
             libgtk-3-0 x11-utils xvfb
-          # Electron 42+ downloads its binary on first use, not at install
-          node node_modules/electron/install.js
+          # The binary came with Install dependencies (electron: "true")
           sudo chown root node_modules/electron/dist/chrome-sandbox
           sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
           Xvfb :99 -screen 0 1280x800x24 > /dev/null 2>&1 &

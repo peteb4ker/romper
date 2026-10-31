@@ -264,15 +264,17 @@ describe("[UC-11] Edits the next write puts on the card mark a kit modified (#56
     expect(modified("A0")).toBe(false);
   });
 
-  it("a scan that adds samples does; one that adds none doesn't", () => {
+  it("a scan that adds samples does; one that adds none doesn't", async () => {
     // A scan adds a folder's files only to a kit that isn't editable
     expect(updateKit(dbDir, "A1", { editable: false }).success).toBe(true);
     wavFile(path.join(localStorePath, "A1", "1 kick.wav"));
-    expect(scanService.rescanKit(settings, "A1").data?.addedSamples).toBe(1);
+    expect(
+      (await scanService.rescanKit(settings, "A1")).data?.addedSamples,
+    ).toBe(1);
     expect(modified("A1")).toBe(true);
 
     markKitsAsSynced(dbDir, ["A1"]);
-    expect(scanService.rescanKit(settings, "A1").success).toBe(true);
+    expect((await scanService.rescanKit(settings, "A1")).success).toBe(true);
     expect(modified("A1")).toBe(false);
   });
 

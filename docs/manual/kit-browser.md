@@ -117,7 +117,7 @@ Click the **Modified** toggle to show only kits the next write will change on yo
 
 ## Validating Your Store
 
-Romper checks that your library's files and its database still agree, on its own. There is nothing to run. It reads each sample's file and, for kits imported during setup (the read-only ones), the kit's folder, and it only reports: it never changes a kit or a file.
+Romper checks that your library's files and its database still agree, on its own. There is nothing to run. It reads each sample's file and, for kits imported during setup (the read-only ones), the kit's folder, and the check itself only reports: it never changes a kit or a file. Fixing a problem is up to you, from the [Library check](#where-it-shows) or the Kit Editor.
 
 A few seconds after your kits load, Romper starts checking in the background, one kit at a time. It steps aside whenever you do something, so you won't notice it, and it waits while a write to the SD card runs. It starts again if you switch to another local store, and when you come back to Romper after a while away, such as after working in Finder or Explorer. The kit you have open in the Kit Editor is checked when it opens (see [Missing and Unreadable Files]({{ site.baseurl }}/manual/kit-editor#missing-and-unreadable-files)).
 
@@ -142,7 +142,7 @@ When there's nothing to report, Romper says nothing. When there is:
 
 - **A message** -- When a check finds missing sample files it hadn't found before, one message says so: "Romper found missing sample files in 3 kits. Open the list from the status bar." Problems you already know about don't bring it back.
 
-Click the status bar item (or focus it and press `Enter`) to open the **Library check**. It lists the kits under **Sample files not found** and **Files not in the kit**, with what's wrong with each, and a line for each drive that wasn't connected or didn't respond. A kit with both problems is under both headings. If the list empties while the dialog is open, it says "No problems found." Press `Escape` or **Close** to close it; focus goes back to the status bar item.
+Click the status bar item (or focus it and press `Enter`) to open the **Library check**. It lists the kits under **Sample files not found** and **Files not in the kit**, with what's wrong with each, and a line for each drive that wasn't connected or didn't respond. A kit with both problems is under both headings. If the list empties while the dialog is open, it says "No problems found." Each kit has a **Scan kit** button (named for the kit, such as "Scan kit A3" to a screen reader). It rescans that kit, as the Kit Editor's **Scan Kit** button does, and Romper checks the kit again straight away, so its entry, its icon and the status bar item update as soon as the scan ends. A kit stays on the list if the scan didn't fix it, for example because a file is still missing. While one scan runs the other buttons wait. Press `Escape` or **Close** to close it; focus goes back to the status bar item.
 
 ![The Library check, listing a kit with a missing sample file and a kit with a file in its folder that the kit doesn't hold]({{ site.baseurl }}/images/manual/library-check-dialog.png)
 
@@ -150,11 +150,11 @@ Click the status bar item (or focus it and press `Enter`) to open the **Library 
 
 ### What to do about it
 
-- **A file is missing:** put it back where it was, or open the kit and replace or remove the sample (the Kit Editor labels it **File not found**). Until then it's skipped when you write to the SD card.
-- **A file isn't in the kit:** open the kit and click **Scan Kit** (or use **File > Scan All**) to add it. See [Scanning Your Library](#scanning-your-library).
+- **A file is missing:** put it back where it was, then click **Scan kit** in the Library check, or open the kit and replace or remove the sample (the Kit Editor labels it **File not found**). Until then it's skipped when you write to the SD card.
+- **A file isn't in the kit:** click **Scan kit** next to the kit in the Library check (or open the kit and click **Scan Kit**, or use **File > Scan All**) to add it. See [Scanning Your Library](#scanning-your-library).
 - **A drive isn't connected:** connect it.
 
-The icon and the status bar item go the next time Romper checks, once what they point at is fixed.
+After a scan from the Library check or the Kit Editor, the kit's icon and the status bar item update at once. If you fix a problem another way, they go the next time Romper checks.
 
 ## Scanning Your Library
 

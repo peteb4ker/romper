@@ -1,23 +1,26 @@
 import type { StoreCheckKitFinding } from "@romper/shared/electronApi";
 
-import { FileXIcon, XIcon } from "@phosphor-icons/react";
+import { ArrowsClockwiseIcon, FileXIcon, XIcon } from "@phosphor-icons/react";
 import {
   describeDriveNotConnected,
   describeDriveNotResponding,
   describeFolderMissing,
   describeMissingFiles,
+  describeScanKit,
   describeUntrackedFiles,
   LIBRARY_CHECK_EMPTY,
   LIBRARY_CHECK_HEADINGS,
   LIBRARY_CHECK_TITLE,
+  SCAN_KIT_LABEL,
 } from "@romper/shared/storeCheckWording";
-import React from "react";
+import React, { useContext, useLayoutEffect, useRef, useState } from "react";
 
 import {
   storeCheckStore,
   useLibraryCheckDialogOpen,
   useStoreCheckSummary,
 } from "../hooks/kit-management/storeCheckStore";
+import { MessageDisplayContext } from "../MessageDisplayContext";
 import ModalDialog from "../shared/ModalDialog";
 
 /**
@@ -28,12 +31,47 @@ import ModalDialog from "../shared/ModalDialog";
  * the check as it stands, so a kit drops off the list when its problem is
  * gone. It replaces the dialog that ran the whole-store validator.
  *
- * It only shows problems; the fixes (scan, remove, find) come with later
- * stages.
+ * Each kit has a "Scan kit" button (#821, stage 4): it rescans the kit, and
+ * main checks the kit again once the scan is over, so the kit's entry, its
+ * badge and the status bar count follow at once. The other fixes (remove,
+ * find) come with later stages.
  */
 const LibraryCheckDialog: React.FC = () => {
   const isOpen = useLibraryCheckDialogOpen();
   const { attention, notConnected, notResponding } = useStoreCheckSummary();
+  const messages = useContext(MessageDisplayContext);
+  // The kit being scanned: one at a time
+  const [scanning, setScanning] = useState<null | string>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  // A scan that fixes a kit removes its entry, and the button that had
+  // focus with it: focus goes to the dialog's title, not to the page behind
+  useLayoutEffect(() => {
+    const title = titleRef.current;
+    if (title && document.activeElement === document.body) {
+      title.focus({ preventScroll: true });
+    }
+  });
+
+  const scanKit = async (kitName: string) => {
+    if (scanning !== null) return;
+    setScanning(kitName);
+    try {
+      const result = await globalThis.electronAPI?.rescanKit?.(kitName);
+      // Main's own words for why the scan failed, as the kit editor shows them
+      if (result && !result.success && result.error) {
+        messages?.showMessage(result.error, "error");
+      }
+    } catch (error) {
+      messages?.showMessage(
+        error instanceof Error ? error.message : String(error),
+        "error",
+      );
+    } finally {
+      setScanning(null);
+    }
+  };
+
   if (!isOpen) return null;
 
   const groups = [
@@ -66,8 +104,10 @@ const LibraryCheckDialog: React.FC = () => {
     >
       <div className="flex justify-between items-center mb-4">
         <h2
-          className="text-xl font-bold flex items-center gap-2"
+          className="text-xl font-bold flex items-center gap-2 focus:outline-none"
           id="library-check-title"
+          ref={titleRef}
+          tabIndex={-1}
         >
           <FileXIcon
             aria-hidden="true"
@@ -103,12 +143,36 @@ const LibraryCheckDialog: React.FC = () => {
                 data-testid={`library-check-${group.id}-${finding.kitName}`}
                 key={finding.kitName}
               >
-                <div className="font-mono font-bold">{finding.kitName}</div>
-                <ul className="text-sm text-accent-warning">
-                  {group.lines(finding).map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
-                </ul>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-mono font-bold">{finding.kitName}</div>
+                    <ul className="text-sm text-accent-warning">
+                      {group.lines(finding).map((line) => (
+                        <li key={line}>{line}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <button
+                    aria-busy={scanning === finding.kitName}
+                    aria-disabled={scanning !== null}
+                    aria-label={describeScanKit(finding.kitName)}
+                    className={`shrink-0 px-2 py-1 text-xs bg-accent-primary text-text-inverse rounded font-semibold flex items-center transition duration-150 ${
+                      scanning === null
+                        ? "hover:bg-accent-primary/80"
+                        : "opacity-60 cursor-wait"
+                    }`}
+                    data-testid={`library-check-scan-${group.id}-${finding.kitName}`}
+                    onClick={() => void scanKit(finding.kitName)}
+                    type="button"
+                  >
+                    <ArrowsClockwiseIcon
+                      aria-hidden="true"
+                      className="inline-block mr-1"
+                      size={14}
+                    />
+                    {SCAN_KIT_LABEL}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

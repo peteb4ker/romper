@@ -755,6 +755,161 @@ describe("[UC-05] [Q-01] StoreCheckService schedules the background check (#812)
     expect(db.updates.map((update) => update.id)).toEqual([2]);
   });
 
+  describe("[UC-05] checking a kit again after a rescan (#821, stage 4)", () => {
+    /** The pass is over, and A1 had a missing file */
+    async function passEnded() {
+      filesFind({ "/lib/A1/1.wav": "missing" });
+      service.start("/lib");
+      await run(1000);
+      expect(service.getStatus().kits.map((kit) => kit.kitName)).toEqual([
+        "A1",
+      ]);
+      pushed.length = 0;
+      scan.check.mockClear();
+    }
+
+    it("checks the kit at once, without waiting for a quiet moment, and pushes it clean when its file is back", async () => {
+      await passEnded();
+      filesFind();
+
+      service.recheckKit("A1");
+      await run(1);
+
+      expect(checkedFiles()).toEqual(["/lib/A1/1.wav"]);
+      expect(pushed).toEqual([
+        { kits: [{ ...CLEAN, kitName: "A1" }], state: "idle" },
+      ]);
+      expect(service.getStatus().kits).toEqual([]);
+    });
+
+    it("checks the kit open in the editor, which the pass leaves out", async () => {
+      await passEnded();
+      service.noteKitOpened("A1");
+
+      service.recheckKit("A1");
+      await run(1);
+
+      expect(checkedFiles()).toEqual(["/lib/A1/1.wav"]);
+    });
+
+    it("does nothing before the pass for the store has started, and after a cancel", async () => {
+      service.recheckKit("A1");
+      await run(1000);
+      expect(scan.check).not.toHaveBeenCalled();
+
+      await passEnded();
+      service.cancel();
+      service.recheckKit("A1");
+      await run(1000);
+      expect(scan.check).not.toHaveBeenCalled();
+    });
+
+    it("waits while a write, setup or rescan is in flight, then checks", async () => {
+      await passEnded();
+      filesFind();
+      let finish!: () => void;
+      const rescan = activity.track(
+        "rescan-kit",
+        () =>
+          new Promise<void>((resolve) => {
+            finish = resolve;
+          }),
+      );
+
+      service.recheckKit("A1");
+      await run(5000);
+      expect(scan.check).not.toHaveBeenCalled();
+
+      finish();
+      await rescan;
+      await run(100);
+      expect(checkedFiles()).toEqual(["/lib/A1/1.wav"]);
+    });
+
+    it("looks again if a rescan began while it checked, and records nothing from the first look", async () => {
+      await passEnded();
+      let rescan: Promise<void> | undefined;
+      let finish!: () => void;
+      scan.check.mockImplementation((row: Sample) => {
+        if (!rescan) {
+          rescan = activity.track(
+            "rescan-kit",
+            () =>
+              new Promise<void>((resolve) => {
+                finish = resolve;
+              }),
+          );
+          return Promise.resolve({
+            fields: { source_status: "missing" },
+            sample: row,
+          });
+        }
+        return Promise.resolve({
+          fields: { source_status: "readable" },
+          sample: row,
+        });
+      });
+
+      service.recheckKit("A1");
+      await run(1000);
+      expect(scan.check).toHaveBeenCalledTimes(1);
+
+      finish();
+      await rescan;
+      await run(100);
+      expect(scan.check).toHaveBeenCalledTimes(2);
+      expect(service.getStatus().kits).toEqual([]);
+    });
+
+    it("checks a kit once for the rescans that ask while it waits", async () => {
+      await passEnded();
+      filesFind();
+      let finish!: () => void;
+      const rescan = activity.track(
+        "rescan-kit",
+        () =>
+          new Promise<void>((resolve) => {
+            finish = resolve;
+          }),
+      );
+
+      service.recheckKit("A1");
+      service.recheckKit("A1");
+      service.recheckKit("A1");
+      finish();
+      await rescan;
+      await run(1000);
+
+      expect(scan.check).toHaveBeenCalledTimes(1);
+    });
+
+    it("sees the folder again too: a read-only kit's untracked file that a rescan added is gone", async () => {
+      files.stat.mockResolvedValue({});
+      db.rows.get("A1")!.editable = false;
+      let folder = ["1.wav", "2 dropped.wav"];
+      files.readdir.mockImplementation(() => Promise.resolve(folder));
+      service.start("/lib");
+      await run(1000);
+      expect(service.getStatus().kits).toEqual([
+        { ...CLEAN, kitName: "A1", untracked: ["2 dropped.wav"] },
+      ]);
+      pushed.length = 0;
+
+      // The scan made the file a row of the kit
+      db.rows
+        .get("A1")!
+        .samples.push(sample(12, "/lib/A1/2 dropped.wav", "readable"));
+      folder = ["1.wav", "2 dropped.wav"];
+      service.recheckKit("A1");
+      await run(1);
+
+      expect(pushed).toEqual([
+        { kits: [{ ...CLEAN, kitName: "A1" }], state: "idle" },
+      ]);
+      expect(service.getStatus().kits).toEqual([]);
+    });
+  });
+
   describe("[UC-05] kit folders (#820, stage 2)", () => {
     const enoent = () =>
       Object.assign(new Error("no such file"), { code: "ENOENT" });

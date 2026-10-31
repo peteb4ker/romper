@@ -118,7 +118,7 @@ When you write to the card:
 
 Romper checks a kit's sample files when you open it, so problems show before you write to the card. It reads the files it hasn't read yet, and the ones it last found missing or unreadable, so a file you've put back or replaced is seen too.
 
-- **File not found** -- The sample's file has been moved or deleted. The slot is labelled **File not found**, and a notice above the voices says which file and how to fix it, for example "kick.wav on voice 1 wasn't found: it was moved or deleted. Put it back, or replace or remove the sample. Until then it's skipped when you write to the card." A missing file doesn't quarantine the kit: the rest of the kit is written, and the write summary lists the skipped sample.
+- **File not found** -- The sample's file has been moved or deleted. The slot is labelled **File not found**, and a notice above the voices says which file and how to fix it, for example "kick.wav on voice 1 wasn't found: it was moved or deleted. Put it back, or replace or remove the sample. Until then it's skipped when you write to the card." A missing file doesn't quarantine the kit: the rest of the kit is written, and the write summary lists the skipped sample. The notice has a **Scan kit** button: after you put a file back, it checks the kit again, so the label and the notice go, and so does the kit's yellow icon in the Kit Browser. In an editable kit it only checks the files and names voices; it never adds the files in the kit's folder.
 
   ![A missing file: the notice above the voices, and File not found under the sample]({{ site.baseurl }}/images/manual/missing-file.png)
 

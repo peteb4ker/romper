@@ -2,9 +2,9 @@
 title: Store check - Specification
 priority: medium
 status: specification
-updated: 2026-10-26
+updated: 2026-10-31
 context_size: medium
-implementation_status: stages 1 (#812, PR #828), 2 (#820) and 3 (#824) built; stages 4-6 (#821-#823) not built
+implementation_status: stages 1 (#812, PR #828), 2 (#820), 3 (#824) and 4 (#821) built; stages 5-6 (#822, #823) not built
 -->
 
 # Store check: keeping the library's files and database in agreement
@@ -301,13 +301,12 @@ does nothing to a sample whose state changed since the pass.
 
 - Calls `rescan-kit`, unchanged: adds untracked files to a read-only kit,
   fills empty metadata, reports missing files. It never deletes a row.
-- Offered for read-only kits with untracked files. For an editable kit,
-  Scan only names voices, so it isn't offered there.
+- Offered for every kit the Library check lists and in the editor's
+  missing-files notice (see "As built (#821)" for editable kits).
 - Safety: as today (one transaction, a locked kit untouched).
-- Q-01: `rescanKit` is synchronous on main (`readdirSync`, `statSync`,
-  header reads). One kit at a time is acceptable as a user action, but
-  stage 4 moves its file reads to `fs.promises` before the notice can
-  offer it on many kits at once.
+- Q-01: `rescanKit` used to be synchronous on main (`readdirSync`,
+  `statSync`, header reads); stage 4 moved its file reads to
+  `fs.promises` before the notice could offer it on many kits at once.
 
 ### Remove the missing samples
 
@@ -563,8 +562,9 @@ Each stage is one PR. Stages 2 to 6 wait for the decisions named.
     one-time message counts kits with more missing files than were known
     (it says "missing sample files", so untracked files and a missing
     folder alone don't bring it). A badge or the item goes at the next
-    pass: nothing refreshes it when you fix a kit, until the fix stages.
-  - Not built: the dialog's fix buttons (stages 4-6), a "Check again"
+    pass: nothing refreshes it when you fix a kit, except a rescan (stage 4).
+  - Not built: the dialog's fix buttons (stage 4 added Scan kit; stages
+    5-6 remain), a "Check again"
     button (D10 allows it, but no channel starts a pass on demand).
 
 ### Stage 4: rescan from the notice (after stage 3)
@@ -573,6 +573,48 @@ Each stage is one PR. Stages 2 to 6 wait for the decisions named.
   file reads move to `fs.promises`.
 - **Acceptance:** rescan from the dialog clears the untracked finding;
   `rescan-kit` makes no sync fs call.
+
+- **As built (#821):**
+  - `rescanKit` is `async`. It lists the folder with `fs.promises.readdir`
+    and makes no sync fs call. The merge itself stays synchronous (it runs
+    inside one database transaction), so `mergeKitScanReadingAsync`
+    (`kitScanReads.ts`) reads what the merge will ask for first: it plans
+    the merge with a recording `io`, reads each file asked about (a stat,
+    then a header where `planKitScanMerge` would read one) one at a time
+    with `fs.promises`, and plans again until nothing new is asked, then
+    runs the transaction on those answers. If the kit's rows changed in
+    between and the merge asks for a file it wasn't given, it rolls back
+    and tries again, up to three times. The rows are read twice (the
+    budget "rescan a kit" in `tests/perf/budgets.ts`). Setup's
+    `importSetupKit` still uses the sync `readWavMetadata` and
+    `statFileSync`: it isn't `rescan-kit`.
+  - The re-check is in main, not a new channel: the `rescan-kit` handler
+    calls `StoreCheckService.recheckKit(kitName)` after a scan that
+    succeeded. It waits for the rescan's own call to end (a rescan counts as
+    exclusive, so the check would otherwise drop its findings), then checks
+    the kit the way a pass does (files and, for a read-only kit, its folder)
+    and pushes it if its finding changed, so the badge, the status bar count
+    and the dialog entry update at once. It doesn't wait for a quiet moment,
+    checks the kit open in the editor too, asks again if a write, setup or
+    rescan begins meanwhile, and does nothing before the store's pass has
+    started. It runs for every rescan, so Scan All and the editor's Scan Kit
+    clear badges too.
+  - The "Library check" dialog has a "Scan kit" button (approved wording) on
+    each kit's entry, named "Scan kit A3" to a screen reader. One scan runs
+    at a time: while it does, the buttons are `aria-disabled` (still
+    focusable), the pressed one is `aria-busy`, and the cursor reads busy.
+    A failed scan shows main's own error text through the message system.
+    When the scanned kit's entry goes, focus moves to the dialog's title.
+  - The editor's missing-files notice has the same button, which calls the
+    editor's `handleScanKit` (a rescan) for read-only and editable kits
+    alike, with the editor's own "Rescanning..." line and result. Its
+    header's Scan Kit button still only names voices in an editable kit.
+    Editable kits are offered it in both places, unlike the spec's
+    original note: `rescan-kit` on an editable kit refreshes its rows'
+    statuses and names voices, and never adds folder files, which is what a
+    put-back file needs.
+  - No new string: the label is "Scan kit", the busy state has no text, and
+    a failure shows main's error as the editor already does.
 
 ### Stage 5: remove missing samples
 

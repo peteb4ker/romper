@@ -40,6 +40,9 @@ export const LIBRARY_CHECK_HEADINGS = {
 /** What the dialog says when nothing is left to list (approved 2026-10-31) */
 export const LIBRARY_CHECK_EMPTY = "No problems found.";
 
+/** The fix button that rescans a kit (approved on #824, 2026-10-30) */
+export const SCAN_KIT_LABEL = "Scan kit";
+
 /** The drive's name for people: "Samples SSD" for `/Volumes/Samples SSD` */
 export function describeDrive(volume: string): string {
   const trimmed = trimTrailing(volume, String.raw`\/`);
@@ -96,6 +99,14 @@ export function describeMissingFiles(count: number): string {
 /** The message shown once when a pass finds missing files it hadn't */
 export function describeNewMissingFiles(kits: number): string {
   return `Romper found missing sample files in ${kits} ${kits === 1 ? "kit" : "kits"}. Open the list from the status bar.`;
+}
+
+/**
+ * The scan button's accessible name: its label with the kit, so each
+ * button in a list says which kit it scans (Q-06). The label stays in it.
+ */
+export function describeScanKit(kitName: string): string {
+  return `${SCAN_KIT_LABEL} ${kitName}`;
 }
 
 /**

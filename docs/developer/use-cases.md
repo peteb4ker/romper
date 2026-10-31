@@ -369,14 +369,19 @@ quarantined kits (#537). See
 **Concepts:** [Scan and setup import](domain-model.md#scan-and-setup-import), [Bank](domain-model.md#bank), [Stereo](domain-model.md#stereo).
 
 - **Renderer:** `app/renderer/components/KitHeader.tsx` and `app/renderer/components/hooks/kit-management/useKitEditorKeyboardNav.ts` →
-  `app/renderer/components/hooks/kit-management/useKitScanning.ts` (`handleScanKit`);
+  `app/renderer/components/hooks/kit-management/useKitScanning.ts` (`handleScanKit`),
+  also from the "Scan kit" button of the missing-files notice
+  (`KitVoicePanels.tsx`) and of each kit in `LibraryCheckDialog.tsx` (#821);
   `app/renderer/components/hooks/kit-management/useKitViewMenuHandlers.ts` (`menu-scan-all-kits`) →
   `app/renderer/views/KitsView.tsx` (every kit in the store) →
   `app/renderer/components/hooks/kit-management/useKitScan.ts` (`scanAllKits`).
 - **IPC:** `rescan-kit`; push `menu-scan-all-kits`.
-- **Main:** `electron/main/services/scanService.ts` (`rescanKit`);
+- **Main:** `electron/main/services/scanService.ts` (`rescanKit`, which
+  reads its files with `fs.promises` through
+  `electron/main/services/kitScanReads.ts`, #821);
   `electron/main/db/operations/kitScanOperations.ts` (`mergeKitScan`,
-  `planKitScanMerge`).
+  `planKitScanMerge`); `electron/main/services/storeCheckService.ts`
+  (`recheckKit`, after a scan).
 
 ## Kit lifecycle
 

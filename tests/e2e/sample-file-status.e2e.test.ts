@@ -95,6 +95,24 @@ test.describe("[UC-13] [Q-04] Missing and unreadable sample files (#537)", () =>
     ).toHaveCount(0);
   });
 
+  test("[UC-05] Scan kit in the missing-files notice finds the file once it's put back (#821)", async () => {
+    await open("A0");
+    const notice = window.locator('[data-testid="kit-missing-files-notice"]');
+    await expect(notice).toBeVisible();
+
+    // The file is put back where it was, and the notice rescans the kit
+    await fs.copy(
+      path.join(testEnv.localStorePath, "A0", "1_kick.wav"),
+      path.join(testEnv.localStorePath, "A0", "2_snare.wav"),
+    );
+    await notice.getByRole("button", { name: "Scan kit A0" }).click();
+
+    await expect(notice).toHaveCount(0);
+    await expect(
+      window.locator('[data-testid="sample-file-label-2-0"]'),
+    ).toHaveCount(0);
+  });
+
   test("an unreadable file quarantines the kit in the editor and the kit browser", async () => {
     await open("B1");
 

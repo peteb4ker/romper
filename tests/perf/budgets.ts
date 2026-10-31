@@ -253,6 +253,18 @@ export const BUDGETS = {
       syncFsCalls: { max: 0 },
     },
     /**
+     * #821: Scan Kit on a read-only kit whose folder holds a new file and
+     * whose rows were never checked, so every file is stat-ed and read.
+     * Its file reads are asynchronous like the rest of the store check, so
+     * the kit's rows are read twice: to know which files to read, and again
+     * in the merge's transaction.
+     */
+    "rescan a kit": {
+      connections: NO_NEW_CONNECTION,
+      statements: { max: 16 },
+      syncFsCalls: { max: 0 },
+    },
+    /**
      * The generated store's six kits, each as above, and the kit list.
      * #820: two of the kits are read-only, so two folder listings (one
      * async `readdir` each); editable kits' folders and folders no kit

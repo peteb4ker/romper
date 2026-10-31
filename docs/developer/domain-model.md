@@ -696,7 +696,8 @@ voice and slot):
 - **Canonical owner:** the database. Scan merges into it; it never
   rebuilds.
 - **Writers:**
-  - kit scan: `rescan-kit` → `scanService.rescanKit` → `mergeKitScan`
+  - kit scan: `rescan-kit` → `scanService.rescanKit` → `mergeKitScanReadingAsync`
+    (reads the files with `fs.promises`) → `mergeKitScan`
     (`planKitScanMerge`, one transaction): existing rows keep slot, voice,
     gain and source; missing files are reported; new files are added to
     read-only kits only, in the lowest free slot, up to 12; empty `wav_*`

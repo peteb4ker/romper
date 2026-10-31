@@ -1,8 +1,8 @@
 import type { NewKit, NewSample } from "@romper/shared/db/schema.js";
 
-import * as fs from "node:fs";
+import fs from "node:fs";
 import * as path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { InMemorySettings } from "../../types/settings.js";
 
@@ -95,21 +95,24 @@ describe("ScanService Integration Tests", () => {
   });
 
   describe("[UC-13] rescanKit", () => {
-    it("should return error when localStorePath is not configured", () => {
-      const result = scanService.rescanKit({}, "A1");
+    it("should return error when localStorePath is not configured", async () => {
+      const result = await scanService.rescanKit({}, "A1");
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("No local store path configured");
     });
 
-    it("should return error when kit directory does not exist", () => {
-      const result = scanService.rescanKit(mockInMemorySettings, "NONEXISTENT");
+    it("should return error when kit directory does not exist", async () => {
+      const result = await scanService.rescanKit(
+        mockInMemorySettings,
+        "NONEXISTENT",
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Kit directory not found");
     });
 
-    it("should scan an empty kit directory and find no samples", () => {
+    it("should scan an empty kit directory and find no samples", async () => {
       // Create kit in database
       const kitRecord: NewKit = {
         alias: "Empty Kit",
@@ -126,14 +129,14 @@ describe("ScanService Integration Tests", () => {
       const kitDir = path.join(TEST_DB_DIR, "A1");
       fs.mkdirSync(kitDir, { recursive: true });
 
-      const result = scanService.rescanKit(mockInMemorySettings, "A1");
+      const result = await scanService.rescanKit(mockInMemorySettings, "A1");
 
       expect(result.success).toBe(true);
       expect(result.data).toBeTruthy();
       expect(result.data!.scannedSamples).toBe(0);
     });
 
-    it("should scan a kit directory with WAV files grouped by voice", () => {
+    it("should scan a kit directory with WAV files grouped by voice", async () => {
       // Create kit in database
       const kitRecord: NewKit = {
         alias: "Full Kit",
@@ -155,7 +158,7 @@ describe("ScanService Integration Tests", () => {
       createTestWavFile(path.join(kitDir, "2-snare.wav"));
       createTestWavFile(path.join(kitDir, "3-hat.wav"));
 
-      const result = scanService.rescanKit(mockInMemorySettings, "A1");
+      const result = await scanService.rescanKit(mockInMemorySettings, "A1");
 
       expect(result.success).toBe(true);
       expect(result.data).toBeTruthy();
@@ -167,7 +170,7 @@ describe("ScanService Integration Tests", () => {
       expect(samplesResult.data).toHaveLength(4);
     });
 
-    it("keeps existing samples and their user data, adding only new files (RE-04)", () => {
+    it("keeps existing samples and their user data, adding only new files (RE-04)", async () => {
       addKit(TEST_DB_PATH, {
         alias: "Factory Kit",
         bank_letter: "A",
@@ -205,7 +208,7 @@ describe("ScanService Integration Tests", () => {
       ];
       userSamples.forEach((sample) => addSample(TEST_DB_PATH, sample));
 
-      const result = scanService.rescanKit(mockInMemorySettings, "A1");
+      const result = await scanService.rescanKit(mockInMemorySettings, "A1");
 
       expect(result.success).toBe(true);
       expect(result.data).toMatchObject({
@@ -240,7 +243,7 @@ describe("ScanService Integration Tests", () => {
       });
     });
 
-    it("scanning twice changes nothing the second time", () => {
+    it("scanning twice changes nothing the second time", async () => {
       addKit(TEST_DB_PATH, {
         bank_letter: "A",
         editable: false,
@@ -250,15 +253,15 @@ describe("ScanService Integration Tests", () => {
       createTestWavFile(path.join(kitDir, "1-kick.wav"));
       createTestWavFile(path.join(kitDir, "2-snare.wav"));
 
-      scanService.rescanKit(mockInMemorySettings, "A1");
+      await scanService.rescanKit(mockInMemorySettings, "A1");
       const before = getKitSamples(TEST_DB_PATH, "A1").data;
-      const second = scanService.rescanKit(mockInMemorySettings, "A1");
+      const second = await scanService.rescanKit(mockInMemorySettings, "A1");
 
       expect(second.data?.addedSamples).toBe(0);
       expect(getKitSamples(TEST_DB_PATH, "A1").data).toEqual(before);
     });
 
-    it("should ignore non-WAV files in the kit directory", () => {
+    it("should ignore non-WAV files in the kit directory", async () => {
       const kitRecord: NewKit = {
         alias: "Mixed Files Kit",
         bank_letter: "A",
@@ -279,13 +282,13 @@ describe("ScanService Integration Tests", () => {
       fs.writeFileSync(path.join(kitDir, "cover.png"), "image data");
       fs.writeFileSync(path.join(kitDir, "1-kick.mp3"), "mp3 data");
 
-      const result = scanService.rescanKit(mockInMemorySettings, "A1");
+      const result = await scanService.rescanKit(mockInMemorySettings, "A1");
 
       expect(result.success).toBe(true);
       expect(result.data!.scannedSamples).toBe(1);
     });
 
-    it("should preserve samples when kit directory is missing (no destructive delete)", () => {
+    it("should preserve samples when kit directory is missing (no destructive delete)", async () => {
       const kitRecord: NewKit = {
         alias: "Protected Kit",
         bank_letter: "A",
@@ -307,7 +310,7 @@ describe("ScanService Integration Tests", () => {
       addSample(TEST_DB_PATH, sample);
 
       // Do NOT create kit directory - it should fail gracefully
-      const result = scanService.rescanKit(mockInMemorySettings, "A1");
+      const result = await scanService.rescanKit(mockInMemorySettings, "A1");
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Kit directory not found");
@@ -318,7 +321,7 @@ describe("ScanService Integration Tests", () => {
       expect(samplesResult.data).toHaveLength(1);
     });
 
-    it("should handle case-insensitive WAV extension", () => {
+    it("should handle case-insensitive WAV extension", async () => {
       const kitRecord: NewKit = {
         alias: "Case Test Kit",
         bank_letter: "A",
@@ -336,7 +339,7 @@ describe("ScanService Integration Tests", () => {
       createTestWavFile(path.join(kitDir, "1-kick.WAV"));
       createTestWavFile(path.join(kitDir, "2-snare.Wav"));
 
-      const result = scanService.rescanKit(mockInMemorySettings, "A1");
+      const result = await scanService.rescanKit(mockInMemorySettings, "A1");
 
       expect(result.success).toBe(true);
       expect(result.data!.scannedSamples).toBe(2);
@@ -346,7 +349,7 @@ describe("ScanService Integration Tests", () => {
   // [Q-03] rescanKitsWithMissingMetadata is gone; rescanKit still backfills
   // WAV metadata for rows saved before the columns existed.
   describe("[Q-03] rescanKit metadata backfill", () => {
-    it("fills in missing WAV metadata without replacing the row", () => {
+    it("fills in missing WAV metadata without replacing the row", async () => {
       addKit(TEST_DB_PATH, {
         alias: "Kit Missing Metadata",
         bank_letter: "A",
@@ -369,7 +372,7 @@ describe("ScanService Integration Tests", () => {
       const [before] = getKitSamples(TEST_DB_PATH, "A2").data!;
       expect(before.wav_sample_rate).toBeNull();
 
-      const result = scanService.rescanKit(mockInMemorySettings, "A2");
+      const result = await scanService.rescanKit(mockInMemorySettings, "A2");
 
       expect(result.success).toBe(true);
       expect(result.data).toMatchObject({
@@ -383,6 +386,148 @@ describe("ScanService Integration Tests", () => {
         id: before.id,
         wav_sample_rate: 44100,
       });
+    });
+  });
+
+  describe("[Q-01] rescanKit's file reads are asynchronous (#821)", () => {
+    /** A read-only kit A1 with one tracked file (kick) and a folder to scan */
+    function readOnlyKit() {
+      addKit(TEST_DB_PATH, {
+        alias: null,
+        bank_letter: "A",
+        editable: false,
+        locked: false,
+        modified_since_sync: false,
+        name: "A1",
+        step_pattern: null,
+      });
+      const kitDir = path.join(TEST_DB_DIR, "A1");
+      const kick = path.join(kitDir, "1-kick.wav");
+      createTestWavFile(kick);
+      addSample(TEST_DB_PATH, {
+        filename: "1-kick.wav",
+        kit_name: "A1",
+        slot_number: 0,
+        source_path: kick,
+        voice_number: 1,
+      });
+      return { kick, kitDir };
+    }
+
+    it("makes no sync fs call while it reads the folder and the files", async () => {
+      const { kitDir } = readOnlyKit();
+      createTestWavFile(path.join(kitDir, "2-snare.wav"));
+      const calls: string[] = [];
+      const names = [
+        "existsSync",
+        "lstatSync",
+        "openSync",
+        "readdirSync",
+        "readFileSync",
+        "readSync",
+        "realpathSync",
+        "statSync",
+      ] as const;
+      const originals = names.map((name) => [name, fs[name]] as const);
+      for (const [name, original] of originals) {
+        (fs as unknown as Record<string, unknown>)[name] = (
+          ...args: unknown[]
+        ) => {
+          calls.push(name);
+          return (original as (...a: unknown[]) => unknown)(...args);
+        };
+      }
+      let result;
+      try {
+        result = await scanService.rescanKit(mockInMemorySettings, "A1");
+      } finally {
+        for (const [name, original] of originals) {
+          (fs as unknown as Record<string, unknown>)[name] = original;
+        }
+      }
+
+      expect(result.success).toBe(true);
+      expect(result.data).toMatchObject({ addedSamples: 1 });
+      expect(calls).toEqual([]);
+    });
+
+    it("reads only the headers the merge needs: a known-readable, unchanged file is only stat-ed", async () => {
+      const { kick } = readOnlyKit();
+      // The first scan reads the kick's header and records its size and time
+      await scanService.rescanKit(mockInMemorySettings, "A1");
+      const opened: string[] = [];
+      const realOpen = fs.promises.open.bind(fs.promises);
+      const spy = vi.spyOn(fs.promises, "open").mockImplementation(((
+        p: string,
+        ...rest: unknown[]
+      ) => {
+        opened.push(p);
+        return realOpen(p, ...(rest as []));
+      }) as typeof fs.promises.open);
+      try {
+        const again = await scanService.rescanKit(mockInMemorySettings, "A1");
+        expect(again.success).toBe(true);
+        expect(opened).toEqual([]);
+
+        // Changed on disk: read again
+        createTestWavFile(kick, { channels: 2 });
+        fs.utimesSync(kick, new Date(), new Date(Date.now() + 5000));
+        await scanService.rescanKit(mockInMemorySettings, "A1");
+        expect(opened).toEqual([kick]);
+      } finally {
+        spy.mockRestore();
+      }
+      expect(getKitSamples(TEST_DB_PATH, "A1").data![0].wav_channels).toBe(2);
+    });
+
+    it("tries the merge again when the kit's rows change while its files are read", async () => {
+      const { kitDir } = readOnlyKit();
+      createTestWavFile(path.join(kitDir, "1-added.wav"));
+      // A sample lands between the scan reading the rows and the transaction
+      let landed = false;
+      const realStat = fs.promises.stat.bind(fs.promises);
+      const spy = vi.spyOn(fs.promises, "stat").mockImplementation(((
+        p: string,
+        ...rest: unknown[]
+      ) => {
+        if (!landed) {
+          landed = true;
+          createTestWavFile(path.join(kitDir, "3-landed.wav"));
+          addSample(TEST_DB_PATH, {
+            filename: "3-landed.wav",
+            kit_name: "A1",
+            slot_number: 0,
+            source_path: path.join(kitDir, "3-landed.wav"),
+            voice_number: 3,
+          });
+        }
+        return realStat(p, ...(rest as []));
+      }) as typeof fs.promises.stat);
+      let result;
+      try {
+        result = await scanService.rescanKit(mockInMemorySettings, "A1");
+      } finally {
+        spy.mockRestore();
+      }
+
+      expect(result.success).toBe(true);
+      const rows = getKitSamples(TEST_DB_PATH, "A1").data!;
+      expect(rows.map((r) => r.filename).sort()).toEqual([
+        "1-added.wav",
+        "1-kick.wav",
+        "3-landed.wav",
+      ]);
+      // The row that landed was read too, not left unchecked
+      expect(rows.every((r) => r.source_status === "readable")).toBe(true);
+    });
+
+    it("reports a kit that isn't in the database", async () => {
+      fs.mkdirSync(path.join(TEST_DB_DIR, "A9"));
+
+      const result = await scanService.rescanKit(mockInMemorySettings, "A9");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Kit not found in database: A9");
     });
   });
 });

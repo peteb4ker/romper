@@ -4,7 +4,7 @@ import type {
   Sample,
 } from "@romper/shared/db/schema";
 
-import { LinkIcon } from "@phosphor-icons/react";
+import { ArrowsClockwiseIcon, LinkIcon } from "@phosphor-icons/react";
 import {
   checkStereoLink,
   describeMissingSampleFile,
@@ -21,6 +21,10 @@ import {
   stereoSampleOf,
   type StereoSampleState,
 } from "@romper/shared/stereoLinkRules";
+import {
+  describeScanKit,
+  SCAN_KIT_LABEL,
+} from "@romper/shared/storeCheckWording";
 import React, { useId, useState } from "react";
 
 import type { SlotPlaybackStore } from "./hooks/kit-management/slotPlaybackStore";
@@ -66,6 +70,11 @@ interface KitVoicePanelsProps {
   onKitUpdated?: (edited?: KitEdit) => Promise<void>;
   onMessage?: (text: string, type?: string, duration?: number) => void; // Refused links and drops (RE-40)
   onPlay: (voice: number, slot: number) => void; // Used by useKitVoicePanels hook
+  /**
+   * Rescans the kit: the missing-files notice offers it (#821), so a file
+   * put back is found. Leave it out for no button.
+   */
+  onRescanKit?: () => void;
   // New props for drag-and-drop sample management (Task 5.2.2 & 5.2.3)
   onSampleAdd?: (
     voice: number,
@@ -89,6 +98,8 @@ interface KitVoicePanelsProps {
     playing: boolean,
   ) => void; // Used by useKitVoicePanels hook
   samples: VoiceSamples; // Used by useKitVoicePanels hook
+  /** Whether a rescan of the kit is running: the button waits for it */
+  scanning?: boolean;
   selectedSampleIdx: number; // Used by useKitVoicePanels hook
   selectedVoice: number; // Used by useKitVoicePanels hook
 
@@ -705,16 +716,42 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
           data-testid="kit-missing-files-notice"
           role="status"
         >
-          <ul className="list-disc pl-5 space-y-0.5">
-            {missingFiles.map((file) => (
-              <li key={`${file.voice_number}-${file.slot_number}`}>
-                {describeMissingSampleFile(
-                  file.filename,
-                  file.voice_number ?? 1,
-                )}
-              </li>
-            ))}
-          </ul>
+          <div className="flex items-start justify-between gap-3">
+            <ul className="list-disc pl-5 space-y-0.5">
+              {missingFiles.map((file) => (
+                <li key={`${file.voice_number}-${file.slot_number}`}>
+                  {describeMissingSampleFile(
+                    file.filename,
+                    file.voice_number ?? 1,
+                  )}
+                </li>
+              ))}
+            </ul>
+            {props.onRescanKit && (
+              <button
+                aria-busy={props.scanning === true}
+                aria-disabled={props.scanning === true}
+                aria-label={describeScanKit(hookProps.kitName)}
+                className={`shrink-0 px-2 py-1 text-xs bg-accent-primary text-text-inverse rounded font-semibold flex items-center transition duration-150 ${
+                  props.scanning
+                    ? "opacity-60 cursor-wait"
+                    : "hover:bg-accent-primary/80"
+                }`}
+                data-testid="kit-missing-files-scan"
+                onClick={() => {
+                  if (!props.scanning) props.onRescanKit?.();
+                }}
+                type="button"
+              >
+                <ArrowsClockwiseIcon
+                  aria-hidden="true"
+                  className="inline-block mr-1"
+                  size={14}
+                />
+                {SCAN_KIT_LABEL}
+              </button>
+            )}
+          </div>
         </div>
       )}
       <div className="flex w-full relative" data-testid="voice-panels-row">

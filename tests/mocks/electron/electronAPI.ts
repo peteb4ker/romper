@@ -333,11 +333,6 @@ export const createElectronAPIMock = (
     updateVoiceVolume: mockMethod("updateVoiceVolume").mockResolvedValue({
       success: true,
     }),
-    validateLocalStore: mockMethod("validateLocalStore").mockResolvedValue({
-      errors: [],
-      errorSummary: undefined,
-      isValid: true,
-    }),
     validateLocalStoreBasic: mockMethod(
       "validateLocalStoreBasic",
     ).mockResolvedValue({ isValid: true }),

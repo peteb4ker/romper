@@ -70,13 +70,12 @@ Confirmed by reading `main` at `ce90f1ba`:
   missing files. It fails with "Kit directory not found" when the folder
   is gone. It reads the folder with `readdirSync` and each header with
   `statSync` and a synchronous read, on the main thread.
-- **The old whole-store validator.** `validateLocalStoreAgainstDb`
-  (`electron/main/localStoreValidator.ts`), behind `validate-local-store`:
+- **The old whole-store validator (removed, #862).**
+  `validateLocalStoreAgainstDb`, behind `validate-local-store`, did
   `existsSync` per sample and `readdirSync` per kit folder, synchronously,
-  on the main thread, for every kit. Its result type is
-  `KitValidationError` (missing and extra files per kit).
-  `ValidationResultsDialog` and `useValidationResults` display it, but
-  nothing opens the dialog (#758 kept them for this work).
+  on the main thread, for every kit. `ValidationResultsDialog` and
+  `useValidationResults` displayed it. Stage 3 removed the dialog and
+  hook; #862 removed the channel and the validator.
 - **Store and database checks.** `validateLocalStoreAndDb` (folder, `.romperdb`,
   schema) and, while running, `checkOpenDatabaseFiles`
   (`electron/main/db/utils/dbUtilities.ts`, #773 for #535): one async
@@ -545,9 +544,9 @@ Each stage is one PR. Stages 2 to 6 wait for the decisions named.
     a changed kit's card redraws. The dialog is mounted in `main.tsx`, not in
     `KitBrowser`, because the status bar item is reachable from the kit
     editor too. `ValidationResultsDialog`, `useValidationResults` and
-    `useKitDialogs` are gone; `validate-local-store` and
-    `validateLocalStoreAgainstDb` stay until a PR that may change the IPC
-    contract removes them.
+    `useKitDialogs` are gone; the `validate-local-store` channel and
+    `validateLocalStoreAgainstDb` went in #862, a PR of their own because it
+    changes the IPC contract.
   - The strings are in `shared/storeCheckWording.ts`, as approved, with
     the follow-ups approved on #824 on 2026-10-31 (singular forms, dialog
     headings and empty line, the drive-only status bar item).
@@ -634,8 +633,8 @@ Each stage is one PR. Stages 2 to 6 wait for the decisions named.
 
 [#813](https://github.com/peteb4ker/romper/issues/813) moved the dialog to
 `validate-local-store-opens` (`validateLocalStoreAndDb`), so it no longer
-checks samples. Once stage 3 replaces `ValidationResultsDialog`,
-`validateLocalStoreAgainstDb` has no caller and is deleted.
+checks samples. Once stage 3 replaced `ValidationResultsDialog`,
+`validateLocalStoreAgainstDb` had no caller, and #862 deleted it.
 
 ## Decisions for the maintainer
 

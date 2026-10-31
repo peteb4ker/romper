@@ -89,7 +89,6 @@ describe("preload/index.tsx", () => {
         updateStepPattern: expect.any(Function),
         updateVoiceAlias: expect.any(Function),
         updateVoiceStereoMode: expect.any(Function),
-        validateLocalStore: expect.any(Function),
         validateLocalStoreBasic: expect.any(Function),
         validateLocalStoreOpens: expect.any(Function),
         validateSampleFormat: expect.any(Function),
@@ -648,11 +647,6 @@ describe("preload/index.tsx", () => {
         args: ["/typed/romper"],
         ipcChannel: "request-local-store-access",
         method: "requestLocalStoreAccess",
-      },
-      {
-        args: ["/local/store"],
-        ipcChannel: "validate-local-store",
-        method: "validateLocalStore",
       },
       {
         args: ["/local/store"],

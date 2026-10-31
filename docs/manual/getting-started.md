@@ -88,7 +88,7 @@ The interface has three main areas:
 
 **Kit Grid** -- The central area showing all your kits as cards, organized by bank. Each card shows the kit ID, alias, voice sample counts, and status indicators.
 
-**Status Bar** -- Fixed at the bottom, showing your local store path, links to the Romper and Rample manuals, and a theme toggle.
+**Status Bar** -- Fixed at the bottom, showing your local store path, links to the Romper and Rample manuals, and a theme toggle. When Romper's check of your library finds sample files missing or out of step with their kit folders, an item such as "3 kits need attention" also appears; see [Validating Your Store]({{ site.baseurl }}/manual/kit-browser#validating-your-store).
 
 ![Status bar]({{ site.baseurl }}/images/manual/status-bar.png)
 

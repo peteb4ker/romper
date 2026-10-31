@@ -46,7 +46,6 @@ import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronA
 import { createMockSettings } from "../../../../tests/mocks/settings";
 import { TestSettingsProvider } from "../../../../tests/providers/TestSettingsProvider";
 import { useDialogState } from "../../components/hooks/shared/useDialogState";
-import { useValidationResults } from "../../components/hooks/shared/useValidationResults";
 import {
   getSavedSelectedKit,
   markExplicitNavigation,
@@ -56,7 +55,6 @@ import { SettingsContext } from "../../utils/SettingsContext";
 import KitsView from "../KitsView";
 
 // Mock the hooks used by KitsView
-const mockOpenValidationDialog = vi.fn(async () => {});
 const mockOpenWizard = vi.fn();
 const mockOpenChangeDirectory = vi.fn();
 const mockOpenPreferences = vi.fn();
@@ -95,16 +93,6 @@ vi.mock("../../components/hooks/shared/useMenuEvents", () => ({
   }),
 }));
 
-vi.mock("../../components/hooks/shared/useValidationResults", () => ({
-  useValidationResults: vi.fn(() => ({
-    closeValidationDialog: vi.fn(),
-    isLoading: false,
-    isOpen: false,
-    openValidationDialog: mockOpenValidationDialog,
-    validationResult: null,
-  })),
-}));
-
 const mockShowMessage = vi.fn();
 vi.mock("../../components/hooks/shared/useMessageApi", () => ({
   useMessageApi: vi.fn(() => ({
@@ -139,7 +127,6 @@ vi.mock("../../components/hooks/shared/useDialogState", () => ({
 // This way it will call the actual functions we pass in (which we can spy on)
 
 // We need to get the actual mocked functions for verification
-const _mockUseValidationResults = vi.mocked(useValidationResults);
 const _mockUseDialogState = vi.mocked(useDialogState);
 
 vi.mock("../../components/LocalStoreWizardUI", () => ({

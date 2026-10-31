@@ -1,12 +1,18 @@
 import {
   DatabaseIcon,
+  FileXIcon,
   MonitorIcon,
   MoonIcon,
   SunIcon,
 } from "@phosphor-icons/react";
+import { describeKitsNeedAttention } from "@romper/shared/storeCheckWording";
 import React from "react";
 
 import { useSettings } from "../utils/SettingsContext";
+import {
+  storeCheckStore,
+  useStoreCheckSummary,
+} from "./hooks/kit-management/storeCheckStore";
 import { usePreferenceSaves } from "./hooks/shared/usePreferenceSaves";
 
 interface StatusBarProps {
@@ -17,6 +23,9 @@ const StatusBar: React.FC<StatusBarProps> = ({ progress = null }) => {
   const { isDarkMode, localStorePath, themeMode } = useSettings();
   // A theme that wasn't saved is reported (#570)
   const { saveThemeMode } = usePreferenceSaves();
+  // Kits the store check found files missing from, or in their folder and
+  // not in the kit (#824). Shown only while there are some.
+  const { attention } = useStoreCheckSummary();
 
   // Extract nested ternary operations into independent statements
   const getThemeDisplayText = () => {
@@ -48,6 +57,17 @@ const StatusBar: React.FC<StatusBarProps> = ({ progress = null }) => {
             {localStorePath || "Not configured"}
           </span>
         </span>
+        {attention.length > 0 && (
+          <button
+            aria-haspopup="dialog"
+            className="flex items-center gap-1 px-2 py-0.5 rounded text-accent-warning hover:bg-surface-3 transition duration-150"
+            data-testid="store-check-status"
+            onClick={storeCheckStore.openDialog}
+          >
+            <FileXIcon aria-hidden="true" size={16} weight="fill" />
+            {describeKitsNeedAttention(attention.length)}
+          </button>
+        )}
         {progress !== null && (
           <div
             className="ml-4 w-32 h-2 bg-surface-3 rounded overflow-hidden"

@@ -93,10 +93,12 @@ const KitsView: React.FC = () => {
 
   // Main checks the store's sample files in the background once the grid
   // has loaded; a kit with a file it can't read shows its quarantine icon
-  // without being opened (#812)
+  // without being opened (#812), and a kit with missing files or files its
+  // folder holds that it doesn't, a badge (#824)
   useStoreCheck({
     isGridLoaded: setupFlow.isLocalStoreReady && kits.length > 0,
     localStorePath,
+    onMessage: showMessage,
     onQuarantineFound: applyQuarantine,
   });
 

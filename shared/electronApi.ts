@@ -432,6 +432,13 @@ export interface SettingsData {
 
 export type SettingsKey = keyof SettingsData;
 
+/** How many of a kit's samples are on a drive that isn't connected (#824) */
+export interface StoreCheckDriveSamples {
+  samples: number;
+  /** The drive's mount point or root, as the store check names it */
+  volume: string;
+}
+
 /**
  * What the store check found about one kit (#812, #820): rows whose file is
  * missing, rows whose file can't be read, and whether that quarantines the
@@ -439,12 +446,22 @@ export type SettingsKey = keyof SettingsData;
  * in its folder that no row points at (`untracked`, file names), its folder
  * being gone (`folderMissing`), and drives that weren't connected or didn't
  * respond when its folder was listed (`unavailableVolumes`). The folder
- * side is in memory only and is rebuilt on every pass.
+ * side is in memory only and is rebuilt on every pass. Since #824 the
+ * file side also says which rows are on a drive that isn't connected
+ * (`notConnected`, D6) and which drives didn't respond (`notResponding`).
  */
 export interface StoreCheckKitFinding {
   folderMissing: boolean;
   kitName: string;
+  /**
+   * Rows whose file is missing. Rows on a drive that isn't connected are in
+   * `notConnected` instead (D6), never here.
+   */
   missing: number;
+  /** Rows whose file was missing on a drive that isn't connected (#824) */
+  notConnected: StoreCheckDriveSamples[];
+  /** Drives that didn't respond, so some of the kit's samples weren't checked (#824) */
+  notResponding: string[];
   quarantined: boolean;
   unavailableVolumes: string[];
   unreadable: number;

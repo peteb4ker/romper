@@ -5,10 +5,8 @@ import React, { useCallback, useRef } from "react";
 import type { BulkScanProgress } from "./hooks/kit-management/useKitScan";
 
 import LiveSyncUpdateDialog from "./dialogs/LiveSyncUpdateDialog";
-import ValidationResultsDialog from "./dialogs/ValidationResultsDialog";
 import { useKitBrowser } from "./hooks/kit-management/useKitBrowser";
 import { useKitDeletion } from "./hooks/kit-management/useKitDeletion";
-import { useKitDialogs } from "./hooks/kit-management/useKitDialogs";
 import { useKitKeyboardNav } from "./hooks/kit-management/useKitKeyboardNav";
 import { useKitSync } from "./hooks/kit-management/useKitSync";
 import KitBankNav from "./KitBankNav";
@@ -148,9 +146,6 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
     emptyBank = shownEmptyBank ?? (kits.length === 0 ? "A" : null);
   }
 
-  // Dialog management hook
-  const { handleCloseValidationDialog, showValidationDialog } = useKitDialogs();
-
   // Kit deletion hook
   const deletion = useKitDeletion({
     onKitDeleted,
@@ -247,16 +242,6 @@ const KitBrowser: React.FC<KitBrowserProps> = (props) => {
           sampleCounts={props.sampleCounts}
         />
       </div>
-      {/* ValidationResultsDialog */}
-      {showValidationDialog && (
-        <ValidationResultsDialog
-          isOpen={showValidationDialog}
-          localStorePath={props.localStorePath || undefined}
-          onClose={handleCloseValidationDialog}
-          onMessage={props.onMessage}
-        />
-      )}
-
       {/* SyncUpdateDialog */}
       {showSyncDialog && currentSyncKit && (
         <LiveSyncUpdateDialog

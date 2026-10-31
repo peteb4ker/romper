@@ -54,4 +54,40 @@ export async function createBrokenKitStore(): Promise<E2ETestEnvironment> {
   return env;
 }
 
+/**
+ * A local store the background store check finds two kinds of problem in
+ * (#824), for the manual's screenshots of the badge, the status bar item and
+ * the "Library check" dialog. Built from the standard e2e fixture:
+ *
+ * - A0 ("Drums"): its snare's file is gone, so the check finds it missing.
+ * - B1 ("Percussion"): read-only, as an imported kit is, with a WAV dropped
+ *   into its folder that the kit doesn't hold.
+ */
+export async function createLibraryCheckStore(): Promise<E2ETestEnvironment> {
+  const env = await extractE2EFixture();
+  const store = env.localStorePath;
+  const wav = await fs.readFile(
+    path.join(store, MISSING_FILE_KIT, "1_kick.wav"),
+  );
+  await fs.remove(path.join(store, MISSING_FILE_KIT, "2_snare.wav"));
+  await fs.writeFile(
+    path.join(store, UNREADABLE_FILE_KIT, "4_dropped.wav"),
+    wav,
+  );
+
+  const db = new DatabaseSync(path.join(store, ".romperdb", "romper.sqlite"));
+  try {
+    db.prepare("UPDATE kits SET editable = ? WHERE name = ?").run(
+      0,
+      UNREADABLE_FILE_KIT,
+    );
+    const alias = db.prepare("UPDATE kits SET alias = ? WHERE name = ?");
+    alias.run("Drums", MISSING_FILE_KIT);
+    alias.run("Percussion", UNREADABLE_FILE_KIT);
+  } finally {
+    db.close();
+  }
+  return env;
+}
+
 export { cleanupE2EFixture as removeBrokenKitStore };

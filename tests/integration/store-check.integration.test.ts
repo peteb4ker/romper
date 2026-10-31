@@ -72,6 +72,8 @@ type Finding = {
   folderMissing: boolean;
   kitName: string;
   missing: number;
+  notConnected: { samples: number; volume: string }[];
+  notResponding: string[];
   quarantined: boolean;
   unavailableVolumes: string[];
   unreadable: number;
@@ -83,6 +85,8 @@ const CLEAN: Finding = {
   folderMissing: false,
   kitName: "",
   missing: 0,
+  notConnected: [],
+  notResponding: [],
   quarantined: false,
   unavailableVolumes: [],
   unreadable: 0,
@@ -181,10 +185,16 @@ async function untilPassEnds() {
   );
 }
 
-const updates = () =>
+const allPushes = () =>
   probe.pushes
     .filter((push) => push.channel === "store-check-updated")
     .map((push) => push.payload as Status["data"]);
+
+/** The pushes that carry a kit's finding */
+const updates = () => allPushes().filter((push) => push.kits.length > 0);
+
+/** The pushes that only say a pass is over (#824) */
+const endings = () => allPushes().filter((push) => push.kits.length === 0);
 
 describe("[UC-05] [Q-01] the store check finds missing and unreadable sample files in the background (#812)", () => {
   beforeEach(() => {
@@ -255,6 +265,9 @@ describe("[UC-05] [Q-01] the store check finds missing and unreadable sample fil
     await gridLoaded();
     await untilPassEnds();
     expect(updates()).toEqual([]);
+    // The renderer is told only that the pass is over, so it can say what
+    // it found (it found nothing)
+    expect(endings()).toEqual([{ kits: [], state: "idle" }]);
     expect((await gridLoaded()).data.kits).toEqual([]);
 
     // The grid loading again (a reloaded renderer) doesn't check again
@@ -281,6 +294,56 @@ describe("[UC-05] [Q-01] the store check finds missing and unreadable sample fil
       kits: [{ ...CLEAN, kitName: "A1" }],
     });
     expect(await quarantinedKits()).toEqual([]);
+  });
+
+  it("tells the renderer of a missing file the database already held from an earlier session (#824)", async () => {
+    // Recorded missing last time; the renderer asked for the status before
+    // this pass reached the kit, so it hasn't heard of it
+    fs.rmSync(fileOf("B0", 1));
+    const row = rowOf("B0", 1);
+    withDbTransaction(dbDir, (db) =>
+      updateSampleSourceStatusTx(
+        db,
+        row.id,
+        { source_status: "missing" },
+        row.source_path,
+      ),
+    );
+
+    expect((await gridLoaded()).data.kits).toEqual([]);
+    await untilPassEnds();
+
+    expect(updates().flatMap((u) => u.kits)).toEqual([
+      { ...CLEAN, kitName: "B0", missing: 1 },
+    ]);
+  });
+
+  it("reports a file on a drive that isn't connected as the drive, not as a missing file (D6, #824)", async () => {
+    const volume = "/Volumes/RomperDriveThatIsNotThere";
+    expect(
+      addSample(dbDir, {
+        filename: "away.wav",
+        kit_name: "A0",
+        slot_number: 2,
+        source_path: `${volume}/away.wav`,
+        voice_number: 1,
+      }).success,
+    ).toBe(true);
+    fs.rmSync(fileOf("A0", 1));
+
+    await gridLoaded();
+    await untilPassEnds();
+
+    expect((await gridLoaded()).data.kits).toEqual([
+      {
+        ...CLEAN,
+        kitName: "A0",
+        missing: 1,
+        notConnected: [{ samples: 1, volume }],
+      },
+    ]);
+    // The row reads missing, as the kit editor labels it
+    expect(rowOf("A0", 2).source_status).toBe("missing");
   });
 
   it("makes no sync fs call and opens no connection", async () => {

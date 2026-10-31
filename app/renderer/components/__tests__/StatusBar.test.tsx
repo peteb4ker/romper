@@ -1,10 +1,12 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { SettingsContextProps } from "../../utils/SettingsContext";
 
+import { createStoreCheckFinding } from "../../../../tests/factories/storeCheck.factory";
 import { createMockSettings } from "../../../../tests/mocks/settings";
+import { storeCheckStore } from "../hooks/kit-management/storeCheckStore";
 import StatusBar from "../StatusBar";
 
 // Mock the useSettings hook
@@ -29,6 +31,7 @@ vi.mock("../hooks/shared/useMessageApi", () => ({
 // Mock @phosphor-icons/react
 vi.mock("@phosphor-icons/react", () => ({
   DatabaseIcon: () => <div data-testid="database-icon" />,
+  FileXIcon: () => <div data-testid="file-x-icon" />,
   MonitorIcon: () => <div data-testid="monitor-icon" />,
   MoonIcon: () => <div data-testid="moon-icon" />,
   SunIcon: () => <div data-testid="sun-icon" />,
@@ -37,6 +40,7 @@ vi.mock("@phosphor-icons/react", () => ({
 describe("StatusBar", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    storeCheckStore.reset();
     mockSetThemeMode.mockResolvedValue(true);
     mockSettings.themeMode = "light";
     mockSettings.isDarkMode = false;
@@ -253,5 +257,82 @@ describe("StatusBar", () => {
       render(<StatusBar progress={undefined} />);
       expect(screen.queryByTestId("progress-bar")).not.toBeInTheDocument();
     });
+  });
+});
+
+describe("[UC-05] [Q-06] StatusBar: the store check's notice (#824)", () => {
+  beforeEach(() => {
+    storeCheckStore.reset();
+  });
+
+  const find = (kits: Parameters<typeof createStoreCheckFinding>[0][]) => {
+    act(() =>
+      storeCheckStore.apply(kits.map((kit) => createStoreCheckFinding(kit))),
+    );
+  };
+
+  it("is silent when the check found nothing", () => {
+    render(<StatusBar />);
+    expect(screen.queryByTestId("store-check-status")).toBeNull();
+  });
+
+  it("says how many kits need attention, as a button named by what it says", () => {
+    render(<StatusBar />);
+
+    find([
+      { kitName: "A0", missing: 2 },
+      { kitName: "B1", untracked: ["1 x.wav"] },
+      { folderMissing: true, kitName: "C2" },
+    ]);
+
+    expect(
+      screen.getByRole("button", { name: "3 kits need attention" }),
+    ).toHaveAttribute("aria-haspopup", "dialog");
+  });
+
+  it("says it in the singular for one kit", () => {
+    render(<StatusBar />);
+
+    find([{ kitName: "A0", missing: 1 }]);
+
+    expect(
+      screen.getByRole("button", { name: "1 kit needs attention" }),
+    ).toBeInTheDocument();
+  });
+
+  it("doesn't count a kit that is only quarantined or has samples on a drive that isn't connected", () => {
+    render(<StatusBar />);
+
+    find([
+      { kitName: "A0", quarantined: true, unreadable: 1 },
+      {
+        kitName: "B1",
+        notConnected: [{ samples: 2, volume: "/Volumes/SSD" }],
+      },
+    ]);
+
+    expect(screen.queryByTestId("store-check-status")).toBeNull();
+  });
+
+  it("goes when the problems are gone", () => {
+    render(<StatusBar />);
+    find([{ kitName: "A0", missing: 1 }]);
+
+    find([{ kitName: "A0" }]);
+
+    expect(screen.queryByTestId("store-check-status")).toBeNull();
+  });
+
+  it("opens the details dialog when it's clicked or activated with the keyboard", () => {
+    render(<StatusBar />);
+    find([{ kitName: "A0", missing: 1 }]);
+    const item = screen.getByTestId("store-check-status");
+
+    fireEvent.click(item);
+
+    expect(storeCheckStore.getDialogOpen()).toBe(true);
+    // A native button: Enter and Space click it, and it's in the tab order
+    expect(item.tagName).toBe("BUTTON");
+    expect(item).not.toHaveAttribute("tabindex", "-1");
   });
 });

@@ -10,6 +10,7 @@ import {
 } from "react-router-dom";
 
 import AboutDialog from "./components/dialogs/AboutDialog";
+import LibraryCheckDialog from "./components/dialogs/LibraryCheckDialog";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useMessageDisplay } from "./components/hooks/shared/useMessageDisplay";
 import MessageDisplay from "./components/MessageDisplay";
@@ -61,6 +62,7 @@ const AppContent = () => {
         </div>
         <StatusBar />
         <AboutDialog isOpen={showAboutModal} onClose={handleCloseAbout} />
+        <LibraryCheckDialog />
       </div>
     </MessageDisplayContext.Provider>
   );

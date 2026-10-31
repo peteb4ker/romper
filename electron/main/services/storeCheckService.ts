@@ -114,26 +114,29 @@ export class StoreCheckService {
     kitName: string,
     controller: AbortController = new AbortController(),
     slowVolumes: Set<string> = new Set(),
+    drives: Map<string, boolean> = new Map(),
   ): Promise<boolean> {
     const dbDir = ServicePathManager.getDbPath(localStorePath);
     const started = this.activity.exclusiveStartCount;
     const read = withDb(dbDir, (db) => readKitRowsToCheck(db, kitName));
     if (!read.success || !read.data) return true;
     const rows = read.data;
-    // The folder side isn't in the database: what the last pass found
+    // What the renderer was last told of this kit (nothing, if this session
+    // hasn't): a problem the database already held from an earlier session
+    // is news to it (#824). The folder side isn't in the database: it is
+    // what the last pass found.
+    const before = this.findings.get(kitName) ?? cleanFinding(kitName);
     const known = folderPartOf(this.findings.get(kitName));
-    const fileSide = this.findingOf(kitName, rows);
-    const before = { ...fileSide, ...known };
+    // The kit list the renderer loaded shows the quarantine the database
+    // held, so a kit that is no longer quarantined is news too (#812)
+    const shownQuarantined = isKitQuarantined(rows.voices, rows.samples);
 
-    const found = await this.checkFiles(rows, controller, slowVolumes);
+    const found = await this.checkFiles(rows, controller, slowVolumes, drives);
+    const kitPath = path.join(localStorePath, kitName);
     const folder = rows.editable
       ? NO_FOLDER_FINDING
-      : ((await this.checkFolder(
-          path.join(localStorePath, kitName),
-          rows,
-          controller,
-          slowVolumes,
-        )) ?? known);
+      : ((await this.checkFolder(kitPath, rows, controller, slowVolumes)) ??
+        known);
     if (controller.signal.aborted) return true;
     // A write, setup or rescan began meanwhile: what was found may be out
     // of date, so check the kit again once it's over
@@ -145,7 +148,7 @@ export class StoreCheckService {
     }
 
     const changes = changedChecks(found);
-    let after = fileSide;
+    let after = this.findingOf(kitName, rows, drives, slowVolumes);
     if (changes.length > 0) {
       // The rows are read again in the transaction, so the finding is what
       // the store holds after the record
@@ -153,11 +156,25 @@ export class StoreCheckService {
         for (const { fields, sample } of changes) {
           updateSampleSourceStatusTx(db, sample.id, fields, sample.source_path);
         }
-        return this.findingOf(kitName, readKitRowsToCheck(db, kitName));
+        return this.findingOf(
+          kitName,
+          readKitRowsToCheck(db, kitName),
+          drives,
+          slowVolumes,
+        );
       });
       if (saved.success && saved.data) after = saved.data;
     }
-    this.report(before, { ...after, ...folder });
+    const notResponding = this.slowVolumesOf(
+      rows,
+      rows.editable ? null : kitPath,
+      slowVolumes,
+    );
+    this.report(
+      before,
+      { ...after, ...folder, notResponding },
+      shownQuarantined,
+    );
     return true;
   }
 
@@ -233,6 +250,7 @@ export class StoreCheckService {
     rows: KitRowsToCheck,
     controller: AbortController,
     slowVolumes: Set<string>,
+    drives: Map<string, boolean>,
   ): Promise<SampleCheck[]> {
     const limit = <T>(operation: Promise<T>) =>
       withCardWatchdog(operation, storeCheckSettings.operationTimeoutMs);
@@ -243,7 +261,11 @@ export class StoreCheckService {
       if (slowVolumes.has(volume)) continue;
       try {
         // One operation at a time: never Promise.all
-        found.push(await checkSampleFile(sample, limit)); // NOSONAR: one fs operation at a time on purpose
+        const check = await checkSampleFile(sample, limit); // NOSONAR: one fs operation at a time on purpose
+        found.push(check);
+        if (check.fields.source_status === "missing") {
+          await this.noteDrive(volume, drives, limit); // NOSONAR: one fs operation at a time on purpose
+        }
       } catch (error) {
         if (error instanceof CardNotRespondingError) slowVolumes.add(volume);
       }
@@ -299,21 +321,40 @@ export class StoreCheckService {
 
   /**
    * The file side of a kit's finding after a step: only what the renderer
-   * can show
+   * can show. A missing file on a drive that isn't connected is counted as
+   * the drive (D6), not as missing; one on a drive that didn't respond is
+   * not counted at all.
    */
   private findingOf(
     kitName: string,
     rows: KitRowsToCheck,
-  ): Omit<StoreCheckKitFinding, keyof FolderFinding> {
+    drives: ReadonlyMap<string, boolean>,
+    slowVolumes: ReadonlySet<string>,
+  ): Omit<StoreCheckKitFinding, "notResponding" | keyof FolderFinding> {
     let missing = 0;
     let unreadable = 0;
-    for (const { source_status } of rows.samples) {
-      if (source_status === "missing") missing++;
-      else if (source_status === "unreadable") unreadable++;
+    const offline = new Map<string, number>();
+    for (const { source_path, source_status } of rows.samples) {
+      if (source_status === "missing") {
+        const volume = volumeOf(source_path);
+        // A drive that didn't respond: not known to be missing (it is
+        // listed in `notResponding`)
+        if (slowVolumes.has(volume)) continue;
+        if (drives.get(volume) === false) {
+          offline.set(volume, (offline.get(volume) ?? 0) + 1);
+        } else {
+          missing++;
+        }
+      } else if (source_status === "unreadable") {
+        unreadable++;
+      }
     }
     return {
       kitName,
       missing,
+      notConnected: [...offline]
+        .map(([volume, samples]) => ({ samples, volume }))
+        .sort((a, b) => a.volume.localeCompare(b.volume)),
       quarantined: isKitQuarantined(rows.voices, rows.samples),
       unreadable,
     };
@@ -323,21 +364,52 @@ export class StoreCheckService {
   private finish(controller: AbortController, completed: boolean): void {
     if (controller.signal.aborted) return;
     this.state = "idle";
-    if (completed) this.lastCompletedAt = Date.now();
-    else this.storePath = null;
+    if (completed) {
+      this.lastCompletedAt = Date.now();
+      // Tells the renderer the pass is over, so it can say once what the
+      // pass found (#824)
+      this.listener?.({ kits: [], state: this.state });
+    } else {
+      this.storePath = null;
+    }
   }
 
-  /** Keep the kit's finding, and tell the renderer if the step changed it */
+  /**
+   * Whether the drive a missing file was on is connected: a mounted volume
+   * that is gone (macOS `/Volumes/<name>` and the like, a Windows drive
+   * letter) is a drive that isn't connected (D6). Asked once per drive per
+   * pass. A drive that doesn't answer is skipped for the rest of the pass.
+   */
+  private async noteDrive(
+    volume: string,
+    drives: Map<string, boolean>,
+    limit: <T>(operation: Promise<T>) => Promise<T>,
+  ): Promise<void> {
+    if (drives.has(volume)) return;
+    try {
+      await limit(fs.promises.stat(volume));
+      drives.set(volume, true);
+    } catch (error) {
+      if (error instanceof CardNotRespondingError) throw error;
+      if (isGone(error)) drives.set(volume, false);
+    }
+  }
+
+  /**
+   * Keep the kit's finding, and tell the renderer if the step changed it,
+   * or if its quarantine isn't what the renderer's kit list shows
+   */
   private report(
     before: StoreCheckKitFinding,
     after: StoreCheckKitFinding,
+    shownQuarantined: boolean,
   ): void {
     if (hasFinding(after)) {
       this.findings.set(after.kitName, after);
     } else {
       this.findings.delete(after.kitName);
     }
-    if (!sameFinding(before, after)) {
+    if (!sameFinding(before, after) || shownQuarantined !== after.quarantined) {
       this.listener?.({ kits: [after], state: this.state });
     }
   }
@@ -359,6 +431,7 @@ export class StoreCheckService {
   ): Promise<void> {
     const dbDir = ServicePathManager.getDbPath(localStorePath);
     const slow = new Set<string>();
+    const drives = new Map<string, boolean>();
     try {
       if (!(await this.waitForQuiet(controller, startupQuietMs, Date.now()))) {
         return;
@@ -371,7 +444,13 @@ export class StoreCheckService {
         return;
       }
       for (const kitName of names.data) {
-        const step = [localStorePath, kitName, controller, slow] as const;
+        const step = [
+          localStorePath,
+          kitName,
+          controller,
+          slow,
+          drives,
+        ] as const;
         const stepped = await this.stepKit(...step); // NOSONAR: one kit per step on purpose
         if (!stepped) return;
       }
@@ -386,6 +465,22 @@ export class StoreCheckService {
   }
 
   /**
+   * The drives that didn't respond and hold some of this kit's files (or,
+   * for a read-only kit, its folder): some of its samples weren't checked
+   */
+  private slowVolumesOf(
+    rows: KitRowsToCheck,
+    folderPath: null | string,
+    slowVolumes: ReadonlySet<string>,
+  ): string[] {
+    const volumes = new Set(
+      rows.samples.map((row) => volumeOf(row.source_path)),
+    );
+    if (folderPath !== null) volumes.add(volumeOf(folderPath));
+    return [...volumes].filter((volume) => slowVolumes.has(volume)).sort();
+  }
+
+  /**
    * Wait for a quiet moment, then check one kit; again if a write, setup
    * or rescan began meanwhile. False if the pass was cancelled.
    */
@@ -394,12 +489,19 @@ export class StoreCheckService {
     kitName: string,
     controller: AbortController,
     slowVolumes: Set<string>,
+    drives: Map<string, boolean>,
   ): Promise<boolean> {
     const quietMs = storeCheckSettings.quietMs;
     for (;;) {
       if (!(await this.waitForQuiet(controller, quietMs))) return false; // NOSONAR: waits for a quiet moment on purpose
       if (kitName === this.openKit) return true;
-      const args = [localStorePath, kitName, controller, slowVolumes] as const;
+      const args = [
+        localStorePath,
+        kitName,
+        controller,
+        slowVolumes,
+        drives,
+      ] as const;
       if (await this.checkKit(...args)) return true; // NOSONAR: one kit per step on purpose
     }
   }
@@ -427,6 +529,23 @@ export class StoreCheckService {
   }
 }
 
+/** A kit with nothing found */
+function cleanFinding(kitName: string): StoreCheckKitFinding {
+  return {
+    ...NO_FOLDER_FINDING,
+    kitName,
+    missing: 0,
+    notConnected: [],
+    notResponding: [],
+    quarantined: false,
+    unreadable: 0,
+  };
+}
+
+function drivesKey({ samples, volume }: { samples: number; volume: string }) {
+  return `${volume}\t${samples}`;
+}
+
 /** The folder side of a kit's last finding, or nothing found */
 function folderPartOf(
   finding: StoreCheckKitFinding | undefined,
@@ -448,7 +567,9 @@ function hasFinding(finding: StoreCheckKitFinding): boolean {
     finding.quarantined ||
     finding.folderMissing ||
     finding.untracked.length > 0 ||
-    finding.unavailableVolumes.length > 0
+    finding.unavailableVolumes.length > 0 ||
+    finding.notConnected.length > 0 ||
+    finding.notResponding.length > 0
   );
 }
 
@@ -474,7 +595,10 @@ function sameFinding(a: StoreCheckKitFinding, b: StoreCheckKitFinding) {
     a.quarantined === b.quarantined &&
     a.folderMissing === b.folderMissing &&
     a.untracked.join("\n") === b.untracked.join("\n") &&
-    a.unavailableVolumes.join("\n") === b.unavailableVolumes.join("\n")
+    a.unavailableVolumes.join("\n") === b.unavailableVolumes.join("\n") &&
+    a.notResponding.join("\n") === b.notResponding.join("\n") &&
+    a.notConnected.map(drivesKey).join("\n") ===
+      b.notConnected.map(drivesKey).join("\n")
   );
 }
 

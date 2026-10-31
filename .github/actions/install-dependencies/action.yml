@@ -42,7 +42,7 @@ runs:
       uses: actions/cache/restore@v6
       with:
         path: node_modules
-        key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
+        key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}-temp853
 
     # Keyed on the exact Node version: the headers must match it. node-gyp
     # reads the devdir from npm_config_devdir, and (without --target) only
@@ -66,7 +66,7 @@ runs:
       if: steps.modules.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        npm ci --prefer-offline --no-audit || {
+        npm ci --prefer-offline --no-audit --foreground-scripts --loglevel=http || {
           echo "::warning::npm ci failed; retrying once"
           npm ci --prefer-offline --no-audit
         }
@@ -77,8 +77,7 @@ runs:
     - name: Fetch the node-gyp headers
       id: fetch-headers
       if: >-
-        steps.headers.outputs.cache-hit != 'true' &&
-        github.event_name == 'push' && github.ref == 'refs/heads/main'
+        steps.headers.outputs.cache-hit != 'true'
       continue-on-error: true
       shell: bash
       run: node node_modules/node-gyp/bin/node-gyp.js install --ensure

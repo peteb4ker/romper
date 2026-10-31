@@ -12,8 +12,11 @@ import {
   describeKitsNeedAttention,
   describeMissingFiles,
   describeNewMissingFiles,
+  describeStatusBarItem,
   describeUntrackedFiles,
   hasKitBadge,
+  LIBRARY_CHECK_EMPTY,
+  LIBRARY_CHECK_HEADINGS,
   summarizeStoreCheck,
 } from "../storeCheckWording";
 
@@ -107,6 +110,55 @@ describe("[UC-05] [Q-06] store check wording (#824)", () => {
       expect(describeFolderMissing("A3")).toBe(
         "A3's folder is missing from your library.",
       );
+    });
+  });
+
+  describe("the dialog and the status bar item (approved 2026-10-31)", () => {
+    it("has the approved headings and empty line", () => {
+      expect(LIBRARY_CHECK_HEADINGS).toEqual({
+        missing: "Sample files not found",
+        untracked: "Files not in the kit",
+      });
+      expect(LIBRARY_CHECK_EMPTY).toBe("No problems found.");
+    });
+
+    it("shows the kit count when kits need attention, even with drives", () => {
+      expect(
+        describeStatusBarItem(
+          summarizeStoreCheck([
+            finding({ missing: 1 }),
+            finding({
+              kitName: "B1",
+              notConnected: [{ samples: 1, volume: "/Volumes/SSD" }],
+            }),
+          ]),
+        ),
+      ).toBe("1 kit needs attention");
+    });
+
+    it("shows the drive when that is all there is: not connected first", () => {
+      const connected = { samples: 1, volume: "/Volumes/SSD" };
+      expect(
+        describeStatusBarItem(
+          summarizeStoreCheck([
+            finding({ notConnected: [connected], notResponding: ["/x"] }),
+          ]),
+        ),
+      ).toBe("Drive not connected");
+      expect(
+        describeStatusBarItem(
+          summarizeStoreCheck([finding({ notResponding: ["/Volumes/Slow"] })]),
+        ),
+      ).toBe("Drive not responding");
+    });
+
+    it("shows nothing when there is nothing to say", () => {
+      expect(describeStatusBarItem(summarizeStoreCheck([]))).toBeNull();
+      expect(
+        describeStatusBarItem(
+          summarizeStoreCheck([finding({ quarantined: true, unreadable: 1 })]),
+        ),
+      ).toBeNull();
     });
   });
 

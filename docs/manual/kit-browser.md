@@ -136,13 +136,13 @@ It doesn't look for a folder for kits you made in Romper (they have none), and i
 When there's nothing to report, Romper says nothing. When there is:
 
 - **Kit cards** -- A kit with missing files, or with files in its folder it doesn't hold, gets the yellow file icon. It's an image with a name and a tooltip, so a screen reader reads it as part of the kit card's name. Color is never the only sign: the tooltip says the same in words.
-- **The status bar** -- An item such as "3 kits need attention" appears at the bottom of the window for as long as there are problems.
+- **The status bar** -- An item such as "3 kits need attention" appears at the bottom of the window for as long as there are problems. If the only problem is a drive, it reads "Drive not connected", or "Drive not responding" when no drive is disconnected and one didn't respond.
 
   ![The status bar item, 2 kits need attention]({{ site.baseurl }}/images/manual/status-bar-store-check.png)
 
 - **A message** -- When a check finds missing sample files it hadn't found before, one message says so: "Romper found missing sample files in 3 kits. Open the list from the status bar." Problems you already know about don't bring it back.
 
-Click the status bar item (or focus it and press `Enter`) to open the **Library check**. It lists each kit to look at and what's wrong with it, and a line for each drive that wasn't connected or didn't respond. Press `Escape` or **Close** to close it; focus goes back to the status bar item.
+Click the status bar item (or focus it and press `Enter`) to open the **Library check**. It lists the kits under **Sample files not found** and **Files not in the kit**, with what's wrong with each, and a line for each drive that wasn't connected or didn't respond. A kit with both problems is under both headings. If the list empties while the dialog is open, it says "No problems found." Press `Escape` or **Close** to close it; focus goes back to the status bar item.
 
 ![The Library check, listing a kit with a missing sample file and a kit with a file in its folder that the kit doesn't hold]({{ site.baseurl }}/images/manual/library-check-dialog.png)
 

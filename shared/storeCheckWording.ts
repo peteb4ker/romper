@@ -28,8 +28,17 @@ export interface StoreCheckSummary {
   notResponding: string[];
 }
 
-/** The details dialog's title, and the status bar item's dialog name */
+/** The details dialog's title */
 export const LIBRARY_CHECK_TITLE = "Library check";
+
+/** The dialog's headings over the kits, by what is wrong (approved 2026-10-31) */
+export const LIBRARY_CHECK_HEADINGS = {
+  missing: "Sample files not found",
+  untracked: "Files not in the kit",
+} as const;
+
+/** What the dialog says when nothing is left to list (approved 2026-10-31) */
+export const LIBRARY_CHECK_EMPTY = "No problems found.";
 
 /** The drive's name for people: "Samples SSD" for `/Volumes/Samples SSD` */
 export function describeDrive(volume: string): string {
@@ -87,6 +96,22 @@ export function describeMissingFiles(count: number): string {
 /** The message shown once when a pass finds missing files it hadn't */
 export function describeNewMissingFiles(kits: number): string {
   return `Romper found missing sample files in ${kits} ${kits === 1 ? "kit" : "kits"}. Open the list from the status bar.`;
+}
+
+/**
+ * The status bar item's text, or null while there is nothing to show: the
+ * kit count when kits need attention, else the drive's state (approved
+ * 2026-10-31)
+ */
+export function describeStatusBarItem(
+  summary: StoreCheckSummary,
+): null | string {
+  if (summary.attention.length > 0) {
+    return describeKitsNeedAttention(summary.attention.length);
+  }
+  if (summary.notConnected.length > 0) return "Drive not connected";
+  if (summary.notResponding.length > 0) return "Drive not responding";
+  return null;
 }
 
 /** Voice-prefixed WAVs in a read-only kit's folder that the kit doesn't hold */

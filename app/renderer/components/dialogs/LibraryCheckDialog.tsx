@@ -1,3 +1,5 @@
+import type { StoreCheckKitFinding } from "@romper/shared/electronApi";
+
 import { FileXIcon, XIcon } from "@phosphor-icons/react";
 import {
   describeDriveNotConnected,
@@ -5,6 +7,8 @@ import {
   describeFolderMissing,
   describeMissingFiles,
   describeUntrackedFiles,
+  LIBRARY_CHECK_EMPTY,
+  LIBRARY_CHECK_HEADINGS,
   LIBRARY_CHECK_TITLE,
 } from "@romper/shared/storeCheckWording";
 import React from "react";
@@ -31,6 +35,27 @@ const LibraryCheckDialog: React.FC = () => {
   const isOpen = useLibraryCheckDialogOpen();
   const { attention, notConnected, notResponding } = useStoreCheckSummary();
   if (!isOpen) return null;
+
+  const groups = [
+    {
+      heading: LIBRARY_CHECK_HEADINGS.missing,
+      id: "missing",
+      kits: attention.filter((kit) => kit.missing > 0 || kit.folderMissing),
+      lines: (kit: StoreCheckKitFinding) => [
+        ...(kit.missing > 0 ? [describeMissingFiles(kit.missing)] : []),
+        ...(kit.folderMissing ? [describeFolderMissing(kit.kitName)] : []),
+      ],
+    },
+    {
+      heading: LIBRARY_CHECK_HEADINGS.untracked,
+      id: "untracked",
+      kits: attention.filter((kit) => kit.untracked.length > 0),
+      lines: (kit: StoreCheckKitFinding) => [
+        describeUntrackedFiles(kit.untracked.length),
+      ],
+    },
+  ].filter((group) => group.kits.length > 0);
+  const hasDrives = notConnected.length > 0 || notResponding.length > 0;
 
   return (
     <ModalDialog
@@ -61,35 +86,40 @@ const LibraryCheckDialog: React.FC = () => {
         </button>
       </div>
 
-      {attention.length > 0 && (
-        <ul
-          className="border border-border-default rounded"
-          data-testid="library-check-kits"
+      {groups.map((group) => (
+        <section
+          aria-labelledby={`library-check-${group.id}`}
+          className="mb-4"
+          data-testid={`library-check-group-${group.id}`}
+          key={group.id}
         >
-          {attention.map((finding) => (
-            <li
-              className="p-3 border-b border-border-default last:border-b-0"
-              data-testid={`library-check-kit-${finding.kitName}`}
-              key={finding.kitName}
-            >
-              <div className="font-mono font-bold">{finding.kitName}</div>
-              <ul className="text-sm text-accent-warning">
-                {finding.missing > 0 && (
-                  <li>{describeMissingFiles(finding.missing)}</li>
-                )}
-                {finding.untracked.length > 0 && (
-                  <li>{describeUntrackedFiles(finding.untracked.length)}</li>
-                )}
-                {finding.folderMissing && (
-                  <li>{describeFolderMissing(finding.kitName)}</li>
-                )}
-              </ul>
-            </li>
-          ))}
-        </ul>
+          <h3 className="font-bold mb-2" id={`library-check-${group.id}`}>
+            {group.heading}
+          </h3>
+          <ul className="border border-border-default rounded">
+            {group.kits.map((finding) => (
+              <li
+                className="p-3 border-b border-border-default last:border-b-0"
+                data-testid={`library-check-${group.id}-${finding.kitName}`}
+                key={finding.kitName}
+              >
+                <div className="font-mono font-bold">{finding.kitName}</div>
+                <ul className="text-sm text-accent-warning">
+                  {group.lines(finding).map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+
+      {groups.length === 0 && !hasDrives && (
+        <p data-testid="library-check-empty">{LIBRARY_CHECK_EMPTY}</p>
       )}
 
-      {(notConnected.length > 0 || notResponding.length > 0) && (
+      {hasDrives && (
         <ul
           className="mt-4 text-sm text-text-secondary space-y-1"
           data-testid="library-check-drives"

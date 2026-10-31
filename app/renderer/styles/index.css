@@ -156,7 +156,8 @@
 @theme {
   /* Font families */
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", "Fira Code", monospace;
+  --font-mono:
+    "JetBrains Mono", ui-monospace, "Cascadia Code", "Fira Code", monospace;
 
   /* Surface colors */
   --color-surface-0: var(--surface-0);
@@ -309,7 +310,8 @@ html {
 @keyframes border-flash {
   from {
     border-color: var(--accent-primary);
-    box-shadow: 0 0 8px color-mix(in srgb, var(--accent-primary) 15%, transparent);
+    box-shadow: 0 0 8px
+      color-mix(in srgb, var(--accent-primary) 15%, transparent);
   }
   to {
     border-color: var(--border-subtle);
@@ -332,7 +334,8 @@ html {
 @keyframes voice-flash {
   0% {
     border-color: var(--accent-success);
-    box-shadow: 0 0 12px color-mix(in srgb, var(--accent-success) 20%, transparent);
+    box-shadow: 0 0 12px
+      color-mix(in srgb, var(--accent-success) 20%, transparent);
   }
   100% {
     border-color: var(--border-subtle);
@@ -395,4 +398,3 @@ html {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-tertiary);
 }
-

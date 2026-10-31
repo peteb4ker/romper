@@ -50,7 +50,7 @@ describe("[UC-05] [Q-06] LibraryCheckDialog (#824)", () => {
     expect(dialog).toHaveAttribute("aria-modal", "true");
   });
 
-  it("lists each kit that needs attention, in slot order, with what is wrong", () => {
+  it("groups the kits under the heading for what is wrong, in slot order, with each kit's lines", () => {
     render(<LibraryCheckDialog />);
     find(
       { kitName: "B1", untracked: ["2 a.wav", "2 b.wav"] },
@@ -61,31 +61,61 @@ describe("[UC-05] [Q-06] LibraryCheckDialog (#824)", () => {
     );
     open();
 
-    const items = screen
-      .getByTestId("library-check-kits")
-      .querySelectorAll(":scope > li");
-    expect([...items].map((item) => item.getAttribute("data-testid"))).toEqual([
-      "library-check-kit-A2",
-      "library-check-kit-A10",
-      "library-check-kit-B1",
-      "library-check-kit-C3",
-    ]);
-    const a2 = within(screen.getByTestId("library-check-kit-A2"));
-    expect(a2.getByText("2 sample files not found")).toBeInTheDocument();
+    const missing = screen.getByTestId("library-check-group-missing");
     expect(
-      a2.getByText(
+      within(missing).getByRole("heading", { name: "Sample files not found" }),
+    ).toBeInTheDocument();
+    const missingKits = [...missing.querySelectorAll(":scope > ul > li")];
+    expect(missingKits.map((kit) => kit.getAttribute("data-testid"))).toEqual([
+      "library-check-missing-A2",
+      "library-check-missing-A10",
+      "library-check-missing-C3",
+    ]);
+    expect(
+      within(screen.getByTestId("library-check-missing-A2")).getByText(
+        "2 sample files not found",
+      ),
+    ).toBeInTheDocument();
+    // A kit with no folder reads its folder line too
+    const c3 = within(screen.getByTestId("library-check-missing-C3"));
+    expect(c3.getByText("4 sample files not found")).toBeInTheDocument();
+    expect(
+      c3.getByText("C3's folder is missing from your library."),
+    ).toBeInTheDocument();
+
+    const untracked = screen.getByTestId("library-check-group-untracked");
+    expect(
+      within(untracked).getByRole("heading", { name: "Files not in the kit" }),
+    ).toBeInTheDocument();
+    const untrackedKits = [...untracked.querySelectorAll(":scope > ul > li")];
+    expect(untrackedKits.map((kit) => kit.getAttribute("data-testid"))).toEqual(
+      ["library-check-untracked-A2", "library-check-untracked-B1"],
+    );
+    expect(
+      within(screen.getByTestId("library-check-untracked-A2")).getByText(
         "1 file in this kit's folder isn't in the kit. Scan the kit to add it.",
       ),
     ).toBeInTheDocument();
     expect(
-      within(screen.getByTestId("library-check-kit-B1")).getByText(
+      within(screen.getByTestId("library-check-untracked-B1")).getByText(
         "2 files in this kit's folder aren't in the kit. Scan the kit to add them.",
       ),
     ).toBeInTheDocument();
-    const c3 = within(screen.getByTestId("library-check-kit-C3"));
+    // Only the quarantine icon covers a kit with a file that can't be read
+    expect(screen.queryByText("D4")).toBeNull();
+  });
+
+  it("shows a heading only when a kit is under it", () => {
+    render(<LibraryCheckDialog />);
+    find({ kitName: "A0", missing: 1 });
+    open();
+
     expect(
-      c3.getByText("C3's folder is missing from your library."),
+      screen.getByRole("heading", { name: "Sample files not found" }),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Files not in the kit" }),
+    ).toBeNull();
   });
 
   it("has a line for each drive that isn't connected, totalled over kits, and each that didn't respond", () => {
@@ -118,8 +148,10 @@ describe("[UC-05] [Q-06] LibraryCheckDialog (#824)", () => {
         `The drive "Slow" didn't respond, so some samples weren't checked.`,
       ),
     ).toBeInTheDocument();
-    // None of them is a kit to look at
-    expect(screen.queryByTestId("library-check-kits")).toBeNull();
+    // None of them is a kit to look at, and the dialog isn't empty
+    expect(screen.queryByTestId("library-check-group-missing")).toBeNull();
+    expect(screen.queryByTestId("library-check-group-untracked")).toBeNull();
+    expect(screen.queryByText("No problems found.")).toBeNull();
   });
 
   it("follows the check while it's open: a kit drops off when its files are back", () => {
@@ -129,8 +161,25 @@ describe("[UC-05] [Q-06] LibraryCheckDialog (#824)", () => {
 
     find({ kitName: "A0" });
 
-    expect(screen.queryByTestId("library-check-kit-A0")).toBeNull();
-    expect(screen.getByTestId("library-check-kit-B1")).toBeInTheDocument();
+    expect(screen.queryByTestId("library-check-missing-A0")).toBeNull();
+    expect(screen.getByTestId("library-check-missing-B1")).toBeInTheDocument();
+  });
+
+  it("says no problems were found when the list empties while it's open", () => {
+    render(<LibraryCheckDialog />);
+    find({ kitName: "A0", missing: 1 });
+    open();
+    expect(screen.queryByText("No problems found.")).toBeNull();
+
+    find({ kitName: "A0" });
+
+    expect(screen.getByText("No problems found.")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Sample files not found" }),
+    ).toBeNull();
+    // Still a dialog, and it still closes
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("closes with the Close button", () => {

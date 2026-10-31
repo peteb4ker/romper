@@ -16,7 +16,10 @@ import { MessageDisplayContext } from "../../MessageDisplayContext";
 import StatusBar from "../../StatusBar";
 import LibraryCheckDialog from "../LibraryCheckDialog";
 
+const settings = vi.hoisted(() => ({ confirmDestructiveActions: true }));
+
 vi.mock("../../../utils/SettingsContext", () => ({
+  useConfirmDestructiveActions: () => settings.confirmDestructiveActions,
   useSettings: () =>
     createMockSettings({
       isDarkMode: false,
@@ -375,6 +378,277 @@ describe("[UC-05] [Q-06] LibraryCheckDialog (#824)", () => {
       expect(screen.getByRole("dialog").contains(document.activeElement)).toBe(
         true,
       );
+    });
+  });
+
+  describe("[UC-05] Remove missing samples (#822, stage 5)", () => {
+    const remove = () => vi.mocked(globalThis.electronAPI.removeMissingSamples);
+    const voicesBefore = [
+      {
+        samples: [
+          {
+            filename: "kick.wav",
+            gain_db: 0,
+            slot_number: 0,
+            source_mtime_ms: null,
+            source_path: "/store/A1/1 kick.wav",
+            source_size: null,
+            source_status: "missing" as const,
+            wav_bit_depth: 16,
+            wav_bitrate: null,
+            wav_channels: 1,
+            wav_format_tag: 1,
+            wav_sample_rate: 44100,
+          },
+        ],
+        voice: 1,
+      },
+    ];
+
+    beforeEach(() => {
+      settings.confirmDestructiveActions = true;
+      remove().mockResolvedValue({
+        data: { samples: 2, voicesBefore },
+        success: true,
+      });
+    });
+
+    it("is offered only for a kit with missing samples, named for the kit", () => {
+      render(<LibraryCheckDialog />);
+      find(
+        { kitName: "A1", missing: 2, untracked: ["3 c.wav"] },
+        { kitName: "B1", untracked: ["2 a.wav"] },
+        // Its files are on a drive that isn't connected: main counts them
+        // there, not as missing (D6), so nothing is offered for removal
+        { folderMissing: true, kitName: "C3" },
+      );
+      open();
+
+      const dialog = within(screen.getByRole("dialog"));
+      const button = dialog.getByRole("button", {
+        name: "Remove missing samples A1",
+      });
+      expect(button).toHaveTextContent("Remove missing samples");
+      // Once, under "Sample files not found", not under "Files not in the kit"
+      expect(
+        dialog.getAllByRole("button", { name: /^Remove missing samples/ }),
+      ).toHaveLength(1);
+    });
+
+    it("asks first, naming the kit and the count, and Cancel removes nothing", () => {
+      render(<LibraryCheckDialog />);
+      find({ kitName: "A1", missing: 2 });
+      open();
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Remove missing samples A1" }),
+      );
+
+      const popover = screen.getByRole("dialog", {
+        name: "Remove 2 missing samples from A1? You can undo this.",
+      });
+      const cancel = within(popover).getByRole("button", { name: "Cancel" });
+      expect(cancel).toHaveFocus();
+      fireEvent.click(cancel);
+
+      expect(remove()).not.toHaveBeenCalled();
+      expect(
+        screen.queryByTestId("library-check-remove-A1-confirm"),
+      ).toBeNull();
+      expect(
+        screen.getByRole("button", { name: "Remove missing samples A1" }),
+      ).toHaveFocus();
+    });
+
+    it("says 1 missing sample in the singular", () => {
+      render(<LibraryCheckDialog />);
+      find({ kitName: "A1", missing: 1 });
+      open();
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Remove missing samples A1" }),
+      );
+
+      expect(
+        screen.getByRole("dialog", {
+          name: "Remove 1 missing sample from A1? You can undo this.",
+        }),
+      ).toBeInTheDocument();
+    });
+
+    it("Escape closes the popover and leaves the dialog open", () => {
+      render(<LibraryCheckDialog />);
+      find({ kitName: "A1", missing: 2 });
+      open();
+      fireEvent.click(
+        screen.getByRole("button", { name: "Remove missing samples A1" }),
+      );
+
+      fireEvent.keyDown(screen.getByRole("button", { name: "Cancel" }), {
+        key: "Escape",
+      });
+
+      expect(
+        screen.queryByTestId("library-check-remove-A1-confirm"),
+      ).toBeNull();
+      expect(
+        screen.getByRole("dialog", { name: "Library check" }),
+      ).toBeInTheDocument();
+    });
+
+    it("removes them when confirmed, and puts one undo entry for the kit on the undo stack", async () => {
+      const added = vi.fn();
+      const refreshed = vi.fn();
+      const onAdd = (e: Event) => added((e as CustomEvent).detail);
+      const onRefresh = (e: Event) => refreshed((e as CustomEvent).detail);
+      document.addEventListener("romper:add-undo-action", onAdd);
+      document.addEventListener("romper:refresh-samples", onRefresh);
+      try {
+        render(<LibraryCheckDialog />);
+        find({ kitName: "A1", missing: 2 });
+        open();
+        fireEvent.click(
+          screen.getByRole("button", { name: "Remove missing samples A1" }),
+        );
+
+        await act(async () => {
+          fireEvent.click(
+            screen.getByTestId("library-check-remove-A1-confirm-button"),
+          );
+        });
+
+        expect(remove()).toHaveBeenCalledWith("A1");
+        expect(added).toHaveBeenCalledTimes(1);
+        expect(added.mock.calls[0][0]).toMatchObject({
+          data: { kitName: "A1", samples: 2, voicesBefore },
+          description: "Remove 2 missing samples from A1",
+          type: "REMOVE_MISSING_SAMPLES",
+        });
+        // The kit is read again, whether or not it's open
+        expect(refreshed).toHaveBeenCalledWith({
+          kitName: "A1",
+          refreshAll: true,
+        });
+      } finally {
+        document.removeEventListener("romper:add-undo-action", onAdd);
+        document.removeEventListener("romper:refresh-samples", onRefresh);
+      }
+    });
+
+    it("adds no undo entry when main found nothing still missing", async () => {
+      remove().mockResolvedValue({
+        data: { samples: 0, voicesBefore: [] },
+        success: true,
+      });
+      const added = vi.fn();
+      document.addEventListener("romper:add-undo-action", added);
+      try {
+        render(<LibraryCheckDialog />);
+        find({ kitName: "A1", missing: 2 });
+        open();
+        fireEvent.click(
+          screen.getByRole("button", { name: "Remove missing samples A1" }),
+        );
+        await act(async () => {
+          fireEvent.click(
+            screen.getByTestId("library-check-remove-A1-confirm-button"),
+          );
+        });
+
+        expect(remove()).toHaveBeenCalledWith("A1");
+        expect(added).not.toHaveBeenCalled();
+      } finally {
+        document.removeEventListener("romper:add-undo-action", added);
+      }
+    });
+
+    it("removes at once, without asking, when Confirm destructive actions is off", async () => {
+      settings.confirmDestructiveActions = false;
+      render(<LibraryCheckDialog />);
+      find({ kitName: "A1", missing: 2 });
+      open();
+
+      await act(async () => {
+        fireEvent.click(
+          screen.getByRole("button", { name: "Remove missing samples A1" }),
+        );
+      });
+
+      expect(remove()).toHaveBeenCalledWith("A1");
+      expect(
+        screen.queryByTestId("library-check-remove-A1-confirm"),
+      ).toBeNull();
+    });
+
+    it("runs one fix at a time: a scan waits for the removal, and the removal for a scan", async () => {
+      settings.confirmDestructiveActions = false;
+      let finish!: () => void;
+      remove().mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            finish = () =>
+              resolve({
+                data: { samples: 0, voicesBefore: [] },
+                success: true,
+              });
+          }),
+      );
+      render(<LibraryCheckDialog />);
+      find({ kitName: "A1", missing: 2 }, { kitName: "B1", missing: 1 });
+      open();
+      const removeA1 = screen.getByRole("button", {
+        name: "Remove missing samples A1",
+      });
+
+      fireEvent.click(removeA1);
+
+      expect(removeA1).toHaveAttribute("aria-busy", "true");
+      const scanB1 = screen.getByRole("button", { name: "Scan kit B1" });
+      expect(scanB1).toHaveAttribute("aria-disabled", "true");
+      fireEvent.click(scanB1);
+      fireEvent.click(
+        screen.getByRole("button", { name: "Remove missing samples B1" }),
+      );
+      expect(globalThis.electronAPI.rescanKit).not.toHaveBeenCalled();
+      expect(remove()).toHaveBeenCalledTimes(1);
+
+      await act(async () => finish());
+      expect(removeA1).toHaveAttribute("aria-busy", "false");
+      expect(scanB1).toHaveAttribute("aria-disabled", "false");
+    });
+
+    it("shows main's own words when the removal fails, and adds no undo entry", async () => {
+      settings.confirmDestructiveActions = false;
+      remove().mockResolvedValue({ error: "Kit A1 not found", success: false });
+      const showMessage = vi.fn();
+      const added = vi.fn();
+      document.addEventListener("romper:add-undo-action", added);
+      try {
+        render(
+          <MessageDisplayContext.Provider
+            value={
+              { showMessage } as unknown as React.ContextType<
+                typeof MessageDisplayContext
+              >
+            }
+          >
+            <LibraryCheckDialog />
+          </MessageDisplayContext.Provider>,
+        );
+        find({ kitName: "A1", missing: 2 });
+        open();
+
+        await act(async () => {
+          fireEvent.click(
+            screen.getByRole("button", { name: "Remove missing samples A1" }),
+          );
+        });
+
+        expect(showMessage).toHaveBeenCalledWith("Kit A1 not found", "error");
+        expect(added).not.toHaveBeenCalled();
+      } finally {
+        document.removeEventListener("romper:add-undo-action", added);
+      }
     });
   });
 

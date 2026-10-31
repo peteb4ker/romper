@@ -12,8 +12,11 @@ interface UseSampleRefreshListenerParams {
 /**
  * Listens for "romper:refresh-samples" events (dispatched by undo
  * operations) and reloads the affected kit when it is the
- * currently selected kit. The listener is registered once; the latest
- * selection and reload function are read through refs.
+ * currently selected kit. Removing a kit's missing samples, and its undo,
+ * reload their kit whether or not it is open (`refreshAll`), since the
+ * Library check can remove them from any kit (#822). The listener is
+ * registered once; the latest selection and reload function are read
+ * through refs.
  */
 export function useSampleRefreshListener({
   refreshKit,
@@ -35,9 +38,11 @@ export function useSampleRefreshListener({
   // Listen for refresh events from undo operations - stable event listener
   useEffect(() => {
     const handleRefreshSamples = (event: Event) => {
-      const customEvent = event as CustomEvent<{ kitName: string }>;
-      if (customEvent.detail.kitName === selectedKitRef.current) {
-        void refreshKitRef.current(selectedKitRef.current);
+      const { kitName, refreshAll } = (
+        event as CustomEvent<{ kitName: string; refreshAll?: boolean }>
+      ).detail;
+      if (kitName && (refreshAll || kitName === selectedKitRef.current)) {
+        void refreshKitRef.current(kitName);
       }
     };
 

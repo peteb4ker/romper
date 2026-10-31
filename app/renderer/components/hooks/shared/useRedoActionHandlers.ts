@@ -1,5 +1,9 @@
-import type { AnyUndoAction } from "@romper/shared/undoTypes";
+import type {
+  AnyUndoAction,
+  RemoveMissingSamplesAction,
+} from "@romper/shared/undoTypes";
 
+import { requestKitRefresh } from "../kit-management/removeMissingSamples";
 import { writeSequenceSnapshot } from "./sequenceUndo";
 
 export interface UseRedoActionHandlersOptions {
@@ -53,6 +57,8 @@ export function useRedoActionHandlers({
           action.data.voice,
           action.data.deletedSlot,
         );
+      case "REMOVE_MISSING_SAMPLES":
+        return redoRemoveMissingSamples(action);
       case "SEQUENCE_EDIT":
         return writeSequenceSnapshot(
           kitName,
@@ -69,4 +75,20 @@ export function useRedoActionHandlers({
   return {
     executeRedoAction,
   };
+}
+
+/**
+ * Remove the kit's missing samples again (#822). Main checks the files
+ * again, so what goes may differ from the first time: the entry keeps what
+ * this removal returned, which is what the next undo puts back.
+ */
+async function redoRemoveMissingSamples(action: RemoveMissingSamplesAction) {
+  const { kitName } = action.data;
+  const result = await globalThis.electronAPI?.removeMissingSamples?.(kitName);
+  if (result?.success && result.data) {
+    action.data.samples = result.data.samples;
+    action.data.voicesBefore = result.data.voicesBefore;
+    requestKitRefresh(kitName);
+  }
+  return result;
 }

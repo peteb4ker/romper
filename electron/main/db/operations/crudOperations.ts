@@ -26,7 +26,10 @@ export {
   updateKit,
 } from "./kitCrudOperations.js";
 
-export { requireEditableKitTx } from "./kitEditableGuard.js";
+export {
+  requireEditableKitTx,
+  requireKitForMissingSampleRemovalTx,
+} from "./kitEditableGuard.js";
 
 export {
   mergeKitScan,
@@ -36,6 +39,13 @@ export {
 } from "./kitScanOperations.js";
 
 export { flagKitModified } from "./kitSyncOperations.js";
+
+export {
+  type ConfirmedMissingSample,
+  putBackMissingSamplesTx,
+  readMissingSamplesTx,
+  removeMissingSamplesTx,
+} from "./missingSampleOperations.js";
 
 export {
   addSample,

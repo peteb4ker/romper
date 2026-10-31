@@ -402,6 +402,35 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
       expect(mockUndo).not.toHaveBeenCalled();
     });
 
+    it("[UC-05] undoes and redoes Remove missing samples in a read-only kit, or with no kit open (#822, D5)", () => {
+      const removal: AnyUndoAction = {
+        data: { kitName: "B0", samples: 2, voicesBefore: [] },
+        description: "Remove 2 missing samples from B0",
+        id: "remove-1",
+        timestamp: new Date(),
+        type: "REMOVE_MISSING_SAMPLES",
+      };
+      vi.mocked(useUndoRedo).mockReturnValue(
+        undoRedoState({ nextRedo: removal, nextUndo: removal }),
+      );
+      const readOnly = renderHook(() =>
+        useGlobalKeyboardShortcuts({
+          currentKitName: "test-kit",
+          isEditMode: false,
+        }),
+      );
+      const noKit = renderHook(() =>
+        useGlobalKeyboardShortcuts({ isEditMode: false }),
+      );
+
+      expect(readOnly.result.current.undoIfAllowed()).toBe(true);
+      expect(noKit.result.current.undoIfAllowed()).toBe(true);
+      expect(noKit.result.current.redoIfAllowed()).toBe(true);
+
+      expect(mockUndo).toHaveBeenCalledTimes(2);
+      expect(mockRedo).toHaveBeenCalledTimes(1);
+    });
+
     it("leaves Cmd+Z in a text field to the field", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({

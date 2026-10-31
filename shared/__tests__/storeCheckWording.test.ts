@@ -12,12 +12,16 @@ import {
   describeKitsNeedAttention,
   describeMissingFiles,
   describeNewMissingFiles,
+  describeRemovedMissingSamples,
+  describeRemoveMissingSamples,
+  describeRemoveMissingSamplesButton,
   describeScanKit,
   describeStatusBarItem,
   describeUntrackedFiles,
   hasKitBadge,
   LIBRARY_CHECK_EMPTY,
   LIBRARY_CHECK_HEADINGS,
+  REMOVE_MISSING_SAMPLES_LABEL,
   SCAN_KIT_LABEL,
   summarizeStoreCheck,
 } from "../storeCheckWording";
@@ -36,6 +40,33 @@ describe("[UC-05] [Q-06] store check wording (#824)", () => {
 
     it("names the kit in the button's accessible name, keeping the label first", () => {
       expect(describeScanKit("A3")).toBe("Scan kit A3");
+    });
+  });
+
+  describe("[UC-05] Remove missing samples (#822)", () => {
+    it("labels the button, and names it for its kit as Scan kit is", () => {
+      expect(REMOVE_MISSING_SAMPLES_LABEL).toBe("Remove missing samples");
+      expect(describeRemoveMissingSamplesButton("A3")).toBe(
+        "Remove missing samples A3",
+      );
+    });
+
+    it("asks in the popover, with the count and the kit, singular for one", () => {
+      expect(describeRemoveMissingSamples(2, "A3")).toBe(
+        "Remove 2 missing samples from A3? You can undo this.",
+      );
+      expect(describeRemoveMissingSamples(1, "A3")).toBe(
+        "Remove 1 missing sample from A3? You can undo this.",
+      );
+    });
+
+    it("names the removal for undo in the popover's words", () => {
+      expect(describeRemovedMissingSamples(2, "A3")).toBe(
+        "Remove 2 missing samples from A3",
+      );
+      expect(describeRemovedMissingSamples(1, "A3")).toBe(
+        "Remove 1 missing sample from A3",
+      );
     });
   });
 

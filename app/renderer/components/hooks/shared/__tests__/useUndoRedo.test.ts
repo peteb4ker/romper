@@ -96,6 +96,55 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
     expect(result.current.canRedo).toBe(true);
   });
 
+  it("[UC-05] undoes and redoes Remove missing samples with no kit open, on the action's own kit (#822)", async () => {
+    const api = vi.mocked(globalThis.electronAPI);
+    api.removeMissingSamples.mockResolvedValue({
+      data: { samples: 2, voicesBefore: [] },
+      success: true,
+    });
+    // The kit grid: no kit open
+    const { result } = renderHook(() => useUndoRedo(""));
+
+    act(() => {
+      result.current.addAction({
+        data: { kitName: "B0", samples: 2, voicesBefore: [] },
+        description: "Remove 2 missing samples from B0",
+        id: "remove-1",
+        timestamp: new Date(),
+        type: "REMOVE_MISSING_SAMPLES",
+      });
+    });
+    expect(result.current.undoDescription).toBe(
+      "Undo remove 2 missing samples from B0",
+    );
+
+    await act(async () => {
+      await result.current.undo();
+    });
+    expect(api.removeMissingSamples).toHaveBeenLastCalledWith("B0", []);
+    expect(result.current.canRedo).toBe(true);
+
+    await act(async () => {
+      await result.current.redo();
+    });
+    expect(api.removeMissingSamples).toHaveBeenLastCalledWith("B0");
+    expect(result.current.canUndo).toBe(true);
+  });
+
+  it("does nothing with no kit open for an action that belongs to the open kit", async () => {
+    const { result } = renderHook(() => useUndoRedo(""));
+    act(() => {
+      result.current.addAction(addSampleAction());
+    });
+
+    await act(async () => {
+      await result.current.undo();
+    });
+
+    expect(globalThis.electronAPI.deleteSampleFromSlot).not.toHaveBeenCalled();
+    expect(result.current.canUndo).toBe(true);
+  });
+
   it("should clear stacks when kit changes", () => {
     const { rerender, result } = renderHook(
       ({ kitName }) => useUndoRedo(kitName),

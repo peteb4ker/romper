@@ -3,7 +3,9 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
+import { createStoreCheckFinding } from "../../../../tests/factories/storeCheck.factory";
 import { createMockVoice } from "../../../../tests/factories/voice.factory";
+import { storeCheckStore } from "../hooks/kit-management/storeCheckStore";
 import KitGridItem from "../KitGridItem";
 
 type ItemProps = React.ComponentProps<typeof KitGridItem>;
@@ -1299,6 +1301,113 @@ describe("KitGridItem", () => {
       const cell = screen.getByRole("gridcell");
       expect(cell).not.toHaveAttribute("aria-describedby");
       expect(cell).toHaveAccessibleDescription("");
+    });
+  });
+
+  // #824: the store check's badge, from main's background check
+  describe("[UC-05] [Q-06] store check badge (#824)", () => {
+    const MISSING = "2 sample files not found";
+
+    beforeEach(() => {
+      storeCheckStore.reset();
+    });
+
+    const find = (overrides: Parameters<typeof createStoreCheckFinding>[0]) => {
+      act(() => storeCheckStore.apply([createStoreCheckFinding(overrides)]));
+    };
+
+    it("shows nothing for a kit the check found nothing in", () => {
+      render(<KitGridItem {...defaultProps} />);
+      expect(screen.queryByTestId("store-check-badge")).toBeNull();
+    });
+
+    it("shows an image with the count as its name and its tooltip", () => {
+      render(<KitGridItem {...defaultProps} />);
+
+      find({ kitName: "A0", missing: 2 });
+
+      const badge = screen.getByRole("img", { name: MISSING });
+      expect(badge).toHaveAttribute("data-testid", "store-check-badge");
+      expect(badge).toHaveAttribute("title", MISSING);
+    });
+
+    it("says what is in the kit's folder and not in the kit", () => {
+      render(<KitGridItem {...defaultProps} />);
+
+      find({ kitName: "A0", untracked: ["4 a.wav", "4 b.wav", "4 c.wav"] });
+
+      expect(screen.getByTestId("store-check-badge")).toHaveAccessibleName(
+        "3 files in this kit's folder aren't in the kit. Scan the kit to add them.",
+      );
+    });
+
+    it("is one icon for a kit with both", () => {
+      render(<KitGridItem {...defaultProps} />);
+
+      find({ kitName: "A0", missing: 2, untracked: ["4 a.wav"] });
+
+      expect(screen.getAllByTestId("store-check-badge")).toHaveLength(1);
+      expect(screen.getByTestId("store-check-badge")).toHaveAccessibleName(
+        "2 sample files not found; 1 file in the folder isn't in the kit",
+      );
+    });
+
+    it("is part of the card's accessible name, which replaces its children's names", () => {
+      render(<KitGridItem {...defaultProps} />);
+
+      find({ kitName: "A0", missing: 2 });
+
+      expect(screen.getByRole("gridcell")).toHaveAccessibleName(
+        `Kit A0 - 10 samples - ${MISSING}`,
+      );
+    });
+
+    it("shows beside the quarantine icon when both apply", () => {
+      render(
+        <KitGridItem
+          {...defaultProps}
+          kitData={{ ...defaultProps.kitData, quarantined: true }}
+        />,
+      );
+
+      find({ kitName: "A0", missing: 2, quarantined: true, unreadable: 1 });
+
+      expect(screen.getByTestId("quarantine-indicator")).toBeInTheDocument();
+      expect(screen.getByTestId("store-check-badge")).toBeInTheDocument();
+    });
+
+    it("isn't shown for a file that can't be read: the quarantine icon is", () => {
+      render(
+        <KitGridItem
+          {...defaultProps}
+          kitData={{ ...defaultProps.kitData, quarantined: true }}
+        />,
+      );
+
+      find({ kitName: "A0", quarantined: true, unreadable: 1 });
+
+      expect(screen.getByTestId("quarantine-indicator")).toBeInTheDocument();
+      expect(screen.queryByTestId("store-check-badge")).toBeNull();
+    });
+
+    it("goes when the files are back", () => {
+      render(<KitGridItem {...defaultProps} />);
+      find({ kitName: "A0", missing: 2 });
+
+      find({ kitName: "A0" });
+
+      expect(screen.queryByTestId("store-check-badge")).toBeNull();
+      expect(screen.getByRole("gridcell")).toHaveAccessibleName(
+        "Kit A0 - 10 samples",
+      );
+    });
+
+    it("is for this kit only", () => {
+      render(<KitGridItem {...defaultProps} />);
+
+      find({ kitName: "B1", missing: 2 });
+
+      expect(screen.queryByTestId("store-check-badge")).toBeNull();
     });
   });
 

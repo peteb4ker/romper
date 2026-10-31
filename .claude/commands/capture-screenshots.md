@@ -70,6 +70,13 @@ ROMPER_HEADLESS=true npm run screenshots -- --target manual-step-sequencer,manua
   run in a second session on a store generated from the e2e fixture by
   `tests/utils/broken-kit-store.ts`, deleted afterwards. They don't need
   `--store`, and never touch a real library.
+- **Library check:** targets marked `store: "library-check"` (the store
+  check's kit card badges, status bar item and "Library check" dialog,
+  #824) run in a session on a store generated from the e2e fixture by
+  `createLibraryCheckStore` in `tests/utils/broken-kit-store.ts`: a deleted
+  sample file in A0 and a dropped WAV in read-only B1. They wait for the
+  background check, which starts a few seconds after the grid loads, and
+  don't need `--store`.
 - **Slicer:** targets marked `store: "slicer"` (`manual-slicer`,
   `manual-slice-strip`, `manual-slice-step-options`,
   `manual-slice-roll-options`) were a one-time capture from a long sample

@@ -111,6 +111,51 @@ Click the **Modified** toggle to show only kits the next write will change on yo
 
   ![Kit card of a quarantined kit, with the red warning octagon beside its ID]({{ site.baseurl }}/images/manual/kit-card-quarantined.png)
 
+- **Files to look at** (yellow file icon with an X) -- Romper's check of your library found sample files missing, or files in the kit's folder that the kit doesn't hold. Hover over the icon to read what's wrong and how many: "2 sample files not found", or "3 files in this kit's folder aren't in the kit. Scan the kit to add them.". See [Validating Your Store](#validating-your-store).
+
+  ![Kit card with the yellow file icon, for a kit a sample file is missing from]({{ site.baseurl }}/images/manual/kit-card-store-check.png)
+
+## Validating Your Store
+
+Romper checks that your library's files and its database still agree, on its own. There is nothing to run. It reads each sample's file and, for kits imported during setup (the read-only ones), the kit's folder, and it only reports: it never changes a kit or a file.
+
+A few seconds after your kits load, Romper starts checking in the background, one kit at a time. It steps aside whenever you do something, so you won't notice it, and it waits while a write to the SD card runs. It starts again if you switch to another local store, and when you come back to Romper after a while away, such as after working in Finder or Explorer. The kit you have open in the Kit Editor is checked when it opens (see [Missing and Unreadable Files]({{ site.baseurl }}/manual/kit-editor#missing-and-unreadable-files)).
+
+### What it finds
+
+- **A sample's file is missing** -- The file was moved or deleted outside Romper. The kit's card shows the yellow file icon: "2 sample files not found".
+- **A file in a read-only kit's folder that the kit doesn't hold** -- A WAV whose name starts with a voice number, such as `2 kick.wav`, was added to the folder outside Romper. The icon reads "3 files in this kit's folder aren't in the kit. Scan the kit to add them." A kit with both shows one icon: "2 sample files not found; 3 files in the folder aren't in the kit". Hidden files, such as the `._` files macOS makes beside files copied from a card, never count, and neither do editable kits' folders, whose samples are the ones Romper holds.
+- **A read-only kit's folder is gone** -- "A3's folder is missing from your library." Its samples count as not found.
+- **A file Romper can't read** -- The kit is quarantined and shows the red warning octagon, as [described above](#kit-status-indicators).
+- **A drive that isn't connected** -- Samples you added from an external drive that isn't plugged in aren't counted as missing, because plugging it back in puts them right. The list says so: "The drive "Samples SSD" isn't connected, so 14 samples in 3 kits weren't checked." If a drive doesn't answer in time, the list says: "The drive "Samples SSD" didn't respond, so some samples weren't checked."
+
+It doesn't look for a folder for kits you made in Romper (they have none), and it never looks at the SD card.
+
+### Where it shows
+
+When there's nothing to report, Romper says nothing. When there is:
+
+- **Kit cards** -- A kit with missing files, or with files in its folder it doesn't hold, gets the yellow file icon. It's an image with a name and a tooltip, so a screen reader reads it as part of the kit card's name. Color is never the only sign: the tooltip says the same in words.
+- **The status bar** -- An item such as "3 kits need attention" appears at the bottom of the window for as long as there are problems.
+
+  ![The status bar item, 2 kits need attention]({{ site.baseurl }}/images/manual/status-bar-store-check.png)
+
+- **A message** -- When a check finds missing sample files it hadn't found before, one message says so: "Romper found missing sample files in 3 kits. Open the list from the status bar." Problems you already know about don't bring it back.
+
+Click the status bar item (or focus it and press `Enter`) to open the **Library check**. It lists each kit to look at and what's wrong with it, and a line for each drive that wasn't connected or didn't respond. Press `Escape` or **Close** to close it; focus goes back to the status bar item.
+
+![The Library check, listing a kit with a missing sample file and a kit with a file in its folder that the kit doesn't hold]({{ site.baseurl }}/images/manual/library-check-dialog.png)
+
+![The yellow file icon on a read-only kit with a file in its folder that the kit doesn't hold]({{ site.baseurl }}/images/manual/kit-card-store-check-folder.png)
+
+### What to do about it
+
+- **A file is missing:** put it back where it was, or open the kit and replace or remove the sample (the Kit Editor labels it **File not found**). Until then it's skipped when you write to the SD card.
+- **A file isn't in the kit:** open the kit and click **Scan Kit** (or use **File > Scan All**) to add it. See [Scanning Your Library](#scanning-your-library).
+- **A drive isn't connected:** connect it.
+
+The icon and the status bar item go the next time Romper checks, once what they point at is fixed.
+
 ## Scanning Your Library
 
 Use **File > Scan All** (`Cmd+Shift+S` / `Ctrl+Shift+S`) to rescan your library. After you confirm, Romper re-reads each kit's folder in your local store. New WAV files in a read-only kit's folder are added (up to 12 per voice), missing WAV details are filled in, and voices without a name are named from their samples. Existing samples, gain, slot order and stereo links are kept (a scan never links or unlinks voices), and editable kits never gain samples from their folders. The result also says what the next write will do about stereo: pairs it will link automatically, voices it will mix down to mono, and quarantined kits (see [Stereo and Mono Handling]({{ site.baseurl }}/manual/kit-editor#stereo-and-mono-handling)).

@@ -1,6 +1,7 @@
 import {
   BookmarkSimpleIcon,
   CopyIcon,
+  FileXIcon,
   LockSimpleIcon,
   MusicNoteIcon,
   TrashIcon,
@@ -8,6 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import { toCapitalCase } from "@romper/shared/kitUtilsShared";
 import { QUARANTINE_ICON_LABEL } from "@romper/shared/stereoLinkRules";
+import { describeKitBadge } from "@romper/shared/storeCheckWording";
 import React, { useId, useState } from "react";
 
 import type {
@@ -15,6 +17,7 @@ import type {
   RequestDeleteSummaryFn,
 } from "./hooks/kit-management/useKitItemActions";
 
+import { useKitStoreFinding } from "./hooks/kit-management/storeCheckStore";
 import { useKitItem } from "./hooks/kit-management/useKitItem";
 import { useKitItemActions } from "./hooks/kit-management/useKitItemActions";
 import { useTimeouts } from "./hooks/shared/useTimeouts";
@@ -96,7 +99,15 @@ const KitGridItem = React.memo(
         (sampleCounts?.[2] || 0) +
         (sampleCounts?.[3] || 0);
       const statusText = isValid ? `${totalSamples} samples` : "Invalid kit";
-      const ariaLabel = `Kit ${kit} - ${statusText}`;
+      // What the store check found: files missing, or in the kit's folder
+      // and not in the kit (#824). One icon, whatever the mix.
+      const finding = useKitStoreFinding(kit);
+      const badge = finding ? describeKitBadge(finding) : null;
+      // The badge is part of the card's name: the cell's aria-label
+      // replaces its children's names
+      const ariaLabel = badge
+        ? `Kit ${kit} - ${statusText} - ${badge}`
+        : `Kit ${kit} - ${statusText}`;
       // The cell's aria-label replaces its children's names, so the
       // quarantine icon's own label is described to a screen reader (#814)
       const quarantineId = useId();
@@ -167,6 +178,17 @@ const KitGridItem = React.memo(
                     title={QUARANTINE_ICON_LABEL}
                   >
                     <WarningOctagonIcon size={15} weight="fill" />
+                  </span>
+                )}
+                {badge && (
+                  <span
+                    aria-label={badge}
+                    className="flex-shrink-0 text-accent-warning"
+                    data-testid="store-check-badge"
+                    role="img"
+                    title={badge}
+                  >
+                    <FileXIcon size={15} weight="fill" />
                   </span>
                 )}
                 {kitData?.voices?.some((v) => v.stereo_mode) && (

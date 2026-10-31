@@ -63,8 +63,8 @@ safe, but:
 
 ## What's in the folder
 
-From a real card (2026-10-04), believed to run firmware 2.00; that
-stays unconfirmed until someone reads **Settings → INFO** (hardware check 1).
+From a real card (2026-10-04), from a Rample running firmware 2.00
+(read from **Settings → INFO**, hardware check 1, 2026-10-30).
 See [Firmware versions](#firmware-versions):
 
 | File | Written by | What it holds |
@@ -171,8 +171,8 @@ versions; see [Firmware versions](#firmware-versions).
 No file in `_save` records a firmware or format version: `settings.rpl`
 has no version key, and the kit files have none either. So the firmware
 behind a folder can only be inferred from which keys are present, and
-each inference is labeled as one. The Rample that wrote these files is believed to run 2.00
-(unconfirmed until check 1); 3.00 is the latest release (February 2026).
+each inference is labeled as one. The Rample that wrote these files runs 2.00
+(check 1); 3.00 is the latest release (February 2026).
 
 Firmware also changes what a value means without changing its key. 2.00
 moved output levels to dB, redesigned Freeze and Bitcrusher, and let
@@ -197,7 +197,7 @@ release between 2.00 and 3.00, and none after 3.00.
 | 1.3 (December 2020) | LAYER default; ASSIGN = KIT or GLOBAL | `layerMode`, `assign`, `global_assign.rpl` | Seen |
 | 1.4 (May 2021) | More VUMETER modes; MIDI keyboard split; CV V/oct | `vu_meters` (wider range); the split's storage is unknown | `vu_meters` seen; the split is expected somewhere |
 | 1.50 (July 2022) | FLIP | `flip` | Seen |
-| 2.00 (February 2024) | SLICER EXP and 1/128; levels in dB; new Freeze and Bitcrusher; holding ASSIGN keeps FX on kit load | `slicer_quantize_postv200` | Seen. The committed files are at least 2.00 (inferred) |
+| 2.00 (February 2024) | SLICER EXP and 1/128; levels in dB; new Freeze and Bitcrusher; holding ASSIGN keeps FX on kit load | `slicer_quantize_postv200` | Seen. The committed files are 2.00 (check 1) |
 | 3.00 (February 2026) | Compressor (COMPRESS preset, % COMPRESS, SIDECHAIN) and TAPE, "saved as part of your settings" per the manual | Expected in `settings.rpl`, names unknown | Not seen: the committed files predate 3.00, or 3.00 writes them only after SAVE SETTINGS (inferred) |
 | 3.00 | PUNCH mode; MIDI layer selection by note; PRO and PEAK VU meters | Unknown; the manual doesn't say whether PUNCH is saved. New VU meters widen `vu_meters`' values | Expected |
 
@@ -373,9 +373,9 @@ device writes, byte for byte, so they're the best regression fixtures for
 a reader and for byte-identical re-encoding.
 
 - **Committed (D1, approved 2026-10-09):** the six files, unchanged, in
-  `tests/fixtures/rample-save/fw-2.00-inferred/`, with a README saying
-  where they came from. The folder says `-inferred` until check 1 reads
-  the firmware from the device; a 3.00 sample goes beside it as
+  `tests/fixtures/rample-save/fw-2.00/`, with a README saying
+  where they came from. Check 1 read the firmware from the device
+  (2.00, 2026-10-30); a 3.00 sample goes beside it as
   `fw-3.00/`, and each later hardware check's `_save` copy goes in too,
   so every claim in the tables above points at a file. A `.gitattributes`
   there marks `*.rpl` binary, so Git never changes a byte.
@@ -471,7 +471,7 @@ Two PRs, both without UI.
   for byte: a device file always should; one with a longer integer form
   than needed (hardware check 17) doesn't.
 - **Affects:** Q-08. **Decisions:** D1 (fixtures; the stage starts
-  with synthetic ones). **Hardware:** none; check 1 labels the fixtures.
+  with synthetic ones). **Hardware:** none; check 1 labeled the fixtures (done).
 - **Tests:** unit tests of the decoder against every fixture; the
   codec's encoder builds the synthetic fixtures (it has no other caller
   until stage 6); a byte-identical decode → encode round trip for every
@@ -726,11 +726,30 @@ check unblocks.
    `cmp -l` on the changed file shows the bytes that moved. Note what
    changed in the check's issue comment.
 
+### Sessions
+
+The checks below in the order to run them, two to four at a time. Each
+session uses the steps in [Before you start](#before-you-start); within a
+session, run the checks in the order listed.
+
+| Order | Session | Checks | Unblocks |
+|---|---|---|---|
+| 1 | **Changes made on the computer.** Edit the card, then load the kit on the device. Restore `L1.rpl` and F7's voice 3 from `00-baseline` afterwards. | 8, 9, 10 | Stage 4, the next stage to build (warn about settings left on the card, and the reset) |
+| 2 | **Voice 1 on L4.** Turn knobs and change modes, STORE after each. | 3, 4, 12 | Knob units, run mode and layer mode names in the "On the Rample" panel; stage 5's seeding |
+| 3 | **Routing, device settings and autosave.** | 5, 6, 13, 2 | Mute groups, CV assignments, device settings and the autosave file in the panel |
+| 4 | **Spare card, part 1.** Romper prepares the files for 14 and 15; ask the coordinator first. | 11, 14, 15 | #573 (lower-case folders); stage 6 |
+| 5 | **Spare card, part 2.** Romper prepares the files. | 16, 17 | Stage 6 |
+| Later | Deferred until a firmware update is planned | 7, 18 | #617, the 3.00 row of the firmware matrix |
+
+Check 1 is done (2.00). Sessions 1 to 3 need only the usual card and its
+`00-baseline` copy; 4 and 5 put computer-made files on a card, so they
+use a spare one. Stage 6 also needs check 18 before it writes for 3.00.
+
 ### The checks
 
 1. **Firmware.** Record the version from **Settings → INFO**, and
-   whether the module is a Rample or a Rample Turbo. Until this is done,
-   the firmware behind the committed files is a belief (2.00), not a fact.
+   whether the module is a Rample or a Rample Turbo. **Done
+   2026-10-30:** 2.00, on a Rample (not a Turbo).
 2. **Autosave.** With AUTOSAVE on, load kit A0, power off and on, copy
    `_save`. Then load B0, power-cycle, copy again. Expect
    `autosave_C1.rpl` to become `autosave_A0.rpl`, then

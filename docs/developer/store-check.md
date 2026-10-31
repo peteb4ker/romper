@@ -37,7 +37,7 @@ Decided on 2026-10-09 (recorded on #769). This spec doesn't reopen them.
 - **Fixes offered:** rescan the kit, remove the missing samples, or search
   on disk for the missing files and copy them back into place.
 - **Wording:** every new string (badge, notice, fix actions) goes to the maintainer
-  for sign-off. The wording below is drafted, not approved.
+  for sign-off. The wording below was approved on #824 (2026-10-30).
 
 ## What exists today
 
@@ -270,8 +270,8 @@ interface StoreCheckStatus {
 
 ## Badges and the notice
 
-All wording here is a draft for the maintainer (see
-[Drafted wording](#drafted-wording)).
+All wording here is in [Wording](#wording), approved on #824
+(2026-10-30).
 
 - **Kit card badge.** A kit with missing files or untracked files gets
   one icon beside the quarantine icon's place, in `--accent-warning`, a
@@ -510,7 +510,7 @@ Each stage is one PR. Stages 2 to 6 wait for the decisions named.
     `tests/perf/budgets.ts` for the one-kit step and the full pass;
     `syncFsCalls` stays 0.
 
-### Stage 3: badges and the notice (blocked on D8, D11 and wording)
+### Stage 3: badges and the notice
 
 - The kit card badge, the status bar item, the one-time message and the
   details dialog (replacing `ValidationResultsDialog` and
@@ -520,20 +520,20 @@ Each stage is one PR. Stages 2 to 6 wait for the decisions named.
   the message appears once per new problem; keyboard and screen reader
   paths work.
 
-### Stage 4: rescan from the notice (blocked on stage 3 and wording)
+### Stage 4: rescan from the notice (after stage 3)
 
 - The rescan fix in the dialog and the editor's notice. `rescanKit`'s
   file reads move to `fs.promises`.
 - **Acceptance:** rescan from the dialog clears the untracked finding;
   `rescan-kit` makes no sync fs call.
 
-### Stage 5: remove missing samples (blocked on D5, D6 and wording)
+### Stage 5: remove missing samples
 
 - `remove-missing-samples`, its popover, and undo.
 - **Acceptance:** removes only rows still missing at the time; never
   those on a drive not connected; one undo restores them.
 
-### Stage 6: find missing files and put them back (blocked on D1, D2, D3 and wording)
+### Stage 6: find missing files and put them back
 
 - `pick-search-folder`, `find-missing-files`, `restore-missing-file`,
   the results list and undo.
@@ -564,9 +564,9 @@ checks samples. Once stage 3 replaces `ValidationResultsDialog`,
 | D10 | The promised "Validate Store" button (UC-05) | **Approved 2026-10-10:** Don't build an on-demand button; the automatic check replaces it. Optionally a "Check again" in the details dialog. |
 | D11 | The badge's look | **Approved 2026-10-10:** A warning-colored icon distinct from the quarantine octagon (for example Phosphor's `FileX`), one per card. |
 
-## Drafted wording
+## Wording
 
-**Drafts for the maintainer's sign-off; none is approved.**
+**Approved on #824 (2026-10-30), as written.**
 
 - Badge, missing files: "2 sample files not found"
 - Badge, untracked files: "3 files in this kit's folder aren't in the kit. Scan the kit to add them."

@@ -7,12 +7,13 @@ See [`docs/developer/rample-save-integration.md`](../../../docs/developer/rample
 for what the files hold.
 
 One folder per firmware, named after it. Nothing in the files records a
-firmware version, so a folder whose firmware hasn't been read from the
-device (**Settings → INFO**, hardware check 1) says `-inferred`.
+firmware version, so it's read from the device (**Settings → INFO**,
+hardware check 1) when the copy is made; a folder whose firmware wasn't
+read says `-inferred`.
 
 | Folder | Source | Firmware |
 |---|---|---|
-| `fw-2.00-inferred/` | A real Rample, copied 2026-10-04 | 2.00, inferred from `settings.rpl`'s keys; unconfirmed until check 1 |
+| `fw-2.00/` | A real Rample (not a Turbo), copied 2026-10-04 | 2.00, read from Settings → INFO (check 1, 2026-10-30) |
 
 Rules:
 

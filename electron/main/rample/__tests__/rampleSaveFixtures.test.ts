@@ -19,11 +19,11 @@ import { decodeCbor, encodeCbor } from "../cbor";
 import { readRampleSaveFolder } from "../rampleSaveReader";
 
 // Real `_save` files (decision D1, #786), copied unchanged from a
-// Rample's card. The firmware is inferred (2.00) until hardware check 1
-// confirms it; see the folder's README.
-const FW_2_00_INFERRED = path.resolve(
+// Rample's card running firmware 2.00 (hardware check 1); see the
+// folder's README.
+const FW_2_00 = path.resolve(
   __dirname,
-  "../../../../tests/fixtures/rample-save/fw-2.00-inferred",
+  "../../../../tests/fixtures/rample-save/fw-2.00",
 );
 
 const NON_EMPTY = [
@@ -35,7 +35,7 @@ const NON_EMPTY = [
 ];
 
 const fixture = (name: string) =>
-  new Uint8Array(fs.readFileSync(path.join(FW_2_00_INFERRED, name)));
+  new Uint8Array(fs.readFileSync(path.join(FW_2_00, name)));
 
 const byName = (files: RampleSaveFile[], name: string) =>
   files.find((file) => file.fileName === name);
@@ -44,7 +44,7 @@ const four = <T>(value: T): T[] => [value, value, value, value];
 
 describe("[Q-08] the reader on a real Rample's _save files (#786)", () => {
   it("decodes all six files, with nothing unknown, missing or wrong", async () => {
-    const { files } = await readRampleSaveFolder(FW_2_00_INFERRED);
+    const { files } = await readRampleSaveFolder(FW_2_00);
 
     expect(files.map((file) => [file.fileName, file.kind])).toEqual([
       ["F7.rpl", "kit"],
@@ -63,7 +63,7 @@ describe("[Q-08] the reader on a real Rample's _save files (#786)", () => {
   });
 
   it("guesses firmware 2.00 from settings.rpl, as an inference", async () => {
-    const { files, firmware } = await readRampleSaveFolder(FW_2_00_INFERRED);
+    const { files, firmware } = await readRampleSaveFolder(FW_2_00);
 
     expect(firmware.inferred).toBe(true);
     expect(firmware.atLeast).toBe("2.00");
@@ -83,7 +83,7 @@ describe("[Q-08] the reader on a real Rample's _save files (#786)", () => {
   });
 
   it("says each non-empty file re-encodes exactly", async () => {
-    const { files } = await readRampleSaveFolder(FW_2_00_INFERRED);
+    const { files } = await readRampleSaveFolder(FW_2_00);
 
     expect(
       files
@@ -94,7 +94,7 @@ describe("[Q-08] the reader on a real Rample's _save files (#786)", () => {
   });
 
   it("holds the values the roadmap's key tables cite", async () => {
-    const { files } = await readRampleSaveFolder(FW_2_00_INFERRED);
+    const { files } = await readRampleSaveFolder(FW_2_00);
     const kit = (name: string) =>
       (byName(files, name) as RampleKitSaveFile).values;
 

@@ -5,7 +5,13 @@ import {
   checkSampleSourceAccess,
   rememberKitSampleSources,
 } from "../security/sampleSourceAccess.js";
+import {
+  putBackMissingSamples,
+  removeMissingSamples,
+} from "../services/missingSampleRemoval.js";
 import { sampleService } from "../services/sampleService.js";
+import { storeCheckService } from "../services/storeCheckService.js";
+import { ServicePathManager } from "../utils/fileSystemUtils.js";
 import {
   createSampleOperationHandler,
   readKitRows,
@@ -123,6 +129,53 @@ export function registerSampleIpcHandlers(
       // Redo removes what this restores; let it read those files again
       await rememberKitSampleSources(inMemorySettings, kitName);
       return sampleService.restoreVoices(inMemorySettings, kitName, voices);
+    },
+  );
+
+  // "Remove missing samples" (#822, stage 5 of docs/developer/store-check.md)
+  // and its undo, on read-only kits too (D5). Main checks each file again
+  // before removing its row. Undo puts back only what the removal took,
+  // and its files must be ones Romper may read (RE-03), as for
+  // restore-kit-voices. Either way the store check looks at the kit again
+  // once this call is over, so its badge, the status bar and the Library
+  // check follow at once.
+  handle(
+    "remove-missing-samples",
+    async (_event, kitName: string, undo?: VoiceSnapshot[]) => {
+      if (typeof kitName !== "string" || kitName === "") {
+        return { error: "Kit name must be a string", success: false };
+      }
+      if (undo !== undefined && !Array.isArray(undo)) {
+        return { error: "No voices to restore", success: false };
+      }
+      const localStorePath =
+        ServicePathManager.getLocalStorePath(inMemorySettings);
+      if (!localStorePath) {
+        return { error: "No local store path configured", success: false };
+      }
+      let result;
+      if (undo === undefined) {
+        // Undo puts back what this removes; let it read those paths again
+        await rememberKitSampleSources(inMemorySettings, kitName);
+        result = await removeMissingSamples(localStorePath, kitName);
+      } else {
+        const sourcePaths = undo.flatMap((voice) =>
+          (voice?.samples ?? []).map((sample) => sample?.source_path),
+        );
+        for (const sourcePath of sourcePaths) {
+          const access = await checkSampleSourceAccess(
+            // NOSONAR: the first refusal, in order
+            inMemorySettings,
+            sourcePath,
+          );
+          if (!access.ok) return { error: access.error, success: false };
+        }
+        // Redo removes them again
+        await rememberKitSampleSources(inMemorySettings, kitName);
+        result = putBackMissingSamples(localStorePath, kitName, undo);
+      }
+      if (result.success) storeCheckService.recheckKit(kitName);
+      return result;
     },
   );
 }

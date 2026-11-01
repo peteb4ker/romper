@@ -23,6 +23,7 @@ export type AnyUndoAction =
   | MoveSampleAction
   | MoveSampleBetweenKitsAction
   | ReindexSamplesAction
+  | RemoveMissingSamplesAction
   | SequenceEditAction;
 
 export interface DeleteSampleAction extends UndoAction {
@@ -117,6 +118,22 @@ export interface ReindexSamplesAction extends UndoAction {
 }
 
 /**
+ * "Remove missing samples" from a kit (#822). It carries its kit, because
+ * it can be made from the Library check while another kit, or none, is
+ * open, and undo works on it whether or not the kit is editable (D5).
+ */
+export interface RemoveMissingSamplesAction extends UndoAction {
+  data: {
+    kitName: string;
+    /** How many rows went */
+    samples: number;
+    /** The voices the removal changed, as main returned them; undo puts them back */
+    voicesBefore: VoiceSnapshot[];
+  };
+  type: "REMOVE_MISSING_SAMPLES";
+}
+
+/**
  * A sample row as undo keeps it: everything the user can see or set, so
  * restoring it brings back its gain and WAV details too (RE-86). The id,
  * kit and voice come from where it's restored.
@@ -169,6 +186,7 @@ export interface UndoAction {
     | "MOVE_SAMPLE_BETWEEN_KITS"
     | "MOVE_SAMPLE"
     | "REINDEX_SAMPLES"
+    | "REMOVE_MISSING_SAMPLES"
     | "SEQUENCE_EDIT";
 }
 
@@ -176,6 +194,17 @@ export interface UndoAction {
 export interface VoiceSnapshot {
   samples: SampleSnapshot[];
   voice: number;
+}
+
+/**
+ * Whether the action names its own kit, so it can be undone or redone with
+ * any kit open, or none, and whether or not that kit is editable: "Remove
+ * missing samples", which the Library check makes for any kit (#822, D5)
+ */
+export function carriesItsKit(
+  action: AnyUndoAction | null | undefined,
+): boolean {
+  return action?.type === "REMOVE_MISSING_SAMPLES";
 }
 
 // Helper to create action IDs: the timestamp, then 8 random hex digits, the
@@ -198,6 +227,7 @@ export function getActionDescription(action: AnyUndoAction): string {
       return `Undo move sample from ${action.data.fromKit} voice ${action.data.fromVoice}, slot ${action.data.fromSlot + 1} to ${action.data.toKit} voice ${action.data.toVoice}, slot ${action.data.toSlot + 1}`;
     case "REINDEX_SAMPLES":
       return `Undo reindex samples in voice ${action.data.voice} after deleting slot ${action.data.deletedSlot + 1}`;
+    case "REMOVE_MISSING_SAMPLES":
     case "SEQUENCE_EDIT":
       return `Undo ${action.description.charAt(0).toLowerCase()}${action.description.slice(1)}`;
     default:

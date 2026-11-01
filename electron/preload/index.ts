@@ -393,6 +393,10 @@ const electronAPI = {
     isDev && console.debug("[IPC] readSettings invoked");
     return await settingsManager.readSettings();
   },
+  removeMissingSamples: (kitName: string, undo?: VoiceSnapshot[]) => {
+    isDev && console.debug("[IPC] removeMissingSamples invoked", kitName);
+    return invoke("remove-missing-samples", kitName, undo);
+  },
   requestLocalStoreAccess: (targetPath: string) => {
     isDev && console.debug("[IPC] requestLocalStoreAccess invoked", targetPath);
     return invoke("request-local-store-access", targetPath);

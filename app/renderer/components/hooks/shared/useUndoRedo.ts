@@ -3,7 +3,7 @@
 
 import type { AnyUndoAction } from "@romper/shared/undoTypes";
 
-import { getActionDescription } from "@romper/shared/undoTypes";
+import { carriesItsKit, getActionDescription } from "@romper/shared/undoTypes";
 import { useCallback } from "react";
 
 import type { OperationResult } from "../sample-management/types";
@@ -93,9 +93,8 @@ export function useUndoRedo(
 
   // Undo the most recent action
   const undo = useCallback(async () => {
-    if (!kitName || state.undoStack.length === 0 || state.isUndoing) {
-      return;
-    }
+    if (state.undoStack.length === 0 || state.isUndoing) return;
+    if (!kitName && !carriesItsKit(state.undoStack[0])) return;
 
     const actionToUndo = state.undoStack[0];
     state.setError("");
@@ -125,9 +124,8 @@ export function useUndoRedo(
 
   // Redo the most recent undone action
   const redo = useCallback(async () => {
-    if (!kitName || state.redoStack.length === 0 || state.isRedoing) {
-      return;
-    }
+    if (state.redoStack.length === 0 || state.isRedoing) return;
+    if (!kitName && !carriesItsKit(state.redoStack[0])) return;
 
     const actionToRedo = state.redoStack[0];
     state.setError("");

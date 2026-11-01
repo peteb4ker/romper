@@ -14,10 +14,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createMockKitWithRelations } from "../../../../tests/factories/kit.factory";
 import { createMockSample } from "../../../../tests/factories/sample.factory";
+import { createStoreCheckFinding } from "../../../../tests/factories/storeCheck.factory";
 import { createMockVoice } from "../../../../tests/factories/voice.factory";
 import { setupElectronAPIMock } from "../../../../tests/mocks/electron/electronAPI";
 import { GAIN_SAVE_DELAY_MS } from "../GainKnob";
 import { createSlotPlaybackStore } from "../hooks/kit-management/slotPlaybackStore";
+import { storeCheckStore } from "../hooks/kit-management/storeCheckStore";
 import { MAX_SLOTS_PER_VOICE } from "../hooks/voice-panels/useVoicePanelSlots";
 import KitVoicePanels from "../KitVoicePanels";
 import { MockMessageDisplayProvider } from "./MockMessageDisplayProvider";
@@ -1647,6 +1649,127 @@ describe("KitVoicePanels", () => {
       fireEvent.click(scan);
 
       expect(onRescanKit).not.toHaveBeenCalled();
+    });
+
+    describe("[UC-05] Remove missing samples in the notice (#822)", () => {
+      afterEach(() => {
+        act(() => storeCheckStore.reset());
+      });
+
+      it("offers it with the count, asks first, and removes the kit's missing samples", async () => {
+        metadata(
+          { ...row(1, 0, "kick.wav", 1), source_status: "missing" },
+          { ...row(2, 0, "hat.wav", 1), source_status: "missing" },
+        );
+        vi.mocked(
+          globalThis.electronAPI.removeMissingSamples,
+        ).mockResolvedValue({
+          data: { samples: 2, voicesBefore: [] },
+          success: true,
+        });
+        render(
+          <MultiVoicePanelsTestWrapper
+            voices={kitVoices({ v2: ["hat.wav"] })}
+          />,
+        );
+
+        const notice = await screen.findByTestId("kit-missing-files-notice");
+        fireEvent.click(
+          within(notice).getByRole("button", {
+            name: "Remove missing samples Kit1",
+          }),
+        );
+        const popover = screen.getByRole("dialog", {
+          name: "Remove 2 missing samples from Kit1? You can undo this.",
+        });
+        await act(async () => {
+          fireEvent.click(
+            within(popover).getByRole("button", {
+              name: "Remove missing samples",
+            }),
+          );
+        });
+
+        expect(
+          globalThis.electronAPI.removeMissingSamples,
+        ).toHaveBeenCalledWith("Kit1");
+      });
+
+      it("doesn't count, or offer, samples on a drive the store check found isn't connected (D6)", async () => {
+        metadata(
+          { ...row(1, 0, "kick.wav", 1), source_status: "missing" },
+          {
+            ...row(2, 0, "hat.wav", 1),
+            source_path: "/Volumes/Away/hat.wav",
+            source_status: "missing",
+          },
+        );
+        act(() =>
+          storeCheckStore.apply([
+            createStoreCheckFinding({
+              kitName: "Kit1",
+              missing: 1,
+              notConnected: [{ samples: 1, volume: "/Volumes/Away" }],
+            }),
+          ]),
+        );
+        const { unmount } = render(
+          <MultiVoicePanelsTestWrapper
+            voices={kitVoices({ v2: ["hat.wav"] })}
+          />,
+        );
+
+        fireEvent.click(
+          await screen.findByRole("button", {
+            name: "Remove missing samples Kit1",
+          }),
+        );
+        expect(
+          screen.getByRole("dialog", {
+            name: "Remove 1 missing sample from Kit1? You can undo this.",
+          }),
+        ).toBeInTheDocument();
+        unmount();
+
+        // Only the drive's sample is missing: nothing to offer
+        metadata({
+          ...row(1, 0, "kick.wav", 1),
+          source_path: "/Volumes/Away/kick.wav",
+          source_status: "missing",
+        });
+        render(<MultiVoicePanelsTestWrapper voices={kitVoices()} />);
+        await screen.findByTestId("kit-missing-files-notice");
+        expect(
+          screen.queryByRole("button", { name: /^Remove missing samples/ }),
+        ).toBeNull();
+      });
+
+      it("shows main's own words when the removal fails", async () => {
+        metadata({ ...row(1, 0, "kick.wav", 1), source_status: "missing" });
+        vi.mocked(
+          globalThis.electronAPI.removeMissingSamples,
+        ).mockResolvedValue({ error: "Kit Kit1 not found", success: false });
+        const onMessage = vi.fn();
+        render(
+          <MultiVoicePanelsTestWrapper
+            onMessage={onMessage}
+            voices={kitVoices()}
+          />,
+        );
+        fireEvent.click(
+          await screen.findByRole("button", {
+            name: "Remove missing samples Kit1",
+          }),
+        );
+
+        await act(async () => {
+          fireEvent.click(
+            screen.getByRole("button", { name: "Remove missing samples" }),
+          );
+        });
+
+        expect(onMessage).toHaveBeenCalledWith("Kit Kit1 not found", "error");
+      });
     });
 
     it("asks main to check the kit's files once per kit open, and reloads when something changed", async () => {

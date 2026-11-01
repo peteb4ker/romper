@@ -43,6 +43,12 @@ export const LIBRARY_CHECK_EMPTY = "No problems found.";
 /** The fix button that rescans a kit (approved on #824, 2026-10-30) */
 export const SCAN_KIT_LABEL = "Scan kit";
 
+/**
+ * The fix button that removes a kit's missing samples, and the button in
+ * its popover that confirms it (approved on #824, 2026-10-30)
+ */
+export const REMOVE_MISSING_SAMPLES_LABEL = "Remove missing samples";
+
 /** The drive's name for people: "Samples SSD" for `/Volumes/Samples SSD` */
 export function describeDrive(volume: string): string {
   const trimmed = trimTrailing(volume, String.raw`\/`);
@@ -99,6 +105,36 @@ export function describeMissingFiles(count: number): string {
 /** The message shown once when a pass finds missing files it hadn't */
 export function describeNewMissingFiles(kits: number): string {
   return `Romper found missing sample files in ${kits} ${kits === 1 ? "kit" : "kits"}. Open the list from the status bar.`;
+}
+
+/**
+ * The removal as undo names it, the popover's words without the question:
+ * "Couldn't undo: remove 2 missing samples from A3. ..." when undo fails
+ */
+export function describeRemovedMissingSamples(
+  count: number,
+  kitName: string,
+): string {
+  return `Remove ${count} missing ${count === 1 ? "sample" : "samples"} from ${kitName}`;
+}
+
+/**
+ * The remove popover's question (approved on #824, 2026-10-30; the
+ * singular in the same style, 2026-10-31)
+ */
+export function describeRemoveMissingSamples(
+  count: number,
+  kitName: string,
+): string {
+  return `Remove ${count} missing ${count === 1 ? "sample" : "samples"} from ${kitName}? You can undo this.`;
+}
+
+/**
+ * The remove button's accessible name: its label with the kit, as "Scan
+ * kit A3" is (approved on #821, 2026-10-31)
+ */
+export function describeRemoveMissingSamplesButton(kitName: string): string {
+  return `${REMOVE_MISSING_SAMPLES_LABEL} ${kitName}`;
 }
 
 /**

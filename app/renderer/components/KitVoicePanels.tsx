@@ -31,6 +31,8 @@ import type { SlotPlaybackStore } from "./hooks/kit-management/slotPlaybackStore
 import type { SampleData, VoiceSamples } from "./kitTypes";
 
 import { slotKey } from "../utils/slotKey";
+import { removeMissingSamplesFromKit } from "./hooks/kit-management/removeMissingSamples";
+import { useKitStoreFinding } from "./hooks/kit-management/storeCheckStore";
 import { useKitVoicePanels } from "./hooks/kit-management/useKitVoicePanels";
 import { useStereoHandling } from "./hooks/sample-management/useStereoHandling";
 import {
@@ -40,6 +42,7 @@ import {
 import { useLatestRef } from "./hooks/shared/useLatestRef";
 import { useSettingSave } from "./hooks/shared/useSettingSave";
 import KitVoicePanel from "./KitVoicePanel";
+import RemoveMissingSamplesButton from "./RemoveMissingSamplesButton";
 import ModalDialog from "./shared/ModalDialog";
 
 /**
@@ -343,6 +346,34 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         ),
     [sampleMetadata],
   );
+
+  // The missing samples "Remove missing samples" would take (#822): not
+  // those on a drive the store check found isn't connected (D6). Main
+  // checks every file again before removing anything.
+  const storeFinding = useKitStoreFinding(hookProps.kitName);
+  const removableCount = React.useMemo(() => {
+    const offline = (storeFinding?.notConnected ?? []).map((d) => d.volume);
+    return missingFiles.filter(
+      (file) =>
+        !offline.some(
+          (volume) =>
+            file.source_path === volume ||
+            file.source_path.startsWith(`${volume}/`) ||
+            file.source_path.startsWith(`${volume}\\`),
+        ),
+    ).length;
+  }, [missingFiles, storeFinding]);
+  const [removing, setRemoving] = useState(false);
+  const { onMessage: showRemoveError } = props;
+  const removeMissing = React.useCallback(async () => {
+    setRemoving(true);
+    try {
+      const error = await removeMissingSamplesFromKit(hookProps.kitName);
+      if (error) showRemoveError?.(error, "error");
+    } finally {
+      setRemoving(false);
+    }
+  }, [hookProps.kitName, showRemoveError]);
 
   // What the rules make of the kit: mixdowns, quarantine (#537), and the
   // pairs the write plays in stereo, links it makes included, so preview
@@ -727,30 +758,42 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
                 </li>
               ))}
             </ul>
-            {props.onRescanKit && (
-              <button
-                aria-busy={props.scanning === true}
-                aria-disabled={props.scanning === true}
-                aria-label={describeScanKit(hookProps.kitName)}
-                className={`shrink-0 px-2 py-1 text-xs bg-accent-primary text-text-inverse rounded font-semibold flex items-center transition duration-150 ${
-                  props.scanning
-                    ? "opacity-60 cursor-wait"
-                    : "hover:bg-accent-primary/80"
-                }`}
-                data-testid="kit-missing-files-scan"
-                onClick={() => {
-                  if (!props.scanning) props.onRescanKit?.();
-                }}
-                type="button"
-              >
-                <ArrowsClockwiseIcon
-                  aria-hidden="true"
-                  className="inline-block mr-1"
-                  size={14}
+            <div className="flex shrink-0 items-start gap-2">
+              {props.onRescanKit && (
+                <button
+                  aria-busy={props.scanning === true}
+                  aria-disabled={props.scanning === true}
+                  aria-label={describeScanKit(hookProps.kitName)}
+                  className={`shrink-0 px-2 py-1 text-xs bg-accent-primary text-text-inverse rounded font-semibold flex items-center transition duration-150 ${
+                    props.scanning
+                      ? "opacity-60 cursor-wait"
+                      : "hover:bg-accent-primary/80"
+                  }`}
+                  data-testid="kit-missing-files-scan"
+                  onClick={() => {
+                    if (!props.scanning) props.onRescanKit?.();
+                  }}
+                  type="button"
+                >
+                  <ArrowsClockwiseIcon
+                    aria-hidden="true"
+                    className="inline-block mr-1"
+                    size={14}
+                  />
+                  {SCAN_KIT_LABEL}
+                </button>
+              )}
+              {removableCount > 0 && (
+                <RemoveMissingSamplesButton
+                  busy={removing}
+                  count={removableCount}
+                  data-testid="kit-missing-files-remove"
+                  disabled={removing || props.scanning === true}
+                  kitName={hookProps.kitName}
+                  onRemove={() => void removeMissing()}
                 />
-                {SCAN_KIT_LABEL}
-              </button>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}

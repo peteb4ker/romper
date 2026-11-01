@@ -122,7 +122,7 @@ function rowsPutBack(
   { samples: snapshot, voice }: VoiceSnapshot,
 ): number {
   if (!Array.isArray(snapshot)) {
-    throw new Error(`Invalid samples for voice ${voice}`);
+    throw new TypeError(`Invalid samples for voice ${voice}`);
   }
   const current = db
     .select()

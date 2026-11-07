@@ -247,7 +247,7 @@ async function countSyncFsCalls(run: () => Promise<unknown>) {
 /** Move a file away and let a pass record it missing */
 async function lose(kit: string, name: string, to: string, kits = [kit]) {
   fs.mkdirSync(path.dirname(to), { recursive: true });
-  fs.renameSync(name.startsWith("/") ? name : fileOf(kit, name), to);
+  fs.renameSync(path.isAbsolute(name) ? name : fileOf(kit, name), to);
   storeCheckService.cancel();
   await passFinds(kits);
 }

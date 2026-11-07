@@ -2,9 +2,27 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
 vi.mock("electron", () => ({
+  dialog: { showOpenDialog: vi.fn() },
   ipcMain: {
     handle: vi.fn(),
   },
+}));
+
+vi.mock("../../services/missingFileSearch.js", () => ({
+  missingFileSearch: {
+    cancel: vi.fn(),
+    find: vi.fn(() => Promise.resolve({ success: true })),
+    pickFolder: vi.fn(() => Promise.resolve({ data: null, success: true })),
+  },
+}));
+
+vi.mock("../../services/missingFileRestore.js", () => ({
+  restoreMissingFile: vi.fn(() => Promise.resolve({ success: true })),
+  undoRestoreMissingFile: vi.fn(() => Promise.resolve({ success: false })),
+}));
+
+vi.mock("../../services/storeCheckService.js", () => ({
+  storeCheckService: { recheckKit: vi.fn() },
 }));
 
 vi.mock("../../services/sampleService.js", () => ({
@@ -30,7 +48,13 @@ import {
   checkSampleSourceAccess,
   rememberKitSampleSources,
 } from "../../security/sampleSourceAccess.js";
+import {
+  restoreMissingFile,
+  undoRestoreMissingFile,
+} from "../../services/missingFileRestore.js";
+import { missingFileSearch } from "../../services/missingFileSearch.js";
 import { sampleService } from "../../services/sampleService.js";
+import { storeCheckService } from "../../services/storeCheckService.js";
 import * as ipcHandlerUtils from "../ipcHandlerUtils.js";
 import { registerSampleIpcHandlers } from "../sampleIpcHandlers";
 
@@ -49,10 +73,10 @@ describe("registerSampleIpcHandlers - Unit Tests", () => {
   });
 
   describe("Handler Registration", () => {
-    it("[Q-03] should register all 7 sample IPC handlers", () => {
+    it("[Q-03] should register all 10 sample IPC handlers", () => {
       registerSampleIpcHandlers(mockInMemorySettings);
 
-      expect(mockIpcMain.handle).toHaveBeenCalledTimes(6);
+      expect(mockIpcMain.handle).toHaveBeenCalledTimes(10);
     });
 
     it("should register handlers with correct IPC channel names", () => {
@@ -69,6 +93,10 @@ describe("registerSampleIpcHandlers - Unit Tests", () => {
         "move-sample-between-kits",
         "restore-kit-voices",
         "remove-missing-samples",
+        "pick-search-folder",
+        "find-missing-files",
+        "cancel-find-missing-files",
+        "restore-missing-file",
       ]);
     });
 
@@ -204,6 +232,104 @@ describe("registerSampleIpcHandlers - undo source grants (RE-03)", () => {
 
       expect(result).toMatchObject({ success: false });
       expect(sampleService.restoreVoices).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("[UC-05] find missing files (#823)", () => {
+    const handlerFor = (channel: string) => {
+      registerSampleIpcHandlers({ localStorePath: "/store" });
+      const call = mockIpcMain.handle.mock.calls.find((c) => c[0] === channel);
+      return call?.[1] as (...args: unknown[]) => Promise<unknown>;
+    };
+
+    it("refuses a kit name that isn't one, and a missing store", async () => {
+      expect(await handlerFor("pick-search-folder")({}, "")).toEqual({
+        error: "Kit name must be a string",
+        success: false,
+      });
+      registerSampleIpcHandlers({});
+      const call = mockIpcMain.handle.mock.calls
+        .filter((c) => c[0] === "find-missing-files")
+        .at(-1);
+      expect(
+        await (call?.[1] as (...args: unknown[]) => Promise<unknown>)(
+          {},
+          "A0",
+          "/x",
+        ),
+      ).toEqual({ error: "No local store path configured", success: false });
+      expect(await handlerFor("find-missing-files")({}, "A0", "")).toEqual({
+        error: "Folder must be a string",
+        success: false,
+      });
+      expect(missingFileSearch.find).not.toHaveBeenCalled();
+    });
+
+    it("searches and cancels through the shared search", async () => {
+      await handlerFor("pick-search-folder")({}, "A0");
+      expect(missingFileSearch.pickFolder).toHaveBeenCalledWith(
+        "/store",
+        "A0",
+        expect.any(Function),
+        expect.any(Function),
+      );
+      await handlerFor("find-missing-files")({}, "A0", "/picked");
+      expect(missingFileSearch.find).toHaveBeenCalledWith(
+        "/store",
+        "A0",
+        "/picked",
+      );
+      await handlerFor("cancel-find-missing-files")({});
+      expect(missingFileSearch.cancel).toHaveBeenCalled();
+    });
+
+    it("checks the kit again after a restore that worked, not after one that failed", async () => {
+      const restore = handlerFor("restore-missing-file");
+      await restore({}, "A0", {
+        foundPath: "/f.wav",
+        kind: "restore",
+        sampleId: 3,
+      });
+      expect(restoreMissingFile).toHaveBeenCalledWith(
+        "/store",
+        "A0",
+        3,
+        "/f.wav",
+      );
+      expect(storeCheckService.recheckKit).toHaveBeenCalledWith("A0");
+
+      vi.mocked(storeCheckService.recheckKit).mockClear();
+      const restored = {
+        fileName: "f.wav",
+        foundPath: "/f.wav",
+        kind: "copy",
+        path: "/store/A0/f.wav",
+        sampleId: 3,
+      };
+      await restore({}, "A0", { kind: "undo", restored });
+      expect(undoRestoreMissingFile).toHaveBeenCalledWith(
+        "/store",
+        "A0",
+        restored,
+      );
+      expect(storeCheckService.recheckKit).not.toHaveBeenCalled();
+    });
+
+    it("refuses a restore request that isn't one", async () => {
+      const restore = handlerFor("restore-missing-file");
+      for (const request of [
+        undefined,
+        { kind: "other" },
+        { foundPath: "", kind: "restore", sampleId: 1 },
+        { kind: "undo", restored: { kind: "repoint", sampleId: 1 } },
+        { kind: "undo", restored: { kind: "copy", path: "/a", sampleId: 1.5 } },
+      ]) {
+        expect(await restore({}, "A0", request)).toMatchObject({
+          success: false,
+        });
+      }
+      expect(restoreMissingFile).not.toHaveBeenCalled();
+      expect(undoRestoreMissingFile).not.toHaveBeenCalled();
     });
   });
 });

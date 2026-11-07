@@ -2,9 +2,9 @@
 title: Store check - Specification
 priority: medium
 status: specification
-updated: 2026-10-31
+updated: 2026-11-06
 context_size: medium
-implementation_status: stages 1 (#812, PR #828), 2 (#820), 3 (#824), 4 (#821) and 5 (#822) built; stage 6 (#823) not built
+implementation_status: stages 1 (#812, PR #828), 2 (#820), 3 (#824), 4 (#821), 5 (#822) and 6 (#823) built
 -->
 
 # Store check: keeping the library's files and database in agreement
@@ -665,6 +665,63 @@ Each stage is one PR. Stages 2 to 6 wait for the decisions named.
 - **Acceptance:** finds a file moved to another folder; never overwrites;
   lists several matches for a choice; undo deletes only an unchanged copy
   or points the sample back.
+- **As built (#823):**
+  - Four channels, not three: `pick-search-folder`, `find-missing-files`,
+    `cancel-find-missing-files` (a search runs in one call, so stopping it
+    needs a call of its own, as `cancel-setup` does) and
+    `restore-missing-file` (`restoreMissingFile(kitName, request)`, where
+    the request is a restore or the undo of one, as `remove-missing-samples`
+    carries its undo).
+  - The rows searched for are the kit's rows recorded `missing` whose file
+    `stillMissing` (stage 5's re-check) confirms is gone on a connected
+    drive (D6). `pick-search-folder` shows the dialog with the first file's
+    name ("Choose a folder to search for kick.wav") at the nearest folder
+    above its old place that exists, grants the folder read-only
+    (`pathAccess.grantRead`) and remembers it; `find-missing-files` searches
+    only a folder remembered that way (Q-03), plus every store folder whose
+    name is a kit name (`isValidKit`). The store root and `.romperdb` are
+    never walked.
+  - `MissingFileSearchService` (`missingFileSearch.ts`) walks with
+    `fs.promises.readdir`, one operation at a time, each under the check's
+    time limit; a drive that times out is skipped for the rest of the
+    search and the result says `notResponding`. It skips names starting
+    with `.`, links (never followed), and folders with a macOS package
+    extension; it stops at a depth and an entry count
+    (`missingFileSearchSettings`) and says `limit`. A cancel (or a newer search) aborts the operation in
+    flight too, so a hung drive doesn't hold it up. A file whose name
+    matches (case ignored) is `lstat`-ed; its header is read only when its
+    size matches `source_size` (or that is unknown). A match also needs
+    every `wav_*` field the row knows (channels, rate, depth, format tag)
+    to be equal (D3). The files kept per sample are capped, matches first.
+  - Results name a picked folder's files from its name ("Samples/Drums")
+    and a store kit folder's from the kit ("B1/…"). One match is offered
+    alone even when files with only the name were found; otherwise all are
+    listed with folder, size and date.
+  - `restore-missing-file` puts back only a file the search offered for
+    that sample this session, and only while the row reads `missing` and
+    `stillMissing` agrees. A sample whose old place is in the store
+    (`isInStore`, resolved as `pathAccess` resolves paths; never
+    `.romperdb`) gets a copy: `copyFile` with `COPYFILE_EXCL` to a hidden
+    temporary name in the same folder, then `link` into place (fails if a
+    file is there), then the temporary file is removed; where links aren't
+    supported, `copyFile` with `COPYFILE_EXCL` straight to the old place. A
+    missing kit folder is created, and undo removes it again if empty. The
+    row is unchanged apart from its file check, so this works on a
+    read-only kit and doesn't flag the kit modified. A sample outside the
+    store is pointed at the found file (`repointSampleTx`), which flags the
+    kit modified and, as any sample edit, is refused on a read-only kit:
+    D5's exception is for removal only. Either way the file is checked and
+    recorded at once, and the handler calls `recheckKit`.
+  - Main keeps each copy it made (size, mtime, inode) in memory. Undo
+    deletes a copy only if it is one of those and still the same; a copy
+    that changed is left, and the renderer shows the approved message.
+    Undo of a re-point points the sample back while it still points at the
+    found file. The undo entry is `RESTORE_MISSING_FILE`, carrying its kit
+    (`carriesItsKit`), added from the Library check like stage 5's; redo
+    puts the same found file back again.
+  - `restore-missing-file` is exclusive in `ipcActivity`;
+    `find-missing-files` isn't (it only reads), but as any call in flight
+    it holds the background pass.
 
 ### Separately: the Invalid Local Store dialog
 

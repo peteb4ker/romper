@@ -1772,6 +1772,88 @@ describe("KitVoicePanels", () => {
       });
     });
 
+    describe("[UC-05] Find missing files in the notice (#823)", () => {
+      afterEach(() => {
+        act(() => storeCheckStore.reset());
+      });
+
+      it("offers it beside the other fixes, searches, and lists what it found in the notice", async () => {
+        metadata({ ...row(1, 0, "kick.wav", 1), source_status: "missing" });
+        vi.mocked(globalThis.electronAPI.pickSearchFolder).mockResolvedValue({
+          data: "/Samples",
+          success: true,
+        });
+        vi.mocked(globalThis.electronAPI.findMissingFiles).mockResolvedValue({
+          data: {
+            cancelled: false,
+            files: [
+              { fileName: "kick.wav", found: [], inStore: true, sampleId: 1 },
+            ],
+            folderName: "Samples",
+            incomplete: null,
+          },
+          success: true,
+        });
+        render(
+          <MultiVoicePanelsTestWrapper
+            onRescanKit={vi.fn()}
+            voices={kitVoices()}
+          />,
+        );
+
+        const notice = await screen.findByTestId("kit-missing-files-notice");
+        await act(async () => {
+          fireEvent.click(
+            within(notice).getByRole("button", {
+              name: "Find missing files… Kit1",
+            }),
+          );
+        });
+
+        expect(globalThis.electronAPI.findMissingFiles).toHaveBeenCalledWith(
+          "Kit1",
+          "/Samples",
+        );
+        expect(
+          within(notice).getByText("No copy of kick.wav found in Samples."),
+        ).toBeInTheDocument();
+      });
+
+      it("isn't offered when every missing file is on a drive that isn't connected (D6), and waits for a rescan", async () => {
+        metadata({
+          ...row(1, 0, "kick.wav", 1),
+          source_path: "/Volumes/Away/kick.wav",
+          source_status: "missing",
+        });
+        act(() =>
+          storeCheckStore.apply([
+            createStoreCheckFinding({
+              kitName: "Kit1",
+              notConnected: [{ samples: 1, volume: "/Volumes/Away" }],
+            }),
+          ]),
+        );
+        const { unmount } = render(
+          <MultiVoicePanelsTestWrapper voices={kitVoices()} />,
+        );
+        await screen.findByTestId("kit-missing-files-notice");
+        expect(
+          screen.queryByRole("button", { name: /^Find missing files/ }),
+        ).toBeNull();
+        unmount();
+        act(() => storeCheckStore.reset());
+
+        metadata({ ...row(1, 0, "kick.wav", 1), source_status: "missing" });
+        render(<MultiVoicePanelsTestWrapper scanning voices={kitVoices()} />);
+        const find = await screen.findByRole("button", {
+          name: "Find missing files… Kit1",
+        });
+        expect(find).toHaveAttribute("aria-disabled", "true");
+        fireEvent.click(find);
+        expect(globalThis.electronAPI.pickSearchFolder).not.toHaveBeenCalled();
+      });
+    });
+
     it("asks main to check the kit's files once per kit open, and reloads when something changed", async () => {
       metadata({ ...row(1, 0, "kick.wav", 1), source_status: null });
       vi.mocked(globalThis.electronAPI.checkKitSampleFiles).mockResolvedValue({

@@ -27,10 +27,23 @@ import { seedRampleSaveCopy } from "./rample-save-copy";
 export const MISSING_FILE_KIT = "A0";
 export const UNREADABLE_FILE_KIT = "B1";
 
-export async function createBrokenKitStore(): Promise<E2ETestEnvironment> {
+export async function createBrokenKitStore(
+  options: {
+    /**
+     * Move A0's snare into this folder (outside the store) instead of
+     * deleting it, for "Find missing files…" to find (#823)
+     */
+    moveSnareTo?: string;
+  } = {},
+): Promise<E2ETestEnvironment> {
   const env = await extractE2EFixture();
   const store = env.localStorePath;
-  await fs.remove(path.join(store, MISSING_FILE_KIT, "2_snare.wav"));
+  const snare = path.join(store, MISSING_FILE_KIT, "2_snare.wav");
+  if (options.moveSnareTo) {
+    await fs.move(snare, path.join(options.moveSnareTo, "2_snare.wav"));
+  } else {
+    await fs.remove(snare);
+  }
   await fs.writeFile(
     path.join(store, UNREADABLE_FILE_KIT, "1_kick.wav"),
     "not a wav file",

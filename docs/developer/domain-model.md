@@ -180,8 +180,10 @@ Renderer paths are under `app/renderer/components/` unless they start with
     says it's valid (`isLocalStoreReady`, #553).
   - One connection per store, closed when the setting changes, before a
     database file is moved or deleted, and at quit (RE-81).
-  - Romper writes only its database and the bank name files into the store;
-    samples you add are referenced, never copied.
+  - Romper writes only its database and the bank name files into the store,
+    and a found file copied back to a missing sample's old place there
+    ("Find missing files…", #823: never over a file, and undo deletes only
+    an unchanged copy). Samples you add are referenced, never copied.
 - **Disagreements on main:**
   - `validate-local-store-basic` and `validate-local-store-opens` take `ROMPER_LOCAL_PATH` before their
     argument, so with the override set the folder you pick is never the one validated. `ServicePathManager` and

@@ -142,7 +142,7 @@ When there's nothing to report, Romper says nothing. When there is:
 
 - **A message** -- When a check finds missing sample files it hadn't found before, one message says so: "Romper found missing sample files in 3 kits. Open the list from the status bar." Problems you already know about don't bring it back.
 
-Click the status bar item (or focus it and press `Enter`) to open the **Library check**. It lists the kits under **Sample files not found** and **Files not in the kit**, with what's wrong with each, and a line for each drive that wasn't connected or didn't respond. A kit with both problems is under both headings. If the list empties while the dialog is open, it says "No problems found." Each kit has a **Scan kit** button (named for the kit, such as "Scan kit A3" to a screen reader). It rescans that kit, as the Kit Editor's **Scan Kit** button does, and Romper checks the kit again straight away, so its entry, its icon and the status bar item update as soon as the scan ends. A kit stays on the list if the scan didn't fix it, for example because a file is still missing. While one scan or removal runs the other buttons wait. Press `Escape` or **Close** to close it; focus goes back to the status bar item.
+Click the status bar item (or focus it and press `Enter`) to open the **Library check**. It lists the kits under **Sample files not found** and **Files not in the kit**, with what's wrong with each, and a line for each drive that wasn't connected or didn't respond. A kit with both problems is under both headings. If the list empties while the dialog is open, it says "No problems found." Each kit has a **Scan kit** button (named for the kit, such as "Scan kit A3" to a screen reader). It rescans that kit, as the Kit Editor's **Scan Kit** button does, and Romper checks the kit again straight away, so its entry, its icon and the status bar item update as soon as the scan ends. A kit stays on the list if the scan didn't fix it, for example because a file is still missing. While one fix runs the other buttons wait. Press `Escape` or **Close** to close it; focus goes back to the status bar item.
 
 ![The Library check, listing a kit with a missing sample file and a kit with a file in its folder that the kit doesn't hold]({{ site.baseurl }}/images/manual/library-check-dialog.png)
 
@@ -150,11 +150,20 @@ A kit under **Sample files not found** also has a **Remove missing samples** but
 
 ![The Library check asking before it removes a kit's missing sample]({{ site.baseurl }}/images/manual/library-check-remove.png)
 
+If you moved a sample's file rather than deleting it, click **Find missing files…** instead. Romper asks for a folder to search, for example "Choose a folder to search for kick.wav", starting at the nearest folder that still exists above where the file was. It searches that folder and the kit folders in your library, never anywhere else, skipping hidden folders, app packages and links. While it searches, **Cancel** stops it. Then, for each missing file, it says what it found: "Found kick.wav in Samples/Drums.", "Found 2 files named kick.wav. Choose one." with each file's folder, size and date, or "No copy of kick.wav found in Samples." A file counts as a match when its name (in any case), size and format are the sample's; a file with only the same name is marked as having a different size or format, so you can decide.
+
+- **Copy back** (a sample from your library's own folders, such as an imported kit's): Romper copies the file you choose back to where the sample was. It never replaces a file that is already there, and it leaves the file it found where it is. This works in read-only kits too.
+- **Use this file** (a sample you added from elsewhere on your computer): Romper points the sample at the file it found, without copying it, and marks the kit modified.
+
+The kit's entry, its icon and the status bar item update at once. **Edit > Undo** reverses it: it deletes the copy Romper made, or points the sample back. If you changed the copy since, Romper leaves it and says "kick.wav has changed since Romper copied it, so it wasn't removed." Files on a drive that isn't connected aren't searched for: connect the drive instead.
+
+![The Library check listing two files found for a kit's missing sample, each with Copy back]({{ site.baseurl }}/images/manual/library-check-find.png)
+
 ![The yellow file icon on a read-only kit with a file in its folder that the kit doesn't hold]({{ site.baseurl }}/images/manual/kit-card-store-check-folder.png)
 
 ### What to do about it
 
-- **A file is missing:** put it back where it was, then click **Scan kit** in the Library check, or open the kit and replace or remove the sample (the Kit Editor labels it **File not found**). If the file is gone for good, click **Remove missing samples** to remove all of the kit's missing samples at once. Until then a missing sample is skipped when you write to the SD card.
+- **A file is missing:** put it back where it was, then click **Scan kit** in the Library check, or open the kit and replace or remove the sample (the Kit Editor labels it **File not found**). If you moved it and don't remember where, click **Find missing files…** to search for it. If the file is gone for good, click **Remove missing samples** to remove all of the kit's missing samples at once. Until then a missing sample is skipped when you write to the SD card.
 - **A file isn't in the kit:** click **Scan kit** next to the kit in the Library check (or open the kit and click **Scan Kit**, or use **File > Scan All**) to add it. See [Scanning Your Library](#scanning-your-library).
 - **A drive isn't connected:** connect it.
 

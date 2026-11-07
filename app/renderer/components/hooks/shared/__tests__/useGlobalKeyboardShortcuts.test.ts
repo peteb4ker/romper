@@ -431,6 +431,40 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
       expect(mockRedo).toHaveBeenCalledTimes(1);
     });
 
+    it("[UC-05] undoes a found file put back in a read-only kit, or with no kit open (#823)", () => {
+      const restore: AnyUndoAction = {
+        data: {
+          kitName: "B0",
+          restored: {
+            fileName: "kick.wav",
+            foundPath: "/Samples/kick.wav",
+            kind: "copy",
+            path: "/store/B0/kick.wav",
+            sampleId: 1,
+          },
+        },
+        description: "Copy back kick.wav",
+        id: "restore-1",
+        timestamp: new Date(),
+        type: "RESTORE_MISSING_FILE",
+      };
+      vi.mocked(useUndoRedo).mockReturnValue(
+        undoRedoState({ nextRedo: restore, nextUndo: restore }),
+      );
+      const readOnly = renderHook(() =>
+        useGlobalKeyboardShortcuts({
+          currentKitName: "test-kit",
+          isEditMode: false,
+        }),
+      );
+      const noKit = renderHook(() =>
+        useGlobalKeyboardShortcuts({ isEditMode: false }),
+      );
+
+      expect(readOnly.result.current.undoIfAllowed()).toBe(true);
+      expect(noKit.result.current.redoIfAllowed()).toBe(true);
+    });
+
     it("leaves Cmd+Z in a text field to the field", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({

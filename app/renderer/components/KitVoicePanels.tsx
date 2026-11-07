@@ -31,6 +31,7 @@ import type { SlotPlaybackStore } from "./hooks/kit-management/slotPlaybackStore
 import type { SampleData, VoiceSamples } from "./kitTypes";
 
 import { slotKey } from "../utils/slotKey";
+import FindMissingFiles from "./FindMissingFiles";
 import { removeMissingSamplesFromKit } from "./hooks/kit-management/removeMissingSamples";
 import { useKitStoreFinding } from "./hooks/kit-management/storeCheckStore";
 import { useKitVoicePanels } from "./hooks/kit-management/useKitVoicePanels";
@@ -364,6 +365,8 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
     ).length;
   }, [missingFiles, storeFinding]);
   const [removing, setRemoving] = useState(false);
+  // "Find missing files…" (#823) is searching or putting a file back
+  const [finding, setFinding] = useState(false);
   const { onMessage: showRemoveError } = props;
   const removeMissing = React.useCallback(async () => {
     setRemoving(true);
@@ -742,60 +745,72 @@ const KitVoicePanels: React.FC<KitVoicePanelsProps> = (props) => {
         </div>
       )}
       {missingFiles.length > 0 && (
-        <div
-          className="mb-2 px-3 py-2 rounded border border-accent-warning/40 bg-accent-warning/10 text-xs text-text-primary"
-          data-testid="kit-missing-files-notice"
-          role="status"
+        <FindMissingFiles
+          data-testid="kit-missing-files-find"
+          disabled={removing || props.scanning === true}
+          kitName={hookProps.kitName}
+          onBusyChange={setFinding}
+          onError={(error) => showRemoveError?.(error, "error")}
         >
-          <div className="flex items-start justify-between gap-3">
-            <ul className="list-disc pl-5 space-y-0.5">
-              {missingFiles.map((file) => (
-                <li key={`${file.voice_number}-${file.slot_number}`}>
-                  {describeMissingSampleFile(
-                    file.filename,
-                    file.voice_number ?? 1,
+          {({ button, results }) => (
+            <div
+              className="mb-2 px-3 py-2 rounded border border-accent-warning/40 bg-accent-warning/10 text-xs text-text-primary"
+              data-testid="kit-missing-files-notice"
+              role="status"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <ul className="list-disc pl-5 space-y-0.5">
+                  {missingFiles.map((file) => (
+                    <li key={`${file.voice_number}-${file.slot_number}`}>
+                      {describeMissingSampleFile(
+                        file.filename,
+                        file.voice_number ?? 1,
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex shrink-0 flex-wrap justify-end items-start gap-2">
+                  {props.onRescanKit && (
+                    <button
+                      aria-busy={props.scanning === true}
+                      aria-disabled={props.scanning === true || finding}
+                      aria-label={describeScanKit(hookProps.kitName)}
+                      className={`shrink-0 px-2 py-1 text-xs bg-accent-primary text-text-inverse rounded font-semibold flex items-center transition duration-150 ${
+                        props.scanning || finding
+                          ? "opacity-60 cursor-wait"
+                          : "hover:bg-accent-primary/80"
+                      }`}
+                      data-testid="kit-missing-files-scan"
+                      onClick={() => {
+                        if (!props.scanning && !finding) props.onRescanKit?.();
+                      }}
+                      type="button"
+                    >
+                      <ArrowsClockwiseIcon
+                        aria-hidden="true"
+                        className="inline-block mr-1"
+                        size={14}
+                      />
+                      {SCAN_KIT_LABEL}
+                    </button>
                   )}
-                </li>
-              ))}
-            </ul>
-            <div className="flex shrink-0 items-start gap-2">
-              {props.onRescanKit && (
-                <button
-                  aria-busy={props.scanning === true}
-                  aria-disabled={props.scanning === true}
-                  aria-label={describeScanKit(hookProps.kitName)}
-                  className={`shrink-0 px-2 py-1 text-xs bg-accent-primary text-text-inverse rounded font-semibold flex items-center transition duration-150 ${
-                    props.scanning
-                      ? "opacity-60 cursor-wait"
-                      : "hover:bg-accent-primary/80"
-                  }`}
-                  data-testid="kit-missing-files-scan"
-                  onClick={() => {
-                    if (!props.scanning) props.onRescanKit?.();
-                  }}
-                  type="button"
-                >
-                  <ArrowsClockwiseIcon
-                    aria-hidden="true"
-                    className="inline-block mr-1"
-                    size={14}
-                  />
-                  {SCAN_KIT_LABEL}
-                </button>
-              )}
-              {removableCount > 0 && (
-                <RemoveMissingSamplesButton
-                  busy={removing}
-                  count={removableCount}
-                  data-testid="kit-missing-files-remove"
-                  disabled={removing || props.scanning === true}
-                  kitName={hookProps.kitName}
-                  onRemove={() => void removeMissing()}
-                />
-              )}
+                  {removableCount > 0 && (
+                    <RemoveMissingSamplesButton
+                      busy={removing}
+                      count={removableCount}
+                      data-testid="kit-missing-files-remove"
+                      disabled={removing || props.scanning === true || finding}
+                      kitName={hookProps.kitName}
+                      onRemove={() => void removeMissing()}
+                    />
+                  )}
+                  {removableCount > 0 && button}
+                </div>
+              </div>
+              {results}
             </div>
-          </div>
-        </div>
+          )}
+        </FindMissingFiles>
       )}
       <div className="flex w-full relative" data-testid="voice-panels-row">
         {/* Global slot numbers column */}

@@ -58,6 +58,7 @@ export function useUndoRedo(
     if (result.success) {
       log.debug("Undo operation successful, updating state");
       state.handleUndoSuccess(actionToUndo);
+      if (result.notice) onMessage?.(result.notice, "warning");
       log.debug("Emitting refresh event");
       state.emitRefreshEvent();
     } else {

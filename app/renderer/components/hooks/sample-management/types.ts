@@ -15,6 +15,8 @@ export interface MoveOperationResult {
 export interface OperationResult {
   data?: unknown;
   error?: string;
+  /** Something to tell the user about an operation that succeeded */
+  notice?: string;
   success: boolean;
 }
 

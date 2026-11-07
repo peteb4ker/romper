@@ -1,8 +1,10 @@
 import type {
   AnyUndoAction,
   RemoveMissingSamplesAction,
+  RestoreMissingFileAction,
 } from "@romper/shared/undoTypes";
 
+import { restoredFoundPath } from "../kit-management/findMissingFiles";
 import { requestKitRefresh } from "../kit-management/removeMissingSamples";
 import { writeSequenceSnapshot } from "./sequenceUndo";
 
@@ -59,6 +61,8 @@ export function useRedoActionHandlers({
         );
       case "REMOVE_MISSING_SAMPLES":
         return redoRemoveMissingSamples(action);
+      case "RESTORE_MISSING_FILE":
+        return redoRestoreMissingFile(action);
       case "SEQUENCE_EDIT":
         return writeSequenceSnapshot(
           kitName,
@@ -88,6 +92,24 @@ async function redoRemoveMissingSamples(action: RemoveMissingSamplesAction) {
   if (result?.success && result.data) {
     action.data.samples = result.data.samples;
     action.data.voicesBefore = result.data.voicesBefore;
+    requestKitRefresh(kitName);
+  }
+  return result;
+}
+
+/**
+ * Put the found file back again (#823). Main checks everything again; the
+ * entry keeps what this restore did, which is what the next undo reverses.
+ */
+async function redoRestoreMissingFile(action: RestoreMissingFileAction) {
+  const { kitName, restored } = action.data;
+  const result = await globalThis.electronAPI?.restoreMissingFile?.(kitName, {
+    foundPath: restoredFoundPath(restored),
+    kind: "restore",
+    sampleId: restored.sampleId,
+  });
+  if (result?.success && result.data?.restored) {
+    action.data.restored = result.data.restored;
     requestKitRefresh(kitName);
   }
   return result;

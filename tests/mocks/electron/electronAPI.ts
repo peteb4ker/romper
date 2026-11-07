@@ -101,6 +101,9 @@ export const createElectronAPIMock = (
     addSampleToSlot: mockMethod("addSampleToSlot").mockResolvedValue({
       success: true,
     }),
+    cancelFindMissingFiles: mockMethod(
+      "cancelFindMissingFiles",
+    ).mockResolvedValue(undefined),
     cancelKitSync: mockMethod("cancelKitSync").mockResolvedValue(undefined),
     cancelSetup: mockMethod("cancelSetup").mockResolvedValue({
       success: true,
@@ -147,6 +150,10 @@ export const createElectronAPIMock = (
     ).mockResolvedValue({ success: true }),
 
     ensureDir: mockMethod("ensureDir").mockResolvedValue({ success: true }),
+    findMissingFiles: mockMethod("findMissingFiles").mockResolvedValue({
+      data: { cancelled: false, files: [], folderName: "", incomplete: null },
+      success: true,
+    }),
     finishSetup: mockMethod("finishSetup").mockResolvedValue({
       success: true,
     }),
@@ -239,6 +246,10 @@ export const createElectronAPIMock = (
     openExternal: mockMethod("openExternal").mockResolvedValue({
       success: true,
     }),
+    pickSearchFolder: mockMethod("pickSearchFolder").mockResolvedValue({
+      data: null,
+      success: true,
+    }),
     readSettings: mockMethod("readSettings").mockResolvedValue({
       localStorePath: "/mock/local/store",
       sdCardPath: "/mock/sd/card",
@@ -259,6 +270,10 @@ export const createElectronAPIMock = (
       success: true,
     }),
     restoreKitVoices: mockMethod("restoreKitVoices").mockResolvedValue({
+      success: true,
+    }),
+    restoreMissingFile: mockMethod("restoreMissingFile").mockResolvedValue({
+      data: { changed: false, restored: null },
       success: true,
     }),
     selectExistingLocalStore: mockMethod(

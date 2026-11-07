@@ -319,6 +319,68 @@ describe("useUndoActionHandlers", () => {
       });
     });
 
+    describe("[UC-05] RESTORE_MISSING_FILE undo (#823)", () => {
+      const restored = {
+        fileName: "loop.wav",
+        from: "/old/loop.wav",
+        kind: "repoint" as const,
+        sampleId: 9,
+        to: "/Samples/loop.wav",
+      };
+      const action: AnyUndoAction = {
+        data: { kitName: "A0", restored },
+        description: "Use this file for loop.wav",
+        id: "restore-id",
+        timestamp: new Date(),
+        type: "RESTORE_MISSING_FILE",
+      };
+
+      it("undoes the restore on the action's own kit and reloads that kit", async () => {
+        vi.mocked(window.electronAPI.restoreMissingFile).mockResolvedValue({
+          data: { changed: false, restored: null },
+          success: true,
+        });
+        const refreshed = vi.fn();
+        const onRefresh = (e: Event) => refreshed((e as CustomEvent).detail);
+        document.addEventListener("romper:refresh-samples", onRefresh);
+        try {
+          const { result } = renderHook(() =>
+            useUndoActionHandlers(mockOptions),
+          );
+
+          const undone = await result.current.executeUndoAction(action);
+
+          expect(undone).toEqual({
+            data: { changed: false, restored: null },
+            success: true,
+          });
+          expect(window.electronAPI.restoreMissingFile).toHaveBeenCalledWith(
+            "A0",
+            { kind: "undo", restored },
+          );
+          expect(refreshed).toHaveBeenCalledWith({
+            kitName: "A0",
+            refreshAll: true,
+          });
+        } finally {
+          document.removeEventListener("romper:refresh-samples", onRefresh);
+        }
+      });
+
+      it("passes main's failure on", async () => {
+        vi.mocked(window.electronAPI.restoreMissingFile).mockResolvedValue({
+          error: "Kit A0 isn't editable.",
+          success: false,
+        });
+        const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
+
+        expect(await result.current.executeUndoAction(action)).toEqual({
+          error: "Kit A0 isn't editable.",
+          success: false,
+        });
+      });
+    });
+
     describe("[UC-05] REMOVE_MISSING_SAMPLES undo (#822)", () => {
       const action: RemoveMissingSamplesAction = {
         data: { kitName: "B0", samples: 1, voicesBefore: [voiceOne] },

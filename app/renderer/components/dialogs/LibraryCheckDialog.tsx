@@ -15,6 +15,7 @@ import {
 } from "@romper/shared/storeCheckWording";
 import React, { useContext, useLayoutEffect, useRef, useState } from "react";
 
+import FindMissingFiles from "../FindMissingFiles";
 import { removeMissingSamplesFromKit } from "../hooks/kit-management/removeMissingSamples";
 import {
   storeCheckStore,
@@ -27,7 +28,7 @@ import ModalDialog from "../shared/ModalDialog";
 
 /** The fix running now, and its kit: one at a time */
 interface RunningFix {
-  fix: "remove" | "scan";
+  fix: "find" | "remove" | "scan";
   kitName: string;
 }
 
@@ -45,7 +46,9 @@ interface RunningFix {
  * samples also has "Remove missing samples" (#822, stage 5): main checks
  * the files again, removes the rows still missing (never one on a drive
  * that isn't connected, D6), and checks the kit again. Undo (Edit > Undo)
- * puts them back. Finding the files comes with stage 6.
+ * puts them back. "Find missing files…" (#823, stage 6) searches the
+ * store's kit folders and a folder the user picks for those files, and
+ * puts back the one the user chooses (`FindMissingFiles`).
  */
 const LibraryCheckDialog: React.FC = () => {
   const isOpen = useLibraryCheckDialogOpen();
@@ -92,6 +95,17 @@ const LibraryCheckDialog: React.FC = () => {
     runFix({ fix: "remove", kitName }, () =>
       removeMissingSamplesFromKit(kitName),
     );
+
+  // A search, or putting a file back, runs in FindMissingFiles; it says
+  // when, so the other fixes wait
+  const findBusy = (kitName: string, busy: boolean) =>
+    setRunning((current) => {
+      if (busy) return current ?? { fix: "find", kitName };
+      return current?.fix === "find" && current.kitName === kitName
+        ? null
+        : current;
+    });
+  const showError = (error: string) => messages?.showMessage(error, "error");
 
   if (!isOpen) return null;
 
@@ -158,59 +172,88 @@ const LibraryCheckDialog: React.FC = () => {
             {group.heading}
           </h3>
           <ul className="border border-border-default rounded">
-            {group.kits.map((finding) => (
-              <li
-                className="p-3 border-b border-border-default last:border-b-0"
-                data-testid={`library-check-${group.id}-${finding.kitName}`}
-                key={finding.kitName}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="font-mono font-bold">{finding.kitName}</div>
-                    <ul className="text-sm text-accent-warning">
-                      {group.lines(finding).map((line) => (
-                        <li key={line}>{line}</li>
-                      ))}
-                    </ul>
+            {group.kits.map((finding) => {
+              const canFind = group.id === "missing" && finding.missing > 0;
+              const entry = (
+                find: React.ReactNode = null,
+                results: React.ReactNode = null,
+              ) => (
+                <li
+                  className="p-3 border-b border-border-default last:border-b-0"
+                  data-testid={`library-check-${group.id}-${finding.kitName}`}
+                  key={finding.kitName}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="font-mono font-bold">
+                        {finding.kitName}
+                      </div>
+                      <ul className="text-sm text-accent-warning">
+                        {group.lines(finding).map((line) => (
+                          <li key={line}>{line}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="flex shrink-0 flex-wrap justify-end items-start gap-2">
+                      <button
+                        aria-busy={scanning === finding.kitName}
+                        aria-disabled={running !== null}
+                        aria-label={describeScanKit(finding.kitName)}
+                        className={`shrink-0 px-2 py-1 text-xs bg-accent-primary text-text-inverse rounded font-semibold flex items-center transition duration-150 ${
+                          running === null
+                            ? "hover:bg-accent-primary/80"
+                            : "opacity-60 cursor-wait"
+                        }`}
+                        data-testid={`library-check-scan-${group.id}-${finding.kitName}`}
+                        onClick={() => void scanKit(finding.kitName)}
+                        type="button"
+                      >
+                        <ArrowsClockwiseIcon
+                          aria-hidden="true"
+                          className="inline-block mr-1"
+                          size={14}
+                        />
+                        {SCAN_KIT_LABEL}
+                      </button>
+                      {canFind && (
+                        <RemoveMissingSamplesButton
+                          busy={
+                            running?.fix === "remove" &&
+                            running.kitName === finding.kitName
+                          }
+                          count={finding.missing}
+                          data-testid={`library-check-remove-${finding.kitName}`}
+                          disabled={running !== null}
+                          kitName={finding.kitName}
+                          onRemove={() => void removeMissing(finding.kitName)}
+                        />
+                      )}
+                      {find}
+                    </div>
                   </div>
-                  <div className="flex shrink-0 items-start gap-2">
-                    <button
-                      aria-busy={scanning === finding.kitName}
-                      aria-disabled={running !== null}
-                      aria-label={describeScanKit(finding.kitName)}
-                      className={`shrink-0 px-2 py-1 text-xs bg-accent-primary text-text-inverse rounded font-semibold flex items-center transition duration-150 ${
-                        running === null
-                          ? "hover:bg-accent-primary/80"
-                          : "opacity-60 cursor-wait"
-                      }`}
-                      data-testid={`library-check-scan-${group.id}-${finding.kitName}`}
-                      onClick={() => void scanKit(finding.kitName)}
-                      type="button"
-                    >
-                      <ArrowsClockwiseIcon
-                        aria-hidden="true"
-                        className="inline-block mr-1"
-                        size={14}
-                      />
-                      {SCAN_KIT_LABEL}
-                    </button>
-                    {group.id === "missing" && finding.missing > 0 && (
-                      <RemoveMissingSamplesButton
-                        busy={
-                          running?.fix === "remove" &&
-                          running.kitName === finding.kitName
-                        }
-                        count={finding.missing}
-                        data-testid={`library-check-remove-${finding.kitName}`}
-                        disabled={running !== null}
-                        kitName={finding.kitName}
-                        onRemove={() => void removeMissing(finding.kitName)}
-                      />
-                    )}
-                  </div>
-                </div>
-              </li>
-            ))}
+                  {results}
+                </li>
+              );
+              if (!canFind) return entry();
+              return (
+                <FindMissingFiles
+                  data-testid={`library-check-find-${finding.kitName}`}
+                  disabled={
+                    running !== null &&
+                    !(
+                      running.fix === "find" &&
+                      running.kitName === finding.kitName
+                    )
+                  }
+                  key={finding.kitName}
+                  kitName={finding.kitName}
+                  onBusyChange={(busy) => findBusy(finding.kitName, busy)}
+                  onError={showError}
+                >
+                  {({ button, results }) => entry(button, results)}
+                </FindMissingFiles>
+              );
+            })}
           </ul>
         </section>
       ))}

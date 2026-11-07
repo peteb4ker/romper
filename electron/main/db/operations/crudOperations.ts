@@ -43,8 +43,10 @@ export { flagKitModified } from "./kitSyncOperations.js";
 export {
   type ConfirmedMissingSample,
   putBackMissingSamplesTx,
+  readKitSampleTx,
   readMissingSamplesTx,
   removeMissingSamplesTx,
+  repointSampleTx,
 } from "./missingSampleOperations.js";
 
 export {

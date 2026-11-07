@@ -4,26 +4,39 @@ import type { StoreCheckKitFinding } from "../electronApi";
 
 import { createStoreCheckFinding } from "../../tests/factories/storeCheck.factory";
 import {
+  COPY_BACK_LABEL,
+  describeCopyChanged,
   describeDrive,
   describeDriveNotConnected,
   describeDriveNotResponding,
+  describeFindMissingFilesButton,
   describeFolderMissing,
+  describeFoundFile,
+  describeFoundPossibleFile,
+  describeFoundSeveralFiles,
   describeKitBadge,
   describeKitsNeedAttention,
   describeMissingFiles,
   describeNewMissingFiles,
+  describeNotFound,
   describeRemovedMissingSamples,
   describeRemoveMissingSamples,
   describeRemoveMissingSamplesButton,
+  describeRestoredMissingFile,
   describeScanKit,
+  describeSearchFolderPrompt,
+  describeSearchIncomplete,
   describeStatusBarItem,
   describeUntrackedFiles,
+  FIND_MISSING_FILES_LABEL,
   hasKitBadge,
   LIBRARY_CHECK_EMPTY,
   LIBRARY_CHECK_HEADINGS,
+  POSSIBLE_MATCH_NOTE,
   REMOVE_MISSING_SAMPLES_LABEL,
   SCAN_KIT_LABEL,
   summarizeStoreCheck,
+  USE_THIS_FILE_LABEL,
 } from "../storeCheckWording";
 
 const finding = (overrides: Partial<StoreCheckKitFinding> = {}) =>
@@ -40,6 +53,55 @@ describe("[UC-05] [Q-06] store check wording (#824)", () => {
 
     it("names the kit in the button's accessible name, keeping the label first", () => {
       expect(describeScanKit("A3")).toBe("Scan kit A3");
+    });
+  });
+
+  describe("[UC-05] Find missing files (#823)", () => {
+    it("uses the approved button, prompt, result, restore and undo words", () => {
+      expect(FIND_MISSING_FILES_LABEL).toBe("Find missing files…");
+      expect(describeFindMissingFilesButton("A3")).toBe(
+        "Find missing files… A3",
+      );
+      expect(describeSearchFolderPrompt(["kick.wav"])).toBe(
+        "Choose a folder to search for kick.wav",
+      );
+      expect(describeFoundFile("kick.wav", "Samples/Drums")).toBe(
+        "Found kick.wav in Samples/Drums.",
+      );
+      expect(describeFoundSeveralFiles(2, "kick.wav")).toBe(
+        "Found 2 files named kick.wav. Choose one.",
+      );
+      expect(describeNotFound("kick.wav", "Samples")).toBe(
+        "No copy of kick.wav found in Samples.",
+      );
+      expect(COPY_BACK_LABEL).toBe("Copy back");
+      expect(USE_THIS_FILE_LABEL).toBe("Use this file");
+      expect(describeCopyChanged("kick.wav")).toBe(
+        "kick.wav has changed since Romper copied it, so it wasn't removed.",
+      );
+    });
+
+    // Proposed on #823, awaiting the maintainer's sign-off
+    it("words the proposed strings", () => {
+      expect(describeSearchFolderPrompt(["a.wav", "b.wav", "c.wav"])).toBe(
+        "Choose a folder to search for 3 missing files",
+      );
+      expect(describeFoundPossibleFile("kick.wav", "Samples/Old")).toBe(
+        "Found a file named kick.wav in Samples/Old, but its size or format is different.",
+      );
+      expect(POSSIBLE_MATCH_NOTE).toBe("Different size or format");
+      expect(describeSearchIncomplete("limit", "Samples")).toBe(
+        "Samples has too many files to search them all. Choose a folder inside it.",
+      );
+      expect(describeSearchIncomplete("notResponding", "Samples")).toBe(
+        "A drive didn't respond, so some folders weren't searched.",
+      );
+      expect(describeRestoredMissingFile("copy", "kick.wav")).toBe(
+        "Copy back kick.wav",
+      );
+      expect(describeRestoredMissingFile("repoint", "loop.wav")).toBe(
+        "Use this file for loop.wav",
+      );
     });
   });
 

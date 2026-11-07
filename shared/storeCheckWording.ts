@@ -49,6 +49,20 @@ export const SCAN_KIT_LABEL = "Scan kit";
  */
 export const REMOVE_MISSING_SAMPLES_LABEL = "Remove missing samples";
 
+/** The fix button that searches for a kit's missing files (approved on #824, 2026-10-30) */
+export const FIND_MISSING_FILES_LABEL = "Find missing files…";
+
+/** The restore button for a sample whose old place is in the store (approved on #824, 2026-10-30) */
+export const COPY_BACK_LABEL = "Copy back";
+
+/** The restore button for a sample whose old place is outside the store (approved on #824, 2026-10-30, D2) */
+export const USE_THIS_FILE_LABEL = "Use this file";
+
+/** The undo of a copy that changed since Romper made it (approved on #824, 2026-10-30) */
+export function describeCopyChanged(fileName: string): string {
+  return `${fileName} has changed since Romper copied it, so it wasn't removed.`;
+}
+
 /** The drive's name for people: "Samples SSD" for `/Volumes/Samples SSD` */
 export function describeDrive(volume: string): string {
   const trimmed = trimTrailing(volume, String.raw`\/`);
@@ -69,9 +83,41 @@ export function describeDriveNotResponding(volume: string): string {
   return `The drive "${describeDrive(volume)}" didn't respond, so some samples weren't checked.`;
 }
 
+/**
+ * The find button's accessible name: its label with the kit, as "Scan kit
+ * A3" is (approved on #821, 2026-10-31)
+ */
+export function describeFindMissingFilesButton(kitName: string): string {
+  return `${FIND_MISSING_FILES_LABEL} ${kitName}`;
+}
+
 /** A read-only kit whose folder is gone from the store */
 export function describeFolderMissing(kitName: string): string {
   return `${kitName}'s folder is missing from your library.`;
+}
+
+/** One file found that matches (approved on #824, 2026-10-30) */
+export function describeFoundFile(fileName: string, where: string): string {
+  return `Found ${fileName} in ${where}.`;
+}
+
+/**
+ * PROPOSED, awaiting sign-off (#823): the only file found has the missing
+ * file's name but not its size or format (D3's possible match)
+ */
+export function describeFoundPossibleFile(
+  fileName: string,
+  where: string,
+): string {
+  return `Found a file named ${fileName} in ${where}, but its size or format is different.`;
+}
+
+/** Several files found, for the user to choose (approved on #824, 2026-10-30) */
+export function describeFoundSeveralFiles(
+  count: number,
+  fileName: string,
+): string {
+  return `Found ${count} files named ${fileName}. Choose one.`;
 }
 
 /**
@@ -92,6 +138,9 @@ export function describeKitBadge(finding: StoreCheckKitFinding): null | string {
   return null;
 }
 
+/** PROPOSED, awaiting sign-off (#823): marks a possible match in a list of choices */
+export const POSSIBLE_MATCH_NOTE = "Different size or format";
+
 /** The status bar item */
 export function describeKitsNeedAttention(kits: number): string {
   return kits === 1 ? "1 kit needs attention" : `${kits} kits need attention`;
@@ -105,6 +154,11 @@ export function describeMissingFiles(count: number): string {
 /** The message shown once when a pass finds missing files it hadn't */
 export function describeNewMissingFiles(kits: number): string {
   return `Romper found missing sample files in ${kits} ${kits === 1 ? "kit" : "kits"}. Open the list from the status bar.`;
+}
+
+/** Nothing found for a missing file (approved on #824, 2026-10-30) */
+export function describeNotFound(fileName: string, folderName: string): string {
+  return `No copy of ${fileName} found in ${folderName}.`;
 }
 
 /**
@@ -141,11 +195,48 @@ export function describeRemoveMissingSamplesButton(kitName: string): string {
 }
 
 /**
+ * The restore as undo names it: its button's words with the file.
+ * PROPOSED, awaiting sign-off (#823): "Couldn't undo: copy back kick.wav.
+ * Check the kit, then try again." when undo fails.
+ */
+export function describeRestoredMissingFile(
+  kind: "copy" | "repoint",
+  fileName: string,
+): string {
+  return kind === "copy"
+    ? `Copy back ${fileName}`
+    : `Use this file for ${fileName}`;
+}
+
+/**
  * The scan button's accessible name: its label with the kit, so each
  * button in a list says which kit it scans (Q-06). The label stays in it.
  */
 export function describeScanKit(kitName: string): string {
   return `${SCAN_KIT_LABEL} ${kitName}`;
+}
+
+/**
+ * The folder dialog's prompt (approved on #824, 2026-10-30, for one
+ * file). PROPOSED, awaiting sign-off (#823): the prompt for several.
+ */
+export function describeSearchFolderPrompt(fileNames: string[]): string {
+  return fileNames.length === 1
+    ? `Choose a folder to search for ${fileNames[0]}`
+    : `Choose a folder to search for ${fileNames.length} missing files`;
+}
+
+/**
+ * PROPOSED, awaiting sign-off (#823): the search didn't look everywhere,
+ * because it reached its limits or a drive didn't respond
+ */
+export function describeSearchIncomplete(
+  reason: "limit" | "notResponding",
+  folderName: string,
+): string {
+  return reason === "limit"
+    ? `${folderName} has too many files to search them all. Choose a folder inside it.`
+    : "A drive didn't respond, so some folders weren't searched.";
 }
 
 /**

@@ -1680,7 +1680,7 @@ describe("KitVoicePanels", () => {
           }),
         );
         const popover = screen.getByRole("dialog", {
-          name: "Remove 2 missing samples from Kit1? You can undo this.",
+          name: "Remove 2 missing samples from Kit1? You can undo this. Your next write also removes them from the card.",
         });
         await act(async () => {
           fireEvent.click(
@@ -1726,7 +1726,7 @@ describe("KitVoicePanels", () => {
         );
         expect(
           screen.getByRole("dialog", {
-            name: "Remove 1 missing sample from Kit1? You can undo this.",
+            name: "Remove 1 missing sample from Kit1? You can undo this. Your next write also removes it from the card.",
           }),
         ).toBeInTheDocument();
         unmount();

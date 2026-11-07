@@ -1,10 +1,19 @@
+import type { RestoreMissingFileRequest } from "@romper/shared/electronApi.js";
 import type { VoiceSnapshot } from "@romper/shared/undoTypes.js";
+
+import { describeSearchFolderPrompt } from "@romper/shared/storeCheckWording.js";
+import { dialog } from "electron";
 
 import { handle } from "../ipcHandle.js";
 import {
   checkSampleSourceAccess,
   rememberKitSampleSources,
 } from "../security/sampleSourceAccess.js";
+import {
+  restoreMissingFile,
+  undoRestoreMissingFile,
+} from "../services/missingFileRestore.js";
+import { missingFileSearch } from "../services/missingFileSearch.js";
 import {
   putBackMissingSamples,
   removeMissingSamples,
@@ -178,4 +187,101 @@ export function registerSampleIpcHandlers(
       return result;
     },
   );
+
+  // "Find missing files…" (#823, stage 6 of docs/developer/store-check.md).
+  // Main shows the folder dialog (D1) and searches only the store's kit
+  // folders and the folder chosen there (Q-03); main checks every file
+  // again before searching for it or putting one back.
+  handle("pick-search-folder", async (_event, kitName: string) => {
+    const localStorePath = storePathFor(inMemorySettings, kitName);
+    if (typeof localStorePath !== "string") return localStorePath;
+    return missingFileSearch.pickFolder(
+      localStorePath,
+      kitName,
+      (options) => dialog.showOpenDialog(options),
+      describeSearchFolderPrompt,
+    );
+  });
+
+  handle(
+    "find-missing-files",
+    async (_event, kitName: string, folder: string) => {
+      const localStorePath = storePathFor(inMemorySettings, kitName);
+      if (typeof localStorePath !== "string") return localStorePath;
+      if (typeof folder !== "string" || folder === "") {
+        return { error: "Folder must be a string", success: false };
+      }
+      return missingFileSearch.find(localStorePath, kitName, folder);
+    },
+  );
+
+  handle("cancel-find-missing-files", () => missingFileSearch.cancel());
+
+  // Puts a found file back, or undoes that. Either way the store check
+  // looks at the kit again once this call is over, so its badge, the status
+  // bar and the Library check follow at once.
+  handle(
+    "restore-missing-file",
+    async (_event, kitName: string, request: RestoreMissingFileRequest) => {
+      const localStorePath = storePathFor(inMemorySettings, kitName);
+      if (typeof localStorePath !== "string") return localStorePath;
+      const invalid = invalidRestoreRequest(request);
+      if (invalid) return { error: invalid, success: false };
+      const result =
+        request.kind === "undo"
+          ? await undoRestoreMissingFile(
+              localStorePath,
+              kitName,
+              request.restored,
+            )
+          : await restoreMissingFile(
+              localStorePath,
+              kitName,
+              request.sampleId,
+              request.foundPath,
+            );
+      if (result.success) storeCheckService.recheckKit(kitName);
+      return result;
+    },
+  );
+}
+
+/** Why a restore request can't be used, or null */
+function invalidRestoreRequest(
+  request: RestoreMissingFileRequest,
+): null | string {
+  if (request?.kind === "restore") {
+    return Number.isInteger(request.sampleId) &&
+      typeof request.foundPath === "string" &&
+      request.foundPath !== ""
+      ? null
+      : "Invalid file to restore";
+  }
+  if (request?.kind === "undo") {
+    const restored = request.restored;
+    const valid =
+      Number.isInteger(restored?.sampleId) &&
+      (restored.kind === "copy"
+        ? typeof restored.path === "string"
+        : restored.kind === "repoint" &&
+          typeof restored.from === "string" &&
+          typeof restored.to === "string");
+    return valid ? null : "Invalid restore to undo";
+  }
+  return "Invalid restore request";
+}
+
+/** The store to work in, or the result that says why there is none */
+function storePathFor(
+  inMemorySettings: Record<string, unknown>,
+  kitName: unknown,
+): { error: string; success: false } | string {
+  if (typeof kitName !== "string" || kitName === "") {
+    return { error: "Kit name must be a string", success: false };
+  }
+  const localStorePath = ServicePathManager.getLocalStorePath(inMemorySettings);
+  if (!localStorePath) {
+    return { error: "No local store path configured", success: false };
+  }
+  return localStorePath;
 }

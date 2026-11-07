@@ -47,6 +47,7 @@ export interface IpcEvents {
  */
 export interface IpcInvokeChannels {
   "add-sample-to-slot": Call<"addSampleToSlot">;
+  "cancel-find-missing-files": Call<"cancelFindMissingFiles">;
   "cancel-setup": Call<"cancelSetup">;
   cancelKitSync: Call<"cancelKitSync">;
   "check-disk-space": Call<"checkDiskSpace">;
@@ -68,6 +69,7 @@ export interface IpcInvokeChannels {
     result: Result<"downloadAndExtractArchive">;
   };
   "ensure-dir": Call<"ensureDir">;
+  "find-missing-files": Call<"findMissingFiles">;
   "finish-setup": Call<"finishSetup">;
   generateSyncChangeSummary: Call<"generateSyncChangeSummary">;
   "get-all-banks": Call<"getAllBanks">;
@@ -89,6 +91,7 @@ export interface IpcInvokeChannels {
   };
   "move-sample-in-kit": Call<"moveSampleInKit">;
   "open-external": Call<"openExternal">;
+  "pick-search-folder": Call<"pickSearchFolder">;
   /** Main's saved settings; the preload's readSettings returns them */
   "read-settings": {
     args: [];
@@ -106,6 +109,7 @@ export interface IpcInvokeChannels {
   "rescan-kit": Call<"rescanKit">;
   "restore-kit-sequence": Call<"restoreKitSequence">;
   "restore-kit-voices": Call<"restoreKitVoices">;
+  "restore-missing-file": Call<"restoreMissingFile">;
   "select-existing-local-store": Call<"selectExistingLocalStore">;
   "select-local-store-path": Call<"selectLocalStorePath">;
   "select-sd-card": Call<"selectSdCard">;

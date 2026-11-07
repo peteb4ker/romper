@@ -9,7 +9,10 @@ import { and, eq, inArray } from "drizzle-orm";
 
 import type { RomperDb } from "../utils/dbUtilities.js";
 
-import { requireKitForMissingSampleRemovalTx } from "./kitEditableGuard.js";
+import {
+  requireEditableKitTx,
+  requireKitForMissingSampleRemovalTx,
+} from "./kitEditableGuard.js";
 import { flagKitModified } from "./kitSyncOperations.js";
 import { restoreVoicesTx } from "./sampleCrudOperations.js";
 import { reindexVoiceTx } from "./sampleManagementOps.js";
@@ -48,6 +51,23 @@ export function putBackMissingSamplesTx(
   }
   restoreVoicesTx(db, kitName, voices);
   return putBack;
+}
+
+/**
+ * One of a kit's rows, by id, for "Find missing files…" (#823), or
+ * undefined when the kit has no such row. Throws if the kit doesn't exist.
+ */
+export function readKitSampleTx(
+  db: RomperDb,
+  kitName: string,
+  sampleId: number,
+): Sample | undefined {
+  requireKitForMissingSampleRemovalTx(db, kitName);
+  return db
+    .select()
+    .from(samples)
+    .where(and(eq(samples.kit_name, kitName), eq(samples.id, sampleId)))
+    .get();
 }
 
 /**
@@ -110,6 +130,41 @@ export function removeMissingSamplesTx(
   for (const voice of voices) reindexVoiceTx(db, kitName, voice);
   flagKitModified(db, kitName);
   return { samples: removed.length, voicesBefore };
+}
+
+/**
+ * Point a sample at another file, on the caller's transaction (#823, D2):
+ * "Use this file" for a missing sample whose old place is outside the
+ * store, and its undo. Only while the row still points at `from` (and,
+ * with `onlyIfMissing`, is still recorded missing), so an edit, a scan or
+ * a check since wins. Flags the kit modified: its next write takes the
+ * other file. A sample edit like any other, so a read-only kit refuses it
+ * (`requireEditableKitTx`); D5's exception is for removal only.
+ */
+export function repointSampleTx(
+  db: RomperDb,
+  kitName: string,
+  sampleId: number,
+  paths: { from: string; onlyIfMissing: boolean; to: string },
+): void {
+  requireEditableKitTx(db, kitName);
+  const { from, onlyIfMissing, to } = paths;
+  const changes = db
+    .update(samples)
+    .set({ source_path: to })
+    .where(
+      and(
+        eq(samples.kit_name, kitName),
+        eq(samples.id, sampleId),
+        eq(samples.source_path, from),
+        ...(onlyIfMissing ? [eq(samples.source_status, "missing")] : []),
+      ),
+    )
+    .run().changes;
+  if (changes === 0) {
+    throw new Error(`The sample in kit ${kitName} changed since it was found`);
+  }
+  flagKitModified(db, kitName);
 }
 
 /**

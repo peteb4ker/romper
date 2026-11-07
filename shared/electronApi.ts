@@ -60,9 +60,14 @@ export interface ElectronAPI {
     slotNumber: number,
     filePath: string,
   ) => Promise<DbResult<{ sampleId: number } & SampleEditKit>>;
+  /** Stop the setup download or extraction in progress (RE-66) */
+  /**
+   * Stop the search `findMissingFiles` is running, if any (#823). The
+   * search then resolves with `cancelled`.
+   */
+  cancelFindMissingFiles: () => Promise<void>;
   /** Stop the write in progress after the file being written */
   cancelKitSync: () => Promise<void>;
-  /** Stop the setup download or extraction in progress (RE-66) */
   cancelSetup: () => Promise<{ success: boolean }>;
   checkDiskSpace: (
     targetPath: string,
@@ -136,6 +141,18 @@ export interface ElectronAPI {
    * The store setup built at `targetPath` is complete, so quitting no longer
    * cleans it up, even if saving it as the local store fails (#616)
    */
+  /**
+   * Look for a kit's missing sample files (#823, stage 6 of
+   * docs/developer/store-check.md): in the store's kit folders and in
+   * `folder`, which must be one `pickSearchFolder` returned (D1). Main
+   * checks each file is still missing first, and leaves out those on a
+   * drive that isn't connected (D6). One fs operation at a time, each
+   * under the store check's time limit; one search at a time.
+   */
+  findMissingFiles: (
+    kitName: string,
+    folder: string,
+  ) => Promise<DbResult<FindMissingFilesResult>>;
   finishSetup: (
     targetPath: string,
   ) => Promise<{ error?: string; success: boolean }>;
@@ -227,6 +244,13 @@ export interface ElectronAPI {
    */
   onSyncProgress: (callback: (progress: SyncProgress) => void) => () => void;
   openExternal: (url: string) => Promise<{ error?: string; success: boolean }>;
+  /**
+   * Ask the user, in a native dialog main shows, for a folder to search
+   * for the kit's missing files (#823, D1). It opens at the nearest folder
+   * above the first missing file's old place that still exists. Resolves
+   * to the folder, or null when the user cancels or nothing is missing.
+   */
+  pickSearchFolder: (kitName: string) => Promise<DbResult<null | string>>;
   readSettings: () => Promise<SettingsData>;
   /**
    * Remove a kit's samples whose files are missing (#822, stage 5 of
@@ -258,14 +282,25 @@ export interface ElectronAPI {
     kitName: string,
     parts: Partial<SequenceSnapshot>,
   ) => Promise<DbResult<void>>;
-  /**
-   * Put a kit's voices back as an undo snapshot had them: rows, slots,
-   * gain and WAV details, in one transaction (RE-86).
-   */
   restoreKitVoices: (
     kitName: string,
     voices: VoiceSnapshot[],
   ) => Promise<DbResult<void>>;
+  /**
+   * Put a kit's voices back as an undo snapshot had them: rows, slots,
+   * gain and WAV details, in one transaction (RE-86).
+   */
+  /**
+   * Put a found file back for a missing sample (#823, D2), or undo that.
+   * A sample whose old place is in the store gets a copy there, never
+   * over an existing file; one outside the store is pointed at the found
+   * file. Undo deletes only a copy Romper made that is unchanged, or
+   * points the sample back.
+   */
+  restoreMissingFile: (
+    kitName: string,
+    request: RestoreMissingFileRequest,
+  ) => Promise<DbResult<RestoreMissingFileResult>>;
   selectExistingLocalStore: () => Promise<{
     error: null | string;
     path: null | string;
@@ -384,6 +419,33 @@ export interface ElectronFileAPI {
   getDroppedFilePath: (file: File) => Promise<string>;
 }
 
+/** What `findMissingFiles` found (#823) */
+export interface FindMissingFilesResult {
+  /** The search was stopped (`cancelFindMissingFiles`, or a newer search) */
+  cancelled: boolean;
+  /** One entry per missing sample searched for, in voice and slot order */
+  files: MissingFileSearch[];
+  /** The picked folder's name, as the results name it: "Samples" */
+  folderName: string;
+  /**
+   * Why the search didn't look everywhere: it reached its depth or file
+   * limit, or a drive didn't respond. Null when it looked everywhere.
+   */
+  incomplete: "limit" | "notResponding" | null;
+}
+
+// createRomperDb returns a DbResult extended with the created file path
+/** A file the search found for a missing sample (#823) */
+export interface FoundFile {
+  /** Same name, size and header (D3); otherwise only the name matched */
+  match: boolean;
+  mtimeMs: number;
+  path: string;
+  size: number;
+  /** The folder it is in: from the picked folder's name ("Samples/Drums"), or a kit folder in the store from the kit ("B1") */
+  where: string;
+}
+
 /**
  * The kit details `updateKit` may change. Main refuses any other field
  * (RE-22): the rest of a kit has its own channel or belongs to main.
@@ -391,6 +453,17 @@ export interface ElectronFileAPI {
 export interface KitMetadataUpdates {
   alias?: null | string;
   editable?: boolean;
+}
+
+/** One missing sample and the files the search found for it (#823) */
+export interface MissingFileSearch {
+  /** Its file's name, as the results name it: "kick.wav" */
+  fileName: string;
+  /** Matches first, then possible matches */
+  found: FoundFile[];
+  /** Its old place is in the store: a found file is copied back (D2) */
+  inStore: boolean;
+  sampleId: number;
 }
 
 /** The arguments `moveSampleBetweenKits` sends over its channel, as one object */
@@ -404,7 +477,6 @@ export interface MoveSampleBetweenKitsParams {
   toVoice: number;
 }
 
-// createRomperDb returns a DbResult extended with the created file path
 /** What removing a kit's missing samples did, or its undo (#822) */
 export interface RemoveMissingSamplesResult {
   /** The rows removed, or for an undo the rows put back */
@@ -414,6 +486,43 @@ export interface RemoveMissingSamplesResult {
    * puts back. Empty when nothing was removed, and for an undo.
    */
   voicesBefore: VoiceSnapshot[];
+}
+
+/**
+ * What `restoreMissingFile` did, so undo can reverse exactly that (#823):
+ * a copy Romper made at the sample's old place in the store, or the sample
+ * pointed from its old path to the found file
+ */
+export type RestoredMissingFile =
+  | {
+      fileName: string;
+      foundPath: string;
+      kind: "copy";
+      path: string;
+      sampleId: number;
+    }
+  | {
+      fileName: string;
+      from: string;
+      kind: "repoint";
+      sampleId: number;
+      to: string;
+    };
+
+/** Put a found file back, or undo that (#823) */
+export type RestoreMissingFileRequest =
+  | { foundPath: string; kind: "restore"; sampleId: number }
+  | { kind: "undo"; restored: RestoredMissingFile };
+
+/** What `restoreMissingFile` did (#823) */
+export interface RestoreMissingFileResult {
+  /**
+   * For an undo of a copy: the copy has changed since Romper made it, so
+   * it was left where it is
+   */
+  changed: boolean;
+  /** For a restore: what was done, for its undo entry */
+  restored: null | RestoredMissingFile;
 }
 
 export interface RomperDbResult extends DbResult<void> {

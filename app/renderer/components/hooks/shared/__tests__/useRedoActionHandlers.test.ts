@@ -62,6 +62,39 @@ describe("useRedoActionHandlers", () => {
       expect(action.data).toEqual({ kitName: "B0", samples: 3, voicesBefore });
     });
 
+    it("[UC-05] redoes RESTORE_MISSING_FILE by putting the same found file back, keeping what this restore did for the next undo (#823)", async () => {
+      const again = {
+        fileName: "loop.wav",
+        from: "/old/loop.wav",
+        kind: "repoint" as const,
+        sampleId: 9,
+        to: "/Samples/loop.wav",
+      };
+      vi.mocked(globalThis.electronAPI.restoreMissingFile).mockResolvedValue({
+        data: { changed: false, restored: again },
+        success: true,
+      });
+      const { result } = renderHook(() =>
+        useRedoActionHandlers({ kitName: testKitName }),
+      );
+      const action: AnyUndoAction = {
+        data: { kitName: "A0", restored: { ...again, from: "/older" } },
+        description: "Use this file for loop.wav",
+        id: "restore-id",
+        timestamp: new Date(),
+        type: "RESTORE_MISSING_FILE",
+      };
+
+      const redone = await result.current.executeRedoAction(action);
+
+      expect(redone).toMatchObject({ success: true });
+      expect(globalThis.electronAPI.restoreMissingFile).toHaveBeenCalledWith(
+        "A0",
+        { foundPath: "/Samples/loop.wav", kind: "restore", sampleId: 9 },
+      );
+      expect(action.data).toEqual({ kitName: "A0", restored: again });
+    });
+
     it("should handle ADD_SAMPLE redo action", async () => {
       const { result } = renderHook(() =>
         useRedoActionHandlers({ kitName: testKitName }),

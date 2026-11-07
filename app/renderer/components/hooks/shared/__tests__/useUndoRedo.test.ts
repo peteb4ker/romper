@@ -131,6 +131,48 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
     expect(result.current.canUndo).toBe(true);
   });
 
+  it("[UC-05] undoes a found file put back with no kit open, and says when the copy had changed and was left (#823)", async () => {
+    const api = vi.mocked(globalThis.electronAPI);
+    api.restoreMissingFile.mockResolvedValue({
+      data: { changed: true, restored: null },
+      success: true,
+    });
+    const onMessage = vi.fn();
+    const { result } = renderHook(() => useUndoRedo("", onMessage));
+    const restored = {
+      fileName: "kick.wav",
+      foundPath: "/Samples/kick.wav",
+      kind: "copy" as const,
+      path: "/store/B0/kick.wav",
+      sampleId: 4,
+    };
+
+    act(() => {
+      result.current.addAction({
+        data: { kitName: "B0", restored },
+        description: "Copy back kick.wav",
+        id: "restore-1",
+        timestamp: new Date(),
+        type: "RESTORE_MISSING_FILE",
+      });
+    });
+    expect(result.current.undoDescription).toBe("Undo copy back kick.wav");
+
+    await act(async () => {
+      await result.current.undo();
+    });
+
+    expect(api.restoreMissingFile).toHaveBeenCalledWith("B0", {
+      kind: "undo",
+      restored,
+    });
+    expect(onMessage).toHaveBeenCalledWith(
+      "kick.wav has changed since Romper copied it, so it wasn't removed.",
+      "warning",
+    );
+    expect(result.current.canRedo).toBe(true);
+  });
+
   it("does nothing with no kit open for an action that belongs to the open kit", async () => {
     const { result } = renderHook(() => useUndoRedo(""));
     act(() => {

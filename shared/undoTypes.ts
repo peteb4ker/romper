@@ -2,6 +2,7 @@
 // Simplified for immediate renderer state management
 
 import type { Sample } from "./db/schema";
+import type { RestoredMissingFile } from "./electronApi";
 import type { SliceStep } from "./sliceTypes";
 
 export interface AddSampleAction extends UndoAction {
@@ -24,6 +25,7 @@ export type AnyUndoAction =
   | MoveSampleBetweenKitsAction
   | ReindexSamplesAction
   | RemoveMissingSamplesAction
+  | RestoreMissingFileAction
   | SequenceEditAction;
 
 export interface DeleteSampleAction extends UndoAction {
@@ -134,6 +136,20 @@ export interface RemoveMissingSamplesAction extends UndoAction {
 }
 
 /**
+ * A found file put back for a missing sample (#823): copied back into the
+ * store, or the sample pointed at it. It carries its kit, as "Remove
+ * missing samples" does, since the Library check makes it for any kit.
+ */
+export interface RestoreMissingFileAction extends UndoAction {
+  data: {
+    kitName: string;
+    /** What main did, as it returned it; undo reverses exactly that */
+    restored: RestoredMissingFile;
+  };
+  type: "RESTORE_MISSING_FILE";
+}
+
+/**
  * A sample row as undo keeps it: everything the user can see or set, so
  * restoring it brings back its gain and WAV details too (RE-86). The id,
  * kit and voice come from where it's restored.
@@ -187,6 +203,7 @@ export interface UndoAction {
     | "MOVE_SAMPLE"
     | "REINDEX_SAMPLES"
     | "REMOVE_MISSING_SAMPLES"
+    | "RESTORE_MISSING_FILE"
     | "SEQUENCE_EDIT";
 }
 
@@ -199,12 +216,17 @@ export interface VoiceSnapshot {
 /**
  * Whether the action names its own kit, so it can be undone or redone with
  * any kit open, or none, and whether or not that kit is editable: "Remove
- * missing samples", which the Library check makes for any kit (#822, D5)
+ * missing samples" (#822, D5) and putting a found file back (#823), which
+ * the Library check makes for any kit. Main still refuses pointing a
+ * read-only kit's sample at another file.
  */
 export function carriesItsKit(
   action: AnyUndoAction | null | undefined,
 ): boolean {
-  return action?.type === "REMOVE_MISSING_SAMPLES";
+  return (
+    action?.type === "REMOVE_MISSING_SAMPLES" ||
+    action?.type === "RESTORE_MISSING_FILE"
+  );
 }
 
 // Helper to create action IDs: the timestamp, then 8 random hex digits, the
@@ -228,6 +250,7 @@ export function getActionDescription(action: AnyUndoAction): string {
     case "REINDEX_SAMPLES":
       return `Undo reindex samples in voice ${action.data.voice} after deleting slot ${action.data.deletedSlot + 1}`;
     case "REMOVE_MISSING_SAMPLES":
+    case "RESTORE_MISSING_FILE":
     case "SEQUENCE_EDIT":
       return `Undo ${action.description.charAt(0).toLowerCase()}${action.description.slice(1)}`;
     default:

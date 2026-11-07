@@ -38,11 +38,13 @@
  *   npm run screenshots -- --target manual-slicer --slicer-sample <wav>
  */
 
-import type { Page } from "playwright";
+import type { ElectronApplication, Page } from "playwright";
 
 import { execFileSync } from "node:child_process";
 import {
+  copyFileSync,
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -84,6 +86,14 @@ const DOCS_IMAGES = path.join(ROOT, "docs", "images");
 // The navigate() function receives the Playwright Page (window) object.
 // The app starts on the Kit Browser view with fixtures loaded.
 // ---------------------------------------------------------------------------
+
+/** What a target's navigate() may need beyond the window */
+interface CaptureContext {
+  app: ElectronApplication;
+  /** A folder of its own, removed after the capture */
+  scratch: string;
+  store: string;
+}
 
 interface PngHeader {
   channels: number;
@@ -819,6 +829,52 @@ const SCREENSHOT_TARGETS = [
     store: "library-check",
   },
 
+  {
+    description:
+      "The Library check listing the files Find missing files found for a kit (#823)",
+    name: "manual-library-check-find",
+    navigate: async (window: Page, context?: CaptureContext) => {
+      if (!context) throw new Error("This target needs the app and the store");
+      await waitForStoreCheck(window, MISSING_FILE_KIT);
+      await dismissMessages(window);
+      // A copy of the missing snare in a folder outside the store, and the
+      // folder dialog (which Playwright can't click) answering with it
+      const samples = path.join(context.scratch, "Samples");
+      mkdirSync(path.join(samples, "Drums"), { recursive: true });
+      copyFileSync(
+        path.join(context.store, UNREADABLE_FILE_KIT, "2_snare.wav"),
+        path.join(samples, "Drums", "2_snare.wav"),
+      );
+      await context.app.evaluate(({ dialog }, chosen) => {
+        dialog.showOpenDialog = (async () => ({
+          canceled: false,
+          filePaths: [chosen],
+        })) as unknown as typeof dialog.showOpenDialog;
+      }, samples);
+      const dialog = window.locator('[data-testid="library-check-dialog"]');
+      if (!(await dialog.isVisible())) {
+        await window.locator('[data-testid="store-check-status"]').click();
+        await dialog.waitFor();
+      }
+      await window
+        .locator(`[data-testid="library-check-find-${MISSING_FILE_KIT}"]`)
+        .click();
+      await window
+        .locator(
+          `[data-testid="library-check-find-${MISSING_FILE_KIT}-results"] li`,
+        )
+        .first()
+        .waitFor();
+      await window.evaluate(() =>
+        (document.activeElement as HTMLElement)?.blur(),
+      );
+      await window.waitForTimeout(300);
+    },
+    output: "manual/library-check-find.png",
+    selector: '[data-testid="library-check-dialog"]',
+    store: "library-check",
+  },
+
   // -- Slicer (#723): one-time capture from --slicer-sample (tests/utils/slicer-store.ts) --
   {
     description:
@@ -1062,7 +1118,11 @@ async function capture(
         console.log(`  Capturing: ${target.name} ...`);
 
         // Navigate to the right state
-        await target.navigate(window);
+        await target.navigate(window, {
+          app: electronApp,
+          scratch: userData,
+          store,
+        });
 
         const outputPath = path.join(DOCS_IMAGES, target.output);
 
@@ -1133,7 +1193,6 @@ async function main() {
   console.log(`\nCapturing ${targets.length} screenshot(s)...\n`);
 
   // Ensure manual images directory exists
-  const { mkdirSync } = await import("node:fs");
   mkdirSync(path.join(DOCS_IMAGES, "manual"), { recursive: true });
 
   // Build the app first

@@ -2,6 +2,7 @@ import type {
   ElectronAPI,
   ElectronFileAPI,
   KitMetadataUpdates,
+  RestoreMissingFileRequest,
   RomperEnv,
   SettingsData,
   SettingsKey,
@@ -158,6 +159,10 @@ const electronAPI = {
       filePath,
     );
   },
+  cancelFindMissingFiles: () => {
+    isDev && console.debug("[IPC] cancelFindMissingFiles invoked");
+    return invoke("cancel-find-missing-files");
+  },
   cancelKitSync: () => {
     isDev && console.debug("[IPC] cancelKitSync invoked");
     return invoke("cancelKitSync");
@@ -243,6 +248,10 @@ const electronAPI = {
   ensureDir: (dir: string) => {
     isDev && console.debug("[IPC] ensureDir invoked", dir);
     return invoke("ensure-dir", dir);
+  },
+  findMissingFiles: (kitName: string, folder: string) => {
+    isDev && console.debug("[IPC] findMissingFiles invoked", kitName);
+    return invoke("find-missing-files", kitName, folder);
   },
   finishSetup: (targetPath: string) => {
     isDev && console.debug("[IPC] finishSetup invoked", targetPath);
@@ -389,6 +398,10 @@ const electronAPI = {
     isDev && console.debug("[IPC] openExternal invoked", url);
     return invoke("open-external", url);
   },
+  pickSearchFolder: (kitName: string) => {
+    isDev && console.debug("[IPC] pickSearchFolder invoked", kitName);
+    return invoke("pick-search-folder", kitName);
+  },
   readSettings: async () => {
     isDev && console.debug("[IPC] readSettings invoked");
     return await settingsManager.readSettings();
@@ -412,6 +425,10 @@ const electronAPI = {
   restoreKitVoices: (kitName: string, voices: VoiceSnapshot[]) => {
     isDev && console.debug("[IPC] restoreKitVoices invoked", kitName);
     return invoke("restore-kit-voices", kitName, voices);
+  },
+  restoreMissingFile: (kitName: string, request: RestoreMissingFileRequest) => {
+    isDev && console.debug("[IPC] restoreMissingFile invoked", kitName);
+    return invoke("restore-missing-file", kitName, request);
   },
   selectExistingLocalStore: () => {
     isDev && console.debug("[IPC] selectExistingLocalStore invoked");

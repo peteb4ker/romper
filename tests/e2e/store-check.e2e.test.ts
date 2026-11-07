@@ -1,4 +1,5 @@
 import fs from "fs-extra";
+import os from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import {
@@ -12,6 +13,7 @@ import {
   removeBrokenKitStore,
 } from "../utils/broken-kit-store";
 import { appEnv } from "../utils/e2e-app-env";
+import { chooseFolderInOpenDialog } from "../utils/e2e-dialogs";
 import { expect, test } from "../utils/e2e-error-guard";
 import {
   type E2ETestEnvironment,
@@ -538,5 +540,120 @@ test.describe("[UC-05] Remove missing samples (#822)", () => {
     await expect(
       window.locator('[data-testid="sample-file-label-2-0"]'),
     ).toHaveText("File not found");
+  });
+});
+
+test.describe("[UC-05] Find missing files (#823)", () => {
+  let electronApp: ElectronApplication;
+  let window: Page;
+  let testEnv: E2ETestEnvironment;
+  let searched: string;
+  const snare = "2_snare.wav";
+  const copied = () => path.join(testEnv.localStorePath, "A0", snare);
+  const moved = () => path.join(searched, "Samples", "Drums", snare);
+
+  async function clickEditMenu(id: "redo" | "undo") {
+    await electronApp.evaluate(({ BrowserWindow, Menu }, itemId) => {
+      const target = BrowserWindow.getAllWindows()[0];
+      const item = Menu.getApplicationMenu()?.getMenuItemById(itemId);
+      if (!item) throw new Error(`no Edit menu item "${itemId}"`);
+      item.click(undefined, target, target.webContents);
+    }, id);
+  }
+
+  test.beforeEach(async () => {
+    // A0's snare was moved out of the store into Samples/Drums; A0 is
+    // read-only, as an imported kit is
+    searched = await fs.mkdtemp(path.join(os.tmpdir(), "romper-e2e-search-"));
+    testEnv = await createBrokenKitStore({
+      moveSnareTo: path.join(searched, "Samples", "Drums"),
+    });
+    const db = new DatabaseSync(
+      path.join(testEnv.localStorePath, ".romperdb", "romper.sqlite"),
+    );
+    try {
+      db.prepare("UPDATE kits SET editable = 0 WHERE name = 'A0'").run();
+    } finally {
+      db.close();
+    }
+    electronApp = await electron.launch({
+      args: ["dist/electron/main/index.js"],
+      env: appEnv(testEnv.environment),
+      timeout: 30000,
+    });
+    window = await electronApp.firstWindow();
+    await window.waitForSelector('[data-testid="kit-grid"]', {
+      timeout: 10000,
+    });
+    // Playwright can't click the native folder picker
+    await chooseFolderInOpenDialog(electronApp, path.join(searched, "Samples"));
+  });
+
+  test.afterEach(async () => {
+    await electronApp?.close();
+    if (testEnv) await removeBrokenKitStore(testEnv);
+    if (searched) await fs.remove(searched);
+  });
+
+  test("from the Library check: finds the file in the folder picked, copies it back into the read-only kit, clears its badge at once, and Edit > Undo deletes the copy", async () => {
+    test.setTimeout(60000);
+    const badge = window.locator(
+      '[data-testid="kit-item-A0"] [data-testid="store-check-badge"]',
+    );
+    const item = window.getByTestId("store-check-status");
+    await expect(item).toBeVisible({ timeout: 40000 });
+    await item.click();
+    const dialog = window.getByRole("dialog", { name: "Library check" });
+    const entry = dialog.getByTestId("library-check-missing-A0");
+
+    await entry.getByRole("button", { name: "Find missing files… A0" }).click();
+    // B1 has a snare just like it: both are offered, for the user to choose
+    await expect(
+      entry.getByText(`Found 2 files named ${snare}. Choose one.`),
+    ).toBeVisible();
+    await entry
+      .locator('li[data-testid*="-choice-"]', {
+        hasText: `Samples/Drums/${snare}`,
+      })
+      .getByRole("button", { name: "Copy back" })
+      .click();
+
+    // Main checks the kit again: the entry, the item and the badge go
+    await expect(entry).toHaveCount(0);
+    await expect(item).toHaveCount(0);
+    expect(await fs.readFile(copied())).toEqual(await fs.readFile(moved()));
+    await window.keyboard.press("Escape");
+    await expect(badge).toHaveCount(0);
+
+    await clickEditMenu("undo");
+
+    // The copy goes, the file found stays, and the badge is back
+    await expect.poll(() => fs.pathExists(copied())).toBe(false);
+    expect(await fs.pathExists(moved())).toBe(true);
+    await expect(badge).toBeVisible();
+  });
+
+  test("from the kit editor's notice: copies the file back, and the notice goes", async () => {
+    test.setTimeout(60000);
+    await window.locator('[data-testid="kit-item-A0"]').click();
+    await window.waitForSelector('[data-testid="kit-editor"]');
+    const notice = window.getByTestId("kit-missing-files-notice");
+    await expect(notice).toBeVisible({ timeout: 20000 });
+
+    await notice
+      .getByRole("button", { name: "Find missing files… A0" })
+      .click();
+    await notice
+      .locator('li[data-testid*="-choice-"]', {
+        hasText: `Samples/Drums/${snare}`,
+      })
+      .getByRole("button", { name: "Copy back" })
+      .click();
+
+    await expect(notice).toHaveCount(0);
+    expect(await fs.pathExists(copied())).toBe(true);
+    await expect(
+      window.locator('[data-testid="sample-file-label-2-0"]'),
+    ).toHaveCount(0);
   });
 });

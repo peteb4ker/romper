@@ -6,8 +6,11 @@ import type {
   MoveSampleBetweenKitsAction,
   ReindexSamplesAction,
   RemoveMissingSamplesAction,
+  RestoreMissingFileAction,
   VoiceSnapshot,
 } from "@romper/shared/undoTypes";
+
+import { describeCopyChanged } from "@romper/shared/storeCheckWording";
 
 import { createLogger } from "../../../utils/logger";
 import { requestKitRefresh } from "../kit-management/removeMissingSamples";
@@ -107,6 +110,21 @@ export function useUndoActionHandlers({
     return result;
   };
 
+  // Deletes the copy a restore made, if unchanged, or points the sample
+  // back (#823). A copy that changed since stays, and the user is told.
+  const undoRestoreMissingFile = async (action: RestoreMissingFileAction) => {
+    const { kitName: kit, restored } = action.data;
+    const result = await globalThis.electronAPI?.restoreMissingFile?.(kit, {
+      kind: "undo",
+      restored,
+    });
+    if (!result?.success) return result;
+    requestKitRefresh(kit);
+    return result.data?.changed
+      ? { ...result, notice: describeCopyChanged(restored.fileName) }
+      : result;
+  };
+
   // Main undo action executor
   const executeUndoAction = async (action: AnyUndoAction) => {
     switch (action.type) {
@@ -122,6 +140,8 @@ export function useUndoActionHandlers({
         return await undoReindexSamples(action);
       case "REMOVE_MISSING_SAMPLES":
         return await undoRemoveMissingSamples(action);
+      case "RESTORE_MISSING_FILE":
+        return await undoRestoreMissingFile(action);
       case "SEQUENCE_EDIT":
         return await writeSequenceSnapshot(
           kitName,

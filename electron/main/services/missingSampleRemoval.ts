@@ -59,31 +59,14 @@ export async function removeMissingSamples(
   );
 }
 
-/** Whether a drive's mount point (or root) is there and answers */
-async function driveConnected(
-  volume: string,
-  limit: <T>(operation: Promise<T>) => Promise<T>,
-): Promise<boolean> {
-  try {
-    await limit(fs.promises.stat(volume));
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/** The fs error says there is no such file or folder (or it isn't one) */
-function isGone(error: unknown): boolean {
-  const code = (error as NodeJS.ErrnoException | undefined)?.code;
-  return code === "ENOENT" || code === "ENOTDIR";
-}
-
 /**
  * The rows whose file is still gone, on a drive that is connected. A file
  * that is back, a drive that is gone or didn't answer, and any other
  * failure (permissions, I/O) leave the row alone.
  */
-async function stillMissing(rows: Sample[]): Promise<ConfirmedMissingSample[]> {
+export async function stillMissing(
+  rows: Sample[],
+): Promise<ConfirmedMissingSample[]> {
   const limit = <T>(operation: Promise<T>) =>
     withCardWatchdog(operation, storeCheckSettings.operationTimeoutMs);
   /** Whether each drive asked about is connected; false once one doesn't answer */
@@ -111,4 +94,23 @@ async function stillMissing(rows: Sample[]): Promise<ConfirmedMissingSample[]> {
     }
   }
   return confirmed;
+}
+
+/** Whether a drive's mount point (or root) is there and answers */
+async function driveConnected(
+  volume: string,
+  limit: <T>(operation: Promise<T>) => Promise<T>,
+): Promise<boolean> {
+  try {
+    await limit(fs.promises.stat(volume));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** The fs error says there is no such file or folder (or it isn't one) */
+function isGone(error: unknown): boolean {
+  const code = (error as NodeJS.ErrnoException | undefined)?.code;
+  return code === "ENOENT" || code === "ENOTDIR";
 }

@@ -652,6 +652,138 @@ describe("[UC-05] [Q-06] LibraryCheckDialog (#824)", () => {
     });
   });
 
+  describe("[UC-05] Find missing files (#823, stage 6)", () => {
+    beforeEach(() => {
+      vi.mocked(globalThis.electronAPI.pickSearchFolder).mockResolvedValue({
+        data: "/Samples",
+        success: true,
+      });
+      vi.mocked(globalThis.electronAPI.findMissingFiles).mockResolvedValue({
+        data: {
+          cancelled: false,
+          files: [
+            {
+              fileName: "kick.wav",
+              found: [
+                {
+                  match: true,
+                  mtimeMs: 0,
+                  path: "/Samples/Drums/kick.wav",
+                  size: 1000,
+                  where: "Samples/Drums",
+                },
+              ],
+              inStore: true,
+              sampleId: 3,
+            },
+          ],
+          folderName: "Samples",
+          incomplete: null,
+        },
+        success: true,
+      });
+    });
+
+    it("is offered only for a kit with missing samples, named for the kit", () => {
+      render(<LibraryCheckDialog />);
+      find(
+        { kitName: "A1", missing: 2 },
+        { kitName: "B1", untracked: ["2 a.wav"] },
+        { folderMissing: true, kitName: "C1" },
+      );
+      open();
+
+      expect(
+        screen.getAllByRole("button", { name: /^Find missing files…/ }),
+      ).toEqual([
+        screen.getByRole("button", { name: "Find missing files… A1" }),
+      ]);
+    });
+
+    it("lists what it found in the kit's entry, and puts the chosen file back", async () => {
+      render(<LibraryCheckDialog />);
+      find({ kitName: "A1", missing: 1 });
+      open();
+
+      await act(async () => {
+        fireEvent.click(
+          screen.getByRole("button", { name: "Find missing files… A1" }),
+        );
+      });
+      const entry = screen.getByTestId("library-check-missing-A1");
+      expect(
+        within(entry).getByText("Found kick.wav in Samples/Drums."),
+      ).toBeInTheDocument();
+      await act(async () => {
+        fireEvent.click(
+          within(entry).getByRole("button", { name: "Copy back" }),
+        );
+      });
+
+      expect(globalThis.electronAPI.restoreMissingFile).toHaveBeenCalledWith(
+        "A1",
+        { foundPath: "/Samples/Drums/kick.wav", kind: "restore", sampleId: 3 },
+      );
+    });
+
+    it("runs one fix at a time: the other fixes wait while it searches", async () => {
+      vi.mocked(globalThis.electronAPI.findMissingFiles).mockReturnValue(
+        new Promise(() => undefined),
+      );
+      render(<LibraryCheckDialog />);
+      find({ kitName: "A1", missing: 1 }, { kitName: "A2", missing: 1 });
+      open();
+
+      await act(async () => {
+        fireEvent.click(
+          screen.getByRole("button", { name: "Find missing files… A1" }),
+        );
+      });
+
+      for (const name of [
+        "Scan kit A1",
+        "Remove missing samples A2",
+        "Find missing files… A2",
+      ]) {
+        expect(screen.getByRole("button", { name })).toHaveAttribute(
+          "aria-disabled",
+          "true",
+        );
+      }
+      fireEvent.click(screen.getByRole("button", { name: "Scan kit A2" }));
+      expect(globalThis.electronAPI.rescanKit).not.toHaveBeenCalled();
+    });
+
+    it("shows main's own words when the search fails", async () => {
+      vi.mocked(globalThis.electronAPI.findMissingFiles).mockResolvedValue({
+        error: "Kit A1 not found",
+        success: false,
+      });
+      const showMessage = vi.fn();
+      render(
+        <MessageDisplayContext.Provider
+          value={
+            { showMessage } as unknown as React.ContextType<
+              typeof MessageDisplayContext
+            >
+          }
+        >
+          <LibraryCheckDialog />
+        </MessageDisplayContext.Provider>,
+      );
+      find({ kitName: "A1", missing: 1 });
+      open();
+
+      await act(async () => {
+        fireEvent.click(
+          screen.getByRole("button", { name: "Find missing files… A1" }),
+        );
+      });
+
+      expect(showMessage).toHaveBeenCalledWith("Kit A1 not found", "error");
+    });
+  });
+
   describe("from the status bar item", () => {
     it("opens with the item, keeps focus inside, and gives focus back to the item when it closes", () => {
       render(

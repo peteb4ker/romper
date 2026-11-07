@@ -3,9 +3,10 @@ import type { IpcChannel } from "@romper/shared/ipcChannels.js";
 /**
  * Channels whose calls change the store or the card over a stretch of
  * time: a write, setup (it copies kits into the store), a rescan (Scan
- * All sends one per kit), and removing a kit's missing samples (it checks
- * their files first, #822). The store check doesn't run while one is in
- * flight, and drops what it found if one started meanwhile (#812).
+ * All sends one per kit), removing a kit's missing samples (it checks
+ * their files first, #822), and putting a found file back (#823). The
+ * store check doesn't run while one is in flight, and drops what it found
+ * if one started meanwhile (#812).
  */
 const EXCLUSIVE_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   "copy-dir",
@@ -13,6 +14,7 @@ const EXCLUSIVE_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   "download-and-extract-archive",
   "remove-missing-samples",
   "rescan-kit",
+  "restore-missing-file",
   "setup-import-bank-names",
   "setup-import-kit",
   "startKitSync",

@@ -25,9 +25,9 @@ import WizardSummaryStep from "./wizard/WizardSummaryStep";
 import WizardTargetStep from "./wizard/WizardTargetStep";
 
 enum WizardStep {
-  Initialize = 2,
   Source = 0,
   Target = 1,
+  Initialize = 2,
 }
 
 interface LocalStoreWizardUIProps {

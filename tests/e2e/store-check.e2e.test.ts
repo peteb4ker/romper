@@ -486,7 +486,7 @@ test.describe("[UC-05] Remove missing samples (#822)", () => {
       .getByRole("button", { name: "Remove missing samples A0" })
       .click();
     const popover = dialog.getByRole("dialog", {
-      name: "Remove 1 missing sample from A0? You can undo this.",
+      name: "Remove 1 missing sample from A0? You can undo this. Your next write also removes it from the card.",
     });
     await expect(popover.getByRole("button", { name: "Cancel" })).toBeFocused();
     await popover
@@ -524,7 +524,7 @@ test.describe("[UC-05] Remove missing samples (#822)", () => {
       .click();
     await notice
       .getByRole("dialog", {
-        name: "Remove 1 missing sample from A0? You can undo this.",
+        name: "Remove 1 missing sample from A0? You can undo this. Your next write also removes it from the card.",
       })
       .getByRole("button", { name: "Remove missing samples" })
       .click();

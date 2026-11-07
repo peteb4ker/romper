@@ -53,10 +53,10 @@ describe("[UC-05] [Q-06] store check wording (#824)", () => {
 
     it("asks in the popover, with the count and the kit, singular for one", () => {
       expect(describeRemoveMissingSamples(2, "A3")).toBe(
-        "Remove 2 missing samples from A3? You can undo this.",
+        "Remove 2 missing samples from A3? You can undo this. Your next write also removes them from the card.",
       );
       expect(describeRemoveMissingSamples(1, "A3")).toBe(
-        "Remove 1 missing sample from A3? You can undo this.",
+        "Remove 1 missing sample from A3? You can undo this. Your next write also removes it from the card.",
       );
     });
 

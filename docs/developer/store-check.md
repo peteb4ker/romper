@@ -703,7 +703,7 @@ checks samples. Once stage 3 replaced `ValidationResultsDialog`,
 - One-time message: "Romper found missing sample files in 3 kits. Open the list from the status bar."
 - Details dialog title: "Library check"
 - Fix buttons: "Scan kit", "Remove missing samples", "Find missing files…"
-- Remove popover: "Remove 2 missing samples from A3? You can undo this."
+- Remove popover: "Remove 2 missing samples from A3? You can undo this." (extended on #822, below)
 - Search: "Choose a folder to search for kick.wav"; results "Found kick.wav in Samples/Drums." / "Found 2 files named kick.wav. Choose one." / "No copy of kick.wav found in Samples."
 - Restore buttons: "Copy back" (store samples), "Use this file" (samples outside the store, if D2 says so)
 - Undo of a copy whose file changed: "kick.wav has changed since Romper copied it, so it wasn't removed."
@@ -715,6 +715,11 @@ checks samples. Once stage 3 replaced `ValidationResultsDialog`,
 - Details dialog with nothing to list: "No problems found."
 - Status bar item when the only problems are drives: "Drive not connected", or "Drive not responding" when no drive is disconnected and one didn't respond. When kits need attention, the kit count shows instead.
 - The one-time message is for missing sample files only; untracked files and missing folders show only by the badge and the status bar.
+
+**Approved on #822 (2026-11-06):**
+
+- Remove popover, with what the next write does: "Remove 2 missing samples from A3? You can undo this. Your next write also removes them from the card." Singular: "Remove 1 missing sample from A3? You can undo this. Your next write also removes it from the card."
+- Undo that fails: "Couldn't undo: remove 2 missing samples from A3. Check the kit, then try again." (the app's existing undo-failure pattern)
 
 ## Risks
 

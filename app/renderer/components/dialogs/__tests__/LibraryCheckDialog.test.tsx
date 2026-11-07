@@ -445,7 +445,7 @@ describe("[UC-05] [Q-06] LibraryCheckDialog (#824)", () => {
       );
 
       const popover = screen.getByRole("dialog", {
-        name: "Remove 2 missing samples from A1? You can undo this.",
+        name: "Remove 2 missing samples from A1? You can undo this. Your next write also removes them from the card.",
       });
       const cancel = within(popover).getByRole("button", { name: "Cancel" });
       expect(cancel).toHaveFocus();
@@ -471,7 +471,7 @@ describe("[UC-05] [Q-06] LibraryCheckDialog (#824)", () => {
 
       expect(
         screen.getByRole("dialog", {
-          name: "Remove 1 missing sample from A1? You can undo this.",
+          name: "Remove 1 missing sample from A1? You can undo this. Your next write also removes it from the card.",
         }),
       ).toBeInTheDocument();
     });

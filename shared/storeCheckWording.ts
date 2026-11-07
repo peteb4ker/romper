@@ -120,13 +120,16 @@ export function describeRemovedMissingSamples(
 
 /**
  * The remove popover's question (approved on #824, 2026-10-30; the
- * singular in the same style, 2026-10-31)
+ * singular in the same style, 2026-10-31), with what the next write does
+ * (approved on #822, 2026-11-06)
  */
 export function describeRemoveMissingSamples(
   count: number,
   kitName: string,
 ): string {
-  return `Remove ${count} missing ${count === 1 ? "sample" : "samples"} from ${kitName}? You can undo this.`;
+  return count === 1
+    ? `Remove 1 missing sample from ${kitName}? You can undo this. Your next write also removes it from the card.`
+    : `Remove ${count} missing samples from ${kitName}? You can undo this. Your next write also removes them from the card.`;
 }
 
 /**

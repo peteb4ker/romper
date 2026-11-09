@@ -110,7 +110,7 @@
     "husky": "^9.1.7",
     "image-size": "file:scripts/image-size-compat",
     "istanbul-merge": "^2.0.0",
-    "jsdom": "^30.1.3",
+    "jsdom": "^31.0.0",
     "lcov": "^1.16.0",
     "lint-staged": "^17.6.0",
     "node-gyp": "^13.1.0",

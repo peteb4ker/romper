@@ -102,7 +102,7 @@ export function describeFoundFile(fileName: string, where: string): string {
 }
 
 /**
- * PROPOSED, awaiting sign-off (#823): the only file found has the missing
+ * Approved on #823 (2026-11-07): the only file found has the missing
  * file's name but not its size or format (D3's possible match)
  */
 export function describeFoundPossibleFile(
@@ -138,7 +138,7 @@ export function describeKitBadge(finding: StoreCheckKitFinding): null | string {
   return null;
 }
 
-/** PROPOSED, awaiting sign-off (#823): marks a possible match in a list of choices */
+/** Approved on #823 (2026-11-07): marks a possible match in a list of choices */
 export const POSSIBLE_MATCH_NOTE = "Different size or format";
 
 /** The status bar item */
@@ -196,7 +196,7 @@ export function describeRemoveMissingSamplesButton(kitName: string): string {
 
 /**
  * The restore as undo names it: its button's words with the file.
- * PROPOSED, awaiting sign-off (#823): "Couldn't undo: copy back kick.wav.
+ * Approved on #823 (2026-11-07): "Couldn't undo: copy back kick.wav.
  * Check the kit, then try again." when undo fails.
  */
 export function describeRestoredMissingFile(
@@ -218,7 +218,7 @@ export function describeScanKit(kitName: string): string {
 
 /**
  * The folder dialog's prompt (approved on #824, 2026-10-30, for one
- * file). PROPOSED, awaiting sign-off (#823): the prompt for several.
+ * file). Approved on #823 (2026-11-07): the prompt for several.
  */
 export function describeSearchFolderPrompt(fileNames: string[]): string {
   return fileNames.length === 1
@@ -227,7 +227,7 @@ export function describeSearchFolderPrompt(fileNames: string[]): string {
 }
 
 /**
- * PROPOSED, awaiting sign-off (#823): the search didn't look everywhere,
+ * Approved on #823 (2026-11-07): the search didn't look everywhere,
  * because it reached its limits or a drive didn't respond
  */
 export function describeSearchIncomplete(

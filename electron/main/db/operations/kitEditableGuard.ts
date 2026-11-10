@@ -6,6 +6,20 @@ import type { RomperDb } from "../utils/dbUtilities.js";
 const { kits } = schema;
 
 /**
+ * Whether the kit is editable, for a fix to leave out what a read-only kit
+ * refuses ("Use this file", #823). Throws if the kit doesn't exist.
+ */
+export function isKitEditableTx(db: RomperDb, kitName: string): boolean {
+  const kit = db
+    .select({ editable: kits.editable })
+    .from(kits)
+    .where(eq(kits.name, kitName))
+    .get();
+  if (!kit) throw new Error(`Kit ${kitName} not found`);
+  return kit.editable;
+}
+
+/**
  * Why main refused to change a kit that isn't editable (RE-71, #572). The
  * stereo-link refusal adds what to do about it.
  */

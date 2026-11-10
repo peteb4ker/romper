@@ -206,10 +206,13 @@ const FindMissingFiles: React.FC<FindMissingFilesProps> = ({
   );
 };
 
+/** Put back one file found for a missing sample */
+type Restore = (file: MissingFileSearch, found: FoundFile) => void;
+
 /** What the search found, one entry per missing file */
 const FoundFilesList: React.FC<{
   busy: boolean;
-  onRestore: (file: MissingFileSearch, found: FoundFile) => void;
+  onRestore: Restore;
   results: FindMissingFilesResult;
   testId: string;
 }> = ({ busy, onRestore, results, testId }) => (
@@ -226,7 +229,9 @@ const FoundFilesList: React.FC<{
           file={file}
           folderName={results.folderName}
           key={file.sampleId}
-          onRestore={onRestore}
+          // A read-only kit isn't offered "Use this file" (decided on #823,
+          // 2026-11-07); main refuses it there too
+          onRestore={file.inStore || results.kitEditable ? onRestore : null}
           testId={`${testId}-file-${file.sampleId}`}
         />
       ))}
@@ -239,7 +244,8 @@ const FoundFileEntry: React.FC<{
   busy: boolean;
   file: MissingFileSearch;
   folderName: string;
-  onRestore: (file: MissingFileSearch, found: FoundFile) => void;
+  /** Null when the file can't be put back from here */
+  onRestore: null | Restore;
   testId: string;
 }> = ({ busy, file, folderName, onRestore, testId }) => {
   const lineId = useId();
@@ -308,7 +314,7 @@ const FoundChoice: React.FC<{
   busy: boolean;
   file: MissingFileSearch;
   found: FoundFile;
-  onRestore: (file: MissingFileSearch, found: FoundFile) => void;
+  onRestore: null | Restore;
   testId: string;
 }> = ({ busy, file, found, onRestore, testId }) => {
   const id = useId();
@@ -346,23 +352,24 @@ const RestoreButton: React.FC<{
   describedBy: string;
   file: MissingFileSearch;
   found: FoundFile;
-  onRestore: (file: MissingFileSearch, found: FoundFile) => void;
+  onRestore: null | Restore;
   testId: string;
-}> = ({ busy, describedBy, file, found, onRestore, testId }) => (
-  <button
-    aria-describedby={describedBy}
-    aria-disabled={busy}
-    className={`shrink-0 px-2 py-1 text-xs bg-accent-primary text-text-inverse rounded font-semibold transition duration-150 ${
-      busy ? "opacity-60 cursor-wait" : "hover:bg-accent-primary/80"
-    }`}
-    data-testid={testId}
-    onClick={() => {
-      if (!busy) onRestore(file, found);
-    }}
-    type="button"
-  >
-    {file.inStore ? COPY_BACK_LABEL : USE_THIS_FILE_LABEL}
-  </button>
-);
+}> = ({ busy, describedBy, file, found, onRestore, testId }) =>
+  onRestore && (
+    <button
+      aria-describedby={describedBy}
+      aria-disabled={busy}
+      className={`shrink-0 px-2 py-1 text-xs bg-accent-primary text-text-inverse rounded font-semibold transition duration-150 ${
+        busy ? "opacity-60 cursor-wait" : "hover:bg-accent-primary/80"
+      }`}
+      data-testid={testId}
+      onClick={() => {
+        if (!busy) onRestore(file, found);
+      }}
+      type="button"
+    >
+      {file.inStore ? COPY_BACK_LABEL : USE_THIS_FILE_LABEL}
+    </button>
+  );
 
 export default FindMissingFiles;

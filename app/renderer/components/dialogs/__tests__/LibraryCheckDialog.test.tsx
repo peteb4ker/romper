@@ -679,6 +679,7 @@ describe("[UC-05] [Q-06] LibraryCheckDialog (#824)", () => {
           ],
           folderName: "Samples",
           incomplete: null,
+          kitEditable: false,
         },
         success: true,
       });

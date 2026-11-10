@@ -81,8 +81,8 @@ describe("[UC-05] [Q-06] store check wording (#824)", () => {
       );
     });
 
-    // Proposed on #823, awaiting the maintainer's sign-off
-    it("words the proposed strings", () => {
+    // Approved on #823 (2026-11-07)
+    it("words the strings approved on #823", () => {
       expect(describeSearchFolderPrompt(["a.wav", "b.wav", "c.wav"])).toBe(
         "Choose a folder to search for 3 missing files",
       );

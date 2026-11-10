@@ -88,6 +88,19 @@ export const KNOWN_NOISE: KnownNoise[] = [
   },
   {
     examples: [
+      // Linux, Electron 45.1: https://github.com/peteb4ker/romper/actions/runs/42762328667
+      "[13025:1110/053019.908508:ERROR:cc/raster/one_copy_raster_buffer_provider.cc:285] Creation of StagingBuffer's SharedImage failed.",
+    ],
+    link: `${CHROMIUM_SOURCE}cc/raster/one_copy_raster_buffer_provider.cc`,
+    pattern:
+      /:ERROR:cc\/raster\/one_copy_raster_buffer_provider\.cc:\d+\] Creation of StagingBuffer's SharedImage failed\.$/,
+    platforms: ["linux"],
+    reason:
+      "Chromium's rasterizer couldn't create a GPU shared image for a staging buffer on the GPU-less Linux CI runners, where the GPU process fails and Chromium falls back to software rendering; Romper creates no shared images",
+    source: "Chromium rasterizer",
+  },
+  {
+    examples: [
       // Linux: https://github.com/peteb4ker/romper/actions/runs/37831977776
       "[4899:1008/192821.847299:ERROR:gpu/command_buffer/service/shared_image/shared_image_manager.cc:395] SharedImageManager::ProduceMemory: Trying to Produce a Memory representation from a non-existent mailbox.",
       // macOS: https://github.com/peteb4ker/romper/actions/runs/37641515841

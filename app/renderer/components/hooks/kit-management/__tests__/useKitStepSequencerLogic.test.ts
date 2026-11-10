@@ -1,5 +1,13 @@
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type Mock,
+  vi,
+} from "vitest";
 
 import {
   SCHEDULE_AHEAD_MS,
@@ -1595,5 +1603,297 @@ describe("useKitStepSequencerLogic", () => {
       )![0];
       expect(start.payload.stepDuration).toBeCloseTo(60000 / (133 * 4), 6);
     });
+  });
+
+  describe("[UC-30] Tempo change while playing (#892)", () => {
+    const step = (currentStep: number, cycleCount = 0) =>
+      act(() => {
+        mockWorker.onmessage?.({
+          data: { payload: { currentStep, cycleCount }, type: "STEP" },
+        } as MessageEvent);
+      });
+    const sent = (type: string) =>
+      mockWorker.postMessage.mock.calls.filter(([m]) => m.type === type);
+
+    it("sends only a tempo message, never START, for tempo changes while playing", () => {
+      const { rerender, result } = renderHook(
+        ({ bpm }) => useKitStepSequencerLogic({ ...getDefaultParams(), bpm }),
+        { initialProps: { bpm: 120 } },
+      );
+      act(() => result.current.setIsSeqPlaying(true));
+      mockWorker.postMessage.mockClear();
+
+      for (let bpm = 121; bpm <= 130; bpm++) rerender({ bpm });
+
+      expect(sent("START")).toHaveLength(0);
+      expect(sent("STOP")).toHaveLength(0);
+      expect(sent("SET_TEMPO")).toHaveLength(10);
+      expect(mockWorker.postMessage).toHaveBeenLastCalledWith({
+        payload: { stepDuration: 60000 / (130 * 4) },
+        type: "SET_TEMPO",
+      });
+    });
+
+    it("sends nothing to the worker for a tempo change while stopped", () => {
+      const { rerender } = renderHook(
+        ({ bpm }) => useKitStepSequencerLogic({ ...getDefaultParams(), bpm }),
+        { initialProps: { bpm: 120 } },
+      );
+      mockWorker.postMessage.mockClear();
+
+      rerender({ bpm: 140 });
+
+      expect(mockWorker.postMessage).not.toHaveBeenCalled();
+    });
+
+    it("starts the next Play with the tempo set while stopped", () => {
+      const { rerender, result } = renderHook(
+        ({ bpm }) => useKitStepSequencerLogic({ ...getDefaultParams(), bpm }),
+        { initialProps: { bpm: 120 } },
+      );
+      rerender({ bpm: 140 });
+      mockWorker.postMessage.mockClear();
+
+      act(() => result.current.setIsSeqPlaying(true));
+
+      expect(mockWorker.postMessage).toHaveBeenCalledWith({
+        payload: { numSteps: 16, stepDuration: 60000 / (140 * 4) },
+        type: "START",
+      });
+    });
+
+    it("keeps the round-robin position and the cycle count across a tempo change", () => {
+      const conditions = Array.from({ length: 4 }, () =>
+        new Array(16).fill(null),
+      );
+      conditions[0][4] = "2:2";
+      const { rerender, result } = renderHook(
+        ({ bpm }) =>
+          useKitStepSequencerLogic({
+            ...getDefaultParams(),
+            bpm,
+            kitName: "A0",
+            sampleModes: { 1: "round-robin" },
+            triggerConditions: conditions,
+          }),
+        { initialProps: { bpm: 120 } },
+      );
+      act(() => result.current.setIsSeqPlaying(true));
+      expect(mockOnPlaySample).toHaveBeenLastCalledWith(1, 0, 100, scheduled);
+      step(1, 1);
+
+      rerender({ bpm: 150 });
+      expect(result.current.cycleCount).toBe(1);
+      expect(result.current.isSeqPlaying).toBe(true);
+
+      step(4, 1);
+      expect(mockOnPlaySample).toHaveBeenLastCalledWith(1, 1, 100, scheduled);
+    });
+
+    it("stops (and sends no tempo message) when the kit and tempo change together", () => {
+      const { rerender, result } = renderHook(
+        ({ bpm, kitName }) =>
+          useKitStepSequencerLogic({ ...getDefaultParams(), bpm, kitName }),
+        { initialProps: { bpm: 120, kitName: "A0" } },
+      );
+      act(() => result.current.setIsSeqPlaying(true));
+      mockWorker.postMessage.mockClear();
+
+      rerender({ bpm: 90, kitName: "A1" });
+
+      expect(result.current.isSeqPlaying).toBe(false);
+      expect(sent("SET_TEMPO")).toHaveLength(0);
+      expect(sent("STOP")).toHaveLength(1);
+    });
+  });
+
+  describe("[UC-30] Play again right after stopping (#893)", () => {
+    const step = (currentStep: number) =>
+      act(() => {
+        mockWorker.onmessage?.({
+          data: { payload: { currentStep }, type: "STEP" },
+        } as MessageEvent);
+      });
+
+    it("sounds step 1 when stopped during step 1 and played again", () => {
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic(getDefaultParams()),
+      );
+      act(() => result.current.setIsSeqPlaying(true));
+      expect(mockOnPlaySample).toHaveBeenCalledTimes(1);
+      act(() => result.current.setIsSeqPlaying(false));
+      mockOnPlaySample.mockClear();
+
+      act(() => result.current.setIsSeqPlaying(true));
+
+      expect(mockOnPlaySample).toHaveBeenCalledTimes(1);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, 0, 100, scheduled);
+    });
+
+    it("sounds step 1, not the stale step, when played before the worker answers the stop", () => {
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic(getDefaultParams()),
+      );
+      act(() => result.current.setIsSeqPlaying(true));
+      step(5); // voice 2 fires on step 6
+      act(() => result.current.setIsSeqPlaying(false));
+      mockOnPlaySample.mockClear();
+
+      act(() => result.current.setIsSeqPlaying(true));
+
+      expect(result.current.currentSeqStep).toBe(0);
+      expect(mockOnPlaySample).toHaveBeenCalledTimes(1);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, 0, 100, scheduled);
+    });
+
+    it("plays step 1 again after Space, Space, Space in quick succession", () => {
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic({
+          ...getDefaultParams(),
+          sequencerOpen: true,
+        }),
+      );
+      const space = () =>
+        act(() => {
+          globalThis.dispatchEvent(new KeyboardEvent("keydown", { key: " " }));
+        });
+      space();
+      space();
+      space();
+
+      expect(result.current.isSeqPlaying).toBe(true);
+      expect(mockOnPlaySample).toHaveBeenCalledTimes(2);
+    });
+  });
+});
+
+describe("[UC-30] Step worker clock (#892)", () => {
+  let script = "";
+  let now = 0;
+  const posted: { at?: number; currentStep: number; cycleCount?: number }[] =
+    [];
+  let send: (data: unknown) => void;
+  const OriginalBlob = globalThis.Blob;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    now = 0;
+    posted.length = 0;
+    vi.stubGlobal(
+      "Blob",
+      class {
+        constructor(parts: string[]) {
+          script = parts.join("");
+        }
+      },
+    );
+    // Create the worker script through the hook, then run it for real
+    renderHook(() =>
+      useKitStepSequencerLogic({
+        onPlaySample: vi.fn(),
+        samples: {},
+        sequencerOpen: false,
+        setSequencerOpen: vi.fn(),
+        setStepPattern: vi.fn(),
+        stepPattern: null,
+      }),
+    );
+    vi.stubGlobal("Blob", OriginalBlob);
+    const self: {
+      onmessage?: (e: { data: unknown }) => void;
+      postMessage: unknown;
+    } = {
+      postMessage: (m: { payload: (typeof posted)[number] }) =>
+        posted.push({ ...m.payload }),
+    };
+    const fakePerformance = { now: () => now, timeOrigin: 1_000_000 };
+    new Function("self", "performance", "setTimeout", "clearTimeout", script)(
+      self,
+      fakePerformance,
+      (fn: () => void, ms: number) => setTimeout(fn, ms),
+      clearTimeout,
+    );
+    send = (data) => self.onmessage?.({ data });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** Advance the fake clock, keeping performance.now() in step. */
+  const advance = (ms: number) => {
+    for (let i = 0; i < ms; i++) {
+      now += 1;
+      vi.advanceTimersByTime(1);
+    }
+  };
+  const stepTimes = () =>
+    posted
+      .filter((p) => p.at !== undefined)
+      .map((p) => (p.at as number) - 1_000_000);
+
+  it("steps in time without a tempo change", () => {
+    send({ payload: { numSteps: 16, stepDuration: 125 }, type: "START" });
+    advance(520);
+    expect(stepTimes()).toEqual([125, 250, 375, 500]);
+  });
+
+  it("rescales the step in progress and then steps at the new length", () => {
+    send({ payload: { numSteps: 16, stepDuration: 125 }, type: "START" });
+    advance(375 + 60); // halfway through step 4 (it began at 375)
+    expect(stepTimes()).toEqual([125, 250, 375]);
+
+    send({ payload: { stepDuration: 250 }, type: "SET_TEMPO" });
+    advance(250);
+    // step 4 began at 375, so it now ends at 375 + 250
+    expect(stepTimes()).toEqual([125, 250, 375, 625]);
+    expect(posted.at(-1)?.currentStep).toBe(4);
+    advance(250);
+    expect(stepTimes()).toEqual([125, 250, 375, 625, 875]);
+  });
+
+  it("is not delayed by ten tempo changes inside one step", () => {
+    send({ payload: { numSteps: 16, stepDuration: 125 }, type: "START" });
+    advance(130);
+    for (let i = 0; i < 10; i++) {
+      send({ payload: { stepDuration: 125 + i }, type: "SET_TEMPO" });
+      advance(5);
+    }
+    // the last change was 134 ms; step 2 began at 125 and ends 134 later
+    send({ payload: { stepDuration: 130 }, type: "SET_TEMPO" });
+    advance(130);
+    expect(stepTimes()).toEqual([125, 255]);
+    expect(posted.map((p) => p.currentStep)).toEqual([1, 2]);
+  });
+
+  it("neither skips nor repeats a step, and keeps the cycle count", () => {
+    send({ payload: { numSteps: 4, stepDuration: 100 }, type: "START" });
+    advance(450);
+    send({ payload: { stepDuration: 50 }, type: "SET_TEMPO" });
+    advance(300);
+    expect(posted.map((p) => p.currentStep)).toEqual([
+      1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
+    ]);
+    expect(posted.at(-1)?.cycleCount).toBe(2);
+  });
+
+  it("fires at once when a faster tempo puts the step's end in the past", () => {
+    send({ payload: { numSteps: 16, stepDuration: 1000 }, type: "START" });
+    advance(900);
+    send({ payload: { stepDuration: 100 }, type: "SET_TEMPO" });
+    advance(1);
+    expect(posted.map((p) => p.currentStep)).toEqual([1]);
+    expect(stepTimes()).toEqual([900]);
+    advance(100);
+    expect(stepTimes()).toEqual([900, 1000]);
+  });
+
+  it("does not start the clock for a tempo message while stopped", () => {
+    send({ payload: { stepDuration: 50 }, type: "SET_TEMPO" });
+    advance(500);
+    expect(posted).toEqual([]);
+    send({ payload: { numSteps: 16, stepDuration: 50 }, type: "START" });
+    advance(60);
+    expect(stepTimes()).toEqual([550]);
   });
 });

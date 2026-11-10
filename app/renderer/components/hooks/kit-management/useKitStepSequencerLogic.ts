@@ -120,13 +120,16 @@ export function useKitStepSequencerLogic(
       let stepDuration = 125; // Default, will be overridden by START message
       let startTime = 0;
       let ticks = 0;
+      let lastTarget = 0; // ideal time of the last step (the clock's phase)
 
       // Drift-free clock: each step is timed from the start, not from the
-      // previous timer firing, and carries its ideal (absolute) time.
+      // previous timer firing, and carries its ideal (absolute) time. A tempo
+      // change re-bases the clock on the last step's ideal time.
       function scheduleNext() {
         const target = startTime + (ticks + 1) * stepDuration;
         timer = setTimeout(() => {
           if (!isPlaying) return;
+          lastTarget = target;
           ticks++;
           const prevStep = currentStep;
           currentStep = (currentStep + 1) % numSteps;
@@ -154,8 +157,20 @@ export function useKitStepSequencerLogic(
           stepDuration = payload.stepDuration ?? 125;
           if (timer) clearTimeout(timer);
           startTime = performance.now();
+          lastTarget = startTime;
           ticks = 0;
           scheduleNext();
+        } else if (type === "SET_TEMPO") {
+          // Keep the step, the cycle and the phase: the step in progress now
+          // ends one new step length after it began. If that is already past
+          // (a much faster tempo), it ends now, not in a burst of catch-up.
+          stepDuration = payload.stepDuration ?? stepDuration;
+          if (isPlaying) {
+            if (timer) clearTimeout(timer);
+            startTime = Math.max(lastTarget, performance.now() - stepDuration);
+            ticks = 0;
+            scheduleNext();
+          }
         } else if (type === "STOP") {
           isPlaying = false;
           if (timer) clearTimeout(timer);
@@ -176,6 +191,17 @@ export function useKitStepSequencerLogic(
   const [isSeqPlaying, setIsSeqPlaying] = React.useState(false);
   const [currentSeqStep, setCurrentSeqStep] = React.useState<number>(0);
   const [cycleCount, setCycleCount] = React.useState<number>(0);
+
+  // Stopping rewinds at once rather than when the worker answers, so a quick
+  // Play starts at step 1 (#893)
+  const [wasPlaying, setWasPlaying] = React.useState(false);
+  if (wasPlaying !== isSeqPlaying) {
+    setWasPlaying(isSeqPlaying);
+    if (!isSeqPlaying) {
+      setCurrentSeqStep(0);
+      setCycleCount(0);
+    }
+  }
 
   // Focus management for keyboard navigation
   const [focusedStep, setFocusedStep] = React.useState<FocusedStep>({
@@ -208,10 +234,30 @@ export function useKitStepSequencerLogic(
     };
   }, [workerBlob]);
 
-  // Worker playback control
+  // Sample triggering on step advance
+  const lastStepRef = React.useRef<null | number>(null);
+  const roundRobinIndexRef = React.useRef<Record<number, number>>({});
+
+  // Worker playback control. Play and stop restart the worker; a tempo change
+  // while playing only re-bases its clock (#892), so a held arrow key on the
+  // BPM field can't keep pushing the next step away.
+  const wasPlayingRef = React.useRef(false);
   React.useEffect(() => {
     const worker = workerRef.current;
     if (!worker) return;
+
+    if (isSeqPlaying === wasPlayingRef.current) {
+      if (isSeqPlaying) {
+        worker.postMessage({
+          payload: { stepDuration },
+          type: "SET_TEMPO",
+        });
+      }
+      return;
+    }
+    wasPlayingRef.current = isSeqPlaying;
+    // The next Play sounds step 1 even if the last one played was step 1 (#893)
+    lastStepRef.current = null;
 
     if (isSeqPlaying) {
       // The first step plays straight away; later steps come from the worker
@@ -224,10 +270,6 @@ export function useKitStepSequencerLogic(
       worker.postMessage({ type: "STOP" });
     }
   }, [isSeqPlaying, stepDuration]);
-
-  // Sample triggering on step advance
-  const lastStepRef = React.useRef<null | number>(null);
-  const roundRobinIndexRef = React.useRef<Record<number, number>>({});
 
   // The editor isn't remounted when you step to another kit, so the next kit
   // starts stopped, from its first layer (#565)

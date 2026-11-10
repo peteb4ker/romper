@@ -287,7 +287,12 @@ to skip them (RE-09).
   the shared `AudioContext`'s clock with `getOutputTimestamp()`, so voices land exactly on
   the grid regardless of React latency. Chokes and retriggers stop the old
   sound at the new one's start (`stopAt`), so scheduling never opens a gap.
-  Clicked previews play immediately.
+  Clicked previews play immediately. A tempo change while playing sends the
+  worker `SET_TEMPO`, not `START`: the clock re-bases on the last step's
+  ideal time, so the step in progress ends one new step length after it
+  began (at once, if that is already past) and later steps use the new
+  length. The step, cycle count and round-robin position carry on. Play
+  and stop are the only messages that restart the clock.
 
 ## Stereo
 

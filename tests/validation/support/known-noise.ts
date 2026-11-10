@@ -105,14 +105,29 @@ export const KNOWN_NOISE: KnownNoise[] = [
       "[4899:1008/192821.847299:ERROR:gpu/command_buffer/service/shared_image/shared_image_manager.cc:395] SharedImageManager::ProduceMemory: Trying to Produce a Memory representation from a non-existent mailbox.",
       // macOS: https://github.com/peteb4ker/romper/actions/runs/37641515841
       "[8568:1007/150650.359808:ERROR:gpu/command_buffer/service/shared_image/shared_image_manager.cc:254] SharedImageManager::ProduceSkia: Trying to Produce a Skia representation from a non-existent mailbox.",
+      // Linux, Electron 45.1: https://github.com/peteb4ker/romper/actions/runs/42762806751
+      "[10888:1110/053803.070463:ERROR:gpu/command_buffer/service/shared_image/shared_image_manager.cc:275] SharedImageManager::ProduceSkia: Trying to produce a Skia representation from an incompatible backing: CompoundImageBacking",
     ],
     link: "https://github.com/peteb4ker/romper/issues/772",
     pattern:
-      /:ERROR:gpu\/command_buffer\/service\/shared_image\/shared_image_manager\.cc:\d+\] SharedImageManager::Produce(Memory|Skia): Trying to Produce a \1 representation from a non-existent mailbox\.$/,
+      /:ERROR:gpu\/command_buffer\/service\/shared_image\/shared_image_manager\.cc:\d+\] SharedImageManager::(Produce(Memory|Skia): Trying to Produce a \2 representation from a non-existent mailbox\.|ProduceSkia: Trying to produce a Skia representation from an incompatible backing: CompoundImageBacking)$/,
     platforms: ["darwin", "linux"],
     reason:
       "Chromium's GPU service logs this when a frame refers to a shared image that was already destroyed, as when a window resizes or closes; Romper creates no shared images",
     source: "Chromium shared image manager",
+  },
+  {
+    examples: [
+      // Linux, Electron 45.1: https://github.com/peteb4ker/romper/actions/runs/42762806751
+      "[10888:1110/053803.071102:ERROR:gpu/command_buffer/service/raster_decoder.cc:1884] [.RendererRasterWorker-0xb3c00050c00]GL ERROR :GL_INVALID_VALUE : CopySharedImage: unknown mailbox",
+    ],
+    link: `${CHROMIUM_SOURCE}gpu/command_buffer/service/raster_decoder.cc`,
+    pattern:
+      /:ERROR:gpu\/command_buffer\/service\/raster_decoder\.cc:\d+\] \[\.RendererRasterWorker-0x[0-9a-f]+\]GL ERROR :GL_INVALID_VALUE : CopySharedImage: unknown mailbox$/,
+    platforms: ["linux"],
+    reason:
+      "Chromium's GPU raster decoder logs this when a raster worker copies a shared image that is already gone, as when the GPU process fails on the GPU-less Linux CI runners and the compositor tears down; Romper creates no shared images",
+    source: "Chromium GPU raster decoder",
   },
   {
     examples: [

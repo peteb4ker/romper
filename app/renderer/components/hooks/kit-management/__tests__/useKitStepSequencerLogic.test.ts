@@ -1596,4 +1596,63 @@ describe("useKitStepSequencerLogic", () => {
       expect(start.payload.stepDuration).toBeCloseTo(60000 / (133 * 4), 6);
     });
   });
+
+  describe("[UC-30] Play again right after stopping (#893)", () => {
+    const step = (currentStep: number) =>
+      act(() => {
+        mockWorker.onmessage?.({
+          data: { payload: { currentStep }, type: "STEP" },
+        } as MessageEvent);
+      });
+
+    it("sounds step 1 when stopped during step 1 and played again", () => {
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic(getDefaultParams()),
+      );
+      act(() => result.current.setIsSeqPlaying(true));
+      expect(mockOnPlaySample).toHaveBeenCalledTimes(1);
+      act(() => result.current.setIsSeqPlaying(false));
+      mockOnPlaySample.mockClear();
+
+      act(() => result.current.setIsSeqPlaying(true));
+
+      expect(mockOnPlaySample).toHaveBeenCalledTimes(1);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, 0, 100, scheduled);
+    });
+
+    it("sounds step 1, not the stale step, when played before the worker answers the stop", () => {
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic(getDefaultParams()),
+      );
+      act(() => result.current.setIsSeqPlaying(true));
+      step(5); // voice 2 fires on step 6
+      act(() => result.current.setIsSeqPlaying(false));
+      mockOnPlaySample.mockClear();
+
+      act(() => result.current.setIsSeqPlaying(true));
+
+      expect(result.current.currentSeqStep).toBe(0);
+      expect(mockOnPlaySample).toHaveBeenCalledTimes(1);
+      expect(mockOnPlaySample).toHaveBeenCalledWith(1, 0, 100, scheduled);
+    });
+
+    it("plays step 1 again after Space, Space, Space in quick succession", () => {
+      const { result } = renderHook(() =>
+        useKitStepSequencerLogic({
+          ...getDefaultParams(),
+          sequencerOpen: true,
+        }),
+      );
+      const space = () =>
+        act(() => {
+          globalThis.dispatchEvent(new KeyboardEvent("keydown", { key: " " }));
+        });
+      space();
+      space();
+      space();
+
+      expect(result.current.isSeqPlaying).toBe(true);
+      expect(mockOnPlaySample).toHaveBeenCalledTimes(2);
+    });
+  });
 });

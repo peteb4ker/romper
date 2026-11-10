@@ -24,6 +24,15 @@ vi.mock("../../cardFileMatch.js", () => ({
   cardFileMatches: vi.fn().mockResolvedValue(false),
 }));
 
+// The temporary-name write has its own tests (cardFileWrite); here it
+// hands the write a temporary path beside the sample's
+vi.mock("../../cardFileWrite.js", () => ({
+  writeCardFileAtomically: vi.fn(
+    (finalPath: string, write: (tempPath: string) => Promise<void>) =>
+      write(`${finalPath}.tmp`),
+  ),
+}));
+
 vi.mock("../../formatConverter.js", () => ({
   convertToRampleDefault: vi.fn().mockResolvedValue({ success: true }),
 }));
@@ -72,6 +81,7 @@ vi.mock("../syncValidationService.js", () => ({
 }));
 
 import { cardFileMatches } from "../../cardFileMatch.js";
+import { writeCardFileAtomically } from "../../cardFileWrite.js";
 import { convertToRampleDefault } from "../../formatConverter.js";
 import {
   CARD_OPERATION_TIMEOUT_MS,
@@ -125,12 +135,16 @@ describe("[UC-34] SyncFileOperationsService", () => {
       sourcePath: "/source/file.wav",
     } as SyncFileOperation;
 
-    it("should copy file for copy operation", async () => {
+    it("copies the file to a temporary name that's renamed into place (#882)", async () => {
       await syncFileOperationsService.executeFileOperation(fileOp, {});
 
+      expect(writeCardFileAtomically).toHaveBeenCalledWith(
+        "/dest/file.wav",
+        expect.any(Function),
+      );
       expect(mockFs.promises.copyFile).toHaveBeenCalledWith(
         "/source/file.wav",
-        "/dest/file.wav",
+        "/dest/file.wav.tmp",
       );
     });
 

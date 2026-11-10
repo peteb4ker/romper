@@ -14,7 +14,10 @@ import {
   requireKitForMissingSampleRemovalTx,
 } from "./kitEditableGuard.js";
 import { flagKitModified } from "./kitSyncOperations.js";
-import { restoreVoicesTx } from "./sampleCrudOperations.js";
+import {
+  requireNoSamplesOnLinkedPartnerTx,
+  restoreVoicesTx,
+} from "./sampleCrudOperations.js";
 import { reindexVoiceTx } from "./sampleManagementOps.js";
 
 const { samples } = schema;
@@ -32,7 +35,8 @@ export interface ConfirmedMissingSample {
  * that: each voice must hold exactly the snapshot's other rows, in the
  * same order with the same file, name and gain, and every row it adds back
  * must be one recorded missing. Anything else means the kit changed since,
- * and it throws. Returns how many rows it put back.
+ * and it throws; so does a put-back that would leave samples on the
+ * right-hand voice of a linked stereo pair. Returns how many rows it put back.
  */
 export function putBackMissingSamplesTx(
   db: RomperDb,
@@ -50,6 +54,9 @@ export function putBackMissingSamplesTx(
     putBack += rowsPutBack(db, kitName, voice);
   }
   restoreVoicesTx(db, kitName, voices);
+  // Linking isn't an undo entry, so the voice may have become the hidden
+  // side of a stereo pair since the removal (#915, as #888)
+  requireNoSamplesOnLinkedPartnerTx(db, kitName, voices);
   return putBack;
 }
 

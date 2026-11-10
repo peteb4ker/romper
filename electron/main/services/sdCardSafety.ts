@@ -1,5 +1,6 @@
 import {
   BANK_NAME_FILE_PATTERN,
+  cardNameKey,
   DEVICE_SAVE_FOLDER,
   isDeviceSaveFolderName,
   kitNameOfCardFolder,
@@ -51,6 +52,14 @@ export interface SdCardTargetCheck {
   reason?: string;
 }
 
+/** The names a folder on the card should hold, as {@link isKeptName} reads them */
+interface KeptNames {
+  /** The lower-case names, by the key the card compares names by */
+  byKey: ReadonlyMap<string, readonly string[]>;
+  /** The names in lower case, as written */
+  lowerCase: ReadonlySet<string>;
+}
+
 /**
  * The Rample content on the card that `contents` doesn't account for, as
  * paths relative to the card: kit folders for kits that aren't in the
@@ -60,8 +69,11 @@ export interface SdCardTargetCheck {
  * (`keepKits`) with everything in it. The Rample's own `_save` folder is
  * skipped by name, whatever the kit and bank patterns match (#787).
  *
- * Names are compared ignoring case: FAT32 cards and macOS volumes are case
- * insensitive, so a file sync just overwrote may keep its old case.
+ * Names are compared as the card compares them ({@link isKeptName}):
+ * ignoring case, since FAT32 cards and macOS volumes are case insensitive
+ * and a file sync just overwrote may keep its old case, and ignoring
+ * whether an accented letter is composed or decomposed, since macOS lists
+ * a card's names decomposed whatever form they were written in (#881).
  */
 export async function findStaleCardEntries(
   sdCardPath: string,
@@ -75,20 +87,21 @@ export async function findStaleCardEntries(
   });
   if (!stats?.isDirectory()) return [];
 
-  const kits = new Map<string, Set<string>>();
+  const kits = new Map<string, KeptNames>();
   for (const [kitName, fileNames] of contents.kits) {
-    kits.set(kitName.toUpperCase(), lowerCaseSet(fileNames));
+    kits.set(kitName.toUpperCase(), keptNames(fileNames));
   }
-  const bankFiles = lowerCaseSet(contents.bankFiles);
+  const bankFiles = keptNames(contents.bankFiles);
   const keepKits = new Set(
     [...(contents.keepKits ?? [])].map((kit) => kit.toUpperCase()),
   );
 
   const stale: string[] = [];
-  const kitFolders: { keep: Set<string>; name: string }[] = [];
+  const kitFolders: { keep: KeptNames; name: string }[] = [];
   const entries = await fs.promises.readdir(sdCardPath, {
     withFileTypes: true,
   });
+  const listedAtRoot = lowerCaseSet(entries.map((entry) => entry.name));
   for (const entry of entries) {
     // The device's settings, never Romper's to remove
     if (isDeviceSaveFolderName(entry.name)) continue;
@@ -101,7 +114,7 @@ export async function findStaleCardEntries(
       } else {
         stale.push(entry.name);
       }
-    } else if (isStaleBankFile(entry, bankFiles)) {
+    } else if (isStaleBankFile(entry, bankFiles, listedAtRoot)) {
       stale.push(entry.name);
     }
   }
@@ -112,8 +125,9 @@ export async function findStaleCardEntries(
     ),
   );
   kitFolders.forEach(({ keep, name }, i) => {
+    const listed = lowerCaseSet(kitContents[i]);
     for (const fileName of kitContents[i]) {
-      if (!keep.has(fileName.toLowerCase())) {
+      if (!isKeptName(fileName, keep, listed)) {
         stale.push(path.join(name, fileName));
       }
     }
@@ -303,6 +317,30 @@ async function canonicalize(
     : resolved;
 }
 
+/**
+ * True when `name`, as a folder on the card lists it, is one of the names
+ * that folder should hold. `listed` is everything the folder lists, in
+ * lower case.
+ *
+ * A name that differs from a wanted one only in how its accented letters
+ * are composed is that file as this card lists it (macOS on FAT32 or
+ * exFAT, #881). The exception is a card that lists the wanted spelling
+ * too: a file system that keeps both (FAT32 on Linux) holds two files,
+ * and only the one the write wrote is kept, so a kit doesn't gain a layer.
+ */
+function isKeptName(
+  name: string,
+  kept: KeptNames,
+  listed: ReadonlySet<string>,
+): boolean {
+  if (kept.lowerCase.has(name.toLowerCase())) return true;
+  const spellings = kept.byKey.get(cardNameKey(name));
+  return (
+    spellings !== undefined &&
+    !spellings.some((spelling) => listed.has(spelling))
+  );
+}
+
 /** True if `child` is `parent` or is inside it. Both must be canonical. */
 function isSameOrInside(child: string, parent: string): boolean {
   const relative = path.relative(parent, child);
@@ -315,13 +353,25 @@ function isSameOrInside(child: string, parent: string): boolean {
 /** A bank name file at the card root for a bank that no longer has that name */
 function isStaleBankFile(
   entry: fs.Dirent,
-  bankFiles: ReadonlySet<string>,
+  bankFiles: KeptNames,
+  listedAtRoot: ReadonlySet<string>,
 ): boolean {
   return (
     entry.isFile() &&
     BANK_NAME_FILE_PATTERN.test(entry.name) &&
-    !bankFiles.has(entry.name.toLowerCase())
+    !isKeptName(entry.name, bankFiles, listedAtRoot)
   );
+}
+
+/** The names a folder on the card should hold, indexed for {@link isKeptName} */
+function keptNames(names: Iterable<string>): KeptNames {
+  const lowerCase = lowerCaseSet(names);
+  const byKey = new Map<string, string[]>();
+  for (const name of lowerCase) {
+    const key = cardNameKey(name);
+    byKey.set(key, [...(byKey.get(key) ?? []), name]);
+  }
+  return { byKey, lowerCase };
 }
 
 /**

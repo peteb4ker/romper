@@ -60,6 +60,12 @@ const VOICE_PREFIX = /^[1-4](?:-\d{2}(?=[ ._-]|$))?[ ._-]*/;
 // Characters FAT32 file names can't contain, plus control characters.
 const FAT_FORBIDDEN = /[\u0000-\u001f"*/:<>?\\|]/g;
 
+// Half of a two-unit character (a surrogate without its pair). A file
+// system stores it as some other character, so the name on the card would
+// no longer be the name the write asked for (#881).
+const LONE_SURROGATE =
+  /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
+
 /**
  * The kit folders among the names at a card's root, in the order given,
  * each with the kit it holds (see {@link kitNameOfCardFolder}). Setup copies
@@ -81,6 +87,23 @@ export function cardKitFolders(
 }
 
 /**
+ * The form in which two names on the card are compared: Unicode-composed
+ * (NFC) and lower case. Two names with the same key are one file to macOS
+ * on a FAT32 or exFAT card; a system that keeps both spellings is handled
+ * where the names are compared (`findStaleCardEntries`).
+ *
+ * - Case: FAT32 ignores it, so a file a write just overwrote may keep its
+ *   old case.
+ * - Composition: macOS lists the names on a FAT32 or exFAT volume
+ *   decomposed (`e` and a combining accent) whatever form they were written
+ *   in, so a name read back from the card isn't `===` the name written
+ *   (#881).
+ */
+export function cardNameKey(name: string): string {
+  return name.normalize("NFC").toLowerCase();
+}
+
+/**
  * The name sync gives a sample on the card: `<voice>-<slot> <name>.wav`.
  *
  * - `voiceNumber` is 1-4 and comes first, so the firmware assigns the voice.
@@ -90,7 +113,9 @@ export function cardKitFolders(
  * - `originalFileName` supplies the readable part. A leading voice prefix is
  *   dropped (so a re-imported card file isn't prefixed twice), characters
  *   FAT32 forbids become `_`, and the whole name is kept to
- *   {@link MAX_CARD_FILE_NAME_LENGTH} characters.
+ *   {@link MAX_CARD_FILE_NAME_LENGTH} UTF-16 units, the unit FAT32 counts
+ *   names in. A name is never cut in the middle of a character, and half a
+ *   character in the source name becomes `_` (#881).
  */
 export function cardSampleFileName(
   voiceNumber: number,
@@ -109,12 +134,16 @@ export function cardSampleFileName(
   const room = MAX_CARD_FILE_NAME_LENGTH - prefix.length - 1 - extension.length;
 
   const name = trimName(
-    trimName(
-      originalFileName
-        .replace(WAV_EXTENSION, "")
-        .replace(VOICE_PREFIX, "")
-        .replaceAll(FAT_FORBIDDEN, "_"),
-    ).slice(0, room),
+    sliceWholeCharacters(
+      trimName(
+        originalFileName
+          .replace(WAV_EXTENSION, "")
+          .replace(VOICE_PREFIX, "")
+          .replaceAll(FAT_FORBIDDEN, "_")
+          .replaceAll(LONE_SURROGATE, "_"),
+      ),
+      room,
+    ),
   );
 
   return name ? `${prefix} ${name}${extension}` : `${prefix}${extension}`;
@@ -167,6 +196,18 @@ export function parseBankNameFile(
 export function voiceOfCardFile(fileName: string): null | number {
   const first = fileName.charAt(0);
   return first >= "1" && first <= "4" ? Number(first) : null;
+}
+
+/**
+ * The first `length` UTF-16 units of `text`, less one if that would end on
+ * the first half of a two-unit character. `text` holds no half characters.
+ */
+function sliceWholeCharacters(text: string, length: number): string {
+  const cut = text.slice(0, length);
+  const last = cut.charCodeAt(cut.length - 1);
+  const endsOnFirstHalf =
+    cut.length < text.length && last >= 0xd800 && last <= 0xdbff;
+  return endsOnFirstHalf ? cut.slice(0, -1) : cut;
 }
 
 /** Strip leading and trailing spaces and dots, which FAT32 rejects or drops. */

@@ -114,6 +114,23 @@ describe("[Q-07] known noise", () => {
       expect(matchKnownNoise(`${prefix}${other}`, "linux")).toBeUndefined();
     }
   });
+
+  it("covers the rasterizer line that failed a Linux run, and nothing else from that file (#917)", () => {
+    const line =
+      "[13025:1110/053019.908508:ERROR:cc/raster/one_copy_raster_buffer_provider.cc:285] Creation of StagingBuffer's SharedImage failed.";
+    expect(matchKnownNoise(line, "linux")?.source).toBe("Chromium rasterizer");
+    expect(matchKnownNoise(line, "darwin")).toBeUndefined();
+    expect(matchKnownNoise(line, "win32")).toBeUndefined();
+
+    const prefix =
+      "[13025:1110/053019.908508:ERROR:cc/raster/one_copy_raster_buffer_provider.cc:285] ";
+    for (const other of [
+      "Some other rasterizer failure.",
+      "Creation of StagingBuffer's SharedImage failed. And more",
+    ]) {
+      expect(matchKnownNoise(`${prefix}${other}`, "linux")).toBeUndefined();
+    }
+  });
 });
 
 describe("[Q-07] MessageCollector.classify with known noise", () => {

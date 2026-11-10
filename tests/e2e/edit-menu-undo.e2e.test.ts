@@ -131,6 +131,36 @@ test.describe("Edit menu undo", () => {
     expect(await sampleCount(voice)).toBe(before + 1);
   });
 
+  test("[UC-26] [Q-06] Cmd/Ctrl+Z and Edit > Undo or Redo with a dialog open leave the kit behind it alone (#890)", async () => {
+    const voice = await voiceWithRoom(2);
+    const before = await sampleCount(voice);
+    await addSample(voice, "behind dialog.wav");
+    await expectSamples(voice, before + 1);
+
+    const preferences = window.getByRole("dialog", { name: "Preferences" });
+    await window.evaluate(() =>
+      globalThis.dispatchEvent(new CustomEvent("menu-preferences")),
+    );
+    await expect(preferences).toBeVisible();
+    // Focus on a button, not a text field, which would keep its own undo
+    await preferences.getByRole("button").first().focus();
+
+    // The key first, alone: the page leaves it to the Edit menu's accelerator
+    await pressUndoKey();
+    await window.waitForTimeout(1000);
+    expect(await sampleCount(voice)).toBe(before + 1);
+    // Then the menu items
+    await clickEditMenu("undo");
+    await window.waitForTimeout(1000);
+    expect(await sampleCount(voice)).toBe(before + 1);
+
+    // Closed, undo works again
+    await window.keyboard.press("Escape");
+    await expect(preferences).toHaveCount(0);
+    await clickEditMenu("undo");
+    await expectSamples(voice, before);
+  });
+
   test("[UC-26] [Q-02] undoing a delete brings the sample back with its gain (RE-86)", async () => {
     const voice = await voiceWithRoom(2);
     const start = await sampleCount(voice);

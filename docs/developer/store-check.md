@@ -646,8 +646,9 @@ Each stage is one PR. Stages 2 to 6 wait for the decisions named.
     get new ids; voice, slot, file, gain, WAV details and status are as
     before. Redo removes again (re-checked) and keeps the new snapshot.
   - The entry names its kit, so Edit > Undo and Cmd+Z undo it with any kit
-    open or none, and in a read-only kit (`carriesItsKit`). The stack is
-    still cleared when another kit opens. The Library check, mounted
+    open or none, and in a read-only kit (`carriesItsKit`), but not while
+    a modal dialog, the Library check included, is open: close it first
+    (#890). The stack is still cleared when another kit opens. The Library check, mounted
     beside the kit view, adds the entry with a `romper:add-undo-action`
     event; the kit is read again with `romper:refresh-samples`, now also
     for a kit that isn't open.

@@ -80,6 +80,25 @@ describe("useKitViewMenuHandlers", () => {
       },
     );
 
+    // #890: a text field in a dialog keeps its native undo; whether Romper's
+    // undo runs behind a dialog is applyUndoRedo's rule, not the menu's
+    it("[Q-06] gives a focused text field in an open dialog its own undo (#890)", () => {
+      const modal = document.createElement("div");
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "true");
+      const input = document.createElement("input");
+      modal.appendChild(input);
+      document.body.appendChild(modal);
+      input.focus();
+      const handlers = menuHandlers();
+
+      handlers.onUndo?.();
+
+      expect(execCommand).toHaveBeenCalledWith("undo");
+      expect(onUndo).not.toHaveBeenCalled();
+      modal.remove();
+    });
+
     it("treats a focused checkbox as no text field", () => {
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";

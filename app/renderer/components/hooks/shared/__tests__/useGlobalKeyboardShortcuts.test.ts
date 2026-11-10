@@ -4,7 +4,15 @@ import type {
 } from "@romper/shared/undoTypes";
 
 import { fireEvent, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type Mock,
+  vi,
+} from "vitest";
 
 import { addSampleAction } from "../../../../../../tests/factories/undoAction.factory";
 import { useGlobalKeyboardShortcuts } from "../useGlobalKeyboardShortcuts";
@@ -557,6 +565,75 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
 
       expect(mockUndo).not.toHaveBeenCalled();
       expect(mockRedo).not.toHaveBeenCalled();
+    });
+
+    describe("[UC-26] [Q-06] with a modal dialog open (#890)", () => {
+      let modal: HTMLElement;
+
+      beforeEach(() => {
+        modal = document.createElement("div");
+        modal.setAttribute("role", "dialog");
+        modal.setAttribute("aria-modal", "true");
+        document.body.appendChild(modal);
+      });
+
+      afterEach(() => {
+        modal.remove();
+      });
+
+      it("undoes and redoes nothing from the menu", () => {
+        const { result } = renderHook(() =>
+          useGlobalKeyboardShortcuts({
+            currentKitName: "A0",
+            isEditMode: true,
+          }),
+        );
+
+        expect(result.current.undoIfAllowed()).toBe(false);
+        expect(result.current.redoIfAllowed()).toBe(false);
+
+        expect(mockUndo).not.toHaveBeenCalled();
+        expect(mockRedo).not.toHaveBeenCalled();
+      });
+
+      it("also leaves an entry that names its own kit alone", () => {
+        const removal: AnyUndoAction = {
+          data: { kitName: "B0", samples: 2, voicesBefore: [] },
+          description: "Remove 2 missing samples from B0",
+          id: "remove-1",
+          timestamp: new Date(),
+          type: "REMOVE_MISSING_SAMPLES",
+        };
+        vi.mocked(useUndoRedo).mockReturnValue(
+          undoRedoState({ nextRedo: removal, nextUndo: removal }),
+        );
+        const { result } = renderHook(() =>
+          useGlobalKeyboardShortcuts({ isEditMode: false }),
+        );
+
+        expect(result.current.undoIfAllowed()).toBe(false);
+        expect(result.current.redoIfAllowed()).toBe(false);
+        modal.remove();
+        expect(result.current.undoIfAllowed()).toBe(true);
+
+        expect(mockRedo).not.toHaveBeenCalled();
+        expect(mockUndo).toHaveBeenCalledTimes(1);
+      });
+
+      it("undoes again once the dialog closes", () => {
+        const { result } = renderHook(() =>
+          useGlobalKeyboardShortcuts({
+            currentKitName: "A0",
+            isEditMode: true,
+          }),
+        );
+        expect(result.current.undoIfAllowed()).toBe(false);
+
+        modal.remove();
+
+        expect(result.current.undoIfAllowed()).toBe(true);
+        expect(mockUndo).toHaveBeenCalledTimes(1);
+      });
     });
 
     it("marks a handled Cmd+Z so the menu's accelerator doesn't undo again", () => {

@@ -86,9 +86,14 @@ export function useGlobalKeyboardShortcuts({
   // read-only kits too (main refuses sample edits on them, #572).
   // "Remove missing samples" names its own kit and is allowed on a
   // read-only kit (D5), so it undoes with any kit open, or none (#822).
-  // Returns false when there's no kit or the kit doesn't allow it.
+  // With a modal dialog open nothing is undone, the entries naming their
+  // own kit included: the dialog owns the keys (#500), and Edit > Undo
+  // follows the same rule (#890). Close the dialog, then undo.
+  // Returns false when a dialog is open, there's no kit or the kit doesn't
+  // allow it.
   const applyUndoRedo = useCallback(
     (isRedo: boolean): boolean => {
+      if (isModalDialogOpen()) return false;
       const next = isRedo ? undoRedo.nextRedo : undoRedo.nextUndo;
       const ownKit = carriesItsKit(next);
       if (!currentKitName && !ownKit) return false;

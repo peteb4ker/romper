@@ -11,7 +11,11 @@ import * as path from "node:path";
 
 import { getAudioMetadataAsync } from "../audioUtils.js";
 import { toWavMetadataFields } from "../db/operations/wavMetadataFields.js";
-import { readMissingSamplesTx, withDb } from "../db/romperDbCoreORM.js";
+import {
+  isKitEditableTx,
+  readMissingSamplesTx,
+  withDb,
+} from "../db/romperDbCoreORM.js";
 import {
   canonicalizePath,
   isSameOrInside,
@@ -82,13 +86,22 @@ class Search {
   private readonly listed = new Set<string>();
   private readonly notResponding = new Set<string>();
 
-  constructor(private readonly signal: AbortSignal) {
-    this.aborted = new Promise<never>((_, reject) => {
+  private constructor(
+    private readonly signal: AbortSignal,
+    aborted: Promise<never>,
+  ) {
+    this.aborted = aborted;
+  }
+
+  /** A search that stops when `signal` aborts, even mid-operation */
+  static start(signal: AbortSignal): Search {
+    const aborted = new Promise<never>((_, reject) => {
       signal.addEventListener("abort", () => reject(new Error("Cancelled")), {
         once: true,
       });
     });
-    this.aborted.catch(() => undefined);
+    aborted.catch(() => undefined);
+    return new Search(signal, aborted);
   }
 
   /**
@@ -142,9 +155,7 @@ class Search {
       const sizeMatches =
         row.source_size === null || row.source_size === stat.size;
       if (sizeMatches && header === undefined) {
-        const read = await this.op(filePath, () =>
-          getAudioMetadataAsync(filePath),
-        ); // NOSONAR: one fs operation at a time on purpose
+        const read = await this.readHeader(filePath); // NOSONAR: one fs operation at a time on purpose
         header =
           read?.success && read.data ? toWavMetadataFields(read.data) : null;
       }
@@ -197,6 +208,11 @@ class Search {
       }
       return null;
     }
+  }
+
+  /** Read a WAV header, or null if it can't be */
+  private readHeader(filePath: string) {
+    return this.op(filePath, () => getAudioMetadataAsync(filePath));
   }
 
   private stopped(): boolean {
@@ -317,7 +333,7 @@ export class MissingFileSearchService {
     try {
       const rows = await searchableRows(localStorePath, kitName);
       if (!rows.success) return { error: rows.error, success: false };
-      const search = new Search(signal);
+      const search = Search.start(signal);
       const roots = [
         ...(await search.storeKitFolders(localStorePath)),
         { base: path.dirname(folder), folder },
@@ -325,11 +341,22 @@ export class MissingFileSearchService {
       const found = await search.run(roots, rows.data ?? []);
       if (signal.aborted) {
         return {
-          data: { cancelled: true, files: [], folderName, incomplete: null },
+          data: {
+            cancelled: true,
+            files: [],
+            folderName,
+            incomplete: null,
+            kitEditable: false,
+          },
           success: true,
         };
       }
       const files = await describeFiles(localStorePath, rows.data ?? [], found);
+      const editable = withDb(
+        ServicePathManager.getDbPath(localStorePath),
+        (db) => isKitEditableTx(db, kitName),
+      );
+      if (!editable.success) return { error: editable.error, success: false };
       for (const file of files) {
         const key = this.offerKey(localStorePath, file.sampleId);
         const offered = this.offered.get(key) ?? new Set<string>();
@@ -342,6 +369,7 @@ export class MissingFileSearchService {
           files,
           folderName,
           incomplete: search.incomplete,
+          kitEditable: editable.data === true,
         },
         success: true,
       };

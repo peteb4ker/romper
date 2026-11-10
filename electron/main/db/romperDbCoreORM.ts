@@ -21,6 +21,7 @@ export {
   getKitSamples,
   getSamplesToDelete,
   getSyncPlanData,
+  isKitEditableTx,
   linkVoicesAutomaticallyTx,
   markAllKitsAsSyncedExcept,
   markAllKitsAsSyncedExceptTx,

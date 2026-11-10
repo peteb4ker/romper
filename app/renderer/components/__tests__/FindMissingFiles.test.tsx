@@ -31,6 +31,7 @@ const results = (
   files: [{ fileName: "kick.wav", found, inStore: true, sampleId: 7 }],
   folderName: "Samples",
   incomplete: null,
+  kitEditable: true,
   ...overrides,
 });
 
@@ -131,6 +132,35 @@ describe("[UC-05] [Q-06] FindMissingFiles (#823, stage 6)", () => {
 
     expect(
       screen.getByRole("button", { name: "Use this file" }),
+    ).toBeInTheDocument();
+  });
+
+  it("doesn't offer Use this file in a read-only kit, but still offers Copy back (decided on #823)", async () => {
+    search().mockResolvedValue({
+      data: {
+        ...results([file()], { kitEditable: false }),
+        files: [
+          {
+            fileName: "loop.wav",
+            found: [file()],
+            inStore: false,
+            sampleId: 8,
+          },
+          { fileName: "kick.wav", found: [file()], inStore: true, sampleId: 7 },
+        ],
+      },
+      success: true,
+    });
+    renderFind();
+    await press();
+
+    // The file found is still listed, with no button to use it
+    expect(screen.getByTestId("find-file-8")).toHaveTextContent(
+      "Found loop.wav in Samples/Drums.",
+    );
+    expect(screen.queryByRole("button", { name: "Use this file" })).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Copy back" }),
     ).toBeInTheDocument();
   });
 

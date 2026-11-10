@@ -1791,6 +1791,7 @@ describe("KitVoicePanels", () => {
             ],
             folderName: "Samples",
             incomplete: null,
+            kitEditable: true,
           },
           success: true,
         });

@@ -323,6 +323,7 @@ describe("[UC-05] find missing files and put them back (#823, stage 6)", () => {
       ],
       folderName: "Samples",
       incomplete: null,
+      kitEditable: false,
     });
 
     const restored = await restore("B0", kick.id, moved);
@@ -451,6 +452,7 @@ describe("[UC-05] find missing files and put them back (#823, stage 6)", () => {
     expect(found.files).toEqual([
       expect.objectContaining({ inStore: false, sampleId: loop.id }),
     ]);
+    expect(found.kitEditable).toBe(true);
     const restored = await restore("A0", loop.id, moved);
 
     expect(restored.data?.restored).toEqual({

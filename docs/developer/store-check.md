@@ -710,7 +710,9 @@ Each stage is one PR. Stages 2 to 6 wait for the decisions named.
     read-only kit and doesn't flag the kit modified. A sample outside the
     store is pointed at the found file (`repointSampleTx`), which flags the
     kit modified and, as any sample edit, is refused on a read-only kit:
-    D5's exception is for removal only. Either way the file is checked and
+    D5's exception is for removal only. The search result carries
+    `kitEditable`, and a read-only kit isn't offered "Use this file"
+    (decided on #823, 2026-11-07). Either way the file is checked and
     recorded at once, and the handler calls `recheckKit`.
   - Main keeps each copy it made (size, mtime, inode) in memory. Undo
     deletes a copy only if it is one of those and still the same; a copy
@@ -772,6 +774,18 @@ checks samples. Once stage 3 replaced `ValidationResultsDialog`,
 - Details dialog with nothing to list: "No problems found."
 - Status bar item when the only problems are drives: "Drive not connected", or "Drive not responding" when no drive is disconnected and one didn't respond. When kits need attention, the kit count shows instead.
 - The one-time message is for missing sample files only; untracked files and missing folders show only by the badge and the status bar.
+
+**Approved on #823 (2026-11-07):**
+
+- The folder dialog for several missing files: "Choose a folder to search for 3 missing files"
+- One file found with only the missing file's name (D3's possible match): "Found a file named kick.wav in Samples/Old, but its size or format is different."
+- A possible match in a list of choices: "Different size or format"
+- A search that reached its limit: "Samples has too many files to search them all. Choose a folder inside it."
+- A drive that didn't respond during a search: "A drive didn't respond, so some folders weren't searched."
+- Undo names: "Copy back kick.wav" and "Use this file for kick.wav" (so "Couldn't undo: copy back kick.wav. Check the kit, then try again.")
+- Each choice's details: its folder and name, size in kB and date, in the user's locale.
+- "Cancel" stops a search; other failures show the main process's error text, as in stages 4 and 5.
+- "Use this file" isn't offered in a read-only kit (main refuses it there too: D5's exception stays removal-only). Files found in the store's kit folders are named from the kit ("B1/2_snare.wav").
 
 **Approved on #822 (2026-11-06):**
 

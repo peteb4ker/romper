@@ -27,6 +27,7 @@ export {
 } from "./kitCrudOperations.js";
 
 export {
+  isKitEditableTx,
   requireEditableKitTx,
   requireKitForMissingSampleRemovalTx,
 } from "./kitEditableGuard.js";

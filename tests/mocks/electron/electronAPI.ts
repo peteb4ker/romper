@@ -151,7 +151,13 @@ export const createElectronAPIMock = (
 
     ensureDir: mockMethod("ensureDir").mockResolvedValue({ success: true }),
     findMissingFiles: mockMethod("findMissingFiles").mockResolvedValue({
-      data: { cancelled: false, files: [], folderName: "", incomplete: null },
+      data: {
+        cancelled: false,
+        files: [],
+        folderName: "",
+        incomplete: null,
+        kitEditable: true,
+      },
       success: true,
     }),
     finishSetup: mockMethod("finishSetup").mockResolvedValue({

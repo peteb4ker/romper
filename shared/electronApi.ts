@@ -432,6 +432,11 @@ export interface FindMissingFilesResult {
    * limit, or a drive didn't respond. Null when it looked everywhere.
    */
   incomplete: "limit" | "notResponding" | null;
+  /**
+   * Whether the kit is editable. A read-only kit isn't offered "Use this
+   * file" (decided on #823, 2026-11-07); main refuses it there too.
+   */
+  kitEditable: boolean;
 }
 
 // createRomperDb returns a DbResult extended with the created file path

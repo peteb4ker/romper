@@ -96,4 +96,17 @@ test.describe("[UC-07] Kit grid keyboard navigation", () => {
     await expect(window.locator('[data-testid="kit-editor"]')).toBeVisible();
     await expect(openKit()).toHaveText("A0");
   });
+
+  test("[Q-06][UC-10] Space on a card's bookmark button bookmarks the kit and leaves the browser showing (#889)", async () => {
+    await card("A0").focus();
+    await window.keyboard.press("Tab");
+    const bookmark = card("A0").getByTitle("Add to favorites");
+    await expect(bookmark).toBeFocused();
+
+    await window.keyboard.press("Space");
+
+    await expect(card("A0").getByTitle("Remove from favorites")).toBeVisible();
+    await expect(window.locator('[data-testid="kits-view"]')).toBeVisible();
+    await expect(window.locator('[data-testid="kit-editor"]')).toHaveCount(0);
+  });
 });

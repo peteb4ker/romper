@@ -417,6 +417,17 @@ Sync doesn't block the main process (RE-07): file I/O is asynchronous and
 `syncFileOperations.processAllFiles` yields to the event loop after every
 file, so progress events and `cancelKitSync` are handled while it runs.
 Cancel stops after the file in progress and returns a `cancelled` outcome.
+The write's job begins as soon as the write is requested
+(`syncService.beginKitSync`, in the `startKitSync` handler before it
+checks the card's path), not when its files are known, so Cancel works
+from the start (#883): a cancel while main checks the card, plans the
+write or copies the card's `_save` folder stops the write before its
+first file, with nothing on the card changed, and returns the same
+`cancelled` outcome. Planning isn't interrupted, and neither is the
+`_save` copy, which finishes, so it never leaves a part copy behind. The
+job for the files keeps a cancel from before them; the job ends however
+the write returns, so a cancel can't carry over to the next write, and a
+cancel with no write running does nothing.
 Removing what the store no longer has is asynchronous too, one entry at a
 time with a yield between entries (#653, `sdCardSafety.removeCardEntries`):
 a synchronous recursive delete of kit folders froze the window on a slow

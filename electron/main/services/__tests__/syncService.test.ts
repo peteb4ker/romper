@@ -583,6 +583,31 @@ describe("[UC-34] SyncService", () => {
       expect(syncProgressManager.getCurrentSyncJob()).toBeNull();
     });
 
+    it("[UC-34] stops a write cancelled while it checks the card, before planning it (#883)", async () => {
+      mockValidateSdCardTarget.mockImplementationOnce(async () => {
+        syncService.cancelSync();
+        return { ok: true };
+      });
+
+      const result = await syncService.startKitSync(mockSettings, {
+        sdCardPath: "/sd/card",
+      });
+
+      expect(result).toEqual({
+        data: {
+          cancelled: true,
+          skippedFiles: [],
+          syncedFiles: 0,
+          warnings: [],
+        },
+        success: true,
+      });
+      expect(getSyncPlanData).not.toHaveBeenCalled();
+      expect(backupRampleSaveFolder).not.toHaveBeenCalled();
+      expect(syncFileOperationsService.processAllFiles).not.toHaveBeenCalled();
+      expect(syncProgressManager.getCurrentSyncJob()).toBeNull();
+    });
+
     it("keeps a name file for every named bank, and writes the same banks", async () => {
       const banks = [
         { artist: "ALWIS", letter: "A" },

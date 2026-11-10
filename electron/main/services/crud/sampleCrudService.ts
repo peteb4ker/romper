@@ -9,6 +9,7 @@ import {
   flagKitModified,
   moveSampleBetweenKitsTx,
   requireEditableKitTx,
+  requireNoSamplesOnLinkedPartnerTx,
   restoreVoicesTx,
   withDbTransaction,
 } from "../../db/romperDbCoreORM.js";
@@ -218,7 +219,8 @@ export class SampleCrudService {
   /**
    * Put a kit's voices back as an undo snapshot had them, in one
    * transaction (RE-86). Undo changes the kit's samples, so a kit made
-   * read-only since the edit keeps them (#572).
+   * read-only since the edit keeps them (#572). A voice that has become the
+   * right-hand side of a linked stereo pair gets no samples back (#888).
    */
   restoreVoices(
     inMemorySettings: Record<string, unknown>,
@@ -231,7 +233,8 @@ export class SampleCrudService {
     }
     return withDbTransaction(this.getDbPath(localStorePath), (db) => {
       requireEditableKitTx(db, kitName);
-      return restoreVoicesTx(db, kitName, voices);
+      restoreVoicesTx(db, kitName, voices);
+      requireNoSamplesOnLinkedPartnerTx(db, kitName, voices);
     });
   }
 

@@ -293,6 +293,14 @@ export const QUARANTINE_ICON_LABEL =
   "Quarantined: this kit won't be written to the card until it's fixed";
 
 /**
+ * Main's refusal of samples on the right-hand voice of a linked pair: add,
+ * move and undo or redo all use these words (#888).
+ */
+export function describeLinkedPartnerRefusal(voiceNumber: number): string {
+  return `Voice ${voiceNumber} is linked to voice ${voiceNumber - 1} for stereo. Unlink them to put samples on voice ${voiceNumber}.`;
+}
+
+/**
  * Approved: the link button, or main, refuses a link.
  * "Voices 2 and 3 can't be linked: voice 3 has samples."
  */

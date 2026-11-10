@@ -2,6 +2,7 @@ import type { DbResult, NewSample, Sample } from "@romper/shared/db/schema.js";
 import type { VoiceSnapshot } from "@romper/shared/undoTypes.js";
 
 import * as schema from "@romper/shared/db/schema.js";
+import { describeLinkedPartnerRefusal } from "@romper/shared/stereoLinkRules.js";
 import { and, eq, type SQL } from "drizzle-orm";
 
 import {
@@ -13,7 +14,7 @@ import { requireEditableKitTx } from "./kitEditableGuard.js";
 import { flagKitModified } from "./kitSyncOperations.js";
 import { performVoiceReindexing } from "./sampleManagementOps.js";
 
-const { kits, samples } = schema;
+const { kits, samples, voices } = schema;
 
 /**
  * Add a sample to the database
@@ -127,6 +128,34 @@ export function getSamplesToDelete(
   whereCondition: SQL,
 ): Sample[] {
   return db.select().from(samples).where(whereCondition).all();
+}
+
+/**
+ * Undo and redo's guard (#888): throw, so the transaction rolls back, when
+ * the snapshot would leave samples on the right-hand voice of a linked
+ * stereo pair. Linking isn't an undo entry, so an older snapshot can name
+ * a voice that has since become the hidden side of a pair. A restore that
+ * leaves that voice empty is fine. Run it after `restoreVoicesTx`, on the
+ * restored rows.
+ */
+export function requireNoSamplesOnLinkedPartnerTx(
+  db: RomperDb,
+  kitName: string,
+  restored: VoiceSnapshot[],
+): void {
+  const linked = new Set(
+    db
+      .select({ voice_number: voices.voice_number })
+      .from(voices)
+      .where(and(eq(voices.kit_name, kitName), eq(voices.stereo_mode, true)))
+      .all()
+      .map((row) => row.voice_number),
+  );
+  for (const { samples: rows, voice } of restored) {
+    if (rows.length > 0 && linked.has(voice - 1)) {
+      throw new Error(describeLinkedPartnerRefusal(voice));
+    }
+  }
 }
 
 /**

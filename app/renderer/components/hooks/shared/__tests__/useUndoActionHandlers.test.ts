@@ -30,9 +30,6 @@ function unknownAction(): AnyUndoAction {
 }
 
 describe("useUndoActionHandlers", () => {
-  const mockOptions = {
-    kitName: "TestKit",
-  };
   /** Voice 1 as it was before an edit: full rows, gain included */
   const voiceOne: VoiceSnapshot = {
     samples: [
@@ -87,12 +84,12 @@ describe("useUndoActionHandlers", () => {
 
   describe("hook initialization", () => {
     it("should initialize without error", () => {
-      const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
+      const { result } = renderHook(() => useUndoActionHandlers());
       expect(result.current).toBeDefined();
     });
 
     it("should provide executeUndoAction function", () => {
-      const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
+      const { result } = renderHook(() => useUndoActionHandlers());
       expect(result.current).toHaveProperty("executeUndoAction");
       expect(typeof result.current.executeUndoAction).toBe("function");
     });
@@ -101,7 +98,7 @@ describe("useUndoActionHandlers", () => {
   describe("executeUndoAction", () => {
     describe("ADD_SAMPLE undo", () => {
       it("should delete sample when undoing ADD_SAMPLE", async () => {
-        const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
+        const { result } = renderHook(() => useUndoActionHandlers());
 
         const action: AddSampleAction = {
           data: {
@@ -109,6 +106,7 @@ describe("useUndoActionHandlers", () => {
               filename: "test.wav",
               source_path: "/path/to/test.wav",
             },
+            kitName: "A0",
             slot: 0,
             voice: 1,
           },
@@ -125,7 +123,7 @@ describe("useUndoActionHandlers", () => {
         await result.current.executeUndoAction(action);
 
         expect(window.electronAPI?.deleteSampleFromSlot).toHaveBeenCalledWith(
-          "TestKit",
+          "A0",
           1,
           0,
         );
@@ -136,7 +134,7 @@ describe("useUndoActionHandlers", () => {
 
     describe("DELETE_SAMPLE undo", () => {
       it("should restore sample when undoing DELETE_SAMPLE", async () => {
-        const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
+        const { result } = renderHook(() => useUndoActionHandlers());
 
         const action: DeleteSampleAction = {
           data: {
@@ -144,6 +142,7 @@ describe("useUndoActionHandlers", () => {
               filename: "test.wav",
               source_path: "/path/to/test.wav",
             },
+            kitName: "A0",
             slot: 0,
             voice: 1,
           },
@@ -160,7 +159,7 @@ describe("useUndoActionHandlers", () => {
         await result.current.executeUndoAction(action);
 
         expect(window.electronAPI?.addSampleToSlot).toHaveBeenCalledWith(
-          "TestKit",
+          "A0",
           1,
           0,
           "/path/to/test.wav",
@@ -176,6 +175,7 @@ describe("useUndoActionHandlers", () => {
           affectedSamples: [],
           fromSlot: 0,
           fromVoice: 1,
+          kitName: "A0",
           movedSample: { filename: "kick.wav", source_path: "/kick.wav" },
           toSlot: 0,
           toVoice: 2,
@@ -188,13 +188,13 @@ describe("useUndoActionHandlers", () => {
       };
 
       it("restores both voices in one call", async () => {
-        const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
+        const { result } = renderHook(() => useUndoActionHandlers());
 
         await result.current.executeUndoAction(action);
 
         expect(window.electronAPI?.restoreKitVoices).toHaveBeenCalledTimes(1);
         expect(window.electronAPI?.restoreKitVoices).toHaveBeenCalledWith(
-          "TestKit",
+          "A0",
           action.data.voicesBefore,
         );
         expect(window.electronAPI?.addSampleToSlot).not.toHaveBeenCalled();
@@ -205,7 +205,7 @@ describe("useUndoActionHandlers", () => {
           error: "Database error",
           success: false,
         });
-        const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
+        const { result } = renderHook(() => useUndoActionHandlers());
 
         expect(await result.current.executeUndoAction(action)).toEqual({
           error: "Database error",
@@ -216,7 +216,7 @@ describe("useUndoActionHandlers", () => {
 
     describe("MOVE_SAMPLE_BETWEEN_KITS undo", () => {
       it("should move sample back between kits", async () => {
-        const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
+        const { result } = renderHook(() => useUndoActionHandlers());
 
         const action: MoveSampleBetweenKitsAction = {
           data: {
@@ -253,7 +253,7 @@ describe("useUndoActionHandlers", () => {
       });
 
       it("should handle errors during cross-kit move undo", async () => {
-        const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
+        const { result } = renderHook(() => useUndoActionHandlers());
 
         if (window.electronAPI?.moveSampleBetweenKits) {
           vi.mocked(window.electronAPI.moveSampleBetweenKits).mockRejectedValue(
@@ -293,12 +293,13 @@ describe("useUndoActionHandlers", () => {
 
     describe("[Q-02] REINDEX_SAMPLES undo", () => {
       it("restores the voice as it was before the delete, in one call", async () => {
-        const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
+        const { result } = renderHook(() => useUndoActionHandlers());
         const action: ReindexSamplesAction = {
           data: {
             affectedSamples: [],
             deletedSample: { filename: "kick.wav", source_path: "/kick.wav" },
             deletedSlot: 0,
+            kitName: "A0",
             voice: 1,
             voicesBefore: [voiceOne],
           },
@@ -312,7 +313,7 @@ describe("useUndoActionHandlers", () => {
 
         expect(window.electronAPI?.restoreKitVoices).toHaveBeenCalledTimes(1);
         expect(window.electronAPI?.restoreKitVoices).toHaveBeenCalledWith(
-          "TestKit",
+          "A0",
           [voiceOne],
         );
         expect(window.electronAPI?.addSampleToSlot).not.toHaveBeenCalled();
@@ -344,9 +345,7 @@ describe("useUndoActionHandlers", () => {
         const onRefresh = (e: Event) => refreshed((e as CustomEvent).detail);
         document.addEventListener("romper:refresh-samples", onRefresh);
         try {
-          const { result } = renderHook(() =>
-            useUndoActionHandlers(mockOptions),
-          );
+          const { result } = renderHook(() => useUndoActionHandlers());
 
           const undone = await result.current.executeUndoAction(action);
 
@@ -372,7 +371,7 @@ describe("useUndoActionHandlers", () => {
           error: "Kit A0 isn't editable.",
           success: false,
         });
-        const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
+        const { result } = renderHook(() => useUndoActionHandlers());
 
         expect(await result.current.executeUndoAction(action)).toEqual({
           error: "Kit A0 isn't editable.",
@@ -400,9 +399,7 @@ describe("useUndoActionHandlers", () => {
         document.addEventListener("romper:refresh-samples", onRefresh);
         try {
           // Another kit is open (or none): the action names its own
-          const { result } = renderHook(() =>
-            useUndoActionHandlers(mockOptions),
-          );
+          const { result } = renderHook(() => useUndoActionHandlers());
 
           const undone = await result.current.executeUndoAction(action);
 
@@ -430,9 +427,7 @@ describe("useUndoActionHandlers", () => {
         const refreshed = vi.fn();
         document.addEventListener("romper:refresh-samples", refreshed);
         try {
-          const { result } = renderHook(() =>
-            useUndoActionHandlers(mockOptions),
-          );
+          const { result } = renderHook(() => useUndoActionHandlers());
 
           const undone = await result.current.executeUndoAction(action);
 
@@ -446,7 +441,7 @@ describe("useUndoActionHandlers", () => {
 
     describe("unknown action type", () => {
       it("should throw error for unknown action type", async () => {
-        const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
+        const { result } = renderHook(() => useUndoActionHandlers());
 
         await expect(
           result.current.executeUndoAction(unknownAction()),
@@ -463,17 +458,21 @@ describe("useUndoActionHandlers", () => {
         triggerConditions: [[null]],
       };
       const after = { ...before, stepPattern: [[127]] };
-      const { result } = renderHook(() => useUndoActionHandlers(mockOptions));
+      const { result } = renderHook(() => useUndoActionHandlers());
 
       const outcome = await result.current.executeUndoAction(
-        createSequenceEditAction("Turn step 1 on voice 1 on", before, after),
+        createSequenceEditAction(
+          "A0",
+          "Turn step 1 on voice 1 on",
+          before,
+          after,
+        ),
       );
 
       expect(outcome).toEqual({ success: true });
-      expect(window.electronAPI.restoreKitSequence).toHaveBeenCalledWith(
-        "TestKit",
-        { stepPattern: [[0]] },
-      );
+      expect(window.electronAPI.restoreKitSequence).toHaveBeenCalledWith("A0", {
+        stepPattern: [[0]],
+      });
     });
   });
 });

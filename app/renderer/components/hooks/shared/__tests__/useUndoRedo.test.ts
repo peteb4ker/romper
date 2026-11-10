@@ -35,7 +35,7 @@ beforeEach(() => {
 
 describe("[UC-26] useUndoRedo - Basic Tests", () => {
   it("should initialize with empty stacks", () => {
-    const { result } = renderHook(() => useUndoRedo("test-kit"));
+    const { result } = renderHook(() => useUndoRedo("A0"));
 
     expect(result.current.canUndo).toBe(false);
     expect(result.current.canRedo).toBe(false);
@@ -45,7 +45,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
   });
 
   it("should add actions to undo stack", () => {
-    const { result } = renderHook(() => useUndoRedo("test-kit"));
+    const { result } = renderHook(() => useUndoRedo("A0"));
 
     act(() => {
       result.current.addAction(
@@ -68,7 +68,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
   });
 
   it("should perform basic undo operation", async () => {
-    const { result } = renderHook(() => useUndoRedo("test-kit"));
+    const { result } = renderHook(() => useUndoRedo("A0"));
 
     act(() => {
       result.current.addAction(
@@ -88,7 +88,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
     });
 
     expect(globalThis.electronAPI.deleteSampleFromSlot).toHaveBeenCalledWith(
-      "test-kit",
+      "A0",
       1,
       2,
     );
@@ -173,7 +173,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
     expect(result.current.canRedo).toBe(true);
   });
 
-  it("does nothing with no kit open for an action that belongs to the open kit", async () => {
+  it("does nothing with no kit open for an action that belongs to a kit", async () => {
     const { result } = renderHook(() => useUndoRedo(""));
     act(() => {
       result.current.addAction(addSampleAction());
@@ -184,14 +184,15 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
     });
 
     expect(globalThis.electronAPI.deleteSampleFromSlot).not.toHaveBeenCalled();
-    expect(result.current.canUndo).toBe(true);
+    // A0's action doesn't go on the history with no kit open (#887)
+    expect(result.current.canUndo).toBe(false);
   });
 
   it("should clear stacks when kit changes", () => {
     const { rerender, result } = renderHook(
       ({ kitName }) => useUndoRedo(kitName),
       {
-        initialProps: { kitName: "kit1" },
+        initialProps: { kitName: "A0" },
       },
     );
 
@@ -212,7 +213,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
     expect(result.current.undoCount).toBe(1);
 
     // Change kit
-    rerender({ kitName: "kit2" });
+    rerender({ kitName: "B0" });
 
     expect(result.current.undoCount).toBe(0);
     expect(result.current.redoCount).toBe(0);
@@ -270,7 +271,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
           voice: 1,
         },
       ];
-      const { result } = renderHook(() => useUndoRedo("test-kit"));
+      const { result } = renderHook(() => useUndoRedo("A0"));
 
       act(() => {
         result.current.addAction(
@@ -295,7 +296,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
 
       expect(globalThis.electronAPI.restoreKitVoices).toHaveBeenCalledTimes(1);
       expect(globalThis.electronAPI.restoreKitVoices).toHaveBeenCalledWith(
-        "test-kit",
+        "A0",
         voicesBefore,
       );
       expect(globalThis.electronAPI.addSampleToSlot).not.toHaveBeenCalled();
@@ -308,7 +309,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
 
   describe("Redo Operations", () => {
     it("should perform basic redo operation", async () => {
-      const { result } = renderHook(() => useUndoRedo("test-kit"));
+      const { result } = renderHook(() => useUndoRedo("A0"));
 
       // Add action
       act(() => {
@@ -341,7 +342,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
       });
 
       expect(globalThis.electronAPI.addSampleToSlot).toHaveBeenCalledWith(
-        "test-kit",
+        "A0",
         1,
         0,
         "/path/to/test.wav",
@@ -351,7 +352,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
     });
 
     it("should handle redo for DELETE_SAMPLE action", async () => {
-      const { result } = renderHook(() => useUndoRedo("test-kit"));
+      const { result } = renderHook(() => useUndoRedo("A0"));
 
       act(() => {
         result.current.addAction(
@@ -375,14 +376,14 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
       });
 
       expect(globalThis.electronAPI.deleteSampleFromSlot).toHaveBeenCalledWith(
-        "test-kit",
+        "A0",
         2,
         1,
       );
     });
 
     it("should handle redo failure gracefully", async () => {
-      const { result } = renderHook(() => useUndoRedo("test-kit"));
+      const { result } = renderHook(() => useUndoRedo("A0"));
 
       act(() => {
         result.current.addAction(
@@ -418,7 +419,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
 
   describe("DELETE_SAMPLE Undo Operations", () => {
     it("should undo DELETE_SAMPLE by restoring the sample", async () => {
-      const { result } = renderHook(() => useUndoRedo("test-kit"));
+      const { result } = renderHook(() => useUndoRedo("A0"));
 
       act(() => {
         result.current.addAction(
@@ -438,7 +439,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
       });
 
       expect(globalThis.electronAPI.addSampleToSlot).toHaveBeenCalledWith(
-        "test-kit",
+        "A0",
         2,
         3,
         "/path/to/deleted.wav",
@@ -448,7 +449,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
 
   describe("Error Handling", () => {
     it("should clear error when clearError is called", async () => {
-      const { result } = renderHook(() => useUndoRedo("test-kit"));
+      const { result } = renderHook(() => useUndoRedo("A0"));
 
       // Trigger an error: the undo's IPC call throws
       vi.mocked(globalThis.electronAPI.deleteSampleFromSlot).mockRejectedValue(
@@ -473,7 +474,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
     });
 
     it("should not undo when already undoing", async () => {
-      const { result } = renderHook(() => useUndoRedo("test-kit"));
+      const { result } = renderHook(() => useUndoRedo("A0"));
 
       act(() => {
         result.current.addAction(
@@ -507,7 +508,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
     });
 
     it("should not redo when already redoing", async () => {
-      const { result } = renderHook(() => useUndoRedo("test-kit"));
+      const { result } = renderHook(() => useUndoRedo("A0"));
 
       act(() => {
         result.current.addAction(
@@ -546,7 +547,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
     });
 
     it("should emit refresh event after successful operations", async () => {
-      const { result } = renderHook(() => useUndoRedo("test-kit"));
+      const { result } = renderHook(() => useUndoRedo("A0"));
 
       const eventListener = vi.fn();
       document.addEventListener("romper:refresh-samples", eventListener);
@@ -570,7 +571,7 @@ describe("[UC-26] useUndoRedo - Basic Tests", () => {
 
       expect(eventListener).toHaveBeenCalledWith(
         expect.objectContaining({
-          detail: { kitName: "test-kit" },
+          detail: { kitName: "A0", refreshAll: true },
         }),
       );
 

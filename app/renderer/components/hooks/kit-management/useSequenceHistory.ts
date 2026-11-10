@@ -19,6 +19,8 @@ type SliceStepsUpdate = ((prev: SliceSteps) => SliceSteps) | SliceSteps;
 
 /** Each setter resolves to whether main saved the change */
 interface UseSequenceHistoryParams {
+  /** The kit whose sequence is edited; its edits' undo entries name it (#887) */
+  kitName: string;
   onAddUndoAction?: (action: AnyUndoAction) => void;
   setSliceSteps: (update: SliceStepsUpdate) => Promise<boolean>;
   setStepPattern: (pattern: number[][]) => Promise<boolean>;
@@ -35,6 +37,7 @@ interface UseSequenceHistoryParams {
  * (#570).
  */
 export function useSequenceHistory({
+  kitName,
   onAddUndoAction,
   setSliceSteps,
   setStepPattern,
@@ -64,6 +67,7 @@ export function useSequenceHistory({
       const after = { ...before, ...change };
       latestRef.current = after;
       const action = createSequenceEditAction(
+        kitName,
         meta?.description ?? fallbackDescription,
         before,
         after,
@@ -71,7 +75,7 @@ export function useSequenceHistory({
       );
       if (await save()) onAddUndoAction?.(action);
     },
-    [latestRef, onAddUndoAction],
+    [kitName, latestRef, onAddUndoAction],
   );
 
   const recordStepPattern = React.useCallback(

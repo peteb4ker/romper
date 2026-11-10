@@ -11,6 +11,8 @@ export interface AddSampleAction extends UndoAction {
       filename: string;
       source_path: string;
     };
+    /** The kit the sample was added to (#887) */
+    kitName: string;
     slot: number;
     voice: number;
     // Store enough data to reverse the operation (delete the added sample)
@@ -34,6 +36,8 @@ export interface DeleteSampleAction extends UndoAction {
       filename: string;
       source_path: string;
     };
+    /** The kit the sample was deleted from (#887) */
+    kitName: string;
     slot: number;
     voice: number;
     // Store deleted sample data to restore it
@@ -55,6 +59,8 @@ export interface MoveSampleAction extends UndoAction {
     }>;
     fromSlot: number;
     fromVoice: number;
+    /** The kit the sample was moved in (#887) */
+    kitName: string;
     mode?: "insert";
     movedSample: {
       filename: string;
@@ -112,6 +118,8 @@ export interface ReindexSamplesAction extends UndoAction {
       source_path: string;
     };
     deletedSlot: number;
+    /** The kit the sample was deleted from (#887) */
+    kitName: string;
     voice: number;
     /** The voice's full rows before the delete; undo restores them */
     voicesBefore: VoiceSnapshot[];
@@ -178,6 +186,8 @@ export interface SequenceEditAction extends UndoAction {
   data: {
     after: SequenceSnapshot;
     before: SequenceSnapshot;
+    /** The kit whose sequence was edited (#887) */
+    kitName: string;
     /** Consecutive edits with the same key (e.g. scroll-wheel nudges of
      * one step) merge into one undo step. */
     mergeKey?: string;
@@ -211,6 +221,17 @@ export interface UndoAction {
 export interface VoiceSnapshot {
   samples: SampleSnapshot[];
   voice: number;
+}
+
+/**
+ * The kit an action was made in, and the kit its undo and redo act on
+ * (#887): every action records it when it's made. A move between kits
+ * belongs to the kit it was moved from.
+ */
+export function actionKit(action: AnyUndoAction): string {
+  return action.type === "MOVE_SAMPLE_BETWEEN_KITS"
+    ? action.data.fromKit
+    : action.data.kitName;
 }
 
 /**

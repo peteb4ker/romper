@@ -61,7 +61,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     it("should expose hook state correctly", () => {
       const { result } = renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: true,
         }),
       );
@@ -89,7 +89,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     it("should handle Cmd+Z for undo when in edit mode", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: true,
         }),
       );
@@ -106,7 +106,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     it("should handle Ctrl+Z for undo on Windows/Linux", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: true,
         }),
       );
@@ -131,7 +131,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
 
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: true,
         }),
       );
@@ -152,7 +152,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
 
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: true,
         }),
       );
@@ -171,7 +171,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     it("should handle Cmd+Shift+Z for redo", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: true,
         }),
       );
@@ -188,7 +188,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     it("should handle Cmd+Y for redo", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: true,
         }),
       );
@@ -204,7 +204,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     it("should handle Ctrl+Y for redo on Windows/Linux", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: true,
         }),
       );
@@ -224,7 +224,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
 
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: true,
         }),
       );
@@ -245,7 +245,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
 
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: true,
         }),
       );
@@ -263,7 +263,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     it("should handle escape key for back navigation", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: false,
           onBackNavigation: mockOnBackNavigation,
         }),
@@ -279,7 +279,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     it("should not handle escape when no onBackNavigation provided", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: false,
         }),
       );
@@ -311,7 +311,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     it("should not handle undo/redo when not in edit mode", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: false,
         }),
       );
@@ -344,7 +344,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     it("should not handle undo/redo without modifier key", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: true,
         }),
       );
@@ -363,6 +363,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
       data: {
         after: { sliceSteps: [], stepPattern: [], triggerConditions: [] },
         before: { sliceSteps: [], stepPattern: [], triggerConditions: [] },
+        kitName: "A0",
       },
       description: "Turn step 1 on voice 1 on",
       id: "seq-1",
@@ -378,7 +379,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
       mockNextUndo(sequenceEdit);
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: false,
         }),
       );
@@ -392,7 +393,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
       mockNextUndo(addSampleAction());
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: false,
         }),
       );
@@ -415,7 +416,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
       );
       const readOnly = renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: false,
         }),
       );
@@ -453,7 +454,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
       );
       const readOnly = renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: false,
         }),
       );
@@ -468,7 +469,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     it("leaves Cmd+Z in a text field to the field", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: true,
         }),
       );
@@ -486,7 +487,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     it("[UC-07] leaves Escape and Cmd+Z to an open modal dialog", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: true,
           onBackNavigation: mockOnBackNavigation as () => void,
         }),
@@ -507,7 +508,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     it("does not go back on an Escape a component already handled", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: true,
           onBackNavigation: mockOnBackNavigation as () => void,
         }),
@@ -527,7 +528,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     it("undoes and redoes under the same rules as the keys", () => {
       const { result } = renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: true,
         }),
       );
@@ -542,7 +543,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     it("does nothing in a locked kit, or with no kit open", () => {
       const locked = renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: false,
         }),
       );
@@ -561,7 +562,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     it("marks a handled Cmd+Z so the menu's accelerator doesn't undo again", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: true,
         }),
       );
@@ -581,7 +582,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     it("leaves an unhandled Cmd+Z unmarked, for the menu to handle", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: false,
         }),
       );
@@ -600,7 +601,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
     it("treats Shift+Cmd+Z reported as an uppercase Z as redo", () => {
       renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: true,
         }),
       );
@@ -632,7 +633,7 @@ describe("useGlobalKeyboardShortcuts - Basic Tests", () => {
 
       const { unmount } = renderHook(() =>
         useGlobalKeyboardShortcuts({
-          currentKitName: "test-kit",
+          currentKitName: "A0",
           isEditMode: true,
         }),
       );

@@ -116,6 +116,7 @@ describe("useSampleManagementUndoActions", () => {
             filename: "new.wav",
             source_path: "/path/to/new.wav",
           },
+          kitName: "TestKit",
           slot: 0,
           voice: 1,
         },
@@ -166,6 +167,7 @@ describe("useSampleManagementUndoActions", () => {
             source_path: "/path/to/test.wav",
           },
           deletedSlot: 0,
+          kitName: "TestKit",
           voice: 1,
           voicesBefore: [voiceOne],
         },
@@ -217,6 +219,7 @@ describe("useSampleManagementUndoActions", () => {
           ],
           fromSlot: 0,
           fromVoice: 1,
+          kitName: "TestKit",
           movedSample: {
             filename: "test.wav",
             source_path: "/path/to/test.wav",

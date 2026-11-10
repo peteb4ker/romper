@@ -8,36 +8,31 @@ import { restoredFoundPath } from "../kit-management/findMissingFiles";
 import { requestKitRefresh } from "../kit-management/removeMissingSamples";
 import { writeSequenceSnapshot } from "./sequenceUndo";
 
-export interface UseRedoActionHandlersOptions {
-  kitName: string;
-}
-
 /**
  * Hook for handling redo operations for different action types
- * Extracted from useUndoRedo to reduce complexity
+ * Extracted from useUndoRedo to reduce complexity. Each redo acts on the
+ * kit its action was made in, never on whichever kit is open (#887).
  */
-export function useRedoActionHandlers({
-  kitName,
-}: UseRedoActionHandlersOptions) {
+export function useRedoActionHandlers() {
   // Main redo action executor
   const executeRedoAction = async (action: AnyUndoAction) => {
     switch (action.type) {
       case "ADD_SAMPLE":
         return globalThis.electronAPI?.addSampleToSlot?.(
-          kitName,
+          action.data.kitName,
           action.data.voice,
           action.data.slot,
           action.data.addedSample.source_path,
         );
       case "DELETE_SAMPLE":
         return globalThis.electronAPI?.deleteSampleFromSlot?.(
-          kitName,
+          action.data.kitName,
           action.data.voice,
           action.data.slot,
         );
       case "MOVE_SAMPLE":
         return globalThis.electronAPI?.moveSampleInKit?.(
-          kitName,
+          action.data.kitName,
           action.data.fromVoice,
           action.data.fromSlot,
           action.data.toVoice,
@@ -55,7 +50,7 @@ export function useRedoActionHandlers({
         );
       case "REINDEX_SAMPLES":
         return globalThis.electronAPI?.deleteSampleFromSlot?.(
-          kitName,
+          action.data.kitName,
           action.data.voice,
           action.data.deletedSlot,
         );
@@ -65,7 +60,7 @@ export function useRedoActionHandlers({
         return redoRestoreMissingFile(action);
       case "SEQUENCE_EDIT":
         return writeSequenceSnapshot(
-          kitName,
+          action.data.kitName,
           action.data.after,
           action.data.before,
         );

@@ -744,10 +744,17 @@ voice and slot):
   (`restore-kit-voices` for delete and move, one transaction;
   add and delete channels otherwise; `writeSequenceSnapshot` for the
   sequencer, one `restore-kit-sequence` write of the parts that differ),
-  then dispatch `romper:refresh-samples` on `document`, which
-  `useSampleRefreshListener` turns into reloads of the selected kit.
+  on the kit the action names (`actionKit`), never on whichever kit is
+  open, then dispatch `romper:refresh-samples` on `document` for that kit,
+  which `useSampleRefreshListener` turns into a reload of it.
 - **Invariants:** the stack belongs to one kit in one store; it clears when
   that changes; an undo either restores everything it touched or nothing.
+  Every action records the kit it was made in (#887). An edit, undo or
+  redo still running when you step to another kit or store doesn't land
+  on the new kit's history: `addAction`, `handleUndoSuccess` and
+  `handleRedoSuccess` drop it. "Remove missing samples" and a found file
+  put back (`carriesItsKit`) go on whichever history is open and undo with
+  any kit open (#822, #823).
 - **Disagreements on main:**
   - Undoing a move between kits refreshes only the selected kit; the move
     itself can't be reached from the UI (UC-22).

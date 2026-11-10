@@ -20,6 +20,7 @@ export const addSampleAction = (
   ...actionBase("Add sample"),
   data: {
     addedSample: { filename: "kick.wav", source_path: "/samples/kick.wav" },
+    kitName: "A0",
     slot: 0,
     voice: 1,
     ...data,
@@ -33,6 +34,7 @@ export const deleteSampleAction = (
   ...actionBase("Delete sample"),
   data: {
     deletedSample: { filename: "kick.wav", source_path: "/samples/kick.wav" },
+    kitName: "A0",
     slot: 0,
     voice: 1,
     ...data,
@@ -48,6 +50,7 @@ export const moveSampleAction = (
     affectedSamples: [],
     fromSlot: 0,
     fromVoice: 1,
+    kitName: "A0",
     movedSample: { filename: "kick.wav", source_path: "/samples/kick.wav" },
     toSlot: 1,
     toVoice: 2,
@@ -84,6 +87,7 @@ export const reindexSamplesAction = (
     affectedSamples: [],
     deletedSample: { filename: "kick.wav", source_path: "/samples/kick.wav" },
     deletedSlot: 0,
+    kitName: "A0",
     voice: 1,
     voicesBefore: [],
     ...data,

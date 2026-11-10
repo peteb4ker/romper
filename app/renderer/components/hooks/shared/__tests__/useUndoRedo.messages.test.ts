@@ -9,6 +9,7 @@ import { undoFailureMessage, useUndoRedo } from "../useUndoRedo";
 const addAction: AnyUndoAction = {
   data: {
     addedSample: { filename: "kick.wav", source_path: "/src/kick.wav" },
+    kitName: "A0",
     slot: 2,
     voice: 1,
   },
@@ -160,7 +161,7 @@ describe("[UC-26] [UC-36] telling the user when undo or redo fails (RE-40)", () 
     const { result } = renderHook(() => useUndoRedo("A0", onMessage));
     act(() =>
       result.current.addAction(
-        createSequenceEditAction("Fill voice 1", before, after),
+        createSequenceEditAction("A0", "Fill voice 1", before, after),
       ),
     );
 

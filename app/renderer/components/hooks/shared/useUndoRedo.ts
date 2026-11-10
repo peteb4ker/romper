@@ -11,7 +11,7 @@ import type { OperationResult } from "../sample-management/types";
 import { createLogger } from "../../../utils/logger";
 import { useRedoActionHandlers } from "./useRedoActionHandlers";
 import { useUndoActionHandlers } from "./useUndoActionHandlers";
-import { useUndoRedoState } from "./useUndoRedoState";
+import { type UndoHistoryOwner, useUndoRedoState } from "./useUndoRedoState";
 
 const log = createLogger("UNDO");
 
@@ -44,23 +44,25 @@ export function useUndoRedo(
   // State management hook
   const state = useUndoRedoState({ kitName, storePath });
 
-  // Action handlers hooks
-  const undoHandlers = useUndoActionHandlers({ kitName });
-  const redoHandlers = useRedoActionHandlers({ kitName });
+  // Action handlers hooks: each acts on the action's own kit (#887)
+  const undoHandlers = useUndoActionHandlers();
+  const redoHandlers = useRedoActionHandlers();
 
-  // Handle undo result and state updates
+  // Handle undo result and state updates. `madeFor` is the history the
+  // undo started on, which may not be the open one by now (#887).
   const handleUndoResult = (
     result: OperationResult,
     actionToUndo: AnyUndoAction,
+    madeFor: UndoHistoryOwner,
   ) => {
     log.debug("Final result:", result);
 
     if (result.success) {
       log.debug("Undo operation successful, updating state");
-      state.handleUndoSuccess(actionToUndo);
+      state.handleUndoSuccess(actionToUndo, madeFor);
       if (result.notice) onMessage?.(result.notice, "warning");
       log.debug("Emitting refresh event");
-      state.emitRefreshEvent();
+      state.emitRefreshEvent(madeFor.kitName);
     } else {
       log.warn("Undo operation failed:", result.error || "No error message");
       state.setError(result.error || "Failed to undo action");
@@ -72,10 +74,11 @@ export function useUndoRedo(
   const handleRedoResult = (
     result: OperationResult,
     actionToRedo: AnyUndoAction,
+    madeFor: UndoHistoryOwner,
   ) => {
     if (result.success) {
-      state.handleRedoSuccess(actionToRedo);
-      state.emitRefreshEvent();
+      state.handleRedoSuccess(actionToRedo, madeFor);
+      state.emitRefreshEvent(madeFor.kitName);
     } else {
       log.warn("Redo operation failed:", result.error || "No error message");
       state.setError(result.error || "Failed to redo action");
@@ -98,6 +101,7 @@ export function useUndoRedo(
     if (!kitName && !carriesItsKit(state.undoStack[0])) return;
 
     const actionToUndo = state.undoStack[0];
+    const madeFor = { kitName, storePath };
     state.setError("");
     state.setUndoing(true);
 
@@ -109,7 +113,7 @@ export function useUndoRedo(
         error: "No result returned",
         success: false,
       };
-      handleUndoResult(operationResult, actionToUndo);
+      handleUndoResult(operationResult, actionToUndo, madeFor);
     } catch (error) {
       log.warn("Exception during undo:", error);
       state.setError(
@@ -121,7 +125,7 @@ export function useUndoRedo(
       state.setUndoing(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kitName, onMessage, state.undoStack, state.isUndoing]);
+  }, [kitName, onMessage, state.undoStack, state.isUndoing, storePath]);
 
   // Redo the most recent undone action
   const redo = useCallback(async () => {
@@ -129,6 +133,7 @@ export function useUndoRedo(
     if (!kitName && !carriesItsKit(state.redoStack[0])) return;
 
     const actionToRedo = state.redoStack[0];
+    const madeFor = { kitName, storePath };
     state.setError("");
     state.setRedoing(true);
 
@@ -138,14 +143,14 @@ export function useUndoRedo(
         error: "No result returned",
         success: false,
       };
-      handleRedoResult(operationResult, actionToRedo);
+      handleRedoResult(operationResult, actionToRedo, madeFor);
     } catch (error) {
       handleRedoError(error, actionToRedo);
     } finally {
       state.setRedoing(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kitName, onMessage, state.redoStack, state.isRedoing]);
+  }, [kitName, onMessage, state.redoStack, state.isRedoing, storePath]);
 
   return {
     // Actions

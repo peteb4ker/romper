@@ -24,7 +24,7 @@ function unknownAction(): AnyUndoAction {
 }
 
 describe("useRedoActionHandlers", () => {
-  const testKitName = "Test Kit";
+  const testKitName = "A0";
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -42,9 +42,7 @@ describe("useRedoActionHandlers", () => {
         data: { samples: 3, voicesBefore },
         success: true,
       });
-      const { result } = renderHook(() =>
-        useRedoActionHandlers({ kitName: testKitName }),
-      );
+      const { result } = renderHook(() => useRedoActionHandlers());
       const action: AnyUndoAction = {
         data: { kitName: "B0", samples: 1, voicesBefore: [] },
         description: "Remove 1 missing sample from B0",
@@ -74,9 +72,7 @@ describe("useRedoActionHandlers", () => {
         data: { changed: false, restored: again },
         success: true,
       });
-      const { result } = renderHook(() =>
-        useRedoActionHandlers({ kitName: testKitName }),
-      );
+      const { result } = renderHook(() => useRedoActionHandlers());
       const action: AnyUndoAction = {
         data: { kitName: "A0", restored: { ...again, from: "/older" } },
         description: "Use this file for loop.wav",
@@ -96,9 +92,7 @@ describe("useRedoActionHandlers", () => {
     });
 
     it("should handle ADD_SAMPLE redo action", async () => {
-      const { result } = renderHook(() =>
-        useRedoActionHandlers({ kitName: testKitName }),
-      );
+      const { result } = renderHook(() => useRedoActionHandlers());
 
       const addAction = addSampleAction({
         addedSample: {
@@ -125,9 +119,7 @@ describe("useRedoActionHandlers", () => {
     });
 
     it("should handle DELETE_SAMPLE redo action", async () => {
-      const { result } = renderHook(() =>
-        useRedoActionHandlers({ kitName: testKitName }),
-      );
+      const { result } = renderHook(() => useRedoActionHandlers());
 
       const deleteAction = deleteSampleAction({ slot: 0, voice: 1 });
 
@@ -146,9 +138,7 @@ describe("useRedoActionHandlers", () => {
     });
 
     it("should handle REINDEX_SAMPLES redo action", async () => {
-      const { result } = renderHook(() =>
-        useRedoActionHandlers({ kitName: testKitName }),
-      );
+      const { result } = renderHook(() => useRedoActionHandlers());
 
       const reindexAction = reindexSamplesAction({ deletedSlot: 2, voice: 1 });
 
@@ -167,9 +157,7 @@ describe("useRedoActionHandlers", () => {
     });
 
     it("should handle MOVE_SAMPLE redo action", async () => {
-      const { result } = renderHook(() =>
-        useRedoActionHandlers({ kitName: testKitName }),
-      );
+      const { result } = renderHook(() => useRedoActionHandlers());
 
       const moveAction = moveSampleAction({
         fromSlot: 0,
@@ -196,9 +184,7 @@ describe("useRedoActionHandlers", () => {
     });
 
     it("should handle MOVE_SAMPLE_BETWEEN_KITS redo action", async () => {
-      const { result } = renderHook(() =>
-        useRedoActionHandlers({ kitName: testKitName }),
-      );
+      const { result } = renderHook(() => useRedoActionHandlers());
 
       const moveAction = moveSampleBetweenKitsAction({
         fromKit: "From Kit",
@@ -231,9 +217,7 @@ describe("useRedoActionHandlers", () => {
     });
 
     it("should handle unknown action type", async () => {
-      const { result } = renderHook(() =>
-        useRedoActionHandlers({ kitName: testKitName }),
-      );
+      const { result } = renderHook(() => useRedoActionHandlers());
 
       await expect(
         result.current.executeRedoAction(unknownAction()),
@@ -243,9 +227,7 @@ describe("useRedoActionHandlers", () => {
     it("should handle missing electronAPI gracefully", async () => {
       vi.stubGlobal("electronAPI", undefined);
 
-      const { result } = renderHook(() =>
-        useRedoActionHandlers({ kitName: testKitName }),
-      );
+      const { result } = renderHook(() => useRedoActionHandlers());
 
       const addAction = addSampleAction({
         addedSample: {
@@ -267,9 +249,7 @@ describe("useRedoActionHandlers", () => {
         addSampleToSlot: undefined,
       }); // Missing addSampleToSlot
 
-      const { result } = renderHook(() =>
-        useRedoActionHandlers({ kitName: testKitName }),
-      );
+      const { result } = renderHook(() => useRedoActionHandlers());
 
       const addAction = addSampleAction({
         addedSample: {
@@ -286,9 +266,7 @@ describe("useRedoActionHandlers", () => {
     });
 
     it("should handle API call failures", async () => {
-      const { result } = renderHook(() =>
-        useRedoActionHandlers({ kitName: testKitName }),
-      );
+      const { result } = renderHook(() => useRedoActionHandlers());
 
       const deleteAction = deleteSampleAction({ slot: 0, voice: 1 });
 
@@ -306,9 +284,7 @@ describe("useRedoActionHandlers", () => {
     });
 
     it("should handle API call exceptions", async () => {
-      const { result } = renderHook(() =>
-        useRedoActionHandlers({ kitName: testKitName }),
-      );
+      const { result } = renderHook(() => useRedoActionHandlers());
 
       const moveAction = moveSampleAction({
         fromSlot: 0,

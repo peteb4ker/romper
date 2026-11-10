@@ -8,6 +8,7 @@ import {
   RAMPLE_FORMAT_REQUIREMENTS,
 } from "./audioUtils.js";
 import { cardFileHolds } from "./cardFileMatch.js";
+import { writeCardFileAtomically } from "./cardFileWrite.js";
 import { decodeWav, type EncodeBitDepth, encodeWav } from "./wavCodec.js";
 
 export interface ConversionOptions {
@@ -347,7 +348,8 @@ function validateTargetFormat(
 /**
  * Writes audio data to output file, unless the file there already holds
  * exactly these bytes, as the card's copy does when the sample hasn't
- * changed since the last write (#650)
+ * changed since the last write (#650). It's written to a temporary name and
+ * renamed into place once complete (#882).
  */
 async function writeOutputFile(
   outputPath: string,
@@ -364,5 +366,7 @@ async function writeOutputFile(
 
   if (await cardFileHolds(outputPath, outputBuffer)) return;
   await fs.promises.mkdir(path.dirname(outputPath), { recursive: true });
-  await fs.promises.writeFile(outputPath, outputBuffer);
+  await writeCardFileAtomically(outputPath, (tempPath) =>
+    fs.promises.writeFile(tempPath, outputBuffer),
+  );
 }

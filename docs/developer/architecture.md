@@ -345,6 +345,26 @@ while the card flushes, so writing an unchanged store again takes
 seconds rather than minutes. A failed read of the card copy counts as a
 mismatch, so the file is written as before.
 
+A sample is never written straight to its own name (#882,
+`cardFileWrite.writeCardFileAtomically`). The copy or the encoded
+conversion goes to a temporary file in the kit folder,
+`romper-<8 hex digits>.tmp`, and is renamed over the sample's name only
+once it's complete. A write that stops partway (the card is pulled, fills
+up or stops responding) leaves the sample's name holding the copy an
+earlier write put there, or nothing, never a cut-off WAV. The temporary
+name can't be a sample's (`<voice>-<slot> <name>.wav`), doesn't end in
+`.wav`, and is random, so a write the card watchdog gave up on can't
+collide with the next. A failed write removes its temporary file where the
+card allows (under the watchdog); one left behind isn't one of the kit's
+samples, so the next write removes it with the other stale entries. A
+rename replaces the old file on macOS (checked on FAT32 and exFAT
+volumes), Linux and Windows; if Windows refuses because something holds
+the old file, the old file is moved aside, the new one renamed in, and the
+old one removed only then, or put back if the new one can't take its
+name. On macOS the temporary file's `._` AppleDouble file moves with the
+rename, and both it and the sample's are removed. The byte-for-byte check
+above compares with the sample's own name, before anything is written.
+
 The card mirrors the store. Once every file is written (and only if the
 sync wasn't cancelled), sync deletes the Rample content the store no
 longer has: kit folders, anything inside a kit folder that isn't one of

@@ -344,6 +344,38 @@ describe("[UC-05] remove missing samples (#822, stage 5)", () => {
     expect(rowsOf("A0")).toEqual(after);
   });
 
+  it("[UC-28] undo refuses, and changes nothing, when its voice became the right-hand voice of a linked pair since (#915, as #888)", async () => {
+    fs.rmSync(fileOf("A0", "2 clap.wav"));
+    await passFinds(["A0"]);
+    const removed = await remove("A0");
+    expect(removed.data?.samples).toBe(1);
+    // Voice 2 is empty now, so the pair can be linked
+    expect(
+      (
+        (await invoke("update-voice-stereo-mode", "A0", 1, true)) as {
+          success: boolean;
+        }
+      ).success,
+    ).toBe(true);
+    const after = rowsOf("A0");
+    const linked = () =>
+      getKit(dbDir, "A0")
+        .data?.voices?.filter((v) => v.stereo_mode)
+        .map((v) => v.voice_number);
+    expect(linked()).toEqual([1]);
+
+    const undone = await remove("A0", removed.data!.voicesBefore);
+
+    expect(undone).toEqual({
+      error:
+        "Voice 2 is linked to voice 1 for stereo. Unlink them to put samples on voice 2.",
+      success: false,
+    });
+    expect(rowsOf("A0")).toEqual(after);
+    expect(rowsOf("A0").some((row) => row.voice === 2)).toBe(false);
+    expect(linked()).toEqual([1]);
+  });
+
   it("undo can only put back missing rows: it isn't a way to edit a read-only kit", async () => {
     const [voice1] = removedVoices(rowsOf("B0"));
     // A snapshot that would add a readable sample, or change a gain

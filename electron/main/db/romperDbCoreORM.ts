@@ -40,6 +40,7 @@ export {
   removeMissingSamplesTx,
   repointSampleTx,
   requireEditableKitTx,
+  requireNoSamplesOnLinkedPartnerTx,
   restoreVoicesTx,
   toggleKitFavorite,
   updateBank,

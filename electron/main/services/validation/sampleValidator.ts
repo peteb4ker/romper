@@ -1,3 +1,4 @@
+import { describeLinkedPartnerRefusal } from "@romper/shared/stereoLinkRules.js";
 import * as fs from "node:fs";
 
 import { getAudioMetadata } from "../../audioUtils.js";
@@ -93,7 +94,7 @@ export class SampleValidator {
     );
     if (previousVoice?.stereo_mode) {
       return {
-        error: `Voice ${voiceNumber} is linked to voice ${voiceNumber - 1} for stereo. Unlink them to put samples on voice ${voiceNumber}.`,
+        error: describeLinkedPartnerRefusal(voiceNumber),
         isValid: false,
       };
     }

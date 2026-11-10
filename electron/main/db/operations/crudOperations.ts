@@ -58,6 +58,7 @@ export {
   deleteSamplesTx,
   getKitSamples,
   getSamplesToDelete,
+  requireNoSamplesOnLinkedPartnerTx,
   restoreVoicesTx,
   updateSampleGain,
   updateSampleMetadata,

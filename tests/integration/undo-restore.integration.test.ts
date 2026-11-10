@@ -25,6 +25,7 @@ import {
   getKit,
   getKitSamples,
   updateSampleGain,
+  updateVoiceStereoMode,
   withDbTransaction,
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { sampleService } from "../../electron/main/services/sampleService.js";
@@ -228,5 +229,60 @@ describe("[UC-26] [Q-02] undo restores voices in one transaction (RE-86)", () =>
       false,
     );
     expect(rows()).toEqual(before);
+  });
+});
+
+describe("[UC-26] [UC-28] undo never puts samples on the right-hand voice of a linked pair (#888)", () => {
+  const stereoModes = () =>
+    (getKit(dbDir, "A0").data?.voices ?? [])
+      .map((v) => [v.voice_number, v.stereo_mode])
+      .sort();
+
+  function deleteThenLink() {
+    expect(
+      sampleService.addSampleToSlot(settings, "A0", 2, 0, wav("x.wav")).success,
+    ).toBe(true);
+    const voicesBefore = snapshotVoices(
+      getKitSamples(dbDir, "A0").data ?? [],
+      [2],
+    );
+    expect(
+      sampleService.deleteSampleFromSlot(settings, "A0", 2, 0).success,
+    ).toBe(true);
+    expect(updateVoiceStereoMode(dbDir, "A0", 1, true).success).toBe(true);
+    return voicesBefore;
+  }
+
+  it("refuses the restore with add's message and changes nothing", () => {
+    const voicesBefore = deleteThenLink();
+    const before = rows();
+    const modes = stereoModes();
+
+    const result = sampleService.restoreVoices(settings, "A0", voicesBefore);
+
+    expect(result).toEqual({
+      error:
+        "Voice 2 is linked to voice 1 for stereo. Unlink them to put samples on voice 2.",
+      success: false,
+    });
+    expect(rows()).toEqual(before);
+    expect(rows().filter((r) => r.voice_number === 2)).toEqual([]);
+    expect(stereoModes()).toEqual(modes);
+    expect(stereoModes()).toContainEqual([1, true]);
+  });
+
+  it("still restores an empty right-hand voice, and voices that aren't one", () => {
+    deleteThenLink();
+    expect(
+      sampleService.restoreVoices(settings, "A0", [{ samples: [], voice: 2 }])
+        .success,
+    ).toBe(true);
+    expect(
+      sampleService.addSampleToSlot(settings, "A0", 3, 0, wav("y.wav")).success,
+    ).toBe(true);
+    const voice3 = snapshotVoices(getKitSamples(dbDir, "A0").data ?? [], [3]);
+    expect(sampleService.restoreVoices(settings, "A0", voice3).success).toBe(
+      true,
+    );
   });
 });

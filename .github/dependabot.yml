@@ -35,6 +35,15 @@ updates:
       - dependency-name: "@types/node"
         update-types:
           - version-update:semver-major
+      # react-window 2 is a rewrite (new list components, no areEqual,
+      # built-in types) that breaks KitGrid. Remove both rules in the PR
+      # that ports the grid (#873).
+      - dependency-name: react-window
+        update-types:
+          - version-update:semver-major
+      - dependency-name: "@types/react-window"
+        update-types:
+          - version-update:semver-major
     groups:
       npm-minor-and-patch:
         update-types:

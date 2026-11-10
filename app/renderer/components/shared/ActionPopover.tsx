@@ -10,6 +10,13 @@ interface ActionPopoverProps {
   onClose: () => void;
 }
 
+// The popover renders in document.body, but React events still bubble to the
+// card that owns it: Enter and Space here must not open the kit (#889).
+// Other keys, Escape included, go on to their handlers.
+const stopOpeningKeys = (e: React.KeyboardEvent) => {
+  if (e.key === "Enter" || e.key === " ") e.stopPropagation();
+};
+
 const ActionPopover: React.FC<ActionPopoverProps> = ({
   anchorRef,
   children,
@@ -40,6 +47,8 @@ const ActionPopover: React.FC<ActionPopoverProps> = ({
     <div
       className="fixed z-50 w-[240px] bg-surface-2 border border-border-strong rounded-lg shadow-lg p-3"
       data-testid="action-popover"
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={stopOpeningKeys}
       ref={popoverRef}
       style={{ left: position.x, top: position.y }}
     >

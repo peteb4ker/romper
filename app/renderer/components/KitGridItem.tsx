@@ -129,8 +129,15 @@ const KitGridItem = React.memo(
           className={`card-grain relative flex flex-col p-2 rounded-md border text-sm h-full w-full ${getBorderStyle(isValid, kitData?.modified_since_sync)} cursor-pointer hover:bg-surface-2 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary ${animationClasses}`}
           data-kit={kit}
           data-testid={`kit-item-${kit}`}
-          onClick={onSelect}
+          onClick={(e) => {
+            // A click in a popover reaches the card through the React tree
+            // although the popover is outside it in the page (#889)
+            if (e.currentTarget.contains(e.target as Node)) onSelect();
+          }}
           onKeyDown={(e) => {
+            // Enter and Space in a button or field inside the card are
+            // theirs: they activate the button or type into the field (#889)
+            if (e.target !== e.currentTarget) return;
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
               // The grid's own Enter handler would open the kit again

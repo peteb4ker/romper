@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -1204,6 +1205,133 @@ describe("KitGridItem", () => {
       fireEvent.click(screen.getByTitle("Duplicate kit"));
       const input = screen.getByTestId("duplicate-dest-input");
       expect(input).toHaveValue("");
+    });
+  });
+
+  describe("[Q-06] keys and clicks inside the card (#889)", () => {
+    const keyProps = {
+      ...defaultProps,
+      kitData: { ...defaultProps.kitData, editable: true, locked: false },
+      onDeleteKit: vi
+        .fn<NonNullable<ItemProps["onDeleteKit"]>>()
+        .mockResolvedValue(undefined),
+      onDuplicateKit: vi
+        .fn<NonNullable<ItemProps["onDuplicateKit"]>>()
+        .mockResolvedValue({}),
+      onRequestDeleteSummary: vi
+        .fn<NonNullable<ItemProps["onRequestDeleteSummary"]>>()
+        .mockResolvedValue({ locked: false, sampleCount: 3 }),
+    };
+
+    it.each(["{Enter}", " "])(
+      "[UC-10] %j on the bookmark button bookmarks and does not open the kit",
+      async (key) => {
+        const onSelect = vi.fn();
+        const onToggleFavorite = vi.fn();
+        render(
+          <KitGridItem
+            {...keyProps}
+            onSelect={onSelect}
+            onToggleFavorite={onToggleFavorite}
+          />,
+        );
+        screen.getByTitle("Add to favorites").focus();
+        await userEvent.keyboard(key);
+
+        expect(onToggleFavorite).toHaveBeenCalledWith("A0");
+        expect(onSelect).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each(["{Enter}", " "])(
+      "[UC-15] %j on the duplicate button opens its popover and does not open the kit",
+      async (key) => {
+        const onSelect = vi.fn();
+        render(<KitGridItem {...keyProps} onSelect={onSelect} />);
+        screen.getByTitle("Duplicate kit").focus();
+        await userEvent.keyboard(key);
+
+        expect(screen.getByTestId("duplicate-dest-input")).toBeInTheDocument();
+        expect(onSelect).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each(["{Enter}", " "])(
+      "[UC-16] %j on the delete button opens its popover and does not open the kit",
+      async (key) => {
+        const onSelect = vi.fn();
+        render(<KitGridItem {...keyProps} onSelect={onSelect} />);
+        screen.getByTestId("delete-kit-button").focus();
+        await userEvent.keyboard(key);
+
+        expect(
+          await screen.findByTestId("confirm-delete-button"),
+        ).toBeInTheDocument();
+        expect(onSelect).not.toHaveBeenCalled();
+      },
+    );
+
+    it("[UC-15] Enter in the duplicate field duplicates and does not open the kit", async () => {
+      const onSelect = vi.fn();
+      render(<KitGridItem {...keyProps} onSelect={onSelect} />);
+      await userEvent.click(screen.getByTitle("Duplicate kit"));
+      await userEvent.keyboard("c2{Enter}");
+
+      expect(keyProps.onDuplicateKit).toHaveBeenCalledWith("A0", "C2");
+      expect(onSelect).not.toHaveBeenCalled();
+    });
+
+    it("[UC-15] typing a space in the duplicate field does not open the kit", async () => {
+      const onSelect = vi.fn();
+      render(<KitGridItem {...keyProps} onSelect={onSelect} />);
+      await userEvent.click(screen.getByTitle("Duplicate kit"));
+      await userEvent.keyboard("c 2");
+
+      expect(onSelect).not.toHaveBeenCalled();
+    });
+
+    it("[UC-15] Escape in the duplicate field closes the popover only", async () => {
+      const onSelect = vi.fn();
+      render(<KitGridItem {...keyProps} onSelect={onSelect} />);
+      await userEvent.click(screen.getByTitle("Duplicate kit"));
+      await userEvent.keyboard("{Escape}");
+
+      expect(
+        screen.queryByTestId("duplicate-dest-input"),
+      ).not.toBeInTheDocument();
+      expect(onSelect).not.toHaveBeenCalled();
+    });
+
+    it("[UC-15] a click on the popover's padding or label does not open the kit", async () => {
+      const onSelect = vi.fn();
+      render(<KitGridItem {...keyProps} onSelect={onSelect} />);
+      await userEvent.click(screen.getByTitle("Duplicate kit"));
+      await userEvent.click(screen.getByTestId("action-popover"));
+      await userEvent.click(screen.getByText("Duplicate A0 to:"));
+
+      expect(onSelect).not.toHaveBeenCalled();
+    });
+
+    it.each(["{Enter}", " "])(
+      "%j on the card itself still opens the kit",
+      async (key) => {
+        const onSelect = vi.fn();
+        render(<KitGridItem {...keyProps} isSelected onSelect={onSelect} />);
+        screen.getByTestId("kit-item-A0").focus();
+        await userEvent.keyboard(key);
+
+        expect(onSelect).toHaveBeenCalledTimes(1);
+      },
+    );
+
+    it("a click on the card or its kit name still opens the kit", async () => {
+      const onSelect = vi.fn();
+      render(<KitGridItem {...keyProps} onSelect={onSelect} />);
+      await userEvent.click(screen.getByTestId("kit-item-A0"));
+      onSelect.mockClear();
+      await userEvent.click(screen.getByText("A0"));
+
+      expect(onSelect).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -226,24 +226,11 @@ class SyncService {
       outcome: Omit<SyncOutcome, "cancelled" | "syncedFiles">,
     ) => writeOutcome(true, { ...outcome, syncedFiles: 0 });
     try {
-      const localStorePath =
-        ServicePathManager.getLocalStorePath(inMemorySettings);
-      if (!localStorePath) {
-        return { error: "No local store path configured", success: false };
-      }
-
-      // Refuse targets that are clearly not an SD card (system root, the home
-      // folder or above it, or anything overlapping a local store) before
-      // anything is read or written. The saved path is protected too when
-      // ROMPER_LOCAL_PATH overrides it.
-      const savedLocalStorePath = inMemorySettings.localStorePath;
-      const target = await validateSdCardTarget(options.sdCardPath, [
-        localStorePath,
-        typeof savedLocalStorePath === "string" ? savedLocalStorePath : "",
-      ]);
-      if (!target.ok) {
-        return { error: target.reason, success: false };
-      }
+      const targetRefusal = await this.refuseTarget(
+        inMemorySettings,
+        options.sdCardPath,
+      );
+      if (targetRefusal) return targetRefusal;
       if (syncProgressManager.isCancelled()) {
         return cancelledBeforeWriting({ skippedFiles: [], warnings: [] });
       }
@@ -599,6 +586,32 @@ class SyncService {
       },
       success: true,
     };
+  }
+
+  /**
+   * The write's refusal when it can't use this store and card, or null
+   * when it can.
+   * Refuses targets that are clearly not an SD card (system root, the home
+   * folder or above it, or anything overlapping a local store) before
+   * anything is read or written. The saved path is protected too when
+   * ROMPER_LOCAL_PATH overrides it.
+   */
+  private async refuseTarget(
+    inMemorySettings: Record<string, unknown>,
+    sdCardPath: string,
+  ): Promise<DbResult<never> | null> {
+    const localStorePath =
+      ServicePathManager.getLocalStorePath(inMemorySettings);
+    if (!localStorePath) {
+      return { error: "No local store path configured", success: false };
+    }
+
+    const savedLocalStorePath = inMemorySettings.localStorePath;
+    const target = await validateSdCardTarget(sdCardPath, [
+      localStorePath,
+      typeof savedLocalStorePath === "string" ? savedLocalStorePath : "",
+    ]);
+    return target.ok ? null : { error: target.reason, success: false };
   }
 
   /**

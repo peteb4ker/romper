@@ -115,6 +115,34 @@ describe("[Q-07] known noise", () => {
     }
   });
 
+  it("covers the compound backing and raster decoder lines that failed a Linux run (#917)", () => {
+    const backing =
+      "[10888:1110/053803.070463:ERROR:gpu/command_buffer/service/shared_image/shared_image_manager.cc:275] SharedImageManager::ProduceSkia: Trying to produce a Skia representation from an incompatible backing: CompoundImageBacking";
+    expect(matchKnownNoise(backing, "linux")?.source).toBe(
+      "Chromium shared image manager",
+    );
+    expect(matchKnownNoise(`${backing} and more`, "linux")).toBeUndefined();
+    expect(
+      matchKnownNoise(
+        backing.replace("CompoundImageBacking", "OtherBacking"),
+        "linux",
+      ),
+    ).toBeUndefined();
+
+    const decoder =
+      "[10888:1110/053803.071102:ERROR:gpu/command_buffer/service/raster_decoder.cc:1884] [.RendererRasterWorker-0xb3c00050c00]GL ERROR :GL_INVALID_VALUE : CopySharedImage: unknown mailbox";
+    expect(matchKnownNoise(decoder, "linux")?.source).toBe(
+      "Chromium GPU raster decoder",
+    );
+    expect(matchKnownNoise(decoder, "win32")).toBeUndefined();
+    expect(
+      matchKnownNoise(
+        decoder.replace("GL_INVALID_VALUE", "GL_INVALID_OPERATION"),
+        "linux",
+      ),
+    ).toBeUndefined();
+  });
+
   it("covers the rasterizer line that failed a Linux run, and nothing else from that file (#917)", () => {
     const line =
       "[13025:1110/053019.908508:ERROR:cc/raster/one_copy_raster_buffer_provider.cc:285] Creation of StagingBuffer's SharedImage failed.";

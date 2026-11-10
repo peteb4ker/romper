@@ -177,6 +177,17 @@ export function useKitStepSequencerLogic(
   const [currentSeqStep, setCurrentSeqStep] = React.useState<number>(0);
   const [cycleCount, setCycleCount] = React.useState<number>(0);
 
+  // Stopping rewinds at once rather than when the worker answers, so a quick
+  // Play starts at step 1 (#893)
+  const [wasPlaying, setWasPlaying] = React.useState(false);
+  if (wasPlaying !== isSeqPlaying) {
+    setWasPlaying(isSeqPlaying);
+    if (!isSeqPlaying) {
+      setCurrentSeqStep(0);
+      setCycleCount(0);
+    }
+  }
+
   // Focus management for keyboard navigation
   const [focusedStep, setFocusedStep] = React.useState<FocusedStep>({
     step: 0,
@@ -208,10 +219,17 @@ export function useKitStepSequencerLogic(
     };
   }, [workerBlob]);
 
+  // Sample triggering on step advance
+  const lastStepRef = React.useRef<null | number>(null);
+  const roundRobinIndexRef = React.useRef<Record<number, number>>({});
+
   // Worker playback control
   React.useEffect(() => {
     const worker = workerRef.current;
     if (!worker) return;
+
+    // The next Play sounds step 1 even if the last one played was step 1 (#893)
+    lastStepRef.current = null;
 
     if (isSeqPlaying) {
       // The first step plays straight away; later steps come from the worker
@@ -224,10 +242,6 @@ export function useKitStepSequencerLogic(
       worker.postMessage({ type: "STOP" });
     }
   }, [isSeqPlaying, stepDuration]);
-
-  // Sample triggering on step advance
-  const lastStepRef = React.useRef<null | number>(null);
-  const roundRobinIndexRef = React.useRef<Record<number, number>>({});
 
   // The editor isn't remounted when you step to another kit, so the next kit
   // starts stopped, from its first layer (#565)

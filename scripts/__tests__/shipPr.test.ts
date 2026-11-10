@@ -38,6 +38,7 @@ import {
   settleResult,
   type Snapshot,
   splitFailures,
+  stopsBeforePushing,
   timeLeft,
   touchesBacklogHistory,
   unlinkNodeModules,
@@ -81,6 +82,22 @@ const openPr = {
 };
 
 describe("[Q-07] ship-pr, the shepherd's merge script", () => {
+  describe("SonarCloud before the push (#878)", () => {
+    it("stops on issues in the head's own analysis", () => {
+      expect(stopsBeforePushing({ code: 1, head: true })).toBe(true);
+    });
+
+    it("goes on when only an older commit's analysis has issues, since the head may fix them", () => {
+      expect(stopsBeforePushing({ code: 1, head: false })).toBe(false);
+    });
+
+    it("goes on with no issues, or no analysis yet", () => {
+      expect(stopsBeforePushing({ code: 0, head: true })).toBe(false);
+      expect(stopsBeforePushing({ code: 0, head: false })).toBe(false);
+      expect(stopsBeforePushing({ code: 2, head: false })).toBe(false);
+    });
+  });
+
   describe("parseArgs", () => {
     it("reads the PR number and defaults", () => {
       expect(parseArgs(["796"])).toEqual({

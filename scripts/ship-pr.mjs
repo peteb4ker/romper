@@ -13,8 +13,9 @@
  *      from a fork, or is labelled hold / do-not-merge.
  *   2. Refuse a diff that touches frozen paths: aidlc-docs/, or the
  *      "Fixed before the issue tracker" list in BACKLOG.md.
- *   3. Refuse new SonarCloud issues (sonar:pr) on the PR's latest analysis
- *      (an early exit: that analysis may be of the pre-rebase head).
+ *   3. Refuse new SonarCloud issues (sonar:pr) in the head's own analysis
+ *      (an early exit). Issues only in an older commit's analysis don't
+ *      stop it: the head may fix them, and step 5 waits for its analysis.
  *   4. Rebase onto origin/main (any conflict: abort, stop), run
  *      `npm run typecheck` on the rebased tree (a clean rebase can still
  *      break the build), and push with --force-with-lease pinned to the
@@ -398,6 +399,17 @@ export function analysisJobDone(checks) {
  */
 export function noAnalysisExpected({ checks, dependabot, sonar }) {
   return dependabot && !sonar.head && analysisJobDone(checks);
+}
+
+/**
+ * Whether SonarCloud's answer stops the script before it rebases and
+ * pushes: only issues in the head's own analysis do. An older commit's
+ * issues may be fixed by the head, whose analysis the poll waits for
+ * before arming (#878).
+ * @param {Pick<Snapshot["sonar"], "code" | "head">} sonar
+ */
+export function stopsBeforePushing(sonar) {
+  return sonar.head && sonar.code === 1;
 }
 
 /**
@@ -982,15 +994,16 @@ async function ship(options) {
 
   checkFrozen(repo, head);
   let sonar = await readSonar(pr, head);
-  if (sonar.code === 1) {
+  if (stopsBeforePushing(sonar)) {
     for (const line of sonar.lines) console.error(line);
     throw new Stop("sonar", "SonarCloud reports new issues (npm run sonar:pr)");
   }
-  log(
-    sonar.code === 0
-      ? "SonarCloud: 0 new issues"
-      : "SonarCloud hasn't analyzed the PR yet",
-  );
+  if (sonar.code === 0) log("SonarCloud: 0 new issues");
+  else if (sonar.code === 1)
+    log(
+      "SonarCloud: an older commit has new issues; waiting for the head's analysis",
+    );
+  else log("SonarCloud hasn't analyzed the PR yet");
 
   if (options.dryRun) {
     const merge = run(

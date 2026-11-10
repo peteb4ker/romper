@@ -53,7 +53,7 @@ For each PR, **in the order given, one at a time**:
 | `usage` | 2 | Bad arguments |
 | `conflict` | 10 | Rebase onto origin/main conflicts (aborted, nothing pushed) |
 | `typecheck` | 11 | Rebased cleanly, but `npm run typecheck` fails |
-| `sonar` | 12 | SonarCloud reports new issues (on the latest analysis, or the pushed head's). Also: a Dependabot head the script pushed (a rebase, or the re-created head below) got no analysis although CI's `analysis` job finished. Push the branch yourself so CI runs with secrets, then run the script again |
+| `sonar` | 12 | SonarCloud reports new issues on the head (before the push, or on the pushed head). Also: a Dependabot head the script pushed (a rebase, or the re-created head below) got no analysis although CI's `analysis` job finished. Push the branch yourself so CI runs with secrets, then run the script again |
 | `frozen` | 13 | Diff touches `aidlc-docs/` or BACKLOG.md's "Fixed before the issue tracker" list |
 | `check-failed` | 14 | A CI check failed (lost runners are rerun once first) |
 | `not-open` | 15 | Closed, draft, not based on main, or from a fork |
@@ -93,8 +93,9 @@ conflict), runs `npm run typecheck` on the rebased tree (a clean rebase can
 still break the build; the tree borrows this checkout's `node_modules` by a
 link it re-makes safely on every rebase, and a checkout without one stops
 with `result=env`), and pushes with `--force-with-lease` pinned to the
-head it started from. The first SonarCloud check reads whatever analysis
-exists, often of the pre-rebase head, so it's only an early exit: auto-merge
+head it started from. The first SonarCloud check stops early only on
+issues in the head's own analysis; issues in an older commit's analysis
+don't stop it, since the head may fix them (#878). Auto-merge
 (rebase) is armed once SonarCloud has analyzed the pushed head and reports 0
 new issues, so issues a rebase brings in can't merge unseen. Auto-merge an
 author armed earlier is turned off until then. It polls once a minute: a

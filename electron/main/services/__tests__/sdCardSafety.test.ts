@@ -232,6 +232,87 @@ describe("[UC-34] sdCardSafety", () => {
       ).toEqual([]);
     });
 
+    // macOS lists the names on a FAT32 or exFAT card decomposed (e + a
+    // combining accent), whatever form they were written in. Compared as
+    // they came, the sample a write had just put there was "stale" and the
+    // same write removed it (#881).
+    describe("[Q-04] names with accents (#881)", () => {
+      const composed = "Café"; // as the database usually holds it
+      const decomposed = "Café"; // as macOS lists it on a card
+
+      it("keeps a sample the card lists in decomposed form", async () => {
+        write(`A0/1-01 ${decomposed}.wav`);
+        write("A0/1-02 kick.wav");
+
+        expect(
+          await findStaleCardEntries(
+            card,
+            contents({ A0: [`1-01 ${composed}.wav`, "1-02 kick.wav"] }),
+          ),
+        ).toEqual([]);
+      });
+
+      it("keeps a sample the store holds in decomposed form", async () => {
+        write(`A0/1-01 ${composed}.wav`);
+
+        expect(
+          await findStaleCardEntries(
+            card,
+            contents({ A0: [`1-01 ${decomposed}.wav`] }),
+          ),
+        ).toEqual([]);
+      });
+
+      it("keeps a bank name file the card lists in decomposed form", async () => {
+        write(`A - ${decomposed}.rtf`);
+
+        expect(
+          await findStaleCardEntries(
+            card,
+            contents({}, [`A - ${composed}.rtf`]),
+          ),
+        ).toEqual([]);
+      });
+
+      it("still lists a file whose name only looks alike", async () => {
+        write("A0/1-01 Cafe.wav");
+
+        expect(
+          await findStaleCardEntries(
+            card,
+            contents({ A0: [`1-01 ${composed}.wav`] }),
+          ),
+        ).toEqual([path.join("A0", "1-01 Cafe.wav")]);
+      });
+
+      // A card that keeps both spellings as two files (FAT32 on Linux)
+      // holds the file the write wrote and an older copy: one layer, not two
+      it("lists the other spelling when the card holds both", async () => {
+        const wanted = `1-01 ${composed}.wav`;
+        const other = `1-01 ${decomposed}.wav`;
+        const bank = `A - ${composed}.rtf`;
+        const otherBank = `A - ${decomposed}.rtf`;
+        const dirent = (name: string, isFile: boolean) =>
+          ({ isDirectory: () => !isFile, isFile: () => isFile, name }) as never;
+        const readdir = vi.spyOn(fs.promises, "readdir");
+        readdir.mockImplementation((async (dir: string) =>
+          dir === card
+            ? [dirent("A0", false), dirent(bank, true), dirent(otherBank, true)]
+            : [other, wanted.toUpperCase()]) as never);
+
+        try {
+          expect(
+            await findStaleCardEntries(
+              card,
+              contents({ A0: [wanted] }, [bank]),
+            ),
+          ).toEqual([otherBank, path.join("A0", other)]);
+        } finally {
+          readdir.mockRestore();
+        }
+      });
+    });
+
     it("leaves everything that isn't Rample content", async () => {
       write("_save/A0.rpl");
       write("Documents/1kick.wav");

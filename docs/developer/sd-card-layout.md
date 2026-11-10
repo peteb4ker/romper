@@ -142,8 +142,11 @@ than a broken feature. Either way, the fix is the same.
   - characters FAT32 forbids (`\ / : * ? " < > |` and control
     characters) replaced with `_`;
   - leading and trailing spaces and dots trimmed;
-  - truncated so the whole name is at most 64 characters (a safe limit
-    until the hardware says otherwise).
+  - half a character (a UTF-16 surrogate without its pair) replaced with
+    `_`: a file system stores it as some other character;
+  - truncated so the whole name is at most 64 UTF-16 units (a safe limit
+    until the hardware says otherwise), never in the middle of a
+    character.
   - If nothing is left, the name is just `<voice>-<slot>.wav`.
 - The `<voice>-<slot>` prefix is unique within a kit, so two samples with
   the same name can no longer overwrite each other (part of RE-05).
@@ -216,7 +219,13 @@ reading the files, are staged in
 
    A sample that can't be written (RE-09) keeps its file, so skipping it
    leaves the card's last copy. Names are compared ignoring case, as
-   FAT32 does. The write summary lists the same entries before the user
+   FAT32 does, and ignoring whether an accented letter is composed or
+   decomposed (`cardNameKey` in `shared/rampleCardLayout.ts`, #881):
+   macOS lists the names on a FAT32 or exFAT card decomposed whatever
+   form they were written in, so a name read back isn't the string that
+   was written. Where a card lists both spellings as two files, the one
+   the write wrote is kept and the other is removed. The write summary
+   lists the same entries before the user
    confirms, which replaces the "clear card first" option.
    `_save/` and anything else on the card is never touched. This is safe
    under the "only through Romper" assumption.

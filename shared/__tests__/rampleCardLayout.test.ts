@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   cardKitFolders,
+  cardNameKey,
   cardSampleFileName,
   DEVICE_SAVE_FOLDER,
   isBankLetter,
@@ -14,7 +15,41 @@ import {
   voiceOfCardFile,
 } from "../rampleCardLayout";
 
+// Half of a two-unit character (a surrogate without its pair)
+const LONE_SURROGATE =
+  /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+
 describe("[UC-34] rampleCardLayout", () => {
+  describe("[Q-04] cardNameKey (#881)", () => {
+    it("is the same for a name composed and decomposed", () => {
+      const composed = "1-01 Café.wav";
+      const decomposed = "1-01 Café.wav";
+      expect(composed).not.toBe(decomposed);
+      expect(cardNameKey(decomposed)).toBe(cardNameKey(composed));
+    });
+
+    it("ignores case, as FAT32 does", () => {
+      expect(cardNameKey("1-01 KICK.WAV")).toBe(cardNameKey("1-01 kick.wav"));
+      expect(cardNameKey("A - ÉCOLE.rtf")).toBe(cardNameKey("a - école.RTF"));
+    });
+
+    it("tells different names apart", () => {
+      expect(cardNameKey("1-01 Cafe.wav")).not.toBe(
+        cardNameKey("1-01 Café.wav"),
+      );
+    });
+
+    it("is the same for any name in either form", () => {
+      fc.assert(
+        fc.property(fc.string({ unit: "grapheme" }), (name) => {
+          expect(cardNameKey(name.normalize("NFD"))).toBe(
+            cardNameKey(name.normalize("NFC")),
+          );
+        }),
+      );
+    });
+  });
+
   describe("cardSampleFileName", () => {
     it("puts the voice first and a 1-based, zero-padded slot after it", () => {
       expect(cardSampleFileName(1, 0, "kick.wav")).toBe("1-01 kick.wav");
@@ -80,6 +115,26 @@ describe("[UC-34] rampleCardLayout", () => {
       expect(name).toMatch(/^1-01 x+\.wav$/);
     });
 
+    // A name ending in half a character is stored on the card as a different
+    // name, which the write then removed as a leftover (#881)
+    it("[Q-04] never cuts a long name in the middle of a character (#881)", () => {
+      const drum = "\u{1F941}"; // two UTF-16 units
+      for (const lead of ["", "x", "xx"]) {
+        const name = cardSampleFileName(1, 0, `${lead}${drum.repeat(60)}.wav`);
+        expect(name.length).toBeLessThanOrEqual(MAX_CARD_FILE_NAME_LENGTH);
+        expect(name).not.toMatch(LONE_SURROGATE);
+        expect(name.startsWith(`1-01 ${lead}${drum}`)).toBe(true);
+      }
+    });
+
+    it("[Q-04] replaces half a character in the source name (#881)", () => {
+      expect(cardSampleFileName(1, 0, "a\uD83Eb.wav")).toBe("1-01 a_b.wav");
+      expect(cardSampleFileName(1, 0, "a\uDD41b.wav")).toBe("1-01 a_b.wav");
+      expect(cardSampleFileName(1, 0, "a\u{1F941}b.wav")).toBe(
+        "1-01 a\u{1F941}b.wav",
+      );
+    });
+
     it("rejects voices and slots outside the card's range", () => {
       expect(() => cardSampleFileName(0, 0, "a.wav")).toThrow(/Voice/);
       expect(() => cardSampleFileName(5, 0, "a.wav")).toThrow(/Voice/);
@@ -102,6 +157,38 @@ describe("[UC-34] rampleCardLayout", () => {
             );
             expect(fileName).not.toMatch(/[\u0000-\u001f"*/:<>?\\|]/);
           }),
+        );
+      });
+
+      it("[Q-04] is whole characters only, whatever the name (#881)", () => {
+        fc.assert(
+          fc.property(
+            voiceArb,
+            slotArb,
+            // One- and two-unit characters, an accent in both forms, and
+            // the two halves of a character on their own; long enough to
+            // be cut most of the time
+            fc.string({
+              maxLength: 120,
+              minLength: 40,
+              unit: fc.constantFrom(
+                "x",
+                " ",
+                "é",
+                "é",
+                "\u{1F941}",
+                "\uD83E",
+                "\uDD41",
+              ),
+            }),
+            (voice, slot, name) => {
+              const fileName = cardSampleFileName(voice, slot, name);
+              expect(fileName).not.toMatch(LONE_SURROGATE);
+              expect(fileName.length).toBeLessThanOrEqual(
+                MAX_CARD_FILE_NAME_LENGTH,
+              );
+            },
+          ),
         );
       });
 

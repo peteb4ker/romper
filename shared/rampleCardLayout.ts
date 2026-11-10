@@ -204,7 +204,8 @@ export function voiceOfCardFile(fileName: string): null | number {
  */
 function sliceWholeCharacters(text: string, length: number): string {
   const cut = text.slice(0, length);
-  const last = cut.charCodeAt(cut.length - 1);
+  // A first half with nothing after it reads as itself
+  const last = cut.codePointAt(cut.length - 1) ?? 0;
   const endsOnFirstHalf =
     cut.length < text.length && last >= 0xd800 && last <= 0xdbff;
   return endsOnFirstHalf ? cut.slice(0, -1) : cut;

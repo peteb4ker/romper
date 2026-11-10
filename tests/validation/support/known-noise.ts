@@ -75,6 +75,19 @@ export const KNOWN_NOISE: KnownNoise[] = [
   },
   {
     examples: [
+      // Linux, Electron 45.2: https://github.com/peteb4ker/romper/actions/runs/42561141026
+      "[3599:1109/041954.907329:ERROR:components/viz/service/main/viz_main_impl.cc:192] Exiting GPU process due to errors during initialization",
+    ],
+    link: `${CHROMIUM_SOURCE}components/viz/service/main/viz_main_impl.cc`,
+    pattern:
+      /:ERROR:components\/viz\/service\/main\/viz_main_impl\.cc:\d+\] Exiting GPU process due to errors during initialization$/,
+    platforms: ["linux"],
+    reason:
+      "Chromium's GPU process can't initialize on the GPU-less Linux CI runners and exits, and Chromium falls back to software rendering; Electron 45.2 started logging it",
+    source: "Chromium GPU process",
+  },
+  {
+    examples: [
       // Linux: https://github.com/peteb4ker/romper/actions/runs/37831977776
       "[4899:1008/192821.847299:ERROR:gpu/command_buffer/service/shared_image/shared_image_manager.cc:395] SharedImageManager::ProduceMemory: Trying to Produce a Memory representation from a non-existent mailbox.",
       // macOS: https://github.com/peteb4ker/romper/actions/runs/37641515841

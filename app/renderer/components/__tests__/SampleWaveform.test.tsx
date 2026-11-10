@@ -1,5 +1,5 @@
 // Test suite for SampleWaveform component
-import { act, render, waitFor } from "@testing-library/react";
+import { act, cleanup, render, waitFor } from "@testing-library/react";
 import React from "react";
 import {
   afterEach,
@@ -882,6 +882,87 @@ describe("SampleWaveform", () => {
       // The retriggered slice is scheduled, and the first stops right then
       expect(sources[1].start.mock.calls[0][0]).toBeCloseTo(5.205, 5);
       expect(sources[0].stop.mock.calls[0][0]).toBeCloseTo(5.205, 5);
+    });
+
+    describe("[UC-30] [UC-29] a whole sample stopped at a scheduled time (#891)", () => {
+      async function playThenChokeAt(
+        stopAt: number | undefined,
+        beforeChoke?: () => void,
+      ) {
+        const mocks = setupRegionMocks();
+        const rerender = await renderAndPlay(undefined);
+        beforeChoke?.();
+        vi.spyOn(performance, "now").mockReturnValue(1000);
+        await act(async () => {
+          rerender(
+            <SampleWaveform
+              kitName="A1"
+              playOptions={{
+                region: { length: 0.125, start: 0 },
+                startAt: stopAt,
+              }}
+              playsStereo={false}
+              playTrigger={2}
+              slotNumber={1}
+              voiceNumber={1}
+            />,
+          );
+        });
+        vi.mocked(performance.now).mockRestore();
+        return mocks;
+      }
+
+      it("keeps sounding until the stop time, then disconnects on ended", async () => {
+        const { sources } = await playThenChokeAt(1080);
+        expect(sources[0].stop.mock.calls[0][0]).toBeGreaterThan(5);
+        expect(sources[0].disconnect).not.toHaveBeenCalled();
+        act(() => sources[0].onended?.());
+        expect(sources[0].disconnect).toHaveBeenCalled();
+      });
+
+      it("stops and disconnects at once when no time is given", async () => {
+        const { sources } = await playThenChokeAt(undefined);
+        expect(sources[0].stop).toHaveBeenCalled();
+        expect(sources[0].disconnect).toHaveBeenCalled();
+      });
+
+      it("stops and disconnects at once when the time is in the past", async () => {
+        const { sources } = await playThenChokeAt(500);
+        expect(sources[0].disconnect).toHaveBeenCalled();
+      });
+
+      it("disconnects by timer if onended never fires (stopped before its start)", async () => {
+        try {
+          const { sources } = await playThenChokeAt(1080, () =>
+            vi.useFakeTimers({ toFake: ["setTimeout"] }),
+          );
+          expect(sources[0].disconnect).not.toHaveBeenCalled();
+          vi.advanceTimersByTime(1000);
+          expect(sources[0].disconnect).toHaveBeenCalled();
+        } finally {
+          vi.useRealTimers();
+        }
+      });
+
+      it("survives disconnect throwing on a second release", async () => {
+        const { sources } = await playThenChokeAt(1080);
+        sources[0].disconnect.mockImplementation(() => {
+          throw new Error("already disconnected");
+        });
+        expect(() => act(() => sources[0].onended?.())).not.toThrow();
+      });
+
+      it("disconnects a pending stop after unmount without a state update", async () => {
+        const errorSpy = vi
+          .spyOn(console, "error")
+          .mockImplementation(() => {});
+        const { sources } = await playThenChokeAt(1080);
+        cleanup();
+        act(() => sources[0].onended?.());
+        expect(sources[0].disconnect).toHaveBeenCalled();
+        expect(errorSpy).not.toHaveBeenCalled();
+        errorSpy.mockRestore();
+      });
     });
 
     it("fades out instead of cutting when a slice is retriggered", async () => {

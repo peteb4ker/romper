@@ -9,6 +9,8 @@ import { createSequenceEditAction } from "../sequenceUndo";
 import { useUndoRedoState } from "../useUndoRedoState";
 
 const mockAction = addSampleAction();
+// The history the actions above belong to
+const owner = { kitName: "A0" };
 
 describe("[UC-26] useUndoRedoState", () => {
   beforeEach(() => {
@@ -17,9 +19,7 @@ describe("[UC-26] useUndoRedoState", () => {
 
   describe("initial state", () => {
     it("should initialize with empty stacks and no errors", () => {
-      const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
-      );
+      const { result } = renderHook(() => useUndoRedoState({ kitName: "A0" }));
 
       expect(result.current.undoStack).toEqual([]);
       expect(result.current.redoStack).toEqual([]);
@@ -35,19 +35,17 @@ describe("[UC-26] useUndoRedoState", () => {
 
   describe("addAction", () => {
     it("merges a sequencer edit that continues the previous one", () => {
-      const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
-      );
+      const { result } = renderHook(() => useUndoRedoState({ kitName: "A0" }));
       const empty = { sliceSteps: [], stepPattern: [], triggerConditions: [] };
       const mid = { ...empty, stepPattern: [[1]] };
       const end = { ...empty, stepPattern: [[2]] };
 
       act(() => {
         result.current.addAction(
-          createSequenceEditAction("Nudge", empty, mid, "slice:0:0"),
+          createSequenceEditAction("A0", "Nudge", empty, mid, "slice:0:0"),
         );
         result.current.addAction(
-          createSequenceEditAction("Nudge", mid, end, "slice:0:0"),
+          createSequenceEditAction("A0", "Nudge", mid, end, "slice:0:0"),
         );
       });
 
@@ -58,9 +56,7 @@ describe("[UC-26] useUndoRedoState", () => {
     });
 
     it("should add action to undo stack", () => {
-      const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
-      );
+      const { result } = renderHook(() => useUndoRedoState({ kitName: "A0" }));
 
       act(() => {
         result.current.addAction(mockAction);
@@ -73,9 +69,7 @@ describe("[UC-26] useUndoRedoState", () => {
     });
 
     it("should clear redo stack when adding new action", () => {
-      const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
-      );
+      const { result } = renderHook(() => useUndoRedoState({ kitName: "A0" }));
 
       // Add action, undo it, then add a new action
       act(() => {
@@ -83,7 +77,7 @@ describe("[UC-26] useUndoRedoState", () => {
       });
 
       act(() => {
-        result.current.handleUndoSuccess(mockAction);
+        result.current.handleUndoSuccess(mockAction, owner);
       });
 
       expect(result.current.redoStack).toHaveLength(1);
@@ -97,9 +91,7 @@ describe("[UC-26] useUndoRedoState", () => {
     });
 
     it("should clear error when adding action", () => {
-      const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
-      );
+      const { result } = renderHook(() => useUndoRedoState({ kitName: "A0" }));
 
       // Set error first
       act(() => {
@@ -130,7 +122,10 @@ describe("[UC-26] useUndoRedoState", () => {
       act(() => {
         result.current.addAction(mockAction);
         result.current.addAction(mockAction);
-        result.current.handleUndoSuccess(mockAction);
+        result.current.handleUndoSuccess(mockAction, {
+          kitName: "A0",
+          storePath: "/stores/one",
+        });
       });
       expect(result.current.undoCount).toBe(1);
       expect(result.current.redoCount).toBe(1);
@@ -157,9 +152,7 @@ describe("[UC-26] useUndoRedoState", () => {
 
   describe("error handling", () => {
     it("should set and clear errors", () => {
-      const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
-      );
+      const { result } = renderHook(() => useUndoRedoState({ kitName: "A0" }));
 
       act(() => {
         result.current.setError("Test error");
@@ -177,9 +170,7 @@ describe("[UC-26] useUndoRedoState", () => {
 
   describe("loading states", () => {
     it("should manage undoing state", () => {
-      const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
-      );
+      const { result } = renderHook(() => useUndoRedoState({ kitName: "A0" }));
 
       act(() => {
         result.current.setUndoing(true);
@@ -195,9 +186,7 @@ describe("[UC-26] useUndoRedoState", () => {
     });
 
     it("should manage redoing state", () => {
-      const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
-      );
+      const { result } = renderHook(() => useUndoRedoState({ kitName: "A0" }));
 
       act(() => {
         result.current.setRedoing(true);
@@ -213,9 +202,7 @@ describe("[UC-26] useUndoRedoState", () => {
     });
 
     it("should disable canUndo when undoing", () => {
-      const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
-      );
+      const { result } = renderHook(() => useUndoRedoState({ kitName: "A0" }));
 
       // Add action to make canUndo true
       act(() => {
@@ -233,9 +220,7 @@ describe("[UC-26] useUndoRedoState", () => {
     });
 
     it("should disable canRedo when redoing", () => {
-      const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
-      );
+      const { result } = renderHook(() => useUndoRedoState({ kitName: "A0" }));
 
       // Add action and undo it to populate redo stack
       act(() => {
@@ -243,7 +228,7 @@ describe("[UC-26] useUndoRedoState", () => {
       });
 
       act(() => {
-        result.current.handleUndoSuccess(mockAction);
+        result.current.handleUndoSuccess(mockAction, owner);
       });
 
       expect(result.current.canRedo).toBe(true);
@@ -259,9 +244,7 @@ describe("[UC-26] useUndoRedoState", () => {
 
   describe("handleUndoSuccess", () => {
     it("should move action from undo to redo stack", () => {
-      const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
-      );
+      const { result } = renderHook(() => useUndoRedoState({ kitName: "A0" }));
 
       // Add action first
       act(() => {
@@ -273,7 +256,7 @@ describe("[UC-26] useUndoRedoState", () => {
 
       // Handle undo success
       act(() => {
-        result.current.handleUndoSuccess(mockAction);
+        result.current.handleUndoSuccess(mockAction, owner);
       });
 
       expect(result.current.undoStack).toHaveLength(0);
@@ -284,9 +267,7 @@ describe("[UC-26] useUndoRedoState", () => {
     });
 
     it("should clear error on successful undo", () => {
-      const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
-      );
+      const { result } = renderHook(() => useUndoRedoState({ kitName: "A0" }));
 
       // Add action first
       act(() => {
@@ -302,7 +283,7 @@ describe("[UC-26] useUndoRedoState", () => {
 
       // Handle undo success should clear error
       act(() => {
-        result.current.handleUndoSuccess(mockAction);
+        result.current.handleUndoSuccess(mockAction, owner);
       });
 
       expect(result.current.error).toBeNull();
@@ -311,14 +292,12 @@ describe("[UC-26] useUndoRedoState", () => {
 
   describe("handleRedoSuccess", () => {
     it("should move action from redo to undo stack", () => {
-      const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
-      );
+      const { result } = renderHook(() => useUndoRedoState({ kitName: "A0" }));
 
       // Set up redo stack
       act(() => {
         result.current.addAction(mockAction);
-        result.current.handleUndoSuccess(mockAction);
+        result.current.handleUndoSuccess(mockAction, owner);
       });
 
       expect(result.current.undoStack).toHaveLength(0);
@@ -326,7 +305,7 @@ describe("[UC-26] useUndoRedoState", () => {
 
       // Handle redo success
       act(() => {
-        result.current.handleRedoSuccess(mockAction);
+        result.current.handleRedoSuccess(mockAction, owner);
       });
 
       expect(result.current.undoStack).toHaveLength(1);
@@ -337,14 +316,12 @@ describe("[UC-26] useUndoRedoState", () => {
     });
 
     it("should clear error on successful redo", () => {
-      const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
-      );
+      const { result } = renderHook(() => useUndoRedoState({ kitName: "A0" }));
 
       // Set up redo stack and error
       act(() => {
         result.current.addAction(mockAction);
-        result.current.handleUndoSuccess(mockAction);
+        result.current.handleUndoSuccess(mockAction, owner);
         result.current.setError("Test error");
       });
 
@@ -352,7 +329,7 @@ describe("[UC-26] useUndoRedoState", () => {
 
       // Handle redo success should clear error
       act(() => {
-        result.current.handleRedoSuccess(mockAction);
+        result.current.handleRedoSuccess(mockAction, owner);
       });
 
       expect(result.current.error).toBeNull();
@@ -362,17 +339,15 @@ describe("[UC-26] useUndoRedoState", () => {
   describe("emitRefreshEvent", () => {
     it("should dispatch custom event with kit name", () => {
       const dispatchEventSpy = vi.spyOn(document, "dispatchEvent");
-      const { result } = renderHook(() =>
-        useUndoRedoState({ kitName: "Test Kit" }),
-      );
+      const { result } = renderHook(() => useUndoRedoState({ kitName: "A0" }));
 
       act(() => {
-        result.current.emitRefreshEvent();
+        result.current.emitRefreshEvent("A0");
       });
 
       expect(dispatchEventSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          detail: { kitName: "Test Kit" },
+          detail: { kitName: "A0", refreshAll: true },
           type: "romper:refresh-samples",
         }),
       );
@@ -385,13 +360,13 @@ describe("[UC-26] useUndoRedoState", () => {
     it("should clear stacks when kit name changes", () => {
       const { rerender, result } = renderHook(
         ({ kitName }) => useUndoRedoState({ kitName }),
-        { initialProps: { kitName: "Original Kit" } },
+        { initialProps: { kitName: "A0" } },
       );
 
       // Add some state
       act(() => {
         result.current.addAction(mockAction);
-        result.current.handleUndoSuccess(mockAction);
+        result.current.handleUndoSuccess(mockAction, owner);
         result.current.setError("Test error");
       });
 
@@ -400,7 +375,7 @@ describe("[UC-26] useUndoRedoState", () => {
       expect(result.current.error).toBe("Test error");
 
       // Change kit name
-      rerender({ kitName: "New Kit" });
+      rerender({ kitName: "B0" });
 
       expect(result.current.undoStack).toHaveLength(0);
       expect(result.current.redoStack).toHaveLength(0);

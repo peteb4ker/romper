@@ -47,6 +47,7 @@ export function useSampleManagementUndoActions({
           filename: filePath.split("/").pop() || "",
           source_path: filePath,
         },
+        kitName,
         slot: slotNumber,
         voice,
       },
@@ -55,7 +56,7 @@ export function useSampleManagementUndoActions({
       timestamp: new Date(),
       type: "ADD_SAMPLE",
     }),
-    [],
+    [kitName],
   );
 
   // Helper function to create reindex samples undo action
@@ -83,6 +84,7 @@ export function useSampleManagementUndoActions({
           source_path: sampleToDelete.source_path,
         },
         deletedSlot: slotNumber,
+        kitName,
         voice,
         voicesBefore,
       },
@@ -91,7 +93,7 @@ export function useSampleManagementUndoActions({
       timestamp: new Date(),
       type: "REINDEX_SAMPLES",
     }),
-    [],
+    [kitName],
   );
 
   const createSameKitMoveAction = useCallback(
@@ -116,6 +118,7 @@ export function useSampleManagementUndoActions({
           })) || [],
         fromSlot: params.fromSlot,
         fromVoice: params.fromVoice,
+        kitName,
         movedSample: {
           filename: params.result.data?.movedSample?.filename || "",
           source_path: params.result.data?.movedSample?.source_path || "",
@@ -129,7 +132,7 @@ export function useSampleManagementUndoActions({
       timestamp: new Date(),
       type: "MOVE_SAMPLE",
     }),
-    [],
+    [kitName],
   );
 
   const createCrossKitMoveAction = useCallback(

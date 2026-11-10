@@ -81,6 +81,7 @@ describe("undoTypes", () => {
         const action: AddSampleAction = {
           data: {
             addedSample: mockSample,
+            kitName: "A0",
             slot: 0,
             voice: 1,
           },
@@ -99,6 +100,7 @@ describe("undoTypes", () => {
         const action: AddSampleAction = {
           data: {
             addedSample: mockSample,
+            kitName: "A0",
             slot: 7,
             voice: 3,
           },
@@ -119,6 +121,7 @@ describe("undoTypes", () => {
         const action: DeleteSampleAction = {
           data: {
             deletedSample: mockSample,
+            kitName: "A0",
             slot: 1,
             voice: 4,
           },
@@ -141,6 +144,7 @@ describe("undoTypes", () => {
             affectedSamples: [],
             fromSlot: 0,
             fromVoice: 1,
+            kitName: "A0",
             mode: "insert",
             movedSample: mockSample,
             toSlot: 3,
@@ -166,6 +170,7 @@ describe("undoTypes", () => {
             affectedSamples: [],
             fromSlot: 7,
             fromVoice: 3,
+            kitName: "A0",
             mode: "insert",
             movedSample: mockSample,
             toSlot: 2,
@@ -247,6 +252,7 @@ describe("undoTypes", () => {
             affectedSamples: [],
             deletedSample: mockSample,
             deletedSlot: 1,
+            kitName: "A0",
             voice: 2,
             voicesBefore: [],
           },
@@ -269,6 +275,7 @@ describe("undoTypes", () => {
             affectedSamples: [],
             deletedSample: mockSample,
             deletedSlot: 9,
+            kitName: "A0",
             voice: 4,
             voicesBefore: [],
           },
@@ -311,6 +318,7 @@ describe("undoTypes", () => {
             filename: "kick.wav",
             source_path: "/path/to/kick.wav",
           },
+          kitName: "A0",
           slot: 0,
           voice: 1,
         },
@@ -338,6 +346,7 @@ describe("undoTypes", () => {
           ],
           fromSlot: 0,
           fromVoice: 1,
+          kitName: "A0",
           mode: "insert",
           movedSample: mockSample,
           toSlot: 1,
@@ -375,6 +384,7 @@ describe("undoTypes", () => {
             affectedSamples: [],
             deletedSample: mockSample,
             deletedSlot: 0,
+            kitName: "A0",
             voice: 1,
             voicesBefore: [],
           },
@@ -397,6 +407,7 @@ describe("undoTypes", () => {
       const action: AddSampleAction = {
         data: {
           addedSample: mockSample,
+          kitName: "A0",
           slot: 0, // 0-based
           voice: 1,
         },
@@ -418,6 +429,7 @@ describe("undoTypes", () => {
           affectedSamples: [],
           fromSlot: 15, // 0-based
           fromVoice: 1,
+          kitName: "A0",
           mode: "insert",
           movedSample: mockSample,
           toSlot: 7, // 0-based

@@ -10,13 +10,14 @@ import { createActionId } from "@romper/shared/undoTypes";
 export const SEQUENCE_MERGE_WINDOW_MS = 1000;
 
 export function createSequenceEditAction(
+  kitName: string,
   description: string,
   before: SequenceSnapshot,
   after: SequenceSnapshot,
   mergeKey?: string,
 ): SequenceEditAction {
   return {
-    data: { after, before, mergeKey },
+    data: { after, before, kitName, mergeKey },
     description,
     id: createActionId(),
     timestamp: new Date(),

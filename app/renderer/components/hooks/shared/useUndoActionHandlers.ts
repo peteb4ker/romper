@@ -18,22 +18,20 @@ import { writeSequenceSnapshot } from "./sequenceUndo";
 
 const log = createLogger("UNDO");
 
-export interface UseUndoActionHandlersOptions {
-  kitName: string;
-}
-
 /**
  * Hook for handling undo operations for different action types
- * Extracted from useUndoRedo to reduce complexity
+ * Extracted from useUndoRedo to reduce complexity. Each undo acts on the
+ * kit its action was made in, never on whichever kit is open (#887).
  */
-export function useUndoActionHandlers({
-  kitName,
-}: UseUndoActionHandlersOptions) {
+export function useUndoActionHandlers() {
   /**
    * Put the voices an edit touched back as they were before it: one
    * transactional call that restores full rows, gain included (RE-86)
    */
-  const restoreVoices = async (voicesBefore: VoiceSnapshot[]) => {
+  const restoreVoices = async (
+    kitName: string,
+    voicesBefore: VoiceSnapshot[],
+  ) => {
     const restore = globalThis.electronAPI?.restoreKitVoices;
     if (!restore) {
       return { error: "Undo isn't available", success: false };
@@ -45,7 +43,7 @@ export function useUndoActionHandlers({
   const undoDeleteSample = async (action: DeleteSampleAction) => {
     log.debug(" Undoing DELETE_SAMPLE - adding sample back");
     const result = await globalThis.electronAPI?.addSampleToSlot?.(
-      kitName,
+      action.data.kitName,
       action.data.voice,
       action.data.slot,
       action.data.deletedSample.source_path,
@@ -57,7 +55,7 @@ export function useUndoActionHandlers({
   const undoAddSample = async (action: AddSampleAction) => {
     log.debug(" Undoing ADD_SAMPLE - deleting sample");
     const result = await globalThis.electronAPI?.deleteSampleFromSlot?.(
-      kitName,
+      action.data.kitName,
       action.data.voice,
       action.data.slot,
     );
@@ -67,7 +65,7 @@ export function useUndoActionHandlers({
 
   const undoMoveSample = async (action: MoveSampleAction) => {
     log.debug(" Undoing MOVE_SAMPLE - restoring both voices");
-    return restoreVoices(action.data.voicesBefore);
+    return restoreVoices(action.data.kitName, action.data.voicesBefore);
   };
 
   const undoMoveSampleBetweenKits = async (
@@ -93,7 +91,7 @@ export function useUndoActionHandlers({
 
   const undoReindexSamples = async (action: ReindexSamplesAction) => {
     log.debug("Undoing REINDEX_SAMPLES - restoring the voice");
-    return restoreVoices(action.data.voicesBefore);
+    return restoreVoices(action.data.kitName, action.data.voicesBefore);
   };
 
   // Puts back what "Remove missing samples" took, through its own channel:
@@ -144,7 +142,7 @@ export function useUndoActionHandlers({
         return await undoRestoreMissingFile(action);
       case "SEQUENCE_EDIT":
         return await writeSequenceSnapshot(
-          kitName,
+          action.data.kitName,
           action.data.before,
           action.data.after,
         );

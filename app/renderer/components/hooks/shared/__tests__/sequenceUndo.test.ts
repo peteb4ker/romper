@@ -26,8 +26,8 @@ describe("mergeSequenceEdit", () => {
   const c = snapshot(127, "1:2");
 
   it("folds an edit with the same key into the previous one", () => {
-    const first = createSequenceEditAction("Edit", a, b, "slice:0:0");
-    const second = createSequenceEditAction("Edit", b, c, "slice:0:0");
+    const first = createSequenceEditAction("A0", "Edit", a, b, "slice:0:0");
+    const second = createSequenceEditAction("A0", "Edit", b, c, "slice:0:0");
 
     const merged = mergeSequenceEdit(first, second);
 
@@ -36,18 +36,18 @@ describe("mergeSequenceEdit", () => {
   });
 
   it("keeps edits apart without a key, with different keys, or too far apart", () => {
-    const first = createSequenceEditAction("Edit", a, b, "slice:0:0");
+    const first = createSequenceEditAction("A0", "Edit", a, b, "slice:0:0");
     expect(
-      mergeSequenceEdit(first, createSequenceEditAction("Edit", b, c)),
+      mergeSequenceEdit(first, createSequenceEditAction("A0", "Edit", b, c)),
     ).toBeNull();
     expect(
       mergeSequenceEdit(
         first,
-        createSequenceEditAction("Edit", b, c, "slice:0:1"),
+        createSequenceEditAction("A0", "Edit", b, c, "slice:0:1"),
       ),
     ).toBeNull();
 
-    const late = createSequenceEditAction("Edit", b, c, "slice:0:0");
+    const late = createSequenceEditAction("A0", "Edit", b, c, "slice:0:0");
     late.timestamp = new Date(
       first.timestamp.getTime() + SEQUENCE_MERGE_WINDOW_MS + 1,
     );
@@ -56,11 +56,14 @@ describe("mergeSequenceEdit", () => {
 
   it("never merges into a sample action", () => {
     const sampleAction = {
-      ...createSequenceEditAction("Edit", a, b, "k"),
+      ...createSequenceEditAction("A0", "Edit", a, b, "k"),
       type: "ADD_SAMPLE",
     } as never;
     expect(
-      mergeSequenceEdit(sampleAction, createSequenceEditAction("E", b, c, "k")),
+      mergeSequenceEdit(
+        sampleAction,
+        createSequenceEditAction("A0", "E", b, c, "k"),
+      ),
     ).toBeNull();
   });
 });

@@ -366,7 +366,7 @@ describe("[Q-06] [UC-21] [UC-26] a key move undoes like a drag (#522)", () => {
         setSelectedSampleIdx: vi.fn(),
         setSelectedVoice: vi.fn(),
       });
-      const undo = useUndoActionHandlers({ kitName: "A0" });
+      const undo = useUndoActionHandlers();
       return { keys, undo };
     });
 

@@ -308,6 +308,7 @@ const KitStepSequencer: React.FC<KitStepSequencerProps> = (props) => {
   });
   // Every step, condition and slice edit goes on the kit's undo stack
   const history = useSequenceHistory({
+    kitName,
     onAddUndoAction: props.onAddUndoAction,
     setSliceSteps: slicerData.setSliceSteps,
     setStepPattern: props.setStepPattern,

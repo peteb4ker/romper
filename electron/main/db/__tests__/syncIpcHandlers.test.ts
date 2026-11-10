@@ -9,7 +9,9 @@ vi.mock("electron", () => ({
 
 vi.mock("../../services/syncService.js", () => ({
   syncService: {
+    beginKitSync: vi.fn(),
     cancelSync: vi.fn(),
+    endKitSync: vi.fn(),
     generateChangeSummary: vi.fn(),
     startKitSync: vi.fn(),
   },
@@ -95,6 +97,19 @@ describe("startKitSync path authorization (RE-03)", () => {
     );
     expect(result).toEqual({ error: "Access denied", success: false });
     expect(syncService.startKitSync).not.toHaveBeenCalled();
+  });
+
+  it("[UC-34] begins the write before it checks the card, so Cancel works from the start (#883)", async () => {
+    vi.mocked(checkPathAccess).mockImplementationOnce(async () => {
+      expect(syncService.beginKitSync).toHaveBeenCalledOnce();
+      return { error: "Access denied", ok: false };
+    });
+
+    await getStartKitSync()({}, { sdCardPath: "/Volumes/RAMPLE" });
+
+    expect(checkPathAccess).toHaveBeenCalledOnce();
+    // A write that didn't start ends there
+    expect(syncService.endKitSync).toHaveBeenCalledOnce();
   });
 
   it("syncs to an allowed SD card folder", async () => {

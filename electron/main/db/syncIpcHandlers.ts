@@ -24,11 +24,18 @@ export function registerSyncIpcHandlers(
     // must be the SD card from settings/env or a folder the user picked.
     // The check resolves the card's path under the card watchdog, so a card
     // that stopped responding fails here instead of freezing (#714).
-    const access = await checkPathAccess(options?.sdCardPath, {
-      write: true,
-    });
-    if (!access.ok) return { error: access.error, success: false };
-    return syncService.startKitSync(inMemorySettings, options);
+    // Cancel is enabled as soon as the write is requested, so the write
+    // begins first, and a cancel during the check stops it (#883).
+    syncService.beginKitSync();
+    try {
+      const access = await checkPathAccess(options?.sdCardPath, {
+        write: true,
+      });
+      if (!access.ok) return { error: access.error, success: false };
+      return await syncService.startKitSync(inMemorySettings, options);
+    } finally {
+      syncService.endKitSync();
+    }
   });
 
   handle("cancelKitSync", () => {

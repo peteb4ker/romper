@@ -30,6 +30,8 @@ vi.mock("fs", async (importOriginal) => ({
 
 // Mock the sync service
 const mockSyncService = {
+  beginKitSync: vi.fn(),
+  endKitSync: vi.fn(),
   generateChangeSummary: vi.fn(),
   startKitSync: vi.fn(),
 };

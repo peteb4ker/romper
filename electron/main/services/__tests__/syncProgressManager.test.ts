@@ -61,6 +61,46 @@ describe("SyncProgressManager", () => {
     });
   });
 
+  describe("[UC-34] a cancel before the write's files are known (#883)", () => {
+    const files = [{ filename: "a.wav", kitName: "A0" }] as SyncFileOperation[];
+
+    afterEach(() => {
+      syncProgressManager.finalizeSyncJob();
+    });
+
+    it("is kept by the job made for the files", () => {
+      syncProgressManager.beginSyncJob();
+      syncProgressManager.cancelCurrentSync();
+      expect(syncProgressManager.isCancelled()).toBe(true);
+
+      syncProgressManager.initializeSyncJob(files);
+
+      expect(syncProgressManager.getCurrentSyncJob()).toMatchObject({
+        cancelled: true,
+        totalFiles: 1,
+      });
+    });
+
+    it("doesn't carry over to a write begun after it", () => {
+      syncProgressManager.beginSyncJob();
+      syncProgressManager.cancelCurrentSync();
+
+      syncProgressManager.beginSyncJob();
+      syncProgressManager.initializeSyncJob(files);
+
+      expect(syncProgressManager.isCancelled()).toBe(false);
+    });
+
+    it("does nothing when no write is running", () => {
+      syncProgressManager.finalizeSyncJob();
+      syncProgressManager.cancelCurrentSync();
+
+      syncProgressManager.initializeSyncJob(files);
+
+      expect(syncProgressManager.isCancelled()).toBe(false);
+    });
+  });
+
   describe("cancelCurrentSync", () => {
     it("should mark current sync job as cancelled", () => {
       const mockFiles = [

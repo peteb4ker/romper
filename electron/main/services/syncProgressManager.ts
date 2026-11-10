@@ -33,6 +33,16 @@ export class SyncProgressManager {
   private pendingTimer: null | ReturnType<typeof setTimeout> = null;
 
   /**
+   * Begin a write's job before its files are known, so a cancel while the
+   * write checks the card, plans or copies the card's `_save` folder is
+   * kept (#883). Always a new job: a cancel from an earlier write never
+   * carries over.
+   */
+  beginSyncJob(): void {
+    this.initializeSyncJob([], false);
+  }
+
+  /**
    * Calculate estimated time remaining based on current progress
    */
   calculateTimeRemaining(): number {
@@ -54,7 +64,8 @@ export class SyncProgressManager {
   }
 
   /**
-   * Mark the current sync job as cancelled
+   * Mark the current sync job as cancelled. With no write running there's
+   * no job, and nothing happens.
    */
   cancelCurrentSync(): void {
     if (this.currentSyncJob) {
@@ -249,13 +260,18 @@ export class SyncProgressManager {
   }
 
   /**
-   * Initialize a new sync job with file operations
+   * Initialize a new sync job with file operations. A cancel the write's
+   * job already has, from before its files were known, is kept (#883),
+   * unless `cancelled` says otherwise.
    */
-  initializeSyncJob(allFiles: SyncFileOperation[]): void {
+  initializeSyncJob(
+    allFiles: SyncFileOperation[],
+    cancelled = this.isCancelled(),
+  ): void {
     this.cancelPendingProgress();
     this.lastEmitTime = null;
     this.currentSyncJob = {
-      cancelled: false,
+      cancelled,
       completedFiles: 0,
       fileOperations: allFiles,
       kitName: allFiles[0]?.kitName || "Unknown Kit",
@@ -263,6 +279,11 @@ export class SyncProgressManager {
       status: "in_progress",
       totalFiles: allFiles.length,
     };
+  }
+
+  /** Whether the write in progress has been cancelled */
+  isCancelled(): boolean {
+    return this.currentSyncJob?.cancelled ?? false;
   }
 
   private cancelPendingProgress(): void {

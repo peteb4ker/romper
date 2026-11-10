@@ -9,6 +9,30 @@ vi.mock("electron", () => ({
   },
 }));
 
+/** Called while the write copies the card's `_save` folder, when set */
+const duringSaveBackup = vi.hoisted(() => ({
+  hook: undefined as (() => void) | undefined,
+}));
+vi.mock(
+  "../../electron/main/rample/rampleSaveBackup.js",
+  async (importOriginal) => {
+    const actual =
+      await importOriginal<
+        typeof import("../../electron/main/rample/rampleSaveBackup.js")
+      >();
+    return {
+      ...actual,
+      backupRampleSaveFolder: async (
+        ...args: Parameters<typeof actual.backupRampleSaveFolder>
+      ) => {
+        const copying = actual.backupRampleSaveFolder(...args);
+        duringSaveBackup.hook?.();
+        return copying;
+      },
+    };
+  },
+);
+
 import {
   addKit,
   addSample,
@@ -16,6 +40,7 @@ import {
 } from "../../electron/main/db/romperDbCoreORM.js";
 import { closeAllDbConnections } from "../../electron/main/db/utils/dbConnections.js";
 import { syncProgressManager } from "../../electron/main/services/syncProgressManager.js";
+import { syncSampleProcessingService } from "../../electron/main/services/syncSampleProcessing.js";
 import { syncService } from "../../electron/main/services/syncService.js";
 import { encodeTestWav, sine } from "../validation/support/wav.js";
 import { createStoreDb } from "./support/storeDb.js";
@@ -105,6 +130,7 @@ describe("[UC-34] Cancelling a write to the card", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    duringSaveBackup.hook = undefined;
     // Windows can't delete a database file that's still open
     closeAllDbConnections();
     fs.rmSync(tempDir, { force: true, recursive: true });
@@ -222,5 +248,100 @@ describe("[UC-34] Cancelling a write to the card", () => {
         written: KITS.map(() => true),
       },
     ]);
+  });
+
+  // #883: Cancel is enabled as soon as the write is requested, but main
+  // first checks the card, plans the write and copies the card's _save
+  // folder. A cancel then used to be dropped, and the whole write ran.
+  describe("before the first file is written (#883)", () => {
+    /** Every file on the card with its bytes */
+    function cardSnapshot(): Record<string, string> {
+      return Object.fromEntries(
+        listCard(card).map((file) => [
+          file,
+          fs.readFileSync(path.join(card, file), "base64"),
+        ]),
+      );
+    }
+
+    /** The write changed nothing on the card and recorded nothing */
+    function expectNothingWritten(before: Record<string, string>) {
+      expect(cardSnapshot()).toEqual(before);
+      for (const kit of KITS) {
+        expect(getKit(dbDir, kit).data?.modified_since_sync).toBe(true);
+      }
+      expect(syncProgressManager.getCurrentSyncJob()).toBeNull();
+    }
+
+    it("stops a write cancelled while it's being planned", async () => {
+      const before = cardSnapshot();
+      const plan = syncSampleProcessingService.processSampleForSync.bind(
+        syncSampleProcessingService,
+      );
+      vi.spyOn(
+        syncSampleProcessingService,
+        "processSampleForSync",
+      ).mockImplementationOnce(async (...args) => {
+        syncService.cancelSync();
+        return plan(...args);
+      });
+
+      const result = await syncService.startKitSync(settings, {
+        sdCardPath: card,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data).toMatchObject({ cancelled: true, syncedFiles: 0 });
+      expectNothingWritten(before);
+    });
+
+    it("stops a write cancelled while the card's _save folder is copied, and keeps the whole copy", async () => {
+      const before = cardSnapshot();
+      duringSaveBackup.hook = () => syncService.cancelSync();
+
+      const result = await syncService.startKitSync(settings, {
+        sdCardPath: card,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data).toMatchObject({
+        cancelled: true,
+        rampleSaveBackup: { status: "copied" },
+        syncedFiles: 0,
+      });
+      expectNothingWritten(before);
+      // The copy finished: one whole copy in the store, no .partial folder
+      const copies = fs.readdirSync(path.join(dbDir, "rample-save"));
+      expect(copies).toHaveLength(1);
+      expect(copies[0]).not.toMatch(/\.partial$/);
+    });
+
+    it("doesn't carry a cancel over to the next write", async () => {
+      duringSaveBackup.hook = () => syncService.cancelSync();
+      const cancelled = await syncService.startKitSync(settings, {
+        sdCardPath: card,
+      });
+      expect(cancelled.data?.cancelled).toBe(true);
+      duringSaveBackup.hook = undefined;
+
+      const result = await syncService.startKitSync(settings, {
+        sdCardPath: card,
+      });
+
+      expect(result.data).toMatchObject({ cancelled: false, syncedFiles: 6 });
+      expect(listCard(card)).toEqual(
+        [...sources.keys(), path.join("_save", "A0.rpl")].sort(),
+      );
+    });
+
+    it("ignores a cancel pressed when no write is running", async () => {
+      syncService.cancelSync();
+
+      const result = await syncService.startKitSync(settings, {
+        sdCardPath: card,
+      });
+
+      expect(result.data).toMatchObject({ cancelled: false, syncedFiles: 6 });
+    });
   });
 });

@@ -111,10 +111,28 @@ const PLAN_BATCH_SIZE = 16;
 
 class SyncService {
   /**
+   * Begin a write as soon as it's requested, so Cancel stops it from then
+   * on, even before its files are known (#883). The write's IPC handler
+   * calls it before it checks the card; `startKitSync` begins one itself
+   * when nobody has, and ends it however it returns.
+   */
+  beginKitSync(): void {
+    syncProgressManager.beginSyncJob();
+  }
+
+  /**
    * Cancel the current sync operation
    */
   cancelSync(): void {
     syncProgressManager.cancelCurrentSync();
+  }
+
+  /**
+   * End a write begun with `beginKitSync`, including one refused before
+   * `startKitSync` ran. Nothing happens if it has ended already.
+   */
+  endKitSync(): void {
+    syncProgressManager.finalizeSyncJob();
   }
 
   /**
@@ -199,6 +217,14 @@ class SyncService {
     inMemorySettings: Record<string, unknown>,
     options: SyncOptions,
   ): Promise<DbResult<SyncOutcome>> {
+    // A cancel from here on stops the write; until the first file, before
+    // anything on the card changes (#883)
+    if (!syncProgressManager.getCurrentSyncJob()) {
+      syncProgressManager.beginSyncJob();
+    }
+    const cancelledBeforeWriting = (
+      outcome: Omit<SyncOutcome, "cancelled" | "syncedFiles">,
+    ) => writeOutcome(true, { ...outcome, syncedFiles: 0 });
     try {
       const localStorePath =
         ServicePathManager.getLocalStorePath(inMemorySettings);
@@ -217,6 +243,9 @@ class SyncService {
       ]);
       if (!target.ok) {
         return { error: target.reason, success: false };
+      }
+      if (syncProgressManager.isCancelled()) {
+        return cancelledBeforeWriting({ skippedFiles: [], warnings: [] });
       }
 
       const planResult = await this.planSync(
@@ -237,6 +266,12 @@ class SyncService {
         validationErrors,
         warnings,
       } = planResult.data;
+      if (syncProgressManager.isCancelled()) {
+        return cancelledBeforeWriting({
+          skippedFiles: validationErrors,
+          warnings,
+        });
+      }
 
       const refusal = unconfirmedSkipRefusal(validationErrors, options);
       if (refusal) return { error: refusal, success: false };
@@ -265,7 +300,11 @@ class SyncService {
           syncedFiles,
           warnings,
         });
+      // A cancel during the copy lets the copy finish, so it never leaves a
+      // part copy behind, then stops the write before its first file (#883)
+      if (syncProgressManager.isCancelled()) return outcome(true, 0);
 
+      // The file phase's job keeps a cancel that came before it
       syncProgressManager.initializeSyncJob(allFiles);
 
       const syncedFiles = await syncFileOperationsService.processAllFiles(
@@ -315,11 +354,14 @@ class SyncService {
       return outcome(false, syncedFiles);
     } catch (error) {
       await this.handleSyncFailure(inMemorySettings, error);
-      syncProgressManager.finalizeSyncJob();
       return {
         error: `Failed to sync kit: ${error instanceof Error ? error.message : String(error)}`,
         success: false,
       };
+    } finally {
+      // However the write ends, its job ends with it, so a cancel can't
+      // carry over to the next write (#883)
+      syncProgressManager.finalizeSyncJob();
     }
   }
 

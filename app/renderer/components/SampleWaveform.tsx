@@ -95,6 +95,29 @@ function playWindow(
   return { offset, playLength };
 }
 
+/**
+ * Disconnect a source whose stop is scheduled, once it has ended. Touches only
+ * the source's own node: no state or refs, which a newer source may own.
+ * `onended` is the normal route; a source stopped before its own start may not
+ * fire it in every engine, so a timer past the stop time disconnects as well
+ * (disconnecting twice is harmless).
+ */
+function releaseSourceAfterStop(
+  source: AudioBufferSourceNode,
+  ctx: BaseAudioContext,
+  stopTime: number,
+): void {
+  const release = () => {
+    try {
+      source.disconnect();
+    } catch {
+      // Already disconnected
+    }
+  };
+  source.onended = release;
+  setTimeout(release, (stopTime - ctx.currentTime) * 1000 + 100);
+}
+
 /** Start a source now, at a scheduled time, or for a region only. */
 function startSource(
   source: AudioBufferSourceNode,
@@ -126,12 +149,19 @@ function stopSource(
   source.onended = null;
   const t = ctx ? Math.max(ctx.currentTime, stopAt ?? 0) : 0;
   if (!envelope || !ctx) {
+    // A stop in the future (a choke scheduled ahead of the next hit) must
+    // keep sounding until then: disconnect() would end it now (#891).
+    const pending = ctx !== null && t > ctx.currentTime;
     try {
       source.stop(t);
     } catch {
       // Ignore stop errors
     }
-    source.disconnect();
+    if (pending) {
+      releaseSourceAfterStop(source, ctx, t);
+    } else {
+      source.disconnect();
+    }
     return;
   }
   try {

@@ -8,7 +8,7 @@ vi.mock("electron", () => ({
 }));
 
 /** The write the mocked service accepts (#886) */
-const WRITE = vi.hoisted(() => Symbol("write"));
+const WRITE = vi.hoisted(() => ({ id: 1 }));
 
 vi.mock("../../services/syncService.js", () => ({
   syncService: {

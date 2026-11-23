@@ -29,7 +29,7 @@ vi.mock("fs", async (importOriginal) => ({
 }));
 
 /** The write the mocked service accepts (#886) */
-const WRITE = Symbol("write");
+const WRITE = { id: 1 };
 
 // Mock the sync service
 const mockSyncService = {

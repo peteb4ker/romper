@@ -114,11 +114,16 @@ const PLAN_BATCH_SIZE = 16;
  * A write `beginKitSync` accepted. Only the write that holds it can run
  * (`startKitSync`) and end it (`endKitSync`) (#886).
  */
-export type KitSyncWrite = symbol;
+export interface KitSyncWrite {
+  /** Which write this is, counted from 1 since the app started */
+  readonly id: number;
+}
 
 class SyncService {
   /** The write in progress, or null when none is (#886) */
   private activeWrite: KitSyncWrite | null = null;
+  /** How many writes have begun */
+  private writesBegun = 0;
 
   /**
    * Begin a write as soon as it's requested, so Cancel stops it from then
@@ -132,7 +137,7 @@ class SyncService {
    */
   beginKitSync(): KitSyncWrite | null {
     if (this.activeWrite) return null;
-    const write = Symbol("kit sync write");
+    const write: KitSyncWrite = { id: ++this.writesBegun };
     this.activeWrite = write;
     syncProgressManager.beginSyncJob();
     return write;

@@ -139,10 +139,11 @@ export function ensureDatabaseMigrations(dbDir: string): DbResult<boolean> {
  *   writer and vice versa; the standard pairing. journal_mode is set
  *   tolerantly — on filesystems without shared-memory support SQLite
  *   keeps the previous mode and everything still works.
- *
- * foreign_keys stays OFF intentionally: kits.bank_letter references
- * banks.letter, but kits can be created before a bank scan has populated
- * the banks table — enforcement would break createKit.
+ * - foreign_keys: enforced, so a voice or sample row for a kit that isn't
+ *   there, or a kit for a bank that isn't, is refused (#901). better-sqlite3
+ *   is built with this on by default; it's set here so Romper doesn't
+ *   depend on that. A migration runs inside the upgrade's transaction,
+ *   where this pragma does nothing (see romper-db.md, "Foreign keys").
  */
 export function openDatabase(
   dbPath: string,
@@ -150,6 +151,7 @@ export function openDatabase(
 ): BetterSqlite3.Database {
   const sqlite = new BetterSqlite3(dbPath, options);
   sqlite.pragma("busy_timeout = 5000");
+  sqlite.pragma("foreign_keys = ON");
   if (!options.readonly) {
     try {
       sqlite.pragma("journal_mode = WAL");

@@ -100,6 +100,31 @@ Individual sample file assignments to voice slots.
 - **kits** (1) → **samples** (up to 48) — 4 voices x 12 slots max
 - **voices** (1) → **samples** (up to 12) via composite `(kit_name, voice_number)`
 
+## Foreign keys
+
+The links above are enforced: SQLite refuses a voice or sample row for a
+kit that isn't there, and a kit for a bank that isn't, with `FOREIGN KEY
+constraint failed`, and the transaction rolls back. `openDatabase` turns
+`PRAGMA foreign_keys` on for every connection (#901), and an integration
+test (`tests/integration/foreign-keys.integration.test.ts`) pins it.
+
+Migrations run inside the upgrade's one transaction (below), where
+[`PRAGMA foreign_keys`](https://www.sqlite.org/pragma.html#pragma_foreign_keys)
+"is a no-op", so the `PRAGMA foreign_keys=OFF` and `ON` lines drizzle-kit
+writes around a table rebuild do nothing: enforcement stays on. A
+migration that rebuilds a table other rows refer to (`banks`, `kits`) must
+keep every reference valid at each statement, or run
+[`PRAGMA defer_foreign_keys = ON`](https://www.sqlite.org/pragma.html#pragma_defer_foreign_keys)
+first, which works inside the transaction and checks the references only
+at commit. Deferring isn't enough for drizzle-kit's rebuild (create
+`__new_kits`, copy, drop `kits`, rename `__new_kits`): dropping a table
+deletes its rows, and renaming the copy doesn't count as putting them
+back, so the commit still fails. With deferring on, recreate the table
+under its own name and insert its rows into it before the commit (copy
+them to a temporary table, drop the table, create it, copy them back).
+A migration that does break a reference fails the whole upgrade, which
+rolls back, so the store stays at its old version.
+
 ## Key Design Decisions
 
 - **Natural keys**: Kit names (A0, B1) as primary keys matching Rample hardware naming

@@ -541,16 +541,21 @@ describe("[UC-05] [Q-01] the store check finds missing and unreadable sample fil
   });
 
   describe("scheduling", () => {
-    it("a stat that never resolves times out without stalling the event loop or other fs work, and its volume is skipped", async () => {
-      storeCheckSettings.operationTimeoutMs = 100;
+    it("[Q-07] a stat that never resolves times out without stalling the event loop or other fs work, and its volume is skipped", async () => {
+      // The files before the hung one are real fs work on a possibly slow
+      // runner, so they keep the default limit. The limit is shortened only
+      // when the hung stat starts: the service reads it when it wraps that
+      // operation, just after the stat call returns (#921).
       const hung = fileOf("A1");
       const realStat = fs.promises.stat.bind(fs.promises);
-      const spy = vi
-        .spyOn(fs.promises, "stat")
-        .mockImplementation(((p: string, ...rest: unknown[]) =>
-          p === hung
-            ? new Promise(() => undefined)
-            : realStat(p, ...(rest as []))) as typeof fs.promises.stat);
+      const spy = vi.spyOn(fs.promises, "stat").mockImplementation(((
+        p: string,
+        ...rest: unknown[]
+      ) => {
+        if (p !== hung) return realStat(p, ...(rest as []));
+        storeCheckSettings.operationTimeoutMs = 100;
+        return new Promise(() => undefined);
+      }) as typeof fs.promises.stat);
       try {
         let turns = 0;
         let waiting = true;

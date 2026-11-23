@@ -18,7 +18,7 @@ export const CARD_NOT_RESPONDING_SETUP_MESSAGE =
 /**
  * A write requested while another is still running (#886). Main refuses
  * it and the running write carries on. The write dialog is modal, so this
- * normally can't be seen. Wording awaiting the maintainer's approval.
+ * normally can't be seen. Wording approved on #886 (2026-11-22).
  */
 export const WRITE_IN_PROGRESS_MESSAGE =
   "A write to the card is already in progress.";

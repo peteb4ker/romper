@@ -8,6 +8,7 @@ import type {
 } from "@romper/shared/electronApi.js";
 import type { WriteStereoSummary } from "@romper/shared/stereoLinkRules.js";
 
+import { WRITE_IN_PROGRESS_MESSAGE } from "@romper/shared/cardMessages.js";
 import { cardSampleFileName } from "@romper/shared/rampleCardLayout.js";
 import { describeTooShortCount } from "@romper/shared/rampleFormat.js";
 import * as fs from "node:fs";
@@ -109,15 +110,32 @@ function fileStatusChange(
  */
 const PLAN_BATCH_SIZE = 16;
 
+/**
+ * A write `beginKitSync` accepted. Only the write that holds it can run
+ * (`startKitSync`) and end it (`endKitSync`) (#886).
+ */
+export type KitSyncWrite = symbol;
+
 class SyncService {
+  /** The write in progress, or null when none is (#886) */
+  private activeWrite: KitSyncWrite | null = null;
+
   /**
    * Begin a write as soon as it's requested, so Cancel stops it from then
    * on, even before its files are known (#883). The write's IPC handler
    * calls it before it checks the card; `startKitSync` begins one itself
-   * when nobody has, and ends it however it returns.
+   * when it isn't given one, and ends it however it returns.
+   *
+   * Only one write runs at a time (#886): while one is in progress this
+   * returns null, and the running write and its job are left as they are.
+   * Whoever gets a write must end it with `endKitSync`.
    */
-  beginKitSync(): void {
+  beginKitSync(): KitSyncWrite | null {
+    if (this.activeWrite) return null;
+    const write = Symbol("kit sync write");
+    this.activeWrite = write;
     syncProgressManager.beginSyncJob();
+    return write;
   }
 
   /**
@@ -129,9 +147,12 @@ class SyncService {
 
   /**
    * End a write begun with `beginKitSync`, including one refused before
-   * `startKitSync` ran. Nothing happens if it has ended already.
+   * `startKitSync` ran, so the next write can begin. Nothing happens if it
+   * has ended already, so a write can't end another's job.
    */
-  endKitSync(): void {
+  endKitSync(write: KitSyncWrite): void {
+    if (this.activeWrite !== write) return;
+    this.activeWrite = null;
     syncProgressManager.finalizeSyncJob();
   }
 
@@ -211,144 +232,25 @@ class SyncService {
   }
 
   /**
-   * Start syncing all kits to SD card
+   * Write every kit to the SD card. `write` is the write the caller began
+   * with `beginKitSync`; without one, this begins and ends its own. A
+   * write requested while another is in progress is refused, and the
+   * running one carries on (#886).
    */
   async startKitSync(
     inMemorySettings: Record<string, unknown>,
     options: SyncOptions,
+    write?: KitSyncWrite,
   ): Promise<DbResult<SyncOutcome>> {
-    // A cancel from here on stops the write; until the first file, before
-    // anything on the card changes (#883)
-    if (!syncProgressManager.getCurrentSyncJob()) {
-      syncProgressManager.beginSyncJob();
+    const accepted = write ?? this.beginKitSync();
+    if (!accepted || accepted !== this.activeWrite) {
+      return { error: WRITE_IN_PROGRESS_MESSAGE, success: false };
     }
-    const cancelledBeforeWriting = (
-      outcome: Omit<SyncOutcome, "cancelled" | "syncedFiles">,
-    ) => writeOutcome(true, { ...outcome, syncedFiles: 0 });
     try {
-      const targetRefusal = await this.refuseTarget(
-        inMemorySettings,
-        options.sdCardPath,
-      );
-      if (targetRefusal) return targetRefusal;
-      if (syncProgressManager.isCancelled()) {
-        return cancelledBeforeWriting({ skippedFiles: [], warnings: [] });
-      }
-
-      const planResult = await this.planSync(
-        inMemorySettings,
-        options.sdCardPath,
-      );
-      if (!planResult.success || !planResult.data) {
-        return { error: planResult.error, success: false };
-      }
-      const {
-        banks,
-        cardContents,
-        dbDir,
-        files: allFiles,
-        fileStatuses,
-        quarantinedKits,
-        stereo,
-        validationErrors,
-        warnings,
-      } = planResult.data;
-      if (syncProgressManager.isCancelled()) {
-        return cancelledBeforeWriting({
-          skippedFiles: validationErrors,
-          warnings,
-        });
-      }
-
-      const refusal = unconfirmedSkipRefusal(validationErrors, options);
-      if (refusal) return { error: refusal, success: false };
-
-      // Keep a copy of the Rample's own _save folder before anything on the
-      // card changes (#802, stage 2 of #786). Read-only on the card. A copy
-      // that fails is logged and returned, and the write goes ahead; a card
-      // that stopped responding stops the write here, before it changes
-      // anything (approved 2026-10-09)
-      const rampleSaveBackup = await backupRampleSaveFolder({
-        cardPath: options.sdCardPath,
-        dbDir,
-        reason: "write",
-      });
-      logRampleSaveBackup(rampleSaveBackup, "Before the write");
-      if (
-        rampleSaveBackup.status === "failed" &&
-        rampleSaveBackup.cardNotResponding
-      ) {
-        return { error: CARD_NOT_RESPONDING_MESSAGE, success: false };
-      }
-      const outcome = (cancelled: boolean, syncedFiles: number) =>
-        writeOutcome(cancelled, {
-          rampleSaveBackup,
-          skippedFiles: validationErrors,
-          syncedFiles,
-          warnings,
-        });
-      // A cancel during the copy lets the copy finish, so it never leaves a
-      // part copy behind, then stops the write before its first file (#883)
-      if (syncProgressManager.isCancelled()) return outcome(true, 0);
-
-      // The file phase's job keeps a cancel that came before it
-      syncProgressManager.initializeSyncJob(allFiles);
-
-      const syncedFiles = await syncFileOperationsService.processAllFiles(
-        allFiles,
-        inMemorySettings,
-        options.sdCardPath,
-      );
-
-      if (syncProgressManager.getCurrentSyncJob()?.cancelled) {
-        syncProgressManager.finalizeSyncJob();
-        return outcome(true, syncedFiles);
-      }
-      syncProgressManager.emitFinalizingProgress();
-
-      // Write bank RTF files to SD card root, from the banks the plan used,
-      // so the stale-entry check below keeps exactly these
-      await this.writeBankRtfFiles(banks, options.sdCardPath);
-
-      // The card mirrors the store: delete what the store no longer has.
-      // Only after every file is written, so a cancelled or failed sync
-      // never leaves a kit with less than it had. Cancel stops between
-      // removals (#653); the next write removes the rest.
-      await this.removeStaleEntries(options.sdCardPath, cardContents);
-      if (syncProgressManager.getCurrentSyncJob()?.cancelled) {
-        syncProgressManager.finalizeSyncJob();
-        return outcome(true, syncedFiles);
-      }
-
-      // The card now mirrors the store, so every kit is in step with it,
-      // except a kit with a skipped sample or a quarantined kit: each keeps
-      // its "modified since sync" flag.
-      const incompleteKits = kitsLeftIncomplete(
-        quarantinedKits,
-        validationErrors,
-      );
-      // The links the write made automatically (#537 rule 2) are recorded
-      // only now the write has completed, with the synced flags, in one
-      // transaction: a cancelled or failed write leaves no links behind
-      this.completeWrite(dbDir, stereo, incompleteKits, fileStatuses);
-
-      // Only now is the write complete. The dialog says "Write Complete" on
-      // this event, so it must not go out while the card is still being
-      // changed or the store could still fail to record the write (#634).
-      syncProgressManager.emitCompletionProgress(syncedFiles, allFiles.length);
-      syncProgressManager.finalizeSyncJob();
-
-      return outcome(false, syncedFiles);
-    } catch (error) {
-      await this.handleSyncFailure(inMemorySettings, error);
-      return {
-        error: `Failed to sync kit: ${error instanceof Error ? error.message : String(error)}`,
-        success: false,
-      };
+      return await this.runKitSync(inMemorySettings, options);
     } finally {
-      // However the write ends, its job ends with it, so a cancel can't
-      // carry over to the next write (#883)
-      syncProgressManager.finalizeSyncJob();
+      // A write begun here ends here, however it returns
+      if (!write) this.endKitSync(accepted);
     }
   }
 
@@ -642,6 +544,143 @@ class SyncService {
         `Removed ${removed} of ${stale.length} stale entries from the SD card:`,
         stale.slice(0, removed),
       );
+    }
+  }
+
+  /** The write `startKitSync` accepted, from the card check to the end */
+  private async runKitSync(
+    inMemorySettings: Record<string, unknown>,
+    options: SyncOptions,
+  ): Promise<DbResult<SyncOutcome>> {
+    // A cancel from here on stops the write; until the first file, before
+    // anything on the card changes (#883)
+    const cancelledBeforeWriting = (
+      outcome: Omit<SyncOutcome, "cancelled" | "syncedFiles">,
+    ) => writeOutcome(true, { ...outcome, syncedFiles: 0 });
+    try {
+      const targetRefusal = await this.refuseTarget(
+        inMemorySettings,
+        options.sdCardPath,
+      );
+      if (targetRefusal) return targetRefusal;
+      if (syncProgressManager.isCancelled()) {
+        return cancelledBeforeWriting({ skippedFiles: [], warnings: [] });
+      }
+
+      const planResult = await this.planSync(
+        inMemorySettings,
+        options.sdCardPath,
+      );
+      if (!planResult.success || !planResult.data) {
+        return { error: planResult.error, success: false };
+      }
+      const {
+        banks,
+        cardContents,
+        dbDir,
+        files: allFiles,
+        fileStatuses,
+        quarantinedKits,
+        stereo,
+        validationErrors,
+        warnings,
+      } = planResult.data;
+      if (syncProgressManager.isCancelled()) {
+        return cancelledBeforeWriting({
+          skippedFiles: validationErrors,
+          warnings,
+        });
+      }
+
+      const refusal = unconfirmedSkipRefusal(validationErrors, options);
+      if (refusal) return { error: refusal, success: false };
+
+      // Keep a copy of the Rample's own _save folder before anything on the
+      // card changes (#802, stage 2 of #786). Read-only on the card. A copy
+      // that fails is logged and returned, and the write goes ahead; a card
+      // that stopped responding stops the write here, before it changes
+      // anything (approved 2026-10-09)
+      const rampleSaveBackup = await backupRampleSaveFolder({
+        cardPath: options.sdCardPath,
+        dbDir,
+        reason: "write",
+      });
+      logRampleSaveBackup(rampleSaveBackup, "Before the write");
+      if (
+        rampleSaveBackup.status === "failed" &&
+        rampleSaveBackup.cardNotResponding
+      ) {
+        return { error: CARD_NOT_RESPONDING_MESSAGE, success: false };
+      }
+      const outcome = (cancelled: boolean, syncedFiles: number) =>
+        writeOutcome(cancelled, {
+          rampleSaveBackup,
+          skippedFiles: validationErrors,
+          syncedFiles,
+          warnings,
+        });
+      // A cancel during the copy lets the copy finish, so it never leaves a
+      // part copy behind, then stops the write before its first file (#883)
+      if (syncProgressManager.isCancelled()) return outcome(true, 0);
+
+      // The file phase's job keeps a cancel that came before it
+      syncProgressManager.initializeSyncJob(allFiles);
+
+      const syncedFiles = await syncFileOperationsService.processAllFiles(
+        allFiles,
+        inMemorySettings,
+        options.sdCardPath,
+      );
+
+      if (syncProgressManager.getCurrentSyncJob()?.cancelled) {
+        syncProgressManager.finalizeSyncJob();
+        return outcome(true, syncedFiles);
+      }
+      syncProgressManager.emitFinalizingProgress();
+
+      // Write bank RTF files to SD card root, from the banks the plan used,
+      // so the stale-entry check below keeps exactly these
+      await this.writeBankRtfFiles(banks, options.sdCardPath);
+
+      // The card mirrors the store: delete what the store no longer has.
+      // Only after every file is written, so a cancelled or failed sync
+      // never leaves a kit with less than it had. Cancel stops between
+      // removals (#653); the next write removes the rest.
+      await this.removeStaleEntries(options.sdCardPath, cardContents);
+      if (syncProgressManager.getCurrentSyncJob()?.cancelled) {
+        syncProgressManager.finalizeSyncJob();
+        return outcome(true, syncedFiles);
+      }
+
+      // The card now mirrors the store, so every kit is in step with it,
+      // except a kit with a skipped sample or a quarantined kit: each keeps
+      // its "modified since sync" flag.
+      const incompleteKits = kitsLeftIncomplete(
+        quarantinedKits,
+        validationErrors,
+      );
+      // The links the write made automatically (#537 rule 2) are recorded
+      // only now the write has completed, with the synced flags, in one
+      // transaction: a cancelled or failed write leaves no links behind
+      this.completeWrite(dbDir, stereo, incompleteKits, fileStatuses);
+
+      // Only now is the write complete. The dialog says "Write Complete" on
+      // this event, so it must not go out while the card is still being
+      // changed or the store could still fail to record the write (#634).
+      syncProgressManager.emitCompletionProgress(syncedFiles, allFiles.length);
+      syncProgressManager.finalizeSyncJob();
+
+      return outcome(false, syncedFiles);
+    } catch (error) {
+      await this.handleSyncFailure(inMemorySettings, error);
+      return {
+        error: `Failed to sync kit: ${error instanceof Error ? error.message : String(error)}`,
+        success: false,
+      };
+    } finally {
+      // However the write ends, its job ends with it, so a cancel can't
+      // carry over to the next write (#883)
+      syncProgressManager.finalizeSyncJob();
     }
   }
 

@@ -433,6 +433,19 @@ first file, with nothing on the card changed, and returns the same
 job for the files keeps a cancel from before them; the job ends however
 the write returns, so a cancel can't carry over to the next write, and a
 cancel with no write running does nothing.
+Only one write runs at a time (#886). The write dialog is modal, but main
+doesn't rely on it: `beginKitSync` returns the write it begins, or null
+while another is in progress, and the handler then refuses the request
+with `WRITE_IN_PROGRESS_MESSAGE` (`shared/cardMessages.ts`) before it
+begins anything. `startKitSync` does the same for a caller that skips the
+handler. A refused request leaves the running write, its job and its
+Cancel alone, so an earlier plan can't remove what a later write put on
+the card. The write that began is the only one that ends it
+(`endKitSync`), in a `finally`, however it returns: complete, cancelled,
+refused by the path check or the target check, failed, or stopped by the
+card watchdog. The write summary (`generateSyncChangeSummary`) only reads
+the store and the card, so it isn't refused; during a write it lists what
+the card holds at that moment.
 Removing what the store no longer has is asynchronous too, one entry at a
 time with a yield between entries (#653, `sdCardSafety.removeCardEntries`):
 a synchronous recursive delete of kit folders froze the window on a slow

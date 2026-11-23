@@ -100,9 +100,9 @@ jobs:
       # System dependencies for Electron (Ubuntu only, optimized)
       - name: Install Electron dependencies
         if: matrix.os == 'ubuntu-latest'
+        timeout-minutes: 5
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
+          scripts/ci/apt-install.sh --no-install-recommends \
             libnss3-dev \
             libatk-bridge2.0-dev \
             libxkbcommon0 \

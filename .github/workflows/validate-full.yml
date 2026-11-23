@@ -74,9 +74,9 @@ jobs:
 
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
+        timeout-minutes: 5
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libnss3-dev libatk-bridge2.0-dev libxkbcommon0 \
+          scripts/ci/apt-install.sh libnss3-dev libatk-bridge2.0-dev libxkbcommon0 \
             libxcomposite1 libxdamage1 libxrandr2 libgbm1 libxss1 libasound2-dev \
             libgtk-3-0 x11-utils xvfb
           # The binary came with Install dependencies (electron: "true")

@@ -14,3 +14,11 @@ export const CARD_NOT_RESPONDING_MESSAGE =
  */
 export const CARD_NOT_RESPONDING_SETUP_MESSAGE =
   "The SD card stopped responding, so setup stopped. Eject and reinsert the card, then try again.";
+
+/**
+ * A write requested while another is still running (#886). Main refuses
+ * it and the running write carries on. The write dialog is modal, so this
+ * normally can't be seen. Wording awaiting the maintainer's approval.
+ */
+export const WRITE_IN_PROGRESS_MESSAGE =
+  "A write to the card is already in progress.";

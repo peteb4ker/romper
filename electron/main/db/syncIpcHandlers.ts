@@ -1,3 +1,5 @@
+import { WRITE_IN_PROGRESS_MESSAGE } from "@romper/shared/cardMessages.js";
+
 import { handle } from "../ipcHandle.js";
 import { checkPathAccess } from "../security/pathAccess.js";
 import { syncService } from "../services/syncService.js";
@@ -26,15 +28,19 @@ export function registerSyncIpcHandlers(
     // that stopped responding fails here instead of freezing (#714).
     // Cancel is enabled as soon as the write is requested, so the write
     // begins first, and a cancel during the check stops it (#883).
-    syncService.beginKitSync();
+    // One write at a time (#886): a write requested while one runs is
+    // refused before it begins, and leaves the running write alone.
+    const write = syncService.beginKitSync();
+    if (!write) return { error: WRITE_IN_PROGRESS_MESSAGE, success: false };
     try {
       const access = await checkPathAccess(options?.sdCardPath, {
         write: true,
       });
       if (!access.ok) return { error: access.error, success: false };
-      return await syncService.startKitSync(inMemorySettings, options);
+      return await syncService.startKitSync(inMemorySettings, options, write);
     } finally {
-      syncService.endKitSync();
+      // However the write ends, the next one can begin
+      syncService.endKitSync(write);
     }
   });
 

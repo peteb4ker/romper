@@ -7,9 +7,12 @@ vi.mock("electron", () => ({
   },
 }));
 
+/** The write the mocked service accepts (#886) */
+const WRITE = vi.hoisted(() => Symbol("write"));
+
 vi.mock("../../services/syncService.js", () => ({
   syncService: {
-    beginKitSync: vi.fn(),
+    beginKitSync: vi.fn(() => WRITE),
     cancelSync: vi.fn(),
     endKitSync: vi.fn(),
     generateChangeSummary: vi.fn(),
@@ -21,6 +24,7 @@ vi.mock("../../security/pathAccess.js", () => ({
   checkPathAccess: vi.fn(() => Promise.resolve({ ok: true })),
 }));
 
+import { WRITE_IN_PROGRESS_MESSAGE } from "@romper/shared/cardMessages.js";
 import { ipcMain } from "electron";
 
 import { checkPathAccess } from "../../security/pathAccess.js";
@@ -109,7 +113,37 @@ describe("startKitSync path authorization (RE-03)", () => {
 
     expect(checkPathAccess).toHaveBeenCalledOnce();
     // A write that didn't start ends there
-    expect(syncService.endKitSync).toHaveBeenCalledOnce();
+    expect(syncService.endKitSync).toHaveBeenCalledExactlyOnceWith(WRITE);
+  });
+
+  it("[UC-34] [Q-04] refuses a write while one is in progress, and leaves that one alone (#886)", async () => {
+    vi.mocked(syncService.beginKitSync).mockReturnValueOnce(null);
+
+    const result = await getStartKitSync()(
+      {},
+      { sdCardPath: "/Volumes/RAMPLE" },
+    );
+
+    expect(result).toEqual({
+      error: WRITE_IN_PROGRESS_MESSAGE,
+      success: false,
+    });
+    expect(checkPathAccess).not.toHaveBeenCalled();
+    expect(syncService.startKitSync).not.toHaveBeenCalled();
+    // The running write isn't ended by the refused request
+    expect(syncService.endKitSync).not.toHaveBeenCalled();
+  });
+
+  it("[UC-34] ends the write when it throws (#886)", async () => {
+    vi.mocked(syncService.startKitSync).mockRejectedValueOnce(
+      new Error("card pulled"),
+    );
+
+    await expect(
+      getStartKitSync()({}, { sdCardPath: "/Volumes/RAMPLE" }),
+    ).rejects.toThrow("card pulled");
+
+    expect(syncService.endKitSync).toHaveBeenCalledExactlyOnceWith(WRITE);
   });
 
   it("syncs to an allowed SD card folder", async () => {
@@ -118,6 +152,7 @@ describe("startKitSync path authorization (RE-03)", () => {
     expect(syncService.startKitSync).toHaveBeenCalledWith(
       { localStorePath: "/store" },
       options,
+      WRITE,
     );
   });
 });

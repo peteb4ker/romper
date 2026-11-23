@@ -28,9 +28,12 @@ vi.mock("fs", async (importOriginal) => ({
   })),
 }));
 
+/** The write the mocked service accepts (#886) */
+const WRITE = Symbol("write");
+
 // Mock the sync service
 const mockSyncService = {
-  beginKitSync: vi.fn(),
+  beginKitSync: vi.fn(() => WRITE),
   endKitSync: vi.fn(),
   generateChangeSummary: vi.fn(),
   startKitSync: vi.fn(),
@@ -195,6 +198,7 @@ describe("Sync IPC Integration Tests", () => {
         {
           sdCardPath: "/sd/card",
         },
+        WRITE,
       );
       expect(result.success).toBe(true);
       expect(result.data).toHaveProperty("syncedFiles");
@@ -280,6 +284,7 @@ describe("Sync IPC Integration Tests", () => {
       expect(mockSyncService.startKitSync).toHaveBeenCalledWith(
         {},
         syncRequest,
+        WRITE,
       );
     });
 
